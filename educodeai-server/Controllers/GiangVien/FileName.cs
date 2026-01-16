@@ -1,6 +1,8 @@
-﻿namespace educodeai_server.Controllers.GiangVien
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace educodeai_server.Controllers.GiangVien
 {
-    public class FileName
+    public class FileName : ControllerBase
     {
     }
 }
