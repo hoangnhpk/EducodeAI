@@ -1,9 +1,8 @@
+import Router from "./router/index";
+
 function App() {
   return (
-    <BrowserRouter>
-      <Header />
-      <DinhTuyen />
-    </BrowserRouter>
+      <Router />
   );
 }
 
