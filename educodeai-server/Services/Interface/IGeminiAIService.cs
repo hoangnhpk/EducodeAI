@@ -1,4 +1,7 @@
-public interface IGeminiAIService
+﻿namespace educodeai_server.Services.Interface
 {
-    Task<string> GenerateAsync(string prompt);
+    public interface IGeminiAIService
+    {
+        Task<string> GenerateAsync(string prompt);
+    }
 }
