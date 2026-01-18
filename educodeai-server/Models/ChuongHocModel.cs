@@ -1,16 +1,20 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-public class ChuongHocModel {
-    [Key]
-    public int MaChuong { get; set; }
 
-    public int MaKhoaHoc { get; set; }
-    [ForeignKey("MaKhoaHoc")]
-    public virtual KhoaHocModel KhoaHoc { get; set; } = null!;
+namespace educodeai_server.Models
+{
+    public class ChuongHocModel {
+        [Key]
+        public int MaChuong { get; set; }
 
-    [Required]
-    [StringLength(200)]
-    public required string TenChuong { get; set; }
+        public int MaKhoaHoc { get; set; }
+        [ForeignKey("MaKhoaHoc")]
+        public virtual KhoaHocModel KhoaHoc { get; set; } = null!;
 
-    public int ThuTu { get; set; }
+        [Required]
+        [StringLength(200)]
+        public required string TenChuong { get; set; }
+
+        public int ThuTu { get; set; }
+    }
 }
