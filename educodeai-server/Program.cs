@@ -12,14 +12,11 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ==========================================================
-// ĐĂNG KÝ REPOSITORY VÀ SERVICE 
-// ==========================================================
+// B. Đăng ký Repository và Service (Dependency Injection)
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
-// ==========================================================
 
-// B. Cấu hình CORS
+// C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -30,9 +27,25 @@ builder.Services.AddCors(options =>
     });
 });
 
-// C. Các Service mặc định
+// D. Các dịch vụ hệ thống mặc định
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+// B. Bảo mật và Định tuyến
+app.UseHttpsRedirection();
+
+// C. Kích hoạt CORS (Phải đặt TRƯỚC Authorization)
+app.UseCors();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
