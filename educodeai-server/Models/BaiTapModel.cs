@@ -16,5 +16,10 @@ namespace educodeai_server.Models
 
         public int GioiHanThoiGian { get; set; } = 1000;
         public int GioiHanBoNho { get; set; } = 128;
+
+        // Navigation
+        public virtual ICollection<BaiTap_NgonNguModel> BaiTap_NgonNgus { get; set; } = null!;
+        public virtual ICollection<BaiNopModel> BaiNops { get; set; } = null!;
+        public virtual ICollection<BoThuNghiemModel> BoThuNghiems { get; set; } = null!;
     }
 }

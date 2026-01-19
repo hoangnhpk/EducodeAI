@@ -41,5 +41,10 @@ namespace educodeai_server.Models
         public string? KyNangChinh { get; set; } // Ví dụ: ["C#","SQL","REACT"]
 
         public DateTime NgayTao { get; set; } = DateTime.Now;
+
+        // Navigation
+        public virtual ICollection<ChuongHocModel> ChuongHocs { get; set; } = null!;
+        public virtual ICollection<DangKyKhoaHocModel> DangKyKhoaHocs { get; set; } = null!;
+        public virtual ICollection<DanhGiaModel> DanhGias { get; set; } = null!;
     }
 }

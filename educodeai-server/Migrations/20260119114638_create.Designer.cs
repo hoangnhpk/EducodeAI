@@ -12,8 +12,8 @@ using educodeai_server.Data;
 namespace educodeai_server.Migrations
 {
     [DbContext(typeof(EduCodeAIDbContext))]
-    [Migration("20260118134534_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260119114638_create")]
+    partial class create
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace educodeai_server.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("BaiHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiHocModel", b =>
                 {
                     b.Property<int>("MaBaiHoc")
                         .ValueGeneratedOnAdd()
@@ -48,6 +48,10 @@ namespace educodeai_server.Migrations
                     b.Property<string>("NoiDung")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ThoiLuong")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int>("ThuTu")
                         .HasColumnType("int");
 
@@ -63,7 +67,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("BaiHocs");
                 });
 
-            modelBuilder.Entity("BaiNopModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiNopModel", b =>
                 {
                     b.Property<int>("MaBaiNop")
                         .ValueGeneratedOnAdd()
@@ -111,7 +115,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("BaiNops");
                 });
 
-            modelBuilder.Entity("BaiTapModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiTapModel", b =>
                 {
                     b.Property<int>("MaBaiTap")
                         .ValueGeneratedOnAdd()
@@ -139,7 +143,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("BaiTaps");
                 });
 
-            modelBuilder.Entity("BaiTap_NgonNguModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiTap_NgonNguModel", b =>
                 {
                     b.Property<int>("MaBaiTapNgonNgu")
                         .ValueGeneratedOnAdd()
@@ -166,7 +170,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("BaiTap_NgonNgus");
                 });
 
-            modelBuilder.Entity("BinhLuanModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BinhLuanModel", b =>
                 {
                     b.Property<int>("MaBinhLuan")
                         .ValueGeneratedOnAdd()
@@ -201,7 +205,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("BinhLuans");
                 });
 
-            modelBuilder.Entity("BoThuNghiemModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BoThuNghiemModel", b =>
                 {
                     b.Property<int>("MaBoThu")
                         .ValueGeneratedOnAdd()
@@ -230,7 +234,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("BoThuNghiems");
                 });
 
-            modelBuilder.Entity("ChuongHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.ChuongHocModel", b =>
                 {
                     b.Property<int>("MaChuong")
                         .ValueGeneratedOnAdd()
@@ -256,7 +260,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("ChuongHocs");
                 });
 
-            modelBuilder.Entity("CuocHoiThoaiAIModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.CuocHoiThoaiAIModel", b =>
                 {
                     b.Property<int>("MaHoiThoai")
                         .ValueGeneratedOnAdd()
@@ -277,7 +281,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("CuocHoiThoaiAIs");
                 });
 
-            modelBuilder.Entity("DangKyKhoaHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.DangKyKhoaHocModel", b =>
                 {
                     b.Property<int>("MaDangKy")
                         .ValueGeneratedOnAdd()
@@ -310,7 +314,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("DangKyKhoaHocs");
                 });
 
-            modelBuilder.Entity("DanhGiaModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.DanhGiaModel", b =>
                 {
                     b.Property<int>("MaDanhGia")
                         .ValueGeneratedOnAdd()
@@ -344,7 +348,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("DanhGias");
                 });
 
-            modelBuilder.Entity("KhoaHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.KhoaHocModel", b =>
                 {
                     b.Property<int>("MaKhoaHoc")
                         .ValueGeneratedOnAdd()
@@ -399,7 +403,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("KhoaHocs");
                 });
 
-            modelBuilder.Entity("LoTrinhAIModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.LoTrinhAIModel", b =>
                 {
                     b.Property<int>("MaLoTrinh")
                         .ValueGeneratedOnAdd()
@@ -431,7 +435,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("LoTrinhAIs");
                 });
 
-            modelBuilder.Entity("NgonNguLapTrinhModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.NgonNguLapTrinhModel", b =>
                 {
                     b.Property<int>("MaNgonNgu")
                         .ValueGeneratedOnAdd()
@@ -449,7 +453,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("NgonNguLapTrinhs");
                 });
 
-            modelBuilder.Entity("NguoiDungModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.NguoiDungModel", b =>
                 {
                     b.Property<int>("MaNguoiDung")
                         .ValueGeneratedOnAdd()
@@ -505,7 +509,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("NguoiDungs");
                 });
 
-            modelBuilder.Entity("TienDoBaiHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.TienDoBaiHocModel", b =>
                 {
                     b.Property<int>("MaTienDo")
                         .ValueGeneratedOnAdd()
@@ -538,7 +542,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("TienDoBaiHocs");
                 });
 
-            modelBuilder.Entity("TinNhanAIModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.TinNhanAIModel", b =>
                 {
                     b.Property<int>("MaTinNhan")
                         .ValueGeneratedOnAdd()
@@ -567,10 +571,10 @@ namespace educodeai_server.Migrations
                     b.ToTable("TinNhanAIs");
                 });
 
-            modelBuilder.Entity("BaiHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiHocModel", b =>
                 {
-                    b.HasOne("ChuongHocModel", "ChuongHoc")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.ChuongHocModel", "ChuongHoc")
+                        .WithMany("BaiHocs")
                         .HasForeignKey("MaChuong")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -578,22 +582,22 @@ namespace educodeai_server.Migrations
                     b.Navigation("ChuongHoc");
                 });
 
-            modelBuilder.Entity("BaiNopModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiNopModel", b =>
                 {
-                    b.HasOne("BaiTapModel", "BaiTap")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.BaiTapModel", "BaiTap")
+                        .WithMany("BaiNops")
                         .HasForeignKey("MaBaiTap")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("NgonNguLapTrinhModel", "NgonNgu")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.NgonNguLapTrinhModel", "NgonNgu")
+                        .WithMany("BaiNops")
                         .HasForeignKey("MaNgonNgu")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany("BaiNops")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -605,10 +609,10 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("BaiTapModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiTapModel", b =>
                 {
-                    b.HasOne("BaiHocModel", "BaiHoc")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.BaiHocModel", "BaiHoc")
+                        .WithMany("BaiTaps")
                         .HasForeignKey("MaBaiHoc")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -616,16 +620,16 @@ namespace educodeai_server.Migrations
                     b.Navigation("BaiHoc");
                 });
 
-            modelBuilder.Entity("BaiTap_NgonNguModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiTap_NgonNguModel", b =>
                 {
-                    b.HasOne("BaiTapModel", "BaiTap")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.BaiTapModel", "BaiTap")
+                        .WithMany("BaiTap_NgonNgus")
                         .HasForeignKey("MaBaiTap")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("NgonNguLapTrinhModel", "NgonNgu")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.NgonNguLapTrinhModel", "NgonNgu")
+                        .WithMany("BaiTap_NgonNgus")
                         .HasForeignKey("MaNgonNgu")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -635,21 +639,21 @@ namespace educodeai_server.Migrations
                     b.Navigation("NgonNgu");
                 });
 
-            modelBuilder.Entity("BinhLuanModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BinhLuanModel", b =>
                 {
-                    b.HasOne("BaiHocModel", "BaiHoc")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.BaiHocModel", "BaiHoc")
+                        .WithMany("BinhLuans")
                         .HasForeignKey("MaBaiHoc")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("BinhLuanModel", "BinhLuanCha")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.BinhLuanModel", "BinhLuanCha")
+                        .WithMany("BinhLuans")
                         .HasForeignKey("MaBinhLuanCha")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany("BinhLuans")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -661,10 +665,10 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("BoThuNghiemModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BoThuNghiemModel", b =>
                 {
-                    b.HasOne("BaiTapModel", "BaiTap")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.BaiTapModel", "BaiTap")
+                        .WithMany("BoThuNghiems")
                         .HasForeignKey("MaBaiTap")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -672,10 +676,10 @@ namespace educodeai_server.Migrations
                     b.Navigation("BaiTap");
                 });
 
-            modelBuilder.Entity("ChuongHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.ChuongHocModel", b =>
                 {
-                    b.HasOne("KhoaHocModel", "KhoaHoc")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.KhoaHocModel", "KhoaHoc")
+                        .WithMany("ChuongHocs")
                         .HasForeignKey("MaKhoaHoc")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -683,10 +687,10 @@ namespace educodeai_server.Migrations
                     b.Navigation("KhoaHoc");
                 });
 
-            modelBuilder.Entity("CuocHoiThoaiAIModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.CuocHoiThoaiAIModel", b =>
                 {
-                    b.HasOne("NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany("CuocHoiThoaiAIs")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -694,15 +698,15 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("DangKyKhoaHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.DangKyKhoaHocModel", b =>
                 {
-                    b.HasOne("KhoaHocModel", "KhoaHoc")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.KhoaHocModel", "KhoaHoc")
+                        .WithMany("DangKyKhoaHocs")
                         .HasForeignKey("MaKhoaHoc")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("NguoiDungModel", "NguoiDung")
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
                         .WithMany("DangKyKhoaHocs")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -713,16 +717,16 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("DanhGiaModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.DanhGiaModel", b =>
                 {
-                    b.HasOne("KhoaHocModel", "KhoaHoc")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.KhoaHocModel", "KhoaHoc")
+                        .WithMany("DanhGias")
                         .HasForeignKey("MaKhoaHoc")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany("DanhGias")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -732,9 +736,9 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("KhoaHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.KhoaHocModel", b =>
                 {
-                    b.HasOne("NguoiDungModel", "GiangVien")
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "GiangVien")
                         .WithMany("KhoaHocs")
                         .HasForeignKey("MaGiangVien")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -743,10 +747,10 @@ namespace educodeai_server.Migrations
                     b.Navigation("GiangVien");
                 });
 
-            modelBuilder.Entity("LoTrinhAIModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.LoTrinhAIModel", b =>
                 {
-                    b.HasOne("NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany("LoTrinhAIs")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -754,16 +758,16 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("TienDoBaiHocModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.TienDoBaiHocModel", b =>
                 {
-                    b.HasOne("BaiHocModel", "BaiHoc")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.BaiHocModel", "BaiHoc")
+                        .WithMany("TienDoBaiHocs")
                         .HasForeignKey("MaBaiHoc")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany("TienDoBaiHocs")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -773,10 +777,10 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("TinNhanAIModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.TinNhanAIModel", b =>
                 {
-                    b.HasOne("CuocHoiThoaiAIModel", "CuocHoiThoaiAI")
-                        .WithMany()
+                    b.HasOne("educodeai_server.Models.CuocHoiThoaiAIModel", "CuocHoiThoaiAI")
+                        .WithMany("TinNhanAIs")
                         .HasForeignKey("MaHoiThoai")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -784,11 +788,72 @@ namespace educodeai_server.Migrations
                     b.Navigation("CuocHoiThoaiAI");
                 });
 
-            modelBuilder.Entity("NguoiDungModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiHocModel", b =>
                 {
+                    b.Navigation("BaiTaps");
+
+                    b.Navigation("BinhLuans");
+
+                    b.Navigation("TienDoBaiHocs");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.BaiTapModel", b =>
+                {
+                    b.Navigation("BaiNops");
+
+                    b.Navigation("BaiTap_NgonNgus");
+
+                    b.Navigation("BoThuNghiems");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.BinhLuanModel", b =>
+                {
+                    b.Navigation("BinhLuans");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.ChuongHocModel", b =>
+                {
+                    b.Navigation("BaiHocs");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.CuocHoiThoaiAIModel", b =>
+                {
+                    b.Navigation("TinNhanAIs");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.KhoaHocModel", b =>
+                {
+                    b.Navigation("ChuongHocs");
+
                     b.Navigation("DangKyKhoaHocs");
 
+                    b.Navigation("DanhGias");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.NgonNguLapTrinhModel", b =>
+                {
+                    b.Navigation("BaiNops");
+
+                    b.Navigation("BaiTap_NgonNgus");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.NguoiDungModel", b =>
+                {
+                    b.Navigation("BaiNops");
+
+                    b.Navigation("BinhLuans");
+
+                    b.Navigation("CuocHoiThoaiAIs");
+
+                    b.Navigation("DangKyKhoaHocs");
+
+                    b.Navigation("DanhGias");
+
                     b.Navigation("KhoaHocs");
+
+                    b.Navigation("LoTrinhAIs");
+
+                    b.Navigation("TienDoBaiHocs");
                 });
 #pragma warning restore 612, 618
         }
