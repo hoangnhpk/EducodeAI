@@ -23,5 +23,8 @@ namespace educodeai_server.Models
         public virtual BinhLuanModel? BinhLuanCha { get; set; }
 
         public DateTime NgayTao { get; set; } = DateTime.Now;
+
+        // Navigation
+        public virtual ICollection<BinhLuanModel> BinhLuans { get; set; } = null!;
     }
 }
