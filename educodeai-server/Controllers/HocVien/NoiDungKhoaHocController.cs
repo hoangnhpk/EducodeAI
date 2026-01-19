@@ -9,7 +9,6 @@ namespace educodeai_server.Controllers.HocVien
     {
         private readonly IKhoaHocService _khoaHocService;
 
-        // Tiêm Service vào Controller thông qua Constructor
         public NoiDungKhoaHocController(IKhoaHocService khoaHocService)
         {
             _khoaHocService = khoaHocService;
