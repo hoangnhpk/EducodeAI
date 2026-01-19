@@ -8,7 +8,6 @@ using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
 // Cấu hình API AI
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true)
@@ -21,28 +20,30 @@ builder.Configuration.AddUserSecrets<Program>();
 // ==========================================
 // 1. CẤU HÌNH SERVICES (Dependency Injection)
 // ==========================================
-
 // A. Kết nối Database (SQL Server)
-// Nó sẽ đọc chuỗi kết nối từ appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// B. Cấu hình CORS (Quan trọng để Frontend React gọi được API)
+// B. Đăng ký Repository và Service (Dependency Injection)
+builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
+builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
+
+// C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()  // Cho phép mọi nguồn
-              .AllowAnyHeader()  // Cho phép mọi Header
-              .AllowAnyMethod(); // Cho phép mọi phương thức (GET, POST, PUT, DELETE)
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
-// C. Các Service mặc định
+// D. Các dịch vụ hệ thống mặc định
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(); // Swagger cơ bản, không có nút nhập Token
+builder.Services.AddSwaggerGen();
 
 
 // D. Đăng ký các Service tùy chỉnh (Dependency Injection)
@@ -70,25 +71,18 @@ builder.Services.Configure<GeminiAIOptions>(
 
 var app = builder.Build();
 
-// ==========================================
-// 2. CẤU HÌNH PIPELINE (Middleware)
-// ==========================================
-
-// A. Swagger (Hiển thị tài liệu API khi chạy môi trường Dev)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// B. Bảo mật và Định tuyến
 app.UseHttpsRedirection();
 
-// B. Kích hoạt CORS (Phải đặt trước UseAuthorization)
+// C. Kích hoạt CORS (Phải đặt TRƯỚC Authorization)
 app.UseCors();
-
-// C. Các Middleware mặc định
-app.UseAuthorization(); // Vẫn để đây cho đúng chuẩn, dù chưa dùng Auth
-
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

@@ -3,6 +3,7 @@ using educodeai_server.Repository.Interface;
 using educodeai_server.Data;
 using educodeai_server.Models;
 using educodeai_server.DTOs.AI;
+using educodeai_server.DTOs.KhoaHoc;
 
 namespace educodeai_server.Repository.Implementation
 {
@@ -47,6 +48,33 @@ namespace educodeai_server.Repository.Implementation
                     LinhVuc = x.LinhVuc!,
                     KyNangChinh = x.KyNangChinh!,
                     ThoiLuongGio = x.ThoiLuongGio
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<ChuongHocDTO>> GetKhoaHocByIdAsync(int maKhoaHoc)
+        {
+            return await _context.ChuongHocs
+                .Include(c => c.BaiHocs)
+                .Where(c => c.MaKhoaHoc == maKhoaHoc)
+                .OrderBy(c => c.ThuTu)
+                .Select(c => new ChuongHocDTO
+                {
+                    Id = c.MaChuong,
+                    TieuDe = c.TenChuong,
+                    ThuTu = c.ThuTu,
+                    DanhSachBaiHoc = c.BaiHocs
+                        .OrderBy(b => b.ThuTu)
+                        .Select(b => new BaiHocDTO
+                        {
+                            Id = b.MaBaiHoc,
+                            TieuDe = b.TieuDe,
+                            LoaiBaiHoc = b.LoaiBaiHoc,
+                            NoiDung = b.NoiDung ?? "",
+                            ThoiLuong = b.ThoiLuong,
+                            ThuTu = b.ThuTu,
+                            LinkVideo = b.LinkVideo
+                        }).ToList()
                 })
                 .ToListAsync();
         }

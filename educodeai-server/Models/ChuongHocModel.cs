@@ -16,5 +16,8 @@ namespace educodeai_server.Models
         public required string TenChuong { get; set; }
 
         public int ThuTu { get; set; }
+
+        // Navigation
+        public virtual ICollection<BaiHocModel> BaiHocs { get; set; } = null!;
     }
 }
