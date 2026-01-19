@@ -1,25 +1,28 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-public class BaiHocModel {
-    [Key]
-    public int MaBaiHoc { get; set; }
+namespace educodeai_server.Models
+{
+    public class BaiHocModel {
+        [Key]
+        public int MaBaiHoc { get; set; }
 
-    public int MaChuong { get; set; }
-    [ForeignKey("MaChuong")]
-    public virtual ChuongHocModel ChuongHoc { get; set; } = null!;
+        public int MaChuong { get; set; }
+        [ForeignKey("MaChuong")]
+        public virtual ChuongHocModel ChuongHoc { get; set; } = null!;
 
-    [Required]
-    [StringLength(200)]
-    public required string TieuDe { get; set; }
+        [Required]
+        [StringLength(200)]
+        public required string TieuDe { get; set; }
 
-    [StringLength(50)]
-    public required string LoaiBaiHoc { get; set; } // Video, VanBan, BaiTap
+        [StringLength(50)]
+        public required string LoaiBaiHoc { get; set; } // Video, VanBan, BaiTap
 
-    public string? NoiDung { get; set; } // HTML content nên để MAX
+        public string? NoiDung { get; set; } // HTML content nên để MAX
 
-    [StringLength(500)]
-    public string? LinkVideo { get; set; }
+        [StringLength(500)]
+        public string? LinkVideo { get; set; }
 
-    public int ThuTu { get; set; }
+        public int ThuTu { get; set; }
+    }
 }
