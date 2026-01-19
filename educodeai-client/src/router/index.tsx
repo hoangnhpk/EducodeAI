@@ -6,9 +6,9 @@ import LayoutGiangVien from "../components/giang-vien/LayoutGiangVien";
 import LayoutQuanTriVien from "../components/quan-tri-vien/LayoutQuanTriVien";
 
 // /* ===== AUTH ===== */
-// import DangNhap from "../pages/auth/DangNhap";
-// import DangKy from "../pages/auth/DangKy";
-// import QuenMatKhau from "../pages/auth/QuenMatKhau";
+import DangNhap from "../pages/auth/DangNhap";
+import DangKy from "../pages/auth/DangKy";
+import QuenMatKhau from "../pages/auth/QuenMatKhau";
 
 // /* ===== HỌC VIÊN ===== */
 // import HVDashboard from "../pages/hoc-vien/trang-chu/TrangChu";
@@ -38,9 +38,9 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* <Route path="/dang-nhap" element={<DangNhap />} />
+        <Route path="/dang-nhap" element={<DangNhap />} />
         <Route path="/dang-ky" element={<DangKy />} />
-        <Route path="/quen-mat-khau" element={<QuenMatKhau />} /> */}
+        <Route path="/quen-mat-khau" element={<QuenMatKhau />} /> 
 
         {/* HỌC VIÊN */}
         {/* <Route path="/hoc-vien" element={<LayoutHocVien />}>
