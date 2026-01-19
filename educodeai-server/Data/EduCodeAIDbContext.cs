@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using educodeai_server.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 namespace educodeai_server.Data
