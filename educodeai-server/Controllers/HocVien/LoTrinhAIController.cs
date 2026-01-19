@@ -20,8 +20,6 @@ namespace EduCodeAI.Controllers.HocVien
         [HttpPost]
         public async Task<IActionResult> TaoLoTrinh(CreateLoTrinhAIDto dto)
         {
-            int maNguoiDung = int.Parse(
-                User.FindFirst("UserId")!.Value);
 
             return Ok(await _service.TaoLoTrinhAsync(8, dto));
         }

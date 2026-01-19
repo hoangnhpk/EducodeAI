@@ -5,6 +5,6 @@ namespace educodeai_server.Repository.Interface
 {
     public interface IKhoaHocRepository
     {
-        Task<List<KhoaHocModel>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto);
+        Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto);
     }
 }
