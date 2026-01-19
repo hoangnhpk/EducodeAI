@@ -12,5 +12,8 @@ namespace educodeai_server.Models
         public virtual NguoiDungModel NguoiDung { get; set; } = null!;
 
         public DateTime NgayTao { get; set; } = DateTime.Now;
+
+        // Navigation
+        public virtual ICollection<TinNhanAIModel> TinNhanAIs { get; set; } = null!;
     }
 }
