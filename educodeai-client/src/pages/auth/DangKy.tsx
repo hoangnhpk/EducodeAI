@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
+import { authService } from '../../services/auth.service';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const RegisterPage = () => {
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'success' | 'error' | null>(null);
-  const [generatedOTP, setGeneratedOTP] = useState('123456');
+  const [serverOtp, setServerOtp] = useState('');
   const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
@@ -43,37 +44,62 @@ const RegisterPage = () => {
     }
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.username || !formData.email || !formData.fullname || !formData.password) {
       alert('Vui lòng điền đầy đủ thông tin!');
       return;
     }
-    sendOTP();
-    setStep(2);
+    await sendOTP();
   };
 
-  const sendOTP = () => {
-    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOTP(newOtp);
-    setCountdown(60);
-    setOtp('');
-    setVerificationStatus(null);
-    console.log('Mã OTP mới:', newOtp);
+  const sendOTP = async () => {
+    try {
+      const registerData = {
+        hoTen: formData.fullname,
+        email: formData.email,
+        taiKhoan: formData.username,
+        matKhau: formData.password
+      };
+      const res = await authService.sendOtp(registerData);
+      setServerOtp(res.tempOtp);
+      setCountdown(60);
+      setOtp('');
+      setVerificationStatus(null);
+      setStep(2);
+    } catch (error) {
+      alert('Không thể gửi mã OTP. Vui lòng kiểm tra lại Email!');
+    }
   };
 
-  const verifyOTP = () => {
+  const verifyOTP = async () => {
     if (otp.length !== 6) return;
     setIsVerifying(true);
-    setTimeout(() => {
-      if (otp === generatedOTP) {
+
+    if (otp === serverOtp) {
+      try {
+        const registerData = {
+          hoTen: formData.fullname,
+          email: formData.email,
+          taiKhoan: formData.username,
+          matKhau: formData.password
+        };
+        await authService.confirmRegister(registerData);
         setVerificationStatus('success');
-        setTimeout(() => alert('Đăng ký thành công!'), 500);
-      } else {
+        setTimeout(() => {
+          alert('Đăng ký thành công!');
+          navigate('/dang-nhap');
+        }, 800);
+      } catch (error) {
+        alert('Lỗi khi hoàn tất đăng ký!');
         setVerificationStatus('error');
         setIsVerifying(false);
       }
-    }, 800);
+    } else {
+      setVerificationStatus('error');
+      setIsVerifying(false);
+      alert('Mã OTP không chính xác!');
+    }
   };
 
   const getStrengthColor = (s: number) => {
@@ -86,17 +112,15 @@ const RegisterPage = () => {
   return (
     <div className="container-xxl py-2 mt-4">
       <div className="container">
-        <div className="row justify-content-center wow fadeInUp" data-wow-delay="0.5s">
+        <div className="row justify-content-center">
           <div className="col-lg-6 col-md-8 text-center">
             <div className="shadow p-4 bg-white rounded" style={{ maxWidth: '550px', margin: '0 auto' }}>
-
-              {/* BƯỚC 1: ĐĂNG KÝ */}
+              
               {step === 1 && (
                 <form onSubmit={handleSignupSubmit}>
                   <div className="text-center mb-5">
                     <h1 className="h3 bg-white px-3">Đăng ký</h1>
                   </div>
-                  
                   <div className="row g-3">
                     <div className="col-12">
                       <div className="form-floating text-start">
@@ -134,52 +158,29 @@ const RegisterPage = () => {
                         </div>
                       )}
                     </div>
-                    
-                    {/* Nút Tiếp theo - Màu cam */}
                     <div className="col-12 mt-4">
                       <button className="btn btn-primary w-100 py-3" type="submit" style={{ backgroundColor: '#fb873f', border: 'none' }}>
                         Tiếp theo
                       </button>
                     </div>
-
-                    {/* Hoặc phân cách */}
-                    <div className="col-12">
-                      <div className="d-flex align-items-center my-3">
-                        <hr className="flex-grow-1" />
-                        <span className="mx-3 text-muted">Hoặc</span>
-                        <hr className="flex-grow-1" />
-                      </div>
-                    </div>
-                    
-                    {/* Link Quay lại Đăng nhập bằng thẻ Link */}
                     <div className="col-12 text-center mt-3">
                       <p className="mb-0 text-muted">Đã có tài khoản? 
-                        <Link 
-                          to="/dang-nhap" 
-                          className="ms-1 text-decoration-none fw-bold"
-                          style={{ color: '#06BBCC' }}
-                        >
-                          Đăng nhập ngay
-                        </Link>
+                        <Link to="/dang-nhap" className="ms-1 text-decoration-none fw-bold" style={{ color: '#06BBCC' }}> Đăng nhập ngay</Link>
                       </p>
                     </div>
                   </div>
                 </form>
               )}
 
-              {/* BƯỚC 2: OTP */}
               {step === 2 && (
                 <div className="text-center py-4">
                   <h2 className="h4 mb-3">Xác thực mã OTP</h2>
                   <p className="small text-muted">Mã đã được gửi đến <b>{formData.email}</b></p>
-
                   <div className="my-4" style={{ maxWidth: 320, margin: '0 auto' }}>
                     <div className="form-floating mb-3">
                       <input
                         type="text"
-                        className={`form-control text-center fs-3 fw-bold ${
-                          verificationStatus === 'success' ? 'is-valid' : verificationStatus === 'error' ? 'is-invalid' : ''
-                        }`}
+                        className={`form-control text-center fs-3 fw-bold ${verificationStatus === 'success' ? 'is-valid' : verificationStatus === 'error' ? 'is-invalid' : ''}`}
                         maxLength={6}
                         value={otp}
                         onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
@@ -187,16 +188,9 @@ const RegisterPage = () => {
                       />
                       <label>Nhập mã OTP</label>
                     </div>
-
-                    <button 
-                      className="btn btn-primary w-100 py-3 mb-3"
-                      onClick={verifyOTP}
-                      style={{ backgroundColor: '#fb873f', border: 'none' }}
-                      disabled={isVerifying || otp.length !== 6 || verificationStatus === 'success'}
-                    >
-                      Xác nhận
+                    <button className="btn btn-primary w-100 py-3 mb-3" onClick={verifyOTP} style={{ backgroundColor: '#fb873f', border: 'none' }} disabled={isVerifying || otp.length !== 6}>
+                      {isVerifying ? "Đang xác thực..." : "Xác nhận"}
                     </button>
-
                     <div className="d-flex flex-column gap-2 mt-2">
                       <button className="btn btn-sm text-muted border-0 bg-transparent" onClick={sendOTP} disabled={countdown > 0}>
                         {countdown > 0 ? `Gửi lại mã sau ${countdown}s` : 'Gửi lại mã mới'}

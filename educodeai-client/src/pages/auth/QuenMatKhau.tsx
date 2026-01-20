@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { authService } from '../../services/auth.service';
 
 const QuenMatKhau: React.FC = () => {
+    const navigate = useNavigate();
     const [step, setStep] = useState<'forgot' | 'reset'>('forgot');
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
-    const [generatedOtp, setGeneratedOtp] = useState('123456');
+    const [generatedOtp, setGeneratedOtp] = useState(''); // Lưu OTP nhận từ Server
     const [countdown, setCountdown] = useState(0);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    // Xử lý đếm ngược gửi mã
     useEffect(() => {
         if (countdown > 0) {
             const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -18,16 +20,23 @@ const QuenMatKhau: React.FC = () => {
         }
     }, [countdown]);
 
-    const handleSendCode = () => {
+    // Gửi OTP qua Email thực tế
+    const handleSendCode = async () => {
         if (!email) {
-            alert('Vui lòng nhập email hoặc tên đăng nhập');
+            alert('Vui lòng nhập email');
             return;
         }
-        const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        setGeneratedOtp(newOtp);
-        setCountdown(120);
-        console.log('Demo OTP:', newOtp);
-        alert(`Mã OTP demo là: ${newOtp}`);
+        setLoading(true);
+        try {
+            const res = await authService.forgotPasswordSendOtp(email);
+            setGeneratedOtp(res.tempOtp); // Backend trả về OTP để so sánh
+            setCountdown(120);
+            alert("Mã xác thực đã được gửi tới email của bạn!");
+        } catch (error: any) {
+            alert(error.response?.data || "Email không tồn tại trên hệ thống!");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,12 +47,35 @@ const QuenMatKhau: React.FC = () => {
         }
     };
 
+    // Cập nhật mật khẩu mới vào SQL
+    const handleResetPassword = async () => {
+        if (password !== confirmPassword) {
+            alert("Mật khẩu nhập lại không khớp!");
+            return;
+        }
+        if (password.length < 6) {
+            alert("Mật khẩu phải từ 6 ký tự trở lên!");
+            return;
+        }
+
+        try {
+            await authService.resetPassword({
+                Email: email,
+                NewPassword: password
+            });
+            alert("Đặt lại mật khẩu thành công!");
+            navigate('/auth/dang-nhap');
+        } catch (error) {
+            alert("Có lỗi xảy ra khi đổi mật khẩu!");
+        }
+    };
+
     return (
         <div className="container-xxl py-2 mt-4">
+            {/* Giữ nguyên phần HTML của bạn, chỉ cập nhật các hàm xử lý */}
             <div className="container">
-                <div className="row g-4 justify-content-center wow fadeInUp" data-wow-delay="0.5s">
+                <div className="row g-4 justify-content-center">
                     <form className="shadow p-4 bg-white" style={{ maxWidth: '550px' }} onSubmit={(e) => e.preventDefault()}>
-                        
                         {step === 'forgot' ? (
                             <div id="step-forgot">
                                 <div className="text-center mb-4">
@@ -52,15 +84,13 @@ const QuenMatKhau: React.FC = () => {
                                 </div>
                                 <div className="row g-3 text-start">
                                     <div className="col-12">
-                                        <label className="mb-1 fw-semibold">Tên đăng nhập / Email</label>
                                         <div className="form-floating">
-                                            <input type="text" className="form-control" placeholder="Email" 
+                                            <input type="email" className="form-control" placeholder="Email" 
                                                 value={email} onChange={(e) => setEmail(e.target.value)} />
-                                            <label>Nhập email hoặc username</label>
+                                            <label>Nhập email của bạn</label>
                                         </div>
                                     </div>
                                     <div className="col-12">
-                                        <label className="mb-1 fw-semibold">Mã xác nhận</label>
                                         <div className="d-flex gap-2">
                                             <div className="form-floating flex-grow-1">
                                                 <input type="text" className="form-control" placeholder="6 chữ số" 
@@ -68,8 +98,8 @@ const QuenMatKhau: React.FC = () => {
                                                 <label>Mã xác nhận (6 chữ số)</label>
                                             </div>
                                             <button type="button" className="btn btn-outline-primary" 
-                                                disabled={countdown > 0} onClick={handleSendCode}>
-                                                {countdown > 0 ? `${countdown}s` : 'Gửi mã'}
+                                                disabled={countdown > 0 || loading} onClick={handleSendCode}>
+                                                {loading ? '...' : (countdown > 0 ? `${countdown}s` : 'Gửi mã')}
                                             </button>
                                         </div>
                                     </div>
@@ -100,12 +130,10 @@ const QuenMatKhau: React.FC = () => {
                                         </div>
                                     </div>
                                     <button className="btn btn-primary w-100 py-3 mt-3 text-white" 
-                                        onClick={() => alert("Thành công!")}>
+                                        style={{backgroundColor: '#fb873f', border: 'none'}}
+                                        onClick={handleResetPassword}>
                                         Cập nhật mật khẩu
                                     </button>
-                                    <div className="col-12 text-center mt-2">
-                                        <a href="#" onClick={() => setStep('forgot')} className="text-decoration-none">Quay lại bước trước</a>
-                                    </div>
                                 </div>
                             </div>
                         )}
