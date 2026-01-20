@@ -1,4 +1,4 @@
-﻿namespace educodeai_server.Services.Interface
+﻿namespace educodeai_server.Helpers
 {
     public interface IGeminiAIService
     {
