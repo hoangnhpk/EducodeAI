@@ -1,0 +1,1106 @@
+
+      :root {
+            --cp-primary: #f69050;
+            --cp-primary-soft: #fef3ec;
+            --cp-primary-strong: #e67e22;
+            --cp-bg: #f4f5fb;
+            --cp-surface: #ffffff;
+            --cp-border: #e2e5f1;
+            --cp-text: #181d38;
+            --cp-text-muted: #6b7280;
+            --cp-radius-lg: 12px;
+            --cp-radius-md: 8px;
+            --cp-shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Heebo", system-ui, -apple-system, BlinkMacSystemFont,
+                "Segoe UI", sans-serif;
+            background: var(--cp-bg);
+            color: var(--cp-text);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* HEADER */
+        .cp-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: linear-gradient(90deg, #f69050, #fb873f);
+            color: #fff;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+        }
+
+        .cp-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .cp-back {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.3);
+            cursor: pointer;
+        }
+
+        .cp-course-title-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .cp-course-title-meta span:first-child {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            opacity: 0.85;
+        }
+
+        .cp-course-title-meta span:last-child {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .cp-header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            font-size: 0.82rem;
+        }
+
+        .cp-progress-inline {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cp-progress-bar {
+            width: 150px;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.3);
+            overflow: hidden;
+        }
+
+        .cp-progress-bar-inner {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #fb873f, #f69050);
+            transition: width 0.25s ease;
+        }
+
+        .cp-user-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        .cp-user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+
+        /* LAYOUT 2 CỘT */
+        .cp-shell {
+            height: calc(100vh - 69px);
+            padding: 1rem 1.5rem 1.25rem;
+            display: grid;
+            grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
+            gap: 1rem;
+        }
+
+        .cp-left,
+        .cp-right {
+            background: var(--cp-surface);
+            border-radius: var(--cp-radius-lg);
+            box-shadow: var(--cp-shadow-soft);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* LEFT: lesson area */
+        .cp-lesson-header {
+            padding: 1rem 1.25rem 0.75rem;
+            border-bottom: 1px solid var(--cp-border);
+        }
+
+        .cp-lesson-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.4rem;
+        }
+
+        .cp-lesson-badges {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .cp-pill {
+            font-size: 0.72rem;
+            padding: 0.18rem 0.6rem;
+            border-radius: 999px;
+            border: 1px solid var(--cp-border);
+            background: #f9fafb;
+            color: var(--cp-text-muted);
+        }
+
+        .cp-pill-primary {
+            border-color: rgba(246, 144, 80, 0.4);
+            background: var(--cp-primary-soft);
+            color: var(--cp-primary-strong);
+        }
+
+        .cp-lesson-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .cp-lesson-desc {
+            font-size: 0.86rem;
+            color: var(--cp-text-muted);
+        }
+
+        /* TABS */
+        .cp-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.45rem 1.25rem 0.35rem;
+            border-bottom: 1px solid var(--cp-border);
+        }
+
+        .cp-tab {
+            border-radius: 999px;
+            padding: 0.32rem 0.85rem;
+            border: 1px solid transparent;
+            background: transparent;
+            font-size: 0.8rem;
+            color: var(--cp-text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
+        }
+
+        .cp-tab:hover {
+            background: #f3f4ff;
+        }
+
+        .cp-tab-active {
+            background: var(--cp-primary-soft);
+            border-color: rgba(246, 144, 80, 0.4);
+            color: var(--cp-primary-strong);
+        }
+
+        /* MAIN CONTENT */
+        .cp-main-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cp-tab-pane {
+            display: none;
+            flex: 1;
+            padding: 1rem 1.25rem;
+            overflow-y: auto;
+        }
+
+        .cp-tab-pane.active {
+            display: block;
+        }
+
+        /* VIDEO CONTENT */
+        .cp-video-frame {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: var(--cp-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+
+        .cp-video-inner {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .cp-video-inner i {
+            font-size: 3rem;
+            margin-bottom: 0.4rem;
+            opacity: 0.7;
+        }
+
+        /* TEXT CONTENT */
+        .cp-text-body p {
+            font-size: 0.9rem;
+            line-height: 1.7;
+            margin-bottom: 0.5rem;
+        }
+
+        .cp-text-body ul {
+            padding-left: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .cp-text-body li {
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Tab Info Styles */
+        .cp-info-section {
+            margin-bottom: 2rem;
+        }
+
+        .cp-info-section h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--cp-border);
+        }
+
+        .cp-overview-content {
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--cp-text);
+        }
+
+        .cp-overview-content p {
+            margin-bottom: 0.8rem;
+        }
+
+        .cp-overview-list {
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .cp-overview-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Rating Section */
+        .cp-rating-summary {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--cp-primary-soft);
+            border-radius: var(--cp-radius-md);
+        }
+
+        .cp-rating-score {
+            text-align: center;
+        }
+
+        .cp-rating-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--cp-primary-strong);
+        }
+
+        .cp-rating-stars {
+            display: flex;
+            gap: 0.2rem;
+            color: #fbbf24;
+            font-size: 1.2rem;
+            margin: 0.3rem 0;
+        }
+
+        .cp-rating-count {
+            font-size: 0.85rem;
+            color: var(--cp-text-muted);
+        }
+
+        .cp-rating-breakdown {
+            flex: 1;
+        }
+
+        .cp-rating-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .cp-rating-bar {
+            flex: 1;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .cp-rating-bar-fill {
+            height: 100%;
+            background: #fbbf24;
+            transition: width 0.3s ease;
+        }
+
+        /* Reviews/Comments */
+        .cp-review-item {
+            padding: 1rem;
+            border: 1px solid var(--cp-border);
+            border-radius: var(--cp-radius-md);
+            margin-bottom: 1rem;
+            background: #f9fafb;
+        }
+
+        .cp-review-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .cp-review-author {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .cp-review-date {
+            font-size: 0.8rem;
+            color: var(--cp-text-muted);
+        }
+
+        .cp-review-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--cp-text);
+        }
+
+        /* Notes Section */
+        .cp-notes-editor {
+            border: 1px solid var(--cp-border);
+            border-radius: var(--cp-radius-md);
+            padding: 1rem;
+            background: #fff;
+        }
+
+        .cp-notes-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 0.75rem;
+            border: 1px solid var(--cp-border);
+            border-radius: var(--cp-radius-md);
+            font-family: inherit;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            resize: vertical;
+            margin-bottom: 0.75rem;
+        }
+
+        .cp-notes-textarea:focus {
+            outline: none;
+            border-color: var(--cp-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .cp-notes-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .cp-notes-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--cp-border);
+            border-radius: var(--cp-radius-md);
+            background: var(--cp-surface);
+            color: var(--cp-text);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .cp-notes-btn:hover {
+            background: var(--cp-primary-soft);
+            border-color: var(--cp-primary);
+            color: var(--cp-primary-strong);
+        }
+
+        .cp-notes-btn-primary {
+            background: var(--cp-primary);
+            color: #fff;
+            border-color: var(--cp-primary);
+        }
+
+        .cp-notes-btn-primary:hover {
+            background: var(--cp-primary-strong);
+        }
+
+        .cp-notes-saved {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            border-radius: var(--cp-radius-md);
+            color: #065f46;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .cp-notes-saved.show {
+            display: block;
+        }
+
+        /* RIGHT: outline */
+        .cp-right-header {
+            padding: 0.9rem 1.1rem 0.55rem;
+            border-bottom: 1px solid var(--cp-border);
+        }
+
+        .cp-right-header h2 {
+            font-size: 0.98rem;
+            font-weight: 600;
+            margin: 0 0 0.15rem;
+        }
+
+        .cp-right-sub {
+            font-size: 0.8rem;
+            color: var(--cp-text-muted);
+        }
+
+        .cp-right-progress {
+            margin-top: 0.5rem;
+        }
+
+        .cp-outline {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.25rem 0.25rem 0.75rem;
+        }
+
+        .cp-outline::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .cp-outline::-webkit-scrollbar-thumb {
+            background: #cdd4f3;
+            border-radius: 999px;
+        }
+
+        .cp-chapter {
+            border-bottom: 1px solid var(--cp-border);
+        }
+
+        .cp-chapter-header {
+            padding: 0.75rem 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .cp-chapter-header:hover {
+            background: #f3f4ff;
+        }
+
+        .cp-chapter-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .cp-chapter-meta {
+            font-size: 0.78rem;
+            color: var(--cp-text-muted);
+        }
+
+        .cp-chapter-lessons {
+            display: none;
+            padding: 0 0.5rem 0.4rem;
+        }
+
+        .cp-chapter-lessons.open {
+            display: block;
+        }
+
+        .cp-lesson-item {
+            padding: 0.5rem 0.65rem 0.5rem 1.2rem;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            cursor: pointer;
+            margin: 0.1rem 0.2rem;
+        }
+
+        .cp-lesson-item:hover:not(.cp-lesson-locked) {
+            background: #f3f4ff;
+        }
+
+        .cp-lesson-active {
+            background: var(--cp-primary-soft);
+            border: 1px solid rgba(246, 144, 80, 0.4);
+        }
+
+        /* Lesson icons */
+        .cp-lesson-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .cp-lesson-icon.video {
+            background: rgba(59, 130, 246, 0.14);
+            color: #2563eb;
+        }
+
+        .cp-lesson-icon.text {
+            background: rgba(16, 185, 129, 0.14);
+            color: #059669;
+        }
+
+        .cp-lesson-icon.ide {
+            background: rgba(124, 58, 237, 0.14);
+            color: #7c3aed;
+        }
+
+        .cp-lesson-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cp-lesson-title {
+            font-size: 0.84rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cp-lesson-meta {
+            font-size: 0.76rem;
+            color: var(--cp-text-muted);
+        }
+
+        .cp-lesson-status {
+            font-size: 0.8rem;
+            width: 22px;
+            text-align: center;
+        }
+
+        .cp-lesson-locked {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .cp-lesson-completed .cp-lesson-title {
+            color: #16a34a;
+        }
+
+        /* Floating navigation bar */
+        .cp-floating-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            background: var(--cp-surface);
+            padding: 12px 0;
+            box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.08);
+            z-index: 1000;
+        }
+
+        .cp-nav-btn {
+            padding: 8px 16px;
+            border: none;
+            background: var(--cp-primary);
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .cp-nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* --- CSS GIAO DIỆN IDE (SPLIT LAYOUT) --- */
+        .cp-ide-wrapper {
+            display: flex;
+            height: 100%;
+            border: 1px solid var(--cp-border);
+            border-radius: var(--cp-radius-md);
+            overflow: hidden;
+            background: #fff;
+        }
+
+        /* CỘT TRÁI: ĐỀ BÀI */
+        .cp-ide-problem-col {
+            width: 35%;
+            background: #fff;
+            border-right: 1px solid var(--cp-border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cp-ide-problem-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--cp-border);
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: #f8fafc;
+        }
+
+        .cp-ide-problem-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #334155;
+        }
+
+        /* Các khối ví dụ trong đề bài */
+        .cp-example-box {
+            background: #f1f5f9;
+            padding: 0.8rem;
+            border-radius: 6px;
+            font-family: monospace;
+            margin: 0.5rem 0 1rem;
+            font-size: 0.9rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* CỘT PHẢI: EDITOR & TEST CASES */
+        .cp-ide-code-col {
+            width: 65%;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+        }
+
+        /* Phần Editor */
+        .cp-ide-editor-area {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .cp-ide-editor-header {
+            background: #252526;
+            color: #e5e7eb;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .cp-ide-textarea {
+            flex: 1;
+            width: 100%;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+
+        /* Khu vực bài kiểm tra */
+        .cp-ide-test-area {
+            flex: 0.8;
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid #333;
+            background: #fff;
+        }
+
+        .cp-test-tabs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--cp-border);
+            padding-right: 10px;
+            height: 42px;
+        }
+
+        .cp-test-tab-list {
+            display: flex;
+            height: 100%;
+        }
+
+        .cp-test-tab-btn {
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .cp-test-tab-btn:hover {
+            color: var(--cp-primary);
+            background: #e2e8f0;
+        }
+
+        .cp-test-tab-btn.active {
+            color: var(--cp-primary);
+            border-bottom-color: var(--cp-primary);
+            background: #fff;
+        }
+
+        /* Nội dung Tab */
+        .cp-test-content-wrap {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            position: relative;
+            background: #fff;
+        }
+
+        .cp-test-pane {
+            display: none;
+        }
+
+        .cp-test-pane.active {
+            display: block;
+        }
+
+        /* Ô Input/Output */
+        .cp-io-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+        }
+
+        .cp-io-box {
+            background: #1e293b;
+            color: #fff;
+            padding: 0.6rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-bottom: 0.8rem;
+            min-height: 2.5rem;
+        }
+
+        /* Nút Chạy code */
+        .cp-run-float-btn {
+            background: #0099ff;
+            color: white;
+            border: none;
+            padding: 0 15px;
+            height: 32px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .cp-run-float-btn:hover {
+            background: #007acc;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 992px) {
+            .cp-shell {
+                grid-template-columns: minmax(0, 1fr);
+                height: auto;
+            }
+
+            .cp-right {
+                max-height: 45vh;
+            }
+
+            .cp-ide-wrapper {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .cp-ide-problem-col,
+            .cp-ide-code-col {
+                width: 100%;
+            }
+
+            .cp-ide-problem-col {
+                height: 300px;
+                border-right: none;
+                border-bottom: 1px solid var(--cp-border);
+            }
+
+            .cp-ide-editor-area {
+                height: 400px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cp-header {
+                padding: 0.7rem 0.9rem;
+            }
+
+            .cp-shell {
+                padding: 0.75rem;
+            }
+        }
+
+        /* --- STYLE CHO BÀI HỌC TRẮC NGHIỆM (QUIZ) --- */
+
+        /* Icon sidebar màu cam đỏ */
+        .cp-lesson-icon.quiz {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+        }
+
+        /* Container chính của Quiz */
+        .cp-quiz-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+            background: #fff;
+            border: 1px solid var(--cp-border);
+            border-radius: var(--cp-radius-md);
+            padding-bottom: 80px;
+        }
+
+        .cp-quiz-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px dashed var(--cp-border);
+        }
+
+        /* Từng câu hỏi */
+        .cp-quiz-item {
+            margin-bottom: 2rem;
+        }
+
+        .cp-quiz-question {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 1rem;
+            color: var(--cp-text);
+        }
+
+        /* Danh sách đáp án */
+        .cp-quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .cp-quiz-option {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--cp-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #fff;
+        }
+
+        .cp-quiz-option:hover:not(.disabled) {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* Trạng thái đã chọn (khi đang làm bài) */
+        .cp-quiz-option.selected {
+            border-color: var(--cp-primary);
+            background: var(--cp-primary-soft);
+            color: var(--cp-primary-strong);
+            font-weight: 500;
+        }
+
+        /* Trạng thái đúng/sai (sau khi nộp bài) */
+        .cp-quiz-option.correct {
+            background: #dcfce7 !important;
+            /* Xanh lá nhạt */
+            border-color: #22c55e !important;
+            color: #15803d !important;
+        }
+
+        .cp-quiz-option.wrong {
+            background: #fee2e2 !important;
+            /* Đỏ nhạt */
+            border-color: #ef4444 !important;
+            color: #b91c1c !important;
+            opacity: 0.7;
+        }
+
+        /* Nút tròn tick chọn giả lập */
+        .cp-option-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .cp-quiz-option.selected .cp-option-circle {
+            border-color: var(--cp-primary);
+            background: var(--cp-primary);
+        }
+
+        /* Footer chứa nút nộp bài */
+        .cp-quiz-footer {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--cp-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cp-quiz-score {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--cp-primary);
+            display: none;
+            /* Ẩn mặc định */
+        }
+
+        /* --- CSS QUIZ STEP-BY-STEP --- */
+
+        /* Ẩn tất cả câu hỏi mặc định */
+        .cp-quiz-item {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Chỉ hiện câu đang active */
+        .cp-quiz-item.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Thanh tiến trình câu hỏi */
+        .cp-quiz-progress-bar {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            margin: 1rem 0 2rem;
+            overflow: hidden;
+        }
+
+        .cp-quiz-progress-fill {
+            height: 100%;
+            background: var(--cp-primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .cp-quiz-status {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--cp-text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Khu vực nút điều hướng Quiz */
+        .cp-quiz-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--cp-border);
+        }
+
+        .cp-btn-nav {
+            padding: 0.6rem 1.2rem;
+            border: 1px solid var(--cp-border);
+            background: white;
+            border-radius: var(--cp-radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .cp-btn-nav:hover:not(:disabled) {
+            border-color: var(--cp-primary);
+            color: var(--cp-primary);
+        }
+
+        .cp-btn-nav:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f1f5f9;
+        }
+
+        .cp-btn-submit {
+            background: var(--cp-primary);
+            color: white;
+            border: none;
+            display: none;
+            /* Ẩn mặc định */
+        }
+
+        .cp-btn-submit:hover {
+            background: var(--cp-primary-dark);
+        }
