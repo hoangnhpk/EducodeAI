@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace educodeai_server.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCeate : Migration
+    public partial class create : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -76,6 +76,10 @@ namespace educodeai_server.Migrations
                     HinhAnh = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     TrangThai = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     DiemDanhGiaTB = table.Column<double>(type: "float", nullable: false),
+                    LinhVuc = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    TrinhDo = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ThoiLuongGio = table.Column<int>(type: "int", nullable: false),
+                    KyNangChinh = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     NgayTao = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -215,6 +219,7 @@ namespace educodeai_server.Migrations
                     TieuDe = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     LoaiBaiHoc = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     NoiDung = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ThoiLuong = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     LinkVideo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ThuTu = table.Column<int>(type: "int", nullable: false)
                 },
