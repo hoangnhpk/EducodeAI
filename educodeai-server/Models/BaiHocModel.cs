@@ -19,8 +19,7 @@ namespace educodeai_server.Models
         public required string LoaiBaiHoc { get; set; } // Video, VanBan, BaiTap
 
         public string? NoiDung { get; set; } // HTML content nên để MAX
-        [StringLength(50)]
-        public string? ThoiLuong { get; set; } // VD: "15:30" (15 phút 30 giây)
+        public int? ThoiLuong { get; set; } // VD: "15:30" (15 phút 30 giây)
 
         [StringLength(500)]
         public string? LinkVideo { get; set; }
