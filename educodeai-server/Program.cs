@@ -6,7 +6,9 @@ using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Cấu hình Configuration
@@ -17,7 +19,20 @@ builder.Configuration
 #if DEBUG
 builder.Configuration.AddUserSecrets<Program>();
 #endif
-
+// 1. Đăng ký xác thực JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options => {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
 // ==========================================
 // 1. CẤU HÌNH SERVICES (Dependency Injection)
 // ==========================================
@@ -31,10 +46,12 @@ builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
 // Lưu ý: Đã xóa các dòng bị trùng lặp ở code cũ
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
+// 2. Đăng ký Repository và Service cho Người dùng (Dựa trên folder bạn có)
+builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
+builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
+// C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
-
-// C. Cấu hình CORS (QUAN TRỌNG: Sửa phần này để khớp với withCredentials: true)
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -89,7 +106,7 @@ app.UseHttpsRedirection();
 
 // Kích hoạt CORS (Phải đặt trước UseAuthorization)
 app.UseCors();
-
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
