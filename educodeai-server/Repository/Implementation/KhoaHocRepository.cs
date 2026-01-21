@@ -19,23 +19,23 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto)
         {
             var query = _context.KhoaHocs
-                .Where(x => x.TrangThai == "Active");
+                .Where(x => x.TrangThai == "Hoạt động");
 
             if (!string.IsNullOrEmpty(dto.TrinhDoHienTai))
             {
                 query = query.Where(x =>
-                    x.TrinhDo!.Contains(dto.TrinhDoHienTai) ||
+                    x.TrinhDo.Contains(dto.TrinhDoHienTai) ||
                     dto.TrinhDoHienTai.Contains(x.TrinhDo));
             }
 
-            if (dto.LinhVucTapTrung?.Any() == true)
-            {
-                query = query.Where(x =>
-                    dto.LinhVucTapTrung.Any(f =>
-                        x.LinhVuc!.Contains(f) ||
-                        x.KyNangChinh!.Contains(f)
-                    ));
-            }
+            //if (dto.LinhVucTapTrung?.Any() == true)
+            //{
+            //    query = query.Where(x =>
+            //        dto.LinhVucTapTrung.Any(f =>
+            //            x.LinhVuc.Contains(f) ||
+            //            x.KyNangChinh.Contains(f)
+            //        ));
+            //}
 
             return await query
                 .OrderByDescending(x => x.DiemDanhGiaTB)
@@ -44,9 +44,9 @@ namespace educodeai_server.Repository.Implementation
                 {
                     MaKhoaHoc = x.MaKhoaHoc,
                     TenKhoaHoc = x.TenKhoaHoc,
-                    TrinhDo = x.TrinhDo!,
-                    LinhVuc = x.LinhVuc!,
-                    KyNangChinh = x.KyNangChinh!,
+                    TrinhDo = x.TrinhDo,
+                    LinhVuc = x.LinhVuc,
+                    KyNangChinh = x.KyNangChinh,
                     ThoiLuongGio = x.ThoiLuongGio
                 })
                 .ToListAsync();
@@ -57,7 +57,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocTheoKeywordAsync(List<string> keywords)
         {
             var query = _context.KhoaHocs
-                .Where(x => x.TrangThai == "Active");
+                .Where(x => x.TrangThai == "Hoạt động");
 
             if (keywords.Any())
             {
@@ -76,16 +76,16 @@ namespace educodeai_server.Repository.Implementation
                 {
                     MaKhoaHoc = x.MaKhoaHoc,
                     TenKhoaHoc = x.TenKhoaHoc,
-                    TrinhDo = x.TrinhDo!,
-                    LinhVuc = x.LinhVuc!,
-                    KyNangChinh = x.KyNangChinh!,
+                    TrinhDo = x.TrinhDo,
+                    LinhVuc = x.LinhVuc,
+                    KyNangChinh = x.KyNangChinh,
                     ThoiLuongGio = x.ThoiLuongGio
                 })
                 .ToListAsync();
         }
 
 
-        public async Task<List<ChuongHocDTO>> GetKhoaHocByIdAsync(int maKhoaHoc)
+        public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc)
         {
             return await _context.KhoaHocs
                 .Where(kh => kh.MaKhoaHoc == maKhoaHoc)

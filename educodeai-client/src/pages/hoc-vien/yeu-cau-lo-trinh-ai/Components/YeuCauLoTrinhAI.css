@@ -226,3 +226,36 @@
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
+
+/* Thêm style cho Giai đoạn */
+.phase-header {
+    background: #fff !important;
+    border-color: #fb873f !important; /* Màu cam chủ đạo */
+    position: relative;
+    transition: all 0.3s;
+}
+
+.phase-header:hover {
+    transform: translateX(5px);
+    background: #fff5f0 !important; /* Màu cam siêu nhạt khi hover */
+}
+
+.phase-block {
+    position: relative;
+}
+
+/* Chỉnh lại timeline một chút để nó thụt vào trong so với Header */
+.timeline {
+    margin-left: 15px !important;
+    padding-left: 25px !important;
+    border-left: 2px dashed #fb873f !important; /* Đổi thành nét đứt cho nghệ */
+}
+
+/* Chỉnh lại chấm tròn timeline cho khớp */
+.timeline-item::before {
+    left: -32px !important; /* Căn chỉnh lại vị trí chấm tròn */
+    background-color: #fff !important;
+    border: 3px solid #fb873f;
+    width: 14px;
+    height: 14px;
+}

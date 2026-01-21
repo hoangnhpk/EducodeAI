@@ -1,4 +1,4 @@
-using educodeai_server.DTOs.AI;
+﻿using educodeai_server.DTOs.AI;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -30,6 +30,13 @@ namespace EduCodeAI.Controllers.HocVien
         {
             var result = await _service.CapNhatLoTrinhAsync(8, dto);
             return Ok(result);
+        }
+
+        [HttpPost("xac-nhan/{maLoTrinh}")]
+        public async Task<IActionResult> XacNhanLoTrinh(int maLoTrinh)
+        {
+            var result = await _service.XacNhanLoTrinhAsync(maLoTrinh);
+            return Ok(new { success = result, message = "Lộ trình đã được áp dụng thành công!" });
         }
     }
 }
