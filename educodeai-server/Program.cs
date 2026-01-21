@@ -8,6 +8,7 @@ using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
 // Cấu hình API AI
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true)
@@ -50,6 +51,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
+builder.Services.AddScoped<IHocVienService, HocVienService>();
 
 
 builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =>
@@ -82,6 +84,7 @@ app.UseHttpsRedirection();
 
 // C. Kích hoạt CORS (Phải đặt TRƯỚC Authorization)
 app.UseCors();
+app.UseStaticFiles();
 app.UseAuthorization();
 app.MapControllers();
 

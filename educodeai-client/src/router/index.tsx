@@ -1,9 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 /* ===== LAYOUTS ===== */
-// import LayoutHocVien from "../components/hoc-vien/LayoutHocVien";
+import LayoutHocVien from "../components/hoc-vien/LayoutHocVien";
 import LayoutGiangVien from "../components/giang-vien/LayoutGiangVien";
 import LayoutQuanTriVien from "../components/quan-tri-vien/LayoutQuanTriVien";
+import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
+
+
 
 // /* ===== AUTH ===== */
 // import DangNhap from "../pages/auth/DangNhap";
@@ -71,9 +74,11 @@ export default function AppRouter() {
           <Route path="review" element={<QuanLyReview />} />
           <Route path="cau-hinh" element={<CauHinhHeThong />} /> */}
         </Route>
-
+        <Route path="/hoc-vien" element={<LayoutHocVien />}>
+          <Route path="ho-so" element={<HoSoHocVienPage />} />
+        </Route>
         {/* FALLBACK */}
-        <Route path="*" element={<Navigate to="/dang-nhap" replace />} />
+        {/* <Route path="*" element={<Navigate to="/dang-nhap" replace />} /> */}
 
       </Routes>
     </BrowserRouter>
