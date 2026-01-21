@@ -19,7 +19,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto)
         {
             var query = _context.KhoaHocs
-                .Where(x => x.TrangThai == "Active");
+                .Where(x => x.TrangThai == "Hoạt động");
 
             if (!string.IsNullOrEmpty(dto.TrinhDoHienTai))
             {
@@ -57,7 +57,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocTheoKeywordAsync(List<string> keywords)
         {
             var query = _context.KhoaHocs
-                .Where(x => x.TrangThai == "Active");
+                .Where(x => x.TrangThai == "Hoạt động");
 
             if (keywords.Any())
             {
