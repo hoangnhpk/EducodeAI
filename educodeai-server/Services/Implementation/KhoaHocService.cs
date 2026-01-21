@@ -13,14 +13,9 @@ namespace educodeai_server.Services.Implementation
             _khoaHocRepository = khoaHocRepository;
         }
 
-        public async Task<List<ChuongHocDTO>> GetKhoaHocByIdAsync(int maKhoaHoc)
+        public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetKhoaHocByIdAsync(int maKhoaHoc)
         {
-            var duLieu = await _khoaHocRepository.GetKhoaHocByIdAsync(maKhoaHoc);
-
-            if (duLieu == null || duLieu.Count == 0)
-            {
-                return new List<ChuongHocDTO>();
-            }
+            var duLieu = await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc);
 
             return duLieu;
         }

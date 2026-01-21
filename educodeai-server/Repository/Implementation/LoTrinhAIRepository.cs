@@ -18,6 +18,18 @@ namespace educodeai_server.Repository.Implementation
             _context.LoTrinhAIs.Add(loTrinh);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<LoTrinhAIModel?> GetByIdAsync(int maLoTrinh)
+        {
+            return await _context.LoTrinhAIs.FindAsync(maLoTrinh);
+        }
+
+        public async Task UpdateAsync(LoTrinhAIModel loTrinh)
+        {
+            _context.LoTrinhAIs.Update(loTrinh);
+            await _context.SaveChangesAsync();
+        }
+
     }
 
 }
