@@ -8,5 +8,8 @@ namespace educodeai_server.Repository.Interface
     {
         Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto);
         Task<List<ChuongHocDTO>> GetKhoaHocByIdAsync(int maKhoaHoc);
+        //KhoaHocCuaToi
+        Task<KhoaHocModel?> GetKhoaHocWithDetailsAsync(int maKhoaHoc);
+        Task<List<KhoaHocModel>> GetKhoaHocsByGiangVienAsync(int maGiangVien);
     }
 }

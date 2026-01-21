@@ -28,6 +28,7 @@ builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
 // B. Đăng ký Repository và Service (Dependency Injection)
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
+builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddCors(options =>
