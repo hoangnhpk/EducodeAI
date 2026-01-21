@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 /* ===== LAYOUTS ===== */
-// import LayoutHocVien from "../components/hoc-vien/LayoutHocVien";
-import LayoutGiangVien from "../components/giang-vien/LayoutGiangVien";
-import LayoutQuanTriVien from "../components/quan-tri-vien/LayoutQuanTriVien";
+import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
+import LayoutBlank from "../layouts/hoc-vien/LayoutBlank";
+import LayoutGiangVien from "../layouts/giang-vien/LayoutGiangVien";
+import LayoutQuanTriVien from "../layouts/quan-tri-vien/LayoutQuanTriVien";
 
 // /* ===== AUTH ===== */
 // import DangNhap from "../pages/auth/DangNhap";
@@ -11,8 +12,8 @@ import LayoutQuanTriVien from "../components/quan-tri-vien/LayoutQuanTriVien";
 // import QuenMatKhau from "../pages/auth/QuenMatKhau";
 
 // /* ===== HỌC VIÊN ===== */
-// import HVDashboard from "../pages/hoc-vien/trang-chu/TrangChu";
-// import DanhSachKhoaHoc from "../pages/hoc-vien/danh-sach-khoa-hoc/DanhSachKhoaHoc";
+// import TrangChuHocVien from "@/pages/hoc-vien/trang-chu/TrangChu";
+import NoiDungKhoaHoc from "@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHoc";
 // import ChiTietKhoaHoc from "../pages/hoc-vien/chi-tiet-khoa-hoc/ChiTietKhoaHoc";
 // import NoiDungBaiHoc from "../pages/hoc-vien/noi-dung-bai-hoc/NoiDungBaiHoc";
 // import IDEAI from "../pages/hoc-vien/thuc-hanh-ide-ai/IDEAI";
@@ -43,17 +44,20 @@ export default function AppRouter() {
         <Route path="/quen-mat-khau" element={<QuenMatKhau />} /> */}
 
         {/* HỌC VIÊN */}
-        {/* <Route path="/hoc-vien" element={<LayoutHocVien />}>
-          <Route index element={<HVDashboard />} />
-          <Route path="khoa-hoc" element={<DanhSachKhoaHoc />} />
-          <Route path="khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
+        <Route path="/" element={<LayoutHocVien />}>
+          {/* <Route index element={<TrangChuHocVien />} /> */}
+          {/* <Route path="khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
           <Route path="bai-hoc/:lessonId" element={<NoiDungBaiHoc />} />
           <Route path="ide-ai" element={<IDEAI />} />
           <Route path="lich-su-bai-lam" element={<LichSuBaiLam />} />
           <Route path="yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
           <Route path="khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
-          <Route path="tro-ly-ai" element={<TroLyAI />} />
-        </Route> */}
+          <Route path="tro-ly-ai" element={<TroLyAI />} /> */}
+        </Route>
+        {/* Trang nội dung khóa học không sử dụng layout có header và footer */}
+        <Route element={<LayoutBlank />}>
+          <Route path="khoa-hoc" element={<NoiDungKhoaHoc />} />
+        </Route>
 
         {/* GIẢNG VIÊN */}
         <Route path="/giang-vien" element={<LayoutGiangVien />}>

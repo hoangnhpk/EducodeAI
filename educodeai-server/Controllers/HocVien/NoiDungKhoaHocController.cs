@@ -21,7 +21,7 @@ namespace educodeai_server.Controllers.HocVien
             {
                 var data = await _khoaHocService.GetKhoaHocByIdAsync(maKhoaHoc);
 
-                if (data == null || data.Count == 0)
+                if (data == null)
                 {
                     return NotFound(new { message = "Không tìm thấy nội dung khóa học này." });
                 }
