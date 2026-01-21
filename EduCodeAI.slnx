@@ -1,7 +1,0 @@
-<Solution>
-  <Project Path="EduCodeAI-Client/educodeai-client.esproj">
-    <Build />
-    <Deploy />
-  </Project>
-  <Project Path="educodeai-server/educodeai-server.csproj" />
-</Solution>
