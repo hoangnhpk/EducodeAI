@@ -30,15 +30,15 @@ namespace educodeai_server.Models
         // ====== CỘT MỚI ======
 
         [StringLength(100)]
-        public string? LinhVuc { get; set; }   // Ví dụ: BackEnd, Database, System Design...
+        public string LinhVuc { get; set; } = null!;  // Ví dụ: BackEnd, Database, System Design...
 
         [StringLength(50)]
-        public string? TrinhDo { get; set; }   // Người mới, Trung cấp, Nâng cao
+        public string TrinhDo { get; set; } = null!;  // Người mới, Trung cấp, Nâng cao
 
         public int ThoiLuongGio { get; set; }  // Tổng số giờ học
 
         [StringLength(50)]
-        public string? KyNangChinh { get; set; } // Ví dụ: ["C#","SQL","REACT"]
+        public string KyNangChinh { get; set; } = null!;  // Ví dụ: ["C#","SQL","REACT"]
 
         public DateTime NgayTao { get; set; } = DateTime.Now;
 
