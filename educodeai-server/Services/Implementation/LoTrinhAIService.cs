@@ -27,7 +27,6 @@ namespace educodeai_server.Services.Implementation
             int maNguoiDung,
             CreateLoTrinhAIDto dto)
         {
-            // Validate
             if(string.IsNullOrEmpty(dto.MucTieuNgheNghiep))
             {
                 throw new ArgumentException("Mục tiêu nghề nghiệp không được để trống.");
@@ -44,7 +43,7 @@ namespace educodeai_server.Services.Implementation
 
             var khoaHocJson = JsonSerializer.Serialize(khoaHoc);
 
-            dto.ThoiGianHocDuKien = dto.ThoiGianHocDuKien * 4; // Chuyển tháng sang tuần
+            dto.ThoiGianHocDuKien = dto.ThoiGianHocDuKien * 4; 
 
             var prompt = Build(dto, khoaHocJson);
 
