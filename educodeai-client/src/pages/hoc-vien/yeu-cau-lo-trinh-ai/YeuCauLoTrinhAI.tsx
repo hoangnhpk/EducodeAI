@@ -4,23 +4,54 @@ import FormYeuCauLoTrinh from "./Components/FormYeuCauLoTrinh";
 import AiPanel from "./Components/AiPanel";
 import "./Components/YeuCauLoTrinhAI.css"
 import { aiRoadmapService } from "../../../services/aiRoadmap.service";
+import TrangThaiKetQua from "./Components/TrangThaiKetQua"
+// import Swal from "sweetalert2";
 
 export default function YeuCauLoTrinhAI() {
   const [trangThaiAI, setTrangThaiAI] = useState<TrangThaiAI>("cho");
   const [ketQuaAI, setKetQuaAI] = useState<KetQuaLoTrinhAI | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const xuLyGuiForm = async (duLieu: DuLieuYeuCauLoTrinh) => {
     try {
       setTrangThaiAI("dang_phan_tich");
-
       const ketQua = await aiRoadmapService.taoLoTrinh(duLieu);
-
       setKetQuaAI(ketQua);
       setTrangThaiAI("da_co_ket_qua");
     } catch (error) {
-      console.error("Lỗi tạo lộ trình AI:", error);
-      alert("Không thể tạo lộ trình. Vui lòng thử lại.");
+      console.error(error);
       setTrangThaiAI("cho");
+      alert("Lỗi khi tạo lộ trình");
+    }
+  };
+
+  const handleModify = async (yeuCauSua: string) => {
+    if (!ketQuaAI?.maLoTrinh) return;
+    try {
+      setIsProcessing(true);
+      const ketQuaMoi = await aiRoadmapService.capNhatLoTrinh(ketQuaAI.maLoTrinh, yeuCauSua);
+      setKetQuaAI(ketQuaMoi);
+      alert("AI đã chỉnh sửa lộ trình theo ý bạn!");
+    } catch (error) {
+      alert("Lỗi khi sửa lộ trình. Vui lòng thử lại.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!ketQuaAI?.maLoTrinh) return;
+    try {
+      setIsProcessing(true);
+      await aiRoadmapService.xacNhanLoTrinh(ketQuaAI.maLoTrinh);
+      
+      // Thành công -> Chuyển hướng hoặc báo tin vui
+      alert("Chúc mừng! Lộ trình học tập đã được áp dụng.");
+      // window.location.href = "/dashboard"; // Ví dụ chuyển trang
+    } catch (error) {
+      alert("Có lỗi xảy ra khi lưu lộ trình.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -37,11 +68,24 @@ export default function YeuCauLoTrinhAI() {
 
         <div className="row align-items-stretch">
           <div className="col-lg-6">
-            <FormYeuCauLoTrinh onSubmit={xuLyGuiForm} />
+            <FormYeuCauLoTrinh 
+                onSubmit={xuLyGuiForm} 
+                isSubmitting={trangThaiAI === "dang_phan_tich"} 
+            />
           </div>
 
           <div className="col-lg-6">
-            <AiPanel trangThaiAI={trangThaiAI} ketQua={ketQuaAI} />
+            {trangThaiAI === "da_co_ket_qua" ? (
+                // Render Component Kết quả với đầy đủ tính năng
+                <TrangThaiKetQua 
+                    ketQua={ketQuaAI}
+                    onModify={handleModify}
+                    onConfirm={handleConfirm}
+                    isProcessing={isProcessing}
+                />
+            ) : (
+                <AiPanel trangThaiAI={trangThaiAI} ketQua={null} />
+            )}
           </div>
         </div>
       </div>

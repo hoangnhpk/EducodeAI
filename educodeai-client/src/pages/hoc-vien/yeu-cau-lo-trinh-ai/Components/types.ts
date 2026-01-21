@@ -9,6 +9,9 @@ export interface DuLieuYeuCauLoTrinh {
   mucTieuNgheNghiep: string;
   thoiGianHoc: string;
   mucDoCamKet: string;
+  kienThucHienCo: string;
+  kinhNghiem: string;
+  khoKhan: string;
   cacMangTapTrung: string[];
 }
 
@@ -27,6 +30,7 @@ export interface GiaiDoanLoTrinh {
 }
 
 export interface KetQuaLoTrinhAI {
+  maLoTrinh?: number;
   tongThoiGianTuan: number;
   loTrinh: GiaiDoanLoTrinh[];
 }
