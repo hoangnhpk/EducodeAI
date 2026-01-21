@@ -60,6 +60,7 @@ namespace educodeai_server.Repository.Implementation
                 {
                     MaKhoaHoc = kh.MaKhoaHoc,
                     TenKhoaHoc = kh.TenKhoaHoc,
+                    Slug = SlugHelper.Generate(kh.TenKhoaHoc),
 
                     DanhSachChuongHoc = kh.ChuongHocs
                         .OrderBy(ch => ch.ThuTu)

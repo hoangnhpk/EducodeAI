@@ -42,7 +42,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); // Dòng này BẮT BUỘC khi client dùng withCredentials: true
+              .AllowCredentials();
     });
 });
 

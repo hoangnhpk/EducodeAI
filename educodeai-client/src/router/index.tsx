@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 /* ===== LAYOUTS ===== */
 import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
+import LayoutBlank from "../layouts/hoc-vien/LayoutBlank";
 import LayoutGiangVien from "../layouts/giang-vien/LayoutGiangVien";
 import LayoutQuanTriVien from "../layouts/quan-tri-vien/LayoutQuanTriVien";
 
@@ -43,9 +44,8 @@ export default function AppRouter() {
         <Route path="/quen-mat-khau" element={<QuenMatKhau />} /> */}
 
         {/* HỌC VIÊN */}
-        <Route path="/hoc-vien" element={<LayoutHocVien />}>
+        <Route path="/" element={<LayoutHocVien />}>
           {/* <Route index element={<TrangChuHocVien />} /> */}
-          <Route path="khoa-hoc" element={<NoiDungKhoaHoc />} />
           {/* <Route path="khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
           <Route path="bai-hoc/:lessonId" element={<NoiDungBaiHoc />} />
           <Route path="ide-ai" element={<IDEAI />} />
@@ -53,6 +53,10 @@ export default function AppRouter() {
           <Route path="yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
           <Route path="khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
           <Route path="tro-ly-ai" element={<TroLyAI />} /> */}
+        </Route>
+        {/* Trang nội dung khóa học không sử dụng layout có header và footer */}
+        <Route element={<LayoutBlank />}>
+          <Route path="khoa-hoc" element={<NoiDungKhoaHoc />} />
         </Route>
 
         {/* GIẢNG VIÊN */}

@@ -1,131 +1,94 @@
-import React, { useState, useEffect, useMemo } from 'react';
-
-import '@/pages/hoc-vien/noi-dung-khoa-hoc/style.css';
+import React, { useEffect, useState, useMemo } from 'react';
 import { KhoaHocService } from '@/services/khoa-hoc.service';
 import type { KhoaHocData } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO';
 
-// 3. Import các Component con (Lưu ý đường dẫn thư mục 'CacThanhPhan')
-import { ThanhTieuDe } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/ThanhTieuDe';
-// import { DanhSachBaiHoc } from './CacThanhPhan/DanhSachBaiHoc';
-// import { NoiDungVideo } from './CacThanhPhan/NoiDungVideo';
+// Import CSS
+import '@/pages/hoc-vien/noi-dung-khoa-hoc/style.css';
+
+// Import Components
+import { ThanhTieuDe } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/ThanhTieuDe'; 
+import { DanhSachBaiHoc } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/DanhSachBaiHoc';
+import { NoiDungVideo } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/NoiDungVideo';
 // import { NoiDungLyThuyet } from './CacThanhPhan/NoiDungLyThuyet';
 // import { BaiTapThucHanh } from './CacThanhPhan/BaiTapThucHanh';
 // import { BaiTapTracNghiem } from './CacThanhPhan/BaiTapTracNghiem';
 // import { DieuHuongNhanh } from './CacThanhPhan/DieuHuongNhanh';
 
-const NoiDungKhoaHoc: React.FC = () => {
-  // --- STATE QUẢN LÝ DỮ LIỆU & UI ---
-  const [duLieu, setDuLieu] = useState<KhoaHocData | null>(null);
-  const [dangTai, setDangTai] = useState<boolean>(true);
-  const [loi, setLoi] = useState<string | null>(null);
+const NoiDungKhoaHoc = () => {
+    const [khoaHoc, setKhoaHoc] = useState<KhoaHocData | null>(null);
+    const [idBaiHoc, setIdBaiHoc] = useState<number>(0);
 
-  const [idBaiHoc, setIdBaiHoc] = useState<number>(0);
+    // 1. Load Data
+    useEffect(() => {
+        KhoaHocService.layDuLieuKhoaHoc(7).then(data => {
+            setKhoaHoc(data);
+            console.log('🚀🚀🚀 KhoaHocData:', data);
+            if (!data) return;
+            // Mặc định chọn bài đầu tiên
+            if (data.danhSachChuongHoc[0]?.danhSachBaiHoc[0]) {
+                setIdBaiHoc(data.danhSachChuongHoc[0].danhSachBaiHoc[0].id);
+            }
+        });
+    }, []);
 
-  useEffect(() => {
-    const taiDuLieu = async () => {
-      try {
-        setDangTai(true);
-        const data = await KhoaHocService.layDuLieuKhoaHoc(7);
-        
-        setDuLieu(data);
-        // if (data.cacChuong.length > 0 && data.cacChuong[0].baiHocs.length > 0) {
-        //   setIdBaiHoc(data.cacChuong[0].baiHocs[0].id);
-        // }
-      } catch (err) {
-        console.error(err);
-        setLoi("Không thể tải khóa học. Vui lòng kiểm tra kết nối mạng.");
-      } finally {
-        setDangTai(false);
-      }
+    // 2. Logic tính toán (Gọi Service)
+    const flatList = useMemo(() => 
+        khoaHoc ? KhoaHocService.lamPhangDanhSachBaiHoc(khoaHoc.danhSachChuongHoc) : [], 
+    [khoaHoc]);
+
+    const baiHocHienTai = KhoaHocService.timBaiHocTheoId(flatList, idBaiHoc);
+    // const nextId = KhoaHocService.timBaiTiepTheo(flatList, idBaiHoc);
+    // const prevId = KhoaHocService.timBaiTruoc(flatList, idBaiHoc);
+    const progress = KhoaHocService.tinhPhanTramTienDo(flatList, idBaiHoc);
+
+    if (!khoaHoc || !baiHocHienTai) return <div>Đang tải khóa học...</div>;
+
+    // 3. Render nội dung giữa màn hình
+    const renderMainContent = () => {
+        switch (baiHocHienTai.loaiBaiHoc) {
+            case 'Video': return <NoiDungVideo videoUrl={baiHocHienTai.linkVideo} />;
+            default: return <div>Loại bài học không hỗ trợ</div>;
+        }
     };
 
-    taiDuLieu();
-  }, []);
-
-  // const dsBaiHocPhang = useMemo(() => 
-  //   duLieu ? KhoaHocService.layDanhSachBaiHocPhang(duLieu.cacChuong) : [], 
-  // [duLieu]);
-
-  // const baiHocHienTai = KhoaHocService.timBaiHoc(dsBaiHocPhang, idBaiHoc);
-  // const idTiep = KhoaHocService.layIdTiepTheo(dsBaiHocPhang, idBaiHoc);
-  // const idTruoc = KhoaHocService.layIdTruoc(dsBaiHocPhang, idBaiHoc);
-
-  // // 3. Tính % tiến độ (Logic đơn giản dựa trên vị trí bài học)
-  // const indexHienTai = dsBaiHocPhang.findIndex(b => b.id === idBaiHoc);
-  // const tienDo = dsBaiHocPhang.length > 0 
-  //   ? Math.round(((indexHienTai + 1) / dsBaiHocPhang.length) * 100) 
-  //   : 0;
-
-  // const handleNext = () => {
-  //     if (idTiep) setIdBaiHoc(idTiep);
-  // };
-
-  // const handlePrev = () => {
-  //     if (idTruoc) setIdBaiHoc(idTruoc);
-  // };
-
-  if (dangTai) {
     return (
-      <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#f4f5fb' }}>
-        <div style={{ textAlign: 'center' }}>
-          <i className="fas fa-circle-notch fa-spin" style={{ fontSize: '3rem', color: '#f69050' }}></i>
-          <p style={{ marginTop: '1rem', color: '#666', fontFamily: 'sans-serif' }}>Đang tải nội dung khóa học...</p>
+        <div style={{ background: '#f4f5fb', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <ThanhTieuDe tenKhoaHoc={khoaHoc.tenKhoaHoc} tienDo={progress} />
+
+            <main className="cp-shell">
+                {/* CỘT TRÁI */}
+                <section className="cp-left">
+                    {/* Tab Navigation giả lập (cho giống HTML cũ) */}
+                    <div className="cp-tabs">
+                        <button className="cp-tab cp-tab-active">
+                            <i className="fas fa-play-circle"></i> Bài học
+                        </button>
+                        <button className="cp-tab">
+                            <i className="fas fa-star"></i> Đánh giá
+                        </button>
+                    </div>
+
+                    <div className="cp-main-content">
+                        {renderMainContent()}
+                    </div>
+                </section>
+
+                {/* CỘT PHẢI: SIDEBAR */}
+                <DanhSachBaiHoc 
+                    cacChuong={khoaHoc.danhSachChuongHoc}
+                    idBaiHocHienTai={idBaiHoc}
+                    onChonBaiHoc={setIdBaiHoc}
+                />
+            </main>
+
+            {/* <DieuHuongNhanh 
+                onPrev={() => prevId && setIdBaiHoc(prevId)}
+                onNext={() => nextId && setIdBaiHoc(nextId)}
+                hasPrev={!!prevId}
+                hasNext={!!nextId}
+            /> */}
         </div>
-      </div>
     );
-  }
-
-  // --- RENDER 2: MÀN HÌNH LỖI ---
-  // if (loi || !duLieu || !baiHocHienTai) {
-  //   return (
-  //       <div style={{ padding: '2rem', textAlign: 'center', color: '#dc2626', fontFamily: 'sans-serif' }}>
-  //           <h2>Đã xảy ra lỗi!</h2>
-  //           <p>{loi || "Không tìm thấy dữ liệu bài học."}</p>
-  //           <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', marginTop: '10px', cursor: 'pointer' }}>Thử lại</button>
-  //       </div>
-  //   );
-  // }
-
-  return (
-    
-    <div className="trinh-phat-wrapper">
-
-      <ThanhTieuDe tenKhoaHoc={duLieu!.tenKhoaHoc} tienDo={1} />
-
-      {/* <main className="cp-shell">
-        <section className="cp-left">
-          {baiHocHienTai.loai === 'video' && (
-             <NoiDungVideo link={baiHocHienTai.linkVideo} />
-          )}
-          
-          {baiHocHienTai.loai === 'van-ban' && (
-             <NoiDungLyThuyet tieuDe={baiHocHienTai.tieuDe} noiDung={baiHocHienTai.noiDungChu} />
-          )}
-          
-          {baiHocHienTai.loai === 'thuc-hanh' && (
-             <BaiTapThucHanh baiHoc={baiHocHienTai} />
-          )}
-          
-          {baiHocHienTai.loai === 'trac-nghiem' && (
-             <BaiTapTracNghiem baiHoc={baiHocHienTai} />
-          )}
-        </section>
-
-        <DanhSachBaiHoc 
-          cacChuong={duLieu.cacChuong} 
-          idHienTai={idBaiHoc} 
-          onChonBai={setIdBaiHoc} 
-        />
-      </main> */}
-      {/* 
-      <DieuHuongNhanh 
-        onNext={handleNext} 
-        onPrev={handlePrev} 
-        voHieuHoaNext={!idTiep}
-        voHieuHoaPrev={!idTruoc}
-      /> */}
-    </div>
-  );
 };
 
 export default NoiDungKhoaHoc;
