@@ -1,29 +1,28 @@
 import React from 'react';
 import { FaUserGraduate, FaCalendarAlt, FaCog } from 'react-icons/fa';
+import { useQuery } from '@tanstack/react-query';
+import { khoaHocService } from '../../../services/khoa-hoc.service';
 
-interface KhoaHoc {
-    id: number;
-    ten: string;
-    lop: string;
-    soHocVien: string;
-    ngay: string;
-    tienDo: number;
-    hinhAnh: string;
+interface KhoaHocDTO {
+    maKhoaHoc: number;
+    tenKhoaHoc: string;
+    hinhAnh: string | null;
+    trangThai: string;
+    soHocVien: number;
+    tienDoTrungBinh: number;
+    ngayTao: string;
 }
 
 interface Props { onXemChiTiet: (id: number) => void; }
 
+
 const DanhSachKhoaHoc: React.FC<Props> = ({ onXemChiTiet }) => {
-    const duLieuMau: KhoaHoc[] = [
-        { id: 1, ten: "HTML Course for Beginners", lop: "HTML & CSS Co ban - K24", soHocVien: "45/50", ngay: "15/01/2024", tienDo: 78, hinhAnh: "https://via.placeholder.com/400x200" },
-        { id: 2, ten: "Lap trinh React Fullstack", lop: "React Fullstack - K24", soHocVien: "45/50", ngay: "10/01/2024", tienDo: 78, hinhAnh: "https://via.placeholder.com/400x200" },
-        { id: 3, ten: "Lap trinh React Fullstack", lop: "React Fullstack - K24", soHocVien: "45/50", ngay: "10/01/2024", tienDo: 78, hinhAnh: "https://via.placeholder.com/400x200" },
-        { id: 4, ten: "Lap trinh React Fullstack", lop: "React Fullstack - K24", soHocVien: "45/50", ngay: "10/01/2024", tienDo: 78, hinhAnh: "https://via.placeholder.com/400x200" },
-        { id: 5, ten: "Lap trinh React Fullstack", lop: "React Fullstack - K24", soHocVien: "45/50", ngay: "10/01/2024", tienDo: 78, hinhAnh: "https://via.placeholder.com/400x200" },
-        { id: 6, ten: "Lap trinh React Fullstack", lop: "React Fullstack - K24", soHocVien: "45/50", ngay: "10/01/2024", tienDo: 78, hinhAnh: "https://via.placeholder.com/400x200" },
-        { id: 7, ten: "Lap trinh React Fullstack", lop: "React Fullstack - K24", soHocVien: "45/50", ngay: "10/01/2024", tienDo: 78, hinhAnh: "https://via.placeholder.com/400x200" },
-        { id: 8, ten: "Lap trinh React Fullstack", lop: "React Fullstack - K24", soHocVien: "45/50", ngay: "10/01/2024", tienDo: 78, hinhAnh: "https://via.placeholder.com/400x200" }
-    ];
+    const { data: danhSach, isLoading, error } = useQuery({
+        queryKey: ['khoa-hoc-giang-vien'],
+        queryFn: () => khoaHocService.getDanhSachKhoaHocGiangVien(1)
+    });
+    if (isLoading) return <div className="course-container">Đang tải dữ liệu...</div>;
+    if (error) return <div className="course-container">Lỗi kết nối Server</div>;
 
     return (
         <div className="course-container">
@@ -35,26 +34,29 @@ const DanhSachKhoaHoc: React.FC<Props> = ({ onXemChiTiet }) => {
             </div>
 
             <div className="course-grid">
-                {duLieuMau.map(kh => (
-                    <div key={kh.id} className="course-card">
+                {danhSach?.map((kh: KhoaHocDTO) => (
+                    <div key={kh.maKhoaHoc} className="course-card">
                         <div className="image-wrapper">
-                            <img src={kh.hinhAnh} alt={kh.ten} />
-                            <span className="status-badge">Đang dạy</span>
-                            <span className="student-count-badge">{kh.soHocVien}</span>
+                            <img src={kh.hinhAnh || "https://via.placeholder.com/400x200"} alt={kh.tenKhoaHoc} />
+                            <span className="status-badge">{kh.trangThai || "Đang dạy"}</span>
+                            <span className="student-count-badge">{kh.soHocVien}/50</span>
                         </div>
                         <div style={{ padding: '15px' }}>
-                            <h4 style={{ margin: '0 0 5px 0' }}>{kh.ten}</h4>
-                            <p style={{ fontSize: '14px', color: '#666' }}>Lớp: {kh.lop}</p>
+                            <h4 style={{ margin: '0 0 5px 0' }}>{kh.tenKhoaHoc}</h4>
+                            <p style={{ fontSize: '14px', color: '#666' }}>Lớp: {kh.tenKhoaHoc}</p>
+                            
                             <div style={{ display: 'flex', gap: '15px', margin: '10px 0', fontSize: '13px', color: '#888' }}>
-                                <span><FaUserGraduate /> {kh.soHocVien.split('/')[0]} Học viên</span>
-                                <span><FaCalendarAlt /> {kh.ngay}</span>
+                                <span><FaUserGraduate /> {kh.soHocVien} Học viên</span>
+                                <span><FaCalendarAlt /> {new Date(kh.ngayTao).toLocaleDateString('vi-VN')}</span>
                             </div>
+
                             <div style={{ height: '6px', background: '#eee', borderRadius: '10px', overflow: 'hidden' }}>
-                                <div style={{ width: `${kh.tienDo}%`, background: '#fb873f', height: '100%' }}></div>
+                                <div style={{ width: `${kh.tienDoTrungBinh}%`, background: '#fb873f', height: '100%' }}></div>
                             </div>
+
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-                                <small style={{ color: '#888' }}>Tỉ lệ hoàn thành:  {kh.tienDo}%</small>
-                                <button className="btn-orange" onClick={() => onXemChiTiet(kh.id)}>
+                                <small style={{ color: '#888' }}>Tỉ lệ hoàn thành: {kh.tienDoTrungBinh}%</small>
+                                <button className="btn-orange" onClick={() => onXemChiTiet(kh.maKhoaHoc)}>
                                     <FaCog /> Chi tiết
                                 </button>
                             </div>
@@ -65,4 +67,5 @@ const DanhSachKhoaHoc: React.FC<Props> = ({ onXemChiTiet }) => {
         </div>
     );
 };
+
 export default DanhSachKhoaHoc;
