@@ -1,35 +1,25 @@
-export type LoaiBaiHoc = 'video' | 'van-ban' | 'thuc-hanh' | 'trac-nghiem';
-
-// export interface CauHoi {
-//   id: number;
-//   cauHoi: string;
-//   cacLuaChon: string[];
-//   dapAnDung: number;
-// }
-
-// export interface TestCase {
-//   input: string;
-//   expected: string;
-// }
+export type LoaiBaiHocType = 'Video' | 'text' | 'ide' | 'quiz';
 
 export interface BaiHoc {
-  id: number;
-  tieuDe: string;
-  loai: LoaiBaiHoc;
-  thoiLuong: string;
-  noiDung?: string;
-  linkVideo?: string;
-  ThuTu: number; 
+    id: number;
+    tieuDe: string;
+    loaiBaiHoc: LoaiBaiHocType;
+    noiDung?: string;
+    thoiLuong: number;
+    thuTu: number;
+    linkVideo?: string | null;
 }
 
 export interface ChuongHoc {
-  id: number;
-  tenChuong: string;
-  baiHocs: BaiHoc[];
+    id: number;
+    tieuDe: string;
+    thuTu: number;
+    danhSachBaiHoc: BaiHoc[]; 
 }
 
 export interface KhoaHocData {
-  maKhoaHoc: number;
-  tenKhoaHoc: string;
-  cacChuong: ChuongHoc[];
+    maKhoaHoc: number;
+    tenKhoaHoc: string; 
+    slug: string;
+    danhSachChuongHoc: ChuongHoc[];
 }

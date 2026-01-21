@@ -6,7 +6,7 @@
         public string TieuDe { get; set; } = null!;
         public string LoaiBaiHoc { get; set; } = null!;
         public string? NoiDung { get; set; }
-        public string? ThoiLuong { get; set; }
+        public int? ThoiLuong { get; set; }
         public int ThuTu { get; set; }
         public string? LinkVideo { get; set; }
 
@@ -24,6 +24,7 @@
     {
         public int MaKhoaHoc { get; set; }
         public string TenKhoaHoc { get; set; } = null!;
+        public string? Slug { get; set; }
         public List<ChuongHoc_NoiDungKhoaHocDTO> DanhSachChuongHoc { get; set; } = new List<ChuongHoc_NoiDungKhoaHocDTO>();
     }
 }
