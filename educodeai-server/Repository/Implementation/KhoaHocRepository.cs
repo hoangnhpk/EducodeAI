@@ -52,6 +52,8 @@ namespace educodeai_server.Repository.Implementation
                 .ToListAsync();
         }
 
+
+
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocTheoKeywordAsync(List<string> keywords)
         {
             var query = _context.KhoaHocs
@@ -85,29 +87,40 @@ namespace educodeai_server.Repository.Implementation
 
         public async Task<List<ChuongHocDTO>> GetKhoaHocByIdAsync(int maKhoaHoc)
         {
-            return await _context.ChuongHocs
-                .Include(c => c.BaiHocs)
-                .Where(c => c.MaKhoaHoc == maKhoaHoc)
-                .OrderBy(c => c.ThuTu)
-                .Select(c => new ChuongHocDTO
+            return await _context.KhoaHocs
+                .Where(kh => kh.MaKhoaHoc == maKhoaHoc)
+                .Select(kh => new KhoaHoc_NoiDungKhoaHocDTO
                 {
-                    Id = c.MaChuong,
-                    TieuDe = c.TenChuong,
-                    ThuTu = c.ThuTu,
-                    DanhSachBaiHoc = c.BaiHocs
-                        .OrderBy(b => b.ThuTu)
-                        .Select(b => new BaiHocDTO
+                    MaKhoaHoc = kh.MaKhoaHoc,
+                    TenKhoaHoc = kh.TenKhoaHoc,
+                    Slug = SlugHelper.Generate(kh.TenKhoaHoc),
+
+                    DanhSachChuongHoc = kh.ChuongHocs
+                        .OrderBy(ch => ch.ThuTu)
+                        .Select(ch => new ChuongHoc_NoiDungKhoaHocDTO
                         {
-                            Id = b.MaBaiHoc,
-                            TieuDe = b.TieuDe,
-                            LoaiBaiHoc = b.LoaiBaiHoc,
-                            NoiDung = b.NoiDung ?? "",
-                            ThoiLuong = b.ThoiLuong,
-                            ThuTu = b.ThuTu,
-                            LinkVideo = b.LinkVideo
-                        }).ToList()
+                            Id = ch.MaChuong,
+                            TieuDe = ch.TenChuong,
+                            ThuTu = ch.ThuTu,
+
+                            DanhSachBaiHoc = ch.BaiHocs
+                                .OrderBy(bh => bh.ThuTu)
+                                .Select(bh => new BaiHoc_NoiDungKhoaHocDTO
+                                {
+                                    Id = bh.MaBaiHoc,
+                                    TieuDe = bh.TieuDe,
+                                    LoaiBaiHoc = bh.LoaiBaiHoc,
+                                    NoiDung = bh.NoiDung,
+                                    ThoiLuong = bh.ThoiLuong,
+                                    ThuTu = bh.ThuTu,
+                                    LinkVideo = bh.LinkVideo
+                                })
+                                .ToList()
+                        })
+                        .ToList()
                 })
-                .ToListAsync();
+                .FirstOrDefaultAsync();
         }
+
     }
 }
