@@ -27,18 +27,15 @@ namespace educodeai_server.Helpers
                 },
                 generationConfig = new
                 {
-                    //maxOutputTokens = 1500,   // 🔥 GIỚI HẠN OUTPUT
+                    maxOutputTokens = 4000,   // 🔥 GIỚI HẠN OUTPUT
                     temperature = 0.7,
                     topP = 0.9
                 }
             };
 
             var response = await _http.PostAsJsonAsync(
-                "v1/models/gemini-2.5-flash:generateContent",
+                "v1beta/models/gemma-3-27b-it:generateContent",
                 requestBody);
-
-            var error = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(error);
 
             response.EnsureSuccessStatusCode();
 

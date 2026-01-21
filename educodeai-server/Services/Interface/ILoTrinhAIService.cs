@@ -8,8 +8,8 @@ namespace educodeai_server.Services.Interface
         int maNguoiDung,
         CreateLoTrinhAIDto dto);
 
-        // Task<LoTrinhAIResponseDto> CapNhatLoTrinhAsync(
-        //     Guid maLoTrinh,
-        //     string yeuCauMoi);
+        Task<LoTrinhAIResponseDto> CapNhatLoTrinhAsync(
+            int maNguoiDung,
+            UpdateLoTrinhDto dto);
     }
 }
