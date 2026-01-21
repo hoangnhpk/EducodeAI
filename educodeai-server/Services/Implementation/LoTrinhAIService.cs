@@ -42,9 +42,9 @@ namespace educodeai_server.Services.Implementation
             }
 
             var khoaHocJson = JsonSerializer.Serialize(khoaHoc);
-
-            dto.ThoiGianHocDuKien = dto.ThoiGianHocDuKien * 4; 
-
+            Console.WriteLine("Thời gian: " + dto.ThoiGianHocDuKien);
+            dto.ThoiGianHocDuKien = dto.ThoiGianHocDuKien * 4;
+            Console.WriteLine("Thời gian: " + dto.ThoiGianHocDuKien);
             var prompt = Build(dto, khoaHocJson);
 
             var aiResult = await _gemini.GenerateAsync(prompt);
@@ -56,7 +56,7 @@ namespace educodeai_server.Services.Implementation
                 MaNguoiDung = 8,
                 YeuCau = prompt,
                 NoiDungJSON = resultChuanHoa,
-                TrangThai = "Generated",
+                TrangThai = "Draft",
                 NgayTao = DateTime.Now
             };
 
@@ -67,6 +67,17 @@ namespace educodeai_server.Services.Implementation
                 MaLoTrinh = loTrinh.MaLoTrinh,
                 NoiDungJSON = resultChuanHoa
             };
+        }
+
+        public async Task<bool> XacNhanLoTrinhAsync(int maLoTrinh)
+        {
+            var loTrinh = await _loTrinhRepo.GetByIdAsync(maLoTrinh);
+            if (loTrinh == null) throw new Exception("Không tìm thấy lộ trình");
+
+            loTrinh.TrangThai = "Active"; // Chuyển sang chính thức
+            await _loTrinhRepo.UpdateAsync(loTrinh);
+
+            return true;
         }
 
         public static string Build(
@@ -121,6 +132,7 @@ namespace educodeai_server.Services.Implementation
                 7. BẮT BUỘC tạo ít nhất 1 tuần học nếu có bất kỳ khoá học nào phù hợp.
                 8. tối đa 4 giai đoạn học chính, tương ứng với các lĩnh vực tập trung
                 9. Mỗi giai đoạn học cần có mục tiêu rõ ràng, liên quan đến lĩnh vực tập trung, và có sự liên kết với nhau.
+                10. Mỗi phương diện chỉ được tập trung 1 cái và đừng lan man qua các phương diện khác tập trung về mục tiêu nghề nghiệp người dùng và lĩnh vực muốn tập trung để đưa ra khoá học phù hợp
 
                 JSON output PHẢI có cấu trúc GIỐNG HỆT schema dưới đây.
                 Mọi mảng trong JSON phải có ít nhất 1 phần tử nếu có dữ liệu phù hợp.
@@ -128,6 +140,7 @@ namespace educodeai_server.Services.Implementation
                 Không markdown, không text, chỉ trả về JSON thuần có thể parse được, không string lồng string.
                 Mọi field dạng số phải là number, không được null, không được string.
                 Nếu không có khoá học phù hợp, trả về JSON với loTrinh là mảng rỗng.
+                Tổng thời gian học được tính theo tổng tuần trong giai đoạn 
 
                 === OUTPUT FORMAT (JSON) ===
                 {outputSchema}
