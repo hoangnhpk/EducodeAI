@@ -7,8 +7,17 @@ interface Props {
   onChonBaiHoc: (id: number) => void;
 }
 
-export const DanhSachBaiHoc: React.FC<Props> = ({cacChuong, idBaiHocHienTai, onChonBaiHoc}) => {
+export const DanhSachBaiHoc: React.FC<Props> = ({
+  cacChuong,
+  idBaiHocHienTai,
+  onChonBaiHoc,
+}) => {
   const [openChapters, setOpenChapters] = useState<number[]>([]);
+
+  const tatCaBaiHoc = cacChuong.flatMap((c) => c.danhSachBaiHoc);
+  const currentIndex = tatCaBaiHoc.findIndex(
+    (b) => b.id === idBaiHocHienTai
+  );
 
   useEffect(() => {
     const chuongDangHoc = cacChuong.find((c) =>
@@ -34,19 +43,16 @@ export const DanhSachBaiHoc: React.FC<Props> = ({cacChuong, idBaiHocHienTai, onC
       case "quiz":
         return "fa-question-circle";
       default:
-        return "fa-align-left"; // text
+        return "fa-align-left";
     }
   };
 
   const tinhGio = (phut: number = 0): string => {
     if (phut <= 0) return "0 phút";
-
     const gio = Math.floor(phut / 60);
     const conLai = phut % 60;
-
     if (gio > 0 && conLai > 0) return `${gio} giờ ${conLai} phút`;
     if (gio > 0) return `${gio} giờ`;
-
     return `${conLai} phút`;
   };
 
@@ -57,7 +63,7 @@ export const DanhSachBaiHoc: React.FC<Props> = ({cacChuong, idBaiHocHienTai, onC
         <div className="cp-right-sub">
           {cacChuong.length} chương •{" "}
           {cacChuong.reduce(
-            (total, c) => total + (c.danhSachBaiHoc?.length ?? 0),
+            (total, c) => total + c.danhSachBaiHoc.length,
             0
           )}{" "}
           bài học
@@ -69,12 +75,10 @@ export const DanhSachBaiHoc: React.FC<Props> = ({cacChuong, idBaiHocHienTai, onC
           const isOpen = openChapters.includes(chuong.id);
 
           const soBaiHoc = chuong.danhSachBaiHoc.length;
-
           const tongThoiLuong = chuong.danhSachBaiHoc.reduce(
-            (total, bai) => total + (bai.thoiLuong ?? 0), 0
+            (total, bai) => total + (bai.thoiLuong ?? 0),
+            0
           );
-          console.log('🚀🚀🚀 soBaiHoc:', chuong.tieuDe);
-          console.log('🚀🚀🚀 tongThoiLuong:', tongThoiLuong);
 
           return (
             <div key={chuong.id} className="cp-chapter">
@@ -88,7 +92,6 @@ export const DanhSachBaiHoc: React.FC<Props> = ({cacChuong, idBaiHocHienTai, onC
                     {soBaiHoc} bài • {tinhGio(tongThoiLuong)}
                   </div>
                 </div>
-
                 <i
                   className={`fas fa-chevron-${isOpen ? "up" : "down"}`}
                 ></i>
@@ -96,38 +99,55 @@ export const DanhSachBaiHoc: React.FC<Props> = ({cacChuong, idBaiHocHienTai, onC
 
               {isOpen && (
                 <div className="cp-chapter-lessons open">
-                  {chuong.danhSachBaiHoc.map((bai) => (
-                    <div
-                      key={bai.id}
-                      className={`cp-lesson-item ${
-                        idBaiHocHienTai === bai.id
-                          ? "cp-lesson-active"
-                          : ""
-                      }`}
-                      onClick={() => onChonBaiHoc(bai.id)}
-                    >
-                      <div
-                        className={`cp-lesson-icon ${bai.loaiBaiHoc.toLowerCase()}`}
-                      >
-                        <i
-                          className={`fas ${getIconClass(
-                            bai.loaiBaiHoc
-                          )}`}
-                        ></i>
-                      </div>
+                  {chuong.danhSachBaiHoc.map((bai) => {
+                    const indexBai = tatCaBaiHoc.findIndex(
+                      (b) => b.id === bai.id
+                    );
 
-                      <div className="cp-lesson-main">
-                        <div className="cp-lesson-title">{bai.tieuDe}</div>
-                        <div className="cp-lesson-meta">
-                          {tinhGio(bai.thoiLuong)}
+                    const daHoanThanh = indexBai < currentIndex;
+                    const dangHoc = indexBai === currentIndex;
+                    const biKhoa = indexBai > currentIndex;
+
+                    return (
+                      <div
+                        key={bai.id}
+                        className={`cp-lesson-item
+                          ${dangHoc ? "cp-lesson-active" : ""}
+                          ${biKhoa ? "cp-lesson-locked" : ""}
+                        `}
+                        onClick={() => {
+                          if (!biKhoa) onChonBaiHoc(bai.id);
+                        }}
+                      >
+                        <div
+                          className={`cp-lesson-icon ${bai.loaiBaiHoc.toLowerCase()}`}
+                        >
+                          <i
+                            className={`fas ${getIconClass(
+                              bai.loaiBaiHoc
+                            )}`}
+                          ></i>
+                        </div>
+
+                        <div className="cp-lesson-main">
+                          <div className="cp-lesson-title">{bai.tieuDe}</div>
+                          <div className="cp-lesson-meta">
+                            {tinhGio(bai.thoiLuong)}
+                          </div>
+                        </div>
+
+                        <div className="cp-lesson-status">
+                          {daHoanThanh && (
+                            <i className="fas fa-check-circle text-success"></i>
+                          )}
+                          {dangHoc && (
+                            <i className="far fa-dot-circle"></i>
+                          )}
+                          {biKhoa && <i className="fas fa-lock"></i>}
                         </div>
                       </div>
-
-                      <div className="cp-lesson-status">
-                        <i className="far fa-circle"></i>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

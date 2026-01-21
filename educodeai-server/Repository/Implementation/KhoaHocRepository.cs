@@ -44,9 +44,9 @@ namespace educodeai_server.Repository.Implementation
                 {
                     MaKhoaHoc = x.MaKhoaHoc,
                     TenKhoaHoc = x.TenKhoaHoc,
-                    TrinhDo = x.TrinhDo!,
-                    LinhVuc = x.LinhVuc!,
-                    KyNangChinh = x.KyNangChinh!,
+                    TrinhDo = x.TrinhDo,
+                    LinhVuc = x.LinhVuc,
+                    KyNangChinh = x.KyNangChinh,
                     ThoiLuongGio = x.ThoiLuongGio
                 })
                 .ToListAsync();
