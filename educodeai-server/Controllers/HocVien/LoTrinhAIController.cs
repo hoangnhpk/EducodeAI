@@ -23,5 +23,13 @@ namespace EduCodeAI.Controllers.HocVien
 
             return Ok(await _service.TaoLoTrinhAsync(8, dto));
         }
+
+        [HttpPut("cap-nhat")]
+        public async Task<IActionResult> CapNhatLoTrinh(
+        [FromBody] UpdateLoTrinhDto dto)
+        {
+            var result = await _service.CapNhatLoTrinhAsync(8, dto);
+            return Ok(result);
+        }
     }
 }
