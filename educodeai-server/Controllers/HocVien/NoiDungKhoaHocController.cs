@@ -1,4 +1,5 @@
-﻿using educodeai_server.Services.Interface;
+﻿using educodeai_server.DTOs.KhoaHoc;
+using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
 namespace educodeai_server.Controllers.HocVien
@@ -19,9 +20,9 @@ namespace educodeai_server.Controllers.HocVien
         {
             try
             {
-                var data = await _khoaHocService.GetKhoaHocByIdAsync(maKhoaHoc);
+                var data = await _khoaHocService.GetKhoaHocByIdAsync(maKhoaHoc, 9);
 
-                if (data == null || data.Count == 0)
+                if (data == null)
                 {
                     return NotFound(new { message = "Không tìm thấy nội dung khóa học này." });
                 }
@@ -33,5 +34,30 @@ namespace educodeai_server.Controllers.HocVien
                 return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
             }
         }
+
+        [HttpPost("luu-tien-do")]
+        public async Task<IActionResult> LuuTienDo([FromBody] TienDoBaiHocDTO dto)
+        {
+            try
+            {
+                var result = await _khoaHocService.LuuTienDoBaiHoc(dto);
+                return Ok(new { thanhCong = result });
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi hệ thống. Vui lòng thử lại sau."
+                });
+            }
+        }
+
     }
 }

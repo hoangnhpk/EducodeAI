@@ -4,6 +4,7 @@ namespace educodeai_server.Services.Interface
 {
     public interface IKhoaHocService
     {
-        Task<List<ChuongHocDTO>> GetKhoaHocByIdAsync(int maKhoaHoc);
+        Task<KhoaHoc_NoiDungKhoaHocDTO?> GetKhoaHocByIdAsync(int maKhoaHoc, int maNguoiDung);
+        Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto);
     }
 }

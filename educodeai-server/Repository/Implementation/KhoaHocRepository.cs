@@ -21,19 +21,19 @@ namespace educodeai_server.Repository.Implementation
             var query = _context.KhoaHocs
                 .Where(x => x.TrangThai == "Hoạt động");
 
-            //if (!string.IsNullOrEmpty(dto.TrinhDoHienTai))
-            //{
-            //    query = query.Where(x =>
-            //        x.TrinhDo!.Contains(dto.TrinhDoHienTai) ||
-            //        dto.TrinhDoHienTai.Contains(x.TrinhDo));
-            //}
+            if (!string.IsNullOrEmpty(dto.TrinhDoHienTai))
+            {
+                query = query.Where(x =>
+                    x.TrinhDo.Contains(dto.TrinhDoHienTai) ||
+                    dto.TrinhDoHienTai.Contains(x.TrinhDo));
+            }
 
             //if (dto.LinhVucTapTrung?.Any() == true)
             //{
             //    query = query.Where(x =>
             //        dto.LinhVucTapTrung.Any(f =>
-            //            x.LinhVuc!.Contains(f) ||
-            //            x.KyNangChinh!.Contains(f)
+            //            x.LinhVuc.Contains(f) ||
+            //            x.KyNangChinh.Contains(f)
             //        ));
             //}
 
@@ -44,39 +44,131 @@ namespace educodeai_server.Repository.Implementation
                 {
                     MaKhoaHoc = x.MaKhoaHoc,
                     TenKhoaHoc = x.TenKhoaHoc,
-                    TrinhDo = x.TrinhDo!,
-                    LinhVuc = x.LinhVuc!,
-                    KyNangChinh = x.KyNangChinh!,
+                    TrinhDo = x.TrinhDo,
+                    LinhVuc = x.LinhVuc,
+                    KyNangChinh = x.KyNangChinh,
                     ThoiLuongGio = x.ThoiLuongGio
                 })
                 .ToListAsync();
         }
 
-        public async Task<List<ChuongHocDTO>> GetKhoaHocByIdAsync(int maKhoaHoc)
+
+
+        public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocTheoKeywordAsync(List<string> keywords)
         {
-            return await _context.ChuongHocs
-                .Include(c => c.BaiHocs)
-                .Where(c => c.MaKhoaHoc == maKhoaHoc)
-                .OrderBy(c => c.ThuTu)
-                .Select(c => new ChuongHocDTO
+            var query = _context.KhoaHocs
+                .Where(x => x.TrangThai == "Hoạt động");
+
+            if (keywords.Any())
+            {
+                query = query.Where(kh =>
+                    keywords.Any(k =>
+                        kh.TenKhoaHoc.ToLower().Contains(k) ||
+                        kh.LinhVuc.ToLower().Contains(k) ||
+                        kh.KyNangChinh.ToLower().Contains(k)
+                    ));
+            }
+
+            return await query
+                .OrderByDescending(x => x.DiemDanhGiaTB)
+                .ThenByDescending(x => x.NgayTao)
+                .Select(x => new KhoaHocAISnapshotDto
                 {
-                    Id = c.MaChuong,
-                    TieuDe = c.TenChuong,
-                    ThuTu = c.ThuTu,
-                    DanhSachBaiHoc = c.BaiHocs
-                        .OrderBy(b => b.ThuTu)
-                        .Select(b => new BaiHocDTO
-                        {
-                            Id = b.MaBaiHoc,
-                            TieuDe = b.TieuDe,
-                            LoaiBaiHoc = b.LoaiBaiHoc,
-                            NoiDung = b.NoiDung ?? "",
-                            ThoiLuong = b.ThoiLuong,
-                            ThuTu = b.ThuTu,
-                            LinkVideo = b.LinkVideo
-                        }).ToList()
+                    MaKhoaHoc = x.MaKhoaHoc,
+                    TenKhoaHoc = x.TenKhoaHoc,
+                    TrinhDo = x.TrinhDo,
+                    LinhVuc = x.LinhVuc,
+                    KyNangChinh = x.KyNangChinh,
+                    ThoiLuongGio = x.ThoiLuongGio
                 })
                 .ToListAsync();
+        }
+
+        public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            try
+            {
+                return await _context.KhoaHocs
+                    .Where(kh => kh.MaKhoaHoc == maKhoaHoc)
+                    .Select(kh => new KhoaHoc_NoiDungKhoaHocDTO
+                    {
+                        MaKhoaHoc = kh.MaKhoaHoc,
+                        TenKhoaHoc = kh.TenKhoaHoc,
+                        Slug = SlugHelper.Generate(kh.TenKhoaHoc),
+
+                        DanhSachChuongHoc = kh.ChuongHocs
+                            .OrderBy(ch => ch.ThuTu)
+                            .Select(ch => new ChuongHoc_NoiDungKhoaHocDTO
+                            {
+                                Id = ch.MaChuong,
+                                TieuDe = ch.TenChuong,
+                                ThuTu = ch.ThuTu,
+
+                                DanhSachBaiHoc = ch.BaiHocs
+                                    .OrderBy(bh => bh.ThuTu)
+                                    .Select(bh => new BaiHoc_NoiDungKhoaHocDTO
+                                    {
+                                        Id = bh.MaBaiHoc,
+                                        TieuDe = bh.TieuDe,
+                                        LoaiBaiHoc = bh.LoaiBaiHoc,
+                                        NoiDung = bh.NoiDung,
+                                        ThoiLuong = bh.ThoiLuong,
+                                        ThuTu = bh.ThuTu,
+                                        LinkVideo = bh.LinkVideo,
+                                        DaXem = bh.TienDoBaiHocs.Any(td => td.MaNguoiDung == maNguoiDung && td.DaXem == true)
+                                    })
+                                    .ToList()
+                            })
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Lỗi khi lấy nội dung khóa học (MaKhoaHoc = {maKhoaHoc})", ex);
+            }
+        }
+
+        public async Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto)
+        {
+            try
+            {
+                var tienDo = await _context.TienDoBaiHocs
+                    .FirstOrDefaultAsync(td =>
+                        td.MaBaiHoc == dto.MaBaiHoc &&
+                        td.MaNguoiDung == dto.MaNguoiDung
+                    );
+
+                if (tienDo != null)
+                {
+                    tienDo.DaXem = dto.DaXem;
+                    tienDo.ThoiGianHoc = dto.ThoiGianHoc;
+                    tienDo.NgayCapNhat = DateTime.UtcNow;
+                }
+                else
+                {
+                    tienDo = new TienDoBaiHocModel
+                    {
+                        MaBaiHoc = dto.MaBaiHoc,
+                        MaNguoiDung = dto.MaNguoiDung,
+                        DaXem = dto.DaXem,
+                        ThoiGianHoc = dto.ThoiGianHoc,
+                        NgayCapNhat = DateTime.UtcNow
+                    };
+
+                    await _context.TienDoBaiHocs.AddAsync(tienDo);
+                }
+
+                return await _context.SaveChangesAsync() > 0;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ApplicationException("Không thể lưu tiến độ bài học. Vui lòng thử lại.", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Đã xảy ra lỗi khi lưu tiến độ bài học.", ex);
+            }
         }
         public async Task<List<KhoaHocModel>> GetKhoaHocsByGiangVienAsync(int maGiangVien)
         {
