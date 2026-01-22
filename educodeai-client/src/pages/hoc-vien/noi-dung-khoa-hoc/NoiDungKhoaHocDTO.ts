@@ -8,6 +8,7 @@ export interface BaiHoc {
     thoiLuong: number;
     thuTu: number;
     linkVideo?: string | null;
+    daXem?: boolean;
 }
 
 export interface ChuongHoc {
