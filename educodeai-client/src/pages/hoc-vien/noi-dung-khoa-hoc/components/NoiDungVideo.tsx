@@ -165,7 +165,7 @@ export const NoiDungVideo: React.FC<Props> = ({ videoUrl, maBaiHoc, maNguoiDung,
       if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.95) {
         luuTienDo(currentVideoTime);
       }
-    }, 1000); 
+    }, 700); 
 
     return () => clearInterval(interval);
   }, [daSanSang, thoiLuongVideo, luuTienDo, daXem]);

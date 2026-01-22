@@ -15,9 +15,6 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
   const [openChapters, setOpenChapters] = useState<number[]>([]);
 
   const tatCaBaiHoc = cacChuong.flatMap((c) => c.danhSachBaiHoc);
-  // const currentIndex = tatCaBaiHoc.findIndex(
-  //   (b) => b.id === idBaiHocHienTai
-  // );
 
   useEffect(() => {
     const chuongDangHoc = cacChuong.find((c) =>
@@ -47,14 +44,24 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
     }
   };
 
-  const tinhGio = (phut: number = 0): string => {
-    if (phut <= 0) return "0 phút";
-    const gio = Math.floor(phut / 60);
-    const conLai = phut % 60;
-    if (gio > 0 && conLai > 0) return `${gio} giờ ${conLai} phút`;
-    if (gio > 0) return `${gio} giờ`;
-    return `${conLai} phút`;
+  // --- SỬA HÀM TÍNH GIỜ (Nhận vào Giây) ---
+  const tinhThoiGian = (giay: number = 0): string => {
+    if (giay <= 0) return "00:00";
+    
+    const gio = Math.floor(giay / 3600);
+    const phut = Math.floor((giay % 3600) / 60);
+    const giayConLai = Math.round(giay % 60); // Làm tròn giây
+
+    // Format mm:ss
+    const phutStr = phut.toString().padStart(2, '0');
+    const giayStr = giayConLai.toString().padStart(2, '0');
+
+    if (gio > 0) {
+      return `${gio}:${phutStr}:${giayStr}`; // Ví dụ: 1:05:30
+    }
+    return `${phutStr}:${giayStr}`; // Ví dụ: 05:30
   };
+  // ----------------------------------------
 
   return (
     <aside className="cp-right">
@@ -75,7 +82,9 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
           const isOpen = openChapters.includes(chuong.id);
 
           const soBaiHoc = chuong.danhSachBaiHoc.length;
-          const tongThoiLuong = chuong.danhSachBaiHoc.reduce(
+          
+          // Tính tổng thời lượng của chương (đơn vị: giây)
+          const tongThoiLuongGiay = chuong.danhSachBaiHoc.reduce(
             (total, bai) => total + (bai.thoiLuong ?? 0),
             0
           );
@@ -89,7 +98,8 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                 <div>
                   <div className="cp-chapter-title">{chuong.tieuDe}</div>
                   <div className="cp-chapter-meta">
-                    {soBaiHoc} bài • {tinhGio(tongThoiLuong)}
+                    {/* Hiển thị tổng thời gian chương */}
+                    {soBaiHoc} bài • {tinhThoiGian(tongThoiLuongGiay)}
                   </div>
                 </div>
                 <i
@@ -104,12 +114,10 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                       (b) => b.id === bai.id
                     );
 
-                    // SỬA Ở ĐÂY: Dùng trangThaiDaHoc từ dữ liệu backend
-                    const daHoanThanh = bai.daXem === true; // Hoặc bai.daXem, bai.hoanThanh...
+                    const daHoanThanh = bai.daXem === true;
                     const dangHoc = bai.id === idBaiHocHienTai;
-
-                    // Khóa nếu bài trước chưa hoàn thành (ngoại trừ bài đầu tiên)
                     const biKhoa = indexBai > 0 && !tatCaBaiHoc[indexBai - 1].daXem;
+                    
                     return (
                       <div
                         key={bai.id}
@@ -134,7 +142,8 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                         <div className="cp-lesson-main">
                           <div className="cp-lesson-title">{bai.tieuDe}</div>
                           <div className="cp-lesson-meta">
-                            {tinhGio(bai.thoiLuong)}
+                            {/* Hiển thị thời gian từng bài */}
+                            {tinhThoiGian(bai.thoiLuong)}
                           </div>
                         </div>
 

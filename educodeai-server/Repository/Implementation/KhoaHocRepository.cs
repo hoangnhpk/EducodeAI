@@ -84,7 +84,6 @@ namespace educodeai_server.Repository.Implementation
                 .ToListAsync();
         }
 
-
         public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
         {
             try
@@ -171,5 +170,21 @@ namespace educodeai_server.Repository.Implementation
                 throw new ApplicationException("Đã xảy ra lỗi khi lưu tiến độ bài học.", ex);
             }
         }
+        public async Task<List<KhoaHocModel>> GetKhoaHocsByGiangVienAsync(int maGiangVien)
+        {
+            return await _context.KhoaHocs
+                .Include(k => k.DangKyKhoaHocs)
+                .Where(k => k.MaGiangVien == maGiangVien)
+                .OrderByDescending(k => k.NgayTao)
+                .ToListAsync();
+        }
+        public async Task<KhoaHocModel?> GetKhoaHocWithDetailsAsync(int maKhoaHoc)
+        {
+            return await _context.KhoaHocs
+                .Include(k => k.DangKyKhoaHocs)
+                    .ThenInclude(d => d.NguoiDung)
+                .FirstOrDefaultAsync(k => k.MaKhoaHoc == maKhoaHoc);
+        }
     }
 }
+

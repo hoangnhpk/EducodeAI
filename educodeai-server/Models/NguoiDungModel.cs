@@ -33,7 +33,7 @@ namespace educodeai_server.Models
         public int VaiTro { get; set; } // 0:Admin, 1:GV, 2:HV
 
         [StringLength(20)]
-        public string? TrangThai { get; set; } = "Active";
+        public string? TrangThai { get; set; } = "Ho?t ??ng";
 
         public DateTime NgayThamGia { get; set; } = DateTime.Now;
 
