@@ -56,7 +56,7 @@ export default function AppRouter() {
         </Route>
         {/* Trang nội dung khóa học không sử dụng layout có header và footer */}
         <Route element={<LayoutBlank />}>
-          <Route path="khoa-hoc" element={<NoiDungKhoaHoc />} />
+          <Route path="khoa-hoc/:slug/:id" element={<NoiDungKhoaHoc />} />
         </Route>
 
         {/* GIẢNG VIÊN */}

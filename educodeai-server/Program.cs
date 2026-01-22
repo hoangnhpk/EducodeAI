@@ -16,9 +16,7 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: true)
     .AddEnvironmentVariables();
 
-#if DEBUG
 builder.Configuration.AddUserSecrets<Program>();
-#endif
 // 1. Đăng ký xác thực JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => {
