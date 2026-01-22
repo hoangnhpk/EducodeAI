@@ -19,7 +19,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto)
         {
             var query = _context.KhoaHocs
-                .Where(x => x.TrangThai == "Active");
+                .Where(x => x.TrangThai == "Hoạt động");
 
             if (!string.IsNullOrEmpty(dto.TrinhDoHienTai))
             {
@@ -57,7 +57,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocTheoKeywordAsync(List<string> keywords)
         {
             var query = _context.KhoaHocs
-                .Where(x => x.TrangThai == "Active");
+                .Where(x => x.TrangThai == "Hoạt động");
 
             if (keywords.Any())
             {
@@ -85,42 +85,91 @@ namespace educodeai_server.Repository.Implementation
         }
 
 
-        public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc)
+        public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
         {
-            return await _context.KhoaHocs
-                .Where(kh => kh.MaKhoaHoc == maKhoaHoc)
-                .Select(kh => new KhoaHoc_NoiDungKhoaHocDTO
-                {
-                    MaKhoaHoc = kh.MaKhoaHoc,
-                    TenKhoaHoc = kh.TenKhoaHoc,
-                    Slug = SlugHelper.Generate(kh.TenKhoaHoc),
+            try
+            {
+                return await _context.KhoaHocs
+                    .Where(kh => kh.MaKhoaHoc == maKhoaHoc)
+                    .Select(kh => new KhoaHoc_NoiDungKhoaHocDTO
+                    {
+                        MaKhoaHoc = kh.MaKhoaHoc,
+                        TenKhoaHoc = kh.TenKhoaHoc,
+                        Slug = SlugHelper.Generate(kh.TenKhoaHoc),
 
-                    DanhSachChuongHoc = kh.ChuongHocs
-                        .OrderBy(ch => ch.ThuTu)
-                        .Select(ch => new ChuongHoc_NoiDungKhoaHocDTO
-                        {
-                            Id = ch.MaChuong,
-                            TieuDe = ch.TenChuong,
-                            ThuTu = ch.ThuTu,
+                        DanhSachChuongHoc = kh.ChuongHocs
+                            .OrderBy(ch => ch.ThuTu)
+                            .Select(ch => new ChuongHoc_NoiDungKhoaHocDTO
+                            {
+                                Id = ch.MaChuong,
+                                TieuDe = ch.TenChuong,
+                                ThuTu = ch.ThuTu,
 
-                            DanhSachBaiHoc = ch.BaiHocs
-                                .OrderBy(bh => bh.ThuTu)
-                                .Select(bh => new BaiHoc_NoiDungKhoaHocDTO
-                                {
-                                    Id = bh.MaBaiHoc,
-                                    TieuDe = bh.TieuDe,
-                                    LoaiBaiHoc = bh.LoaiBaiHoc,
-                                    NoiDung = bh.NoiDung,
-                                    ThoiLuong = bh.ThoiLuong,
-                                    ThuTu = bh.ThuTu,
-                                    LinkVideo = bh.LinkVideo
-                                })
-                                .ToList()
-                        })
-                        .ToList()
-                })
-                .FirstOrDefaultAsync();
+                                DanhSachBaiHoc = ch.BaiHocs
+                                    .OrderBy(bh => bh.ThuTu)
+                                    .Select(bh => new BaiHoc_NoiDungKhoaHocDTO
+                                    {
+                                        Id = bh.MaBaiHoc,
+                                        TieuDe = bh.TieuDe,
+                                        LoaiBaiHoc = bh.LoaiBaiHoc,
+                                        NoiDung = bh.NoiDung,
+                                        ThoiLuong = bh.ThoiLuong,
+                                        ThuTu = bh.ThuTu,
+                                        LinkVideo = bh.LinkVideo,
+                                        DaXem = bh.TienDoBaiHocs.Any(td => td.MaNguoiDung == maNguoiDung && td.DaXem == true)
+                                    })
+                                    .ToList()
+                            })
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Lỗi khi lấy nội dung khóa học (MaKhoaHoc = {maKhoaHoc})", ex);
+            }
         }
 
+        public async Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto)
+        {
+            try
+            {
+                var tienDo = await _context.TienDoBaiHocs
+                    .FirstOrDefaultAsync(td =>
+                        td.MaBaiHoc == dto.MaBaiHoc &&
+                        td.MaNguoiDung == dto.MaNguoiDung
+                    );
+
+                if (tienDo != null)
+                {
+                    tienDo.DaXem = dto.DaXem;
+                    tienDo.ThoiGianHoc = dto.ThoiGianHoc;
+                    tienDo.NgayCapNhat = DateTime.UtcNow;
+                }
+                else
+                {
+                    tienDo = new TienDoBaiHocModel
+                    {
+                        MaBaiHoc = dto.MaBaiHoc,
+                        MaNguoiDung = dto.MaNguoiDung,
+                        DaXem = dto.DaXem,
+                        ThoiGianHoc = dto.ThoiGianHoc,
+                        NgayCapNhat = DateTime.UtcNow
+                    };
+
+                    await _context.TienDoBaiHocs.AddAsync(tienDo);
+                }
+
+                return await _context.SaveChangesAsync() > 0;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ApplicationException("Không thể lưu tiến độ bài học. Vui lòng thử lại.", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Đã xảy ra lỗi khi lưu tiến độ bài học.", ex);
+            }
+        }
     }
 }
