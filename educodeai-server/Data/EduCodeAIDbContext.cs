@@ -1,3 +1,4 @@
+using educodeai_server.Data.DuLieuMau;
 using educodeai_server.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -32,23 +33,21 @@ namespace educodeai_server.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // 1. Cấu hình các ràng buộc Duy nhất (Unique)
             modelBuilder.Entity<NguoiDungModel>().HasIndex(u => u.TaiKhoan).IsUnique();
             modelBuilder.Entity<NguoiDungModel>().HasIndex(u => u.Email).IsUnique();
             modelBuilder.Entity<TienDoBaiHocModel>().HasIndex(t => new { t.MaNguoiDung, t.MaBaiHoc }).IsUnique();
             modelBuilder.Entity<BaiTap_NgonNguModel>().HasIndex(b => new { b.MaBaiTap, b.MaNgonNgu }).IsUnique();
             modelBuilder.Entity<DanhGiaModel>().HasIndex(d => new { d.MaNguoiDung, d.MaKhoaHoc }).IsUnique();
 
-            // 2. GIẢI PHÁP TRIỆT ĐỂ CHO LỖI 1785 (Multiple Cascade Paths)
-            // Thay vì sửa từng bảng, ta quét toàn bộ quan hệ trong Database
-            // Nếu bất kỳ quan hệ nào có Cascade Delete, ta chuyển hết về NoAction
+            KhoaHocDuLieu.SeedKhoaHoc(modelBuilder);
+            ChuongHocDuLieu.SeedChuongHoc(modelBuilder);
+            BaiHocDuLieu.SeedBaiHoc(modelBuilder);
+            NguoiDungDuLieu.SeedNguoiDung(modelBuilder);
+
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             {
                 relationship.DeleteBehavior = DeleteBehavior.NoAction;
             }
-
-            // 3. Xử lý riêng cho trường hợp Self-Join (Bình luận cha-con) 
-            // Vòng lặp trên đã xử lý luôn phần này về NoAction cho bạn rồi.
         }
     }
 }
