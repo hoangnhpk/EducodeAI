@@ -1,3 +1,4 @@
+
 import axiosClient from '@/configs/axios'
 import type { KhoaHocData, BaiHoc, ChuongHoc } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO'
 
@@ -61,3 +62,14 @@ tinhPhanTramTienDo(
   return Math.round(((idx + 1) / dsPhang.length) * 100)
 },
 }
+
+export const khoaHocService = {
+    getDanhSachKhoaHocGiangVien: async (maGiangVien: number) => {
+        const res = await axios.get(`${API_BASE_URL}/danh-sach/${maGiangVien}`);
+        return res.data;
+    },
+    getChiTietKhoaHoc: async (id: number) => {
+        const res = await axios.get(`${API_BASE_URL}/chi-tiet/${id}`);
+        return res.data;
+    }
+};
