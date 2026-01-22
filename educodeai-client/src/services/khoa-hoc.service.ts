@@ -5,7 +5,7 @@ export const KhoaHocService = {
   async layDuLieuKhoaHoc(khoaHocId: number): Promise<KhoaHocData> {
     try {
       return await axiosClient.get<KhoaHocData>(
-        `/api/NoiDungKhoaHoc/${khoaHocId}`
+        `/NoiDungKhoaHoc/${khoaHocId}`
       )
     } catch (error) {
   console.error('❌ Lỗi lấy dữ liệu khóa học:', error)

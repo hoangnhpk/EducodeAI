@@ -9,7 +9,7 @@ export default function HeaderHocVien() {
       >
         <p className="m-0 fw-bold" style={{ fontSize: 25 }}>
           <img src="/img/icon.png" alt="" height={50} />
-          Secret<span style={{ color: "#fb873f" }}>Coder</span>
+          EDUCODE<span style={{ color: "#fb873f" }}>AI</span>
         </p>
       </Link>
 
