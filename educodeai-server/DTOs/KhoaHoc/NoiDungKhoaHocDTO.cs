@@ -9,6 +9,7 @@
         public int? ThoiLuong { get; set; }
         public int ThuTu { get; set; }
         public string? LinkVideo { get; set; }
+        public bool DaXem { get; set; } = false;
 
     }
 
@@ -26,5 +27,13 @@
         public string TenKhoaHoc { get; set; } = null!;
         public string? Slug { get; set; }
         public List<ChuongHoc_NoiDungKhoaHocDTO> DanhSachChuongHoc { get; set; } = new List<ChuongHoc_NoiDungKhoaHocDTO>();
+    }
+
+    public class TienDoBaiHocDTO
+    {
+        public int MaBaiHoc { get; set; }
+        public int MaNguoiDung { get; set; }
+        public bool DaXem { get; set; }
+        public int ThoiGianHoc { get; set; }
     }
 }

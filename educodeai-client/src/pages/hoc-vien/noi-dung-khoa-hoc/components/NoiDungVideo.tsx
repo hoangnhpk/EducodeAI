@@ -1,30 +1,37 @@
-import React, { useState, useRef } from 'react';
 import YouTube from 'react-youtube';
-import type { YouTubeEvent } from 'react-youtube'; // ← sửa ở đây
+import type { YouTubeEvent } from 'react-youtube';
+import axiosClient from '@/configs/axios';
+import Swal from 'sweetalert2';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 interface Props {
   videoUrl?: string | null;
-  onSeekTo8Min?: () => void; // Callback tùy chọn khi tua đến/vượt 8 phút
+  maBaiHoc: number;
+  maNguoiDung: number;
+  daXem?: boolean;
+  onVideoCompleted?: (maBaiHoc: number) => void;
 }
 
-export const NoiDungVideo: React.FC<Props> = ({ videoUrl, onSeekTo8Min }) => {
-  const playerRef = useRef<any>(null); // any tạm thời để tránh lỗi type strict
-  const [isReady, setIsReady] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const targetTime = 8 * 60; // 8 phút = 480 giây
+export const NoiDungVideo: React.FC<Props> = ({ videoUrl, maBaiHoc, maNguoiDung, daXem, onVideoCompleted }) => {
+  const playerRef = useRef<any>(null);
+  const [daSanSang, setDaSanSang] = useState(false);
+  const [thoiLuongVideo, setThoiLuongVideo] = useState(0);
+  const [thoiGianHienTai, setThoiGianHienTai] = useState(0);
+  
+  const daLuuTienDoRef = useRef(false);
+  const dangCanhBaoRef = useRef(false);
+  
+  const lastValidVideoTimeRef = useRef(0);
+  const lastRealTimeRef = useRef(Date.now());
 
-  // Extract video ID từ URL
-  const getVideoId = (url?: string | null) => {
-    if (!url) return null;
+  const videoId = useMemo(() => {
+    if (!videoUrl) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
+    const match = videoUrl.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
-  };
+  }, [videoUrl]);
 
-  const videoId = getVideoId(videoUrl);
-
-  // Options cho player
-  const opts = {
+  const tuyChinh = useMemo(() => ({
     height: '100%',
     width: '100%',
     playerVars: {
@@ -33,73 +40,164 @@ export const NoiDungVideo: React.FC<Props> = ({ videoUrl, onSeekTo8Min }) => {
       modestbranding: 1,
       rel: 0,
     },
+  }), []);
+
+  const luuTienDo = useCallback(async (thoiGianThuc: number) => {
+    if (daLuuTienDoRef.current || thoiLuongVideo === 0) return;
+    daLuuTienDoRef.current = true;
+    try {
+      await axiosClient.post('/NoiDungKhoaHoc/luu-tien-do', {
+        MaBaiHoc: maBaiHoc,
+        MaNguoiDung: maNguoiDung,
+        DaXem: true,
+        ThoiGianHoc: Math.max(Math.round(thoiGianThuc), 1),
+      });
+      onVideoCompleted?.(maBaiHoc);
+    } catch (loi) { console.error(loi); }
+  }, [thoiLuongVideo, maBaiHoc, maNguoiDung, onVideoCompleted]);
+
+  // Hàm xử lý khi phát hiện gian lận (tách ra để tái sử dụng)
+  const xuLyGianLan = (lastValidTime: number) => {
+    dangCanhBaoRef.current = true;
+    playerRef.current.pauseVideo();
+
+    Swal.fire({
+      icon: 'error',
+          title: 'Phát hiện gian lận!',
+          html: `
+            Hệ thống chỉ ghi nhận thời gian học thực tế.<br/>
+            Vui lòng không tua video!
+          `,
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          backdrop: `rgba(0,0,0,0.7)`,
+          customClass: { container: 'swal-z-index-fix' }
+    }).then(() => {
+      playerRef.current.seekTo(lastValidTime, true);
+      playerRef.current.playVideo();
+      
+      // Reset mốc thời gian để tránh lặp lỗi
+      lastRealTimeRef.current = Date.now();
+      lastValidVideoTimeRef.current = lastValidTime;
+      
+      dangCanhBaoRef.current = false;
+    });
   };
 
-  const onReady = (event: YouTubeEvent) => {
+  const khiSanSang = (event: YouTubeEvent) => {
     playerRef.current = event.target;
-    setIsReady(true);
-
-    // Check thời gian mỗi giây
-    const interval = setInterval(() => {
-      if (playerRef.current) {
-        const time = playerRef.current.getCurrentTime() as number;
-        setCurrentTime(time);
-
-        if (time >= targetTime) {
-          onSeekTo8Min?.();
-        }
-      }
-    }, 999);
-
-    return () => clearInterval(interval);
+    setDaSanSang(true);
+    setThoiLuongVideo(playerRef.current.getDuration() || 0);
+    lastValidVideoTimeRef.current = 0;
+    lastRealTimeRef.current = Date.now();
   };
 
-  // Optional: Phát hiện seek khi state thay đổi (PLAYING)
-  const onStateChange = (event: YouTubeEvent) => {
-    if (event.data === 1 && playerRef.current) { // 1 = PLAYING
-      const time = playerRef.current.getCurrentTime() as number;
-      if (time >= targetTime) {
-        console.log('Video đang phát từ vị trí đã tua:', time);
+  const khiTrangThaiThayDoi = (event: YouTubeEvent) => {
+    if (event.data === 0) { // Kết thúc
+      luuTienDo(playerRef.current?.getDuration() || 0);
+    }
+    
+    // Khi bấm Play (1), kiểm tra xem trong lúc Pause người dùng có tua đi đâu xa không?
+    if (event.data === 1) {
+      const currentVideoTime = playerRef.current.getCurrentTime();
+      // Nếu vị trí hiện tại xa hơn vị trí cũ quá 2 giây -> GIAN LẬN
+      if (!daXem && (currentVideoTime - lastValidVideoTimeRef.current > 2)) {
+         xuLyGianLan(lastValidVideoTimeRef.current);
+         return;
       }
+
+      // Nếu hợp lệ thì mới reset mốc thời gian thực
+      lastRealTimeRef.current = Date.now();
+      // Không update lastValidVideoTimeRef ở đây để đảm bảo tính liên tục
     }
   };
 
-  if (!videoId) {
-    return (
-      <div className="cp-video-frame">
-        <div className="cp-video-inner">
-          <i className="fas fa-play-circle"></i>
-          <div style={{ marginBottom: 4 }}>Chưa có video hoặc URL không hợp lệ</div>
-          <div style={{ fontSize: '.85rem', opacity: 0.9 }}>
-            Video player sẽ được tích hợp tại đây (YouTube, HTML5...)
-          </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!daSanSang || daLuuTienDoRef.current) return;
+
+    const interval = setInterval(() => {
+      if (!playerRef.current) return;
+      if (dangCanhBaoRef.current) return;
+      
+      // Nếu video đang Pause hoặc Buffer thì không check, chỉ cập nhật lại mốc thực tế
+      const playerState = playerRef.current.getPlayerState();
+      if (playerState !== 1) { // 1 là Playing
+         lastRealTimeRef.current = Date.now();
+         return;
+      }
+
+      const currentVideoTime = playerRef.current.getCurrentTime() || 0;
+      const currentRealTime = Date.now();
+      
+      // --- FIX LỖI 1: CHẶN TÍCH LŨY THỜI GIAN KHI TREO TAB ---
+      // Tính thời gian thực trôi qua, NHƯNG KHÔNG ĐƯỢC QUÁ 2 giây (Cap limit)
+      // Dù bạn treo tab 1 tiếng, hệ thống chỉ tính là bạn vừa xem 2 giây thôi.
+      let realTimePassed = (currentRealTime - lastRealTimeRef.current) / 1000;
+      if (realTimePassed > 3) realTimePassed = 1; // Nếu > 3s nghĩa là lag/treo tab -> reset về 1s chuẩn
+      
+      const videoTimePassed = currentVideoTime - lastValidVideoTimeRef.current;
+      const playbackRate = playerRef.current.getPlaybackRate() || 1;
+
+      // Ngưỡng cho phép
+      const allowedProgress = (realTimePassed * playbackRate) + 2; // Giảm buffer xuống 1.5s cho chặt
+
+      if (!daXem && videoTimePassed > allowedProgress) {
+        xuLyGianLan(lastValidVideoTimeRef.current);
+        return;
+      }
+      
+      // Update trạng thái hợp lệ
+      // Chỉ update khi video chạy xuôi (videoTimePassed > 0)
+      if (videoTimePassed <= allowedProgress && videoTimePassed > -5) { 
+          lastValidVideoTimeRef.current = currentVideoTime;
+          lastRealTimeRef.current = currentRealTime;
+          setThoiGianHienTai(currentVideoTime);
+      } else if (videoTimePassed < -5) {
+          // Trường hợp tua ngược lại để xem lại bài -> Cho phép và cập nhật mốc mới
+          lastValidVideoTimeRef.current = currentVideoTime;
+          lastRealTimeRef.current = currentRealTime;
+          setThoiGianHienTai(currentVideoTime);
+      }
+
+      if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.95) {
+        luuTienDo(currentVideoTime);
+      }
+    }, 1000); 
+
+    return () => clearInterval(interval);
+  }, [daSanSang, thoiLuongVideo, luuTienDo, daXem]);
+
+  // Reset khi đổi bài
+  useEffect(() => {
+    daLuuTienDoRef.current = false;
+    dangCanhBaoRef.current = false;
+    lastValidVideoTimeRef.current = 0;
+    lastRealTimeRef.current = Date.now();
+    setDaSanSang(false);
+    setThoiLuongVideo(0);
+    setThoiGianHienTai(0);
+  }, [videoId]);
+
+  if (!videoId) return <div className="cp-video-frame"><div className="cp-video-inner">Chưa có video</div></div>;
 
   return (
     <div className="cp-tab-pane active" style={{ display: 'block', height: '100%' }}>
       <YouTube
         videoId={videoId}
-        opts={opts}
-        onReady={onReady}
-        onStateChange={onStateChange}
+        opts={tuyChinh}
+        onReady={khiSanSang}
+        onStateChange={khiTrangThaiThayDoi}
         className="cp-video-frame w-100 h-100"
-        iframeClassName="w-100 h-100" 
+        iframeClassName="w-100 h-100"
         style={{ aspectRatio: '16/9', borderRadius: '8px' }}
       />
-
-      {/* Debug thời gian (tùy chọn) */}
-      {isReady && (
-        <div style={{ padding: '10px', margin: '0 0 40px 0', background: '#f8f9fa', textAlign: 'center' }}>
-          Thời gian hiện tại: {Math.floor(currentTime / 60)}:
-          {Math.floor(currentTime % 60).toString().padStart(2, '0')}
-          {currentTime >= targetTime && (
-            <span style={{ color: 'green', marginLeft: '10px' }}>
-              ✓ Đã tua đến/vượt 8 phút!
-            </span>
-          )}
+      {daSanSang && (
+        <div style={{ padding: '10px', background: '#f8f9fa', textAlign: 'center' }}>
+             {Math.floor(thoiGianHienTai / 60)}:{Math.floor(thoiGianHienTai % 60).toString().padStart(2, '0')} /{' '}
+            {Math.floor(thoiLuongVideo / 60)}:{Math.floor(thoiLuongVideo % 60).toString().padStart(2, '0')}
         </div>
       )}
     </div>
