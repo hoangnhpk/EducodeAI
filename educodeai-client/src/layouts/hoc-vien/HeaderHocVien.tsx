@@ -9,7 +9,7 @@ export default function HeaderHocVien() {
       >
         <p className="m-0 fw-bold" style={{ fontSize: 25 }}>
           <img src="/img/icon.png" alt="" height={50} />
-          Secret<span style={{ color: "#fb873f" }}>Coder</span>
+          EDUCODE<span style={{ color: "#fb873f" }}>AI</span>
         </p>
       </Link>
 
@@ -28,15 +28,15 @@ export default function HeaderHocVien() {
             Trang chủ
           </Link>
 
-          <Link to="/about" className="nav-item nav-link">
-            Giới thiệu
+          <Link to="/yeu-cau-lo-trinh-ai" className="nav-item nav-link">
+            Lộ trình AI
           </Link>
 
           <Link to="/courses" className="nav-item nav-link">
             Khóa học
           </Link>
 
-          <div className="nav-item dropdown">
+          {/* <div className="nav-item dropdown">
             <a
               href="#"
               className="nav-link dropdown-toggle"
@@ -56,7 +56,7 @@ export default function HeaderHocVien() {
 
           <Link to="/contact" className="nav-item nav-link">
             Liên hệ
-          </Link>
+          </Link> */}
 
           <Link to="/login" className="nav-item nav-link">
             <i className="fa fa-user"></i>
