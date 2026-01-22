@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
-/* ===== LAYOUTS ===== */
+import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
 import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
 import LayoutBlank from "../layouts/hoc-vien/LayoutBlank";
 import LayoutGiangVien from "../layouts/giang-vien/LayoutGiangVien";
@@ -75,9 +74,11 @@ export default function AppRouter() {
           <Route path="review" element={<QuanLyReview />} />
           <Route path="cau-hinh" element={<CauHinhHeThong />} /> */}
         </Route>
-
+        <Route path="/hoc-vien" element={<LayoutHocVien />}>
+          <Route path="ho-so" element={<HoSoHocVienPage />} />
+        </Route>
         {/* FALLBACK */}
-        <Route path="*" element={<Navigate to="/dang-nhap" replace />} />
+        {/* <Route path="*" element={<Navigate to="/dang-nhap" replace />} /> */}
 
       </Routes>
     </BrowserRouter>
