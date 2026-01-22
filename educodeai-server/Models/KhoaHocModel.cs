@@ -37,7 +37,7 @@ namespace educodeai_server.Models
 
         public int ThoiLuongGio { get; set; }  // Tổng số giờ học
 
-        [StringLength(50)]
+        [StringLength(500)]
         public string KyNangChinh { get; set; } = null!;  // Ví dụ: ["C#","SQL","REACT"]
 
         public DateTime NgayTao { get; set; } = DateTime.Now;
