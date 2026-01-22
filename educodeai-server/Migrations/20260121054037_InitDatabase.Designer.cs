@@ -12,8 +12,8 @@ using educodeai_server.Data;
 namespace educodeai_server.Migrations
 {
     [DbContext(typeof(EduCodeAIDbContext))]
-    [Migration("20260119114638_create")]
-    partial class create
+    [Migration("20260121054037_InitDatabase")]
+    partial class InitDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -48,9 +48,8 @@ namespace educodeai_server.Migrations
                     b.Property<string>("NoiDung")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ThoiLuong")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int?>("ThoiLuong")
+                        .HasColumnType("int");
 
                     b.Property<int>("ThuTu")
                         .HasColumnType("int");
@@ -364,10 +363,12 @@ namespace educodeai_server.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("KyNangChinh")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("LinhVuc")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -393,6 +394,7 @@ namespace educodeai_server.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("TrinhDo")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
