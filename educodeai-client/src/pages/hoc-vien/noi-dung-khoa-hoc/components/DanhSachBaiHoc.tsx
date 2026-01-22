@@ -15,9 +15,9 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
   const [openChapters, setOpenChapters] = useState<number[]>([]);
 
   const tatCaBaiHoc = cacChuong.flatMap((c) => c.danhSachBaiHoc);
-  const currentIndex = tatCaBaiHoc.findIndex(
-    (b) => b.id === idBaiHocHienTai
-  );
+  // const currentIndex = tatCaBaiHoc.findIndex(
+  //   (b) => b.id === idBaiHocHienTai
+  // );
 
   useEffect(() => {
     const chuongDangHoc = cacChuong.find((c) =>
@@ -104,10 +104,12 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                       (b) => b.id === bai.id
                     );
 
-                    const daHoanThanh = indexBai < currentIndex;
-                    const dangHoc = indexBai === currentIndex;
-                    const biKhoa = indexBai > currentIndex;
+                    // SỬA Ở ĐÂY: Dùng trangThaiDaHoc từ dữ liệu backend
+                    const daHoanThanh = bai.daXem === true; // Hoặc bai.daXem, bai.hoanThanh...
+                    const dangHoc = bai.id === idBaiHocHienTai;
 
+                    // Khóa nếu bài trước chưa hoàn thành (ngoại trừ bài đầu tiên)
+                    const biKhoa = indexBai > 0 && !tatCaBaiHoc[indexBai - 1].daXem;
                     return (
                       <div
                         key={bai.id}
@@ -140,7 +142,7 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                           {daHoanThanh && (
                             <i className="fas fa-check-circle text-success"></i>
                           )}
-                          {dangHoc && (
+                          {dangHoc && !daHoanThanh && (
                             <i className="far fa-dot-circle"></i>
                           )}
                           {biKhoa && <i className="fas fa-lock"></i>}
