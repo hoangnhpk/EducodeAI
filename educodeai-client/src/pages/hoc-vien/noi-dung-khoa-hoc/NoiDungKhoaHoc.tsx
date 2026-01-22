@@ -120,9 +120,9 @@ const NoiDungKhoaHoc = () => {
                         <button className="cp-tab cp-tab-active">
                             <i className="fas fa-play-circle"></i> Bài học
                         </button>
-                        <button className="cp-tab">
+                        {/* <button className="cp-tab">
                             <i className="fas fa-star"></i> Đánh giá
-                        </button>
+                        </button> */}
                     </div>
 
                     <div className="cp-main-content">
