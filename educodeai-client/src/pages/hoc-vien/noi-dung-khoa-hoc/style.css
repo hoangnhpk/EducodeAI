@@ -636,16 +636,36 @@ a {
 /* Floating navigation bar */
 .cp-floating-nav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 20px; /* Cách đáy một chút cho đẹp */
+    left: 50%;
+    transform: translateX(-50%); /* Căn giữa màn hình */
+    z-index: 100;
+    
+    background: #fff;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    padding: 10px 20px;
+    border-radius: 50px; /* Bo tròn giống dạng viên thuốc */
     display: flex;
     justify-content: center;
-    gap: 16px;
-    background: var(--cp-surface);
-    padding: 12px 0;
-    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.08);
-    z-index: 1000;
+    gap: 15px;
+
+    /* --- QUAN TRỌNG: Hiệu ứng ẩn hiện --- */
+    transition: all 0.4s ease-in-out;
+    opacity: 1;
+    visibility: visible;
+}
+
+.cp-floating-nav.hidden {
+    bottom: -80px; /* Đẩy hẳn ra khỏi màn hình */
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Khi hiện: Trở về vị trí cũ */
+.cp-floating-nav.visible {
+    bottom: 20px;
+    opacity: 1;
+    visibility: visible;
 }
 
 .cp-nav-btn {
