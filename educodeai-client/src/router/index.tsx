@@ -18,6 +18,7 @@ import NoiDungKhoaHoc from "@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHoc";
 // import IDEAI from "../pages/hoc-vien/thuc-hanh-ide-ai/IDEAI";
 // import LichSuBaiLam from "../pages/hoc-vien/lich-su-bai-lam/LichSuLamBai";
 import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinhAI";
+import ThongKeHocTap from "@/pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 // import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
 // import TroLyAI from "../pages/hoc-vien/tro-ly-hoi-dap-ai/TroLyAI";
 
@@ -64,8 +65,8 @@ export default function AppRouter() {
           {/* <Route index element={<GVDashboard />} />
           <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
           <Route path="giao-trinh" element={<QuanLyGiaoTrinh />} />
-          <Route path="bai-tap" element={<TaoBaiTap />} />
-          <Route path="thong-ke" element={<ThongKeHocTap />} /> */}
+          <Route path="bai-tap" element={<TaoBaiTap />} />*/
+          <Route path="thong-ke" element={<ThongKeHocTap />} />}
         </Route>
 
         {/* ADMIN */}
