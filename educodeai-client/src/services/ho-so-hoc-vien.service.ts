@@ -23,8 +23,9 @@ export interface UpdateHoSoHocVienDTO {
 
 /* ===== GET ===== */
 export const getHoSoHocVien = async (): Promise<HoSoHocVienDTO> => {
-  const response = await axiosClient.get("/hoc-vien/ho-so");
-  return response.data;
+  const response = await axiosClient.get<HoSoHocVienDTO>("/hoc-vien/ho-so");
+  return response;
+
 };
 
 /* ===== UPDATE ===== */
@@ -38,26 +39,23 @@ export const updateHoSoHocVien = async (
     formData.append("AnhDaiDien", data.AnhDaiDien);
   }
 
-  const response = await axiosClient.put(
-    "/hoc-vien/ho-so",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  const response = await axiosClient.get<HoSoHocVienDTO>("/hoc-vien/ho-so");
+  return response;
 
-  return response.data;
 };
 
+/* ===== DOI MAT KHAU ===== */
 export interface DoiMatKhauPayload {
   matKhauCu: string;
   matKhauMoi: string;
   xacNhanMatKhauMoi: string;
 }
 
-export const doiMatKhau = async (payload: DoiMatKhauPayload) => {
-  const res = await axiosClient.post("/nguoi-dung/doi-mat-khau", payload);
-  return res.data;
+export const doiMatKhau = async (
+  payload: DoiMatKhauPayload
+): Promise<void> => {
+  await axiosClient.post<void>(
+    "/nguoi-dung/doi-mat-khau",
+    payload
+  );
 };
