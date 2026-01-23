@@ -78,16 +78,12 @@
 .page-header h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #ffffff;
-}
-
-.page-header {
-  background-color: white;
+  color: #1e40af;
 }
 
 .page-header p {
   font-size: 14px;
-  color: #ffffff;
+  color: #000000;
   margin-top: 4px;
 }
 
