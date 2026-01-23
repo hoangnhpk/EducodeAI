@@ -60,7 +60,7 @@ namespace educodeai_server.Services.Implementation
             };
         }
 
-        // ================== UPDATE ==================
+        // ================== UPDATE PROFILE ==================
         public async Task<HoSoHocVienDTO> UpdateHoSoHocVien(
             int maNguoiDung,
             UpdateHoSoHocVienDTO dto
@@ -72,10 +72,8 @@ namespace educodeai_server.Services.Implementation
             if (hocVien == null)
                 throw new Exception("Không tìm thấy học viên");
 
-            // update tên
             hocVien.HoTen = dto.HoTen;
 
-            // update ảnh
             if (dto.AnhDaiDien != null)
             {
                 var uploadPath = Path.Combine(
@@ -101,6 +99,34 @@ namespace educodeai_server.Services.Implementation
             await _context.SaveChangesAsync();
 
             return GetHoSoHocVien(maNguoiDung);
+        }
+
+        // ================== ĐỔI MẬT KHẨU ==================
+        public async Task<(bool IsSuccess, string Message)> DoiMatKhauAsync(
+            int maNguoiDung,
+            DoiMatKhauDTO dto
+        )
+        {
+            var user = await _context.NguoiDungs
+                .FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
+
+            if (user == null)
+                return (false, "Người dùng không tồn tại");
+
+            // kiểm tra mật khẩu cũ
+            if (!BCrypt.Net.BCrypt.Verify(dto.MatKhauCu, user.MatKhau))
+                return (false, "Mật khẩu hiện tại không đúng");
+
+            // kiểm tra xác nhận
+            if (dto.MatKhauMoi != dto.XacNhanMatKhauMoi)
+                return (false, "Xác nhận mật khẩu không khớp");
+
+            // hash mật khẩu mới
+            user.MatKhau = BCrypt.Net.BCrypt.HashPassword(dto.MatKhauMoi);
+
+            await _context.SaveChangesAsync();
+
+            return (true, "Đổi mật khẩu thành công");
         }
     }
 }

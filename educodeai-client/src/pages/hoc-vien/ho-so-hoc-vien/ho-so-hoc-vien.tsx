@@ -11,6 +11,7 @@ import "./ho-so-hoc-vien.css";
 
 type TabType = "tong-quan" | "khoa-hoc" | "cai-dat";
 
+
 const HoSoHocVien = () => {
   const [activeTab, setActiveTab] = useState<TabType>("tong-quan");
   const [data, setData] = useState<HoSoHocVienDTO | null>(null);
