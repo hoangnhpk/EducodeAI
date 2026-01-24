@@ -17,7 +17,8 @@ builder.Configuration
 builder.Configuration.AddUserSecrets<Program>();
 // 1. Đăng ký xác thực JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options => {
+    .AddJwtBearer(options =>
+    {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -53,12 +54,13 @@ builder.Services.AddScoped<IHocVienService, HocVienService>();
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.WithOrigins("http://localhost:3000",
+            "http://localhost:5173", "http://localhost:5210")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -102,7 +104,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Kích hoạt CORS (Phải đặt trước UseAuthorization)
-app.UseCors();
+app.UseCors("AllowReactApp");
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
