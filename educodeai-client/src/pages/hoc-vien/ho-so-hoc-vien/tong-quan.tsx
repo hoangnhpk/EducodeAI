@@ -1,35 +1,57 @@
 import { useState } from "react";
-import type {
-  HoSoHocVienDTO,
-  UpdateHoSoHocVienDTO,
-} from "../../../services/ho-so-hoc-vien.service";
+import type { HoSoHocVienDTO } from "../../../services/ho-so-hoc-vien.service";
 import { updateHoSoHocVien } from "../../../services/ho-so-hoc-vien.service";
-import "./ho-so-hoc-vien.css";
+import "./css/tong-quan.css";
 
-interface Props {
+interface TongQuanProps {
   data: HoSoHocVienDTO;
 }
 
-const TongQuan = ({ data }: Props) => {
-  const [showEdit, setShowEdit] = useState(false);
-  const [hoTen, setHoTen] = useState(data.hoTen);
-  const [anhDaiDien, setAnhDaiDien] = useState<File | null>(null);
+const TongQuan = ({ data }: TongQuanProps) => {
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    hoTen: data.hoTen,
+    AnhDaiDien: null as File | null
+  });
+  const [previewImage, setPreviewImage] = useState(data.anhDaiDien || "");
   const [loading, setLoading] = useState(false);
 
+  // Xử lý thay đổi tên
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, hoTen: e.target.value }));
+  };
 
-  const handleSave = async () => {
-    const payload: UpdateHoSoHocVienDTO = {
-      hoTen,
-      AnhDaiDien: anhDaiDien,
-    };
+  // Xử lý upload ảnh
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, AnhDaiDien: file }));
+      
+      // Preview ảnh
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
+  // Xử lý submit
+  const handleSubmit = async () => {
     try {
       setLoading(true);
-      await updateHoSoHocVien(payload);
-      setShowEdit(false);
-      window.location.reload(); // reload lại hồ sơ cho chắc
-    } catch (err) {
-      console.error("Lỗi cập nhật hồ sơ", err);
+      console.log("🔄 Đang cập nhật hồ sơ:", formData);
+      
+      await updateHoSoHocVien(formData);
+      
+      alert("✅ Cập nhật thành công!");
+      setShowModal(false);
+      
+      // Reload trang để lấy data mới
+      window.location.reload();
+    } catch (error: any) {
+      console.error("❌ Lỗi cập nhật:", error);
+      alert(error.message || "Có lỗi xảy ra!");
     } finally {
       setLoading(false);
     }
@@ -37,155 +59,178 @@ const TongQuan = ({ data }: Props) => {
 
   return (
     <div className="tong-quan-container">
-      <div className="tong-quan-content">
-        <div className="tong-quan-header">
-          <h1>Tóm Tắt Học Tập</h1>
-          <p>
-            Đây là không gian học tập cá nhân của bạn. Bạn có thể xem tiến độ,
-            khóa học và chỉnh sửa hồ sơ cá nhân.
-          </p>
+      <div className="tong-quan-layout">
+        
+        {/* ===== LEFT: PROFILE CARD ===== */}
+        <div className="profile-card">
+          <div className="avatar-wrapper">
+            {previewImage || data.anhDaiDien ? (
+              <img
+                src={previewImage || data.anhDaiDien}
+                alt={data.hoTen}
+                className="avatar-img"
+              />
+            ) : (
+              <div className="avatar-img" style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                color: 'white',
+                fontSize: '48px',
+                fontWeight: 'bold'
+              }}>
+                {data.hoTen.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+
+          <div className="profile-info">
+            <h2>{data.hoTen}</h2>
+            <span className="role">
+              {data.vaiTro === 1 ? "Học Viên" : "Giảng Viên"}
+            </span>
+            <p className="email">{data.email}</p>
+          </div>
+
+          <button 
+            className="edit-profile-btn"
+            onClick={() => setShowModal(true)}
+          >
+            Chỉnh Sửa Hồ Sơ
+          </button>
+
+          <div className="profile-mini-stats">
+            <div className="mini-stat-item">
+              <h3>{data.tongKhoaHoc}</h3>
+              <p>Khóa Học</p>
+            </div>
+            <div className="mini-stat-item">
+              <h3>{data.daHoanThanh}</h3>
+              <p>Đã Hoàn Thành</p>
+            </div>
+            <div className="mini-stat-item">
+              <h3>{data.chungChi}</h3>
+              <p>Chứng Chỉ</p>
+            </div>
+          </div>
         </div>
 
-        <div className="tong-quan-grid">
-          {/* PROFILE CARD */}
-          <div className="student-profile-card">
-            <div className="student-profile-content">
-              <div className="student-avatar">
-                {data.anhDaiDien ? (
-                  <img
-                    src={`http://localhost:5210${data.anhDaiDien}`}
-                    alt="avatar"
-                    className="avatar-img"
-                  />
-                ) : (
-                  <span>{data.hoTen?.[0]?.toUpperCase() || "?"}</span>
-                )}
-              </div>
+        {/* ===== RIGHT: MAIN CONTENT ===== */}
+        <div className="main-content">
+          <div className="content-header">
+            <h1>Tóm Tắt Học Tập</h1>
+            <p>
+              Đây là không gian học tập cá nhân của bạn trên Secret Coder. 
+              Tại đây bạn có thể nhanh chóng xem tiến độ tổng thể, các khóa học 
+              bạn đang tham gia và những thành tích bạn đã đạt được.
+            </p>
+          </div>
 
-
-              <h2 className="student-name">{data.hoTen}</h2>
-              <p className="student-role">{data.vaiTro}</p>
-              <p className="student-email">{data.email}</p>
-
-              <button
-                className="edit-profile-btn"
-                onClick={() => setShowEdit(true)}
-              >
-                ✏️ Chỉnh Sửa Hồ Sơ
-              </button>
-
-              <div className="student-stats-grid">
-                <div className="student-stat-item">
-                  <div className="student-stat-number">{data.tongKhoaHoc}</div>
-                  <div className="student-stat-label">Khóa Học</div>
-                </div>
-                <div className="student-stat-item">
-                  <div className="student-stat-number">{data.daHoanThanh}</div>
-                  <div className="student-stat-label">Hoàn Thành</div>
-                </div>
-                <div className="student-stat-item">
-                  <div className="student-stat-number">{data.chungChi}</div>
-                  <div className="student-stat-label">Chứng Chỉ</div>
-                </div>
-              </div>
+          <div className="stats-grid">
+            <div className="stat-card blue">
+              <span className="stat-label">Giờ Đã Học</span>
+              <div className="stat-value">{data.gioDaHoc}h</div>
+            </div>
+            <div className="stat-card purple">
+              <span className="stat-label">Đang Học</span>
+              <div className="stat-value">{data.dangHoc}</div>
+            </div>
+            <div className="stat-card green">
+              <span className="stat-label">Tỷ Lệ Hoàn Thành</span>
+              <div className="stat-value">{data.tyLeHoanThanh}%</div>
             </div>
           </div>
 
-          {/* STATS */}
-          <div className="stats-cards-grid">
-            <div className="stat-card hours">
-              <p className="stat-label">Giờ Đã Học</p>
-              <h2 className="stat-value">{data.gioDaHoc}h</h2>
-            </div>
-
-            <div className="stat-card current">
-              <p className="stat-label">Đang Học</p>
-              <h2 className="stat-value">{data.dangHoc}</h2>
-            </div>
-
-            <div className="stat-card completion">
-              <p className="stat-label">Tỷ Lệ Hoàn Thành</p>
-              <h2 className="stat-value">{data.tyLeHoanThanh}%</h2>
-              <div className="progress-bar-container">
-                <div
-                  className="progress-bar-fill"
-                  style={{ width: `${data.tyLeHoanThanh}%` }}
-                />
+          <div className="progress-section">
+            <h3>Tiến độ học tập tổng thể</h3>
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{ width: `${data.tyLeHoanThanh}%` }}
+              >
+                {data.tyLeHoanThanh > 0 && `${data.tyLeHoanThanh}%`}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* MODAL */}
-      {showEdit && (
-        <div className="modal-overlay" onClick={() => setShowEdit(false)}>
-          <div
-            className="edit-profile-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+      {/* ===== MODAL ===== */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="edit-profile-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Chỉnh sửa hồ sơ</h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowEdit(false)}
-              >
-                ✕
-              </button>
+              <h2>Chỉnh Sửa Hồ Sơ</h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
 
             <div className="modal-body">
-              {/* AVATAR */}
               <div className="avatar-edit">
                 <div className="avatar-preview">
-                  {anhDaiDien ? (
-                    <img
-                      src={URL.createObjectURL(anhDaiDien)}
-                      alt="preview"
-                      className="avatar-img"
-                    />
-                  ) : data.anhDaiDien ? (
-                    <img
-                      src={`http://localhost:5210${data.anhDaiDien}`}
-                      alt="avatar"
-                      className="avatar-img"
-                    />
+                  {previewImage || data.anhDaiDien ? (
+                    <img src={previewImage || data.anhDaiDien} alt="Preview" />
                   ) : (
-                    <span>{hoTen?.[0]?.toUpperCase() || "?"}</span>
+                    <div style={{
+                      width: '100%', height: '100%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '28px', fontWeight: 'bold', color: 'white',
+                      background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                      borderRadius: '50%'
+                    }}>
+                      {data.hoTen.charAt(0).toUpperCase()}
+                    </div>
                   )}
                 </div>
-
-                <label className="upload-btn">
-                  Đổi ảnh đại diện
+                <div>
+                  <label htmlFor="avatar-upload" className="upload-btn">
+                    Đổi ảnh đại diện
+                  </label>
                   <input
+                    id="avatar-upload"
                     type="file"
-                    hidden
                     accept="image/*"
-                    onChange={(e) =>
-                      setAnhDaiDien(e.target.files?.[0] || null)
-                    }
+                    style={{ display: 'none' }}
+                    onChange={handleImageChange}
                   />
-                </label>
+                </div>
               </div>
 
-              {/* NAME */}
               <div className="form-group">
-                <label>Họ tên</label>
+                <label>Họ và Tên</label>
                 <input
                   type="text"
-                  value={hoTen}
-                  onChange={(e) => setHoTen(e.target.value)}
+                  value={formData.hoTen}
+                  onChange={handleNameChange}
+                  placeholder="Nhập họ tên"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Email</label>
+                <input 
+                  type="email" 
+                  value={data.email} 
+                  disabled 
+                  style={{ 
+                    background: '#f1f5f9', 
+                    cursor: 'not-allowed',
+                    color: '#64748b'
+                  }}
                 />
               </div>
             </div>
 
             <div className="modal-actions">
-              <button
-                className="btn-primary"
-                onClick={handleSave}
+              <button className="btn-secondary" onClick={() => setShowModal(false)}>
+                Hủy
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleSubmit}
                 disabled={loading}
               >
-                {loading ? "Đang lưu..." : "Lưu thay đổi"}
+                {loading ? "Đang lưu..." : "Lưu Thay Đổi"}
               </button>
             </div>
           </div>
