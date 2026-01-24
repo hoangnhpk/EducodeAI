@@ -38,9 +38,10 @@ namespace educodeai_server.Services.Implementation
             var user = await _repository.GetUserByEmailAsync(email);
             if (user == null) return false;
 
-            user.MatKhau = newPassword; // Cập nhật mật khẩu mới
-            return await _repository.UpdateUserAsync(user); // Bạn cần thêm hàm Update vào Repository
+            user.PasswordHash = newPassword; // ✅ ĐÚNG TÊN
+            return await _repository.UpdateUserAsync(user);
         }
+
         // --- BỔ SUNG HÀM ĐĂNG KÝ NÀY ---
         public async Task<bool> RegisterAsync(RegisterDto model)
         {
@@ -50,9 +51,10 @@ namespace educodeai_server.Services.Implementation
                 HoTen = model.HoTen,
                 Email = model.Email,
                 TaiKhoan = model.TaiKhoan,
-                MatKhau = model.MatKhau, // Sau này nên dùng BCrypt để mã hóa
+                PasswordHash = model.MatKhau, // ✅ MAP DTO → MODEL
                 NgayThamGia = DateTime.Now
             };
+
 
             // Gọi Repository để lưu vào Database thông qua DbContext
             return await _repository.AddUserAsync(newUser);
