@@ -1,8 +1,7 @@
-import YouTube from 'react-youtube';
-import type { YouTubeEvent } from 'react-youtube';
-import axiosClient from '@/configs/axios';
-import Swal from 'sweetalert2';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import YouTube, { type YouTubeEvent } from 'react-youtube';
+import Swal from 'sweetalert2';
+import axiosClient from '@/configs/axios'; // Đảm bảo đường dẫn đúng
 
 interface Props {
   videoUrl?: string | null;
@@ -18,12 +17,13 @@ export const NoiDungVideo: React.FC<Props> = ({ videoUrl, maBaiHoc, maNguoiDung,
   const [thoiLuongVideo, setThoiLuongVideo] = useState(0);
   const [thoiGianHienTai, setThoiGianHienTai] = useState(0);
   
+  // Refs cho logic Anti-cheat
   const daLuuTienDoRef = useRef(false);
-  const dangCanhBaoRef = useRef(false);
-  
+  const dangCanhBaoRef = useRef(false); // Cờ đang hiện popup cảnh báo tua/ghi chú
   const lastValidVideoTimeRef = useRef(0);
   const lastRealTimeRef = useRef(Date.now());
 
+  // Lấy Video ID từ URL
   const videoId = useMemo(() => {
     if (!videoUrl) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -31,17 +31,19 @@ export const NoiDungVideo: React.FC<Props> = ({ videoUrl, maBaiHoc, maNguoiDung,
     return match && match[2].length === 11 ? match[2] : null;
   }, [videoUrl]);
 
+  // Cấu hình Player
   const tuyChinh = useMemo(() => ({
     height: '100%',
     width: '100%',
     playerVars: {
       autoplay: 1,
-      controls: 1,
+      controls: 1, // Vẫn hiện control để user Pause/Volume, nhưng tua sẽ bị chặn
       modestbranding: 1,
       rel: 0,
     },
   }), []);
 
+  // --- API: Lưu tiến độ ---
   const luuTienDo = useCallback(async (thoiGianThuc: number) => {
     if (daLuuTienDoRef.current || thoiLuongVideo === 0) return;
     daLuuTienDoRef.current = true;
@@ -53,40 +55,104 @@ export const NoiDungVideo: React.FC<Props> = ({ videoUrl, maBaiHoc, maNguoiDung,
         ThoiGianHoc: Math.max(Math.round(thoiGianThuc), 1),
       });
       onVideoCompleted?.(maBaiHoc);
-    } catch (loi) { console.error(loi); }
+    } catch (loi) { console.error('Lỗi lưu tiến độ:', loi); }
   }, [thoiLuongVideo, maBaiHoc, maNguoiDung, onVideoCompleted]);
 
-  // Hàm xử lý khi phát hiện gian lận (tách ra để tái sử dụng)
-  const xuLyGianLan = (lastValidTime: number) => {
+  // --- LOGIC: Xử lý Gian lận (Anti-Cheat) ---
+  const xuLyGianLan = (currentTime: number, lastValidTime: number) => {
     dangCanhBaoRef.current = true;
     playerRef.current.pauseVideo();
+    const soGiayGianLan = Math.round(currentTime - lastValidTime);
 
     Swal.fire({
-      icon: 'error',
-          title: 'Phát hiện gian lận!',
-          html: `
-            Hệ thống chỉ ghi nhận thời gian học thực tế.<br/>
-            Vui lòng không tua video!
-          `,
-          timer: 3000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          backdrop: `rgba(0,0,0,0.7)`,
-          customClass: { container: 'swal-z-index-fix' }
+      icon: 'warning',
+      title: 'Phát hiện tua nhanh!',
+      html: `Bạn đã tua <b>${soGiayGianLan} giây</b>.<br/>Hệ thống yêu cầu học đúng thời lượng thực tế.`,
+      timer: 4000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      backdrop: `rgba(0,0,0,0.7)`,
+      customClass: { container: 'swal-z-index-fix' } // Class css fix z-index nếu cần
     }).then(() => {
       playerRef.current.seekTo(lastValidTime, true);
       playerRef.current.playVideo();
-      
-      // Reset mốc thời gian để tránh lặp lỗi
+      // Reset mốc
       lastRealTimeRef.current = Date.now();
       lastValidVideoTimeRef.current = lastValidTime;
-      
       dangCanhBaoRef.current = false;
     });
   };
 
+  // --- LOGIC: Thêm Ghi Chú (MỚI) ---
+  const themGhiChu = () => {
+    if (!playerRef.current) return;
+    
+    // 1. Pause video & Đặt cờ để Anti-cheat không bắt lỗi lúc này
+    dangCanhBaoRef.current = true; 
+    playerRef.current.pauseVideo();
+
+    // 2. Lấy thời gian hiện tại
+    const thoiDiemGiay = Math.floor(playerRef.current.getCurrentTime());
+    const thoiGianFormat = `${Math.floor(thoiDiemGiay / 60)}:${Math.floor(thoiDiemGiay % 60).toString().padStart(2, '0')}`;
+
+    // 3. Hiện Popup
+    Swal.fire({
+        title: `<span style="font-size:1.2rem">📝 Ghi chú tại <b>${thoiGianFormat}</b></span>`,
+        input: 'textarea',
+        inputPlaceholder: 'Nhập nội dung cần ghi nhớ...',
+        inputAttributes: { 'aria-label': 'Nội dung ghi chú' },
+        showCancelButton: true,
+        confirmButtonText: 'Lưu ghi chú',
+        confirmButtonColor: '#f69050',
+        cancelButtonText: 'Hủy',
+        showLoaderOnConfirm: true,
+        preConfirm: async (noiDung) => {
+            if (!noiDung) {
+                Swal.showValidationMessage('Vui lòng nhập nội dung!');
+                return;
+            }
+            try {
+                // --- GỌI API LƯU DB ---
+                // await axiosClient.post('/GhiChu/Them', { 
+                //    MaBaiHoc: maBaiHoc, 
+                //    MaNguoiDung: maNguoiDung,
+                //    ThoiGianVideo: thoiDiemGiay, 
+                //    NoiDung: noiDung 
+                // });
+                // ---------------------
+                
+                // Giả lập delay mạng 0.5s
+                return new Promise(resolve => setTimeout(() => resolve(noiDung), 500));
+            } catch (error) {
+                Swal.showValidationMessage(`Lỗi: ${error}`);
+            }
+        },
+        allowOutsideClick: false
+    }).then((result) => {
+        // Sau khi đóng popup (dù Lưu hay Hủy)
+        // Reset mốc thời gian thực để Anti-cheat không tính thời gian nhập liệu là thời gian treo máy
+        lastRealTimeRef.current = Date.now();
+        lastValidVideoTimeRef.current = thoiDiemGiay; 
+        
+        dangCanhBaoRef.current = false; // Tắt cờ cảnh báo
+        
+        if (result.isConfirmed) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Đã lưu!',
+                text: 'Ghi chú của bạn đã được lưu thành công.',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            playerRef.current.playVideo();
+        } else {
+            playerRef.current.playVideo();
+        }
+    });
+  };
+
+  // --- Handlers Video ---
   const khiSanSang = (event: YouTubeEvent) => {
     playerRef.current = event.target;
     setDaSanSang(true);
@@ -96,35 +162,35 @@ export const NoiDungVideo: React.FC<Props> = ({ videoUrl, maBaiHoc, maNguoiDung,
   };
 
   const khiTrangThaiThayDoi = (event: YouTubeEvent) => {
-    if (event.data === 0) { // Kết thúc
+    // 0: Ended, 1: Playing, 2: Paused
+    if (event.data === 0) { 
       luuTienDo(playerRef.current?.getDuration() || 0);
     }
     
-    // Khi bấm Play (1), kiểm tra xem trong lúc Pause người dùng có tua đi đâu xa không?
+    // Khi bấm Play lại sau khi Pause
     if (event.data === 1) {
+      if (dangCanhBaoRef.current) return; // Nếu đang nhập ghi chú thì bỏ qua check
+
       const currentVideoTime = playerRef.current.getCurrentTime();
-      // Nếu vị trí hiện tại xa hơn vị trí cũ quá 2 giây -> GIAN LẬN
+      // Check xem lúc Pause có tua đi đâu xa quá 2s không
       if (!daXem && (currentVideoTime - lastValidVideoTimeRef.current > 2)) {
-         xuLyGianLan(lastValidVideoTimeRef.current);
+         xuLyGianLan(currentVideoTime, lastValidVideoTimeRef.current);
          return;
       }
-
-      // Nếu hợp lệ thì mới reset mốc thời gian thực
+      // Reset mốc thời gian thực
       lastRealTimeRef.current = Date.now();
-      // Không update lastValidVideoTimeRef ở đây để đảm bảo tính liên tục
     }
   };
 
+  // --- Loop Check Anti-Cheat ---
   useEffect(() => {
     if (!daSanSang || daLuuTienDoRef.current) return;
 
     const interval = setInterval(() => {
-      if (!playerRef.current) return;
-      if (dangCanhBaoRef.current) return;
+      if (!playerRef.current || dangCanhBaoRef.current) return;
       
-      // Nếu video đang Pause hoặc Buffer thì không check, chỉ cập nhật lại mốc thực tế
       const playerState = playerRef.current.getPlayerState();
-      if (playerState !== 1) { // 1 là Playing
+      if (playerState !== 1) { // Nếu không Playing thì chỉ update RealTime
          lastRealTimeRef.current = Date.now();
          return;
       }
@@ -132,40 +198,33 @@ export const NoiDungVideo: React.FC<Props> = ({ videoUrl, maBaiHoc, maNguoiDung,
       const currentVideoTime = playerRef.current.getCurrentTime() || 0;
       const currentRealTime = Date.now();
       
-      // --- FIX LỖI 1: CHẶN TÍCH LŨY THỜI GIAN KHI TREO TAB ---
-      // Tính thời gian thực trôi qua, NHƯNG KHÔNG ĐƯỢC QUÁ 2 giây (Cap limit)
-      // Dù bạn treo tab 1 tiếng, hệ thống chỉ tính là bạn vừa xem 2 giây thôi.
+      // Chống treo tab: RealTime trôi quá 3s thì reset về 1s
       let realTimePassed = (currentRealTime - lastRealTimeRef.current) / 1000;
-      if (realTimePassed > 3) realTimePassed = 1; // Nếu > 3s nghĩa là lag/treo tab -> reset về 1s chuẩn
+      if (realTimePassed > 3) realTimePassed = 1; 
       
       const videoTimePassed = currentVideoTime - lastValidVideoTimeRef.current;
       const playbackRate = playerRef.current.getPlaybackRate() || 1;
 
-      // Ngưỡng cho phép
-      const allowedProgress = (realTimePassed * playbackRate) + 2; // Giảm buffer xuống 1.5s cho chặt
+      // Công thức: Cho phép = (Thời gian thực * Tốc độ) + Buffer 1.5s
+      const allowedProgress = (realTimePassed * playbackRate) + 1.5; 
 
       if (!daXem && videoTimePassed > allowedProgress) {
-        xuLyGianLan(lastValidVideoTimeRef.current);
+        xuLyGianLan(currentVideoTime, lastValidVideoTimeRef.current);
         return;
       }
       
-      // Update trạng thái hợp lệ
-      // Chỉ update khi video chạy xuôi (videoTimePassed > 0)
-      if (videoTimePassed <= allowedProgress && videoTimePassed > -5) { 
-          lastValidVideoTimeRef.current = currentVideoTime;
-          lastRealTimeRef.current = currentRealTime;
-          setThoiGianHienTai(currentVideoTime);
-      } else if (videoTimePassed < -5) {
-          // Trường hợp tua ngược lại để xem lại bài -> Cho phép và cập nhật mốc mới
+      // Nếu hợp lệ (bao gồm cả tua ngược)
+      if (videoTimePassed <= allowedProgress || videoTimePassed < 0) { 
           lastValidVideoTimeRef.current = currentVideoTime;
           lastRealTimeRef.current = currentRealTime;
           setThoiGianHienTai(currentVideoTime);
       }
 
-      if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.95) {
+      // Check hoàn thành 98%
+      if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.98) {
         luuTienDo(currentVideoTime);
       }
-    }, 700); 
+    }, 1000); 
 
     return () => clearInterval(interval);
   }, [daSanSang, thoiLuongVideo, luuTienDo, daXem]);
@@ -181,7 +240,11 @@ export const NoiDungVideo: React.FC<Props> = ({ videoUrl, maBaiHoc, maNguoiDung,
     setThoiGianHienTai(0);
   }, [videoId]);
 
-  if (!videoId) return <div className="cp-video-frame"><div className="cp-video-inner">Chưa có video</div></div>;
+  if (!videoId) return (
+    <div className="cp-video-frame d-flex align-items-center justify-content-center bg-dark text-white">
+        Chưa có video
+    </div>
+  );
 
   return (
     <div className="cp-tab-pane active" style={{ display: 'block', height: '100%' }}>
@@ -192,12 +255,42 @@ export const NoiDungVideo: React.FC<Props> = ({ videoUrl, maBaiHoc, maNguoiDung,
         onStateChange={khiTrangThaiThayDoi}
         className="cp-video-frame w-100 h-100"
         iframeClassName="w-100 h-100"
-        style={{ aspectRatio: '16/9', borderRadius: '8px' }}
+        style={{ aspectRatio: '16/9', borderRadius: '8px 8px 0 0' }}
       />
+      
       {daSanSang && (
-        <div style={{ padding: '10px', background: '#f8f9fa', textAlign: 'center' }}>
-             {Math.floor(thoiGianHienTai / 60)}:{Math.floor(thoiGianHienTai % 60).toString().padStart(2, '0')} /{' '}
+        <div style={{ 
+            padding: '12px', 
+            background: '#f8f9fa', 
+            border: '1px solid #dee2e6',
+            borderTop: 'none',
+            borderRadius: '0 0 8px 8px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+        }}>
+          {/* Bên trái: Thời gian */}
+          <div style={{ fontWeight: '600', color: '#555', fontSize: '0.95rem' }}>
+            <i className="far fa-clock me-2"></i>
+            {Math.floor(thoiGianHienTai / 60)}:{Math.floor(thoiGianHienTai % 60).toString().padStart(2, '0')} /{' '}
             {Math.floor(thoiLuongVideo / 60)}:{Math.floor(thoiLuongVideo % 60).toString().padStart(2, '0')}
+          </div>
+
+          {/* Bên phải: Nút Ghi chú */}
+          <button 
+            onClick={themGhiChu}
+            className="btn btn-primary btn-sm"
+            style={{ 
+                borderRadius: '20px', 
+                padding: '4px 16px', 
+                fontWeight: '600',
+                backgroundColor: '#f69050',
+                borderColor: '#f69050',
+                boxShadow: '0 2px 5px rgba(246, 144, 80, 0.3)'
+            }}
+          >
+            <i className="fas fa-plus-circle me-1"></i> Thêm ghi chú
+          </button>
         </div>
       )}
     </div>

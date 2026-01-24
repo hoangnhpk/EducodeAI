@@ -19,7 +19,7 @@ const NoiDungKhoaHoc = () => {
     // ... (giữ nguyên hàm layDuLieuKhoaHoc và useEffect)
     const layDuLieuKhoaHoc = async () => {
         if (!id) return;
-        const realId = decodeId("8mep2bMy");
+        const realId = decodeId("pnel5aKB");
         const data = await KhoaHocService.layDuLieuKhoaHoc(realId);
         setKhoaHoc(data);
         if (data && data.danhSachChuongHoc[0]?.danhSachBaiHoc[0]) {

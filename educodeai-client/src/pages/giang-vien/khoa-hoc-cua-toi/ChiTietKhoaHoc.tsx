@@ -1,6 +1,6 @@
 import React from 'react';
-import { FaEnvelope, FaInfoCircle, FaArrowLeft, FaStar } from 'react-icons/fa';
 import { useQuery } from '@tanstack/react-query';
+import { FaEnvelope, FaInfoCircle, FaArrowLeft, FaStar } from 'react-icons/fa';
 import { khoaHocService } from '../../../services/khoa-hoc.service';
 
 interface HocVienTrongLopDTO {
