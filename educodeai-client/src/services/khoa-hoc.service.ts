@@ -61,15 +61,24 @@ tinhPhanTramTienDo(
 
   return Math.round(((idx + 1) / dsPhang.length) * 100)
 },
-}
+};
 
-export const khoaHocService = {
-    getDanhSachKhoaHocGiangVien: async (maGiangVien: number) => {
-        const res = await axios.get(`${API_BASE_URL}/danh-sach/${maGiangVien}`);
-        return res.data;
+export const khoaHocCuaToiService = {
+    async getDanhSach(maGiangVien: number) {
+        try {
+            return await axiosClient.get(`/giang-vien/KhoaHocCuaToi/danh-sach/${maGiangVien}`);
+        } catch (error) {
+            console.error('Không thể tải danh sách:', error);
+            throw error;
+        }
     },
-    getChiTietKhoaHoc: async (id: number) => {
-        const res = await axios.get(`${API_BASE_URL}/chi-tiet/${id}`);
-        return res.data;
+
+    async getChiTiet(id: number) {
+        try {
+            return await axiosClient.get(`/giang-vien/KhoaHocCuaToi/chi-tiet/${id}`);
+        } catch (error) {
+            console.error('Không thể tải chi tiết lớp học:', error);
+            throw error;
+        }
     }
 };

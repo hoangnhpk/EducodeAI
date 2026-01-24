@@ -1,38 +1,42 @@
-/* Màu chủ đạo */
 :root {
     --primary-orange: #fb873f;
+    --primary-hover: #e6762c;
+    --bg-light: #f8f9fa;
+    --text-dark: #2c3e50;
+    --shadow-sm: 0 2px 12px rgba(0,0,0,0.08);
 }
 
+/* --- LAYOUT CHUNG --- */
 .course-container {
-    padding: 30px;
-    background-color: #fcfcfc;
+    padding: 20px;
+    background-color: var(--bg-light);
 }
 
-.section-title {
-    color: var(--primary-orange);
-    font-weight: 700;
-    margin-bottom: 5px;
-}
-
-/* Danh sach Card */
+/* --- CARD KHÓA HỌC --- */
 .course-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
     margin-top: 20px;
 }
 
 .course-card {
     background: white;
-    border-radius: 8px;
-    border: 1px solid #eee;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+}
+
+.course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
 .image-wrapper {
     position: relative;
-    height: 200px;
+    height: 160px;
 }
 
 .image-wrapper img {
@@ -45,79 +49,152 @@
     position: absolute;
     top: 10px;
     left: 10px;
-    background: #ffc107;
+    background: var(--primary-orange);
     color: white;
-    padding: 3px 10px;
-    font-size: 12px;
-    border-radius: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
 }
 
-.student-count-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #198754;
-    color: white;
-    padding: 3px 10px;
-    font-size: 12px;
-    border-radius: 4px;
-}
-
+/* --- NÚT & TIẾN ĐỘ --- */
 .btn-orange {
-    background-color: var(--primary-orange);
+    background: var(--primary-orange);
     color: white;
     border: none;
-    padding: 8px 20px;
-    border-radius: 20px;
-    cursor: pointer;
+    padding: 10px;
+    border-radius: 8px;
     font-weight: 600;
+    width: 100%;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
+    transition: 0.2s;
 }
 
-/* Chi tiet khoa hoc */
+.btn-orange:hover {
+    background: var(--primary-hover);
+    color: white;
+}
+
+.pg-container {
+    height: 8px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.pg-bar {
+    height: 100%;
+    background: var(--primary-orange);
+}
+
+/* --- THỐNG KÊ CHI TIẾT --- */
+.stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
 .stat-card {
     background: white;
-    border: 1px solid #e0e0e0;
-    padding: 20px;
+    padding: 15px;
+    border-radius: 10px;
     text-align: center;
-    border-radius: 4px;
+    box-shadow: var(--shadow-sm);
 }
 
 .stat-value {
-    font-size: 24px;
-    font-weight: 800;
-    margin-top: 10px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-orange);
+}
+/* --- MODAL CHI TIẾT HỌC VIÊN --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    animation: fadeIn 0.3s ease;
 }
 
-.student-table {
-    width: 100%;
-    border-collapse: collapse;
+.modal-content-custom {
     background: white;
-    margin-top: 15px;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    border: none;
+    animation: slideUp 0.3s ease;
 }
 
-.student-table th {
-    text-align: left;
+.modal-header-custom {
+    background: var(--primary-orange);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header-custom h5 {
+    margin: 0;
+    font-weight: 700;
+}
+
+.modal-body-custom {
+    padding: 25px;
+}
+
+/* --- THÔNG TIN CHI TIẾT TRONG MODAL --- */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.info-item {
+    background: #f8f9fa;
     padding: 15px;
-    border-bottom: 2px solid #f0f0f0;
-    color: #333;
+    border-radius: 10px;
+    border-left: 4px solid var(--primary-orange);
 }
 
-.student-table td {
-    padding: 15px;
-    border-bottom: 1px solid #f0f0f0;
+.info-label {
+    font-size: 0.75rem;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    font-weight: 600;
 }
-
-.avatar-circle {
-    width: 40px;
-    height: 40px;
+.avatar-placeholder {
+    width: 65px;
+    height: 65px;
+    background: linear-gradient(135deg, #fb873f, #e6762c);
+    color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    font-size: 1.5rem;
     font-weight: bold;
-    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(251, 135, 63, 0.3);
+}
+
+.modal-body-custom textarea {
+    border: 1px dashed #ccc;
+    resize: none;
+    height: 80px;
 }

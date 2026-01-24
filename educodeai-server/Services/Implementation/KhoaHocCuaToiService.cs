@@ -33,8 +33,9 @@ namespace educodeai_server.Services.Implementation
         public async Task<ChiTietKhoaHocDTO?> GetChiTietKhoaHoc(int maKhoaHoc)
         {
             var khoaHoc = await _khoaHocRepo.GetKhoaHocWithDetailsAsync(maKhoaHoc);
-            if (khoaHoc == null) return null;
-
+            if (khoaHoc == null) {
+                return null;
+            }
             var dsHocVien = khoaHoc.DangKyKhoaHocs.ToList();
 
             return new ChiTietKhoaHocDTO
