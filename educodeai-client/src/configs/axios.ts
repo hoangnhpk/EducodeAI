@@ -6,18 +6,27 @@ const axiosClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // withCredentials: true,
+  withCredentials: true,
 });
 
 // Request Interceptor
 axiosClient.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     console.log("📤 Request:", config.method?.toUpperCase(), config.url);
     console.log("🌐 Base URL:", config.baseURL);
+    console.log("🔐 Token:", token ? "Có" : "Không có");
+
     return config;
   },
   (error) => Promise.reject(error)
 );
+
 
 // Response Interceptor
 axiosClient.interceptors.response.use(

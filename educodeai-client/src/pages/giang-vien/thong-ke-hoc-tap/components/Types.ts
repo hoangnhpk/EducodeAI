@@ -1,4 +1,57 @@
-// src/types/types.ts
+// ================== API RESPONSE TYPES ==================
+
+export interface PagedResult<T> {
+  total: number;
+  data: T[];
+}
+
+// ================== OVERVIEW ==================
+
+export interface ThongKeOverview {
+  gioHocTrungBinh: number;
+  soKhoaHocDangDay: number;
+  tongBaiTap: number;
+  tyLeHoanThanhTB: number;
+}
+
+// ================== TRẠNG THÁI HỌC VIÊN ==================
+
+export interface TrangThaiHocVien {
+  trangThai: string; // "Hoàn thành", "Đang học", "Chưa bắt đầu", "Nguy cơ bỏ học"
+  soLuong: number;
+}
+
+// ================== TIẾN ĐỘ THEO THỜI GIAN ==================
+
+export interface TienDoTheoThoiGian {
+  tuan: number;
+  tyLeHoanThanh: number;
+}
+
+// ================== HỌC VIÊN ==================
+
+export interface HocVien {
+  maHocVien: number;
+  tenHocVien: string;
+  email: string;
+  anhDaiDien?: string;
+  soKhoaHocThamGia: number;
+  soBaiTapHoanThanh: number;
+  tongBaiTap: number;
+  tyLeHoanThanh: number;
+  diemTrungBinh: number;
+  trangThai: string; // "Hoàn thành" | "Đang học" | "Nguy cơ bỏ học"
+}
+
+// ================== API PARAMS ==================
+
+export interface HocVienParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+}
+
+// ================== OLD TYPES (GIỮ LẠI ĐỂ TƯƠNG THÍCH) ==================
 
 export interface Student {
   id: number;
@@ -7,15 +60,18 @@ export interface Student {
   completion: number;
   assignments: number;
   avgScore: number;
-  status: "completed" | "in-progress" | "at-risk";
-  course: string;
+  status: 'completed' | 'in-progress' | 'at-risk';
 }
 
-export interface Assignment {
-  id: number;
+// ================== CHART DATA ==================
+
+export interface ChartDataPoint {
   name: string;
-  total: number;
-  submitted: number;
-  notSubmitted: number;
-  rate: number;
+  value: number;
+  color?: string;
+}
+
+export interface ProgressDataPoint {
+  week: string;
+  value: number;
 }

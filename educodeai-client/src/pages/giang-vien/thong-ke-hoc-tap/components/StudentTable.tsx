@@ -1,52 +1,66 @@
-import type { Student } from "./Types";
-import { Eye } from "lucide-react";
+import type { HocVien } from "./Types";
+import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import "./css/student-table.css";
 
 interface Props {
-  students: Student[];
-  searchTerm: string;
+  students: HocVien[];
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
-const StudentTable = ({ students, searchTerm }: Props) => {
+const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props) => {
   /* ===== STATUS BADGE ===== */
-  const getStatusBadge = (status: string) => {
-    const map: Record<
-      string,
-      { label: string; className: string }
-    > = {
-      completed: {
+  const getStatusBadge = (trangThai: string) => {
+    const map: Record<string, { label: string; className: string }> = {
+      "Hoàn thành": {
         label: "HOÀN THÀNH",
         className: "status-badge status-completed",
       },
-      "in-progress": {
+      "Đang học": {
         label: "ĐANG HỌC",
         className: "status-badge status-learning",
       },
-      "at-risk": {
+      "Nguy cơ bỏ học": {
         label: "NGUY CƠ BỎ HỌC",
         className: "status-badge status-risk",
+      },
+      "Chưa bắt đầu": {
+        label: "CHƯA BẮT ĐẦU",
+        className: "status-badge status-not-started",
       },
     };
 
     return (
-      <span className={map[status]?.className}>
-        {map[status]?.label}
+      <span className={map[trangThai]?.className || "status-badge"}>
+        {map[trangThai]?.label || trangThai}
       </span>
     );
   };
 
-  /* ===== FILTER ===== */
-  const filteredStudents = students.filter(
-    (s) =>
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   /* ===== PROGRESS COLOR ===== */
-  const getProgressClass = (completion: number) => {
-    if (completion >= 80) return "progress-green";
-    if (completion >= 50) return "progress-yellow";
+  const getProgressClass = (tyLeHoanThanh: number) => {
+    if (tyLeHoanThanh >= 80) return "progress-green";
+    if (tyLeHoanThanh >= 50) return "progress-yellow";
     return "progress-red";
+  };
+
+  /* ===== AVATAR ===== */
+  const getAvatar = (hocVien: HocVien) => {
+    if (hocVien.anhDaiDien) {
+      return (
+        <img 
+          src={hocVien.anhDaiDien} 
+          alt={hocVien.tenHocVien}
+          className="student-avatar-img"
+        />
+      );
+    }
+    return (
+      <div className="student-avatar">
+        {hocVien.tenHocVien.charAt(0).toUpperCase()}
+      </div>
+    );
   };
 
   return (
@@ -56,6 +70,7 @@ const StudentTable = ({ students, searchTerm }: Props) => {
           <tr>
             <th>Họ tên</th>
             <th>Email</th>
+            <th>Khóa học</th>
             <th>% Hoàn thành</th>
             <th>Số bài đã nộp</th>
             <th>Điểm TB</th>
@@ -65,20 +80,25 @@ const StudentTable = ({ students, searchTerm }: Props) => {
         </thead>
 
         <tbody>
-          {filteredStudents.map((student) => (
-            <tr key={student.id}>
+          {students.map((hocVien) => (
+            <tr key={hocVien.maHocVien}>
               {/* ===== NAME ===== */}
               <td>
                 <div className="student-info">
-                  <div className="student-avatar">
-                    {student.name.charAt(0)}
-                  </div>
-                  <strong>{student.name}</strong>
+                  {getAvatar(hocVien)}
+                  <strong>{hocVien.tenHocVien}</strong>
                 </div>
               </td>
 
               {/* ===== EMAIL ===== */}
-              <td>{student.email}</td>
+              <td>{hocVien.email}</td>
+
+              {/* ===== COURSES ===== */}
+              <td>
+                <span className="course-badge">
+                  {hocVien.soKhoaHocThamGia} khóa
+                </span>
+              </td>
 
               {/* ===== PROGRESS ===== */}
               <td>
@@ -86,27 +106,29 @@ const StudentTable = ({ students, searchTerm }: Props) => {
                   <div className="progress-bar">
                     <div
                       className={`progress-fill ${getProgressClass(
-                        student.completion
+                        hocVien.tyLeHoanThanh
                       )}`}
-                      style={{ width: `${student.completion}%` }}
+                      style={{ width: `${hocVien.tyLeHoanThanh}%` }}
                     />
                   </div>
-                  <strong>{student.completion}%</strong>
+                  <strong>{hocVien.tyLeHoanThanh.toFixed(1)}%</strong>
                 </div>
               </td>
 
               {/* ===== ASSIGNMENTS ===== */}
               <td>
                 <span className="assignment-badge">
-                  {student.assignments}/12
+                  {hocVien.soBaiTapHoanThanh}/{hocVien.tongBaiTap}
                 </span>
               </td>
 
               {/* ===== AVG SCORE ===== */}
-              <td className="avg-score">{student.avgScore}</td>
+              <td className="avg-score">
+                {hocVien.diemTrungBinh.toFixed(1)}
+              </td>
 
               {/* ===== STATUS ===== */}
-              <td>{getStatusBadge(student.status)}</td>
+              <td>{getStatusBadge(hocVien.trangThai)}</td>
 
               {/* ===== ACTION ===== */}
               <td>
@@ -118,15 +140,42 @@ const StudentTable = ({ students, searchTerm }: Props) => {
             </tr>
           ))}
 
-          {filteredStudents.length === 0 && (
+          {students.length === 0 && (
             <tr>
-              <td colSpan={7} style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={8} style={{ textAlign: "center", padding: 24 }}>
                 Không tìm thấy học viên
               </td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* ===== PAGINATION ===== */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button
+            className="pagination-btn"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft size={18} />
+            Trước
+          </button>
+
+          <div className="pagination-info">
+            Trang {currentPage} / {totalPages}
+          </div>
+
+          <button
+            className="pagination-btn"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Sau
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
