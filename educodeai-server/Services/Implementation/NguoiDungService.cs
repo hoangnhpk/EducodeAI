@@ -60,26 +60,38 @@ namespace educodeai_server.Services.Implementation
 
         public string GenerateJwtToken(NguoiDungModel user)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var securityKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])
+            );
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+            string role = user.VaiTro switch
+            {
+                1 => "Admin",
+                2 => "GiangVien",
+                3 => "HocVien",
+                _ => "User"
+            };
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim("id", user.MaNguoiDung.ToString()),
-                new Claim(ClaimTypes.Name, user.HoTen ?? ""),
-                new Claim(ClaimTypes.Role, "User")
-            };
+        new Claim(JwtRegisteredClaimNames.Sub, user.Email ?? ""),
+        new Claim("id", user.MaNguoiDung.ToString()),
+        new Claim(ClaimTypes.Name, user.HoTen ?? ""),
+        new Claim(ClaimTypes.Role, role)
+    };
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddDays(1),
-                signingCredentials: credentials);
+                signingCredentials: credentials
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
 
     }
 }
