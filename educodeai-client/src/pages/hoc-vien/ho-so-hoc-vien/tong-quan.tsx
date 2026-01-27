@@ -3,6 +3,9 @@ import type { HoSoHocVienDTO } from "../../../services/ho-so-hoc-vien.service";
 import { updateHoSoHocVien } from "../../../services/ho-so-hoc-vien.service";
 import "./css/tong-quan.css";
 
+// 👉 URL backend (bỏ /api)
+const BE_URL = import.meta.env.VITE_API_URL.replace("/api", "");
+
 interface TongQuanProps {
   data: HoSoHocVienDTO;
 }
@@ -11,43 +14,48 @@ const TongQuan = ({ data }: TongQuanProps) => {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     hoTen: data.hoTen,
-    AnhDaiDien: null as File | null
+    AnhDaiDien: null as File | null,
   });
-  const [previewImage, setPreviewImage] = useState(data.anhDaiDien || "");
+
+  // 👉 previewImage luôn là URL HỢP LỆ để <img> dùng
+  const [previewImage, setPreviewImage] = useState<string>(
+    data.anhDaiDien ? `${BE_URL}${data.anhDaiDien}` : ""
+  );
+
   const [loading, setLoading] = useState(false);
 
-  // Xử lý thay đổi tên
+  // ===== HANDLE NAME =====
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, hoTen: e.target.value }));
+    setFormData((prev) => ({ ...prev, hoTen: e.target.value }));
   };
 
-  // Xử lý upload ảnh
+  // ===== HANDLE IMAGE =====
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, AnhDaiDien: file }));
-      
-      // Preview ảnh
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    setFormData((prev) => ({ ...prev, AnhDaiDien: file }));
+
+    // Preview base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
-  // Xử lý submit
+  // ===== SUBMIT =====
   const handleSubmit = async () => {
     try {
       setLoading(true);
       console.log("🔄 Đang cập nhật hồ sơ:", formData);
-      
+
       await updateHoSoHocVien(formData);
-      
+
       alert("✅ Cập nhật thành công!");
       setShowModal(false);
-      
-      // Reload trang để lấy data mới
+
+      // Reload để lấy data mới từ API
       window.location.reload();
     } catch (error: any) {
       console.error("❌ Lỗi cập nhật:", error);
@@ -57,29 +65,33 @@ const TongQuan = ({ data }: TongQuanProps) => {
     }
   };
 
+  // ===== AVATAR SRC =====
+  const avatarSrc =
+    previewImage ||
+    (data.anhDaiDien ? `${BE_URL}${data.anhDaiDien}` : "");
+
   return (
     <div className="tong-quan-container">
       <div className="tong-quan-layout">
-        
-        {/* ===== LEFT: PROFILE CARD ===== */}
+        {/* ===== LEFT ===== */}
         <div className="profile-card">
           <div className="avatar-wrapper">
-            {previewImage || data.anhDaiDien ? (
-              <img
-                src={previewImage || data.anhDaiDien}
-                alt={data.hoTen}
-                className="avatar-img"
-              />
+            {avatarSrc ? (
+              <img src={avatarSrc} alt={data.hoTen} className="avatar-img" />
             ) : (
-              <div className="avatar-img" style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-                color: 'white',
-                fontSize: '48px',
-                fontWeight: 'bold'
-              }}>
+              <div
+                className="avatar-img"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background:
+                    "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+                  color: "white",
+                  fontSize: "48px",
+                  fontWeight: "bold",
+                }}
+              >
                 {data.hoTen.charAt(0).toUpperCase()}
               </div>
             )}
@@ -93,7 +105,7 @@ const TongQuan = ({ data }: TongQuanProps) => {
             <p className="email">{data.email}</p>
           </div>
 
-          <button 
+          <button
             className="edit-profile-btn"
             onClick={() => setShowModal(true)}
           >
@@ -116,14 +128,12 @@ const TongQuan = ({ data }: TongQuanProps) => {
           </div>
         </div>
 
-        {/* ===== RIGHT: MAIN CONTENT ===== */}
+        {/* ===== RIGHT ===== */}
         <div className="main-content">
           <div className="content-header">
             <h1>Tóm Tắt Học Tập</h1>
             <p>
-              Đây là không gian học tập cá nhân của bạn trên Secret Coder. 
-              Tại đây bạn có thể nhanh chóng xem tiến độ tổng thể, các khóa học 
-              bạn đang tham gia và những thành tích bạn đã đạt được.
+              Đây là không gian học tập cá nhân của bạn trên Secret Coder.
             </p>
           </div>
 
@@ -141,59 +151,62 @@ const TongQuan = ({ data }: TongQuanProps) => {
               <div className="stat-value">{data.tyLeHoanThanh}%</div>
             </div>
           </div>
-
-          <div className="progress-section">
-            <h3>Tiến độ học tập tổng thể</h3>
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: `${data.tyLeHoanThanh}%` }}
-              >
-                {data.tyLeHoanThanh > 0 && `${data.tyLeHoanThanh}%`}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* ===== MODAL ===== */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="edit-profile-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="edit-profile-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>Chỉnh Sửa Hồ Sơ</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
+              <button
+                className="modal-close"
+                onClick={() => setShowModal(false)}
+              >
+                ✕
+              </button>
             </div>
 
             <div className="modal-body">
               <div className="avatar-edit">
                 <div className="avatar-preview">
-                  {previewImage || data.anhDaiDien ? (
-                    <img src={previewImage || data.anhDaiDien} alt="Preview" />
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="Preview" />
                   ) : (
-                    <div style={{
-                      width: '100%', height: '100%',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '28px', fontWeight: 'bold', color: 'white',
-                      background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-                      borderRadius: '50%'
-                    }}>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "28px",
+                        fontWeight: "bold",
+                        color: "white",
+                        background:
+                          "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+                        borderRadius: "50%",
+                      }}
+                    >
                       {data.hoTen.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
-                <div>
-                  <label htmlFor="avatar-upload" className="upload-btn">
-                    Đổi ảnh đại diện
-                  </label>
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={handleImageChange}
-                  />
-                </div>
+
+                <label htmlFor="avatar-upload" className="upload-btn">
+                  Đổi ảnh đại diện
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleImageChange}
+                />
               </div>
 
               <div className="form-group">
@@ -202,31 +215,24 @@ const TongQuan = ({ data }: TongQuanProps) => {
                   type="text"
                   value={formData.hoTen}
                   onChange={handleNameChange}
-                  placeholder="Nhập họ tên"
                 />
               </div>
 
               <div className="form-group">
                 <label>Email</label>
-                <input 
-                  type="email" 
-                  value={data.email} 
-                  disabled 
-                  style={{ 
-                    background: '#f1f5f9', 
-                    cursor: 'not-allowed',
-                    color: '#64748b'
-                  }}
-                />
+                <input type="email" value={data.email} disabled />
               </div>
             </div>
 
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowModal(false)}>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowModal(false)}
+              >
                 Hủy
               </button>
-              <button 
-                className="btn-primary" 
+              <button
+                className="btn-primary"
                 onClick={handleSubmit}
                 disabled={loading}
               >
