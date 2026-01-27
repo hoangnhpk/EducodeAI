@@ -41,26 +41,5 @@ namespace educodeai_server.Controllers.HocVien
 
             return Ok(result);
         }
-
-        // ================== CHANGE PASSWORD ==================
-        [Authorize]
-        [HttpPost("doi-mat-khau")]
-        public async Task<IActionResult> DoiMatKhau(DoiMatKhauDTO dto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            var result = await _hocVienService.DoiMatKhauAsync(
-                int.Parse(userId),
-                dto
-            );
-
-            if (!result.IsSuccess)
-                return BadRequest(result.Message);
-
-            return Ok(result.Message);
-        }
     }
 }

@@ -13,5 +13,7 @@ namespace educodeai_server.Services.Interface
         Task<bool> RegisterAsync(RegisterDto model);
         Task<bool> IsEmailExistAsync(string email);
         Task<bool> UpdatePasswordAsync(string email, string newPassword);
+
+        Task DoiMatKhauAsync(int userId, DoiMatKhauDTO dto); //Đổi mật khẩu khi đã đăng nhập
     }
 }
