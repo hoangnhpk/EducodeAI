@@ -49,14 +49,14 @@ namespace educodeai_server.Services.Implementation
 
             var aiResult = await _gemini.GenerateAsync(prompt);
 
-            var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
+            //var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
 
             var loTrinh = new LoTrinhAIModel
             {
-                MaNguoiDung = 8,
+                MaNguoiDung = maNguoiDung,
                 YeuCau = prompt,
-                NoiDungJSON = resultChuanHoa,
-                TrangThai = "Draft",
+                NoiDungJSON = aiResult,
+                TrangThai = "Nháp",
                 NgayTao = DateTime.Now
             };
 
@@ -65,7 +65,7 @@ namespace educodeai_server.Services.Implementation
             return new LoTrinhAIResponseDto
             {
                 MaLoTrinh = loTrinh.MaLoTrinh,
-                NoiDungJSON = resultChuanHoa
+                NoiDungJSON = aiResult
             };
         }
 
@@ -74,7 +74,7 @@ namespace educodeai_server.Services.Implementation
             var loTrinh = await _loTrinhRepo.GetByIdAsync(maLoTrinh);
             if (loTrinh == null) throw new Exception("Không tìm thấy lộ trình");
 
-            loTrinh.TrangThai = "Active"; // Chuyển sang chính thức
+            loTrinh.TrangThai = "Hoạt động"; // Chuyển sang chính thức
             await _loTrinhRepo.UpdateAsync(loTrinh);
 
             return true;
@@ -124,15 +124,19 @@ namespace educodeai_server.Services.Implementation
 
                 === YÊU CẦU XỬ LÝ ===
                 1. Tạo lộ trình học theo từng tuần.
-                2. Bỏ qua hoặc rút gọn nội dung học viên đã biết.
+                2. Bỏ qua hoặc rút gọn các khoá học trùng với kiến thức học viên đã có.
                 3. Chỉ sử dụng khoá học trong danh sách INPUT.
-                4. Không suy đoán ra ngoài dữ liệu, nhưng được suy luận nội bộ để chia tuần.
-                5. Kết quả trả về JSON thuần, không giải thích.
-                6. Nếu một khoá học dài, có thể chia ra nhiều tuần.
-                7. BẮT BUỘC tạo ít nhất 1 tuần học nếu có bất kỳ khoá học nào phù hợp.
-                8. tối đa 4 giai đoạn học chính, tương ứng với các lĩnh vực tập trung
-                9. Mỗi giai đoạn học cần có mục tiêu rõ ràng, liên quan đến lĩnh vực tập trung, và có sự liên kết với nhau.
-                10. Mỗi phương diện chỉ được tập trung 1 cái và đừng lan man qua các phương diện khác tập trung về mục tiêu nghề nghiệp người dùng và lĩnh vực muốn tập trung để đưa ra khoá học phù hợp
+                4. Tổng số tuần KHÔNG ĐƯỢC vượt quá thời gian học dự kiến của học viên.
+                5. Có thể chia một khoá học ra nhiều tuần nếu thời lượng dài.
+                6. Phải tạo ÍT NHẤT 1 tuần học nếu tồn tại khoá học phù hợp.
+                7. Tối đa 4 giai đoạn học chính.
+                8. Mỗi giai đoạn:
+                - Chỉ tập trung MỘT lĩnh vực liên quan trực tiếp đến mục tiêu nghề nghiệp
+                - Có mục tiêu rõ ràng
+                - Có sự liên kết logic với giai đoạn trước
+                9. Không lan man sang lĩnh vực khác nếu không phục vụ mục tiêu nghề nghiệp.
+                10. Tổng thời gian học = tổng số tuần trong toàn bộ lộ trình
+                11. Nếu học viên đã biết một số kiến thức, ưu tiên chọn khoá học có liên quan đến nó.
 
                 JSON output PHẢI có cấu trúc GIỐNG HỆT schema dưới đây.
                 Mọi mảng trong JSON phải có ít nhất 1 phần tử nếu có dữ liệu phù hợp.
