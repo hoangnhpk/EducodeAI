@@ -7,10 +7,10 @@ import type {
   HocVienParams,
 } from '../pages/giang-vien/thong-ke-hoc-tap/components/Types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5210';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5210/api';
 
 const apiClient = axios.create({
-  baseURL: `${API_BASE_URL}/api/giang-vien/thong-ke`,
+  baseURL: `${API_BASE_URL}/giang-vien/thong-ke`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -18,9 +18,9 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = token;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -34,6 +34,7 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       console.error('Unauthorized - Token expired or invalid');
+      // Có thể redirect về login
     }
     return Promise.reject(error);
   }

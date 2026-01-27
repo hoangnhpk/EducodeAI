@@ -2,6 +2,9 @@
 using educodeai_server.Services.Interface;
 using educodeai_server.DTOs.NguoiDung;
 using educodeai_server.Helpers;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+
 
 namespace educodeai_server.Controllers
 {
@@ -63,6 +66,14 @@ namespace educodeai_server.Controllers
             return BadRequest("Không thể gửi email xác thực.");
         }
 
+        [HttpGet("test-hash")]
+        public IActionResult TestHash()
+        {
+            var hash = BCrypt.Net.BCrypt.HashPassword("123456");
+            return Ok(hash);
+        }
+
+
         [HttpPost("confirm-register")]
         public async Task<IActionResult> ConfirmRegister([FromBody] RegisterDto model)
         {
@@ -100,5 +111,31 @@ namespace educodeai_server.Controllers
             if (result) return Ok(new { message = "Đặt lại mật khẩu thành công!" });
             return BadRequest("Lỗi hệ thống hoặc email không tồn tại.");
         }
+
+        [Authorize]
+        [HttpPost("doi-mat-khau")]
+        public async Task<IActionResult> DoiMatKhau([FromBody] DoiMatKhauDTO dto)
+        {
+            try
+            {
+                int userId = int.Parse(User.FindFirst("id")!.Value);
+
+                // DEBUG LOG
+                Console.WriteLine("👤 [DOI_MAT_KHAU] UserId từ JWT = " + userId);
+                Console.WriteLine("🔐 [DOI_MAT_KHAU] MatKhauCu = " + dto.MatKhauCu);
+                Console.WriteLine("🔐 [DOI_MAT_KHAU] MatKhauMoi = " + dto.MatKhauMoi);
+
+
+                await _userService.DoiMatKhauAsync(userId, dto);
+
+                return Ok(new { message = "Đổi mật khẩu thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
     }
 }

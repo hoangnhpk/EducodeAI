@@ -25,7 +25,6 @@ namespace educodeai_server.Services.Implementation
 
             int soKhoaHocDangDay = khoaHocIds.Count;
 
-            // ✅ FIX: BaiTap -> BaiHoc -> ChuongHoc -> KhoaHoc
             int tongBaiTap = await _context.BaiTaps
                 .Where(bt =>
                     _context.BaiHocs
