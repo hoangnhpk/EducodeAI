@@ -11,11 +11,11 @@ const axiosClient = axios.create({
 // ======================
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("user_token");
 
     // Gắn token nếu có
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token.trim()}`;
     }
 
     if (config.data instanceof FormData) {
@@ -60,8 +60,8 @@ axiosClient.interceptors.response.use(
 );
 
 export default axiosClient as {
-  get<T>(url: string): Promise<T>;
-  post<T>(url: string, data?: any): Promise<T>;
-  put<T>(url: string, data?: any): Promise<T>;
-  delete<T>(url: string): Promise<T>;
+  get<T>(url: string, config?: any): Promise<T>;
+  post<T>(url: string, data?: any, config?: any): Promise<T>;
+  put<T>(url: string, data?: any, config?: any): Promise<T>;
+  delete<T>(url: string, config?: any): Promise<T>;
 };
