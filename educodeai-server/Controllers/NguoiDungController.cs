@@ -69,7 +69,7 @@ namespace educodeai_server.Controllers
         [HttpGet("test-hash")]
         public IActionResult TestHash()
         {
-            var hash = BCrypt.Net.BCrypt.HashPassword("123456");
+            var hash = BCrypt.Net.BCrypt.HashPassword("123456", 11);
             return Ok(hash);
         }
 

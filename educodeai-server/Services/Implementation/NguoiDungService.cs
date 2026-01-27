@@ -74,6 +74,7 @@ namespace educodeai_server.Services.Implementation
             var securityKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])
             );
+            Console.WriteLine("JWT KEY (SIGN): " + _configuration["Jwt:Key"]);//Tạm thời log key
 
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
@@ -88,7 +89,7 @@ namespace educodeai_server.Services.Implementation
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email ?? ""),
-                new Claim("id", user.MaNguoiDung.ToString()),
+                new Claim("MaNguoiDung", user.MaNguoiDung.ToString()),
                 new Claim(ClaimTypes.Name, user.HoTen ?? ""),
                 new Claim(ClaimTypes.Role, role)
             };

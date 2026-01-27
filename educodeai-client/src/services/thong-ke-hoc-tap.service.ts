@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axiosClient from '@/configs/axios';
 import type {
   ThongKeOverview,
   TrangThaiHocVien,
@@ -7,49 +7,13 @@ import type {
   HocVienParams,
 } from '../pages/giang-vien/thong-ke-hoc-tap/components/Types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5210/api';
-
-const apiClient = axios.create({
-  baseURL: `${API_BASE_URL}/giang-vien/thong-ke`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      console.error('Unauthorized - Token expired or invalid');
-      // Có thể redirect về login
-    }
-    return Promise.reject(error);
-  }
-);
-
-// ================== API FUNCTIONS ==================
-
 export const thongKeHocTapService = {
   /**
    * Lấy thống kê tổng quan
    * GET /api/giang-vien/thong-ke/overview
    */
   getOverview: async (): Promise<ThongKeOverview> => {
-    const response = await apiClient.get<ThongKeOverview>('/overview');
-    return response.data;
+    return axiosClient.get<ThongKeOverview>('/giang-vien/thong-ke/overview');
   },
 
   /**
@@ -57,8 +21,7 @@ export const thongKeHocTapService = {
    * GET /api/giang-vien/thong-ke/trang-thai-hoc-vien
    */
   getTrangThaiHocVien: async (): Promise<TrangThaiHocVien[]> => {
-    const response = await apiClient.get<TrangThaiHocVien[]>('/trang-thai-hoc-vien');
-    return response.data;
+    return axiosClient.get<TrangThaiHocVien[]>('/giang-vien/thong-ke/trang-thai-hoc-vien');
   },
 
   /**
@@ -66,14 +29,13 @@ export const thongKeHocTapService = {
    * GET /api/giang-vien/thong-ke/hoc-vien
    */
   getHocVien: async (params?: HocVienParams): Promise<PagedResult<HocVien>> => {
-    const response = await apiClient.get<PagedResult<HocVien>>('/hoc-vien', {
+    return axiosClient.get<PagedResult<HocVien>>('/giang-vien/thong-ke/hoc-vien', {
       params: {
         page: params?.page || 1,
         pageSize: params?.pageSize || 10,
         search: params?.search || undefined,
       },
     });
-    return response.data;
   },
 };
 
