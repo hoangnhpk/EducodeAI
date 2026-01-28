@@ -136,7 +136,7 @@ namespace educodeai_server.Controllers
                 Console.WriteLine("🔐 [DOI_MAT_KHAU] MatKhauMoi = " + dto.MatKhauMoi);
 
 
-                await _userService.DoiMatKhauAsync(userId, dto);
+                //await _userService.DoiMatKhauAsync(userId, dto);
 
                 return Ok(new { message = "Đổi mật khẩu thành công" });
             }

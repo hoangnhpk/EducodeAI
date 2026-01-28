@@ -80,7 +80,7 @@ namespace educodeai_server.Services.Implementation
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim("id", user.MaNguoiDung.ToString()),
                 new Claim(ClaimTypes.Name, user.HoTen ?? ""),
-                new Claim(ClaimTypes.Role, role)
+                //new Claim(ClaimTypes.Role, role)
             };
             var token = new JwtSecurityToken(
                 _configuration["Jwt:Issuer"],
