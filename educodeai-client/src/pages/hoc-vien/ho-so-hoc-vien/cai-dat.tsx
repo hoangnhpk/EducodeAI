@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "@/configs/axios";
 
 const CaiDat = () => {
   const [emailNotif, setEmailNotif] = useState(true);
@@ -25,14 +26,20 @@ const CaiDat = () => {
     try {
       setLoading(true);
 
-      // TODO: gắn API đổi mật khẩu ở đây
-      console.log({
-        matKhauCu,
-        matKhauMoi,
-        xacNhan,
-      });
+      const res: any = await axios.post(
+        "/NguoiDung/doi-mat-khau",
+        {
+          matKhauCu,
+          matKhauMoi,
+          xacNhanMatKhauMoi: xacNhan,
+        }
+      );
 
-      alert("Đổi mật khẩu thành công");
+
+      console.log("API response:", res);
+
+      alert(res?.message || res?.data?.message || "Đổi mật khẩu thành công");
+
       setShowChangePassword(false);
       setMatKhauCu("");
       setMatKhauMoi("");
@@ -44,6 +51,7 @@ const CaiDat = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="cai-dat-container">

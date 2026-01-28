@@ -13,7 +13,7 @@ export default function SidebarQuanTriVien() {
         <a href="/quan-tri-vien/nguoi-dung" className="qtv-nav-link">
           <MdPeople /> Người Dùng
         </a>
-        <a href="/quan-tri-vien/review" className="qtv-nav-link">
+        <a href="/quan-tri-vien/quan-ly-binh-luan-review" className="qtv-nav-link">
           <MdRateReview /> Review
         </a>
         <a href="/quan-tri-vien/cau-hinh" className="qtv-nav-link">

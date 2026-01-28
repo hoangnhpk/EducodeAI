@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace educodeai_server.Models
 {
-    public class BaiNopModel {
+    public class KetQuaLamBaiModel {
         [Key]
-        public int MaBaiNop { get; set; }
+        public int MaKetQuaBaiNop { get; set; }
 
         public int MaNguoiDung { get; set; }
         [ForeignKey("MaNguoiDung")] 
@@ -15,20 +15,12 @@ namespace educodeai_server.Models
         [ForeignKey("MaBaiTap")] 
         public virtual BaiTapModel BaiTap { get; set; } = null!;
 
-        public int MaNgonNgu { get; set; }
-        [ForeignKey("MaNgonNgu")] 
-        public virtual NgonNguLapTrinhModel NgonNgu { get; set; } = null!;
-
         [Required]
-        public required string CodeNop { get; set; }
+        [Column(TypeName = "nvarchar(max)")]
+        public required string NoiDungNopJSON { get; set; }
 
-        public int LanNop { get; set; }
-
-        [StringLength(50)]
-        public string? TrangThai { get; set; } // AC, WA, TLE...
-
-        public int ThoiGianChay { get; set; }
-        public int BoNhoSuDung { get; set; }
+        public float DiemSo { get; set; }
+        public bool TrangThai { get; set; } = false;
         public DateTime NgayNop { get; set; } = DateTime.Now;
     }
 }
