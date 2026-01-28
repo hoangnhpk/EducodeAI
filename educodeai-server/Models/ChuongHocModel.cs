@@ -3,21 +3,19 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace educodeai_server.Models
 {
-    public class ChuongHocModel {
-        [Key]
+    [Table("ChuongHoc")]
+    public class ChuongHocModel
+    {
+        [Key] 
         public int MaChuong { get; set; }
 
-        public int MaKhoaHoc { get; set; }
-        [ForeignKey("MaKhoaHoc")]
-        public virtual KhoaHocModel KhoaHoc { get; set; } = null!;
-
-        [Required]
-        [StringLength(200)]
-        public required string TenChuong { get; set; }
-
+        public string TenChuong { get; set; } = null!;
         public int ThuTu { get; set; }
 
-        // Navigation
-        public virtual ICollection<BaiHocModel> BaiHocs { get; set; } = null!;
+        public int MaKhoaHoc { get; set; }
+        public KhoaHocModel KhoaHoc { get; set; } = null!;
+
+        public ICollection<BaiHocModel> BaiHocs { get; set; }
+            = new List<BaiHocModel>();
     }
 }

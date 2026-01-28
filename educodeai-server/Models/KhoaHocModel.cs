@@ -3,34 +3,25 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace educodeai_server.Models
 {
+    [Table("KhoaHoc")]
     public class KhoaHocModel
     {
         [Key]
         public int MaKhoaHoc { get; set; }
 
-        public int MaGiangVien { get; set; }
-
-        [ForeignKey("MaGiangVien")]
-        public virtual NguoiDungModel GiangVien { get; set; } = null!;
-
-        [Required]
-        [StringLength(200)]
         public string TenKhoaHoc { get; set; } = null!;
-
         public string? MoTa { get; set; }
 
-        [StringLength(500)]
+        
         public string? HinhAnh { get; set; }
 
-        [StringLength(50)]
-        public string? TrangThai { get; set; } = "Hoạt động";
+        public string TrangThai { get; set; } = "Hoạt động";
+        public string LinhVuc { get; set; } = "";
+        public double DiemDanhGiaTB { get; set; }
 
-        public double DiemDanhGiaTB { get; set; } = 0;
 
-        // ====== CỘT MỚI ======
-
-        [StringLength(100)]
-        public string LinhVuc { get; set; } = null!;  // Ví dụ: BackEnd, Database, System Design...
+        public int MaGiangVien { get; set; }
+        public NguoiDungModel GiangVien { get; set; } = null!;
 
         [StringLength(50)]
         public string TrinhDo { get; set; } = null!;  // Người mới, Trung cấp, Nâng cao
