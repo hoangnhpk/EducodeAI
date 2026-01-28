@@ -37,6 +37,7 @@ namespace educodeai_server.Services.Implementation
             }
             return null;
         }
+
         public async Task<bool> RegisterAsync(RegisterDto model)
         {
             var newUser = new NguoiDungModel
