@@ -23,7 +23,7 @@ import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinh
 
 // /* ===== GIẢNG VIÊN ===== */
 // import GVDashboard from "../pages/giang-vien/dashboard-giang-vien/Dashboard";
-  import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
+  // import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 // import QuanLyGiaoTrinh from "../pages/giang-vien/quan-ly-giao-trinh/QuanLyGiaoTrinh";
 // import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
 // import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
@@ -62,7 +62,7 @@ export default function AppRouter() {
         {/* GIẢNG VIÊN */}
         <Route path="/giang-vien" element={<LayoutGiangVien />}>
           {/* <Route index element={<GVDashboard />} />*/}
-          <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
+          {/* <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} /> */}
           {/*<Route path="giao-trinh" element={<QuanLyGiaoTrinh />} />
           <Route path="bai-tap" element={<TaoBaiTap />} />
           <Route path="thong-ke" element={<ThongKeHocTap />} /> */}
