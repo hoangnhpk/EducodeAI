@@ -33,12 +33,19 @@ namespace educodeai_server.Models
         public int VaiTro { get; set; } // 0:Admin, 1:GV, 2:HV
 
         [StringLength(20)]
-        public string? TrangThai { get; set; } = "Active";
+        public string? TrangThai { get; set; } = "Ho?t ??ng";
 
         public DateTime NgayThamGia { get; set; } = DateTime.Now;
 
         // Navigation
         public virtual ICollection<KhoaHocModel> KhoaHocs { get; set; } = null!;
         public virtual ICollection<DangKyKhoaHocModel> DangKyKhoaHocs { get; set; } = null!;
+        public virtual ICollection<TienDoBaiHocModel> TienDoBaiHocs { get; set; } = null!;
+        public virtual ICollection<DanhGiaModel> DanhGias { get; set; } = null!;
+        public virtual ICollection<BinhLuanModel> BinhLuans { get; set; } = null!;
+        public virtual ICollection<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; } = null!;
+        public virtual ICollection<KetQuaLamBaiModel> BaiNops { get; set; } = null!;
+        public virtual ICollection<LoTrinhAIModel> LoTrinhAIs { get; set; } = null!;
+        public virtual ICollection<CuocHoiThoaiAIModel> CuocHoiThoaiAIs { get; set; } = null!;
     }
 }
