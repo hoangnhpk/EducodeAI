@@ -241,10 +241,7 @@ namespace educodeai_server.Migrations
                 {
                     MaBaiTap = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiHoc = table.Column<int>(type: "int", nullable: false),
-                    DeBai = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    GioiHanThoiGian = table.Column<int>(type: "int", nullable: false),
-                    GioiHanBoNho = table.Column<int>(type: "int", nullable: false)
+                    MaBaiHoc = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -289,6 +286,33 @@ namespace educodeai_server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GhiChuBaiHocs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
+                    MaBaiHoc = table.Column<int>(type: "int", nullable: false),
+                    ThoiGianVideo = table.Column<int>(type: "int", nullable: false),
+                    NoiDung = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    NgayTao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GhiChuBaiHocs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GhiChuBaiHocs_BaiHocs_MaBaiHoc",
+                        column: x => x.MaBaiHoc,
+                        principalTable: "BaiHocs",
+                        principalColumn: "MaBaiHoc");
+                    table.ForeignKey(
+                        name: "FK_GhiChuBaiHocs_NguoiDungs_MaNguoiDung",
+                        column: x => x.MaNguoiDung,
+                        principalTable: "NguoiDungs",
+                        principalColumn: "MaNguoiDung");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TienDoBaiHocs",
                 columns: table => new
                 {
@@ -316,64 +340,80 @@ namespace educodeai_server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "BaiNops",
+                name: "BaiTap_Quizs",
                 columns: table => new
                 {
-                    MaBaiNop = table.Column<int>(type: "int", nullable: false)
+                    MaBaiTapQuiz = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
                     MaBaiTap = table.Column<int>(type: "int", nullable: false),
-                    MaNgonNgu = table.Column<int>(type: "int", nullable: false),
-                    CodeNop = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LanNop = table.Column<int>(type: "int", nullable: false),
-                    TrangThai = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    ThoiGianChay = table.Column<int>(type: "int", nullable: false),
-                    BoNhoSuDung = table.Column<int>(type: "int", nullable: false),
-                    NgayNop = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    ThoiGianLamBai = table.Column<int>(type: "int", nullable: true),
+                    DiemCanDat = table.Column<double>(type: "float", nullable: false),
+                    ChoPhepLamLai = table.Column<bool>(type: "bit", nullable: false),
+                    DaoCauHoi = table.Column<bool>(type: "bit", nullable: false),
+                    DuLieuCauHoi = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BaiNops", x => x.MaBaiNop);
+                    table.PrimaryKey("PK_BaiTap_Quizs", x => x.MaBaiTapQuiz);
                     table.ForeignKey(
-                        name: "FK_BaiNops_BaiTaps_MaBaiTap",
+                        name: "FK_BaiTap_Quizs_BaiTaps_MaBaiTap",
                         column: x => x.MaBaiTap,
                         principalTable: "BaiTaps",
                         principalColumn: "MaBaiTap");
-                    table.ForeignKey(
-                        name: "FK_BaiNops_NgonNguLapTrinhs_MaNgonNgu",
-                        column: x => x.MaNgonNgu,
-                        principalTable: "NgonNguLapTrinhs",
-                        principalColumn: "MaNgonNgu");
-                    table.ForeignKey(
-                        name: "FK_BaiNops_NguoiDungs_MaNguoiDung",
-                        column: x => x.MaNguoiDung,
-                        principalTable: "NguoiDungs",
-                        principalColumn: "MaNguoiDung");
                 });
 
             migrationBuilder.CreateTable(
-                name: "BaiTap_NgonNgus",
+                name: "BaiTap_ThucHanhIDEs",
                 columns: table => new
                 {
-                    MaBaiTapNgonNgu = table.Column<int>(type: "int", nullable: false)
+                    MaBaiTapThucHanh = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     MaBaiTap = table.Column<int>(type: "int", nullable: false),
                     MaNgonNgu = table.Column<int>(type: "int", nullable: false),
+                    DeBai = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CodeMau = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BaiTap_NgonNgus", x => x.MaBaiTapNgonNgu);
+                    table.PrimaryKey("PK_BaiTap_ThucHanhIDEs", x => x.MaBaiTapThucHanh);
                     table.ForeignKey(
-                        name: "FK_BaiTap_NgonNgus_BaiTaps_MaBaiTap",
+                        name: "FK_BaiTap_ThucHanhIDEs_BaiTaps_MaBaiTap",
                         column: x => x.MaBaiTap,
                         principalTable: "BaiTaps",
                         principalColumn: "MaBaiTap");
                     table.ForeignKey(
-                        name: "FK_BaiTap_NgonNgus_NgonNguLapTrinhs_MaNgonNgu",
+                        name: "FK_BaiTap_ThucHanhIDEs_NgonNguLapTrinhs_MaNgonNgu",
                         column: x => x.MaNgonNgu,
                         principalTable: "NgonNguLapTrinhs",
                         principalColumn: "MaNgonNgu");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KetQuaLamBais",
+                columns: table => new
+                {
+                    MaKetQuaBaiNop = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
+                    MaBaiTap = table.Column<int>(type: "int", nullable: false),
+                    NoiDungNopJSON = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DiemSo = table.Column<float>(type: "real", nullable: false),
+                    TrangThai = table.Column<bool>(type: "bit", nullable: false),
+                    NgayNop = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KetQuaLamBais", x => x.MaKetQuaBaiNop);
+                    table.ForeignKey(
+                        name: "FK_KetQuaLamBais_BaiTaps_MaBaiTap",
+                        column: x => x.MaBaiTap,
+                        principalTable: "BaiTaps",
+                        principalColumn: "MaBaiTap");
+                    table.ForeignKey(
+                        name: "FK_KetQuaLamBais_NguoiDungs_MaNguoiDung",
+                        column: x => x.MaNguoiDung,
+                        principalTable: "NguoiDungs",
+                        principalColumn: "MaNguoiDung");
                 });
 
             migrationBuilder.CreateTable(
@@ -382,19 +422,21 @@ namespace educodeai_server.Migrations
                 {
                     MaBoThu = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiTap = table.Column<int>(type: "int", nullable: false),
+                    MaBaiTapThucHanh = table.Column<int>(type: "int", nullable: false),
                     DauVao = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DauRaMongMuon = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    GioiHanThoiGian = table.Column<int>(type: "int", nullable: false),
+                    GioiHanBoNho = table.Column<int>(type: "int", nullable: false),
                     AnDanh = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BoThuNghiems", x => x.MaBoThu);
                     table.ForeignKey(
-                        name: "FK_BoThuNghiems_BaiTaps_MaBaiTap",
-                        column: x => x.MaBaiTap,
-                        principalTable: "BaiTaps",
-                        principalColumn: "MaBaiTap");
+                        name: "FK_BoThuNghiems_BaiTap_ThucHanhIDEs_MaBaiTapThucHanh",
+                        column: x => x.MaBaiTapThucHanh,
+                        principalTable: "BaiTap_ThucHanhIDEs",
+                        principalColumn: "MaBaiTapThucHanh");
                 });
 
             migrationBuilder.InsertData(
@@ -627,29 +669,26 @@ namespace educodeai_server.Migrations
                 column: "MaChuong");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BaiNops_MaBaiTap",
-                table: "BaiNops",
-                column: "MaBaiTap");
+                name: "IX_BaiTap_Quizs_MaBaiTap",
+                table: "BaiTap_Quizs",
+                column: "MaBaiTap",
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_BaiNops_MaNgonNgu",
-                table: "BaiNops",
-                column: "MaNgonNgu");
+                name: "IX_BaiTap_ThucHanhIDEs_MaBaiTap",
+                table: "BaiTap_ThucHanhIDEs",
+                column: "MaBaiTap",
+                unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_BaiNops_MaNguoiDung",
-                table: "BaiNops",
-                column: "MaNguoiDung");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BaiTap_NgonNgus_MaBaiTap_MaNgonNgu",
-                table: "BaiTap_NgonNgus",
+                name: "IX_BaiTap_ThucHanhIDEs_MaBaiTap_MaNgonNgu",
+                table: "BaiTap_ThucHanhIDEs",
                 columns: new[] { "MaBaiTap", "MaNgonNgu" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_BaiTap_NgonNgus_MaNgonNgu",
-                table: "BaiTap_NgonNgus",
+                name: "IX_BaiTap_ThucHanhIDEs_MaNgonNgu",
+                table: "BaiTap_ThucHanhIDEs",
                 column: "MaNgonNgu");
 
             migrationBuilder.CreateIndex(
@@ -673,9 +712,9 @@ namespace educodeai_server.Migrations
                 column: "MaNguoiDung");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BoThuNghiems_MaBaiTap",
+                name: "IX_BoThuNghiems_MaBaiTapThucHanh",
                 table: "BoThuNghiems",
-                column: "MaBaiTap");
+                column: "MaBaiTapThucHanh");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ChuongHocs_MaKhoaHoc",
@@ -707,6 +746,26 @@ namespace educodeai_server.Migrations
                 table: "DanhGias",
                 columns: new[] { "MaNguoiDung", "MaKhoaHoc" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GhiChuBaiHocs_MaBaiHoc",
+                table: "GhiChuBaiHocs",
+                column: "MaBaiHoc");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GhiChuBaiHocs_MaNguoiDung",
+                table: "GhiChuBaiHocs",
+                column: "MaNguoiDung");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KetQuaLamBais_MaBaiTap",
+                table: "KetQuaLamBais",
+                column: "MaBaiTap");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KetQuaLamBais_MaNguoiDung",
+                table: "KetQuaLamBais",
+                column: "MaNguoiDung");
 
             migrationBuilder.CreateIndex(
                 name: "IX_KhoaHocs_MaGiangVien",
@@ -752,10 +811,7 @@ namespace educodeai_server.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "BaiNops");
-
-            migrationBuilder.DropTable(
-                name: "BaiTap_NgonNgus");
+                name: "BaiTap_Quizs");
 
             migrationBuilder.DropTable(
                 name: "BinhLuans");
@@ -770,6 +826,12 @@ namespace educodeai_server.Migrations
                 name: "DanhGias");
 
             migrationBuilder.DropTable(
+                name: "GhiChuBaiHocs");
+
+            migrationBuilder.DropTable(
+                name: "KetQuaLamBais");
+
+            migrationBuilder.DropTable(
                 name: "LoTrinhAIs");
 
             migrationBuilder.DropTable(
@@ -779,13 +841,16 @@ namespace educodeai_server.Migrations
                 name: "TinNhanAIs");
 
             migrationBuilder.DropTable(
-                name: "NgonNguLapTrinhs");
+                name: "BaiTap_ThucHanhIDEs");
+
+            migrationBuilder.DropTable(
+                name: "CuocHoiThoaiAIs");
 
             migrationBuilder.DropTable(
                 name: "BaiTaps");
 
             migrationBuilder.DropTable(
-                name: "CuocHoiThoaiAIs");
+                name: "NgonNguLapTrinhs");
 
             migrationBuilder.DropTable(
                 name: "BaiHocs");

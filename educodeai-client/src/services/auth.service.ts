@@ -12,9 +12,8 @@ export const authService: any = {
       Password: pass,
     });
 
-    if (data?.token) {
-      localStorage.setItem('user_token', data.token);
-      localStorage.setItem('user_info', JSON.stringify(data.user));
+    if (!res?.token) {
+      throw new Error('Login response không có token');
     }
     return data;
   },

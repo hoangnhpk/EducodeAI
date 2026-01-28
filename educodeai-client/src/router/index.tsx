@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, } from "react-router-dom";
-import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
 import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
 import LayoutBlank from "../layouts/hoc-vien/LayoutBlank";
 import LayoutGiangVien from "../layouts/giang-vien/LayoutGiangVien";
@@ -18,20 +17,22 @@ import NoiDungKhoaHoc from "@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHoc";
 // import IDEAI from "../pages/hoc-vien/thuc-hanh-ide-ai/IDEAI";
 // import LichSuBaiLam from "../pages/hoc-vien/lich-su-bai-lam/LichSuLamBai";
 import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinhAI";
+// import ThongKeHocTap from "@/pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 // import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
 // import TroLyAI from "../pages/hoc-vien/tro-ly-hoi-dap-ai/TroLyAI";
+import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
 
 // /* ===== GIẢNG VIÊN ===== */
 // import GVDashboard from "../pages/giang-vien/dashboard-giang-vien/Dashboard";
-  import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
+  // import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 // import QuanLyGiaoTrinh from "../pages/giang-vien/quan-ly-giao-trinh/QuanLyGiaoTrinh";
 // import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
-// import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
+import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 
 // /* ===== ADMIN ===== */
 // import ADashboard from "../pages/quan-tri-vien/dashboard-he-thong/Dashboard";
 // import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
-// import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
+import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
 // import CauHinhHeThong from "../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeThong";
 
 export default function AppRouter() {
@@ -54,6 +55,7 @@ export default function AppRouter() {
           {/* <Route path="khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
           <Route path="tro-ly-ai" element={<TroLyAI />} /> */}
         </Route>
+        
         {/* Trang nội dung khóa học không sử dụng layout có header và footer */}
         <Route element={<LayoutBlank />}>
           <Route path="khoa-hoc/:slug/:id" element={<NoiDungKhoaHoc />} />
@@ -61,8 +63,9 @@ export default function AppRouter() {
 
         {/* GIẢNG VIÊN */}
         <Route path="/giang-vien" element={<LayoutGiangVien />}>
+          <Route path="/giang-vien/thong-ke" element={<ThongKeHocTap />} />
           {/* <Route index element={<GVDashboard />} />*/}
-          <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
+          {/* <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} /> */}
           {/*<Route path="giao-trinh" element={<QuanLyGiaoTrinh />} />
           <Route path="bai-tap" element={<TaoBaiTap />} />
           <Route path="thong-ke" element={<ThongKeHocTap />} /> */}
@@ -71,9 +74,9 @@ export default function AppRouter() {
         {/* ADMIN */}
         <Route path="/quan-tri-vien" element={<LayoutQuanTriVien />}>
           {/* <Route index element={<ADashboard />} />
-          <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
-          <Route path="review" element={<QuanLyReview />} />
-          <Route path="cau-hinh" element={<CauHinhHeThong />} /> */}
+          <Route path="nguoi-dung" element={<QuanLyNguoiDung />} /> */}
+          <Route path="quan-ly-binh-luan-review" element={<QuanLyReview />} />
+          {/* <Route path="cau-hinh" element={<CauHinhHeThong />} /> */}
         </Route>
       </Routes>
     </BrowserRouter>
