@@ -55,6 +55,7 @@ builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
 // 2. Đăng ký Repository và Service cho Người dùng (Dựa trên folder bạn có)
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
+builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();

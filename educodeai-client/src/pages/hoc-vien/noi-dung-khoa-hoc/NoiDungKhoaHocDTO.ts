@@ -1,4 +1,29 @@
-export type LoaiBaiHocType = 'Video' | 'text' | 'ide' | 'quiz';
+export type LoaiBaiHocType = 'Video' | 'Text' | 'Ide' | 'Quiz';
+
+export interface TestCaseDTO {
+    dauVao: string;
+    ketQuaMongDoi: string;
+}
+
+export interface BaiTapThucHanhDTO {
+    maBaiTapIDE: number;
+    tieuDe: string;
+    noiDungHTML: string;
+    codeMau: string;
+    testCases: TestCaseDTO[];
+    maNgonNgu?: number | null;
+}
+
+export interface BaiTapQuizDTO {
+    maBaiTapQuiz: number;
+    maBaiTap: number;
+    thoiGianLamBai?: number | null;
+    diemCanDat: number;
+    choPhepLamLai: boolean;
+    daoCauHoi: boolean;
+    duLieuCauHoiJSON: string; 
+}
+
 
 export interface BaiHoc {
     id: number;
@@ -9,6 +34,9 @@ export interface BaiHoc {
     thuTu: number;
     linkVideo?: string | null;
     daXem?: boolean;
+
+    thongTinQuiz?: BaiTapQuizDTO | null;
+    thongTinThucHanh?: BaiTapThucHanhDTO | null;
 }
 
 export interface ChuongHoc {
@@ -23,4 +51,11 @@ export interface KhoaHocData {
     tenKhoaHoc: string; 
     slug: string;
     danhSachChuongHoc: ChuongHoc[];
+}
+
+export interface GhiChuItem {
+    id: number;
+    thoiGianVideo: number;
+    noiDung: string;
+    ngayTao: string;
 }
