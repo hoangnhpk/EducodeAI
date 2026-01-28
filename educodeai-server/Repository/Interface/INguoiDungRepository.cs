@@ -9,5 +9,9 @@ namespace educodeai_server.Repository.Interface
         Task<bool> AddUserAsync(NguoiDungModel user);
         Task<NguoiDungModel?> GetUserByEmailAsync(string email);
         Task<bool> UpdateUserAsync(NguoiDungModel user);
+        Task<NguoiDungModel?> GetUserByIdAsync(int id);
+        Task<NguoiDungModel?> GetUserByIdentifierAsync(string identifier);
+
+
     }
 }

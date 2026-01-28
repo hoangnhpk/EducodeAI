@@ -52,13 +52,30 @@ namespace educodeai_server.Repository.Implementation
             {
                 _context.NguoiDungs.Update(user);
                 var result = await _context.SaveChangesAsync();
+
+                Console.WriteLine("🔥 SaveChanges = " + result);
+
                 return result > 0;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Lỗi khi cập nhật người dùng: " + ex.Message);
+                Console.WriteLine("❌ UpdateUserAsync ERROR: " + ex.Message);
                 return false;
             }
         }
+
+        public async Task<NguoiDungModel?> GetUserByIdAsync(int id)
+        {
+            return await _context.NguoiDungs
+                .FirstOrDefaultAsync(x => x.MaNguoiDung == id);
+        }
+        public async Task<NguoiDungModel?> GetUserByIdentifierAsync(string identifier)
+        {
+            return await _context.NguoiDungs
+                .FirstOrDefaultAsync(x =>
+                    x.Email == identifier || x.TaiKhoan == identifier);
+        }
+
+
     }
 }
