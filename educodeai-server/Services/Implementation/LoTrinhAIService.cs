@@ -49,13 +49,13 @@ namespace educodeai_server.Services.Implementation
 
             var aiResult = await _gemini.GenerateAsync(prompt);
 
-            //var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
+            var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
 
             var loTrinh = new LoTrinhAIModel
             {
                 MaNguoiDung = maNguoiDung,
                 YeuCau = prompt,
-                NoiDungJSON = aiResult,
+                NoiDungJSON = resultChuanHoa,
                 TrangThai = "Nháp",
                 NgayTao = DateTime.Now
             };
@@ -65,7 +65,7 @@ namespace educodeai_server.Services.Implementation
             return new LoTrinhAIResponseDto
             {
                 MaLoTrinh = loTrinh.MaLoTrinh,
-                NoiDungJSON = aiResult
+                NoiDungJSON = resultChuanHoa
             };
         }
 
@@ -136,7 +136,6 @@ namespace educodeai_server.Services.Implementation
                 - Có sự liên kết logic với giai đoạn trước
                 9. Không lan man sang lĩnh vực khác nếu không phục vụ mục tiêu nghề nghiệp.
                 10. Tổng thời gian học = tổng số tuần trong toàn bộ lộ trình
-                11. Nếu học viên đã biết một số kiến thức, ưu tiên chọn khoá học có liên quan đến nó.
 
                 JSON output PHẢI có cấu trúc GIỐNG HỆT schema dưới đây.
                 Mọi mảng trong JSON phải có ít nhất 1 phần tử nếu có dữ liệu phù hợp.
@@ -159,8 +158,42 @@ namespace educodeai_server.Services.Implementation
 
         private static readonly HashSet<string> StopWords = new()
         {
-            "tôi", "muốn", "học", "thêm", "về",
-            "là", "cho", "và", "hoặc", "các", "một"
+            // Từ đệm
+            "ạ", "nhé", "nha", "ha", "à", "ơi", "nhỉ", "nè", "cơ", "chứ",
+
+            // Đại từ
+            "tôi", "mình", "tớ", "tao", "bạn", "cậu", "anh", "chị", "em",
+            "chúng", "chúng tôi", "chúng ta",
+
+            // Động từ & ý định
+            "muốn", "muốn biết", "cần", "học", "tìm", "đang tìm", "tìm hiểu",
+            "biết", "làm", "có", "là", "được", "bị", "đang", "sẽ", "đã",
+            "nên", "định", "dự định", "bắt đầu", "mới", "lần đầu",
+
+            // Giới từ / liên từ
+            "về", "cho", "với", "từ", "đến", "trong", "ngoài", "trên", "dưới",
+            "và", "hoặc", "hay", "nhưng", "thì", "mà", "để", "khi", "vào",
+
+            // Lượng từ
+            "một", "các", "những", "nhiều", "ít", "mỗi", "vài",
+            "rất", "khá", "hơi", "quá",
+
+            // Thời gian
+            "hiện tại", "bây giờ", "sau này", "trước đây", "lâu dài", "ngắn hạn",
+
+            // Đánh giá
+            "tốt", "hay", "ổn", "phù hợp", "hiệu quả", "nhanh", "chậm", "dễ", "khó",
+
+            // Từ chung chung
+            "cái", "việc", "thứ", "vấn đề", "điều", "phần", "loại", "kiểu", "dạng", "thêm",
+
+            // Câu hỏi
+            "làm sao", "như thế nào", "bao nhiêu", "tại sao", "vì sao",
+            "liệu", "có thể", "có phải", "nên không", "được không", "không biết",
+
+            // Ngữ cảnh lập trình
+            "ngôn", "ngữ", "lập", "trình", "khóa", "học", "kiến", "thức",
+            "cơ bản", "nâng cao"
         };
 
         public static List<string> Extract(string input)
@@ -181,13 +214,13 @@ namespace educodeai_server.Services.Implementation
         public static readonly Dictionary<string, string[]> Map = new()
         {
             // Frontend
-            ["fe"] = new[]
+            ["frontend"] = new[]
             {
                 "giao", "diện", "frontend", "ui", "ux", "web", "website", "trang"
             },
 
             // Backend
-            ["be"] = new[]
+            ["backend"] = new[]
             {
                 "backend", "máy", "chủ", "server", "api", "rest"
             },
@@ -239,7 +272,11 @@ namespace educodeai_server.Services.Implementation
 
             var tuKhoa = Extract(dto.YeuCauMoi);
 
+            Console.WriteLine("[LoTrinhAIService] Từ khoá trích xuất: " + string.Join(", ", tuKhoa));
+
             var keywordChuanHoa = ChuanHoa(tuKhoa);
+
+            Console.WriteLine("[LoTrinhAIService] Từ khoá sau chuẩn hoá: " + string.Join(", ", keywordChuanHoa));
 
             var khoaHoc = await _khoaHocRepo.GetKhoaHocTheoKeywordAsync(keywordChuanHoa);
             Console.WriteLine($"[LoTrinhAIService] Tìm thấy {khoaHoc.Count} khoá học phù hợp để cập nhật.");
@@ -249,6 +286,7 @@ namespace educodeai_server.Services.Implementation
                 loTrinhCu.NoiDungJSON!,
                 dto.YeuCauMoi,
                 khoaHocJson);
+
 
             var aiResult = await _gemini.GenerateAsync(prompt);
 
