@@ -24,7 +24,7 @@ export default function HeaderHocVien() {
 
       <div className="collapse navbar-collapse" id="navbarCollapse">
         <div className="navbar-nav ms-auto p-4 p-lg-0">
-          <Link to="/trang-chu" className="nav-item nav-link">
+          <Link to="/" className="nav-item nav-link">
             Trang chủ
           </Link>
 
