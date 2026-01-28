@@ -31,9 +31,9 @@ export interface DoiMatKhauPayload {
 /* ===== GET HO SO ===== */
 export const getHoSoHocVien = async (): Promise<HoSoHocVienDTO> => {
   try {
-    console.log("🔄 Đang gọi API /hoc-vien/ho-so...");
+    console.log("🔄 Đang gọi API /api/hoc-vien/ho-so...");
     
-    const data = await axiosClient.get<HoSoHocVienDTO>("/hoc-vien/ho-so");
+    const data = await axiosClient.get<HoSoHocVienDTO>("/api/hoc-vien/ho-so");
     
     console.log("✅ Dữ liệu nhận được:", data);
     
@@ -72,7 +72,7 @@ export const updateHoSoHocVien = async (
     });
     
     const data = await axiosClient.put<HoSoHocVienDTO>(
-      "/hoc-vien/ho-so",
+      "/api/hoc-vien/ho-so",
       formData
     );
     
@@ -100,7 +100,7 @@ export const doiMatKhau = async (
   try {
     console.log("🔄 Đang đổi mật khẩu...");
     
-    await axiosClient.post<void>("/nguoi-dung/doi-mat-khau", payload);
+    await axiosClient.post<void>("/api/nguoi-dung/doi-mat-khau", payload);
     
     console.log("✅ Đổi mật khẩu thành công");
   } catch (error: any) {

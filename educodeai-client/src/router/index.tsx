@@ -55,6 +55,7 @@ export default function AppRouter() {
           {/* <Route path="khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
           <Route path="tro-ly-ai" element={<TroLyAI />} /> */}
         </Route>
+        
         {/* Trang nội dung khóa học không sử dụng layout có header và footer */}
         <Route element={<LayoutBlank />}>
           <Route path="khoa-hoc/:slug/:id" element={<NoiDungKhoaHoc />} />
@@ -62,7 +63,7 @@ export default function AppRouter() {
 
         {/* GIẢNG VIÊN */}
         <Route path="/giang-vien" element={<LayoutGiangVien />}>
-          <Route path="thong-ke" element={<ThongKeHocTap />} />}
+          <Route path="/giang-vien/thong-ke" element={<ThongKeHocTap />} />
           {/* <Route index element={<GVDashboard />} />*/}
           {/* <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} /> */}
           {/*<Route path="giao-trinh" element={<QuanLyGiaoTrinh />} />
