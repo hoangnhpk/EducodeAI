@@ -15,23 +15,56 @@ const HoSoHocVien = () => {
   const [activeTab, setActiveTab] = useState<TabType>("tong-quan");
   const [data, setData] = useState<HoSoHocVienDTO | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
+    console.log("🚀 Component mounted - Bắt đầu fetch data...");
+    
     getHoSoHocVien()
       .then((res) => {
-        console.log("Hồ sơ học viên:", res);
+        console.log("✅ Hồ sơ học viên nhận được:", res);
         setData(res);
       })
       .catch((err) => {
-        console.error("Lỗi lấy hồ sơ học viên:", err);
+        console.error("❌ Lỗi lấy hồ sơ học viên:", err);
+        setError(err.message || "Có lỗi xảy ra");
       })
       .finally(() => {
+        console.log("🏁 Hoàn thành fetch data");
         setLoading(false);
       });
   }, []);
 
-  if (loading) return <div className="loading">Đang tải hồ sơ...</div>;
-  if (!data) return <div className="loading">Không có dữ liệu</div>;
+  if (loading) {
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+        <p>Đang tải hồ sơ...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error">
+        <p>❌ Lỗi Rồi: {error}</p>
+        <button onClick={() => window.location.reload()}>
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="no-data">
+        <p>⚠️ Không có dữ liệu</p>
+        <button onClick={() => window.location.reload()}>
+          Tải lại
+        </button>
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {
