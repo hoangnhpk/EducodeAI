@@ -10,5 +10,10 @@ namespace educodeai_server.Services.Interface
             int maNguoiDung,
             UpdateHoSoHocVienDTO dto
         );
+
+        Task<(bool IsSuccess, string Message)> DoiMatKhauAsync(
+            int maNguoiDung,
+            DoiMatKhauDTO dto
+        );
     }
 }
