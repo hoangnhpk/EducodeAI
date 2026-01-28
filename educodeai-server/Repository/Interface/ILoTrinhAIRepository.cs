@@ -7,5 +7,6 @@ namespace educodeai_server.Repository.Interface
         Task AddAsync(LoTrinhAIModel loTrinh);
         Task<LoTrinhAIModel?> GetByIdAsync(int maLoTrinh);
         Task UpdateAsync(LoTrinhAIModel loTrinh);
+        Task<List<LoTrinhAIModel>?> GetAll(int maNguoiDung);
     }
 }
