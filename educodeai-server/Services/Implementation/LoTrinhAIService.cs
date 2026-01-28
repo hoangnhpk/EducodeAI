@@ -53,10 +53,10 @@ namespace educodeai_server.Services.Implementation
 
             var loTrinh = new LoTrinhAIModel
             {
-                MaNguoiDung = 8,
+                MaNguoiDung = maNguoiDung,
                 YeuCau = prompt,
                 NoiDungJSON = resultChuanHoa,
-                TrangThai = "Draft",
+                TrangThai = "Nháp",
                 NgayTao = DateTime.Now
             };
 
@@ -74,7 +74,7 @@ namespace educodeai_server.Services.Implementation
             var loTrinh = await _loTrinhRepo.GetByIdAsync(maLoTrinh);
             if (loTrinh == null) throw new Exception("Không tìm thấy lộ trình");
 
-            loTrinh.TrangThai = "Active"; // Chuyển sang chính thức
+            loTrinh.TrangThai = "Hoạt động"; // Chuyển sang chính thức
             await _loTrinhRepo.UpdateAsync(loTrinh);
 
             return true;
@@ -124,15 +124,18 @@ namespace educodeai_server.Services.Implementation
 
                 === YÊU CẦU XỬ LÝ ===
                 1. Tạo lộ trình học theo từng tuần.
-                2. Bỏ qua hoặc rút gọn nội dung học viên đã biết.
+                2. Bỏ qua hoặc rút gọn các khoá học trùng với kiến thức học viên đã có.
                 3. Chỉ sử dụng khoá học trong danh sách INPUT.
-                4. Không suy đoán ra ngoài dữ liệu, nhưng được suy luận nội bộ để chia tuần.
-                5. Kết quả trả về JSON thuần, không giải thích.
-                6. Nếu một khoá học dài, có thể chia ra nhiều tuần.
-                7. BẮT BUỘC tạo ít nhất 1 tuần học nếu có bất kỳ khoá học nào phù hợp.
-                8. tối đa 4 giai đoạn học chính, tương ứng với các lĩnh vực tập trung
-                9. Mỗi giai đoạn học cần có mục tiêu rõ ràng, liên quan đến lĩnh vực tập trung, và có sự liên kết với nhau.
-                10. Mỗi phương diện chỉ được tập trung 1 cái và đừng lan man qua các phương diện khác tập trung về mục tiêu nghề nghiệp người dùng và lĩnh vực muốn tập trung để đưa ra khoá học phù hợp
+                4. Tổng số tuần KHÔNG ĐƯỢC vượt quá thời gian học dự kiến của học viên.
+                5. Có thể chia một khoá học ra nhiều tuần nếu thời lượng dài.
+                6. Phải tạo ÍT NHẤT 1 tuần học nếu tồn tại khoá học phù hợp.
+                7. Tối đa 4 giai đoạn học chính.
+                8. Mỗi giai đoạn:
+                - Chỉ tập trung MỘT lĩnh vực liên quan trực tiếp đến mục tiêu nghề nghiệp
+                - Có mục tiêu rõ ràng
+                - Có sự liên kết logic với giai đoạn trước
+                9. Không lan man sang lĩnh vực khác nếu không phục vụ mục tiêu nghề nghiệp.
+                10. Tổng thời gian học = tổng số tuần trong toàn bộ lộ trình
 
                 JSON output PHẢI có cấu trúc GIỐNG HỆT schema dưới đây.
                 Mọi mảng trong JSON phải có ít nhất 1 phần tử nếu có dữ liệu phù hợp.
@@ -155,8 +158,42 @@ namespace educodeai_server.Services.Implementation
 
         private static readonly HashSet<string> StopWords = new()
         {
-            "tôi", "muốn", "học", "thêm", "về",
-            "là", "cho", "và", "hoặc", "các", "một"
+            // Từ đệm
+            "ạ", "nhé", "nha", "ha", "à", "ơi", "nhỉ", "nè", "cơ", "chứ",
+
+            // Đại từ
+            "tôi", "mình", "tớ", "tao", "bạn", "cậu", "anh", "chị", "em",
+            "chúng", "chúng tôi", "chúng ta",
+
+            // Động từ & ý định
+            "muốn", "muốn biết", "cần", "học", "tìm", "đang tìm", "tìm hiểu",
+            "biết", "làm", "có", "là", "được", "bị", "đang", "sẽ", "đã",
+            "nên", "định", "dự định", "bắt đầu", "mới", "lần đầu",
+
+            // Giới từ / liên từ
+            "về", "cho", "với", "từ", "đến", "trong", "ngoài", "trên", "dưới",
+            "và", "hoặc", "hay", "nhưng", "thì", "mà", "để", "khi", "vào",
+
+            // Lượng từ
+            "một", "các", "những", "nhiều", "ít", "mỗi", "vài",
+            "rất", "khá", "hơi", "quá",
+
+            // Thời gian
+            "hiện tại", "bây giờ", "sau này", "trước đây", "lâu dài", "ngắn hạn",
+
+            // Đánh giá
+            "tốt", "hay", "ổn", "phù hợp", "hiệu quả", "nhanh", "chậm", "dễ", "khó",
+
+            // Từ chung chung
+            "cái", "việc", "thứ", "vấn đề", "điều", "phần", "loại", "kiểu", "dạng", "thêm",
+
+            // Câu hỏi
+            "làm sao", "như thế nào", "bao nhiêu", "tại sao", "vì sao",
+            "liệu", "có thể", "có phải", "nên không", "được không", "không biết",
+
+            // Ngữ cảnh lập trình
+            "ngôn", "ngữ", "lập", "trình", "khóa", "học", "kiến", "thức",
+            "cơ bản", "nâng cao"
         };
 
         public static List<string> Extract(string input)
@@ -177,13 +214,13 @@ namespace educodeai_server.Services.Implementation
         public static readonly Dictionary<string, string[]> Map = new()
         {
             // Frontend
-            ["fe"] = new[]
+            ["frontend"] = new[]
             {
                 "giao", "diện", "frontend", "ui", "ux", "web", "website", "trang"
             },
 
             // Backend
-            ["be"] = new[]
+            ["backend"] = new[]
             {
                 "backend", "máy", "chủ", "server", "api", "rest"
             },
@@ -235,7 +272,11 @@ namespace educodeai_server.Services.Implementation
 
             var tuKhoa = Extract(dto.YeuCauMoi);
 
+            Console.WriteLine("[LoTrinhAIService] Từ khoá trích xuất: " + string.Join(", ", tuKhoa));
+
             var keywordChuanHoa = ChuanHoa(tuKhoa);
+
+            Console.WriteLine("[LoTrinhAIService] Từ khoá sau chuẩn hoá: " + string.Join(", ", keywordChuanHoa));
 
             var khoaHoc = await _khoaHocRepo.GetKhoaHocTheoKeywordAsync(keywordChuanHoa);
             Console.WriteLine($"[LoTrinhAIService] Tìm thấy {khoaHoc.Count} khoá học phù hợp để cập nhật.");
@@ -245,6 +286,7 @@ namespace educodeai_server.Services.Implementation
                 loTrinhCu.NoiDungJSON!,
                 dto.YeuCauMoi,
                 khoaHocJson);
+
 
             var aiResult = await _gemini.GenerateAsync(prompt);
 

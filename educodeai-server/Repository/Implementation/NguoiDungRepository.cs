@@ -77,12 +77,12 @@ namespace educodeai_server.Repository.Implementation
             return await _context.NguoiDungs
                 .FirstOrDefaultAsync(x => x.MaNguoiDung == id);
         }
-        public async Task<NguoiDungModel?> GetUserByIdentifierAsync(string identifier)
-        {
-            return await _context.NguoiDungs
-                .FirstOrDefaultAsync(x =>
-                    x.Email == identifier || x.TaiKhoan == identifier);
-        }
+        //public async Task<NguoiDungModel?> GetUserByIdentifierAsync(string identifier)
+        //{
+        //    return await _context.NguoiDungs
+        //        .FirstOrDefaultAsync(x =>
+        //            x.Email == identifier || x.TaiKhoan == identifier);
+        //}
 
 
     }

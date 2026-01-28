@@ -88,7 +88,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
               className={`form-control ${errors.hoTen ? "is-invalid" : ""}`}
               placeholder="Họ và tên"
               value={formData.hoTen}
-              onChange={handleChange}
+              onChange={handleChange} maxLength={70}
             />
             <label className="required-field">Họ và tên</label>
             <div className="invalid-feedback">{errors.hoTen}</div>
@@ -145,6 +145,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
               placeholder="Ví dụ: Trở thành Data Scientist"
               value={formData.mucTieuNgheNghiep}
               onChange={handleChange}
+              maxLength={100}
             />
             <label className="required-field">Mục tiêu nghề nghiệp cụ thể</label>
             <div className="invalid-feedback">{errors.mucTieuNgheNghiep}</div>
@@ -161,9 +162,9 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
               onChange={handleChange}
             >
               <option value="">Chọn thời gian học</option>
-              <option value="1">1 tháng</option>
               <option value="3">3 tháng</option>
               <option value="6">6 tháng</option>
+              <option value="9">9 tháng</option>
               <option value="12">1 năm</option>
             </select>
             <label className="required-field">Thời gian học dự kiến</label>
@@ -196,6 +197,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
           className="form-control textarea-height"
           value={formData.kienThucHienCo}
           onChange={handleChange}
+          maxLength={100}
         />
         <label>Kiến thức hiện có</label>
         <small className="form-text text-muted">Ví dụ: Python, SQL, Machine Learning cơ bản,
@@ -208,6 +210,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
           className="form-control textarea-height"
           value={formData.kinhNghiem}
           onChange={handleChange}
+          maxLength={100}
         />
         <label>Kinh nghiệm thực tế</label>
         <small className="form-text text-muted">Ví dụ: Dự án cá nhân, công việc trước
@@ -220,6 +223,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
           className="form-control textarea-height-100"
           value={formData.khoKhan}
           onChange={handleChange}
+          maxLength={100}
         />
         <label>Khó khăn hiện tại</label>
         <small className="form-text text-muted">Ví dụ: Thiếu kiến thức nền, khó tập
