@@ -11,7 +11,7 @@ import DangKy from "../pages/auth/DangKy";
 import QuenMatKhau from "../pages/auth/QuenMatKhau";
 
 // /* ===== HỌC VIÊN ===== */
-// import TrangChuHocVien from "@/pages/hoc-vien/trang-chu/TrangChu";
+import TrangChuHocVien from "@/pages/hoc-vien/trang-chu/TrangChu";
 import NoiDungKhoaHoc from "@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHoc";
 // import ChiTietKhoaHoc from "../pages/hoc-vien/chi-tiet-khoa-hoc/ChiTietKhoaHoc";
 // import NoiDungBaiHoc from "../pages/hoc-vien/noi-dung-bai-hoc/NoiDungBaiHoc";
@@ -44,7 +44,7 @@ export default function AppRouter() {
 
         {/* HỌC VIÊN */}
         <Route path="/" element={<LayoutHocVien />}>
-          {/* <Route index element={<TrangChuHocVien />} /> */}
+          <Route index element={<TrangChuHocVien />} />
           {/* <Route path="khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
           <Route path="bai-hoc/:lessonId" element={<NoiDungBaiHoc />} />
           <Route path="ide-ai" element={<IDEAI />} />

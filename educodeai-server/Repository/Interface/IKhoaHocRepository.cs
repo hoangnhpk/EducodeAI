@@ -14,5 +14,6 @@ namespace educodeai_server.Repository.Interface
         //KhoaHocCuaToi
         Task<KhoaHocModel?> GetKhoaHocWithDetailsAsync(int maKhoaHoc);
         Task<List<KhoaHocModel>> GetKhoaHocsByGiangVienAsync(int maGiangVien);
+        Task<List<KhoaHocModel>> GetAllKhoaHocsAsync();
     }
 }
