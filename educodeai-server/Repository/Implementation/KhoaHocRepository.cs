@@ -16,7 +16,13 @@ namespace educodeai_server.Repository.Implementation
         {
             _context = context;
         }
-
+        public async Task<List<KhoaHocModel>> GetAllKhoaHocsAsync()
+        {
+            return await _context.KhoaHocs
+                .Where(x => x.TrangThai == "Hoạt động") // Chỉ lấy khóa học đang mở
+                .OrderByDescending(x => x.NgayTao)      // Khóa học mới nhất lên đầu
+                .ToListAsync();
+        }
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto)
         {
             var query = _context.KhoaHocs
