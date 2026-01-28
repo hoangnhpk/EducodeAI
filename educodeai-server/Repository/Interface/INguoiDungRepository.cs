@@ -19,7 +19,7 @@ namespace educodeai_server.Repository.Interface
         // Cập nhật thông tin (Đổi mật khẩu)
         Task<bool> UpdateUserAsync(NguoiDungModel user);
         Task<NguoiDungModel?> GetUserByIdAsync(int id);
-        Task<NguoiDungModel?> GetUserByIdentifierAsync(string identifier);
+        //Task<NguoiDungModel?> GetUserByIdentifierAsync(string identifier);
 
 
     }
