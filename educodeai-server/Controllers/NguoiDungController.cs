@@ -2,9 +2,9 @@
 using educodeai_server.Services.Interface;
 using educodeai_server.DTOs.NguoiDung;
 using educodeai_server.Helpers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-
 
 namespace educodeai_server.Controllers
 {
@@ -22,19 +22,29 @@ namespace educodeai_server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            // Truyền UsernameOrEmail vào tham số identifier
             var user = await _userService.CheckLoginAsync(loginDto.UsernameOrEmail, loginDto.Password);
-
-            if (user == null)
-                return Unauthorized(new { message = "Thông tin đăng nhập hoặc mật khẩu không đúng!" });
+            if (user == null) return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu!" });
 
             var token = _userService.GenerateJwtToken(user);
 
-            return Ok(new
+            // Ghi đè Cookie vào Response
+            Response.Cookies.Append("AuthToken", token, new CookieOptions
             {
-                token = token,
-                user = new { user.Email, user.TaiKhoan, user.HoTen }
+                HttpOnly = true, // Quan trọng: Ngăn chặn XSS tấn công lấy token
+                Secure = true,   // Bắt buộc nếu SameSite = None
+                SameSite = SameSiteMode.None, // Cho phép gửi cookie giữa các port khác nhau (3000 và 7284)
+                Expires = DateTime.Now.AddDays(1)
             });
+
+            return Ok(new { message = "Đăng nhập thành công", user = new { user.Email, user.TaiKhoan, user.HoTen } });
+        }
+        [HttpGet("check-email")]
+        public async Task<IActionResult> CheckEmail([FromQuery] string email) // Thêm [FromQuery]
+        {
+            // Sử dụng service đã có thay vì _context để tránh lỗi compile
+            var userExists = await _userService.IsEmailExistAsync(email);
+
+            return Ok(new { exists = userExists });
         }
         [HttpPost("send-otp")]
         public async Task<IActionResult> SendOtp([FromBody] RegisterDto model)
