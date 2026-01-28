@@ -165,7 +165,7 @@ namespace educodeai_server.Services.Implementation
 
             // ===== 2. Số bài đã nộp =====
             var baiDaNopDict = await (
-                from bn in _context.BaiNops
+                from bn in _context.KetQuaLamBais
                 join bt in _context.BaiTaps on bn.MaBaiTap equals bt.MaBaiTap
                 join bh in _context.BaiHocs on bt.MaBaiHoc equals bh.MaBaiHoc
                 join ch in _context.ChuongHocs on bh.MaChuong equals ch.MaChuong
