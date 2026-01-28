@@ -1,12 +1,12 @@
 ﻿using educodeai_server.Models;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
-using educodeai_server.DTOs.NguoiDung; // Đảm bảo đã import DTO
+using educodeai_server.DTOs.NguoiDung;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-
+using BCrypt.Net;
 namespace educodeai_server.Services.Implementation
 {
     public class NguoiDungService : INguoiDungService
@@ -20,66 +20,75 @@ namespace educodeai_server.Services.Implementation
             _configuration = configuration;
         }
 
-        public async Task<NguoiDungModel?> CheckLoginAsync(string identifier, string password)
+        // Fix lỗi gạch đỏ: Cần thực thi hàm này từ Interface
+        public async Task<NguoiDungModel?> GetUserByIdentifierAsync(string identifier)
         {
-            return await _repository.GetUserForLoginAsync(identifier, password);
-        }
-        // --- MỚI: KIỂM TRA EMAIL TỒN TẠI (Dùng cho Quên mật khẩu) ---
-        public async Task<bool> IsEmailExistAsync(string email)
-        {
-            // Bạn cần thêm hàm này vào Repository
-            var user = await _repository.GetUserByEmailAsync(email);
-            return user != null;
+            if (string.IsNullOrWhiteSpace(identifier)) return null;
+            return await _repository.GetUserByIdentifierAsync(identifier.Trim());
         }
 
-        // --- MỚI: CẬP NHẬT MẬT KHẨU MỚI ---
+        public async Task<NguoiDungModel?> CheckLoginAsync(string identifier, string password)
+        {
+            var user = await GetUserByIdentifierAsync(identifier);
+            // Sử dụng BCrypt để kiểm tra mật khẩu đã mã hóa
+            if (user != null && BCrypt.Net.BCrypt.Verify(password, user.MatKhau))
+            {
+                return user;
+            }
+            return null;
+        }
+
+        public async Task<bool> RegisterAsync(RegisterDto model)
+        {
+            var newUser = new NguoiDungModel
+            {
+                HoTen = model.HoTen,
+                Email = model.Email.Trim().ToLower(),
+                TaiKhoan = model.TaiKhoan.Trim(),
+                MatKhau = BCrypt.Net.BCrypt.HashPassword(model.MatKhau),
+                NgayThamGia = DateTime.Now,
+
+                // Bổ sung các giá trị mặc định để tránh lỗi logic/font
+                VaiTro = 2, 
+                TrangThai = "Hoạt động", // Gán trực tiếp chuỗi chuẩn
+                AnhDaiDien = null,
+                GoogleID = null
+            };
+
+            // Đảm bảo Repository trả về true nếu SaveChanges > 0
+            return await _repository.AddUserAsync(newUser);
+        }
+
         public async Task<bool> UpdatePasswordAsync(string email, string newPassword)
         {
             var user = await _repository.GetUserByEmailAsync(email);
             if (user == null) return false;
 
-            user.MatKhau = newPassword; // Cập nhật mật khẩu mới
-            return await _repository.UpdateUserAsync(user); // Bạn cần thêm hàm Update vào Repository
+            user.MatKhau = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            return await _repository.UpdateUserAsync(user);
         }
-        // --- BỔ SUNG HÀM ĐĂNG KÝ NÀY ---
-        public async Task<bool> RegisterAsync(RegisterDto model)
-        {
-            // Chuyển đổi từ DTO sang Model Database
-            var newUser = new NguoiDungModel
-            {
-                HoTen = model.HoTen,
-                Email = model.Email,
-                TaiKhoan = model.TaiKhoan,
-                MatKhau = model.MatKhau, // Sau này nên dùng BCrypt để mã hóa
-                NgayThamGia = DateTime.Now
-            };
 
-            // Gọi Repository để lưu vào Database thông qua DbContext
-            return await _repository.AddUserAsync(newUser);
-        }
+        public async Task<bool> IsEmailExistAsync(string email) =>
+            await _repository.GetUserByEmailAsync(email) != null;
 
         public string GenerateJwtToken(NguoiDungModel user)
         {
+            // Logic tạo Token giữ nguyên như bạn đã viết...
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
+            var claims = new[] {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim("id", user.MaNguoiDung.ToString()),
                 new Claim(ClaimTypes.Name, user.HoTen ?? ""),
-                new Claim(ClaimTypes.Role, "User")
+                //new Claim(ClaimTypes.Role, role)
             };
-
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
+                _configuration["Jwt:Issuer"],
+                _configuration["Jwt:Audience"],
+                claims,
                 expires: DateTime.Now.AddDays(1),
                 signingCredentials: credentials);
-
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
     }
 }
