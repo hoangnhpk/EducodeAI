@@ -10,8 +10,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
-
-// Cấu hình Configuration
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true)
     .AddEnvironmentVariables();
@@ -47,9 +45,13 @@ builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
 // 2. Đăng ký Repository và Service cho Người dùng (Dựa trên folder bạn có)
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
+builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
+
+builder.Services.AddScoped<IHocVienService, HocVienService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -65,8 +67,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// E. Cấu hình HTTP Client cho Gemini AI
 builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
@@ -104,6 +104,7 @@ app.UseHttpsRedirection();
 
 // Kích hoạt CORS (Phải đặt trước UseAuthorization)
 app.UseCors();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

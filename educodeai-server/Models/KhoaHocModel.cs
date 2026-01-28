@@ -16,20 +16,26 @@ namespace educodeai_server.Models
         public string? HinhAnh { get; set; }
 
         public string TrangThai { get; set; } = "Hoạt động";
-        public string TrinhDo { get; set; } = "";
         public string LinhVuc { get; set; } = "";
-        public string KyNangChinh { get; set; } = "";
-        public int ThoiLuongGio { get; set; }
-
-        
         public double DiemDanhGiaTB { get; set; }
 
-        public DateTime NgayTao { get; set; }
 
         public int MaGiangVien { get; set; }
         public NguoiDungModel GiangVien { get; set; } = null!;
 
-        public ICollection<ChuongHocModel> ChuongHocs { get; set; }
-            = new List<ChuongHocModel>();
+        [StringLength(50)]
+        public string TrinhDo { get; set; } = null!;  // Người mới, Trung cấp, Nâng cao
+
+        public int ThoiLuongGio { get; set; }  // Tổng số giờ học
+
+        [StringLength(500)]
+        public string KyNangChinh { get; set; } = null!;  // Ví dụ: ["C#","SQL","REACT"]
+
+        public DateTime NgayTao { get; set; } = DateTime.Now;
+
+        // Navigation
+        public virtual ICollection<ChuongHocModel> ChuongHocs { get; set; } = null!;
+        public virtual ICollection<DangKyKhoaHocModel> DangKyKhoaHocs { get; set; } = null!;
+        public virtual ICollection<DanhGiaModel> DanhGias { get; set; } = null!;
     }
 }

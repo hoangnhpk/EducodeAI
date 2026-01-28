@@ -1,4 +1,6 @@
-﻿using educodeai_server.Services.Interface;
+﻿using educodeai_server.DTOs.KhoaHoc;
+using educodeai_server.Services.Implementation;
+using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
 namespace educodeai_server.Controllers.HocVien
@@ -19,7 +21,7 @@ namespace educodeai_server.Controllers.HocVien
         {
             try
             {
-                var data = await _khoaHocService.GetKhoaHocByIdAsync(maKhoaHoc);
+                var data = await _khoaHocService.GetKhoaHocByIdAsync(maKhoaHoc, 2);
 
                 if (data == null)
                 {
@@ -31,6 +33,94 @@ namespace educodeai_server.Controllers.HocVien
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
+            }
+        }
+
+        [HttpPost("luu-tien-do")]
+        public async Task<IActionResult> LuuTienDo([FromBody] TienDoBaiHocDTO dto)
+        {
+            try
+            {
+                var result = await _khoaHocService.LuuTienDoBaiHoc(dto);
+                return Ok(new { thanhCong = result });
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi hệ thống. Vui lòng thử lại sau."
+                });
+            }
+        }
+
+        [HttpPost("luu-ghi-chu")]
+        public async Task<IActionResult> LuuGhiChu([FromBody] GhiChuBaiHocDTO dto)
+        {
+            try
+            {
+                var result = await _khoaHocService.LuuGhiChuBaiHoc(dto);
+                return Ok(new { thanhCong = result });
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi hệ thống. Vui lòng thử lại sau."
+                });
+            }
+        }
+
+        [HttpGet("lay-ds-ghi-chu/{maBaiHoc}/{maNguoiDung}")]
+        public async Task<IActionResult> GetGhiChuBaiHoc(int maBaiHoc, int maNguoiDung)
+        {
+            try
+            {
+                var ghiChus = await _khoaHocService.GetGhiChuBaiHocAsync(maBaiHoc, maNguoiDung);
+                return Ok(ghiChus);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi hệ thống. Vui lòng thử lại sau."
+                });
+            }
+
+        }
+
+        [HttpPost("BaiTap/luu-ket-qua-quiz")]
+        public async Task<IActionResult> LuuKetQua([FromBody] KetQuaQuizSubmitDTO dto)
+        {
+            var ketQua = await _khoaHocService.LuuKetQuaBaiTap(dto);
+
+            if (ketQua)
+            {
+                return Ok(new { success = true, message = "Nộp bài thành công" });
+            }
+            else
+            {
+                return BadRequest(new { success = false, message = "Lỗi khi lưu bài làm" });
             }
         }
     }
