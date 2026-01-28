@@ -1,0 +1,153 @@
+/* ===== STUDENT TABLE CARD ===== */
+.student-table-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* ===== TABLE ===== */
+.student-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.student-table thead {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.student-table th {
+  padding: 16px 24px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.student-table td {
+  padding: 16px 24px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.student-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s ease;
+}
+
+.student-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* ===== STUDENT INFO ===== */
+.student-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.student-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fb923c, #f97316);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ===== PROGRESS ===== */
+.progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-bar {
+  width: 90px;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.progress-green {
+  background: #22c55e;
+}
+
+.progress-yellow {
+  background: #facc15;
+}
+
+.progress-red {
+  background: #ef4444;
+}
+
+/* ===== ASSIGNMENT BADGE ===== */
+.assignment-badge {
+  padding: 4px 10px;
+  background: #0ea5e9;
+  color: #ffffff;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ===== SCORE ===== */
+.avg-score {
+  font-weight: 600;
+  color: #2563eb;
+}
+
+/* ===== STATUS BADGE ===== */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-learning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-risk {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ===== ACTION BUTTON ===== */
+.detail-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #fb923c;
+  background: #fff7ed;
+  color: #f97316;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.detail-btn:hover {
+  background: #ffedd5;
+}
