@@ -44,7 +44,7 @@ namespace educodeai_server.Models
         public virtual ICollection<DanhGiaModel> DanhGias { get; set; } = null!;
         public virtual ICollection<BinhLuanModel> BinhLuans { get; set; } = null!;
         public virtual ICollection<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; } = null!;
-        public virtual ICollection<BaiNopModel> BaiNops { get; set; } = null!;
+        public virtual ICollection<KetQuaLamBaiModel> BaiNops { get; set; } = null!;
         public virtual ICollection<LoTrinhAIModel> LoTrinhAIs { get; set; } = null!;
         public virtual ICollection<CuocHoiThoaiAIModel> CuocHoiThoaiAIs { get; set; } = null!;
     }
