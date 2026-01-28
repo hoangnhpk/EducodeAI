@@ -25,5 +25,23 @@ namespace educodeai_server.Services.Implementation
             var ketQua = await _khoaHocRepository.LuuTienDoBaiHoc(dto);
             return ketQua;
         }
+
+        public async Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto)
+        {
+            var ketQua = await _khoaHocRepository.LuuGhiChuBaiHoc(dto);
+            return ketQua;
+        }
+
+        public async Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung)
+        {
+            var ketQua = await _khoaHocRepository.GetGhiChuBaiHocAsync(maBaiHoc, maNguoiDung);
+            return ketQua;
+        }
+
+        public async Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto)
+        {
+            var ketQua = await _khoaHocRepository.LuuKetQuaBaiTap(dto);
+            return ketQua;
+        }
     }
 }

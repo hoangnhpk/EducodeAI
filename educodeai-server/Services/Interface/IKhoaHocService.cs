@@ -6,5 +6,8 @@ namespace educodeai_server.Services.Interface
     {
         Task<KhoaHoc_NoiDungKhoaHocDTO?> GetKhoaHocByIdAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto);
+        Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto);
+        Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung);
+        Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto);
     }
 }
