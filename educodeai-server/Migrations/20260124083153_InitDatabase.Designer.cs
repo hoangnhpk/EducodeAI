@@ -12,7 +12,7 @@ using educodeai_server.Data;
 namespace educodeai_server.Migrations
 {
     [DbContext(typeof(EduCodeAIDbContext))]
-    [Migration("20260122061752_InitDatabase")]
+    [Migration("20260124083153_InitDatabase")]
     partial class InitDatabase
     {
         /// <inheritdoc />
@@ -1685,54 +1685,6 @@ namespace educodeai_server.Migrations
                         });
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.BaiNopModel", b =>
-                {
-                    b.Property<int>("MaBaiNop")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaBaiNop"));
-
-                    b.Property<int>("BoNhoSuDung")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CodeNop")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("LanNop")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MaBaiTap")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MaNgonNgu")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MaNguoiDung")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("NgayNop")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ThoiGianChay")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TrangThai")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("MaBaiNop");
-
-                    b.HasIndex("MaBaiTap");
-
-                    b.HasIndex("MaNgonNgu");
-
-                    b.HasIndex("MaNguoiDung");
-
-                    b.ToTable("BaiNops");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.BaiTapModel", b =>
                 {
                     b.Property<int>("MaBaiTap")
@@ -1740,16 +1692,6 @@ namespace educodeai_server.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaBaiTap"));
-
-                    b.Property<string>("DeBai")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("GioiHanBoNho")
-                        .HasColumnType("int");
-
-                    b.Property<int>("GioiHanThoiGian")
-                        .HasColumnType("int");
 
                     b.Property<int>("MaBaiHoc")
                         .HasColumnType("int");
@@ -1761,15 +1703,54 @@ namespace educodeai_server.Migrations
                     b.ToTable("BaiTaps");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.BaiTap_NgonNguModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiTap_QuizModel", b =>
                 {
-                    b.Property<int>("MaBaiTapNgonNgu")
+                    b.Property<int>("MaBaiTapQuiz")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaBaiTapNgonNgu"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaBaiTapQuiz"));
+
+                    b.Property<bool>("ChoPhepLamLai")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DaoCauHoi")
+                        .HasColumnType("bit");
+
+                    b.Property<double>("DiemCanDat")
+                        .HasColumnType("float");
+
+                    b.Property<string>("DuLieuCauHoi")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MaBaiTap")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ThoiGianLamBai")
+                        .HasColumnType("int");
+
+                    b.HasKey("MaBaiTapQuiz");
+
+                    b.HasIndex("MaBaiTap")
+                        .IsUnique();
+
+                    b.ToTable("BaiTap_Quizs");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.BaiTap_ThucHanhIDEModel", b =>
+                {
+                    b.Property<int>("MaBaiTapThucHanh")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaBaiTapThucHanh"));
 
                     b.Property<string>("CodeMau")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeBai")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("MaBaiTap")
@@ -1778,14 +1759,17 @@ namespace educodeai_server.Migrations
                     b.Property<int>("MaNgonNgu")
                         .HasColumnType("int");
 
-                    b.HasKey("MaBaiTapNgonNgu");
+                    b.HasKey("MaBaiTapThucHanh");
+
+                    b.HasIndex("MaBaiTap")
+                        .IsUnique();
 
                     b.HasIndex("MaNgonNgu");
 
                     b.HasIndex("MaBaiTap", "MaNgonNgu")
                         .IsUnique();
 
-                    b.ToTable("BaiTap_NgonNgus");
+                    b.ToTable("BaiTap_ThucHanhIDEs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.BinhLuanModel", b =>
@@ -1842,12 +1826,18 @@ namespace educodeai_server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("MaBaiTap")
+                    b.Property<int>("GioiHanBoNho")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GioiHanThoiGian")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaBaiTapThucHanh")
                         .HasColumnType("int");
 
                     b.HasKey("MaBoThu");
 
-                    b.HasIndex("MaBaiTap");
+                    b.HasIndex("MaBaiTapThucHanh");
 
                     b.ToTable("BoThuNghiems");
                 });
@@ -2232,6 +2222,76 @@ namespace educodeai_server.Migrations
                         .IsUnique();
 
                     b.ToTable("DanhGias");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.GhiChuBaiHocModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("MaBaiHoc")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaNguoiDung")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("NgayTao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NoiDung")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("ThoiGianVideo")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaBaiHoc");
+
+                    b.HasIndex("MaNguoiDung");
+
+                    b.ToTable("GhiChuBaiHocs");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.KetQuaLamBaiModel", b =>
+                {
+                    b.Property<int>("MaKetQuaBaiNop")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaKetQuaBaiNop"));
+
+                    b.Property<float>("DiemSo")
+                        .HasColumnType("real");
+
+                    b.Property<int>("MaBaiTap")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaNguoiDung")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("NgayNop")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NoiDungNopJSON")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TrangThai")
+                        .HasColumnType("bit");
+
+                    b.HasKey("MaKetQuaBaiNop");
+
+                    b.HasIndex("MaBaiTap");
+
+                    b.HasIndex("MaNguoiDung");
+
+                    b.ToTable("KetQuaLamBais");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.KhoaHocModel", b =>
@@ -2633,33 +2693,6 @@ namespace educodeai_server.Migrations
                     b.Navigation("ChuongHoc");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.BaiNopModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.BaiTapModel", "BaiTap")
-                        .WithMany("BaiNops")
-                        .HasForeignKey("MaBaiTap")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("educodeai_server.Models.NgonNguLapTrinhModel", "NgonNgu")
-                        .WithMany("BaiNops")
-                        .HasForeignKey("MaNgonNgu")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
-                        .HasForeignKey("MaNguoiDung")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("BaiTap");
-
-                    b.Navigation("NgonNgu");
-
-                    b.Navigation("NguoiDung");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.BaiTapModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.BaiHocModel", "BaiHoc")
@@ -2671,11 +2704,22 @@ namespace educodeai_server.Migrations
                     b.Navigation("BaiHoc");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.BaiTap_NgonNguModel", b =>
+            modelBuilder.Entity("educodeai_server.Models.BaiTap_QuizModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.BaiTapModel", "BaiTap")
-                        .WithMany("BaiTap_NgonNgus")
-                        .HasForeignKey("MaBaiTap")
+                        .WithOne("BaiTap_Quiz")
+                        .HasForeignKey("educodeai_server.Models.BaiTap_QuizModel", "MaBaiTap")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BaiTap");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.BaiTap_ThucHanhIDEModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.BaiTapModel", "BaiTap")
+                        .WithOne("BaiTap_NgonNgus")
+                        .HasForeignKey("educodeai_server.Models.BaiTap_ThucHanhIDEModel", "MaBaiTap")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -2704,7 +2748,7 @@ namespace educodeai_server.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                        .WithMany("BinhLuans")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -2718,13 +2762,13 @@ namespace educodeai_server.Migrations
 
             modelBuilder.Entity("educodeai_server.Models.BoThuNghiemModel", b =>
                 {
-                    b.HasOne("educodeai_server.Models.BaiTapModel", "BaiTap")
+                    b.HasOne("educodeai_server.Models.BaiTap_ThucHanhIDEModel", "BaiTap_ThucHanh")
                         .WithMany("BoThuNghiems")
-                        .HasForeignKey("MaBaiTap")
+                        .HasForeignKey("MaBaiTapThucHanh")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.Navigation("BaiTap");
+                    b.Navigation("BaiTap_ThucHanh");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.ChuongHocModel", b =>
@@ -2741,7 +2785,7 @@ namespace educodeai_server.Migrations
             modelBuilder.Entity("educodeai_server.Models.CuocHoiThoaiAIModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                        .WithMany("CuocHoiThoaiAIs")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -2777,12 +2821,50 @@ namespace educodeai_server.Migrations
                         .IsRequired();
 
                     b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                        .WithMany("DanhGias")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("KhoaHoc");
+
+                    b.Navigation("NguoiDung");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.GhiChuBaiHocModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.BaiHocModel", "BaiHoc")
+                        .WithMany("GhiChuBaiHocs")
+                        .HasForeignKey("MaBaiHoc")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany("GhiChuBaiHocs")
+                        .HasForeignKey("MaNguoiDung")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BaiHoc");
+
+                    b.Navigation("NguoiDung");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.KetQuaLamBaiModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.BaiTapModel", "BaiTap")
+                        .WithMany("KetQuaBaiTaps")
+                        .HasForeignKey("MaBaiTap")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany("BaiNops")
+                        .HasForeignKey("MaNguoiDung")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BaiTap");
 
                     b.Navigation("NguoiDung");
                 });
@@ -2801,7 +2883,7 @@ namespace educodeai_server.Migrations
             modelBuilder.Entity("educodeai_server.Models.LoTrinhAIModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                        .WithMany("LoTrinhAIs")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -2818,7 +2900,7 @@ namespace educodeai_server.Migrations
                         .IsRequired();
 
                     b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
+                        .WithMany("TienDoBaiHocs")
                         .HasForeignKey("MaNguoiDung")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -2845,15 +2927,23 @@ namespace educodeai_server.Migrations
 
                     b.Navigation("BinhLuans");
 
+                    b.Navigation("GhiChuBaiHocs");
+
                     b.Navigation("TienDoBaiHocs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.BaiTapModel", b =>
                 {
-                    b.Navigation("BaiNops");
+                    b.Navigation("BaiTap_NgonNgus")
+                        .IsRequired();
 
-                    b.Navigation("BaiTap_NgonNgus");
+                    b.Navigation("BaiTap_Quiz");
 
+                    b.Navigation("KetQuaBaiTaps");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.BaiTap_ThucHanhIDEModel", b =>
+                {
                     b.Navigation("BoThuNghiems");
                 });
 
@@ -2883,16 +2973,28 @@ namespace educodeai_server.Migrations
 
             modelBuilder.Entity("educodeai_server.Models.NgonNguLapTrinhModel", b =>
                 {
-                    b.Navigation("BaiNops");
-
                     b.Navigation("BaiTap_NgonNgus");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.NguoiDungModel", b =>
                 {
+                    b.Navigation("BaiNops");
+
+                    b.Navigation("BinhLuans");
+
+                    b.Navigation("CuocHoiThoaiAIs");
+
                     b.Navigation("DangKyKhoaHocs");
 
+                    b.Navigation("DanhGias");
+
+                    b.Navigation("GhiChuBaiHocs");
+
                     b.Navigation("KhoaHocs");
+
+                    b.Navigation("LoTrinhAIs");
+
+                    b.Navigation("TienDoBaiHocs");
                 });
 #pragma warning restore 612, 618
         }

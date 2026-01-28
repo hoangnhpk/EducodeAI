@@ -1,7 +1,7 @@
 ﻿using educodeai_server.Models;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
-using educodeai_server.DTOs.NguoiDung; // Đảm bảo đã import DTO
+using educodeai_server.DTOs.NguoiDung;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -80,7 +80,7 @@ namespace educodeai_server.Services.Implementation
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim("id", user.MaNguoiDung.ToString()),
                 new Claim(ClaimTypes.Name, user.HoTen ?? ""),
-                new Claim(ClaimTypes.Role, "User")
+                new Claim(ClaimTypes.Role, role)
             };
             var token = new JwtSecurityToken(
                 _configuration["Jwt:Issuer"],
