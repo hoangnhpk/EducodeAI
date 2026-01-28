@@ -21,7 +21,7 @@ namespace EduCodeAI.Controllers.HocVien
         public async Task<IActionResult> TaoLoTrinh(CreateLoTrinhAIDto dto)
         {
 
-            return Ok(await _service.TaoLoTrinhAsync(8, dto));
+            return Ok(await _service.TaoLoTrinhAsync(3, dto));
         }
 
         [HttpPut("cap-nhat")]
