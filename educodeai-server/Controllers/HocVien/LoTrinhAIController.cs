@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace EduCodeAI.Controllers.HocVien
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/lo-trinh-ai")]
     public class LoTrinhAIController : ControllerBase
     {
         private readonly ILoTrinhAIService _service;
