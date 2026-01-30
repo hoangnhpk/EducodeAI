@@ -12,6 +12,8 @@ namespace educodeai_server.Services.Interface
             int maNguoiDung,
             UpdateLoTrinhDto dto);
 
-        Task<bool> XacNhanLoTrinhAsync(int maLoTrinh);
+        Task<bool> XacNhanLoTrinhAsync(int maLoTrinh, int maNguoiDung);
+
+        Task<List<LoTrinhAICuaToiResponseDTO>?> GetLoTrinhCuaToiAsync(int maNguoiDung);
     }
 }

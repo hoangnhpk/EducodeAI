@@ -20,32 +20,32 @@ const INITIAL_STATE: DuLieuYeuCauLoTrinh = {
   khoKhan: "",
 };
 
-const GOI_Y_MUC_TIEU: string[] = [
-  // Data & AI core
-  "Trở thành Data Scientist",
-  "Machine Learning Engineer",
-  "AI Engineer ứng dụng",
-  "Data Engineer",
-  "NLP Specialist",
-  "Computer Vision Engineer",
+const GOI_Y_MUC_TIEU = [
+  // có dữ liệu
+  { key: "Data", label: "Data Engineer" },
+  { key: "AI", label: "Prompt Engineer / AI Trainer" },
+  { key: "Backend", label: "Backend Engineer" },
+  { key: "Frontend", label: "Frontend Engineer" },
+  { key: "Fullstack", label: "Software Engineer (Fullstack)" },
+  { key: "Mobile", label: "Mobile Developer" },
+  { key: "Cloud", label: "Cloud Engineer" },
+  { key: "DevOps", label: "DevOps Engineer" },
 
-  // Product & Business (AI-aware)
-  "AI Product Manager",
-  "AI Business Analyst",
-  "Business Intelligence Analyst",
-  "Technical Consultant (AI/Data)",
-  "Prompt Engineer / AI Trainer",
+  // Data & AI
+  { key: "data_scientist", label: "Trở thành Data Scientist" },
+  { key: "ml_engineer", label: "Machine Learning Engineer" },
+  { key: "ai_engineer", label: "AI Engineer ứng dụng" },
+  { key: "nlp", label: "NLP Specialist" },
+  { key: "computer_vision", label: "Computer Vision Engineer" },
 
-  // Software Engineering
-  "Backend Engineer",
-  "Frontend Engineer",
-  "Software Engineer (Fullstack)",
-  "Mobile Developer",
+  // Product & Business
+  { key: "ai_pm", label: "AI Product Manager" },
+  { key: "ai_ba", label: "AI Business Analyst" },
+  { key: "bi_analyst", label: "Business Intelligence Analyst" },
+  { key: "ai_consultant", label: "Technical Consultant (AI/Data)" },
 
-  // Infra & Platform
-  "Cloud Engineer",
-  "DevOps Engineer",
-  "Cybersecurity Specialist"
+  // Infra
+  { key: "cybersecurity", label: "Cybersecurity Specialist" },
 ];
 
 
@@ -155,24 +155,23 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
         <div className="col-12">
           <label className="required-field mb-2 d-block">Mục tiêu nghề nghiệp cụ thể</label>
           <div
-            className={`p-3 border rounded ${
-              errors.mucTieuNgheNghiep ? "border-danger" : "border-secondary"
-            }`}
+            className={`p-3 border rounded ${errors.mucTieuNgheNghiep ? "border-danger" : "border-secondary"
+              }`}
           >
             <div className="row g-2">
-              {GOI_Y_MUC_TIEU.map((mucTieu, index) => (
-                <div className="col-md-6" key={mucTieu}>
+              {GOI_Y_MUC_TIEU.map(({ key, label }) => (
+                <div className="col-md-6" key={key}>
                   <div className="form-check">
                     <input
                       className="form-check-input"
                       type="radio"
                       name="mucTieuNgheNghiep"
-                      id={`muc-tieu-${index}`}
-                      checked={formData.mucTieuNgheNghiep === mucTieu}
-                      onChange={() => handleChonMucTieu(mucTieu)}
+                      id={`muc-tieu-${key}`}
+                      checked={formData.mucTieuNgheNghiep === key}
+                      onChange={() => handleChonMucTieu(key)}
                     />
-                    <label className="form-check-label" htmlFor={`muc-tieu-${index}`}>
-                      {mucTieu}
+                    <label className="form-check-label" htmlFor={`muc-tieu-${key}`}>
+                      {label}
                     </label>
                   </div>
                 </div>
@@ -232,7 +231,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
         />
         <label>Kiến thức hiện có</label>
         <small className="form-text text-muted">Ví dụ: Python, SQL, Machine Learning cơ bản,
-                                            Excel...</small>
+          Excel...</small>
       </div>
 
       <div className="form-floating mb-3">
@@ -245,7 +244,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
         />
         <label>Kinh nghiệm thực tế</label>
         <small className="form-text text-muted">Ví dụ: Dự án cá nhân, công việc trước
-                                            đây...</small>
+          đây...</small>
       </div>
 
       <div className="form-floating mb-3">
@@ -258,7 +257,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
         />
         <label>Khó khăn hiện tại</label>
         <small className="form-text text-muted">Ví dụ: Thiếu kiến thức nền, khó tập
-                                            trung...</small>
+          trung...</small>
       </div>
 
       <button
