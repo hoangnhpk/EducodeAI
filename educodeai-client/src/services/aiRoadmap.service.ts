@@ -3,27 +3,22 @@ import type { DuLieuYeuCauLoTrinh, KetQuaLoTrinhAI } from "../pages/hoc-vien/yeu
 
 export const aiRoadmapService = {
   async taoLoTrinh(data: DuLieuYeuCauLoTrinh) {
-    const thoiGianHocDuKien = Number(data.thoiGianHoc);
-    const thoiGianMoiTuan = Number(data.mucDoCamKet);
+    const thoiGianHocDuKien = data.thoiGianHoc ? Number(data.thoiGianHoc) : undefined;
+    const thoiGianMoiTuan = data.mucDoCamKet ? Number(data.mucDoCamKet) : undefined;
 
     const payload = {
       trinhDoHienTai: data.trinhDo,
       phongCachHoc: data.phongCachHoc,
       mucTieuNgheNghiep: data.mucTieuNgheNghiep,
-      thoiGianHocDuKien: Number.isFinite(thoiGianHocDuKien)
-        ? thoiGianHocDuKien
-        : undefined,
-      thoiGianMoiTuan: Number.isFinite(thoiGianMoiTuan)
-        ? thoiGianMoiTuan
-        : undefined,
+      thoiGianHocDuKien,
+      thoiGianMoiTuan,
       kienThucHienCo: data.kienThucHienCo,
       kinhNghiemThucTe: data.kinhNghiem,
-      khoKhanHienTai: data.khoKhan,
-      linhVucTapTrung: data.cacMangTapTrung
+      khoKhanHienTai: data.khoKhan
     };
 
     const res = await (axios as any).post(
-      "/LoTrinhAI",
+      "/api/lo-trinh-ai",
       payload,
       {
         timeout: 120000, // 120s - Tha hồ cho AI suy ngẫm
@@ -52,7 +47,7 @@ export const aiRoadmapService = {
 
   async capNhatLoTrinh(maLoTrinh: number, yeuCauMoi: string) {
     const res = await (axios as any).put(
-      "/LoTrinhAI/cap-nhat",
+      "/api/lo-trinh-ai/cap-nhat",
       { maLoTrinh, yeuCauMoi },
       { timeout: 120000 }
     ) as { maLoTrinh: number; noiDungJSON: string };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { DuLieuYeuCauLoTrinh, TrinhDo } from "./types";
+import type { DuLieuYeuCauLoTrinh } from "./types";
 import "./YeuCauLoTrinhAI.css";
 
 interface Props {
@@ -8,26 +8,50 @@ interface Props {
 }
 
 // Gom state ban đầu cho gọn
-const INITIAL_STATE = {
+const INITIAL_STATE: DuLieuYeuCauLoTrinh = {
   hoTen: "",
-  trinhDo: "" as TrinhDo,
-  phongCachHoc: "",
+  trinhDo: "Người mới",
+  phongCachHoc: "video",
   mucTieuNgheNghiep: "",
-  thoiGianHoc: "",
-  mucDoCamKet: "",
+  thoiGianHoc: "3",
+  mucDoCamKet: "10",
   kienThucHienCo: "",
   kinhNghiem: "",
   khoKhan: "",
 };
 
+const GOI_Y_MUC_TIEU: string[] = [
+  // Data & AI core
+  "Trở thành Data Scientist",
+  "Machine Learning Engineer",
+  "AI Engineer ứng dụng",
+  "Data Engineer",
+  "NLP Specialist",
+  "Computer Vision Engineer",
+
+  // Product & Business (AI-aware)
+  "AI Product Manager",
+  "AI Business Analyst",
+  "Business Intelligence Analyst",
+  "Technical Consultant (AI/Data)",
+  "Prompt Engineer / AI Trainer",
+
+  // Software Engineering
+  "Backend Engineer",
+  "Frontend Engineer",
+  "Software Engineer (Fullstack)",
+  "Mobile Developer",
+
+  // Infra & Platform
+  "Cloud Engineer",
+  "DevOps Engineer",
+  "Cybersecurity Specialist"
+];
+
+
 export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Props) {
   // 1. Dùng 1 state object thay vì 10 cái useState lẻ
   const [formData, setFormData] = useState(INITIAL_STATE);
-
-  // State riêng cho mảng checkbox và field "Khác"
-  const [cacMangTapTrung, setCacMangTapTrung] = useState<string[]>([]);
-  const [isKhac, setIsKhac] = useState(false);
-  const [mangKhac, setMangKhac] = useState("");
 
   // State validate (đơn giản hoá)
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -44,10 +68,11 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
     }
   };
 
-  const toggleMang = (value: string) => {
-    setCacMangTapTrung((prev) =>
-      prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value]
-    );
+  const handleChonMucTieu = (value: string) => {
+    setFormData((prev) => ({ ...prev, mucTieuNgheNghiep: value }));
+    if (errors.mucTieuNgheNghiep) {
+      setErrors((prev) => ({ ...prev, mucTieuNgheNghiep: "" }));
+    }
   };
 
   const validate = () => {
@@ -65,14 +90,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
     e.preventDefault();
     if (!validate()) return;
 
-    const danhSachMang = isKhac && mangKhac.trim()
-      ? [...cacMangTapTrung, mangKhac.trim()]
-      : cacMangTapTrung;
-
-    onSubmit({
-      ...formData,
-      cacMangTapTrung: danhSachMang,
-    });
+    onSubmit(formData);
   };
 
   return (
@@ -103,7 +121,6 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
               value={formData.trinhDo}
               onChange={handleChange}
             >
-              <option value="">Chọn trình độ hiện tại</option>
               <option value="Người mới">Người mới bắt đầu</option>
               <option value="Trung cấp">Trung cấp</option>
               <option value="Nâng cao">Nâng cao</option>
@@ -121,7 +138,6 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
               value={formData.phongCachHoc}
               onChange={handleChange}
             >
-              <option value="">Chọn phong cách học</option>
               <option value="video">Video và bài giảng</option>
               <option value="reading">Đọc sách và tài liệu</option>
               <option value="hands-on">Thực hành dự án</option>
@@ -137,21 +153,38 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
 
       <div className="row g-3">
         <div className="col-12">
-          <div className="form-floating">
-            <input
-              name="mucTieuNgheNghiep"
-              type="text"
-              className={`form-control ${errors.mucTieuNgheNghiep ? "is-invalid" : ""}`}
-              placeholder="Ví dụ: Trở thành Data Scientist"
-              value={formData.mucTieuNgheNghiep}
-              onChange={handleChange}
-              maxLength={100}
-            />
-            <label className="required-field">Mục tiêu nghề nghiệp cụ thể</label>
-            <div className="invalid-feedback">{errors.mucTieuNgheNghiep}</div>
-            <small className="form-text text-muted">Hãy mô tả rõ ràng vai trò bạn muốn đạt
-                                            được.</small>
+          <label className="required-field mb-2 d-block">Mục tiêu nghề nghiệp cụ thể</label>
+          <div
+            className={`p-3 border rounded ${
+              errors.mucTieuNgheNghiep ? "border-danger" : "border-secondary"
+            }`}
+          >
+            <div className="row g-2">
+              {GOI_Y_MUC_TIEU.map((mucTieu, index) => (
+                <div className="col-md-6" key={mucTieu}>
+                  <div className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="radio"
+                      name="mucTieuNgheNghiep"
+                      id={`muc-tieu-${index}`}
+                      checked={formData.mucTieuNgheNghiep === mucTieu}
+                      onChange={() => handleChonMucTieu(mucTieu)}
+                    />
+                    <label className="form-check-label" htmlFor={`muc-tieu-${index}`}>
+                      {mucTieu}
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+          {errors.mucTieuNgheNghiep && (
+            <div className="invalid-feedback d-block">{errors.mucTieuNgheNghiep}</div>
+          )}
+          <small className="form-text text-muted">
+            Chọn mục tiêu gần nhất với định hướng của bạn.
+          </small>
         </div>
         <div className="col-md-6">
           <div className="form-floating">
@@ -161,7 +194,6 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
               value={formData.thoiGianHoc}
               onChange={handleChange}
             >
-              <option value="">Chọn thời gian học</option>
               <option value="3">3 tháng</option>
               <option value="6">6 tháng</option>
               <option value="9">9 tháng</option>
@@ -178,7 +210,6 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
               value={formData.mucDoCamKet}
               onChange={handleChange}
             >
-              <option value="">Mức độ cam kết</option>
               <option value="10">Part-time (5-10h/tuần)</option>
               <option value="30">Full-time (20-40h/tuần)</option>
               <option value="50">Intensive (40h+/tuần)</option>
@@ -229,43 +260,6 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
         <small className="form-text text-muted">Ví dụ: Thiếu kiến thức nền, khó tập
                                             trung...</small>
       </div>
-
-      <label className="mb-2 fw-bold">Bạn muốn AI tập trung mạnh vào mảng nào?</label>
-      <div className="row g-2 mb-3">
-        {["Frontend", "DevOps", "Backend", "Database", "Clean Code", "System Design", "AI"].map((mang) => (
-          <div className="col-md-6" key={mang}>
-            <div className="form-check">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                checked={cacMangTapTrung.includes(mang)}
-                onChange={() => toggleMang(mang)}
-              />
-              <label className="form-check-label">{mang}</label>
-            </div>
-          </div>
-        ))}
-        <div className="col-md-6">
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              checked={isKhac}
-              onChange={(e) => setIsKhac(e.target.checked)}
-            />
-            <label className="form-check-label">Khác</label>
-          </div>
-        </div>
-      </div>
-
-      {isKhac && (
-        <input
-          className="form-control mb-3"
-          placeholder="Nhập lĩnh vực khác..."
-          value={mangKhac}
-          onChange={(e) => setMangKhac(e.target.value)}
-        />
-      )}
 
       <button
         type="submit"

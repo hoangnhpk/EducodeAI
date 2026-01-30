@@ -34,7 +34,6 @@ namespace educodeai_server.Services.Implementation
 
             var khoaHoc = await _khoaHocRepo.GetKhoaHocPhuHopAsync(dto);
 
-            Console.WriteLine($"[LoTrinhAIService] Tìm thấy {khoaHoc.Count} khoá học phù hợp.");
 
             if (khoaHoc == null || !khoaHoc.Any())
             {
@@ -42,14 +41,18 @@ namespace educodeai_server.Services.Implementation
             }
 
             var khoaHocJson = JsonSerializer.Serialize(khoaHoc);
-            Console.WriteLine("Thời gian: " + dto.ThoiGianHocDuKien);
+
             dto.ThoiGianHocDuKien = dto.ThoiGianHocDuKien * 4;
-            Console.WriteLine("Thời gian: " + dto.ThoiGianHocDuKien);
+
             var prompt = Build(dto, khoaHocJson);
+
 
             var aiResult = await _gemini.GenerateAsync(prompt);
 
             var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
+
+            var resultusageMetadata = ChuanHoaJsonTuAI.usageMetadata(aiResult);
+            Console.WriteLine("[LoTrinhAIService] AI result usageMetadata: " + resultusageMetadata);
 
             var loTrinh = new LoTrinhAIModel
             {
@@ -86,6 +89,8 @@ namespace educodeai_server.Services.Implementation
         {
             var outputSchema = """
                 {
+                  "tenLoTrinh": "",
+                  "moTaChung": "",
                   "tongThoiGianTuan": 0,
                   "loTrinh": [
                     {
@@ -97,7 +102,8 @@ namespace educodeai_server.Services.Implementation
                           "TuTuan": 0,  
                           "DenTuan": 0,
                           "tenKhoaHoc": "",
-                          "noiDungChinh": ""
+                          "noiDungChinh": "",
+                          "ghiChu": ""
                         }
                       ]
                     }
@@ -120,7 +126,6 @@ namespace educodeai_server.Services.Implementation
                 Kiến thức đã có: {dto.KienThucHienCo}
                 Kinh nghiệm thực tế: {dto.KinhNghiemThucTe}
                 Khó khăn hiện tại: {dto.KhoKhanHienTai}
-                Lĩnh vực muốn tập trung: {string.Join(", ", dto.LinhVucTapTrung ?? new())}
 
                 === YÊU CẦU XỬ LÝ ===
                 1. Tạo lộ trình học theo từng tuần.
@@ -136,6 +141,21 @@ namespace educodeai_server.Services.Implementation
                 - Có sự liên kết logic với giai đoạn trước
                 9. Không lan man sang lĩnh vực khác nếu không phục vụ mục tiêu nghề nghiệp.
                 10. Tổng thời gian học = tổng số tuần trong toàn bộ lộ trình
+                11. Sắp xếp giai đoạn 1 cách trật tự phải đi từ cái cơ bản đến cái khó
+                12. Không được chuyển sang ngôn ngữ lập trình khác trừ khi danh sách input không tồn tại bất kỳ khoá học nào phù hợp cho ngôn ngữ mà học viên đã có khi đó phải viết vào ghiChu ở khoaHocSuDung..
+                13. Mỗi 1 nghề nghiệp chỉ được chọn 1 ngôn ngữ lập trình chính để tập trung không mở rộng, không tham khảo, không so sánh.
+                14. Các kiến thức nền tảng (ví dụ: Nhập môn CNTT, tư duy lập trình, toán nền, xác suất thống kê cơ bản)
+                    BẮT BUỘC phải nằm ở giai đoạn đầu tiên nếu được sử dụng.
+                15. KHÔNG được sắp xếp bất kỳ khoá học nhập môn / kiến thức nền chung
+                    sau khi đã bắt đầu giai đoạn học chuyên ngành chính của nghề nghiệp.
+                16. Không mở rộng sang kiến thức khác mà không phục vụ trực tiếp mục tiêu nghề nghiệp của học viên để tránh tốn thời gian.
+                17. "Mở rộng kiến thức Backend" chỉ được hiểu là:
+                - Kiến trúc
+                - Hiệu năng
+                - Bảo mật
+                - Database
+                - DevOps cơ bản
+                TRÊN CÙNG ngôn ngữ lập trình đã chọn.
 
                 JSON output PHẢI có cấu trúc GIỐNG HỆT schema dưới đây.
                 Mọi mảng trong JSON phải có ít nhất 1 phần tử nếu có dữ liệu phù hợp.
@@ -322,7 +342,8 @@ namespace educodeai_server.Services.Implementation
                           "TuTuan": 0,  
                           "DenTuan": 0,
                           "tenKhoaHoc": "",
-                          "noiDungChinh": ""
+                          "noiDungChinh": "",
+                          "ghiChu": ""
                         }
                       ]
                     }
@@ -353,6 +374,8 @@ namespace educodeai_server.Services.Implementation
                     - KHÔNG suy luận từng bước.
                     - KHÔNG lập kế hoạch nội bộ.
                     - Chỉ trả kết quả cuối cùng.
+                    - Nếu không có khoá học phù hợp với kiến thức user đã có thì khi chọn kiến thức khác phải khi vào ghi chú ở khoá học đó.
+                    - Mỗi 1 nghề nghiệp chỉ được chọn 1 ngôn ngữ lập trình chính để tập trung.
                     """;
         }
 
