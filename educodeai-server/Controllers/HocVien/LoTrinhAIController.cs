@@ -17,7 +17,7 @@ namespace EduCodeAI.Controllers.HocVien
             _service = service;
         }
 
-        [HttpPost]
+        [HttpPost("them")]
         public async Task<IActionResult> TaoLoTrinh(CreateLoTrinhAIDto dto)
         {
 
@@ -28,15 +28,22 @@ namespace EduCodeAI.Controllers.HocVien
         public async Task<IActionResult> CapNhatLoTrinh(
         [FromBody] UpdateLoTrinhDto dto)
         {
-            var result = await _service.CapNhatLoTrinhAsync(8, dto);
+            var result = await _service.CapNhatLoTrinhAsync(3, dto);
             return Ok(result);
         }
 
         [HttpPost("xac-nhan/{maLoTrinh}")]
         public async Task<IActionResult> XacNhanLoTrinh(int maLoTrinh)
         {
-            var result = await _service.XacNhanLoTrinhAsync(maLoTrinh);
+            var result = await _service.XacNhanLoTrinhAsync(maLoTrinh, 3);
             return Ok(new { success = result, message = "Lộ trình đã được áp dụng thành công!" });
+        }
+
+        [HttpGet("lay-tat-ca-lo-trinh")]
+        public async Task<IActionResult> GetAllLoTrinhAI()
+        {
+            var result = await _service.GetLoTrinhCuaToiAsync(3);
+            return Ok(result);
         }
     }
 }

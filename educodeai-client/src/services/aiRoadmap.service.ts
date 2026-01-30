@@ -18,7 +18,7 @@ export const aiRoadmapService = {
     };
 
     const res = await (axios as any).post(
-      "/api/lo-trinh-ai",
+      "/api/lo-trinh-ai/them",
       payload,
       {
         timeout: 120000, // 120s - Tha hồ cho AI suy ngẫm
@@ -62,7 +62,7 @@ export const aiRoadmapService = {
 },
 
   async xacNhanLoTrinh(maLoTrinh: number) {
-    return await axios.post(`/LoTrinhAI/xac-nhan/${maLoTrinh}`);
+    return await axios.post(`/api/lo-trinh-ai/xac-nhan/${maLoTrinh}`);
   }
   
 };
