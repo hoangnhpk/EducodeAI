@@ -45,9 +45,8 @@ export default function YeuCauLoTrinhAI() {
       setIsProcessing(true);
       await aiRoadmapService.xacNhanLoTrinh(ketQuaAI.maLoTrinh);
       
-      // Thành công -> Chuyển hướng hoặc báo tin vui
       alert("Chúc mừng! Lộ trình học tập đã được áp dụng.");
-      // window.location.href = "/dashboard"; // Ví dụ chuyển trang
+      window.location.href = "/khoa-hoc-ai-cua-toi";
     } catch (error) {
       alert("Có lỗi xảy ra khi lưu lộ trình.");
     } finally {

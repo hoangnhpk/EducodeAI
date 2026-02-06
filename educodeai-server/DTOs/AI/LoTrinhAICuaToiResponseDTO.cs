@@ -7,9 +7,16 @@ namespace educodeai_server.DTOs.AI
         public int MaLoTrinh { get; set; }
         public string TenLoTrinh { get; set; } = null!;
         public string MoTaChung { get; set; } = null!;
+
         public int TongSoKhoaHoc { get; set; }
-        public int SoKhoaHocHoanThanh { get; set; }
-        public double PhanTramHoanThanh { get; set; }
+
+        public int TongThoiGianTuan { get; set; }
+
+        public int TongSoGiaiDoan { get; set; }
+        public int SoGiaiDoanHoanThanh { get; set; }
+
+        public double PhanTramHoanThanh { get; set; } // Tính theo (SoGiaiDoanHoanThanh / TongSoGiaiDoan) * 100
+
         public List<GiaiDoanProgressDTO> GiaiDoan { get; set; } = new();
     }
 
@@ -20,6 +27,19 @@ namespace educodeai_server.DTOs.AI
         public int TongKhoaHoc { get; set; }
         public int KhoaHocHoanThanh { get; set; }
         public double PhanTram { get; set; }
+        public bool HoanThanh { get; set; }
+
+        public List<KhoaHocLoTrinhChiTietDTO> DanhSachKhoaHoc { get; set; } = new();
+    }
+
+    public class KhoaHocLoTrinhChiTietDTO
+    {
+        public int MaKhoaHoc { get; set; }
+        public string TenKhoaHoc { get; set; } = null!;
+        public string NoiDungChinh { get; set; } = null!;
+        public string GhiChu { get; set; } = string.Empty;
+        public int TuTuan { get; set; }
+        public int DenTuan { get; set; }
     }
 
     public class NoiDungLoTrinhDTO

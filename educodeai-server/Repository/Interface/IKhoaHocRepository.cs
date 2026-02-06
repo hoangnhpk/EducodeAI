@@ -16,10 +16,7 @@ namespace educodeai_server.Repository.Interface
         Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung);
         Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto);
 
-        Task<List<int>> GetMaKhoaHocDaDangKyAsync(
-        int maNguoiDung,
-        List<int> danhSachMaKhoaHoc
-        );
+        Task<List<int>> GetMaKhoaHocDaDangKyAsync(int maNguoiDung,List<int> danhSachMaKhoaHoc);
 
         Task<List<DangKyKhoaHocModel>> GetDangKyKhoaHocAsync(int maNguoiDung);
 

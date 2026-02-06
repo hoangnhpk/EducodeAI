@@ -1,5 +1,6 @@
 import axios from "@/configs/axios";
 import type { DuLieuYeuCauLoTrinh, KetQuaLoTrinhAI } from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/Components/types";
+import type {LoTrinhAICuaToiDTO} from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/LoTrinhAICuaToiDTO"
 
 export const aiRoadmapService = {
   async taoLoTrinh(data: DuLieuYeuCauLoTrinh) {
@@ -24,7 +25,7 @@ export const aiRoadmapService = {
         timeout: 120000, // 120s - Tha hồ cho AI suy ngẫm
       }
     ) as { maLoTrinh: number; noiDungJSON: string };
-    
+
 
     let noiDung: KetQuaLoTrinhAI | null = null;
     try {
@@ -53,16 +54,29 @@ export const aiRoadmapService = {
     ) as { maLoTrinh: number; noiDungJSON: string };
 
     const noiDung = JSON.parse(res.noiDungJSON);
-    
+
     return {
-        ...noiDung,
-        loTrinh: noiDung.loTrinh ?? [],
-        maLoTrinh: res.maLoTrinh
+      ...noiDung,
+      loTrinh: noiDung.loTrinh ?? [],
+      maLoTrinh: res.maLoTrinh
     } as KetQuaLoTrinhAI;
-},
+  },
 
   async xacNhanLoTrinh(maLoTrinh: number) {
     return await axios.post(`/api/lo-trinh-ai/xac-nhan/${maLoTrinh}`);
+  },
+
+  async getAllLoTrinh(): Promise<LoTrinhAICuaToiDTO[]> {
+    const url = '/api/lo-trinh-ai/lay-tat-ca-lo-trinh';
+    const res = await axios.get(url);
+    return res as LoTrinhAICuaToiDTO[];
+  },
+
+  async getChiTietLoTrinh(maLoTrinh: number): Promise<LoTrinhAICuaToiDTO> {
+    const url = `/api/lo-trinh-ai/chi-tiet/${maLoTrinh}`;
+    // Ép kiểu về DTO
+    const res = await (axios as any).get(url); 
+    return res as LoTrinhAICuaToiDTO; 
   }
-  
+
 };
