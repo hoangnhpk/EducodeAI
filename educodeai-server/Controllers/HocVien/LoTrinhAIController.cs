@@ -45,5 +45,18 @@ namespace EduCodeAI.Controllers.HocVien
             var result = await _service.GetLoTrinhCuaToiAsync(3);
             return Ok(result);
         }
+
+        [HttpGet("chi-tiet/{maLoTrinh}")]
+        public async Task<IActionResult> GetChiTietLoTrinh(int maLoTrinh)
+        {
+            var result = await _service.GetChiTietLoTrinhAsync(maLoTrinh, 3);
+
+            if (result == null)
+            {
+                return NotFound(new { message = "Không tìm thấy lộ trình hoặc lộ trình không thuộc về bạn." });
+            }
+
+            return Ok(result);
+        }
     }
 }

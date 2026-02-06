@@ -29,10 +29,10 @@ namespace educodeai_server.Services.Implementation
             int maNguoiDung,
             CreateLoTrinhAIDto dto)
         {
-            if(string.IsNullOrEmpty(dto.MucTieuNgheNghiep))
+            if (string.IsNullOrEmpty(dto.MucTieuNgheNghiep))
             {
                 throw new ArgumentException("Mục tiêu nghề nghiệp không được để trống.");
-            }    
+            }
 
             var khoaHoc = await _khoaHocRepo.GetKhoaHocPhuHopAsync(dto);
 
@@ -82,7 +82,7 @@ namespace educodeai_server.Services.Implementation
             if (loTrinh.MaNguoiDung != maNguoiDung)
                 throw new UnauthorizedAccessException("Không có quyền áp dụng lộ trình này");
 
-            var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(loTrinh.NoiDungJSON) ?? 
+            var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(loTrinh.NoiDungJSON) ??
                 throw new Exception("Nội dung lộ trình không hợp lệ");
 
             var danhSachMaKhoaHoc = noiDung.LoTrinh
@@ -412,7 +412,6 @@ namespace educodeai_server.Services.Implementation
         public async Task<List<LoTrinhAICuaToiResponseDTO>?> GetLoTrinhCuaToiAsync(int maNguoiDung)
         {
             var loTrinhs = await _loTrinhRepo.GetByUserIdAsync(maNguoiDung);
-
             var danhSachDangKy = await _khoaHocRepo.GetDangKyKhoaHocAsync(maNguoiDung);
 
             var ketQua = new List<LoTrinhAICuaToiResponseDTO>();
@@ -420,35 +419,132 @@ namespace educodeai_server.Services.Implementation
             foreach (var loTrinh in loTrinhs)
             {
                 var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(loTrinh.NoiDungJSON);
-
                 if (noiDung == null) continue;
 
-                var tatCaKhoaHoc = noiDung.LoTrinh
-                    .SelectMany(gd => gd.KhoaHocSuDung)
-                    .ToList();
-
-                int tong = tatCaKhoaHoc.Count;
-
-                int hoanThanh = tatCaKhoaHoc.Count(kh =>
-                    danhSachDangKy.Any(dk =>
-                        dk.MaKhoaHoc == kh.MaKhoaHoc &&
-                        (dk.TrangThai == "Hoàn thành" || dk.TienDo == 100))
-                );
+                var (soGdHoanThanh, phanTram) =
+                    TinhTienDoTheoGiaiDoan(noiDung.LoTrinh, danhSachDangKy);
 
                 ketQua.Add(new LoTrinhAICuaToiResponseDTO
                 {
                     MaLoTrinh = loTrinh.MaLoTrinh,
                     TenLoTrinh = noiDung.TenLoTrinh,
                     MoTaChung = noiDung.MoTaChung,
-                    TongSoKhoaHoc = tong,
-                    SoKhoaHocHoanThanh = hoanThanh,
-                    PhanTramHoanThanh = tong == 0 ? 0 : Math.Round((double)hoanThanh / tong * 100, 2)
+                    TongSoKhoaHoc = noiDung.LoTrinh.Sum(gd => gd.KhoaHocSuDung.Count),
+                    TongThoiGianTuan = noiDung.TongThoiGianTuan,
+
+                    TongSoGiaiDoan = noiDung.LoTrinh.Count,
+                    SoGiaiDoanHoanThanh = soGdHoanThanh,
+
+                    PhanTramHoanThanh = phanTram
                 });
             }
 
             return ketQua;
         }
 
-    }
+        public async Task<LoTrinhAICuaToiResponseDTO?> GetChiTietLoTrinhAsync(int maLoTrinh, int maNguoiDung)
+        {
+            var loTrinh = await _loTrinhRepo.GetByIdAsync(maLoTrinh);
+            if (loTrinh == null || loTrinh.MaNguoiDung != maNguoiDung)
+                throw new Exception("Không tìm thấy lộ trình");
 
+            var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(loTrinh.NoiDungJSON);
+            if (noiDung == null)
+                throw new Exception("Nội dung lộ trình không hợp lệ");
+
+            var danhSachDangKy = await _khoaHocRepo.GetDangKyKhoaHocAsync(maNguoiDung);
+
+            var (soGdHoanThanh, phanTram) =
+                TinhTienDoTheoGiaiDoan(noiDung.LoTrinh, danhSachDangKy);
+
+            // ===== Trạng thái chi tiết từng giai đoạn =====
+            var giaiDoanProgress = new List<GiaiDoanProgressDTO>();
+
+            foreach (var gd in noiDung.LoTrinh)
+            {
+                var maKhoaHocGd = gd.KhoaHocSuDung.Select(kh => kh.MaKhoaHoc).ToList();
+
+                int khoahocHoanThanhCount = maKhoaHocGd.Count(maKH =>
+                    danhSachDangKy.Any(dk =>
+                        dk.MaKhoaHoc == maKH && (dk.TienDo == 100 || dk.TrangThai == "Hoàn thành")
+                    )
+                );
+
+                // Giai đoạn chỉ được coi là xong khi ALL khoá học đều done
+                bool daHoanThanhGiaiDoan = (maKhoaHocGd.Count > 0) && (khoahocHoanThanhCount == maKhoaHocGd.Count);
+
+                var chiTietKhoaHocs = gd.KhoaHocSuDung.Select(khJson => {
+
+                    return new KhoaHocLoTrinhChiTietDTO
+                    {
+                        MaKhoaHoc = khJson.MaKhoaHoc,
+                        TenKhoaHoc = khJson.TenKhoaHoc,
+                        NoiDungChinh = khJson.NoiDungChinh,
+                        GhiChu = khJson.GhiChu,
+                        TuTuan = khJson.TuTuan,
+                        DenTuan = khJson.DenTuan
+                    };
+                }).ToList();
+
+                giaiDoanProgress.Add(new GiaiDoanProgressDTO
+                {
+                    GiaiDoan = gd.GiaiDoan,
+                    MucTieu = gd.MucTieu,
+                    TongKhoaHoc = maKhoaHocGd.Count,
+                    KhoaHocHoanThanh = khoahocHoanThanhCount,
+                    PhanTram = maKhoaHocGd.Count == 0 ? 0 : Math.Round((double)khoahocHoanThanhCount / maKhoaHocGd.Count * 100, 2),
+                    HoanThanh = daHoanThanhGiaiDoan,
+                    DanhSachKhoaHoc = chiTietKhoaHocs
+                });
+            }
+
+            return new LoTrinhAICuaToiResponseDTO
+            {
+                MaLoTrinh = loTrinh.MaLoTrinh,
+                TenLoTrinh = noiDung.TenLoTrinh,
+                MoTaChung = noiDung.MoTaChung,
+                TongSoKhoaHoc = noiDung.LoTrinh.Sum(gd => gd.KhoaHocSuDung.Count),
+                TongThoiGianTuan = noiDung.TongThoiGianTuan,
+
+                // Map lại cho chuẩn
+                TongSoGiaiDoan = noiDung.LoTrinh.Count,
+                SoGiaiDoanHoanThanh = soGdHoanThanh,
+
+                PhanTramHoanThanh = phanTram,
+                GiaiDoan = giaiDoanProgress
+            };
+        }
+
+        private static (int soGiaiDoanHoanThanh, double phanTram) TinhTienDoTheoGiaiDoan(List<GiaiDoanDTO> giaiDoanJson, List<DangKyKhoaHocModel> danhSachDangKy)
+        {
+            if (giaiDoanJson == null || giaiDoanJson.Count == 0)
+                return (0, 0);
+
+            int tongGiaiDoan = giaiDoanJson.Count;
+            int giaiDoanHoanThanh = 0;
+
+            foreach (var gd in giaiDoanJson)
+            {
+                var maKhoaHocGd = gd.KhoaHocSuDung.Select(kh => kh.MaKhoaHoc).ToList();
+
+                if (!maKhoaHocGd.Any()) continue;
+
+                // Điểm mấu chốt: .All() -> Tất cả phải xong
+                bool hoanThanhGd = maKhoaHocGd.All(maKH =>
+                    danhSachDangKy.Any(dk =>
+                        dk.MaKhoaHoc == maKH &&
+                        (dk.TienDo == 100 || dk.TrangThai == "Hoàn thành")
+                    )
+                );
+
+                if (hoanThanhGd)
+                    giaiDoanHoanThanh++;
+            }
+
+            double phanTram = Math.Round((double)giaiDoanHoanThanh / tongGiaiDoan * 100, 2);
+
+            return (giaiDoanHoanThanh, phanTram);
+        }
+
+    }
 }
