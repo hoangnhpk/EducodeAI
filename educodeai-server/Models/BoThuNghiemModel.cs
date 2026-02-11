@@ -23,5 +23,9 @@ namespace educodeai_server.Models
         public int GioiHanBoNho { get; set; } = 128; // Memory limit in MB
 
         public bool AnDanh { get; set; } = false;
+
+        public int Diem { get; set; } = 1;
+
+        public bool LaEdgeCase { get; set; } = false;
     }
 }
