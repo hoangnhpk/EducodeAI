@@ -62,23 +62,3 @@ tinhPhanTramTienDo(
   return Math.round(((idx + 1) / dsPhang.length) * 100)
 },
 };
-
-export const khoaHocCuaToiService = {
-    async getDanhSach(maGiangVien: number) {
-        try {
-            return await axiosClient.get(`/giang-vien/KhoaHocCuaToi/danh-sach/${maGiangVien}`);
-        } catch (error) {
-            console.error('Không thể tải danh sách:', error);
-            throw error;
-        }
-    },
-
-    async getChiTiet(id: number) {
-        try {
-            return await axiosClient.get(`/giang-vien/KhoaHocCuaToi/chi-tiet/${id}`);
-        } catch (error) {
-            console.error('Không thể tải chi tiết lớp học:', error);
-            throw error;
-        }
-    }
-};

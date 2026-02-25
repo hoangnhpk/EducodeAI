@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using educodeai_server.Services.Implement;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true)
@@ -45,7 +46,10 @@ builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
 // 2. Đăng ký Repository và Service cho Người dùng (Dựa trên folder bạn có)
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
+builder.Services.AddScoped<IKhoaHocCuaToiRepository, KhoaHocCuaToiRepository>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
+builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
+builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
