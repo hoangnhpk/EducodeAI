@@ -31,6 +31,9 @@ export default function HeaderHocVien() {
           <Link to="/yeu-cau-lo-trinh-ai" className="nav-item nav-link">
             Lộ trình AI
           </Link>
+          <Link to="/khoa-hoc-ai-cua-toi" className="nav-item nav-link">
+            Lộ trình của tôi
+          </Link>
 
           <Link to="/courses" className="nav-item nav-link">
             Khóa học

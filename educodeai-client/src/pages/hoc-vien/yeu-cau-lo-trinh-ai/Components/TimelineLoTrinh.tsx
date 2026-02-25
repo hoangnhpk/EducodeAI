@@ -25,6 +25,7 @@ export default function TimelineLoTrinh({
               <div className="timeline-item" key={khoaHoc.maKhoaHoc}>
                 <div className="timeline-time">
                   Tuần {khoaHoc.TuTuan} – {khoaHoc.DenTuan}
+                  {khoaHoc.ghiChu ? (<span> - {khoaHoc.ghiChu}</span>) : null}
                 </div>
 
                 <div className="timeline-content">

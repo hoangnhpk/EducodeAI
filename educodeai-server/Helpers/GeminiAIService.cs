@@ -34,7 +34,7 @@ namespace educodeai_server.Helpers
             };
 
             var response = await _http.PostAsJsonAsync(
-                "v1beta/models/gemini-2.5-flash:generateContent",
+                "v1beta/models/gemma-3-27b-it:generateContent",
                 requestBody);
 
             response.EnsureSuccessStatusCode();

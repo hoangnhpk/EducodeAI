@@ -1,4 +1,4 @@
-export type TrinhDo = "nguoi_moi" | "trung_cap" | "nang_cao" | "";
+export type TrinhDo = "Người mới" | "Trung cấp" | "Nâng cao" | "";
 
 export type TrangThaiAI = "cho" | "dang_phan_tich" | "da_co_ket_qua";
 
@@ -12,7 +12,6 @@ export interface DuLieuYeuCauLoTrinh {
   kienThucHienCo: string;
   kinhNghiem: string;
   khoKhan: string;
-  cacMangTapTrung: string[];
 }
 
 export interface KhoaHocSuDung {
@@ -21,6 +20,7 @@ export interface KhoaHocSuDung {
   DenTuan: number;
   tenKhoaHoc: string;
   noiDungChinh: string;
+  ghiChu: string;
 }
 
 export interface GiaiDoanLoTrinh {
@@ -31,6 +31,8 @@ export interface GiaiDoanLoTrinh {
 
 export interface KetQuaLoTrinhAI {
   maLoTrinh?: number;
+  tenLoTrinh: string;
+  moTaChung: string;
   tongThoiGianTuan: number;
   loTrinh: GiaiDoanLoTrinh[];
 }
