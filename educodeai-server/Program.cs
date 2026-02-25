@@ -60,6 +60,9 @@ builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 
+builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
+builder.Services.AddScoped<IQuizService, QuizService>();
+
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
 
 builder.Services.AddScoped<IHocVienService, HocVienService>();
