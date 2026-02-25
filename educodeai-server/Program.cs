@@ -63,7 +63,7 @@ builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
 
 builder.Services.AddScoped<IHocVienService, HocVienService>();
-
+builder.Services.AddHttpClient<BaiTapService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>

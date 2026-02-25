@@ -12,6 +12,7 @@ import { DieuHuongNhanh } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/Di
 import { NoiDungVideo, type NoiDungVideoRef } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/NoiDungVideo';
 import { SidebarGhiChu } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/SidebarGhiChu';
 import { BaiTapTracNghiem } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/BaiTapTracNghiem';
+import { BaiTapIDE } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/BaiTapThucHanh';
 
 const NoiDungKhoaHoc = () => {
     const { id } = useParams<{ id: string }>();
@@ -134,7 +135,23 @@ const NoiDungKhoaHoc = () => {
             case 'Text':
                 return <div dangerouslySetInnerHTML={{ __html: baiHocHienTai.noiDung || '' }}></div>;
             case 'Ide':
-                return <div>Chức năng IDE đang phát triển...</div>;
+                return (
+                    <BaiTapIDE
+                        duLieu={{
+                            tieuDe: baiHocHienTai.tieuDe || "Bài tập thực hành",
+                            moTa: baiHocHienTai.noiDung || "",
+                            ngonNgu: "python",
+                            templateCode: "# Viết code của bạn tại đây\n",
+                            testCases: []
+                        }}
+                        khiHoanThanh={(phanTram: number, daDat: boolean) => {
+                            if (daDat) {
+                                handleVideoCompleted(idBaiHoc);
+                            }
+                            console.log(`Hoàn thành: ${phanTram}%, Đạt: ${daDat}`);
+                        }}
+                    />
+                );
             case 'Quiz':
                 // Kiểm tra xem dữ liệu Quiz đã có sẵn chưa
                 if (baiHocHienTai.thongTinQuiz) {
