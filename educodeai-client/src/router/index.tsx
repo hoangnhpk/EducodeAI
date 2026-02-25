@@ -18,7 +18,8 @@ import NoiDungKhoaHoc from "@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHoc";
 // import LichSuBaiLam from "../pages/hoc-vien/lich-su-bai-lam/LichSuLamBai";
 import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinhAI";
 // import ThongKeHocTap from "@/pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
-// import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
+import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
+import ChiTietLoTrinhAI from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/ChiTietLoTrinhAI"
 // import TroLyAI from "../pages/hoc-vien/tro-ly-hoi-dap-ai/TroLyAI";
 import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
 
@@ -52,8 +53,9 @@ export default function AppRouter() {
           <Route path="lich-su-bai-lam" element={<LichSuBaiLam />} /> */}
           <Route path="yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
           <Route path="ho-so" element={<HoSoHocVienPage />} />
-          {/* <Route path="khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
-          <Route path="tro-ly-ai" element={<TroLyAI />} /> */}
+          <Route path="khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
+          <Route path="chi-tiet-lo-trinh/:id" element={<ChiTietLoTrinhAI />} />
+          {/* <Route path="tro-ly-ai" element={<TroLyAI />} /> */}
         </Route>
         
         {/* Trang nội dung khóa học không sử dụng layout có header và footer */}

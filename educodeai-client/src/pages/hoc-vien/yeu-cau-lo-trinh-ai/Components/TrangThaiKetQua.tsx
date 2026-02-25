@@ -18,10 +18,15 @@ export default function TrangThaiKetQua({ ketQua, onModify, onConfirm, isProcess
   return (
     <div className="ai-panel bg-light shadow-sm rounded p-4 p-md-3">
       <div className="d-flex justify-content-between align-items-center mb-4">
+        <h6 className="ai-color m-0">
+          {ketQua.tenLoTrinh}
+        </h6>
+        <span className="badge bg-warning text-dark">Bản Nháp (Draft)</span>
+      </div>
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="ai-color m-0">
           Tổng thời gian: {ketQua.tongThoiGianTuan} tuần
         </h4>
-        <span className="badge bg-warning text-dark">Bản Nháp (Draft)</span>
       </div>
 
       <TimelineLoTrinh ketQua={ketQua} />
