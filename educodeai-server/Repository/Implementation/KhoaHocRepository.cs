@@ -170,21 +170,14 @@ namespace educodeai_server.Repository.Implementation
                 throw new ApplicationException("Đã xảy ra lỗi khi lưu tiến độ bài học.", ex);
             }
         }
-        public async Task<List<KhoaHocModel>> GetKhoaHocsByGiangVienAsync(int maGiangVien)
+        // Thêm hàm này vào để khớp với Interface IKhoaHocRepository
+        public async Task<List<ChuongHoc_NoiDungKhoaHocDTO>> GetKhoaHocByIdAsync(int maKhoaHoc)
         {
-            return await _context.KhoaHocs
-                .Include(k => k.DangKyKhoaHocs)
-                .Where(k => k.MaGiangVien == maGiangVien)
-                .OrderByDescending(k => k.NgayTao)
-                .ToListAsync();
-        }
-        public async Task<KhoaHocModel?> GetKhoaHocWithDetailsAsync(int maKhoaHoc)
-        {
-            return await _context.KhoaHocs
-                .Include(k => k.DangKyKhoaHocs)
-                    .ThenInclude(d => d.NguoiDung)
-                .FirstOrDefaultAsync(k => k.MaKhoaHoc == maKhoaHoc);
+            // Tạm thời trả về danh sách rỗng để máy hiểu là bạn đã "khai báo" hàm này
+            // Sau này bạn sẽ viết logic lấy dữ liệu thật ở đây
+            return new List<ChuongHoc_NoiDungKhoaHocDTO>();
         }
     }
+
 }
 

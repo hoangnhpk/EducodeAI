@@ -30,7 +30,7 @@ import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinh
 
 // /* ===== ADMIN ===== */
 // import ADashboard from "../pages/quan-tri-vien/dashboard-he-thong/Dashboard";
-// import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
+  import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
 // import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
 // import CauHinhHeThong from "../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeThong";
 
@@ -70,9 +70,9 @@ export default function AppRouter() {
 
         {/* ADMIN */}
         <Route path="/quan-tri-vien" element={<LayoutQuanTriVien />}>
-          {/* <Route index element={<ADashboard />} />
+          {/* <Route index element={<ADashboard />} />*/}
           <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
-          <Route path="review" element={<QuanLyReview />} />
+          {/*<Route path="review" element={<QuanLyReview />} />
           <Route path="cau-hinh" element={<CauHinhHeThong />} /> */}
         </Route>
       </Routes>
