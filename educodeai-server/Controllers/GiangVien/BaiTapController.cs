@@ -167,5 +167,40 @@ namespace educodeai_server.Controllers.GiangVien
                 });
             }
         }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetChiTietBaiTap(int id)
+        {
+            try
+            {
+                // Gọi xuống tầng Repository để moi móc dữ liệu
+                var chiTiet = await _baiTapRepository.LayChiTietBaiTapAsync(id);
+
+                if (chiTiet == null)
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Ối dồi ôi, không tìm thấy bài tập này sếp ơi! 🥺"
+                    });
+                }
+
+                // Trả data về cho FE lụm
+                return Ok(new
+                {
+                    success = true,
+                    message = "Lấy chi tiết thành công rực rỡ! ✨",
+                    data = chiTiet
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Server đang hờn dỗi: " + ex.Message
+                });
+            }
+        }
     }
 }
