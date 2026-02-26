@@ -130,5 +130,25 @@ namespace educodeai_server.Repository.Implementation
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<object> LayChiTietBaiTapAsync(int maBaiTap)
+        {
+            // Dùng Entity Framework Core query thẳng vào bảng BaiTap_Quiz dựa trên ERD của ông
+            var chiTietQuiz = await _context.BaiTap_Quizs
+                .Where(q => q.MaBaiTap == maBaiTap)
+                .Select(q => new
+                {
+                    q.MaBaiTap,
+                    q.ThoiGianLamBai,
+                    q.DiemCanDat,
+                    q.ChoPhepLamLai,
+                    q.DaoCauHoi,
+                    // Quan trọng nhất: Kéo cái chuỗi JSON đang nằm trong Database ra
+                    duLieuCauHoiJSON = q.DuLieuCauHoi
+                })
+                .FirstOrDefaultAsync();
+
+            return chiTietQuiz;
+        }
     }
 }

@@ -16,5 +16,7 @@ namespace educodeai_server.Repository.Interface
         Task<List<BaiHocModel>> GetBaiHocModelsByChuongHocAsync(int maChuongHoc);
 
         Task<bool> XoaBaiTapAsync(int maBaiTapQuiz);
+
+        Task<object> LayChiTietBaiTapAsync(int maBaiTap);
     }
 }
