@@ -54,5 +54,38 @@ namespace educodeai_server.Helpers
                 throw new Exception("JSON bên trong không hợp lệ", ex);
             }
         }
+        public static string usageMetadata(string outputAI)
+        {
+            if (string.IsNullOrWhiteSpace(outputAI))
+                throw new Exception("Output AI rỗng");
+
+            // 1. Parse JSON tổng của Gemini
+            JObject root;
+            try
+            {
+                root = JObject.Parse(outputAI);
+            }
+            catch
+            {
+                throw new Exception("Output không phải JSON hợp lệ (Gemini response)");
+            }
+
+            // 2. Lấy text từ usageMetadata
+            var text = root["usageMetadata"];
+
+            if (text == null)
+                throw new Exception("Không tìm thấy usageMetadata");
+
+            // 4. Parse + format JSON kết quả
+            try
+            {
+                return text
+                    .ToString(Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("JSON bên trong không hợp lệ", ex);
+            }
+        }
     }
 }

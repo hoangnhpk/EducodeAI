@@ -1,0 +1,286 @@
+.roadmap-detail-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    padding: 40px 20px;
+    font-family: 'Inter', sans-serif;
+}
+
+.roadmap-detail-card {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 60px 50px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+.roadmap-header {
+    text-align: left;
+}
+
+.roadmap-header h2 {
+    font-size: 2.5rem;
+    color: #1e293b;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.roadmap-header p {
+    font-size: 1.1rem;
+    color: #64748b;
+    max-width: 700px;
+}
+
+.roadmap-timeline {
+    position: relative;
+    padding-left: 50px;
+    margin-top: 60px;
+}
+
+.roadmap-timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #fb873f 0%, #e74c3c 100%);
+    border-radius: 2px;
+}
+
+.stage-card {
+    position: relative;
+    margin-bottom: 32px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 22px 24px;
+    border: 2px solid #f1f5f9;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.stage-card:hover {
+    border-color: #fb873f;
+    box-shadow: 0 12px 40px rgba(251, 135, 63, 0.15);
+    transform: translateY(-5px);
+}
+
+.stage-card::before {
+    content: '';
+    position: absolute;
+    left: -42px;
+    top: 28px;
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #fb873f 0%, #f97316 100%);
+    border-radius: 50%;
+    border: 4px solid #ffffff;
+    box-shadow: 0 4px 15px rgba(251, 135, 63, 0.4);
+    z-index: 2;
+}
+
+/* Hiển thị số giai đoạn */
+.stage-card::after {
+    content: attr(data-stage);
+    position: absolute;
+    left: -34px;
+    top: 34px;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    z-index: 3;
+}
+
+.stage-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.stage-badge.beginner {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+}
+
+.stage-badge.intermediate {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+}
+
+.stage-badge.advanced {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: #ffffff;
+}
+
+.stage-card h4 {
+    font-size: 1.4rem;
+    color: #1e293b;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.stage-desc {
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border-left: 4px solid #fb873f;
+    border-radius: 8px;
+}
+
+.stage-courses {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.course-item {
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 18px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.course-item:hover {
+    border-color: #fb873f;
+    box-shadow: 0 8px 25px rgba(251, 135, 63, 0.2);
+    transform: translateY(-3px);
+}
+
+.course-item h6 {
+    font-size: 1rem;
+    color: #1e293b;
+    margin-bottom: 6px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.course-item h6::before {
+    content: '📚';
+    font-size: 1.3rem;
+}
+
+.course-item small {
+    display: block;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* Trạng thái đã hoàn thành khóa học */
+.course-item.completed {
+    border-color: #10b981;
+    background: #ecfdf5;
+}
+.course-item.completed h6::before {
+    content: '✅';
+}
+
+.stage-stats {
+    display: flex;
+    gap: 20px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.stat-item i {
+    color: #fb873f;
+    font-size: 1rem;
+}
+
+.progress-track-custom {
+    width: 300px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+
+.progress-bar-custom {
+    height: 100%;
+    border-radius: inherit;
+    background: #fb873f;
+    transition: width 0.6s ease;
+}
+
+.progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #475569;
+    font-size: 0.95rem;
+}
+
+.timeline-summary-card {
+    margin-top: 12px;
+    padding: 14px 18px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #fff7f1 0%, #ffe9dd 100%);
+    border: 1px solid rgba(251, 135, 63, 0.35);
+    text-align: right;
+}
+
+.summary-label {
+    display: block;
+    color: #fb873f;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.summary-value {
+    font-size: 1.35rem;
+    color: #1e293b;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: #fb873f;
+    font-weight: 500;
+    text-decoration: none;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .roadmap-detail-card { padding: 40px 25px; }
+    .roadmap-timeline { padding-left: 40px; }
+    .stage-courses { grid-template-columns: 1fr; }
+    .stage-stats { flex-direction: column; gap: 15px; }
+    .progress-track-custom { width: 100%; }
+}

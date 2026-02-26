@@ -11,6 +11,5 @@ namespace educodeai_server.DTOs.AI
         public string? KinhNghiemThucTe { get; set; }
         public string? KhoKhanHienTai { get; set; }
 
-        public List<string>? LinhVucTapTrung { get; set; }
     }
 }
