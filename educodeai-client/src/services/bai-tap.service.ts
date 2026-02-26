@@ -33,4 +33,9 @@ export const BaiTapService = {
     deleteBaiTap: (maBaiTap: number) => {
         return axiosClient.delete<any>(`/api/BaiTap/xoa/${maBaiTap}`);
     },
+    
+    getChiTietBaiTap: (id: number) => {
+        // Thay đổi URL theo đúng API lấy chi tiết bài tập của backend ông nha
+        return axiosClient.get<any>(`/api/BaiTap/${id}`); 
+    },
 };
