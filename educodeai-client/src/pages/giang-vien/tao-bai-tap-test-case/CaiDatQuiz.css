@@ -1,0 +1,264 @@
+/* =========================================
+   CÀI ĐẶT QUIZ CSS (VERSION NÉT CĂNG) ⚙️
+   ========================================= */
+
+/* Breadcrumb (Giữ style chung) */
+.breadcrumb {
+    background: linear-gradient(135deg, #F0F4FF, #E6FFFA);
+    padding: 16px 24px;
+    border-radius: 14px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(0, 102, 255, 0.05);
+}
+
+.breadcrumb-item {
+    color: #64748B;
+}
+
+.breadcrumb-item.active {
+    color: #0066FF;
+    font-weight: 800;
+}
+
+.breadcrumb-separator {
+    color: #94A3B8;
+    font-weight: 500;
+}
+
+/* Settings Card */
+.settings-card {
+    background: #FFFFFF;
+    border-radius: 24px;
+    padding: 48px;
+    box-shadow: 0 10px 30px rgba(15, 20, 25, 0.05);
+    border: 1px solid #E2E8F0;
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.settings-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.settings-header h2 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0F1419;
+    margin-bottom: 8px;
+}
+
+.settings-header p {
+    color: #64748B;
+    font-size: 15px;
+}
+
+/* Grid layout cho 2 ô nhập liệu đầu tiên */
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 32px;
+}
+
+/* Setting Item */
+.setting-label {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1E293B;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.time-icon {
+    background: #E0E7FF;
+    color: #4F46E5;
+}
+
+.score-icon {
+    background: #FEF3C7;
+    color: #D97706;
+}
+
+.retake-icon {
+    background: #D1FAE5;
+    color: #059669;
+}
+
+.shuffle-icon {
+    background: #FCE7F3;
+    color: #DB2777;
+}
+
+.setting-input {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 2px solid #E2E8F0;
+    font-size: 16px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    background: #F8FAFC;
+    color: #0F1419;
+}
+
+.setting-input:focus {
+    outline: none;
+    border-color: #0066FF;
+    background: #FFFFFF;
+    box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
+}
+
+/* Radio Group xịn xò */
+.radio-group {
+    display: flex;
+    gap: 16px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 2px solid #E2E8F0;
+    background: #F8FAFC;
+    transition: all 0.2s ease;
+    flex: 1;
+}
+
+.radio-option:hover {
+    border-color: #0066FF;
+    background: #F0F4FF;
+}
+
+.radio-option.selected {
+    border-color: #0066FF;
+    background: #F0F4FF;
+    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.1);
+}
+
+.radio-option input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #0066FF;
+    pointer-events: none;
+}
+
+.radio-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: #475569;
+}
+
+.radio-option.selected .radio-label {
+    color: #0066FF;
+}
+
+.action-buttons {
+    display: flex !important; 
+    justify-content: center !important; 
+    gap: 24px !important;
+    margin-top: 48px; 
+    padding-top: 40px; 
+    border-top: 2px dashed #E2E8F0;
+    width: 100%;
+}
+
+.btn-action {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 32px !important;
+    height: 56px !important; /* Chốt chiều cao cố định */
+    min-width: 220px !important; /* Chốt chiều rộng tối thiểu, không cho ai bóp */
+    border-radius: 14px !important;
+    border: none !important;
+    font-weight: 800 !important;
+    font-size: 16px !important;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    gap: 10px !important;
+    white-space: nowrap !important; /* Lệnh cấm tuyệt đối chữ bị rớt dòng */
+    flex-shrink: 0 !important; /* Không cho phép nút bị teo nhỏ lại */
+    text-decoration: none !important;
+}
+
+/* Nút Save (Quay lại) */
+.btn-save {
+    background: #F1F5F9 !important; 
+    color: #475569 !important; 
+    border: 2px solid #E2E8F0 !important;
+}
+.btn-save:hover { 
+    background: #E2E8F0 !important; 
+    color: #1E293B !important; 
+    transform: translateY(-2px); 
+}
+
+/* Nút Publish (Xuất bản) */
+.btn-publish {
+    background: linear-gradient(135deg, #0066FF, #0052CC) !important; 
+    color: #FFFFFF !important; 
+    box-shadow: 0 8px 20px rgba(0, 102, 255, 0.25) !important; 
+}
+.btn-publish:hover:not(:disabled) { 
+    transform: translateY(-3px); 
+    box-shadow: 0 12px 28px rgba(0, 102, 255, 0.35) !important; 
+}
+.btn-publish:disabled { 
+    opacity: 0.7 !important; 
+    cursor: not-allowed !important; 
+    transform: none !important; 
+    box-shadow: none !important; 
+}
+
+/* Responsive khi xuống màn hình điện thoại */
+@media (max-width: 768px) {
+    .action-buttons { 
+        flex-direction: column !important; 
+        gap: 16px !important; 
+    }
+    .btn-action { 
+        width: 100% !important; 
+    }
+}
+
+@media (max-width: 768px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .radio-group {
+        flex-direction: column;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .btn-action {
+        width: 100%;
+        justify-content: center;
+    }
+}

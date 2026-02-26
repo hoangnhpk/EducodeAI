@@ -1,0 +1,165 @@
+/* =========================================
+   FIX MÀU NÉT CĂNG - CHỐNG MỜ NHẠT 🚀
+   ========================================= */
+
+/* 1. Kích màu cho các Badge (Trạng thái) */
+.badge {
+    padding: 7px 16px;
+    /* Tăng nhẹ padding cho đầy đặn */
+    font-size: 11px;
+    border-radius: 8px;
+    font-weight: 800;
+    /* Chữ siêu đậm */
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: inline-block;
+}
+
+/* Màu xám: Draft - Phải đậm hơn để không bị lẫn vào nền */
+.badge-draft {
+    background: #CBD5E1;
+    /* Xám đậm hơn */
+    color: #1E293B;
+    /* Chữ xám đen */
+}
+
+/* Màu xanh: Published - Phải rực rỡ */
+.badge-published {
+    background: #10B981;
+    /* Xanh lá rực (Emerald 500) */
+    color: #FFFFFF;
+    /* Chữ trắng cho nổi bần bật trên nền đậm */
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+}
+
+/* Màu vàng: Sửa/Đang chờ - Phải rõ ràng */
+.badge-sửa {
+    background: #F59E0B;
+    /* Vàng hổ phách (Amber 500) */
+    color: #FFFFFF;
+    /* Chữ trắng luôn cho nét */
+}
+
+/* 2. Cải thiện độ tương phản cho nút Hành động */
+.action-btn {
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    border: 1.5px solid transparent;
+    /* Thêm border nhẹ để định hình nút */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Nút Sửa: Dùng màu xanh Blue đậm */
+.edit-btn {
+    background: #0066FF;
+    color: #FFFFFF;
+}
+
+.edit-btn:hover {
+    background: #0052CC;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+}
+
+/* Nút Xóa: Dùng màu đỏ Coral đậm */
+.delete-btn {
+    background: #FF4D4D;
+    color: #FFFFFF;
+}
+
+.delete-btn:hover {
+    background: #E60000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 77, 77, 0.3);
+}
+
+/* 3. Chốt hạ: Làm đậm tiêu đề bảng để cân bằng thị giác */
+.table th {
+    color: #0F1419;
+    /* Đen tuyền */
+    font-weight: 850;
+    border-bottom: 3px solid #0066FF;
+    /* Line xanh đậm bên dưới tiêu đề */
+    background: #F8FAFC;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    padding: 6px;
+    background: snow;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(15, 20, 25, 0.06);
+    width: fit-content;
+}
+
+.tab {
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    color: #536471;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Outfit', sans-serif;
+    position: relative;
+}
+
+.tab.active {
+    background: #0066FF;
+    color: snow;
+    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25);
+}
+
+.card {
+    background: snow;
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 8px 24px rgba(15, 20, 25, 0.1);
+    margin-bottom: 24px;
+    border: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+    box-shadow: 0 16px 48px rgba(15, 20, 25, 0.14);
+    transform: translateY(-2px);
+}
+
+.truncate-text {
+    max-width: 150px;
+    /* Chốt độ rộng tối đa (Ông có thể tăng giảm tùy ý) */
+    white-space: nowrap;
+    /* Lệnh cấm tuyệt đối rớt dòng */
+    overflow: hidden;
+    /* Đem giấu hết những chữ tràn viền */
+    text-overflow: ellipsis;
+    /* Phép thuật biến phần bị giấu thành ... */
+    display: inline-block;
+    /* Bắt buộc để max-width có tác dụng */
+    vertical-align: middle;
+    cursor: pointer;
+    /* Biến con trỏ chuột thành hình bàn tay cho giang hồ biết là có thể bấm/hover */
+}
+
+/* Thích thì buff thêm max-width cho từng cột riêng biệt */
+.col-ten {
+    max-width: 200px;
+}
+
+.col-khoahoc {
+    max-width: 200px;
+}
+
+.col-chuong {
+    max-width: 150px;
+}
