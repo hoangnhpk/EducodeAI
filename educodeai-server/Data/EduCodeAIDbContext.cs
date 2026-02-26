@@ -30,6 +30,10 @@ namespace educodeai_server.Data
         public DbSet<CuocHoiThoaiAIModel> CuocHoiThoaiAIs { get; set; }
         public DbSet<TinNhanAIModel> TinNhanAIs { get; set; }
         public DbSet<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; }
+        public DbSet<GoiYAI_TaoBaiTapModel> GoiYAI_TaoBaiTapS { get; set; }
+        public DbSet<PhienBanBaiTapModel> PhienBanBaiTaps { get; set; }
+        public DbSet<RangBuocBaiTapModel> RangBuocBaiTaps { get; set; }
+        public DbSet<LoiGiaiMauModel> LoiGiaiMaus { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -175,6 +179,40 @@ namespace educodeai_server.Data
                  .WithOne(bth => bth.BaiTap_ThucHanh)
                  .HasForeignKey(bth => bth.MaBaiTapThucHanh)
                  .OnDelete(DeleteBehavior.NoAction);
+
+            // 1. LoiGiaiMauModel
+            modelBuilder.Entity<LoiGiaiMauModel>()
+                .HasOne(l => l.BaiTapThucHanh)
+                .WithMany() // Giả sử bên IDE không cần List<LoiGiaiMau>
+                .HasForeignKey(l => l.MaBaiTapThucHanh)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<LoiGiaiMauModel>()
+                .HasOne(l => l.NgonNguLapTrinh)
+                .WithMany()
+                .HasForeignKey(l => l.MaNgonNgu)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // 2. RangBuocBaiTapModel
+            modelBuilder.Entity<RangBuocBaiTapModel>()
+                .HasOne(r => r.BaiTapThucHanh)
+                .WithMany()
+                .HasForeignKey(r => r.MaBaiTapThucHanh)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // 3. PhienBanBaiTapModel
+            modelBuilder.Entity<PhienBanBaiTapModel>()
+                .HasOne(p => p.BaiTapThucHanh)
+                .WithMany()
+                .HasForeignKey(p => p.MaBaiTapThucHanh)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // 4. GoiYAI_TaoBaiTapModel
+            modelBuilder.Entity<GoiYAI_TaoBaiTapModel>()
+                .HasOne(g => g.BaiTapThucHanh)
+                .WithMany()
+                .HasForeignKey(g => g.MaBaiTapThucHanh)
+                .OnDelete(DeleteBehavior.NoAction);
 
 
             // NgonNguLapTrinhModel relationships
