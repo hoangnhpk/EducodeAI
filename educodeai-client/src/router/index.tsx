@@ -27,7 +27,10 @@ import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
 // import GVDashboard from "../pages/giang-vien/dashboard-giang-vien/Dashboard";
   // import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 // import QuanLyGiaoTrinh from "../pages/giang-vien/quan-ly-giao-trinh/QuanLyGiaoTrinh";
-// import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
+import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
+import TaoQuiz from "../pages/giang-vien/tao-bai-tap-test-case/TaoQuizContent";
+import PreviewQuiz from "../pages/giang-vien/tao-bai-tap-test-case/PreviewQuizContent";
+import CaiDatQuiz from "../pages/giang-vien/tao-bai-tap-test-case/CaiDatQuizContent";
 import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 
 // /* ===== ADMIN ===== */
@@ -68,9 +71,12 @@ export default function AppRouter() {
           <Route path="/giang-vien/thong-ke" element={<ThongKeHocTap />} />
           {/* <Route index element={<GVDashboard />} />*/}
           {/* <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} /> */}
-          {/*<Route path="giao-trinh" element={<QuanLyGiaoTrinh />} />
+          {/* <Route path="giao-trinh" element={<QuanLyGiaoTrinh />} /> */}
           <Route path="bai-tap" element={<TaoBaiTap />} />
-          <Route path="thong-ke" element={<ThongKeHocTap />} /> */}
+          <Route path="quiz" element={<TaoQuiz />} />
+          <Route path="preview-quiz" element={<PreviewQuiz />} />
+          <Route path="cai-dat" element={<CaiDatQuiz />} />
+          {/* <Route path="thong-ke" element={<ThongKeHocTap />} /> */}
         </Route>
 
         {/* ADMIN */}
