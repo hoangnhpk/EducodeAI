@@ -6,12 +6,20 @@ namespace educodeai_server.Repository.Interface
 {
     public interface IKhoaHocRepository
     {
+        // 1. Thêm hàm này để lấy danh sách cho trang chủ
+        Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync();
+
+        // 2. Các hàm AI và tìm kiếm
         Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto);
-        Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc, int maNguoiDung);
         Task<List<KhoaHocAISnapshotDto>> GetKhoaHocTheoKeywordAsync(List<string> keywords);
-        Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto);
+
+        // 3. Nội dung chi tiết và quản lý khóa học
+        Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc, int maNguoiDung);
         Task<KhoaHocModel?> GetKhoaHocWithDetailsAsync(int maKhoaHoc);
         Task<List<KhoaHocModel>> GetKhoaHocsByGiangVienAsync(int maGiangVien);
+
+        // 4. Tiến độ, ghi chú và bài tập
+        Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto);
         Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto);
         Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung);
         Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto);

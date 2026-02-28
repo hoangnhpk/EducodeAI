@@ -130,7 +130,7 @@ const RegisterPage = () => {
             };
             await authService.confirmRegister(registerData);
             alert("Đăng ký thành công!");
-            navigate('/auth/dang-nhap');
+            navigate('/dang-nhap');
         } catch (error: any) {
             setErrors({ otp: error.response?.data?.message || "Đăng ký thất bại" });
         } finally {
