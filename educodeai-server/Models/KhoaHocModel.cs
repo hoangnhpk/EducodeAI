@@ -1,27 +1,50 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-public class KhoaHocModel {
-    [Key]
-    public int MaKhoaHoc { get; set; }
+namespace educodeai_server.Models
+{
+    public class KhoaHocModel
+    {
+        [Key]
+        public int MaKhoaHoc { get; set; }
 
-    public int MaGiangVien { get; set; }
-    [ForeignKey("MaGiangVien")]
-    public virtual NguoiDungModel GiangVien { get; set; } = null!;
+        public int MaGiangVien { get; set; }
 
-    [Required]
-    [StringLength(200)]
-    public string TenKhoaHoc { get; set; } = null!;
+        [ForeignKey("MaGiangVien")]
+        public virtual NguoiDungModel GiangVien { get; set; } = null!;
 
-    public string? MoTa { get; set; }
+        [Required]
+        [StringLength(200)]
+        public string TenKhoaHoc { get; set; } = null!;
 
-    [StringLength(500)]
-    public string? HinhAnh { get; set; }
+        public string? MoTa { get; set; }
 
-    [StringLength(50)]
-    public string? TrangThai { get; set; } = "Hoạt động";
+        [StringLength(500)]
+        public string? HinhAnh { get; set; }
 
-    public double DiemDanhGiaTB { get; set; } = 0;
+        [StringLength(50)]
+        public string? TrangThai { get; set; } = "Hoạt động";
 
-    public DateTime NgayTao { get; set; } = DateTime.Now;
+        public double DiemDanhGiaTB { get; set; } = 0;
+
+        // ====== CỘT MỚI ======
+
+        [StringLength(100)]
+        public string LinhVuc { get; set; } = null!;  // Ví dụ: BackEnd, Database, System Design...
+
+        [StringLength(50)]
+        public string TrinhDo { get; set; } = null!;  // Người mới, Trung cấp, Nâng cao
+
+        public int ThoiLuongGio { get; set; }  // Tổng số giờ học
+
+        [StringLength(500)]
+        public string KyNangChinh { get; set; } = null!;  // Ví dụ: ["C#","SQL","REACT"]
+
+        public DateTime NgayTao { get; set; } = DateTime.Now;
+
+        // Navigation
+        public virtual ICollection<ChuongHocModel> ChuongHocs { get; set; } = null!;
+        public virtual ICollection<DangKyKhoaHocModel> DangKyKhoaHocs { get; set; } = null!;
+        public virtual ICollection<DanhGiaModel> DanhGias { get; set; } = null!;
+    }
 }

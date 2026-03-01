@@ -1,0 +1,102 @@
+.page-header{
+    background-image: url('../../../assets/image.png');
+}
+.roadmap-wrapper {
+    border-radius: 28px;
+    background: #ffffff;
+    padding: 3rem;
+    box-shadow: 0 25px 60px rgba(15, 15, 15, 0.08);
+    border: 1px solid #eef2ff;
+}
+
+.roadmap-eyebrow {
+    font-size: 1rem;
+    letter-spacing: 0.2em;
+    color: #fb873f;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 0.8rem;
+}
+
+.roadmap-heading {
+    color: #0f172a;
+    margin-bottom: 2rem;
+}
+
+.roadmap-heading span {
+    display: block;
+    color: #475569;
+    font-size: 1rem;
+    margin-top: 0.35rem;
+}
+
+.roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.roadmap-card {
+    border-radius: 24px;
+    padding: 2rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    background: #ffffff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.roadmap-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.roadmap-card-primary {
+    background: #fff7f1;
+    border-color: rgba(251, 135, 63, 0.35);
+}
+
+.roadmap-card h3 {
+    margin: 0;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.roadmap-path {
+    color: #fb873f;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #475569;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.progress-track {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+
+.progress-bar-custom {
+    height: 100%;
+    border-radius: inherit;
+    background: #fb873f;
+    transition: width 0.6s ease;
+}
+
+.roadmap-cta {
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    width: 100%;
+    margin-top: auto;
+}
