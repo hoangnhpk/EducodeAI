@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 
@@ -47,7 +48,7 @@ const QuenMatKhau: React.FC = () => {
             if (res && res.tempOtp) {
                 setGeneratedOtp(res.tempOtp);
                 setCountdown(120);
-                alert("Mã xác thực đã được gửi tới email của bạn!");
+                Swal.fire({ icon: 'success', text: "Mã xác thực đã được gửi tới email của bạn!", timer: 1500, showConfirmButton: false });
             }
         } catch (error: any) {
             const errorMsg = error.response?.data?.message || "Email không tồn tại trên hệ thống!";
@@ -97,7 +98,7 @@ const QuenMatKhau: React.FC = () => {
                 Email: email,
                 NewPassword: password
             });
-            alert("Đặt lại mật khẩu thành công!");
+            Swal.fire({ icon: 'success', text: "Đặt lại mật khẩu thành công!", timer: 1500, showConfirmButton: false });
             navigate('/dang-nhap');
         } catch (error: any) {
             setErrors({ password: error.response?.data?.message || "Lỗi hệ thống khi đổi mật khẩu" });

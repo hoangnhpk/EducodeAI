@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import axiosClient from '../../configs/axios'; 
@@ -56,14 +57,10 @@ const DangNhap: React.FC = () => {
         try {
             const decoded: any = jwtDecode(credentialResponse.credential);
             
-            const res: any = await axiosClient.post("/NguoiDung/google-login", {
-                email: decoded.email,
-                name: decoded.name,
-                picture: decoded.picture
-            });
-
-            localStorage.setItem('user_token', res.token);
-            localStorage.setItem('user_info', JSON.stringify(res.user));
+            // Thông báo thành công (Có thể dùng Toast thay vì alert)
+            Swal.fire({ icon: 'success', text: `Chào mừng ${response.user?.hoTen || 'bạn'} đã quay trở lại!`, timer: 1500, showConfirmButton: false });
+            
+            localStorage.setItem('user_info', JSON.stringify(response.user));
 
             alert(`Đăng nhập Google thành công! Tài khoản của bạn đã được đồng bộ.`);
             navigate('/');

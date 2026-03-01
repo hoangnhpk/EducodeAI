@@ -269,3 +269,24 @@
 .btn-save-ai-note i {
     font-size: 0.8rem;
 }
+
+/* Style mặc định của bạn */
+.btn-save-ai-note {
+    transition: all 0.3s ease;
+    border: 1px solid #ccc;
+    background: #fff;
+    /* Giữ nguyên các thuộc tính khác của bạn */
+}
+
+/* Hiệu ứng Hover khi chưa lưu */
+.btn-save-ai-note:hover:not(.saved) {
+    background-color: #f0f0f0;
+    border-color: #f69050; /* Màu thương hiệu của bạn */
+    color: #f69050;
+    transform: translateY(-1px);
+}
+
+/* Khi đã lưu xong (không hover đổi màu nữa để tránh nhầm lẫn) */
+.btn-save-ai-note.saved:hover {
+    transform: none;
+}

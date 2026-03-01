@@ -129,8 +129,8 @@ const RegisterPage = () => {
                 matKhau: formData.password
             };
             await authService.confirmRegister(registerData);
-            alert("Đăng ký thành công!");
-            navigate('/dang-nhap');
+            Swal.fire({ icon: 'success', text: "Đăng ký thành công!", timer: 1500, showConfirmButton: false });
+            navigate('/auth/dang-nhap');
         } catch (error: any) {
             setErrors({ otp: error.response?.data?.message || "Đăng ký thất bại" });
         } finally {

@@ -83,10 +83,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<string> TomTatVideoAsync(YeuCauTomTatVideoDTO yeuCau)
         {
-            string phuDeKhaiThac = yeuCau.PhuDeVideo;
-
-            // 1. NẾU KHÔNG CÓ PHỤ ĐỀ TRONG DB -> GỌI HELPER LẤY TỪ YOUTUBE
-            if (string.IsNullOrWhiteSpace(phuDeKhaiThac) && !string.IsNullOrWhiteSpace(yeuCau.VideoId))
+            string phuDeKhaiThac = "";
+            if (!string.IsNullOrWhiteSpace(yeuCau.VideoId))
             {
                 Console.WriteLine($"Đang cào phụ đề từ YouTube ID: {yeuCau.VideoId}...");
                 phuDeKhaiThac = await GetPhuDeVideoHelper.LayPhuDeYoutube(yeuCau.VideoId);

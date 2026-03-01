@@ -375,6 +375,102 @@ namespace educodeai_server.Repository.Implementation
                 return false;
             }
         }
+
+        public async Task<List<DangKyKhoaHocModel>> GetDangKyKhoaHocAsync(int maNguoiDung)
+        {
+            return await _context.DangKyKhoaHocs
+                .Where(x => x.MaNguoiDung == maNguoiDung)
+                .ToListAsync();
+        }
+
+        public async Task<List<int>> GetMaKhoaHocDaDangKyAsync(int maNguoiDung, List<int> danhSachMaKhoaHoc)
+        {
+            return await _context.DangKyKhoaHocs
+                .Where(x => x.MaNguoiDung == maNguoiDung
+                         && danhSachMaKhoaHoc.Contains(x.MaKhoaHoc))
+                .Select(x => x.MaKhoaHoc)
+                .ToListAsync();
+        }
+
+        public async Task AddDangKyKhoaHocAsync(List<DangKyKhoaHocModel> dangKyKhoaHocs)
+        {
+            await _context.DangKyKhoaHocs.AddRangeAsync(dangKyKhoaHocs);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<GhiChuAIModel>> LayDanhSachGhiChuAI(int maNguoiDung)
+        {
+            return await _context.GhiChuAIs
+                .Include(g => g.BaiHoc)
+                .Where(g => g.MaNguoiDung == maNguoiDung)
+                .OrderByDescending(g => g.NgayTao)
+                .ToListAsync();
+        }
+
+        public async Task<bool> LuuGhiChuAI(GhiChuAIModel duLieu)
+        {
+            _context.GhiChuAIs.Add(duLieu);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateGhiChuAI(int id, string noiDung)
+        {
+            var ghiChu = await _context.GhiChuAIs.FindAsync(id);
+            if (ghiChu == null) return false;
+
+            ghiChu.NoiDung = noiDung;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteGhiChuAI(int id)
+        {
+            var ghiChu = await _context.GhiChuAIs.FindAsync(id);
+            if (ghiChu == null) return false;
+
+            _context.GhiChuAIs.Remove(ghiChu);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc)
+        {
+            return await _context.DanhGias
+                .Include(d => d.NguoiDung)
+                .Where(d => d.MaKhoaHoc == maKhoaHoc)
+                .OrderByDescending(d => d.NgayDanhGia)
+                .ToListAsync();
+        }
+
+        public async Task<bool> KiemTraDaDanhGiaAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            return await _context.DanhGias
+                .AnyAsync(d => d.MaKhoaHoc == maKhoaHoc && d.MaNguoiDung == maNguoiDung);
+        }
+
+        public async Task<bool> ThemDanhGiaAsync(DanhGiaModel danhGia)
+        {
+            _context.DanhGias.Add(danhGia);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> KiemTraHoanThanhKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            // 1. Đếm TỔNG SỐ BÀI HỌC (Bỏ Include đi cho nhẹ)
+            var tongSoBaiHoc = await _context.BaiHocs
+                .Where(b => b.ChuongHoc.MaKhoaHoc == maKhoaHoc)
+                .CountAsync();
+
+            if (tongSoBaiHoc == 0) return false;
+
+            // 2. Đếm SỐ BÀI ĐÃ HỌC (Cũng bỏ Include đi)
+            var soBaiDaHoc = await _context.TienDoBaiHocs
+                .Where(t => t.MaNguoiDung == maNguoiDung
+                         && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc
+                         && t.DaXem == true)
+                .CountAsync();
+            Console.WriteLine("Số bài đã học: " + soBaiDaHoc);
+            Console.WriteLine("Tổng số bài học: " + tongSoBaiHoc);
+            return soBaiDaHoc == tongSoBaiHoc;
+        }
     }
 
 }
