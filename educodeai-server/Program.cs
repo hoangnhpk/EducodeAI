@@ -1,41 +1,141 @@
-﻿using educodeai_server.Data;
+﻿using educodeai_server.Config;
+using educodeai_server.Data;
+using educodeai_server.Helpers;
+using educodeai_server.Repository.Implementation;
+using educodeai_server.Repository.Interface;
+using educodeai_server.Services.Implementation;
+using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using System.Text;
+
+// 1. FIX LỖI FONT TIẾNG VIỆT (Dấu ?) KHI LẤY PHỤ ĐỀ YOUTUBE
+System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ==========================================
-// 1. CẤU HÌNH SERVICES (Dependency Injection)
-// ==========================================
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true)
+    .AddEnvironmentVariables();
 
-// A. Kết nối Database (SQL Server)
-// Nó sẽ đọc chuỗi kết nối từ appsettings.json
+builder.Configuration.AddUserSecrets<Program>();
+
+// ==========================================
+// 2. CẤU HÌNH XÁC THỰC (JWT)
+// ==========================================
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        Console.WriteLine("JWT KEY (VERIFY): " + builder.Configuration["Jwt:Key"]);
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+            RoleClaimType = ClaimTypes.Role
+        };
+    });
+
+// ==========================================
+// 3. CẤU HÌNH KẾT NỐI CƠ SỞ DỮ LIỆU
+// ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// B. Cấu hình CORS (Quan trọng để Frontend React gọi được API)
+// ==========================================
+// 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
+// ==========================================
+// Khóa học & Bài tập
+builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
+builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
+builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
+builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
+builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddHttpClient<BaiTapService>();
+
+// Người dùng & Thống kê
+builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
+builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
+builder.Services.AddScoped<IHocVienService, HocVienService>();
+builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
+
+// AI & Lộ trình
+builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
+builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
+builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
+
+// ==========================================
+// 5. CẤU HÌNH HTTP CLIENT CHO GEMINI (ĐÃ TỐI ƯU)
+// ==========================================
+builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var baseUrl = config["GeminiAI:BaseUrl"];
+
+    if (!string.IsNullOrEmpty(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+});
+
+builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
+
+// ==========================================
+// 6. CẤU HÌNH CORS & SWAGGER
+// ==========================================
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.AllowAnyOrigin()  // Cho phép mọi nguồn
-              .AllowAnyHeader()  // Cho phép mọi Header
-              .AllowAnyMethod(); // Cho phép mọi phương thức (GET, POST, PUT, DELETE)
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5210")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
-// C. Các Service mặc định
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(); // Swagger cơ bản, không có nút nhập Token
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "EduCodeAI API", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Nhập theo format: Bearer {token}"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
 // ==========================================
-// 2. CẤU HÌNH PIPELINE (Middleware)
+// 7. PIPELINE REQUEST (Middleware)
 // ==========================================
-
-// A. Swagger (Hiển thị tài liệu API khi chạy môi trường Dev)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -44,11 +144,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// B. Kích hoạt CORS (Phải đặt trước UseAuthorization)
-app.UseCors();
+// Kích hoạt CORS (Phải đặt trước UseAuthorization)
+app.UseCors("AllowReactApp");
+app.UseStaticFiles();
 
-// C. Các Middleware mặc định
-app.UseAuthorization(); // Vẫn để đây cho đúng chuẩn, dù chưa dùng Auth
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

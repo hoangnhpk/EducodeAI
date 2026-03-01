@@ -1,0 +1,1724 @@
+:root {
+    --cp-primary: #f69050;
+    --cp-primary-soft: #fef3ec;
+    --cp-primary-strong: #e67e22;
+    --cp-bg: #f4f5fb;
+    --cp-surface: #ffffff;
+    --cp-border: #e2e5f1;
+    --cp-text: #181d38;
+    --cp-text-muted: #6b7280;
+    --cp-radius-lg: 12px;
+    --cp-radius-md: 8px;
+    --cp-shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Heebo", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    background: var(--cp-bg);
+    color: var(--cp-text);
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* HEADER */
+.cp-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: linear-gradient(90deg, #f69050, #fb873f);
+    color: #fff;
+    padding: 0.8rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+}
+
+.cp-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+/* Container nút quay lại */
+a.cp-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+
+    /* Màu sắc: Trắng để nổi bật trên nền cam */
+    background-color: rgba(255, 255, 255, 0.2);
+    /* Trắng mờ */
+    color: #ffffff !important;
+
+    /* Loại bỏ gạch chân hoàn toàn */
+    text-decoration: none !important;
+
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+/* Loại bỏ gạch chân cho mọi trạng thái */
+a.cp-back:visited,
+a.cp-back:hover,
+a.cp-back:active {
+    text-decoration: none !important;
+}
+
+/* Hiệu ứng Hover: Sáng rực lên */
+a.cp-back:hover {
+    background-color: #ffffff;
+    /* Trắng đặc */
+    color: #f69050 !important;
+    /* Icon đổi sang màu cam giống màu nền */
+    transform: translateX(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Đảm bảo icon FontAwesome không bị lệch */
+.cp-back i {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.cp-course-title-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cp-course-title-meta span:first-child {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    opacity: 0.85;
+}
+
+.cp-course-title-meta span:last-child {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.cp-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    font-size: 0.82rem;
+}
+
+.cp-progress-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cp-progress-bar {
+    width: 150px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.3);
+    overflow: hidden;
+}
+
+.cp-progress-bar-inner {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--cp-bg);
+    transition: width 0.25s ease;
+}
+
+.cp-user-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(15, 23, 42, 0.3);
+}
+
+.cp-user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+/* LAYOUT 2 CỘT */
+.cp-shell {
+    height: calc(100vh - 69px);
+    padding: 1rem 1.5rem 1.25rem;
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
+    gap: 1rem;
+}
+
+.cp-left,
+.cp-right {
+    background: var(--cp-surface);
+    border-radius: var(--cp-radius-lg);
+    box-shadow: var(--cp-shadow-soft);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* LEFT: lesson area */
+.cp-lesson-header {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--cp-border);
+}
+
+.cp-lesson-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
+}
+
+.cp-lesson-badges {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.cp-pill {
+    font-size: 0.72rem;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid var(--cp-border);
+    background: #f9fafb;
+    color: var(--cp-text-muted);
+}
+
+.cp-pill-primary {
+    border-color: rgba(246, 144, 80, 0.4);
+    background: var(--cp-primary-soft);
+    color: var(--cp-primary-strong);
+}
+
+.cp-lesson-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.cp-lesson-desc {
+    font-size: 0.86rem;
+    color: var(--cp-text-muted);
+}
+
+/* TABS */
+.cp-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.45rem 1.25rem 0.35rem;
+    border-bottom: 1px solid var(--cp-border);
+}
+
+.cp-tab {
+    border-radius: 999px;
+    padding: 0.32rem 0.85rem;
+    border: 1px solid transparent;
+    background: transparent;
+    font-size: 0.8rem;
+    color: var(--cp-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+}
+
+.cp-tab:hover {
+    background: #f3f4ff;
+}
+
+.cp-tab-active {
+    background: var(--cp-primary-soft);
+    border-color: rgba(246, 144, 80, 0.4);
+    color: var(--cp-primary-strong);
+}
+
+/* MAIN CONTENT */
+.cp-main-content {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.cp-tab-pane {
+    display: none;
+    flex: 1;
+    padding: 1rem 1.25rem;
+    overflow-y: auto;
+}
+
+.cp-tab-pane.active {
+    display: block;
+}
+
+/* VIDEO CONTENT */
+.cp-video-frame {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: var(--cp-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+.cp-video-inner {
+    text-align: center;
+    padding: 2rem;
+}
+
+.cp-video-inner i {
+    font-size: 3rem;
+    margin-bottom: 0.4rem;
+    opacity: 0.7;
+}
+
+/* TEXT CONTENT */
+.cp-text-body p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin-bottom: 0.5rem;
+}
+
+.cp-text-body ul {
+    padding-left: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.cp-text-body li {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Tab Info Styles */
+.cp-info-section {
+    margin-bottom: 2rem;
+}
+
+.cp-info-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--cp-border);
+}
+
+.cp-overview-content {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--cp-text);
+}
+
+.cp-overview-content p {
+    margin-bottom: 0.8rem;
+}
+
+.cp-overview-list {
+    padding-left: 1.5rem;
+    margin: 1rem 0;
+}
+
+.cp-overview-list li {
+    margin-bottom: 0.5rem;
+}
+
+/* Rating Section */
+.cp-rating-summary {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--cp-primary-soft);
+    border-radius: var(--cp-radius-md);
+}
+
+.cp-rating-score {
+    text-align: center;
+}
+
+.cp-rating-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--cp-primary-strong);
+}
+
+.cp-rating-stars {
+    display: flex;
+    gap: 0.2rem;
+    color: #fbbf24;
+    font-size: 1.2rem;
+    margin: 0.3rem 0;
+}
+
+.cp-rating-count {
+    font-size: 0.85rem;
+    color: var(--cp-text-muted);
+}
+
+.cp-rating-breakdown {
+    flex: 1;
+}
+
+.cp-rating-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.cp-rating-bar {
+    flex: 1;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.cp-rating-bar-fill {
+    height: 100%;
+    background: #fbbf24;
+    transition: width 0.3s ease;
+}
+
+/* Reviews/Comments */
+.cp-review-item {
+    padding: 1rem;
+    border: 1px solid var(--cp-border);
+    border-radius: var(--cp-radius-md);
+    margin-bottom: 1rem;
+    background: #f9fafb;
+}
+
+.cp-review-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.cp-review-author {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.cp-review-date {
+    font-size: 0.8rem;
+    color: var(--cp-text-muted);
+}
+
+.cp-review-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--cp-text);
+}
+
+/* Notes Section */
+.cp-notes-editor {
+    border: 1px solid var(--cp-border);
+    border-radius: var(--cp-radius-md);
+    padding: 1rem;
+    background: #fff;
+}
+
+.cp-notes-textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 0.75rem;
+    border: 1px solid var(--cp-border);
+    border-radius: var(--cp-radius-md);
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    resize: vertical;
+    margin-bottom: 0.75rem;
+}
+
+.cp-notes-textarea:focus {
+    outline: none;
+    border-color: var(--cp-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.cp-notes-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.cp-notes-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--cp-border);
+    border-radius: var(--cp-radius-md);
+    background: var(--cp-surface);
+    color: var(--cp-text);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.cp-notes-btn:hover {
+    background: var(--cp-primary-soft);
+    border-color: var(--cp-primary);
+    color: var(--cp-primary-strong);
+}
+
+.cp-notes-btn-primary {
+    background: var(--cp-primary);
+    color: #fff;
+    border-color: var(--cp-primary);
+}
+
+.cp-notes-btn-primary:hover {
+    background: var(--cp-primary-strong);
+}
+
+.cp-notes-saved {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #d1fae5;
+    border: 1px solid #10b981;
+    border-radius: var(--cp-radius-md);
+    color: #065f46;
+    font-size: 0.85rem;
+    display: none;
+}
+
+.cp-notes-saved.show {
+    display: block;
+}
+
+/* RIGHT: outline */
+.cp-right-header {
+    padding: 0.9rem 1.1rem 0.55rem;
+    border-bottom: 1px solid var(--cp-border);
+}
+
+.cp-right-header h2 {
+    font-size: 0.98rem;
+    font-weight: 600;
+    margin: 0 0 0.15rem;
+}
+
+.cp-right-sub {
+    font-size: 0.8rem;
+    color: var(--cp-text-muted);
+}
+
+.cp-right-progress {
+    margin-top: 0.5rem;
+}
+
+.cp-outline {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.25rem 0.25rem 0.75rem;
+}
+
+.cp-outline::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cp-outline::-webkit-scrollbar-thumb {
+    background: #cdd4f3;
+    border-radius: 999px;
+}
+
+.cp-chapter {
+    border-bottom: 1px solid var(--cp-border);
+}
+
+.cp-chapter-header {
+    padding: 0.75rem 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+
+.cp-chapter-header:hover {
+    background: #f3f4ff;
+}
+
+.cp-chapter-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.cp-chapter-meta {
+    font-size: 0.78rem;
+    color: var(--cp-text-muted);
+}
+
+.cp-chapter-lessons {
+    display: none;
+    padding: 0 0.5rem 0.4rem;
+}
+
+.cp-chapter-lessons.open {
+    display: block;
+}
+
+.cp-lesson-item {
+    padding: 0.5rem 0.65rem 0.5rem 1.2rem;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    cursor: pointer;
+    margin: 0.1rem 0.2rem;
+}
+
+.cp-lesson-item:hover:not(.cp-lesson-locked) {
+    background: #f3f4ff;
+}
+
+.cp-lesson-active {
+    background: var(--cp-primary-soft);
+    border: 1px solid rgba(246, 144, 80, 0.4);
+}
+
+/* Lesson icons */
+.cp-lesson-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+.cp-lesson-icon.video {
+    background: rgba(59, 130, 246, 0.14);
+    color: #2563eb;
+}
+
+.cp-lesson-icon.text {
+    background: rgba(16, 185, 129, 0.14);
+    color: #059669;
+}
+
+.cp-lesson-icon.ide {
+    background: rgba(124, 58, 237, 0.14);
+    color: #7c3aed;
+}
+
+.cp-lesson-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.cp-lesson-title {
+    font-size: 0.84rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cp-lesson-meta {
+    font-size: 0.76rem;
+    color: var(--cp-text-muted);
+}
+
+.cp-lesson-status {
+    font-size: 0.8rem;
+    width: 22px;
+    text-align: center;
+}
+
+.cp-lesson-locked {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.cp-lesson-completed .cp-lesson-title {
+    color: #16a34a;
+}
+
+/* Floating navigation bar */
+.cp-floating-nav {
+    position: fixed;
+    bottom: 20px;
+    /* Cách đáy một chút cho đẹp */
+    left: 50%;
+    transform: translateX(-50%);
+    /* Căn giữa màn hình */
+    z-index: 100;
+
+    background: #fff;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    padding: 10px 20px;
+    border-radius: 50px;
+    /* Bo tròn giống dạng viên thuốc */
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+
+    /* --- QUAN TRỌNG: Hiệu ứng ẩn hiện --- */
+    transition: all 0.4s ease-in-out;
+    opacity: 1;
+    visibility: visible;
+}
+
+.cp-floating-nav.hidden {
+    bottom: -80px;
+    /* Đẩy hẳn ra khỏi màn hình */
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Khi hiện: Trở về vị trí cũ */
+.cp-floating-nav.visible {
+    bottom: 20px;
+    opacity: 1;
+    visibility: visible;
+}
+
+.cp-nav-btn {
+    padding: 8px 16px;
+    border: none;
+    background: var(--cp-primary);
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.cp-nav-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* --- CSS GIAO DIỆN IDE (SPLIT LAYOUT) --- */
+.cp-ide-wrapper {
+    display: flex;
+    height: 100%;
+    border: 1px solid var(--cp-border);
+    border-radius: var(--cp-radius-md);
+    overflow: hidden;
+    background: #fff;
+}
+
+/* CỘT TRÁI: ĐỀ BÀI */
+.cp-ide-problem-col {
+    width: 35%;
+    background: #fff;
+    border-right: 1px solid var(--cp-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.cp-ide-problem-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--cp-border);
+    font-weight: 700;
+    font-size: 1.1rem;
+    background: #f8fafc;
+}
+
+.cp-ide-problem-content {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #334155;
+}
+
+/* Các khối ví dụ trong đề bài */
+.cp-example-box {
+    background: #f1f5f9;
+    padding: 0.8rem;
+    border-radius: 6px;
+    font-family: monospace;
+    margin: 0.5rem 0 1rem;
+    font-size: 0.9rem;
+    border: 1px solid #e2e8f0;
+}
+
+/* CỘT PHẢI: EDITOR & TEST CASES */
+.cp-ide-code-col {
+    width: 65%;
+    display: flex;
+    flex-direction: column;
+    background: #1e1e1e;
+}
+
+/* Phần Editor */
+.cp-ide-editor-area {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.cp-ide-editor-header {
+    background: #252526;
+    color: #e5e7eb;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+.cp-ide-textarea {
+    flex: 1;
+    width: 100%;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border: none;
+    padding: 1rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+}
+
+/* Khu vực bài kiểm tra */
+.cp-ide-test-area {
+    flex: 0.8;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid #333;
+    background: #fff;
+}
+
+.cp-test-tabs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f1f5f9;
+    border-bottom: 1px solid var(--cp-border);
+    padding-right: 10px;
+    height: 42px;
+}
+
+.cp-test-tab-list {
+    display: flex;
+    height: 100%;
+}
+
+.cp-test-tab-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.cp-test-tab-btn:hover {
+    color: var(--cp-primary);
+    background: #e2e8f0;
+}
+
+.cp-test-tab-btn.active {
+    color: var(--cp-primary);
+    border-bottom-color: var(--cp-primary);
+    background: #fff;
+}
+
+/* Nội dung Tab */
+.cp-test-content-wrap {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    position: relative;
+    background: #fff;
+}
+
+.cp-test-pane {
+    display: none;
+}
+
+.cp-test-pane.active {
+    display: block;
+}
+
+/* Ô Input/Output */
+.cp-io-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+}
+
+.cp-io-box {
+    background: #1e293b;
+    color: #fff;
+    padding: 0.6rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+    min-height: 2.5rem;
+}
+
+/* Nút Chạy code */
+.cp-run-float-btn {
+    background: #0099ff;
+    color: white;
+    border: none;
+    padding: 0 15px;
+    height: 32px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.cp-run-float-btn:hover {
+    background: #007acc;
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+    .cp-shell {
+        grid-template-columns: minmax(0, 1fr);
+        height: auto;
+    }
+
+    .cp-right {
+        max-height: 45vh;
+    }
+
+    .cp-ide-wrapper {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .cp-ide-problem-col,
+    .cp-ide-code-col {
+        width: 100%;
+    }
+
+    .cp-ide-problem-col {
+        height: 300px;
+        border-right: none;
+        border-bottom: 1px solid var(--cp-border);
+    }
+
+    .cp-ide-editor-area {
+        height: 400px;
+    }
+}
+
+@media (max-width: 768px) {
+    .cp-header {
+        padding: 0.7rem 0.9rem;
+    }
+
+    .cp-shell {
+        padding: 0.75rem;
+    }
+}
+
+/* --- STYLE CHO BÀI HỌC TRẮC NGHIỆM (QUIZ) --- */
+
+/* Icon sidebar màu cam đỏ */
+.cp-lesson-icon.quiz {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+}
+
+/* Container chính của Quiz */
+.cp-quiz-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid var(--cp-border);
+    border-radius: var(--cp-radius-md);
+    padding-bottom: 80px;
+}
+
+.cp-quiz-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed var(--cp-border);
+}
+
+/* Từng câu hỏi */
+.cp-quiz-item {
+    margin-bottom: 2rem;
+}
+
+.cp-quiz-question {
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-bottom: 1rem;
+    color: var(--cp-text);
+}
+
+/* Danh sách đáp án */
+.cp-quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cp-quiz-option {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--cp-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #fff;
+}
+
+.cp-quiz-option:hover:not(.disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+/* Trạng thái đã chọn (khi đang làm bài) */
+.cp-quiz-option.selected {
+    border-color: var(--cp-primary);
+    background: var(--cp-primary-soft);
+    color: var(--cp-primary-strong);
+    font-weight: 500;
+}
+
+/* Trạng thái đúng/sai (sau khi nộp bài) */
+.cp-quiz-option.correct {
+    background: #dcfce7 !important;
+    /* Xanh lá nhạt */
+    border-color: #22c55e !important;
+    color: #15803d !important;
+}
+
+.cp-quiz-option.wrong {
+    background: #fee2e2 !important;
+    /* Đỏ nhạt */
+    border-color: #ef4444 !important;
+    color: #b91c1c !important;
+    opacity: 0.7;
+}
+
+/* Nút tròn tick chọn giả lập */
+.cp-option-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.cp-quiz-option.selected .cp-option-circle {
+    border-color: var(--cp-primary);
+    background: var(--cp-primary);
+}
+
+/* Footer chứa nút nộp bài */
+.cp-quiz-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--cp-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cp-quiz-score {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--cp-primary);
+    display: none;
+    /* Ẩn mặc định */
+}
+
+/* --- CSS QUIZ STEP-BY-STEP --- */
+
+/* Ẩn tất cả câu hỏi mặc định */
+.cp-quiz-item {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Chỉ hiện câu đang active */
+.cp-quiz-item.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Thanh tiến trình câu hỏi */
+.cp-quiz-progress-bar {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    margin: 1rem 0 2rem;
+    overflow: hidden;
+}
+
+.cp-quiz-progress-fill {
+    height: 100%;
+    background: var(--cp-primary);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.cp-quiz-status {
+    text-align: right;
+    font-size: 0.85rem;
+    color: var(--cp-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+/* Khu vực nút điều hướng Quiz */
+.cp-quiz-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--cp-border);
+}
+
+.cp-btn-nav {
+    padding: 0.6rem 1.2rem;
+    border: 1px solid var(--cp-border);
+    background: white;
+    border-radius: var(--cp-radius-md);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.cp-btn-nav:hover:not(:disabled) {
+    border-color: var(--cp-primary);
+    color: var(--cp-primary-soft);
+}
+
+.cp-btn-nav:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f1f5f9;
+}
+
+.cp-btn-submit {
+    background: var(--cp-primary);
+    color: white;
+    border: none;
+    display: none;
+    /* Ẩn mặc định */
+}
+
+.cp-btn-submit:hover {
+    background: var(--cp-primary-dark);
+}
+
+.cp-lesson-locked {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.text-success {
+    color: #28a745;
+}
+
+.cp-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cp-nav-btn.disabled,
+.cp-nav-btn.locked {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.cp-nav-btn.locked::after {
+    content: "🔒";
+    margin-left: 6px;
+}
+
+video::-webkit-media-controls-timeline {
+    pointer-events: none;
+}
+
+video::-webkit-media-controls-playback-rate-button {
+    display: none;
+}
+
+/* Container chính: Giới hạn chiều rộng, căn giữa, đổ bóng */
+.cp-quiz-wrapper {
+    max-width: 800px;
+    margin: 2rem auto;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+    border: 1px solid #f0f0f0;
+}
+
+/* Header */
+.cp-quiz-header {
+    padding: 1.5rem 2rem;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.cp-quiz-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 1rem;
+}
+
+/* Thanh tiến độ */
+.cp-progress-track {
+    width: 100%;
+    height: 6px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.cp-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f69050, #ff7e5f);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Timer */
+.cp-timer-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.cp-timer-badge.warning {
+    background: #fff0f0;
+    color: #e63946;
+    border: 1px solid #ffcccc;
+    animation: pulse 1s infinite;
+}
+
+.cp-timer-badge.normal {
+    background: #f0f9ff;
+    color: #0077b6;
+    border: 1px solid #cceeff;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Body câu hỏi */
+.cp-quiz-body {
+    padding: 2rem;
+}
+
+.cp-quiz-question {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2d3748;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+/* Grid đáp án */
+.cp-quiz-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    /* 1 cột trên mobile */
+    gap: 12px;
+}
+
+@media (min-width: 600px) {
+    .cp-quiz-options {
+        grid-template-columns: 1fr 1fr;
+        /* 2 cột trên PC */
+    }
+}
+
+/* Card đáp án */
+.cp-option-card {
+    position: relative;
+    padding: 1rem 1rem 1rem 3rem;
+    /* Chừa chỗ cho nút tròn */
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+    min-height: 60px;
+}
+
+.cp-option-card:hover:not(.disabled) {
+    border-color: #cbd5e0;
+    background: #f8fafc;
+    transform: translateY(-2px);
+}
+
+/* Trạng thái Selected */
+.cp-option-card.selected {
+    border-color: #f69050;
+    background: #fff8f3;
+    color: #c05621;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(246, 144, 80, 0.15);
+}
+
+/* Trạng thái Đúng/Sai (Sau khi nộp) */
+.cp-option-card.correct {
+    border-color: #48bb78 !important;
+    background: #f0fff4 !important;
+    color: #276749 !important;
+}
+
+.cp-option-card.wrong {
+    border-color: #f56565 !important;
+    background: #fff5f5 !important;
+    color: #c53030 !important;
+    opacity: 0.8;
+}
+
+/* Nút tròn Custom */
+.cp-option-circle {
+    position: absolute;
+    left: 1rem;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e0;
+    transition: all 0.2s;
+}
+
+.cp-option-card.selected .cp-option-circle {
+    border-color: #f69050;
+    background: #f69050;
+    box-shadow: inset 0 0 0 3px #fff;
+    /* Tạo chấm trắng ở giữa */
+}
+
+.cp-option-card.correct .cp-option-circle {
+    border-color: #48bb78;
+    background: #48bb78;
+    box-shadow: inset 0 0 0 3px #fff;
+}
+
+.cp-option-card.wrong .cp-option-circle {
+    border-color: #f56565;
+    background: #f56565;
+    box-shadow: inset 0 0 0 3px #fff;
+}
+
+/* Footer */
+.cp-quiz-footer {
+    padding: 1.5rem 2rem;
+    background: #fcfcfc;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Nút bấm hiện đại */
+.cp-btn-nav {
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+}
+
+.cp-btn-nav.secondary {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.cp-btn-nav.secondary:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #2d3748;
+}
+
+.cp-btn-nav.primary {
+    background: linear-gradient(135deg, #f69050 0%, #e07a3c 100%);
+    color: white;
+    box-shadow: 0 4px 10px rgba(246, 144, 80, 0.3);
+}
+
+.cp-btn-nav.primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(246, 144, 80, 0.4);
+}
+
+.cp-btn-nav:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Animation */
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.anim-enter {
+    animation: fadeInSlide 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Nền tối làm mờ màn hình (Overlay) */
+.ai-notes-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1040;
+    transition: opacity 0.3s ease;
+}
+
+/* Khung Sidebar trượt từ bên phải vào */
+.ai-notes-sidebar {
+    position: fixed;
+    top: 0;
+    right: -450px;
+    /* Ẩn đi mặc định */
+    width: 450px;
+    height: 100vh;
+    background-color: #f8fafc;
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+    z-index: 1050;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-notes-sidebar.open {
+    right: 0;
+    /* Hiện ra */
+}
+
+/* Header của Sidebar */
+.ai-notes-header {
+    padding: 20px;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-notes-header h4 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.btn-close-sidebar {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-close-sidebar:hover {
+    color: #ef4444;
+}
+
+/* Phần Body chứa danh sách ghi chú */
+.ai-notes-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Từng thẻ (Card) ghi chú */
+.ai-note-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.ai-note-meta {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 8px;
+}
+
+/* Format lại nội dung Markdown bên trong thẻ ghi chú */
+.ai-note-content {
+    font-size: 0.9rem;
+    color: #334155;
+    line-height: 1.6;
+}
+
+.ai-note-content h1,
+.ai-note-content h2,
+.ai-note-content h3 {
+    font-size: 1rem;
+    color: #0f172a;
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.ai-note-content ul {
+    padding-left: 20px;
+    margin-bottom: 10px;
+}
+
+/* Khu vực bao quanh phần tóm tắt */
+.ai-summary-container {
+    margin-top: 10px;
+    padding: 24px;
+    background-color: #ffffff;
+    /* Đổi sang nền trắng cho sạch */
+    border-radius: 12px;
+    /* Không dùng border thô, dùng shadow mịn hơn */
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+/* Nút bấm gọi AI - Làm phẳng hơn, bỏ gradient bóng bẩy quá mức */
+.btn-ai-summarize {
+    background-color: #f69050;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 8px;
+    /* Bo góc nhẹ cho hiện đại */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-ai-summarize:hover:not(:disabled) {
+    background-color: #e67e22;
+    transform: translateY(-1px);
+}
+
+.btn-ai-summarize:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Khung hiển thị kết quả Markdown */
+.ai-summary-result {
+    margin-top: 24px;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #334155;
+    border: 1px solid #f1f5f9;
+}
+
+/* Tinh chỉnh typography trong Markdown */
+.ai-summary-result h3 {
+    font-size: 1.1rem;
+    color: #0f172a;
+    margin-bottom: 12px;
+}
+
+.ai-summary-result strong {
+    color: #f69050;
+    font-weight: 600;
+}
+
+/* Thay thế hiệu ứng chớp nháy bằng hiệu ứng Loading "Shimmer" (trượt sáng) */
+.ai-loading-pulse {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    color: #64748b;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Đường kẻ chạy ngang tạo cảm giác đang quét dữ liệu */
+.ai-loading-pulse::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(255, 255, 255, 0) 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* --- Form Đánh Giá --- */
+.cp-review-form-container {
+    background: #fff;
+    border: 1px solid var(--cp-border);
+    border-radius: var(--cp-radius-md);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.cp-star-selector {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    color: #cbd5e1; /* Màu xám khi chưa chọn */
+    cursor: pointer;
+    margin-bottom: 1rem;
+}
+
+.cp-star-selector i {
+    transition: color 0.2s, transform 0.2s;
+}
+
+.cp-star-selector i.active,
+.cp-star-selector i:hover {
+    color: #fbbf24; /* Màu vàng của sao */
+    transform: scale(1.1);
+}
+
+.cp-review-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.75rem;
+    border: 1px solid var(--cp-border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+    outline: none;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s;
+}
+
+.cp-review-textarea:focus {
+    border-color: var(--cp-primary);
+}
+
+.cp-btn-submit-review {
+    background: var(--cp-primary);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.cp-btn-submit-review:hover {
+    background: var(--cp-primary-strong);
+}
+
+.cp-btn-submit-review:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}
