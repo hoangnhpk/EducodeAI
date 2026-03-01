@@ -26,9 +26,10 @@ interface RatingSummary {
 interface Props {
     maKhoaHoc: number;
     maNguoiDung: number;
+    daHoanThanhKhoaHoc: boolean; // Prop mới để kiểm tra hoàn thành khóa học
 }
 
-export const TabDanhGia: React.FC<Props> = ({ maKhoaHoc, maNguoiDung }) => {
+export const TabDanhGia: React.FC<Props> = ({ maKhoaHoc, maNguoiDung, daHoanThanhKhoaHoc }) => {
     // State cho Form
     const [userRating, setUserRating] = useState<number>(0);
     const [hoverRating, setHoverRating] = useState<number>(0);
@@ -72,9 +73,6 @@ export const TabDanhGia: React.FC<Props> = ({ maKhoaHoc, maNguoiDung }) => {
             const daDanhGia = res.danhSach.some((r: Review) => r.maNguoiDung === maNguoiDung);
             if (daDanhGia) {
                 setHasReviewed(true);
-                // Lưu ý: Không tự động bật hienThongBao khi mới load lại trang, 
-                // chỉ bật khi người dùng VỪA MỚI gửi form thành công.
-                // setHienThongBao(true); <-- BỎ DÒNG NÀY ĐI
             }
         } catch (error) {
             console.error("Lỗi lấy đánh giá:", error);
@@ -157,8 +155,14 @@ export const TabDanhGia: React.FC<Props> = ({ maKhoaHoc, maNguoiDung }) => {
             </div>
 
             {/* 2. CẤU TRÚC ĐIỀU KIỆN HIỂN THỊ FORM VÀ THÔNG BÁO */}
-            {!hasReviewed ? (
-                // NẾU CHƯA ĐÁNH GIÁ: Hiện form nhập
+            {!daHoanThanhKhoaHoc ? (
+                 // NẾU CHƯA HOÀN THÀNH: Hiện thông báo yêu cầu hoàn thành
+                 <div style={{ background: '#fffbeb', border: '1px solid #fef08a', color: '#b45309', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', textAlign: 'center' }}>
+                     <i className="fas fa-lock" style={{ marginRight: '8px' }}></i>
+                     Bạn cần hoàn thành tất cả bài học để có thể gửi đánh giá cho khóa học này. Hãy tiếp tục cố gắng nhé!
+                 </div>
+            ) : !hasReviewed ? (
+                // NẾU ĐÃ HOÀN THÀNH VÀ CHƯA ĐÁNH GIÁ: Hiện form nhập
                 <div className="cp-review-form-container">
                     <h5 style={{ marginBottom: '1rem', fontWeight: 600 }}>Gửi đánh giá của bạn</h5>
 
@@ -208,6 +212,7 @@ export const TabDanhGia: React.FC<Props> = ({ maKhoaHoc, maNguoiDung }) => {
                                 <div>
                                     <div className="cp-review-author">
                                         {review.tenNguoiDung}
+                                        {/* Tag báo hiệu review của chính User đó */}
                                         {review.maNguoiDung === maNguoiDung && <span className="badge bg-secondary ms-2" style={{ fontSize: '0.7rem' }}>Bạn</span>}
                                     </div>
                                     {renderStaticStars(review.soSao)}
