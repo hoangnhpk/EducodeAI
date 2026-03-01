@@ -91,6 +91,7 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
 
   // --- LOGIC: Xử lý Gian lận (Anti-Cheat) ---
   const xuLyGianLan = (currentTime: number, lastValidTime: number) => {
+    return;
     if (dangCanhBaoRef.current) return; // Nếu đang tua từ ghi chú thì bỏ qua
 
     dangCanhBaoRef.current = true;
@@ -236,7 +237,7 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
         setThoiGianHienTai(currentVideoTime);
       }
 
-      if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.98) {
+      if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.90) {
         luuTienDo(currentVideoTime);
       }
     }, 1000);

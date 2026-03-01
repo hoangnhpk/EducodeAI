@@ -17,7 +17,7 @@
 
 .btn:hover {
     background: transparent;
-    color: var(--primary) !important;
+    /* color: var(--primary) !important; */
     border: 1px solid var(--primary);
 }
 
@@ -30,8 +30,7 @@
 }
 
 .btn-light:hover {
-    background: transparent;
-    color: var(--light) !important;
+    /* color: var(--light) !important; */
     border: 1px solid var(--light);
 }
 
@@ -286,7 +285,7 @@
 }
 
 .page-header {
-    background: linear-gradient(#FFFFFF), url(../img/carousel-1.jpg);
+    background: linear-gradient(rgba(24, 29, 56, .7), rgba(24, 29, 56, .7)), url(../img/carousel-1.jpg);
     background-position: center center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -558,39 +557,4 @@
     margin-right: 0;
     padding-right: 0;
     border-right: none;
-}
-
-/* =============================
-   LAYOUT GIẢNG VIÊN
-   ============================= */
-
-.layout-giang-vien {
-  display: flex;
-  min-height: 100vh;
-}
-
-/* ===== SIDEBAR: KHÓA CỨNG ===== */
-.gv-sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 260px;
-  height: 100vh;
-  background: var(--bg-sidebar);
-  z-index: 100;
-}
-
-/* ===== MAIN WRAPPER ===== */
-.gv-main-wrapper {
-  margin-left: 260px; /* chừa chỗ cho sidebar */
-  width: calc(100% - 260px);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ===== CONTENT CUỘN BÌNH THƯỜNG ===== */
-.gv-main-content {
-  flex: 1;
-  padding: 24px;
 }
