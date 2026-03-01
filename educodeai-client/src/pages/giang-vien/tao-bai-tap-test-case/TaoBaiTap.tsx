@@ -106,7 +106,7 @@ const QuanLyBaiTapContent = () => {
         <div className="main-content" style={{ padding: '40px 48px', animation: 'fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
             <div className="tabs">
                 <a href="/giang-vien/quiz" className="tab active text-decoration-none">+ Tạo Quiz</a>
-                <button className="tab">+ Tạo Bài Thực Hành</button>
+                {/* <button className="tab">+ Tạo Bài Thực Hành</button> */}
             </div>
             <div className="card">
                 <div className="table-container">
