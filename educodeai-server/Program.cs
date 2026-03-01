@@ -12,19 +12,24 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
 
+// 1. FIX LỖI FONT TIẾNG VIỆT (Dấu ?) KHI LẤY PHỤ ĐỀ YOUTUBE
+System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true)
     .AddEnvironmentVariables();
 
 builder.Configuration.AddUserSecrets<Program>();
-// 1. Đăng ký xác thực JWT
+
+// ==========================================
+// 2. CẤU HÌNH XÁC THỰC (JWT)
+// ==========================================
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         Console.WriteLine("JWT KEY (VERIFY): " + builder.Configuration["Jwt:Key"]);
-
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -35,62 +40,75 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-
             RoleClaimType = ClaimTypes.Role
         };
     });
-// ==========================================
-// 1. CẤU HÌNH SERVICES (Dependency Injection)
-// ==========================================
 
-// A. Kết nối Database (SQL Server)
+// ==========================================
+// 3. CẤU HÌNH KẾT NỐI CƠ SỞ DỮ LIỆU
+// ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// B. Đăng ký Repository và Service (Dependency Injection)
-// Lưu ý: Đã xóa các dòng bị trùng lặp ở code cũ
+// ==========================================
+// 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
+// ==========================================
+// Khóa học & Bài tập
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
-// 2. Đăng ký Repository và Service cho Người dùng (Dựa trên folder bạn có)
-builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
-builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
-// C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
-builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
-builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
-
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddHttpClient<BaiTapService>();
 
+// Người dùng & Thống kê
+builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
+builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
+builder.Services.AddScoped<IHocVienService, HocVienService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
 
-builder.Services.AddScoped<IHocVienService, HocVienService>();
+// AI & Lộ trình
+builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
+builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
+builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
 
+// ==========================================
+// 5. CẤU HÌNH HTTP CLIENT CHO GEMINI (ĐÃ TỐI ƯU)
+// ==========================================
+builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var baseUrl = config["GeminiAI:BaseUrl"];
+
+    if (!string.IsNullOrEmpty(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+});
+
+builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
+
+// ==========================================
+// 6. CẤU HÌNH CORS & SWAGGER
+// ==========================================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000",
-            "http://localhost:5173", "http://localhost:5210")
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5210")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
     });
 });
 
-// D. Các dịch vụ hệ thống mặc định
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "EduCodeAI API",
-        Version = "v1"
-    });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "EduCodeAI API", Version = "v1" });
 
-    // 🔐 Khai báo Bearer Token
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -106,44 +124,18 @@ builder.Services.AddSwaggerGen(c =>
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
 
-builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    var baseUrl = config["GeminiAI:BaseUrl"];
-    var apiKey = config["GeminiAI:ApiKey"];
-
-    // Kiểm tra null để tránh lỗi runtime nếu chưa cấu hình
-    if (!string.IsNullOrEmpty(baseUrl))
-    {
-        client.BaseAddress = new Uri(baseUrl);
-    }
-
-    if (!string.IsNullOrEmpty(apiKey))
-    {
-        client.DefaultRequestHeaders.Add("x-goog-api-key", apiKey);
-    }
-});
-
-builder.Services.Configure<GeminiAIOptions>(
-    builder.Configuration.GetSection("GeminiAI"));
-
 var app = builder.Build();
 
 // ==========================================
-// 2. PIPELINE REQUEST (Middleware)
+// 7. PIPELINE REQUEST (Middleware)
 // ==========================================
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -155,8 +147,10 @@ app.UseHttpsRedirection();
 // Kích hoạt CORS (Phải đặt trước UseAuthorization)
 app.UseCors("AllowReactApp");
 app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
