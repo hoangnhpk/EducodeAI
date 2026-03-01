@@ -6,15 +6,19 @@ const api = axiosInstance as any;
 export const authService: any = {
   // ===== ĐĂNG NHẬP =====
   login: async (identifier: string, pass: string) => {
-    // data ở đây chính là response.data từ server
     const data = await api.post('/NguoiDung/login', {
       UsernameOrEmail: identifier,
       Password: pass,
     });
 
-    if (!res?.token) {
+    // SỬA Ở ĐÂY: Phải kiểm tra 'data' chứ không phải 'res'
+    if (!data?.token) {
       throw new Error('Login response không có token');
     }
+    
+    // Lưu token vào localStorage ngay tại đây để đồng bộ với Interceptor
+    localStorage.setItem('user_token', data.token);
+    
     return data;
   },
 

@@ -15,35 +15,40 @@ namespace educodeai_server.Services.Implementation
             _khoaHocRepository = khoaHocRepository;
         }
 
+        // ============================================================
+        // ĐÂY LÀ HÀM BẠN ĐANG THIẾU - COPY CHÍNH XÁC DÒNG NÀY
+        // ============================================================
+        public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync()
+        {
+            return await _khoaHocRepository.GetAllKhoaHocsAsync();
+        }
+
+        // ============================================================
+        // CÁC HÀM CÒN LẠI GIỮ NGUYÊN
+        // ============================================================
         public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetKhoaHocByIdAsync(int maKhoaHoc, int maNguoiDung)
         {
-            var duLieu = await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, maNguoiDung);
-
-            return duLieu;
+            return await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, maNguoiDung);
         }
 
         public async Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto)
         {
-            var ketQua = await _khoaHocRepository.LuuTienDoBaiHoc(dto);
-            return ketQua;
+            return await _khoaHocRepository.LuuTienDoBaiHoc(dto);
         }
 
         public async Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto)
         {
-            var ketQua = await _khoaHocRepository.LuuGhiChuBaiHoc(dto);
-            return ketQua;
+            return await _khoaHocRepository.LuuGhiChuBaiHoc(dto);
         }
 
         public async Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung)
         {
-            var ketQua = await _khoaHocRepository.GetGhiChuBaiHocAsync(maBaiHoc, maNguoiDung);
-            return ketQua;
+            return await _khoaHocRepository.GetGhiChuBaiHocAsync(maBaiHoc, maNguoiDung);
         }
 
         public async Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto)
         {
-            var ketQua = await _khoaHocRepository.LuuKetQuaBaiTap(dto);
-            return ketQua;
+            return await _khoaHocRepository.LuuKetQuaBaiTap(dto);
         }
 
         public async Task<List<GhiChuAIModel>> LayGhiChuAI(int maNguoiDung)
