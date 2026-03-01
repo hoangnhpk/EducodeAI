@@ -106,7 +106,7 @@ namespace educodeai_server.Services.Implementation
             Console.WriteLine("Output thô từ Gemini: " + aiResult);
 
             // 4. Chuẩn hóa chuỗi JSON (Dùng lại đồ xịn của Khôi)
-            var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
+            var resultChuanHoa = ChuanHoaJsonTuAIHelper.ChuanHoa(aiResult);
             Console.WriteLine("Output sau khi chuẩn hóa: " + resultChuanHoa);
 
             return resultChuanHoa; // Trả nguyên cục JSON về cho FE hiển thị ở Màn 2 (Preview)
