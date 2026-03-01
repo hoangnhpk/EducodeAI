@@ -113,6 +113,11 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<bool> TaoDanhGiaMoiAsync(DanhGiaDTO yeuCau)
         {
+            bool daHocXong = await _khoaHocRepository.KiemTraHoanThanhKhoaHocAsync(yeuCau.MaKhoaHoc, yeuCau.MaNguoiDung);
+            if (!daHocXong)
+            {
+                throw new Exception("Bạn phải hoàn thành 100% khóa học mới được phép đánh giá!");
+            }
             // 1 user chỉ được đánh giá 1 lần cho 1 khóa học
             bool daTonTai = await _khoaHocRepository.KiemTraDaDanhGiaAsync(yeuCau.MaKhoaHoc, yeuCau.MaNguoiDung);
             if (daTonTai) throw new Exception("Bạn đã đánh giá khóa học này rồi!");
