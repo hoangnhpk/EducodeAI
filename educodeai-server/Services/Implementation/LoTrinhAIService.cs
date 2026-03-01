@@ -1,9 +1,11 @@
 ﻿using System.Text.Json;
 using educodeai_server.DTOs.AI;
+using educodeai_server.DTOs.NguoiDung;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
+using Microsoft.EntityFrameworkCore;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -27,14 +29,13 @@ namespace educodeai_server.Services.Implementation
             int maNguoiDung,
             CreateLoTrinhAIDto dto)
         {
-            if(string.IsNullOrEmpty(dto.MucTieuNgheNghiep))
+            if (string.IsNullOrEmpty(dto.MucTieuNgheNghiep))
             {
                 throw new ArgumentException("Mục tiêu nghề nghiệp không được để trống.");
-            }    
+            }
 
             var khoaHoc = await _khoaHocRepo.GetKhoaHocPhuHopAsync(dto);
 
-            Console.WriteLine($"[LoTrinhAIService] Tìm thấy {khoaHoc.Count} khoá học phù hợp.");
 
             if (khoaHoc == null || !khoaHoc.Any())
             {
@@ -42,21 +43,25 @@ namespace educodeai_server.Services.Implementation
             }
 
             var khoaHocJson = JsonSerializer.Serialize(khoaHoc);
-            Console.WriteLine("Thời gian: " + dto.ThoiGianHocDuKien);
+
             dto.ThoiGianHocDuKien = dto.ThoiGianHocDuKien * 4;
-            Console.WriteLine("Thời gian: " + dto.ThoiGianHocDuKien);
+
             var prompt = Build(dto, khoaHocJson);
+
 
             var aiResult = await _gemini.GenerateAsync(prompt);
 
-            var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
+            var resultChuanHoa = ChuanHoaJsonTuAIHelper.ChuanHoa(aiResult);
+
+            var resultusageMetadata = ChuanHoaJsonTuAIHelper.usageMetadata(aiResult);
+            Console.WriteLine("[LoTrinhAIService] AI result usageMetadata: " + resultusageMetadata);
 
             var loTrinh = new LoTrinhAIModel
             {
-                MaNguoiDung = 8,
+                MaNguoiDung = maNguoiDung,
                 YeuCau = prompt,
                 NoiDungJSON = resultChuanHoa,
-                TrangThai = "Draft",
+                TrangThai = "Nháp",
                 NgayTao = DateTime.Now
             };
 
@@ -69,12 +74,46 @@ namespace educodeai_server.Services.Implementation
             };
         }
 
-        public async Task<bool> XacNhanLoTrinhAsync(int maLoTrinh)
+        public async Task<bool> XacNhanLoTrinhAsync(int maLoTrinh, int maNguoiDung)
         {
             var loTrinh = await _loTrinhRepo.GetByIdAsync(maLoTrinh);
             if (loTrinh == null) throw new Exception("Không tìm thấy lộ trình");
 
-            loTrinh.TrangThai = "Active"; // Chuyển sang chính thức
+            if (loTrinh.MaNguoiDung != maNguoiDung)
+                throw new UnauthorizedAccessException("Không có quyền áp dụng lộ trình này");
+
+            var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(loTrinh.NoiDungJSON) ??
+                throw new Exception("Nội dung lộ trình không hợp lệ");
+
+            var danhSachMaKhoaHoc = noiDung.LoTrinh
+                .SelectMany(gd => gd.KhoaHocSuDung)
+                .Select(kh => kh.MaKhoaHoc)
+                .Distinct()
+                .ToList();
+
+            if (!danhSachMaKhoaHoc.Any())
+                throw new Exception("Lộ trình không có khóa học");
+
+            var maKhoaHocDaDangKy = await _khoaHocRepo.GetMaKhoaHocDaDangKyAsync(maNguoiDung, danhSachMaKhoaHoc);
+
+            var dangKyMoi = danhSachMaKhoaHoc
+                .Where(maKH => !maKhoaHocDaDangKy.Contains(maKH))
+                .Select(maKH => new DangKyKhoaHocModel
+                {
+                    MaNguoiDung = maNguoiDung,
+                    MaKhoaHoc = maKH,
+                    TrangThai = "Đang học",
+                    TienDo = 0,
+                    NgayDangKy = DateTime.Now
+                })
+                .ToList();
+
+            if (dangKyMoi.Any())
+            {
+                await _khoaHocRepo.AddDangKyKhoaHocAsync(dangKyMoi);
+            }
+
+            loTrinh.TrangThai = "Hoạt động"; // Chuyển sang chính thức
             await _loTrinhRepo.UpdateAsync(loTrinh);
 
             return true;
@@ -86,6 +125,8 @@ namespace educodeai_server.Services.Implementation
         {
             var outputSchema = """
                 {
+                  "tenLoTrinh": "",
+                  "moTaChung": "",
                   "tongThoiGianTuan": 0,
                   "loTrinh": [
                     {
@@ -97,7 +138,8 @@ namespace educodeai_server.Services.Implementation
                           "TuTuan": 0,  
                           "DenTuan": 0,
                           "tenKhoaHoc": "",
-                          "noiDungChinh": ""
+                          "noiDungChinh": "",
+                          "ghiChu": ""
                         }
                       ]
                     }
@@ -120,19 +162,30 @@ namespace educodeai_server.Services.Implementation
                 Kiến thức đã có: {dto.KienThucHienCo}
                 Kinh nghiệm thực tế: {dto.KinhNghiemThucTe}
                 Khó khăn hiện tại: {dto.KhoKhanHienTai}
-                Lĩnh vực muốn tập trung: {string.Join(", ", dto.LinhVucTapTrung ?? new())}
 
                 === YÊU CẦU XỬ LÝ ===
                 1. Tạo lộ trình học theo từng tuần.
-                2. Bỏ qua hoặc rút gọn nội dung học viên đã biết.
+                2. Bỏ qua hoặc rút gọn các khoá học trùng với kiến thức học viên đã có.
                 3. Chỉ sử dụng khoá học trong danh sách INPUT.
-                4. Không suy đoán ra ngoài dữ liệu, nhưng được suy luận nội bộ để chia tuần.
-                5. Kết quả trả về JSON thuần, không giải thích.
-                6. Nếu một khoá học dài, có thể chia ra nhiều tuần.
-                7. BẮT BUỘC tạo ít nhất 1 tuần học nếu có bất kỳ khoá học nào phù hợp.
-                8. tối đa 4 giai đoạn học chính, tương ứng với các lĩnh vực tập trung
-                9. Mỗi giai đoạn học cần có mục tiêu rõ ràng, liên quan đến lĩnh vực tập trung, và có sự liên kết với nhau.
-                10. Mỗi phương diện chỉ được tập trung 1 cái và đừng lan man qua các phương diện khác tập trung về mục tiêu nghề nghiệp người dùng và lĩnh vực muốn tập trung để đưa ra khoá học phù hợp
+                4. Tổng số tuần KHÔNG ĐƯỢC vượt quá thời gian học dự kiến của học viên.
+                5. Có thể chia một khoá học ra nhiều tuần nếu thời lượng dài.
+                6. Phải tạo ÍT NHẤT 1 tuần học nếu tồn tại khoá học phù hợp.
+                7. Tối đa 4 giai đoạn học chính.
+                8. Mỗi giai đoạn:
+                - Chỉ tập trung MỘT lĩnh vực liên quan trực tiếp đến mục tiêu nghề nghiệp
+                - Có mục tiêu rõ ràng
+                - Có sự liên kết logic với giai đoạn trước
+                9. Không lan man sang lĩnh vực khác nếu không phục vụ mục tiêu nghề nghiệp.
+                10. Tổng thời gian học = tổng số tuần trong toàn bộ lộ trình
+                11. Sắp xếp giai đoạn 1 cách trật tự phải đi từ cái cơ bản đến cái khó
+                12. Không được chuyển sang ngôn ngữ lập trình khác trừ khi danh sách input không tồn tại bất kỳ khoá học nào phù hợp cho ngôn ngữ mà học viên đã có khi đó phải viết vào ghiChu ở khoaHocSuDung..
+                13. Mỗi 1 nghề nghiệp chỉ được chọn 1 ngôn ngữ lập trình chính để tập trung không mở rộng, không tham khảo, không so sánh. 
+                14. Các kiến thức nền tảng (ví dụ: Nhập môn CNTT, tư duy lập trình, toán nền, xác suất thống kê cơ bản)
+                    BẮT BUỘC phải nằm ở giai đoạn đầu tiên nếu được sử dụng.
+                15. KHÔNG được sắp xếp bất kỳ khoá học nhập môn / kiến thức nền chung
+                    sau khi đã bắt đầu giai đoạn học chuyên ngành chính của nghề nghiệp.
+                16. Không mở rộng sang kiến thức khác mà không phục vụ trực tiếp mục tiêu nghề nghiệp của học viên để tránh tốn thời gian.
+                17. Các ngôn ngữ sql chỉ được chọn 1 loại phù hợp nhất.
 
                 JSON output PHẢI có cấu trúc GIỐNG HỆT schema dưới đây.
                 Mọi mảng trong JSON phải có ít nhất 1 phần tử nếu có dữ liệu phù hợp.
@@ -155,8 +208,42 @@ namespace educodeai_server.Services.Implementation
 
         private static readonly HashSet<string> StopWords = new()
         {
-            "tôi", "muốn", "học", "thêm", "về",
-            "là", "cho", "và", "hoặc", "các", "một"
+            // Từ đệm
+            "ạ", "nhé", "nha", "ha", "à", "ơi", "nhỉ", "nè", "cơ", "chứ",
+
+            // Đại từ
+            "tôi", "mình", "tớ", "tao", "bạn", "cậu", "anh", "chị", "em",
+            "chúng", "chúng tôi", "chúng ta",
+
+            // Động từ & ý định
+            "muốn", "muốn biết", "cần", "học", "tìm", "đang tìm", "tìm hiểu",
+            "biết", "làm", "có", "là", "được", "bị", "đang", "sẽ", "đã",
+            "nên", "định", "dự định", "bắt đầu", "mới", "lần đầu",
+
+            // Giới từ / liên từ
+            "về", "cho", "với", "từ", "đến", "trong", "ngoài", "trên", "dưới",
+            "và", "hoặc", "hay", "nhưng", "thì", "mà", "để", "khi", "vào",
+
+            // Lượng từ
+            "một", "các", "những", "nhiều", "ít", "mỗi", "vài",
+            "rất", "khá", "hơi", "quá",
+
+            // Thời gian
+            "hiện tại", "bây giờ", "sau này", "trước đây", "lâu dài", "ngắn hạn",
+
+            // Đánh giá
+            "tốt", "hay", "ổn", "phù hợp", "hiệu quả", "nhanh", "chậm", "dễ", "khó",
+
+            // Từ chung chung
+            "cái", "việc", "thứ", "vấn đề", "điều", "phần", "loại", "kiểu", "dạng", "thêm",
+
+            // Câu hỏi
+            "làm sao", "như thế nào", "bao nhiêu", "tại sao", "vì sao",
+            "liệu", "có thể", "có phải", "nên không", "được không", "không biết",
+
+            // Ngữ cảnh lập trình
+            "ngôn", "ngữ", "lập", "trình", "khóa", "học", "kiến", "thức",
+            "cơ bản", "nâng cao"
         };
 
         public static List<string> Extract(string input)
@@ -177,13 +264,13 @@ namespace educodeai_server.Services.Implementation
         public static readonly Dictionary<string, string[]> Map = new()
         {
             // Frontend
-            ["fe"] = new[]
+            ["frontend"] = new[]
             {
                 "giao", "diện", "frontend", "ui", "ux", "web", "website", "trang"
             },
 
             // Backend
-            ["be"] = new[]
+            ["backend"] = new[]
             {
                 "backend", "máy", "chủ", "server", "api", "rest"
             },
@@ -235,7 +322,11 @@ namespace educodeai_server.Services.Implementation
 
             var tuKhoa = Extract(dto.YeuCauMoi);
 
+            Console.WriteLine("[LoTrinhAIService] Từ khoá trích xuất: " + string.Join(", ", tuKhoa));
+
             var keywordChuanHoa = ChuanHoa(tuKhoa);
+
+            Console.WriteLine("[LoTrinhAIService] Từ khoá sau chuẩn hoá: " + string.Join(", ", keywordChuanHoa));
 
             var khoaHoc = await _khoaHocRepo.GetKhoaHocTheoKeywordAsync(keywordChuanHoa);
             Console.WriteLine($"[LoTrinhAIService] Tìm thấy {khoaHoc.Count} khoá học phù hợp để cập nhật.");
@@ -246,11 +337,12 @@ namespace educodeai_server.Services.Implementation
                 dto.YeuCauMoi,
                 khoaHocJson);
 
+
             var aiResult = await _gemini.GenerateAsync(prompt);
 
             Console.WriteLine("[LoTrinhAIService] AI response received for update: " + aiResult);
 
-            var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
+            var resultChuanHoa = ChuanHoaJsonTuAIHelper.ChuanHoa(aiResult);
 
             loTrinhCu.NoiDungJSON = resultChuanHoa;
             loTrinhCu.YeuCau = dto.YeuCauMoi;
@@ -280,7 +372,8 @@ namespace educodeai_server.Services.Implementation
                           "TuTuan": 0,  
                           "DenTuan": 0,
                           "tenKhoaHoc": "",
-                          "noiDungChinh": ""
+                          "noiDungChinh": "",
+                          "ghiChu": ""
                         }
                       ]
                     }
@@ -311,10 +404,147 @@ namespace educodeai_server.Services.Implementation
                     - KHÔNG suy luận từng bước.
                     - KHÔNG lập kế hoạch nội bộ.
                     - Chỉ trả kết quả cuối cùng.
+                    - Nếu không có khoá học phù hợp với kiến thức user đã có thì khi chọn kiến thức khác phải khi vào ghi chú ở khoá học đó.
+                    - Mỗi 1 nghề nghiệp chỉ được chọn 1 ngôn ngữ lập trình chính để tập trung.
                     """;
         }
 
+        public async Task<List<LoTrinhAICuaToiResponseDTO>?> GetLoTrinhCuaToiAsync(int maNguoiDung)
+        {
+            var loTrinhs = await _loTrinhRepo.GetByUserIdAsync(maNguoiDung);
+            var danhSachDangKy = await _khoaHocRepo.GetDangKyKhoaHocAsync(maNguoiDung);
+
+            var ketQua = new List<LoTrinhAICuaToiResponseDTO>();
+
+            foreach (var loTrinh in loTrinhs)
+            {
+                var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(loTrinh.NoiDungJSON);
+                if (noiDung == null) continue;
+
+                var (soGdHoanThanh, phanTram) =
+                    TinhTienDoTheoGiaiDoan(noiDung.LoTrinh, danhSachDangKy);
+
+                ketQua.Add(new LoTrinhAICuaToiResponseDTO
+                {
+                    MaLoTrinh = loTrinh.MaLoTrinh,
+                    TenLoTrinh = noiDung.TenLoTrinh,
+                    MoTaChung = noiDung.MoTaChung,
+                    TongSoKhoaHoc = noiDung.LoTrinh.Sum(gd => gd.KhoaHocSuDung.Count),
+                    TongThoiGianTuan = noiDung.TongThoiGianTuan,
+
+                    TongSoGiaiDoan = noiDung.LoTrinh.Count,
+                    SoGiaiDoanHoanThanh = soGdHoanThanh,
+
+                    PhanTramHoanThanh = phanTram
+                });
+            }
+
+            return ketQua;
+        }
+
+        public async Task<LoTrinhAICuaToiResponseDTO?> GetChiTietLoTrinhAsync(int maLoTrinh, int maNguoiDung)
+        {
+            var loTrinh = await _loTrinhRepo.GetByIdAsync(maLoTrinh);
+            if (loTrinh == null || loTrinh.MaNguoiDung != maNguoiDung)
+                throw new Exception("Không tìm thấy lộ trình");
+
+            var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(loTrinh.NoiDungJSON);
+            if (noiDung == null)
+                throw new Exception("Nội dung lộ trình không hợp lệ");
+
+            var danhSachDangKy = await _khoaHocRepo.GetDangKyKhoaHocAsync(maNguoiDung);
+
+            var (soGdHoanThanh, phanTram) =
+                TinhTienDoTheoGiaiDoan(noiDung.LoTrinh, danhSachDangKy);
+
+            // ===== Trạng thái chi tiết từng giai đoạn =====
+            var giaiDoanProgress = new List<GiaiDoanProgressDTO>();
+
+            foreach (var gd in noiDung.LoTrinh)
+            {
+                var maKhoaHocGd = gd.KhoaHocSuDung.Select(kh => kh.MaKhoaHoc).ToList();
+
+                int khoahocHoanThanhCount = maKhoaHocGd.Count(maKH =>
+                    danhSachDangKy.Any(dk =>
+                        dk.MaKhoaHoc == maKH && (dk.TienDo == 100 || dk.TrangThai == "Hoàn thành")
+                    )
+                );
+
+                // Giai đoạn chỉ được coi là xong khi ALL khoá học đều done
+                bool daHoanThanhGiaiDoan = (maKhoaHocGd.Count > 0) && (khoahocHoanThanhCount == maKhoaHocGd.Count);
+
+                var chiTietKhoaHocs = gd.KhoaHocSuDung.Select(khJson => {
+
+                    return new KhoaHocLoTrinhChiTietDTO
+                    {
+                        MaKhoaHoc = khJson.MaKhoaHoc,
+                        TenKhoaHoc = khJson.TenKhoaHoc,
+                        NoiDungChinh = khJson.NoiDungChinh,
+                        GhiChu = khJson.GhiChu,
+                        TuTuan = khJson.TuTuan,
+                        DenTuan = khJson.DenTuan
+                    };
+                }).ToList();
+
+                giaiDoanProgress.Add(new GiaiDoanProgressDTO
+                {
+                    GiaiDoan = gd.GiaiDoan,
+                    MucTieu = gd.MucTieu,
+                    TongKhoaHoc = maKhoaHocGd.Count,
+                    KhoaHocHoanThanh = khoahocHoanThanhCount,
+                    PhanTram = maKhoaHocGd.Count == 0 ? 0 : Math.Round((double)khoahocHoanThanhCount / maKhoaHocGd.Count * 100, 2),
+                    HoanThanh = daHoanThanhGiaiDoan,
+                    DanhSachKhoaHoc = chiTietKhoaHocs
+                });
+            }
+
+            return new LoTrinhAICuaToiResponseDTO
+            {
+                MaLoTrinh = loTrinh.MaLoTrinh,
+                TenLoTrinh = noiDung.TenLoTrinh,
+                MoTaChung = noiDung.MoTaChung,
+                TongSoKhoaHoc = noiDung.LoTrinh.Sum(gd => gd.KhoaHocSuDung.Count),
+                TongThoiGianTuan = noiDung.TongThoiGianTuan,
+
+                // Map lại cho chuẩn
+                TongSoGiaiDoan = noiDung.LoTrinh.Count,
+                SoGiaiDoanHoanThanh = soGdHoanThanh,
+
+                PhanTramHoanThanh = phanTram,
+                GiaiDoan = giaiDoanProgress
+            };
+        }
+
+        private static (int soGiaiDoanHoanThanh, double phanTram) TinhTienDoTheoGiaiDoan(List<GiaiDoanDTO> giaiDoanJson, List<DangKyKhoaHocModel> danhSachDangKy)
+        {
+            if (giaiDoanJson == null || giaiDoanJson.Count == 0)
+                return (0, 0);
+
+            int tongGiaiDoan = giaiDoanJson.Count;
+            int giaiDoanHoanThanh = 0;
+
+            foreach (var gd in giaiDoanJson)
+            {
+                var maKhoaHocGd = gd.KhoaHocSuDung.Select(kh => kh.MaKhoaHoc).ToList();
+
+                if (!maKhoaHocGd.Any()) continue;
+
+                // Điểm mấu chốt: .All() -> Tất cả phải xong
+                bool hoanThanhGd = maKhoaHocGd.All(maKH =>
+                    danhSachDangKy.Any(dk =>
+                        dk.MaKhoaHoc == maKH &&
+                        (dk.TienDo == 100 || dk.TrangThai == "Hoàn thành")
+                    )
+                );
+
+                if (hoanThanhGd)
+                    giaiDoanHoanThanh++;
+            }
+
+            double phanTram = Math.Round((double)giaiDoanHoanThanh / tongGiaiDoan * 100, 2);
+
+            return (giaiDoanHoanThanh, phanTram);
+        }
 
     }
-
 }

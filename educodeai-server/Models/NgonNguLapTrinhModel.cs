@@ -11,7 +11,6 @@ namespace educodeai_server.Models
         public required string TenNgonNgu { get; set; }
 
         // Navigation
-        public virtual ICollection<BaiTap_NgonNguModel> BaiTap_NgonNgus { get; set; } = null!;
-        public virtual ICollection<BaiNopModel> BaiNops { get; set; } = null!;
+        public virtual ICollection<BaiTap_ThucHanhIDEModel> BaiTap_NgonNgus { get; set; } = null!;
     }
 }

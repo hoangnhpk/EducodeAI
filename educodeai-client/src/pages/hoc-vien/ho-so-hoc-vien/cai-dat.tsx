@@ -1,4 +1,6 @@
 import { useState } from "react";
+import axios from "@/configs/axios";
+import Swal from "sweetalert2";
 
 const CaiDat = () => {
   const [emailNotif, setEmailNotif] = useState(true);
@@ -13,37 +15,44 @@ const CaiDat = () => {
 
   const handleChangePassword = async () => {
     if (!matKhauCu || !matKhauMoi || !xacNhan) {
-      alert("Vui lòng nhập đầy đủ thông tin");
+      Swal.fire({ icon: 'warning', text: "Vui lòng nhập đầy đủ thông tin" });
       return;
     }
 
     if (matKhauMoi !== xacNhan) {
-      alert("Xác nhận mật khẩu không khớp");
+      Swal.fire({ icon: 'warning', text: "Xác nhận mật khẩu không khớp" });
       return;
     }
 
     try {
       setLoading(true);
 
-      // TODO: gắn API đổi mật khẩu ở đây
-      console.log({
-        matKhauCu,
-        matKhauMoi,
-        xacNhan,
-      });
+      const res: any = await axios.post(
+        "/api/NguoiDung/doi-mat-khau",
+        {
+          matKhauCu,
+          matKhauMoi,
+          xacNhanMatKhauMoi: xacNhan,
+        }
+      );
 
-      alert("Đổi mật khẩu thành công");
+
+      console.log("API response:", res);
+
+      Swal.fire({ icon: 'success', text: res?.message || res?.data?.message || "Đổi mật khẩu thành công" });
+
       setShowChangePassword(false);
       setMatKhauCu("");
       setMatKhauMoi("");
       setXacNhan("");
     } catch (err) {
       console.error(err);
-      alert("Đổi mật khẩu thất bại");
+      Swal.fire({ icon: 'error', text: "Đổi mật khẩu thất bại" });
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="cai-dat-container">
