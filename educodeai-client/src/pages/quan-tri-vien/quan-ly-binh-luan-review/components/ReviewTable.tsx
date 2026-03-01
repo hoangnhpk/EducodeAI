@@ -170,9 +170,15 @@ export default function ReviewTable({
                   <button
                     className="btn-action btn-delete"
                     onClick={() => {
-                      if (window.confirm('Bạn có chắc muốn xóa?')) {
-                        onDelete(review.id, review.loai);
-                      }
+                      Swal.fire({
+                        title: 'Bạn có chắc muốn xóa?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Xóa',
+                        cancelButtonText: 'Hủy'
+                      }).then(res => {
+                        if (res.isConfirmed) onDelete(review.id, review.loai);
+                      });
                     }}
                     title="Xóa"
                   >

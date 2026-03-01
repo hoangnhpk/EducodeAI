@@ -366,6 +366,60 @@ namespace educodeai_server.Repository.Implementation
             await _context.DangKyKhoaHocs.AddRangeAsync(dangKyKhoaHocs);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<GhiChuAIModel>> LayDanhSachGhiChuAI(int maNguoiDung)
+        {
+            return await _context.GhiChuAIs
+                .Include(g => g.BaiHoc)
+                .Where(g => g.MaNguoiDung == maNguoiDung)
+                .OrderByDescending(g => g.NgayTao)
+                .ToListAsync();
+        }
+
+        public async Task<bool> LuuGhiChuAI(GhiChuAIModel duLieu)
+        {
+            _context.GhiChuAIs.Add(duLieu);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateGhiChuAI(int id, string noiDung)
+        {
+            var ghiChu = await _context.GhiChuAIs.FindAsync(id);
+            if (ghiChu == null) return false;
+
+            ghiChu.NoiDung = noiDung;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteGhiChuAI(int id)
+        {
+            var ghiChu = await _context.GhiChuAIs.FindAsync(id);
+            if (ghiChu == null) return false;
+
+            _context.GhiChuAIs.Remove(ghiChu);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc)
+        {
+            return await _context.DanhGias
+                .Include(d => d.NguoiDung)
+                .Where(d => d.MaKhoaHoc == maKhoaHoc)
+                .OrderByDescending(d => d.NgayDanhGia)
+                .ToListAsync();
+        }
+
+        public async Task<bool> KiemTraDaDanhGiaAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            return await _context.DanhGias
+                .AnyAsync(d => d.MaKhoaHoc == maKhoaHoc && d.MaNguoiDung == maNguoiDung);
+        }
+
+        public async Task<bool> ThemDanhGiaAsync(DanhGiaModel danhGia)
+        {
+            _context.DanhGias.Add(danhGia);
+            return await _context.SaveChangesAsync() > 0;
+        }
     }
 }
 
