@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 
@@ -40,7 +41,7 @@ const DangNhap: React.FC = () => {
             const response: any = await authService.login(emailOrUsername, password);
             
             // Thông báo thành công (Có thể dùng Toast thay vì alert)
-            alert(`Chào mừng ${response.user?.hoTen || 'bạn'} đã quay trở lại!`);
+            Swal.fire({ icon: 'success', text: `Chào mừng ${response.user?.hoTen || 'bạn'} đã quay trở lại!`, timer: 1500, showConfirmButton: false });
             
             localStorage.setItem('user_info', JSON.stringify(response.user));
 

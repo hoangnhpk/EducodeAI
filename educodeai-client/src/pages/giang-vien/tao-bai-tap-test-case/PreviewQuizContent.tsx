@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import './PreviewQuiz.css';
 
@@ -16,7 +17,7 @@ const PreviewQuizContent = () => {
         if (draftData) {
             setQuestions(JSON.parse(draftData));
         } else {
-            alert("Ủa alo, chưa tạo câu hỏi nào mà? Quay lại màn 1 nha sếp!");
+            Swal.fire({ icon: 'warning', text: "Ủa alo, chưa tạo câu hỏi nào mà? Quay lại màn 1 nha sếp!" });
             navigate('/giang-vien/quiz');
         }
     }, [navigate]);
