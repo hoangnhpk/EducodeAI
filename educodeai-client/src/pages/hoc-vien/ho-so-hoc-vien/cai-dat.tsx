@@ -14,12 +14,12 @@ const CaiDat = () => {
 
   const handleChangePassword = async () => {
     if (!matKhauCu || !matKhauMoi || !xacNhan) {
-      alert("Vui lòng nhập đầy đủ thông tin");
+      Swal.fire({ icon: 'warning', text: "Vui lòng nhập đầy đủ thông tin" });
       return;
     }
 
     if (matKhauMoi !== xacNhan) {
-      alert("Xác nhận mật khẩu không khớp");
+      Swal.fire({ icon: 'warning', text: "Xác nhận mật khẩu không khớp" });
       return;
     }
 
@@ -38,7 +38,7 @@ const CaiDat = () => {
 
       console.log("API response:", res);
 
-      alert(res?.message || res?.data?.message || "Đổi mật khẩu thành công");
+      Swal.fire({ icon: 'success', text: res?.message || res?.data?.message || "Đổi mật khẩu thành công" });
 
       setShowChangePassword(false);
       setMatKhauCu("");
@@ -46,7 +46,7 @@ const CaiDat = () => {
       setXacNhan("");
     } catch (err) {
       console.error(err);
-      alert("Đổi mật khẩu thất bại");
+      Swal.fire({ icon: 'error', text: "Đổi mật khẩu thất bại" });
     } finally {
       setLoading(false);
     }
