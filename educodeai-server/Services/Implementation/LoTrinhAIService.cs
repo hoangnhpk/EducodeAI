@@ -51,9 +51,9 @@ namespace educodeai_server.Services.Implementation
 
             var aiResult = await _gemini.GenerateAsync(prompt);
 
-            var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
+            var resultChuanHoa = ChuanHoaJsonTuAIHelper.ChuanHoa(aiResult);
 
-            var resultusageMetadata = ChuanHoaJsonTuAI.usageMetadata(aiResult);
+            var resultusageMetadata = ChuanHoaJsonTuAIHelper.usageMetadata(aiResult);
             Console.WriteLine("[LoTrinhAIService] AI result usageMetadata: " + resultusageMetadata);
 
             var loTrinh = new LoTrinhAIModel
@@ -342,7 +342,7 @@ namespace educodeai_server.Services.Implementation
 
             Console.WriteLine("[LoTrinhAIService] AI response received for update: " + aiResult);
 
-            var resultChuanHoa = ChuanHoaJsonTuAI.ChuanHoa(aiResult);
+            var resultChuanHoa = ChuanHoaJsonTuAIHelper.ChuanHoa(aiResult);
 
             loTrinhCu.NoiDungJSON = resultChuanHoa;
             loTrinhCu.YeuCau = dto.YeuCauMoi;

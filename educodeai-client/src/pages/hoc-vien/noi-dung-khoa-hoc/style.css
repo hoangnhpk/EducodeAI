@@ -49,16 +49,47 @@ a {
     gap: 0.8rem;
 }
 
-.cp-back {
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+/* Container nút quay lại */
+a.cp-back {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(15, 23, 42, 0.3);
+    width: 36px;
+    height: 36px;
+    
+    /* Màu sắc: Trắng để nổi bật trên nền cam */
+    background-color: rgba(255, 255, 255, 0.2); /* Trắng mờ */
+    color: #ffffff !important; 
+    
+    /* Loại bỏ gạch chân hoàn toàn */
+    text-decoration: none !important; 
+    
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    
+    transition: all 0.2s ease;
     cursor: pointer;
+}
+
+/* Loại bỏ gạch chân cho mọi trạng thái */
+a.cp-back:visited, 
+a.cp-back:hover, 
+a.cp-back:active {
+    text-decoration: none !important;
+}
+
+/* Hiệu ứng Hover: Sáng rực lên */
+a.cp-back:hover {
+    background-color: #ffffff; /* Trắng đặc */
+    color: #f69050 !important; /* Icon đổi sang màu cam giống màu nền */
+    transform: translateX(-3px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Đảm bảo icon FontAwesome không bị lệch */
+.cp-back i {
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .cp-course-title-meta {
@@ -1103,7 +1134,7 @@ a {
 
 .cp-btn-nav:hover:not(:disabled) {
     border-color: var(--cp-primary);
-    color: var(--cp-primary);
+    color: var(--cp-primary-soft);
 }
 
 .cp-btn-nav:disabled {
