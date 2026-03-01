@@ -4,7 +4,7 @@ import { KhoaHocService, type LuuKetQuaQuizDTO } from '@/services/khoa-hoc.servi
 import type { KhoaHocData } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO';
 import { decodeId } from '@/utils/id-helper';
 import '@/pages/hoc-vien/noi-dung-khoa-hoc/style.css';
-
+import Swal from 'sweetalert2';
 // Import Components
 import { VideoSummary } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/TomTatVideoAI';
 import { ThanhTieuDe } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/ThanhTieuDe';
@@ -79,6 +79,37 @@ const NoiDungKhoaHoc = () => {
     const baiHocHienTai = KhoaHocService.timBaiHocTheoId(flatList, idBaiHoc);
     const nextId = KhoaHocService.timBaiTiepTheo(flatList, idBaiHoc);
     const prevId = KhoaHocService.timBaiTruoc(flatList, idBaiHoc);
+    useEffect(() => {
+        // Nếu tổng số bài > 0 và số bài đã học bằng đúng tổng số bài (Hoàn thành 100%)
+        if (tongSoBai > 0 && soBaiDaHoc === tongSoBai) {
+
+            // Đảm bảo tên biến khoaHoc.id và user.id khớp với biến trong file của bạn
+            const modalKey = `shown_congrats_modal_${khoaHoc?.maKhoaHoc}`;
+            const hasShown = localStorage.getItem(modalKey);
+
+            // Nếu chưa từng hiện Modal chúc mừng này
+            if (!hasShown) {
+                Swal.fire({
+                    title: '🎉 Chúc mừng bạn!',
+                    html: 'Bạn đã hoàn thành xuất sắc toàn bộ khóa học.<br/><br/>Hãy để lại vài lời đánh giá để giúp khóa học phát triển hơn nhé!',
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonColor: '#f69050',
+                    cancelButtonColor: '#94a3b8',
+                    confirmButtonText: '<i class="fas fa-star"></i> Đánh giá ngay',
+                    cancelButtonText: 'Để sau'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Chuyển hướng sang tab đánh giá
+                        setTabActive('danhgia');
+                    }
+                });
+
+                // Lưu trạng thái để không hiện lại khi F5
+                localStorage.setItem(modalKey, 'true');
+            }
+        }
+    }, [soBaiDaHoc, tongSoBai, khoaHoc?.maKhoaHoc]);
 
     const handleSeekVideo = (seconds: number) => {
         if (videoRef.current) {
@@ -254,7 +285,8 @@ const NoiDungKhoaHoc = () => {
                         <div style={{ display: tabActive === 'danhgia' ? 'block' : 'none', height: '100%', overflowY: 'auto', padding: '20px' }}>
                             <TabDanhGia
                                 maKhoaHoc={khoaHoc.maKhoaHoc}
-                                maNguoiDung={3}
+                                maNguoiDung={2}
+                                daHoanThanhKhoaHoc={tongSoBai > 0 && soBaiDaHoc === tongSoBai}
                             />
                         </div>
                     </div>

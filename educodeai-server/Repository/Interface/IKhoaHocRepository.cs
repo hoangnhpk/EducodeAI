@@ -28,5 +28,6 @@ namespace educodeai_server.Repository.Interface
         Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc);
         Task<bool> KiemTraDaDanhGiaAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> ThemDanhGiaAsync(DanhGiaModel danhGia);
+        Task<bool> KiemTraHoanThanhKhoaHocAsync(int maKhoaHoc, int maNguoiDung);
     }
 }
