@@ -5,21 +5,21 @@ import { FaUserGraduate, FaClock, FaStar, FaTrash, FaCog } from 'react-icons/fa'
 const TRINH_DO_MAP: Record<string, { label: string; color: string }> = {
     nguoi_moi: { label: 'Người mới', color: '#27ae60' },
     trung_cap: { label: 'Trung cấp', color: '#f39c12' },
-    nang_cao:  { label: 'Nâng cao',  color: '#e74c3c' },
+    nang_cao: { label: 'Nâng cao', color: '#e74c3c' },
 };
 
 interface Props {
-    duLieu:          KhoaHocGiangVienListDTO[];
-    loadingDeleteId: number | null; // ❶ Nhận id đang xóa từ parent
-    onXemChiTiet:    (maKhoaHoc: number) => void;
-    onXoa:           (maKhoaHoc: number) => void;
+    duLieu: KhoaHocGiangVienListDTO[];
+    loadingDeleteId: number | null;
+    onXemChiTiet: (maKhoaHoc: number) => void;
+    onXoa: (maKhoaHoc: number) => void;
 }
 
 const DanhSachKhoaHoc: React.FC<Props> = ({ duLieu, loadingDeleteId, onXemChiTiet, onXoa }) => {
     return (
         <div className="course-grid">
             {duLieu.map(kh => {
-                const trinhDo   = TRINH_DO_MAP[kh.trinhDo] ?? { label: kh.trinhDo, color: '#95a5a6' };
+                const trinhDo = TRINH_DO_MAP[kh.trinhDo] ?? { label: kh.trinhDo, color: '#95a5a6' };
                 const isDeleting = loadingDeleteId === kh.maKhoaHoc;
 
                 return (
@@ -29,8 +29,7 @@ const DanhSachKhoaHoc: React.FC<Props> = ({ duLieu, loadingDeleteId, onXemChiTie
                     >
                         <div className="image-wrapper">
                             <img
-                                src={kh.hinhAnh || 'https://placehold.co/400x200/fb873f/white?text=No+Image'}
-                                alt={kh.tenKhoaHoc}
+                                src={kh.hinhAnh || ''} alt={kh.tenKhoaHoc}
                             />
                             <span className="status-badge">{kh.trangThai || 'Hoạt động'}</span>
                             <span
