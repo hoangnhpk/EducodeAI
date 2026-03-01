@@ -1,6 +1,8 @@
-using educodeai_server.Repository.Interface;
+﻿using educodeai_server.Repository.Interface;
 using educodeai_server.Data;
 using educodeai_server.Models;
+using Microsoft.EntityFrameworkCore;
+using educodeai_server.DTOs.AI;
 
 namespace educodeai_server.Repository.Implementation
 {
@@ -28,6 +30,13 @@ namespace educodeai_server.Repository.Implementation
         {
             _context.LoTrinhAIs.Update(loTrinh);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<LoTrinhAIModel>> GetByUserIdAsync(int maNguoiDung)
+        {
+            return await _context.LoTrinhAIs
+                .Where(x => x.MaNguoiDung == maNguoiDung && x.TrangThai == "Hoạt động")
+                .ToListAsync();
         }
 
     }
