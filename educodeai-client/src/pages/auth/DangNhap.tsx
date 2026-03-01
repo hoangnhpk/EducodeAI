@@ -55,12 +55,8 @@ const DangNhap: React.FC = () => {
     const handleGoogleSuccess = async (credentialResponse: any) => {
         setIsLoading(true);
         try {
-            const decoded: any = jwtDecode(credentialResponse.credential);
-            
-            // Thông báo thành công (Có thể dùng Toast thay vì alert)
-            Swal.fire({ icon: 'success', text: `Chào mừng ${response.user?.hoTen || 'bạn'} đã quay trở lại!`, timer: 1500, showConfirmButton: false });
-            
-            localStorage.setItem('user_info', JSON.stringify(response.user));
+
+            localStorage.setItem('user_info', JSON.stringify(credentialResponse.user));
 
             alert(`Đăng nhập Google thành công! Tài khoản của bạn đã được đồng bộ.`);
             navigate('/');
@@ -79,7 +75,7 @@ const DangNhap: React.FC = () => {
         if (response.accessToken) {
             setIsLoading(true);
             try {
-                const res: any = await axiosClient.post("/NguoiDung/facebook-login", {
+                const res: any = await axiosClient.post("/api/NguoiDung/facebook-login", {
                     email: response.email,
                     name: response.name,
                     picture: response.picture.data.url,
