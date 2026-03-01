@@ -131,11 +131,11 @@ export const KhoaHocService = {
     return Math.round(((idx + 1) / dsPhang.length) * 100)
   },
   getDanhSachKhoaHocGiangVien: async (maGiangVien: number) => {
-    const res = await axiosClient.get(`/danh-sach/${maGiangVien}`);
+    const res = await axiosClient.get(`/api/giang-vien/KhoaHocCuaToi/danh-sach/${maGiangVien}`);
     return res;
   },
   getChiTietKhoaHoc: async (id: number) => {
-    const res = await axiosClient.get(`/chi-tiet/${id}`);
+    const res = await axiosClient.get(`/api/giang-vien/KhoaHocCuaToi/chi-tiet/${id}`);
     return res;
   }
 }

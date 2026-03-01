@@ -24,7 +24,7 @@ const TrangChu: React.FC = () => {
         setIsLoading(true);
         try {
             // Sử dụng params để gửi từ khóa tìm kiếm lên Backend
-            const data = await axiosInstance.get<IKhoaHoc[]>('/KhoaHoc/all', {
+            const data = await axiosInstance.get<IKhoaHoc[]>('/api/KhoaHoc/all', {
                 params: { search: search }
             });
             setCourses(data);

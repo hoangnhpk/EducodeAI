@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
-    "@react-oauth/google": "^0.13.4",
     "@monaco-editor/react": "^4.6.0",
+    "@react-oauth/google": "^0.13.4",
     "@tanstack/react-query": "^5.90.19",
     "animate.css": "^4.1.1",
     "axios": "^1.13.2",

@@ -76,7 +76,7 @@ export default function QuanLyReview() {
       await Promise.all([fetchReviews(), fetchThongKe()]);
     } catch (err) {
       console.error('Error approving review:', err);
-      alert('Có lỗi xảy ra khi duyệt');
+      Swal.fire({ icon: 'error', text: 'Có lỗi xảy ra khi duyệt' });
     }
   };
 
@@ -86,7 +86,7 @@ export default function QuanLyReview() {
       await Promise.all([fetchReviews(), fetchThongKe()]);
     } catch (err) {
       console.error('Error rejecting review:', err);
-      alert('Có lỗi xảy ra khi từ chối');
+      Swal.fire({ icon: 'error', text: 'Có lỗi xảy ra khi từ chối' });
     }
   };
 
@@ -96,7 +96,7 @@ export default function QuanLyReview() {
       await Promise.all([fetchReviews(), fetchThongKe()]);
     } catch (err) {
       console.error('Error deleting review:', err);
-      alert('Có lỗi xảy ra khi xóa');
+      Swal.fire({ icon: 'error', text: 'Có lỗi xảy ra khi xóa' });
     }
   };
 
