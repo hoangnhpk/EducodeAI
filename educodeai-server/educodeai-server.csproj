@@ -26,6 +26,7 @@
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
     <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="9.0.6" />
+    <PackageReference Include="YoutubeExplode" Version="6.5.7" />
   </ItemGroup>
 
 </Project>

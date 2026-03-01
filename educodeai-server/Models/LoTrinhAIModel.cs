@@ -14,7 +14,7 @@ namespace educodeai_server.Models
         [Required]
         public required string YeuCau { get; set; }
 
-        public string? NoiDungJSON { get; set; } 
+        public string NoiDungJSON { get; set; } = null!;
 
         [StringLength(50)]
         public string? TrangThai { get; set; }

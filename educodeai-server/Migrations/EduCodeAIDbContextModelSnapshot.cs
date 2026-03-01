@@ -1823,11 +1823,17 @@ namespace educodeai_server.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Diem")
+                        .HasColumnType("int");
+
                     b.Property<int>("GioiHanBoNho")
                         .HasColumnType("int");
 
                     b.Property<int>("GioiHanThoiGian")
                         .HasColumnType("int");
+
+                    b.Property<bool>("LaEdgeCase")
+                        .HasColumnType("bit");
 
                     b.Property<int>("MaBaiTapThucHanh")
                         .HasColumnType("int");
@@ -2255,6 +2261,41 @@ namespace educodeai_server.Migrations
                     b.ToTable("GhiChuBaiHocs");
                 });
 
+            modelBuilder.Entity("educodeai_server.Models.GoiYAI_TaoBaiTapModel", b =>
+                {
+                    b.Property<int>("MaGoiY")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaGoiY"));
+
+                    b.Property<string>("LoaiGoiY")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("MaBaiTapThucHanh")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("NgayTao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NoiDung")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TrangThai")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("MaGoiY");
+
+                    b.HasIndex("MaBaiTapThucHanh");
+
+                    b.ToTable("GoiYAI_TaoBaiTapS");
+                });
+
             modelBuilder.Entity("educodeai_server.Models.KetQuaLamBaiModel", b =>
                 {
                     b.Property<int>("MaKetQuaBaiNop")
@@ -2486,6 +2527,7 @@ namespace educodeai_server.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NoiDungJSON")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TrangThai")
@@ -2501,6 +2543,42 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiDung");
 
                     b.ToTable("LoTrinhAIs");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.LoiGiaiMauModel", b =>
+                {
+                    b.Property<int>("MaLoiGiai")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaLoiGiai"));
+
+                    b.Property<string>("CodeMau")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DoPhucTap")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("GiaiThich")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MaBaiTapThucHanh")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaNgonNgu")
+                        .HasColumnType("int");
+
+                    b.HasKey("MaLoiGiai");
+
+                    b.HasIndex("MaBaiTapThucHanh");
+
+                    b.HasIndex("MaNgonNgu");
+
+                    b.ToTable("LoiGiaiMaus");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.NgonNguLapTrinhModel", b =>
@@ -2615,6 +2693,58 @@ namespace educodeai_server.Migrations
                             TrangThai = "Hoạt động",
                             VaiTro = 2
                         });
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.PhienBanBaiTapModel", b =>
+                {
+                    b.Property<int>("MaPhienBan")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaPhienBan"));
+
+                    b.Property<int>("MaBaiTapThucHanh")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("NgayTao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SnapshotJSON")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("MaPhienBan");
+
+                    b.HasIndex("MaBaiTapThucHanh");
+
+                    b.ToTable("PhienBanBaiTaps");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.RangBuocBaiTapModel", b =>
+                {
+                    b.Property<int>("MaRangBuoc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaRangBuoc"));
+
+                    b.Property<string>("GiaTri")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MaBaiTapThucHanh")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TenRangBuoc")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("MaRangBuoc");
+
+                    b.HasIndex("MaBaiTapThucHanh");
+
+                    b.ToTable("RangBuocBaiTaps");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.TienDoBaiHocModel", b =>
@@ -2847,6 +2977,17 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
+            modelBuilder.Entity("educodeai_server.Models.GoiYAI_TaoBaiTapModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.BaiTap_ThucHanhIDEModel", "BaiTapThucHanh")
+                        .WithMany()
+                        .HasForeignKey("MaBaiTapThucHanh")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BaiTapThucHanh");
+                });
+
             modelBuilder.Entity("educodeai_server.Models.KetQuaLamBaiModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.BaiTapModel", "BaiTap")
@@ -2886,6 +3027,47 @@ namespace educodeai_server.Migrations
                         .IsRequired();
 
                     b.Navigation("NguoiDung");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.LoiGiaiMauModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.BaiTap_ThucHanhIDEModel", "BaiTapThucHanh")
+                        .WithMany()
+                        .HasForeignKey("MaBaiTapThucHanh")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("educodeai_server.Models.NgonNguLapTrinhModel", "NgonNguLapTrinh")
+                        .WithMany()
+                        .HasForeignKey("MaNgonNgu")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BaiTapThucHanh");
+
+                    b.Navigation("NgonNguLapTrinh");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.PhienBanBaiTapModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.BaiTap_ThucHanhIDEModel", "BaiTapThucHanh")
+                        .WithMany()
+                        .HasForeignKey("MaBaiTapThucHanh")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BaiTapThucHanh");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.RangBuocBaiTapModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.BaiTap_ThucHanhIDEModel", "BaiTapThucHanh")
+                        .WithMany()
+                        .HasForeignKey("MaBaiTapThucHanh")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("BaiTapThucHanh");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.TienDoBaiHocModel", b =>
@@ -2934,7 +3116,8 @@ namespace educodeai_server.Migrations
                     b.Navigation("BaiTap_NgonNgus")
                         .IsRequired();
 
-                    b.Navigation("BaiTap_Quiz");
+                    b.Navigation("BaiTap_Quiz")
+                        .IsRequired();
 
                     b.Navigation("KetQuaBaiTaps");
                 });
