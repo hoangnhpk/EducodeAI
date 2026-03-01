@@ -86,7 +86,7 @@ const TrangChu: React.FC = () => {
                         <h1 className="mb-5" style={{ color: '#fb873f' }}>Chủ đề phổ biến</h1>
                     </div>
                     <div className="row g-2 m-2">
-                        {["Microsoft Excel", "AWS", "Python", "Java", "Web Design", "Web Development", "MySQL", "UI/UX Design"].map((cat, index) => (
+                        {["C#", "AWS", "Python", "Java", "Web Design", "Web Development", "MySQL", "UI/UX Design"].map((cat, index) => (
                             <div key={index} className="col-lg-3 col-md-6 text-center" style={{ cursor: 'pointer' }} onClick={() => setSearchTerm(cat)}>
                                 <div className="content shadow p-3 mb-2 bg-white rounded transition-hover">
                                     <img src={`img/cat${index + 1}.png`} className="img-fluid" alt={cat} />
@@ -114,7 +114,7 @@ const TrangChu: React.FC = () => {
                         {isLoading ? (
                             <div className="text-center w-100 py-5">
                                 <div className="spinner-border text-primary" role="status"></div>
-                                <p className="mt-2 text-muted">Đang tải dữ liệu...</p>
+                                <p className="mt-2 text-muted">Đang tải khoá học...</p>
                             </div>
                         ) : courses.length > 0 ? (
                             courses.map((kh) => (
