@@ -52,14 +52,14 @@ const TongQuan = ({ data }: TongQuanProps) => {
 
       await updateHoSoHocVien(formData);
 
-      alert("✅ Cập nhật thành công!");
+      Swal.fire({ icon: 'success', text: "✅ Cập nhật thành công!", timer: 1500, showConfirmButton: false });
       setShowModal(false);
 
       // Reload để lấy data mới từ API
       window.location.reload();
     } catch (error: any) {
       console.error("❌ Lỗi cập nhật:", error);
-      alert(error.message || "Có lỗi xảy ra!");
+      Swal.fire({ icon: 'error', text: error.message || "Có lỗi xảy ra!", timer: 2000, showConfirmButton: false });
     } finally {
       setLoading(false);
     }

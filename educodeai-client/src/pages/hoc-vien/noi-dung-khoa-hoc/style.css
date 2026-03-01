@@ -56,32 +56,35 @@ a.cp-back {
     justify-content: center;
     width: 36px;
     height: 36px;
-    
+
     /* Màu sắc: Trắng để nổi bật trên nền cam */
-    background-color: rgba(255, 255, 255, 0.2); /* Trắng mờ */
-    color: #ffffff !important; 
-    
+    background-color: rgba(255, 255, 255, 0.2);
+    /* Trắng mờ */
+    color: #ffffff !important;
+
     /* Loại bỏ gạch chân hoàn toàn */
-    text-decoration: none !important; 
-    
+    text-decoration: none !important;
+
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.4);
-    
+
     transition: all 0.2s ease;
     cursor: pointer;
 }
 
 /* Loại bỏ gạch chân cho mọi trạng thái */
-a.cp-back:visited, 
-a.cp-back:hover, 
+a.cp-back:visited,
+a.cp-back:hover,
 a.cp-back:active {
     text-decoration: none !important;
 }
 
 /* Hiệu ứng Hover: Sáng rực lên */
 a.cp-back:hover {
-    background-color: #ffffff; /* Trắng đặc */
-    color: #f69050 !important; /* Icon đổi sang màu cam giống màu nền */
+    background-color: #ffffff;
+    /* Trắng đặc */
+    color: #f69050 !important;
+    /* Icon đổi sang màu cam giống màu nền */
     transform: translateX(-3px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
@@ -667,15 +670,18 @@ a.cp-back:hover {
 /* Floating navigation bar */
 .cp-floating-nav {
     position: fixed;
-    bottom: 20px; /* Cách đáy một chút cho đẹp */
+    bottom: 20px;
+    /* Cách đáy một chút cho đẹp */
     left: 50%;
-    transform: translateX(-50%); /* Căn giữa màn hình */
+    transform: translateX(-50%);
+    /* Căn giữa màn hình */
     z-index: 100;
-    
+
     background: #fff;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
     padding: 10px 20px;
-    border-radius: 50px; /* Bo tròn giống dạng viên thuốc */
+    border-radius: 50px;
+    /* Bo tròn giống dạng viên thuốc */
     display: flex;
     justify-content: center;
     gap: 15px;
@@ -687,7 +693,8 @@ a.cp-back:hover {
 }
 
 .cp-floating-nav.hidden {
-    bottom: -80px; /* Đẩy hẳn ra khỏi màn hình */
+    bottom: -80px;
+    /* Đẩy hẳn ra khỏi màn hình */
     opacity: 0;
     visibility: hidden;
 }
@@ -1182,12 +1189,13 @@ a.cp-back:hover {
 }
 
 video::-webkit-media-controls-timeline {
-  pointer-events: none;
+    pointer-events: none;
 }
 
 video::-webkit-media-controls-playback-rate-button {
-  display: none;
+    display: none;
 }
+
 /* Container chính: Giới hạn chiều rộng, căn giữa, đổ bóng */
 .cp-quiz-wrapper {
     max-width: 800px;
@@ -1239,7 +1247,7 @@ video::-webkit-media-controls-playback-rate-button {
     border-radius: 30px;
     font-weight: 600;
     font-size: 0.9rem;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
 }
 
@@ -1257,9 +1265,17 @@ video::-webkit-media-controls-playback-rate-button {
 }
 
 @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 /* Body câu hỏi */
@@ -1278,20 +1294,23 @@ video::-webkit-media-controls-playback-rate-button {
 /* Grid đáp án */
 .cp-quiz-options {
     display: grid;
-    grid-template-columns: 1fr; /* 1 cột trên mobile */
+    grid-template-columns: 1fr;
+    /* 1 cột trên mobile */
     gap: 12px;
 }
 
 @media (min-width: 600px) {
     .cp-quiz-options {
-        grid-template-columns: 1fr 1fr; /* 2 cột trên PC */
+        grid-template-columns: 1fr 1fr;
+        /* 2 cột trên PC */
     }
 }
 
 /* Card đáp án */
 .cp-option-card {
     position: relative;
-    padding: 1rem 1rem 1rem 3rem; /* Chừa chỗ cho nút tròn */
+    padding: 1rem 1rem 1rem 3rem;
+    /* Chừa chỗ cho nút tròn */
     background: #fff;
     border: 2px solid #e2e8f0;
     border-radius: 12px;
@@ -1347,7 +1366,8 @@ video::-webkit-media-controls-playback-rate-button {
 .cp-option-card.selected .cp-option-circle {
     border-color: #f69050;
     background: #f69050;
-    box-shadow: inset 0 0 0 3px #fff; /* Tạo chấm trắng ở giữa */
+    box-shadow: inset 0 0 0 3px #fff;
+    /* Tạo chấm trắng ở giữa */
 }
 
 .cp-option-card.correct .cp-option-circle {
@@ -1414,10 +1434,291 @@ video::-webkit-media-controls-playback-rate-button {
 
 /* Animation */
 @keyframes fadeInSlide {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .anim-enter {
     animation: fadeInSlide 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Nền tối làm mờ màn hình (Overlay) */
+.ai-notes-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1040;
+    transition: opacity 0.3s ease;
+}
+
+/* Khung Sidebar trượt từ bên phải vào */
+.ai-notes-sidebar {
+    position: fixed;
+    top: 0;
+    right: -450px;
+    /* Ẩn đi mặc định */
+    width: 450px;
+    height: 100vh;
+    background-color: #f8fafc;
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+    z-index: 1050;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-notes-sidebar.open {
+    right: 0;
+    /* Hiện ra */
+}
+
+/* Header của Sidebar */
+.ai-notes-header {
+    padding: 20px;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-notes-header h4 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.btn-close-sidebar {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-close-sidebar:hover {
+    color: #ef4444;
+}
+
+/* Phần Body chứa danh sách ghi chú */
+.ai-notes-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Từng thẻ (Card) ghi chú */
+.ai-note-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.ai-note-meta {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 8px;
+}
+
+/* Format lại nội dung Markdown bên trong thẻ ghi chú */
+.ai-note-content {
+    font-size: 0.9rem;
+    color: #334155;
+    line-height: 1.6;
+}
+
+.ai-note-content h1,
+.ai-note-content h2,
+.ai-note-content h3 {
+    font-size: 1rem;
+    color: #0f172a;
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.ai-note-content ul {
+    padding-left: 20px;
+    margin-bottom: 10px;
+}
+
+/* Khu vực bao quanh phần tóm tắt */
+.ai-summary-container {
+    margin-top: 10px;
+    padding: 24px;
+    background-color: #ffffff;
+    /* Đổi sang nền trắng cho sạch */
+    border-radius: 12px;
+    /* Không dùng border thô, dùng shadow mịn hơn */
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+/* Nút bấm gọi AI - Làm phẳng hơn, bỏ gradient bóng bẩy quá mức */
+.btn-ai-summarize {
+    background-color: #f69050;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 8px;
+    /* Bo góc nhẹ cho hiện đại */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-ai-summarize:hover:not(:disabled) {
+    background-color: #e67e22;
+    transform: translateY(-1px);
+}
+
+.btn-ai-summarize:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Khung hiển thị kết quả Markdown */
+.ai-summary-result {
+    margin-top: 24px;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #334155;
+    border: 1px solid #f1f5f9;
+}
+
+/* Tinh chỉnh typography trong Markdown */
+.ai-summary-result h3 {
+    font-size: 1.1rem;
+    color: #0f172a;
+    margin-bottom: 12px;
+}
+
+.ai-summary-result strong {
+    color: #f69050;
+    font-weight: 600;
+}
+
+/* Thay thế hiệu ứng chớp nháy bằng hiệu ứng Loading "Shimmer" (trượt sáng) */
+.ai-loading-pulse {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    color: #64748b;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Đường kẻ chạy ngang tạo cảm giác đang quét dữ liệu */
+.ai-loading-pulse::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(255, 255, 255, 0) 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* --- Form Đánh Giá --- */
+.cp-review-form-container {
+    background: #fff;
+    border: 1px solid var(--cp-border);
+    border-radius: var(--cp-radius-md);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.cp-star-selector {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    color: #cbd5e1; /* Màu xám khi chưa chọn */
+    cursor: pointer;
+    margin-bottom: 1rem;
+}
+
+.cp-star-selector i {
+    transition: color 0.2s, transform 0.2s;
+}
+
+.cp-star-selector i.active,
+.cp-star-selector i:hover {
+    color: #fbbf24; /* Màu vàng của sao */
+    transform: scale(1.1);
+}
+
+.cp-review-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.75rem;
+    border: 1px solid var(--cp-border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+    outline: none;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s;
+}
+
+.cp-review-textarea:focus {
+    border-color: var(--cp-primary);
+}
+
+.cp-btn-submit-review {
+    background: var(--cp-primary);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.cp-btn-submit-review:hover {
+    background: var(--cp-primary-strong);
+}
+
+.cp-btn-submit-review:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
 }

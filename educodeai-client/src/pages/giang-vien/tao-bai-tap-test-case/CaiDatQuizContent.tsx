@@ -23,7 +23,7 @@ const CaiDatQuizContent = () => {
         const draftSettings = sessionStorage.getItem('draftQuizSettings');
         
         if (!draftData || !draftSettings) {
-            alert("Oops! Mất kết nối dữ liệu rồi sếp ơi. Tạo lại từ đầu nha! 🥲");
+            Swal.fire({ icon: 'error', text: "Oops! Mất kết nối dữ liệu rồi sếp ơi. Tạo lại từ đầu nha! 🥲" });
             navigate('/giang-vien/tao-quiz');
         }
     }, [navigate]);
@@ -62,17 +62,17 @@ const CaiDatQuizContent = () => {
             const response = await BaiTapService.xuatBanQuiz(payload);
 
             if (response.success) {
-                alert(`Trộm vía! ${response.message} 🎉`);
+                Swal.fire({ icon: 'success', text: `Trộm vía! ${response.message} 🎉` });
                 sessionStorage.removeItem('draftQuizData');
                 sessionStorage.removeItem('draftQuizSettings');
                 navigate('/giang-vien/bai-tap'); // Đá về trang danh sách
             } else {
-                alert("Úi, có lỗi: " + response.message);
+                Swal.fire({ icon: 'error', text: "Úi, có lỗi: " + response.message });
             }
 
         } catch (error: any) {
             console.error("Lỗi sập nguồn:", error);
-            alert("Server đang hờn dỗi, không lưu được rồi sếp ơi! 😭");
+            Swal.fire({ icon: 'error', text: "Server đang hờn dỗi, không lưu được rồi sếp ơi! 😭" });
         } finally {
             setIsPublishing(false);
         }

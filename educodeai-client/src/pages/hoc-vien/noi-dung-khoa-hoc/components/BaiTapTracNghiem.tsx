@@ -115,10 +115,17 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
         }
     };
 
-    const xuLyNopBai = (tuDongNop: boolean = false) => {
+    const xuLyNopBai = async (tuDongNop: boolean = false) => {
         // Nếu không phải tự động nộp (do hết giờ) thì hỏi xác nhận
         if (!tuDongNop && Object.keys(dapAnNguoiDung).length < tongSoCau) {
-            if (!window.confirm("Bạn chưa chọn hết đáp án. Vẫn muốn nộp bài?")) return;
+            const result = await Swal.fire({
+                title: 'Bạn chưa chọn hết đáp án. Vẫn muốn nộp bài?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Nộp',
+                cancelButtonText: 'Quay lại'
+            });
+            if (!result.isConfirmed) return;
         }
 
         setDaNopBai(true);
@@ -152,7 +159,9 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
             title: tuDongNop ? 'Hết giờ!' : (daDat ? 'Chúc mừng!' : 'Chưa đạt'),
             text: `Kết quả: ${soCauDung}/${tongSoCau} câu đúng (${Math.round(phanTramDatDuoc)}%). Yêu cầu: ${duLieu.diemCanDat}%`,
             confirmButtonText: 'Xem lại bài làm',
-            confirmButtonColor: '#f69050'
+            confirmButtonColor: '#f69050',
+            timer: 2000,
+            showConfirmButton: false
         });
     };
 
