@@ -37,6 +37,8 @@ import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 // import ADashboard from "../pages/quan-tri-vien/dashboard-he-thong/Dashboard";
 // import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
 import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
+  import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
+// import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
 // import CauHinhHeThong from "../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeThong";
 
 export default function AppRouter() {
@@ -85,6 +87,10 @@ export default function AppRouter() {
           <Route path="nguoi-dung" element={<QuanLyNguoiDung />} /> */}
           <Route path="quan-ly-binh-luan-review" element={<QuanLyReview />} />
           {/* <Route path="cau-hinh" element={<CauHinhHeThong />} /> */}
+          {/* <Route index element={<ADashboard />} />*/}
+          <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
+          {/*<Route path="review" element={<QuanLyReview />} />
+          <Route path="cau-hinh" element={<CauHinhHeThong />} /> */}
         </Route>
       </Routes>
     </BrowserRouter>

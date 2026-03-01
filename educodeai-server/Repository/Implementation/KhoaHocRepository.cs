@@ -17,53 +17,31 @@ namespace educodeai_server.Repository.Implementation
             _context = context;
         }
 
-        // 1. Lấy danh sách cho trang chủ
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync()
         {
-            //try
-            //{
-            //    var query = _context.KhoaHocs
-            //    .Where(x => x.TrangThai == "Hoạt động");
-
-            //    if (!string.IsNullOrEmpty(dto.TrinhDoHienTai))
-            //    {
-            //        query = query.Where(x =>
-            //            x.TrinhDo.Contains(dto.TrinhDoHienTai) ||
-            //            dto.TrinhDoHienTai.Contains(x.TrinhDo));
-            //    }
-
-            //    if (!string.IsNullOrEmpty(dto.MucTieuNgheNghiep))
-            //    {
-            //        var mucTieu = dto.MucTieuNgheNghiep;
-
-            //        query = query.Where(x =>
-            //            x.LinhVuc.Contains(mucTieu) ||
-            //            x.LinhVuc.Contains("Foundation")
-            //        );
-            //    }
-
-            //    return await query
-            //        .OrderByDescending(x => x.DiemDanhGiaTB)
-            //        .ThenByDescending(x => x.NgayTao)
-            //        .Select(x => new KhoaHocAISnapshotDto
-            //        {
-            //            MaKhoaHoc = x.MaKhoaHoc,
-            //            TenKhoaHoc = x.TenKhoaHoc,
-            //            TrinhDo = x.TrinhDo,
-            //            LinhVuc = x.LinhVuc,
-            //            KyNangChinh = x.KyNangChinh,
-            //            ThoiLuongGio = x.ThoiLuongGio
-            //        })
-            //        .ToListAsync();
-            //}
-            //catch (Exception ex)
-            //{
-            //    throw new ApplicationException("Lỗi khi lấy khóa học phù hợp.", ex);
-            //}
-            return null;
+            try
+            {
+                return await _context.KhoaHocs
+                    .Where(x => x.TrangThai == "Hoạt động")
+                    .OrderByDescending(x => x.NgayTao)
+                    .Select(x => new KhoaHocDto
+                    {
+                        MaKhoaHoc = x.MaKhoaHoc,
+                        TenKhoaHoc = x.TenKhoaHoc,
+                        HinhAnh = x.HinhAnh,
+                        LinhVuc = x.LinhVuc,
+                        DiemDanhGiaTB = x.DiemDanhGiaTB,
+                        ThoiLuongGio = x.ThoiLuongGio,
+                        TrinhDo = x.TrinhDo,
+                        KyNangChinh = x.KyNangChinh
+                    })
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Lỗi khi lấy danh sách khóa học trang chủ.", ex);
+            }
         }
-
-
 
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocTheoKeywordAsync(List<string> keywords)
         {
@@ -102,7 +80,7 @@ namespace educodeai_server.Repository.Implementation
             }
         }
 
-        // 2. LẤY CHI TIẾT KHÓA HỌC (HÀM BẠN ĐANG THIẾU)
+        // 2. LẤY CHI TIẾT KHÓA HỌC
         public async Task<KhoaHocModel?> GetKhoaHocWithDetailsAsync(int maKhoaHoc)
         {
             return await _context.KhoaHocs
@@ -433,23 +411,19 @@ namespace educodeai_server.Repository.Implementation
 
         public async Task<bool> KiemTraHoanThanhKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
         {
-            // 1. Đếm TỔNG SỐ BÀI HỌC (Bỏ Include đi cho nhẹ)
             var tongSoBaiHoc = await _context.BaiHocs
                 .Where(b => b.ChuongHoc.MaKhoaHoc == maKhoaHoc)
                 .CountAsync();
 
             if (tongSoBaiHoc == 0) return false;
 
-            // 2. Đếm SỐ BÀI ĐÃ HỌC (Cũng bỏ Include đi)
             var soBaiDaHoc = await _context.TienDoBaiHocs
                 .Where(t => t.MaNguoiDung == maNguoiDung
                          && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc
                          && t.DaXem == true)
                 .CountAsync();
-            Console.WriteLine("Số bài đã học: " + soBaiDaHoc);
-            Console.WriteLine("Tổng số bài học: " + tongSoBaiHoc);
+
             return soBaiDaHoc == tongSoBaiHoc;
         }
     }
-
 }
