@@ -376,27 +376,6 @@ namespace educodeai_server.Repository.Implementation
             }
         }
 
-        public async Task<List<DangKyKhoaHocModel>> GetDangKyKhoaHocAsync(int maNguoiDung)
-        {
-            return await _context.DangKyKhoaHocs
-                .Where(x => x.MaNguoiDung == maNguoiDung)
-                .ToListAsync();
-        }
-
-        public async Task<List<int>> GetMaKhoaHocDaDangKyAsync(int maNguoiDung, List<int> danhSachMaKhoaHoc)
-        {
-            return await _context.DangKyKhoaHocs
-                .Where(x => x.MaNguoiDung == maNguoiDung
-                         && danhSachMaKhoaHoc.Contains(x.MaKhoaHoc))
-                .Select(x => x.MaKhoaHoc)
-                .ToListAsync();
-        }
-
-        public async Task AddDangKyKhoaHocAsync(List<DangKyKhoaHocModel> dangKyKhoaHocs)
-        {
-            await _context.DangKyKhoaHocs.AddRangeAsync(dangKyKhoaHocs);
-            await _context.SaveChangesAsync();
-        }
 
         public async Task<List<GhiChuAIModel>> LayDanhSachGhiChuAI(int maNguoiDung)
         {
