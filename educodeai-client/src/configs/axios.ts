@@ -24,11 +24,6 @@ axiosClient.interceptors.request.use(
       config.headers["Content-Type"] = "application/json";
     }
 
-    console.log("📤 Request:", config.method?.toUpperCase(), config.url);
-    console.log("🌐 Base URL:", config.baseURL);
-    console.log("📦 Payload type:", config.data instanceof FormData ? "FormData" : "JSON");
-    console.log("🔐 Token:", token ? "Có" : "Không có");
-
     return config;
   },
   (error) => Promise.reject(error)
@@ -39,8 +34,6 @@ axiosClient.interceptors.request.use(
 // ======================
 axiosClient.interceptors.response.use(
   (response) => {
-    console.log("📥 Response từ:", response.config.url);
-    console.log("📦 Response data:", response.data);
 
     // trả về response.data để service dùng trực tiếp
     return response.data;

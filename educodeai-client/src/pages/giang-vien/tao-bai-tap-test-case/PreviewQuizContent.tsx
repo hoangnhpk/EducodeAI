@@ -197,7 +197,7 @@ const PreviewQuizContent = () => {
                             style={{ padding: '12px 28px', fontSize: '16px', fontWeight: 800 }}
                             onClick={handleTiepTuc}
                         >
-                            Chốt! Tới Cài đặt →
+                            Tới Cài đặt →
                         </button>
 
                     </div>
