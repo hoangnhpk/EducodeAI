@@ -11,10 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
-
-// 1. FIX LỖI FONT TIẾNG VIỆT (Dấu ?) KHI LẤY PHỤ ĐỀ YOUTUBE
-System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
+using educodeai_server.Services.Implement;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
@@ -69,6 +66,11 @@ builder.Services.AddScoped<IHocVienService, HocVienService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
 
 // AI & Lộ trình
+builder.Services.AddScoped<IKhoaHocCuaToiRepository, KhoaHocCuaToiRepository>();
+builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
+builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
+builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
+// C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
