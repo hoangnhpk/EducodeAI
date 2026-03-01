@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { BaiTapService } from '@/services/bai-tap.service';
 import type { DanhSachBaiTapDTO } from '@/pages/giang-vien/tao-bai-tap-test-case/BaiTap';
 import './QuanLyBaiTap.css';
@@ -30,28 +31,33 @@ const QuanLyBaiTapContent = () => {
     }, []);
 
     const handleDeleteClick = async (maBaiTap: number, tenBaiTap: string) => {
-      
-        const isConfirm = window.confirm(`bạn có chắc muốn xoá bài tập "${tenBaiTap}" không?`);
-        
-        if (isConfirm) {
-            try {
+        Swal.fire({
+            title: `bạn có chắc muốn xoá bài tập "${tenBaiTap}" không?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
+        }).then(async result => {
+            if (result.isConfirmed) {
+                try {
                 // Gọi API chém xuống Backend
                 const response = await BaiTapService.deleteBaiTap(maBaiTap);
                 
                 // Giả sử BE của ông trả về cục { success: true, message: "..." }
                 // Nếu BE chỉ trả status 200/204 không có body thì chỉ cần check try catch là đủ nha!
                 if (response.success !== false) { 
-                    alert(`Đã tiễn ẻm bay màu thành công!`);
+                    Swal.fire({ icon: 'success', text: `Đã tiễn ẻm bay màu thành công!` });
                     
                     setDanhSachBaiTap(prevList => prevList.filter(bt => bt.maBaiTap !== maBaiTap));
                 } else {
-                    alert("Úi, có lỗi cản địa: " + response.message);
+                    Swal.fire({ icon: 'error', text: "Úi, có lỗi cản địa: " + response.message });
                 }
             } catch (error: any) {
                 console.error("Lỗi sập nguồn khi xóa:", error);
-                alert("Server đang hờn dỗi, giấu không cho xóa rồi sếp ơi!");
+                Swal.fire({ icon: 'error', text: "Server đang hờn dỗi, giấu không cho xóa rồi sếp ơi!" });
             }
-        }
+            }
+        });
     };
 
     const handleViewClick = async (maBaiTap: number) => {
@@ -77,7 +83,7 @@ const QuanLyBaiTapContent = () => {
             setChiTietQuiz({ ...response.data, danhSachCauHoi });
         } catch (error) {
             console.error("Lỗi lấy chi tiết:", error);
-            alert("Lỗi kéo chi tiết bài tập rồi sếp ơi!");
+            Swal.fire({ icon: 'error', text: "Lỗi kéo chi tiết bài tập rồi sếp ơi!" });
             setIsModalOpen(false);
         } finally {
             setIsLoadingDetails(false);

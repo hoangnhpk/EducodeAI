@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '@/configs/axios';
 import ReactMarkdown from 'react-markdown';
+import Swal from 'sweetalert2';
 // THÊM 2 DÒNG IMPORT NÀY VÀO ĐÂY:
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import '@/pages/hoc-vien/noi-dung-khoa-hoc/VideoSummary.css';
 
 interface VideoSummaryProps {
     maBaiHoc: number;
@@ -58,10 +58,18 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
     };
 
     const handleLamMoi = () => {
-        if (window.confirm("Bạn muốn AI phân tích và tóm tắt lại từ đầu?")) {
-            localStorage.removeItem(storageKey);
-            xuLyTomTatVideo();
-        }
+        Swal.fire({
+            title: 'Bạn muốn AI phân tích và tóm tắt lại từ đầu?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Có',
+            cancelButtonText: 'Hủy'
+        }).then(result => {
+            if (result.isConfirmed) {
+                localStorage.removeItem(storageKey);
+                xuLyTomTatVideo();
+            }
+        });
     }
 
     return (
@@ -78,11 +86,11 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
                     </button>
                 )}
 
-                {ketQuaTomTat && !dangXuLy && (
+                {/* {ketQuaTomTat && !dangXuLy && (
                     <button onClick={handleLamMoi} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '13px' }}>
                         <i className="fas fa-sync-alt me-1"></i> Tóm tắt lại
                     </button>
-                )}
+                )} */}
             </div>
 
             {dangXuLy && (

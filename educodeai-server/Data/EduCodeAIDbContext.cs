@@ -27,8 +27,7 @@ namespace educodeai_server.Data
         public DbSet<BoThuNghiemModel> BoThuNghiems { get; set; }
         public DbSet<KetQuaLamBaiModel> KetQuaLamBais { get; set; }
         public DbSet<LoTrinhAIModel> LoTrinhAIs { get; set; }
-        public DbSet<CuocHoiThoaiAIModel> CuocHoiThoaiAIs { get; set; }
-        public DbSet<TinNhanAIModel> TinNhanAIs { get; set; }
+        public DbSet<GhiChuAIModel> GhiChuAIs { get; set; }
         public DbSet<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; }
         public DbSet<GoiYAI_TaoBaiTapModel> GoiYAI_TaoBaiTapS { get; set; }
         public DbSet<PhienBanBaiTapModel> PhienBanBaiTaps { get; set; }
@@ -95,12 +94,6 @@ namespace educodeai_server.Data
                 .HasMany(n => n.LoTrinhAIs)
                 .WithOne(l => l.NguoiDung)
                 .HasForeignKey(l => l.MaNguoiDung)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<NguoiDungModel>()
-                .HasMany(n => n.CuocHoiThoaiAIs)
-                .WithOne(c => c.NguoiDung)
-                .HasForeignKey(c => c.MaNguoiDung)
                 .OnDelete(DeleteBehavior.NoAction);
 
             // KhoaHocModel relationships
@@ -229,12 +222,6 @@ namespace educodeai_server.Data
                 .HasForeignKey(b => b.MaBinhLuanCha)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // CuocHoiThoaiAIModel relationships
-            modelBuilder.Entity<CuocHoiThoaiAIModel>()
-                .HasMany(c => c.TinNhanAIs)
-                .WithOne(t => t.CuocHoiThoaiAI)
-                .HasForeignKey(t => t.MaHoiThoai)
-                .OnDelete(DeleteBehavior.NoAction);
 
             // ====== SEED DATA ======
             KhoaHocDuLieu.SeedKhoaHoc(modelBuilder);

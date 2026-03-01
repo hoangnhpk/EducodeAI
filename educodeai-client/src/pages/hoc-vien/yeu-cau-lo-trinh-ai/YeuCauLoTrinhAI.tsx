@@ -5,7 +5,7 @@ import AiPanel from "./Components/AiPanel";
 import "./Components/YeuCauLoTrinhAI.css"
 import { aiRoadmapService } from "../../../services/aiRoadmap.service";
 import TrangThaiKetQua from "./Components/TrangThaiKetQua"
-// import Swal from "sweetalert2";
+import Swal from "sweetalert2";
 
 export default function YeuCauLoTrinhAI() {
   const [trangThaiAI, setTrangThaiAI] = useState<TrangThaiAI>("cho");
@@ -21,7 +21,7 @@ export default function YeuCauLoTrinhAI() {
     } catch (error) {
       console.error(error);
       setTrangThaiAI("cho");
-      alert("Lỗi khi tạo lộ trình");
+      Swal.fire({ icon: 'error', text: "Lỗi khi tạo lộ trình" });
     }
   };
 
@@ -31,9 +31,9 @@ export default function YeuCauLoTrinhAI() {
       setIsProcessing(true);
       const ketQuaMoi = await aiRoadmapService.capNhatLoTrinh(ketQuaAI.maLoTrinh, yeuCauSua);
       setKetQuaAI(ketQuaMoi);
-      alert("AI đã chỉnh sửa lộ trình theo ý bạn!");
+      Swal.fire({ icon: 'success', text: "AI đã chỉnh sửa lộ trình theo ý bạn!", timer: 1500, showConfirmButton: false });
     } catch (error) {
-      alert("Lỗi khi sửa lộ trình. Vui lòng thử lại.");
+      Swal.fire({ icon: 'error', text: "Lỗi khi sửa lộ trình. Vui lòng thử lại." });
     } finally {
       setIsProcessing(false);
     }
@@ -45,10 +45,10 @@ export default function YeuCauLoTrinhAI() {
       setIsProcessing(true);
       await aiRoadmapService.xacNhanLoTrinh(ketQuaAI.maLoTrinh);
       
-      alert("Chúc mừng! Lộ trình học tập đã được áp dụng.");
+      Swal.fire({ icon: 'success', text: "Chúc mừng! Lộ trình học tập đã được áp dụng.", timer: 1500, showConfirmButton: false });
       window.location.href = "/khoa-hoc-ai-cua-toi";
     } catch (error) {
-      alert("Có lỗi xảy ra khi lưu lộ trình.");
+      Swal.fire({ icon: 'error', text: "Có lỗi xảy ra khi lưu lộ trình." });
     } finally {
       setIsProcessing(false);
     }

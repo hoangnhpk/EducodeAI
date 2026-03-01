@@ -20,46 +20,47 @@ namespace educodeai_server.Repository.Implementation
         // 1. Lấy danh sách cho trang chủ
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync()
         {
-            try
-            {
-                var query = _context.KhoaHocs
-                .Where(x => x.TrangThai == "Hoạt động");
+            //try
+            //{
+            //    var query = _context.KhoaHocs
+            //    .Where(x => x.TrangThai == "Hoạt động");
 
-                if (!string.IsNullOrEmpty(dto.TrinhDoHienTai))
-                {
-                    query = query.Where(x =>
-                        x.TrinhDo.Contains(dto.TrinhDoHienTai) ||
-                        dto.TrinhDoHienTai.Contains(x.TrinhDo));
-                }
+            //    if (!string.IsNullOrEmpty(dto.TrinhDoHienTai))
+            //    {
+            //        query = query.Where(x =>
+            //            x.TrinhDo.Contains(dto.TrinhDoHienTai) ||
+            //            dto.TrinhDoHienTai.Contains(x.TrinhDo));
+            //    }
 
-                if (!string.IsNullOrEmpty(dto.MucTieuNgheNghiep))
-                {
-                    var mucTieu = dto.MucTieuNgheNghiep;
+            //    if (!string.IsNullOrEmpty(dto.MucTieuNgheNghiep))
+            //    {
+            //        var mucTieu = dto.MucTieuNgheNghiep;
 
-                    query = query.Where(x =>
-                        x.LinhVuc.Contains(mucTieu) ||
-                        x.LinhVuc.Contains("Foundation")
-                    );
-                }
+            //        query = query.Where(x =>
+            //            x.LinhVuc.Contains(mucTieu) ||
+            //            x.LinhVuc.Contains("Foundation")
+            //        );
+            //    }
 
-                return await query
-                    .OrderByDescending(x => x.DiemDanhGiaTB)
-                    .ThenByDescending(x => x.NgayTao)
-                    .Select(x => new KhoaHocAISnapshotDto
-                    {
-                        MaKhoaHoc = x.MaKhoaHoc,
-                        TenKhoaHoc = x.TenKhoaHoc,
-                        TrinhDo = x.TrinhDo,
-                        LinhVuc = x.LinhVuc,
-                        KyNangChinh = x.KyNangChinh,
-                        ThoiLuongGio = x.ThoiLuongGio
-                    })
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new ApplicationException("Lỗi khi lấy khóa học phù hợp.", ex);
-            }
+            //    return await query
+            //        .OrderByDescending(x => x.DiemDanhGiaTB)
+            //        .ThenByDescending(x => x.NgayTao)
+            //        .Select(x => new KhoaHocAISnapshotDto
+            //        {
+            //            MaKhoaHoc = x.MaKhoaHoc,
+            //            TenKhoaHoc = x.TenKhoaHoc,
+            //            TrinhDo = x.TrinhDo,
+            //            LinhVuc = x.LinhVuc,
+            //            KyNangChinh = x.KyNangChinh,
+            //            ThoiLuongGio = x.ThoiLuongGio
+            //        })
+            //        .ToListAsync();
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw new ApplicationException("Lỗi khi lấy khóa học phù hợp.", ex);
+            //}
+            return null;
         }
 
 
@@ -178,16 +179,6 @@ namespace educodeai_server.Repository.Implementation
             return await query.Select(x => new KhoaHocAISnapshotDto { MaKhoaHoc = x.MaKhoaHoc, TenKhoaHoc = x.TenKhoaHoc, TrinhDo = x.TrinhDo, LinhVuc = x.LinhVuc, KyNangChinh = x.KyNangChinh, ThoiLuongGio = x.ThoiLuongGio }).ToListAsync();
         }
 
-        public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocTheoKeywordAsync(List<string> keywords)
-        {
-            var query = _context.KhoaHocs.Where(x => x.TrangThai == "Hoạt động");
-            if (keywords.Any())
-            {
-                query = query.Where(kh => keywords.Any(k => kh.TenKhoaHoc.ToLower().Contains(k) || kh.LinhVuc.ToLower().Contains(k)));
-            }
-            return await query.Select(x => new KhoaHocAISnapshotDto { MaKhoaHoc = x.MaKhoaHoc, TenKhoaHoc = x.TenKhoaHoc, TrinhDo = x.TrinhDo, LinhVuc = x.LinhVuc, KyNangChinh = x.KyNangChinh, ThoiLuongGio = x.ThoiLuongGio }).ToListAsync();
-        }
-
         public async Task<List<DangKyKhoaHocModel>> GetDangKyKhoaHocAsync(int maNguoiDung)
         {
             return await _context.DangKyKhoaHocs
@@ -209,13 +200,256 @@ namespace educodeai_server.Repository.Implementation
             await _context.DangKyKhoaHocs.AddRangeAsync(dangKyKhoaHocs);
             await _context.SaveChangesAsync();
         }
-    }
-}
 
-        // 6. Lưu tiến độ, ghi chú, kết quả bài tập
-        public async Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto) { /* ... code cũ của bạn ... */ return true; }
-        public async Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto) { /* ... code cũ của bạn ... */ return true; }
-        public async Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung) { return new List<GhiChuBaiHocDTO>(); }
-        public async Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto) { return true; }
+        public async Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto)
+        {
+            try
+            {
+                var tienDo = await _context.TienDoBaiHocs
+                    .FirstOrDefaultAsync(td =>
+                        td.MaBaiHoc == dto.MaBaiHoc &&
+                        td.MaNguoiDung == dto.MaNguoiDung
+                    );
+
+                if (tienDo != null)
+                {
+                    tienDo.DaXem = dto.DaXem;
+                    tienDo.ThoiGianHoc = dto.ThoiGianHoc;
+                    tienDo.NgayCapNhat = DateTime.UtcNow;
+                    _context.TienDoBaiHocs.Update(tienDo);
+                }
+                else
+                {
+                    tienDo = new TienDoBaiHocModel
+                    {
+                        MaBaiHoc = dto.MaBaiHoc,
+                        MaNguoiDung = dto.MaNguoiDung,
+                        DaXem = dto.DaXem,
+                        ThoiGianHoc = dto.ThoiGianHoc,
+                        NgayCapNhat = DateTime.UtcNow
+                    };
+
+                    await _context.TienDoBaiHocs.AddAsync(tienDo);
+                }
+
+                return await _context.SaveChangesAsync() > 0;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ApplicationException("Không thể lưu tiến độ bài học. Vui lòng thử lại.", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Đã xảy ra lỗi khi lưu tiến độ bài học.", ex);
+            }
+        }
+
+        public async Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto)
+        {
+            if (dto == null) return false;
+            try
+            {
+                var ghiChuTonTai = await _context.GhiChuBaiHocs
+                    .FirstOrDefaultAsync(x => x.MaNguoiDung == dto.MaNguoiDung
+                                           && x.MaBaiHoc == dto.MaBaiHoc
+                                           && x.ThoiGianVideo == dto.ThoiGianVideo);
+
+                if (ghiChuTonTai != null)
+                {
+                    ghiChuTonTai.NoiDung = dto.NoiDung;
+                    ghiChuTonTai.NgayTao = DateTime.Now;
+                    _context.GhiChuBaiHocs.Update(ghiChuTonTai);
+                }
+                else
+                {
+                    var duLieuMoi = new GhiChuBaiHocModel
+                    {
+                        MaNguoiDung = dto.MaNguoiDung,
+                        MaBaiHoc = dto.MaBaiHoc,
+                        ThoiGianVideo = dto.ThoiGianVideo,
+                        NoiDung = dto.NoiDung,
+                        NgayTao = DateTime.Now
+                    };
+                    await _context.GhiChuBaiHocs.AddAsync(duLieuMoi);
+                }
+
+                return await _context.SaveChangesAsync() > 0;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ApplicationException("Lỗi cập nhật cơ sở dữ liệu khi lưu ghi chú.", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Đã xảy ra lỗi hệ thống khi xử lý ghi chú.", ex);
+            }
+        }
+
+        public async Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung)
+        {
+            return await _context.GhiChuBaiHocs
+                .Where(x => x.MaBaiHoc == maBaiHoc && x.MaNguoiDung == maNguoiDung)
+                .Select(x => new GhiChuBaiHocDTO
+                {
+                    MaGhiChu = x.Id,
+                    MaBaiHoc = x.MaBaiHoc,
+                    MaNguoiDung = x.MaNguoiDung,
+                    ThoiGianVideo = x.ThoiGianVideo,
+                    NoiDung = x.NoiDung,
+                    NgayTao = x.NgayTao
+                })
+                .ToListAsync();
+        }
+
+        public async Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto)
+        {
+            if (dto == null) return false;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var duLieuLuuTru = new
+                {
+                    SoCauDung = dto.SoCauDung,
+                    TongSoCau = dto.TongSoCau,
+                    DiemSo = dto.DiemSo,
+                    KetQua = dto.DaDat ? "Pass" : "Fail",
+                    ThoiGianNop = DateTime.Now,
+                    LichSuTraLoi = dto.ChiTietLamBai
+                };
+
+                var ketQuaMoi = new KetQuaLamBaiModel
+                {
+                    MaNguoiDung = dto.MaNguoiDung,
+                    MaBaiTap = dto.MaBaiTap,
+                    DiemSo = dto.DiemSo,
+                    TrangThai = dto.DaDat,
+                    NoiDungNopJSON = JsonSerializer.Serialize(duLieuLuuTru),
+                    NgayNop = DateTime.Now
+                };
+
+                _context.KetQuaLamBais.Add(ketQuaMoi);
+                await _context.SaveChangesAsync();
+
+                if (dto.DaDat)
+                {
+                    var tienDo = await _context.TienDoBaiHocs
+                        .FirstOrDefaultAsync(td => td.MaBaiHoc == dto.MaBaiHoc
+                                                && td.MaNguoiDung == dto.MaNguoiDung);
+
+                    if (tienDo == null)
+                    {
+                        tienDo = new TienDoBaiHocModel
+                        {
+                            MaBaiHoc = dto.MaBaiHoc,
+                            MaNguoiDung = dto.MaNguoiDung,
+                            DaXem = true,
+                            ThoiGianHoc = 100, // 100%
+                            NgayCapNhat = DateTime.Now
+                        };
+                        _context.TienDoBaiHocs.Add(tienDo);
+                    }
+                    else
+                    {
+                        if (!tienDo.DaXem)
+                        {
+                            tienDo.DaXem = true;
+                            tienDo.ThoiGianHoc = 100;
+                        }
+                        tienDo.NgayCapNhat = DateTime.Now;
+                        _context.TienDoBaiHocs.Update(tienDo);
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+
+                Console.WriteLine($"Lỗi khi lưu kết quả bài tập: {ex.Message}");
+                return false;
+            }
+        }
+
+
+        public async Task<List<GhiChuAIModel>> LayDanhSachGhiChuAI(int maNguoiDung)
+        {
+            return await _context.GhiChuAIs
+                .Include(g => g.BaiHoc)
+                .Where(g => g.MaNguoiDung == maNguoiDung)
+                .OrderByDescending(g => g.NgayTao)
+                .ToListAsync();
+        }
+
+        public async Task<bool> LuuGhiChuAI(GhiChuAIModel duLieu)
+        {
+            _context.GhiChuAIs.Add(duLieu);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateGhiChuAI(int id, string noiDung)
+        {
+            var ghiChu = await _context.GhiChuAIs.FindAsync(id);
+            if (ghiChu == null) return false;
+
+            ghiChu.NoiDung = noiDung;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteGhiChuAI(int id)
+        {
+            var ghiChu = await _context.GhiChuAIs.FindAsync(id);
+            if (ghiChu == null) return false;
+
+            _context.GhiChuAIs.Remove(ghiChu);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc)
+        {
+            return await _context.DanhGias
+                .Include(d => d.NguoiDung)
+                .Where(d => d.MaKhoaHoc == maKhoaHoc)
+                .OrderByDescending(d => d.NgayDanhGia)
+                .ToListAsync();
+        }
+
+        public async Task<bool> KiemTraDaDanhGiaAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            return await _context.DanhGias
+                .AnyAsync(d => d.MaKhoaHoc == maKhoaHoc && d.MaNguoiDung == maNguoiDung);
+        }
+
+        public async Task<bool> ThemDanhGiaAsync(DanhGiaModel danhGia)
+        {
+            _context.DanhGias.Add(danhGia);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> KiemTraHoanThanhKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            // 1. Đếm TỔNG SỐ BÀI HỌC (Bỏ Include đi cho nhẹ)
+            var tongSoBaiHoc = await _context.BaiHocs
+                .Where(b => b.ChuongHoc.MaKhoaHoc == maKhoaHoc)
+                .CountAsync();
+
+            if (tongSoBaiHoc == 0) return false;
+
+            // 2. Đếm SỐ BÀI ĐÃ HỌC (Cũng bỏ Include đi)
+            var soBaiDaHoc = await _context.TienDoBaiHocs
+                .Where(t => t.MaNguoiDung == maNguoiDung
+                         && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc
+                         && t.DaXem == true)
+                .CountAsync();
+            Console.WriteLine("Số bài đã học: " + soBaiDaHoc);
+            Console.WriteLine("Tổng số bài học: " + tongSoBaiHoc);
+            return soBaiDaHoc == tongSoBaiHoc;
+        }
     }
+
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { BaiTapService } from '@/services/bai-tap.service';
 import './TaoQuiz.css';
@@ -81,7 +82,7 @@ const TaoQuizContent = () => {
 
         // Validate sương sương
         if (!formData.lesson) {
-            alert("Ê sếp, chọn Bài học trước đã rồi AI mới biết đường chế quiz chứ! 😅");
+            Swal.fire({ icon: 'warning', text: "Ê sếp, chọn Bài học trước đã rồi AI mới biết đường chế quiz chứ! 😅" });
             return;
         }
 
@@ -104,7 +105,7 @@ const TaoQuizContent = () => {
 
             if (response.success) {
                 console.log("Thành quả AI nhả ra nè:", response.data);
-                alert(`Trộm vía! ${response.message} 🎉`);
+                Swal.fire({ icon: 'success', text: `Trộm vía! ${response.message} 🎉` });
 
                 let aiData = response.data;
                 let danhSachCauHoiChuan = [];
@@ -143,12 +144,12 @@ const TaoQuizContent = () => {
 
                 navigate('/giang-vien/preview-quiz');
             } else {
-                alert("Có lỗi òi: " + response.message);
+                Swal.fire({ icon: 'error', text: "Có lỗi òi: " + response.message });
             }
 
         } catch (error: any) {
             console.error("Lỗi sập nguồn khi gọi AI:", error);
-            alert("AI đang dỗi hoặc server ngủ quên mất rồi! 😭");
+            Swal.fire({ icon: 'error', text: "AI đang dỗi hoặc server ngủ quên mất rồi! 😭" });
         } finally {
             setIsGenerating(false);
         }

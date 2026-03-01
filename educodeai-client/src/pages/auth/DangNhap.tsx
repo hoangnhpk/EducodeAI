@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import axiosClient from '../../configs/axios'; 
@@ -54,16 +55,8 @@ const DangNhap: React.FC = () => {
     const handleGoogleSuccess = async (credentialResponse: any) => {
         setIsLoading(true);
         try {
-            const decoded: any = jwtDecode(credentialResponse.credential);
-            
-            const res: any = await axiosClient.post("/NguoiDung/google-login", {
-                email: decoded.email,
-                name: decoded.name,
-                picture: decoded.picture
-            });
 
-            localStorage.setItem('user_token', res.token);
-            localStorage.setItem('user_info', JSON.stringify(res.user));
+            localStorage.setItem('user_info', JSON.stringify(credentialResponse.user));
 
             alert(`Đăng nhập Google thành công! Tài khoản của bạn đã được đồng bộ.`);
             navigate('/');
@@ -82,7 +75,7 @@ const DangNhap: React.FC = () => {
         if (response.accessToken) {
             setIsLoading(true);
             try {
-                const res: any = await axiosClient.post("/NguoiDung/facebook-login", {
+                const res: any = await axiosClient.post("/api/NguoiDung/facebook-login", {
                     email: response.email,
                     name: response.name,
                     picture: response.picture.data.url,
