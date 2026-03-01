@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace educodeai_server.Helpers
 {
-    public class ChuanHoaJsonTuAI
+    public class ChuanHoaJsonTuAIHelper
     {
         public static string ChuanHoa(string outputAI)
         {
@@ -86,6 +86,35 @@ namespace educodeai_server.Helpers
             {
                 throw new Exception("JSON bên trong không hợp lệ", ex);
             }
+        }
+
+        public static string LayTextChatTuAI(string outputAI)
+        {
+            if (string.IsNullOrWhiteSpace(outputAI))
+                throw new Exception("Output AI rỗng");
+
+            // 1. Parse JSON tổng của Gemini
+            JObject root;
+            try
+            {
+                root = JObject.Parse(outputAI);
+            }
+            catch
+            {
+                throw new Exception("Output không phải JSON hợp lệ (Gemini response)");
+            }
+
+            // 2. Lấy text từ candidates -> content -> parts
+            var text = root["candidates"]?
+                .First?["content"]?["parts"]?
+                .Select(p => p?["text"]?.ToString())
+                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+
+            if (string.IsNullOrWhiteSpace(text))
+                throw new Exception("Không tìm thấy nội dung text từ Gemini");
+
+            // TRẢ VỀ LUÔN CHUỖI TEXT, KHÔNG TÌM REGEX JSON NỮA
+            return text.Trim();
         }
     }
 }
