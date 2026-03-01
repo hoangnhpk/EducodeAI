@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "@/configs/axios";
+import Swal from "sweetalert2";
 
 const CaiDat = () => {
   const [emailNotif, setEmailNotif] = useState(true);
@@ -27,7 +28,7 @@ const CaiDat = () => {
       setLoading(true);
 
       const res: any = await axios.post(
-        "/NguoiDung/doi-mat-khau",
+        "/api/NguoiDung/doi-mat-khau",
         {
           matKhauCu,
           matKhauMoi,
