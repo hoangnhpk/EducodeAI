@@ -86,11 +86,11 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
                     </button>
                 )}
 
-                {ketQuaTomTat && !dangXuLy && (
+                {/* {ketQuaTomTat && !dangXuLy && (
                     <button onClick={handleLamMoi} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '13px' }}>
                         <i className="fas fa-sync-alt me-1"></i> Tóm tắt lại
                     </button>
-                )}
+                )} */}
             </div>
 
             {dangXuLy && (

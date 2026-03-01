@@ -420,6 +420,26 @@ namespace educodeai_server.Repository.Implementation
             _context.DanhGias.Add(danhGia);
             return await _context.SaveChangesAsync() > 0;
         }
+
+        public async Task<bool> KiemTraHoanThanhKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            // 1. Đếm TỔNG SỐ BÀI HỌC (Bỏ Include đi cho nhẹ)
+            var tongSoBaiHoc = await _context.BaiHocs
+                .Where(b => b.ChuongHoc.MaKhoaHoc == maKhoaHoc)
+                .CountAsync();
+
+            if (tongSoBaiHoc == 0) return false;
+
+            // 2. Đếm SỐ BÀI ĐÃ HỌC (Cũng bỏ Include đi)
+            var soBaiDaHoc = await _context.TienDoBaiHocs
+                .Where(t => t.MaNguoiDung == maNguoiDung
+                         && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc
+                         && t.DaXem == true)
+                .CountAsync();
+            Console.WriteLine("Số bài đã học: " + soBaiDaHoc);
+            Console.WriteLine("Tổng số bài học: " + tongSoBaiHoc);
+            return soBaiDaHoc == tongSoBaiHoc;
+        }
     }
 }
 
