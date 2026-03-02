@@ -5,7 +5,7 @@ import type { KhoaHocData } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoa
 import { decodeId } from '@/utils/id-helper';
 import '@/pages/hoc-vien/noi-dung-khoa-hoc/style.css';
 import Swal from 'sweetalert2';
-import  { getUserId, getUserInfo } from '@/utils/authHelper';
+import  { getUserId } from '@/utils/authHelper';
 // Import Components
 import { VideoSummary } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/TomTatVideoAI';
 import { ThanhTieuDe } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/ThanhTieuDe';
@@ -28,10 +28,12 @@ const NoiDungKhoaHoc = () => {
     const videoRef = useRef<NoiDungVideoRef>(null);
     const [hienGhiChuAI, setHienGhiChuAI] = useState(false);
     const maNguoiDung = getUserId();
+    if (!maNguoiDung) {
+        return <div>Vui lòng đăng nhập để xem nội dung khóa học.</div>;
+    }
     const layDuLieuKhoaHoc = async () => {
         if (!id) return;
         const realId = decodeId(id);
-        console.log("Decoded ID:", realId); // Kiểm tra ID sau khi decode
         const data = await KhoaHocService.layDuLieuKhoaHoc(realId);
         setKhoaHoc(data);
 
