@@ -1,0 +1,296 @@
+/* ===== Toolbar ===== */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.search-input {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    width: 250px;
+    outline: none;
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    outline: none;
+}
+
+.btn-add {
+    background: #5b3df5;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+.btn-add:hover {
+    background: #452dd8;
+}
+
+/* ===== Table ===== */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.user-table thead {
+    background: #f4f6f9;
+}
+
+.user-table th,
+.user-table td {
+    padding: 12px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.user-table th {
+    font-weight: 600;
+    color: #444;
+}
+
+.user-table tbody tr {
+    border-bottom: 1px solid #eee;
+    transition: 0.2s;
+}
+
+.user-table tbody tr:hover {
+    background: #f9f9ff;
+}
+
+/* ===== Badge vai trò ===== */
+.badge-role {
+    background: #eef2ff;
+    color: #5b3df5;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== Trạng thái ===== */
+.status-dot {
+    font-weight: 500;
+}
+
+.status-dot.active {
+    color: #2ecc71;
+}
+
+.status-dot.locked {
+    color: #e74c3c;
+}
+
+/* ===== Nút thao tác ===== */
+.user-table button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    margin-right: 6px;
+    font-size: 13px;
+}
+
+.user-table button:hover {
+    text-decoration: underline;
+}
+
+/* ===== Action Buttons ===== */
+
+.action-cell {
+    white-space: nowrap;
+}
+
+/*--Nút --*/
+.btn-action {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-right: 6px;
+    transition: 0.2s;
+    background: white;
+}
+
+/* ===== Sửa ===== */
+.btn-edit {
+    color: #0284c7;
+    border: 1px solid #0284c7;
+}
+
+.btn-edit:hover {
+    background: #0284c7;
+    color: white;
+}
+
+/* ===== Khóa ===== */
+.btn-lock {
+    color: #b45309;
+    border: 1px solid #f59e0b;
+}
+
+.btn-lock:hover {
+    background: #f59e0b;
+    color: white;
+}
+
+/* ===== Mở ===== */
+.btn-unlock {
+    color: #15803d;
+    border: 1px solid #22c55e;
+}
+
+.btn-unlock:hover {
+    background: #22c55e;
+    color: white;
+}
+
+/* ===== Xóa ===== */
+.btn-delete {
+    color: #b91c1c;
+    border: 1px solid #ef4444;
+}
+
+.btn-delete:hover {
+    background: #ef4444;
+    color: white;
+}
+/* ===== Modal Overlay ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(3px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* ===== Modal Container ===== */
+.modal-container {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    animation: fadeInUp 0.25s ease;
+}
+
+.modal-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e1e2f;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #444;
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #5b3df5;
+    box-shadow: 0 0 0 3px rgba(91, 61, 245, 0.1);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.btn-cancel {
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #555;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #f4f4f4;
+}
+
+.btn-save {
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #f97316;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-save:hover {
+    background: #ea6c0a;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+/* ===== Fix Modal Overlay ===== */
+.modal-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.45) !important;
+    backdrop-filter: blur(3px);
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    z-index: 9999 !important;
+}
+
+.modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    animation: fadeInUp 0.25s ease;
+    /* Quan trọng: không để bị lệch */
+    position: relative;
+    margin: 0;
+}

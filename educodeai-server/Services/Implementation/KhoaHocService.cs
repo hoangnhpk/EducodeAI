@@ -15,17 +15,11 @@ namespace educodeai_server.Services.Implementation
             _khoaHocRepository = khoaHocRepository;
         }
 
-        // ============================================================
-        // ĐÂY LÀ HÀM BẠN ĐANG THIẾU - COPY CHÍNH XÁC DÒNG NÀY
-        // ============================================================
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync()
         {
             return await _khoaHocRepository.GetAllKhoaHocsAsync();
         }
 
-        // ============================================================
-        // CÁC HÀM CÒN LẠI GIỮ NGUYÊN
-        // ============================================================
         public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetKhoaHocByIdAsync(int maKhoaHoc, int maNguoiDung)
         {
             return await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, maNguoiDung);
