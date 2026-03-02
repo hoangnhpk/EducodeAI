@@ -28,11 +28,11 @@ const NoiDungKhoaHoc = () => {
     const [hienGhiChuAI, setHienGhiChuAI] = useState(false);
     const layDuLieuKhoaHoc = async () => {
         if (!id) return;
-        const realId = decodeId("pnel5aKB");
+        const realId = decodeId(id);
+        console.log("Decoded ID:", realId); // Kiểm tra ID sau khi decode
         const data = await KhoaHocService.layDuLieuKhoaHoc(realId);
         setKhoaHoc(data);
 
-        // --- ĐÃ FIX: Logic khôi phục bài học cũ khi F5 ---
         if (data && data.danhSachChuongHoc.length > 0) {
             if (idBaiHoc === 0) {
                 const storageKey = `bai_hoc_dang_hoc_${id}`;

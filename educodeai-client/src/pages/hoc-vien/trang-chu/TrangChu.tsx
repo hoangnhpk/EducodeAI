@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import EduBanner from "./components/EduBanner";
-
+import { encodeId } from "@/utils/id-helper";
 interface IKhoaHoc {
     maKhoaHoc: number;
     tenKhoaHoc: string;
+    slug: string;
     hinhAnh: string;
     linhVuc: string;
     diemDanhGiaTB: number;
@@ -86,7 +87,7 @@ const TrangChu: React.FC = () => {
                         <h1 className="mb-5" style={{ color: '#fb873f' }}>Chủ đề phổ biến</h1>
                     </div>
                     <div className="row g-2 m-2">
-                        {["Microsoft Excel", "AWS", "Python", "Java", "Web Design", "Web Development", "MySQL", "UI/UX Design"].map((cat, index) => (
+                        {["C#", "AWS", "Python", "Java", "Web Design", "Web Development", "MySQL", "UI/UX Design"].map((cat, index) => (
                             <div key={index} className="col-lg-3 col-md-6 text-center" style={{ cursor: 'pointer' }} onClick={() => setSearchTerm(cat)}>
                                 <div className="content shadow p-3 mb-2 bg-white rounded transition-hover">
                                     <img src={`img/cat${index + 1}.png`} className="img-fluid" alt={cat} />
@@ -114,7 +115,7 @@ const TrangChu: React.FC = () => {
                         {isLoading ? (
                             <div className="text-center w-100 py-5">
                                 <div className="spinner-border text-primary" role="status"></div>
-                                <p className="mt-2 text-muted">Đang tải dữ liệu...</p>
+                                <p className="mt-2 text-muted">Đang tải khoá học...</p>
                             </div>
                         ) : courses.length > 0 ? (
                             courses.map((kh) => (
@@ -146,7 +147,7 @@ const TrangChu: React.FC = () => {
                                             </p>
                                             <div className="d-flex justify-content-between border-top pt-3 align-items-center">
                                                 <small className="text-muted"><i className="fa fa-clock text-primary me-2"></i>{kh.thoiLuongGio} giờ</small>
-                                                <Link to={`/course/${kh.maKhoaHoc}`} className="btn btn-sm btn-primary px-3 rounded-pill">Chi tiết</Link>
+                                                <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-sm btn-primary px-3 rounded-pill">Chi tiết</Link>
                                             </div>
                                         </div>
                                     </div>
