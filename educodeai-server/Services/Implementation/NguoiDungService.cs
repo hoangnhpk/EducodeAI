@@ -29,8 +29,6 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<NguoiDungModel?> CheckLoginAsync(string identifier, string password)
         {
-            Console.WriteLine($"Attempting login for identifier: {identifier}");
-            Console.WriteLine($"Password provided: {password}");
             var user = await GetUserByIdentifierAsync(identifier);
             // Sử dụng BCrypt để kiểm tra mật khẩu đã mã hóa
             if (user != null && BCrypt.Net.BCrypt.Verify(password, user.MatKhau))
