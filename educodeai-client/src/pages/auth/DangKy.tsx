@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
-
+import Swal from 'sweetalert2';
 const RegisterPage = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
@@ -130,7 +130,7 @@ const RegisterPage = () => {
             };
             await authService.confirmRegister(registerData);
             Swal.fire({ icon: 'success', text: "Đăng ký thành công!", timer: 1500, showConfirmButton: false });
-            navigate('/auth/dang-nhap');
+            navigate('/dang-nhap');
         } catch (error: any) {
             setErrors({ otp: error.response?.data?.message || "Đăng ký thất bại" });
         } finally {
