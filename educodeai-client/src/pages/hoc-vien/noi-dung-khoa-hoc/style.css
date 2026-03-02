@@ -1,7 +1,10 @@
+/* Import global variables */
+@import url('../../../assets/styles/variables.css');
+
 :root {
-    --cp-primary: #f69050;
+    --cp-primary: var(--primary);
     --cp-primary-soft: #fef3ec;
-    --cp-primary-strong: #e67e22;
+    --cp-primary-strong: var(--primary-hover);
     --cp-bg: #f4f5fb;
     --cp-surface: #ffffff;
     --cp-border: #e2e5f1;
@@ -34,7 +37,7 @@ a {
     position: sticky;
     top: 0;
     z-index: 20;
-    background: linear-gradient(90deg, #f69050, #fb873f);
+    background: linear-gradient(90deg, var(--primary), var(--primary-hover));
     color: #fff;
     padding: 0.8rem 1.5rem;
     display: flex;
