@@ -28,6 +28,7 @@ namespace educodeai_server.Repository.Implementation
                     {
                         MaKhoaHoc = x.MaKhoaHoc,
                         TenKhoaHoc = x.TenKhoaHoc,
+                        Slug = SlugHelper.Generate(x.TenKhoaHoc),
                         HinhAnh = x.HinhAnh,
                         LinhVuc = x.LinhVuc,
                         DiemDanhGiaTB = x.DiemDanhGiaTB,

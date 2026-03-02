@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import EduBanner from "./components/EduBanner";
-
+import { encodeId } from "@/utils/id-helper";
 interface IKhoaHoc {
     maKhoaHoc: number;
     tenKhoaHoc: string;
+    slug: string;
     hinhAnh: string;
     linhVuc: string;
     diemDanhGiaTB: number;
@@ -146,7 +147,7 @@ const TrangChu: React.FC = () => {
                                             </p>
                                             <div className="d-flex justify-content-between border-top pt-3 align-items-center">
                                                 <small className="text-muted"><i className="fa fa-clock text-primary me-2"></i>{kh.thoiLuongGio} giờ</small>
-                                                <Link to={`/course/${kh.maKhoaHoc}`} className="btn btn-sm btn-primary px-3 rounded-pill">Chi tiết</Link>
+                                                <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-sm btn-primary px-3 rounded-pill">Chi tiết</Link>
                                             </div>
                                         </div>
                                     </div>
