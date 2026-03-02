@@ -5,6 +5,7 @@ import type { KhoaHocData } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoa
 import { decodeId } from '@/utils/id-helper';
 import '@/pages/hoc-vien/noi-dung-khoa-hoc/style.css';
 import Swal from 'sweetalert2';
+import  { getUserId, getUserInfo } from '@/utils/authHelper';
 // Import Components
 import { VideoSummary } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/TomTatVideoAI';
 import { ThanhTieuDe } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/ThanhTieuDe';
@@ -26,6 +27,7 @@ const NoiDungKhoaHoc = () => {
     const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia'>('hoc');
     const videoRef = useRef<NoiDungVideoRef>(null);
     const [hienGhiChuAI, setHienGhiChuAI] = useState(false);
+    const maNguoiDung = getUserId();
     const layDuLieuKhoaHoc = async () => {
         if (!id) return;
         const realId = decodeId(id);
@@ -155,7 +157,7 @@ const NoiDungKhoaHoc = () => {
             const payload: LuuKetQuaQuizDTO = {
                 MaBaiHoc: idBaiHoc,
                 MaBaiTap: baiHocHienTai.thongTinQuiz.maBaiTap ?? 0,
-                MaNguoiDung: 2,
+                MaNguoiDung: maNguoiDung,
                 DiemSo: phanTramDiem,
                 SoCauDung: soCauDung,
                 TongSoCau: tongSoCau,
@@ -182,7 +184,7 @@ const NoiDungKhoaHoc = () => {
                         key={baiHocHienTai.id}
                         videoUrl={baiHocHienTai.linkVideo}
                         maBaiHoc={baiHocHienTai.id}
-                        maNguoiDung={2}
+                        maNguoiDung={maNguoiDung}
                         daXem={baiHocHienTai.daXem}
                         onVideoCompleted={handleVideoCompleted}
                     />
@@ -285,7 +287,7 @@ const NoiDungKhoaHoc = () => {
                         <div style={{ display: tabActive === 'danhgia' ? 'block' : 'none', height: '100%', overflowY: 'auto', padding: '20px' }}>
                             <TabDanhGia
                                 maKhoaHoc={khoaHoc.maKhoaHoc}
-                                maNguoiDung={2}
+                                maNguoiDung={maNguoiDung}
                                 daHoanThanhKhoaHoc={tongSoBai > 0 && soBaiDaHoc === tongSoBai}
                             />
                         </div>
@@ -312,7 +314,7 @@ const NoiDungKhoaHoc = () => {
                     isOpen={hienSidebar}
                     onClose={() => setHienSidebar(false)}
                     maBaiHoc={baiHocHienTai.id}
-                    maNguoiDung={2}
+                    maNguoiDung={maNguoiDung}
                     onSeek={handleSeekVideo}
                 />
             )}
@@ -320,7 +322,7 @@ const NoiDungKhoaHoc = () => {
             <SidebarGhiChuAI
                 isOpen={hienGhiChuAI}
                 onClose={() => setHienGhiChuAI(false)}
-                maNguoiDung={2}
+                maNguoiDung={maNguoiDung}
             />
 
             <ChatBot
