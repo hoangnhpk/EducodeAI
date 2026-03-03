@@ -3,7 +3,6 @@ import { FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import Swal from 'sweetalert2';
-
 const RegisterPage = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);

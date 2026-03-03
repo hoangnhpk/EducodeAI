@@ -1,0 +1,86 @@
+/* ========== GLOBAL COLOR VARIABLES - ĐỒNG BỘ TOÀN BỘ HỆ THỐNG ========== */
+:root {
+  /* ===== PRIMARY COLORS (ORANGE - CAM) ===== */
+  --primary: #f69050;
+  --primary-hover: #e67e22;
+  --primary-dark: #d97706;
+  
+  /* ===== SECONDARY & ACCENT ===== */
+  --secondary: #10b981;
+  --accent-orange: #f59e0b;
+  --accent-orange-hover: #d97706;
+  
+  /* ===== SEMANTIC COLORS ===== */
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+  
+  /* ===== BACKGROUND COLORS ===== */
+  --bg-main: #f9fafb;
+  --bg-card: #ffffff;
+  --bg-sidebar: #111827;
+  --bg-light: #f0fbfc;
+  --bg-light-secondary: #f0e4de;
+  
+  /* ===== TEXT COLORS ===== */
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --text-light: #9ca3af;
+  --text-white: #ffffff;
+  --text-dark: #181d38;
+  
+  /* ===== BORDER & SHADOW ===== */
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 4px 10px rgba(0,0,0,.08);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,.12);
+  
+  /* ===== RADIUS ===== */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  
+  /* ===== FONT ===== */
+  --font-main: 'Inter', 'Roboto', 'Nunito', sans-serif;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  
+  /* ===== TRANSITIONS ===== */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* ========== SIDEBAR GRADIENT COLORS ========== */
+:root {
+  --sidebar-gradient-start: #1e40af;
+  --sidebar-gradient-end: #1e3a8a;
+  --sidebar-active-border: #fbbf24;
+}
+
+/* ========== DASHBOARD SPECIFIC ========== */
+:root {
+  --dashboard-gv-title: #1e40af;
+  --dashboard-qtv-title: #1e40af;
+  --dashboard-hv-title: #1e293b;
+}
+
+/* ========== CONTENT PAGE (CP) SPECIFIC - CAM THEME ========== */
+:root {
+  --cp-primary: #f69050;
+  --cp-primary-soft: #fef3ec;
+  --cp-primary-strong: #e67e22;
+  --cp-bg: #f4f5fb;
+  --cp-surface: #ffffff;
+  --cp-border: #e2e5f1;
+  --cp-text: #181d38;
+  --cp-text-muted: #6b7280;
+  --cp-radius-lg: 12px;
+  --cp-radius-md: 8px;
+  --cp-shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
