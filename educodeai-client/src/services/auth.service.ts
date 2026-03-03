@@ -23,7 +23,7 @@ export const authService: any = {
   },
  googleLogin: async (payload: { token: string }) => {
     // Gửi token nhận từ Google lên Backend
-    return await api.post('/NguoiDung/google-login', payload);
+    return await api.post('/api/NguoiDung/google-login', payload);
   },
   // ===== KIỂM TRA EMAIL TỒN TẠI =====
   checkEmail: async (email: string) => {
