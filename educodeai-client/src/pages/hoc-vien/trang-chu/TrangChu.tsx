@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import EduBanner from "./components/EduBanner";
 import { encodeId } from "@/utils/id-helper";
+import { ChatBot } from '@/pages/hoc-vien/tro-ly-hoi-dap-ai/TroLyAI';
 interface IKhoaHoc {
     maKhoaHoc: number;
     tenKhoaHoc: string;
@@ -66,8 +67,8 @@ const TrangChu: React.FC = () => {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                                 {searchTerm && (
-                                    <button 
-                                        className="btn bg-white border-0 text-muted pe-3" 
+                                    <button
+                                        className="btn bg-white border-0 text-muted pe-3"
                                         onClick={() => setSearchTerm('')}
                                     >
                                         <i className="fa fa-times"></i>
@@ -162,7 +163,7 @@ const TrangChu: React.FC = () => {
                     </div>
                 </div>
             </div>
-
+            {/* <ChatBot /> */}
             <style>{`
                 .transition-hover { transition: all 0.3s ease; }
                 .transition-hover:hover { transform: translateY(-10px); box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important; }
