@@ -40,7 +40,6 @@ const DangNhap: React.FC = () => {
             if (response && response.token) {
                 localStorage.setItem('user_token', response.token);
                 localStorage.setItem('user_info', JSON.stringify(response.user));
-                alert(`Chào mừng ${response.user?.hoTen || 'bạn'} đã quay trở lại!`);
                 navigate('/');
                 window.location.reload();
             }
@@ -96,11 +95,14 @@ const DangNhap: React.FC = () => {
                 localStorage.setItem('user_token', res.token);
                 localStorage.setItem('user_info', JSON.stringify(res.user));
 
-                alert(`Đăng nhập Facebook thành công!`);
                 navigate('/');
                 window.location.reload();
             } catch (error: any) {
-                alert(error.response?.data?.message || "Lỗi đồng bộ Facebook. Kiểm tra dung lượng đĩa!");
+                Swal.fire({
+                    icon: "error",
+                    title: "Lỗi đăng nhập",
+                    text: error.response?.data?.message || "Lỗi đồng bộ Facebook. Kiểm tra dung lượng đĩa!",
+                });
             } finally {
                 setIsLoading(false);
             }
@@ -179,7 +181,11 @@ const DangNhap: React.FC = () => {
                                         {/* Nút Google */}
                                         <GoogleLogin
                                             onSuccess={handleGoogleSuccess}
-                                            onError={() => alert('Đăng nhập Google thất bại')}
+                                            onError={() => Swal.fire({
+                                                icon: "error",
+                                                title: "Lỗi đăng nhập Google",
+                                                text: "Đăng nhập Google thất bại!",
+                                            })}
                                             shape="pill"
                                             theme="outline"
                                             text="signin_with"

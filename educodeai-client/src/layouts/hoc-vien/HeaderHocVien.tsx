@@ -60,10 +60,6 @@ export default function HeaderHocVien() {
             Lộ trình của tôi
           </Link>
 
-          <Link to="/courses" className="nav-item nav-link">
-            Khóa học
-          </Link>
-
           {/* KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP */}
           {user ? (
             <div className="nav-item dropdown px-lg-4">
