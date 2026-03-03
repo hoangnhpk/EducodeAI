@@ -21,7 +21,10 @@ export const authService: any = {
     
     return data;
   },
-
+ googleLogin: async (payload: { token: string }) => {
+    // Gửi token nhận từ Google lên Backend
+    return await api.post('/NguoiDung/google-login', payload);
+  },
   // ===== KIỂM TRA EMAIL TỒN TẠI =====
   checkEmail: async (email: string) => {
     // Phải return trực tiếp kết quả để RegisterPage nhận được { exists: true/false }

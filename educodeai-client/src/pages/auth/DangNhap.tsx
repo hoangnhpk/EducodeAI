@@ -52,26 +52,40 @@ const DangNhap: React.FC = () => {
     };
 
     const handleGoogleSuccess = async (credentialResponse: any) => {
-        setIsLoading(true);
-        try {
+    setIsLoading(true);
+    try {
+        // 1. Lấy Credential (Token) từ Google
+        const token = credentialResponse.credential;
 
-            localStorage.setItem('user_info', JSON.stringify(credentialResponse.user));
+        // 2. GỌI API GỬI LÊN BACKEND (Đây là bước bạn đang thiếu)
+        // Giả sử service của bạn là authService.googleLogin
+        const res: any = await authService.googleLogin({ token: token }); 
+
+        // 3. Chỉ lưu vào localStorage KHI BACKEND trả về thành công
+        if (res && res.token) {
+            localStorage.setItem('user_token', res.token);
+            localStorage.setItem('user_info', JSON.stringify(res.user));
+
+            alert(`Đăng nhập Google thành công!`);
             navigate('/');
             window.location.reload();
-        } catch (error: any) {
-            console.error("❌ Lỗi API Google Login:", error);
-            const errorMsg = error.response?.data?.message || "Không thể đồng bộ tài khoản với SQL Server. Kiểm tra dung lượng đĩa!";
-        } finally {
-            setIsLoading(false);
         }
-    };
+    } catch (error: any) {
+        console.error("❌ Lỗi API Google Login:", error);
+        // Nếu lỗi 404, hãy kiểm tra xem URL trong service đã có /api/ chưa
+        const errorMsg = error.response?.data?.message || "Không thể đồng bộ với Server. Kiểm tra URL API hoặc dung lượng đĩa!";
+        alert(errorMsg);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     // THÊM: XỬ LÝ ĐĂNG NHẬP FACEBOOK
     const responseFacebook = async (response: any) => {
         if (response.accessToken) {
             setIsLoading(true);
             try {
-                const res: any = await axiosClient.post("/api/NguoiDung/facebook-login", {
+                const res: any = await axiosClient.post("/NguoiDung/facebook-login", {
                     email: response.email,
                     name: response.name,
                     picture: response.picture.data.url,
