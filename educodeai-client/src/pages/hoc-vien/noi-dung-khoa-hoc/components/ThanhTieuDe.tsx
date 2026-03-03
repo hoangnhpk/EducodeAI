@@ -1,3 +1,4 @@
+import { getUserInfo } from '@/utils/authHelper';
 import React from 'react';
 
 interface Props { 
@@ -19,7 +20,7 @@ export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai
     return (
         <header className="cp-header">
             <div className="cp-header-left">
-                <a href="/khoa-hoc" className="cp-back" title="Quay lại danh sách khóa học">
+                <a href="/" className="cp-back" title="Quay lại danh sách khóa học">
                     <i className="fas fa-arrow-left"></i>
                 </a>
                 <div className="cp-course-title-meta">
@@ -88,7 +89,7 @@ export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai
 
                 <div className="cp-user-chip" style={{ marginLeft: '15px' }}>
                     <div className="cp-user-avatar">HV</div>
-                    <span>Học viên</span>
+                    <span>{getUserInfo()?.hoTen || 'Học viên'}</span>
                 </div>
             </div>
         </header>

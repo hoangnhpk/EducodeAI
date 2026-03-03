@@ -92,7 +92,7 @@ namespace educodeai_server.Controllers
             {
                 message = "Đăng nhập thành công",
                 token = token,
-                user = new { user.Email, user.TaiKhoan, user.HoTen, user.AnhDaiDien }
+                user = new { user.MaNguoiDung, user.Email, user.TaiKhoan, user.HoTen, user.AnhDaiDien }
             });
         }
 
