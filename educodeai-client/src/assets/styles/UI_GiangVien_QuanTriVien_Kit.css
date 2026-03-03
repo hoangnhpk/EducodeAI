@@ -1,35 +1,6 @@
 /* ========== ROOT VARIABLES ========== */
-:root {
-  /* Colors */
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --secondary: #10b981;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --info: #0ea5e9;
-
-  --bg-main: #f9fafb;
-  --bg-card: #ffffff;
-  --bg-sidebar: #111827;
-
-  --text-main: #111827;
-  --text-muted: #6b7280;
-  --text-white: #ffffff;
-
-  /* Border */
-  --border-color: #e5e7eb;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-
-  /* Shadow */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-  --shadow-md: 0 4px 10px rgba(0,0,0,.08);
-  --shadow-lg: 0 10px 25px rgba(0,0,0,.12);
-
-  /* Font */
-  --font-main: 'Inter', 'Roboto', sans-serif;
-}
+/* Variables are now imported from variables.css */
+@import url("./variables.css");
 
 /* ========== RESET ========== */
 * {
@@ -124,19 +95,28 @@ body {
   border: none;
   font-weight: 600;
   cursor: pointer;
-  transition: .2s;
+  transition: var(--transition-fast);
+  color: white;
 }
 
 .btn-primary {
   background: var(--primary);
   color: white;
 }
+
 .btn-primary:hover {
   background: var(--primary-hover);
+  color: white;
+  box-shadow: 0 4px 12px rgba(246, 144, 80, 0.3);
 }
 
 .btn-secondary {
   background: var(--secondary);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #059669;
   color: white;
 }
 
@@ -145,9 +125,20 @@ body {
   color: white;
 }
 
+.btn-danger:hover {
+  background: #dc2626;
+  color: white;
+}
+
 .btn-outline {
   background: transparent;
   border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .form-group {
