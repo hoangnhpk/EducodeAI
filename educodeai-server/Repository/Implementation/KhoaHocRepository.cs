@@ -100,7 +100,6 @@ namespace educodeai_server.Repository.Implementation
                 .ToListAsync();
         }
 
-        // 4. Lấy nội dung khóa học (Chuương, bài học) cho học viên học
         public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
         {
             return await _context.KhoaHocs
@@ -194,7 +193,7 @@ namespace educodeai_server.Repository.Implementation
                 {
                     tienDo.DaXem = dto.DaXem;
                     tienDo.ThoiGianHoc = dto.ThoiGianHoc;
-                    tienDo.NgayCapNhat = DateTime.UtcNow;
+                    tienDo.NgayCapNhat = DateTime.Now;
                     _context.TienDoBaiHocs.Update(tienDo);
                 }
                 else
@@ -205,13 +204,64 @@ namespace educodeai_server.Repository.Implementation
                         MaNguoiDung = dto.MaNguoiDung,
                         DaXem = dto.DaXem,
                         ThoiGianHoc = dto.ThoiGianHoc,
-                        NgayCapNhat = DateTime.UtcNow
+                        NgayCapNhat = DateTime.Now
                     };
 
                     await _context.TienDoBaiHocs.AddAsync(tienDo);
                 }
 
-                return await _context.SaveChangesAsync() > 0;
+                // Lưu tiến độ bài học xuống DB trước
+                bool isSaved = await _context.SaveChangesAsync() > 0;
+
+                // 2. LOGIC KIỂM TRA BÀI CUỐI & CẬP NHẬT TRẠNG THÁI KHÓA HỌC
+
+                if (isSaved && dto.DaXem == true)
+                {
+                    // Lấy ra mã khóa học từ bài học hiện tại
+                    var baiHoc = await _context.BaiHocs
+                        .Include(b => b.ChuongHoc)
+                        .FirstOrDefaultAsync(b => b.MaBaiHoc == dto.MaBaiHoc);
+
+                    if (baiHoc != null)
+                    {
+                        int maKhoaHoc = baiHoc.ChuongHoc.MaKhoaHoc;
+
+                        // Đếm tổng số bài của khóa học
+                        int tongSoBai = await _context.BaiHocs
+                            .Where(b => b.ChuongHoc.MaKhoaHoc == maKhoaHoc)
+                            .CountAsync();
+                        // Đếm số bài đã học của user này
+                        int soBaiDaHoc = await _context.TienDoBaiHocs
+                            .Where(t => t.MaNguoiDung == dto.MaNguoiDung
+                                     && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc
+                                     && t.DaXem == true)
+                            .CountAsync();
+                        // Tìm bản ghi đăng ký khóa học tương ứng
+                        var dangKy = await _context.DangKyKhoaHocs
+                            .FirstOrDefaultAsync(dk => dk.MaKhoaHoc == maKhoaHoc && dk.MaNguoiDung == dto.MaNguoiDung && dk.TrangThai == "DangHoc");
+
+                        if (dangKy != null)
+                        {
+                            // Cập nhật % tiến độ (Tuỳ chọn nếu bảng DangKyKhoaHoc của bạn có lưu Tiến Độ dạng số)
+                            dangKy.TienDo = tongSoBai > 0 ? (int)Math.Round((double)soBaiDaHoc / tongSoBai * 100) : 0;
+
+                            // KIỂM TRA NẾU ĐÃ HỌC XONG BÀI CUỐI CÙNG (Số bài đã học = Tổng số bài)
+                            if (tongSoBai > 0 && soBaiDaHoc == tongSoBai)
+                            {
+                                dangKy.TrangThai = "HoanThanh"; // Giả sử 2 là trạng thái "Đã hoàn thành" trong hệ thống của bạn
+                            }
+                            else
+                            {
+                                dangKy.TrangThai = "DangHoc"; // 1 là trạng thái "Đang học"
+                            }
+
+                            _context.DangKyKhoaHocs.Update(dangKy);
+                            await _context.SaveChangesAsync(); 
+                        }
+                    }
+                }
+
+                return isSaved;
             }
             catch (DbUpdateException ex)
             {

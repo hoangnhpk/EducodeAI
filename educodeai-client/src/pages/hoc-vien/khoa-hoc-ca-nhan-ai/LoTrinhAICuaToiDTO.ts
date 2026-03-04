@@ -18,6 +18,7 @@ export interface KhoaHocTrongLoTrinhDTO {
     ghiChu: string;
     tuTuan: number;
     denTuan: number;
+    slug?: string;
 }
 
 export interface ChiTietGiaiDoanDTO {
