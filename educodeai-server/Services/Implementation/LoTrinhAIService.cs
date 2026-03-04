@@ -361,6 +361,8 @@ namespace educodeai_server.Services.Implementation
         {
             var outputSchema = """
                 {
+                  "tenLoTrinh": "",
+                  "moTaChung": "",
                   "tongThoiGianTuan": 0,
                   "loTrinh": [
                     {
@@ -482,7 +484,8 @@ namespace educodeai_server.Services.Implementation
                         NoiDungChinh = khJson.NoiDungChinh,
                         GhiChu = khJson.GhiChu,
                         TuTuan = khJson.TuTuan,
-                        DenTuan = khJson.DenTuan
+                        DenTuan = khJson.DenTuan,
+                        Slug = SlugHelper.Generate(khJson.TenKhoaHoc)
                     };
                 }).ToList();
 

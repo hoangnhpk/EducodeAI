@@ -1,4 +1,5 @@
 /* ===== LAYOUT DASHBOARD CHUNG (Giảng Viên & Quản Trị Viên) ===== */
+@import url("./variables.css");
 
 .layout-giang-vien,
 .layout-qtv {
@@ -15,10 +16,7 @@
   padding: 20px;
   flex-shrink: 0;
   box-shadow: var(--shadow-md);
-}
-
-.gv-sidebar, .qtv-sidebar {
-  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+  background: linear-gradient(135deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
 }
 
 .gv-sidebar-header h2,
@@ -52,9 +50,9 @@
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   border-radius: var(--radius-sm);
-  transition: 0.2s ease;
+  transition: var(--transition-fast);
   font-size: 15px;
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .gv-nav-link svg,
@@ -72,7 +70,7 @@
 .gv-nav-link.active {
   background: rgba(255, 255, 255, 0.25);
   color: white;
-  border-left: 3px solid #fbbf24;
+  border-left: 3px solid var(--sidebar-active-border);
   padding-left: 11px;
 }
 
@@ -115,9 +113,8 @@
 .gv-page-title, .qtv-page-title {
   font-size: 26px;
   font-weight: 700;
-  color: #1e40af;
+  color: var(--dashboard-gv-title);
 }
-
 .gv-page-subtitle,
 .qtv-page-subtitle {
   font-size: 13px;

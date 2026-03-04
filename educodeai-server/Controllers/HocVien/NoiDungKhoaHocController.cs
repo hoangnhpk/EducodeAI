@@ -1,5 +1,6 @@
 ﻿using educodeai_server.DTOs.AI;
 using educodeai_server.DTOs.KhoaHoc;
+using educodeai_server.Helpers;
 using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
@@ -20,9 +21,11 @@ namespace educodeai_server.Controllers.HocVien
         [HttpGet("{maKhoaHoc}")]
         public async Task<IActionResult> GetNoiDungKhoaHoc(int maKhoaHoc)
         {
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            Console.WriteLine($"[NoiDungKhoaHocController] Lấy nội dung khóa học cho MaKhoaHoc={maKhoaHoc}, MaNguoiDung={maNguoiDung}");
             try
             {
-                var data = await _khoaHocService.GetKhoaHocByIdAsync(maKhoaHoc, 2);
+                var data = await _khoaHocService.GetKhoaHocByIdAsync(maKhoaHoc, maNguoiDung);
 
                 if (data == null)
                 {
