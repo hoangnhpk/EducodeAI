@@ -119,5 +119,30 @@ namespace educodeai_server.Controllers.GiangVien
 
             return Ok(result);
         }
+        [HttpPost("upload-hinh-anh")]
+        public async Task<IActionResult> UploadHinhAnh(
+    IFormFile file,
+    [FromServices] IWebHostEnvironment env)  // ← inject thẳng vào method, không qua constructor
+        {
+            if (file is null || file.Length == 0)
+                return BadRequest(new { message = "Vui lòng chọn file ảnh." });
+
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
+            if (!allowedTypes.Contains(file.ContentType))
+                return BadRequest(new { message = "Chỉ chấp nhận file ảnh (jpg, png, webp, gif)." });
+
+            if (file.Length > 5 * 1024 * 1024)
+                return BadRequest(new { message = "Kích thước ảnh không được vượt quá 5MB." });
+
+            var folder = Path.Combine(env.WebRootPath, "uploads", "khoa-hoc");
+            Directory.CreateDirectory(folder);
+
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName).ToLowerInvariant()}";
+
+            await using var stream = new FileStream(Path.Combine(folder, fileName), FileMode.Create);
+            await file.CopyToAsync(stream);
+
+            return Ok(new { url = $"/uploads/khoa-hoc/{fileName}" });
+        }
     }
 }
