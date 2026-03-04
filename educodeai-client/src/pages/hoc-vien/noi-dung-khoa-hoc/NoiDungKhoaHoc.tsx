@@ -5,7 +5,7 @@ import type { KhoaHocData } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoa
 import { decodeId } from '@/utils/id-helper';
 import '@/pages/hoc-vien/noi-dung-khoa-hoc/style.css';
 import Swal from 'sweetalert2';
-import  { getUserId } from '@/utils/authHelper';
+import { getUserId } from '@/utils/authHelper';
 // Import Components
 import { VideoSummary } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/TomTatVideoAI';
 import { ThanhTieuDe } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/ThanhTieuDe';
@@ -24,13 +24,19 @@ const NoiDungKhoaHoc = () => {
     const [khoaHoc, setKhoaHoc] = useState<KhoaHocData | null>(null);
     const [idBaiHoc, setIdBaiHoc] = useState<number>(0);
     const [hienSidebar, setHienSidebar] = useState(false);
-    const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia'>('hoc');
+    const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia' | 'quiz'>('hoc');
     const videoRef = useRef<NoiDungVideoRef>(null);
     const [hienGhiChuAI, setHienGhiChuAI] = useState(false);
+    
+    // Mảng lưu vết những video đã xem trong phiên này để mở khóa quiz
+    const [videoDaXongLocal, setVideoDaXongLocal] = useState<number[]>([]);
+    
     const maNguoiDung = getUserId();
+    
     if (!maNguoiDung) {
         return <div>Vui lòng đăng nhập để xem nội dung khóa học.</div>;
     }
+
     const layDuLieuKhoaHoc = async () => {
         if (!id) return;
         const realId = decodeId(id);
@@ -41,20 +47,15 @@ const NoiDungKhoaHoc = () => {
             if (idBaiHoc === 0) {
                 const storageKey = `bai_hoc_dang_hoc_${id}`;
                 const savedLessonId = localStorage.getItem(storageKey);
-
-                // Gom tất cả bài học lại để tìm kiếm
                 const allLessons = KhoaHocService.lamPhangDanhSachBaiHoc(data.danhSachChuongHoc);
 
                 if (savedLessonId) {
-                    // Kiểm tra xem ID lưu trong máy có thực sự thuộc khóa học này không
                     const existingLesson = allLessons.find(b => b.id.toString() === savedLessonId);
                     if (existingLesson) {
                         setIdBaiHoc(existingLesson.id);
-                        return; // Đã tìm thấy bài cũ thì dừng tại đây
+                        return;
                     }
                 }
-
-                // Nếu chưa từng học hoặc bài cũ không tồn tại, lấy bài đầu tiên
                 if (data.danhSachChuongHoc[0]?.danhSachBaiHoc[0]) {
                     setIdBaiHoc(data.danhSachChuongHoc[0].danhSachBaiHoc[0].id);
                 }
@@ -66,7 +67,6 @@ const NoiDungKhoaHoc = () => {
         layDuLieuKhoaHoc();
     }, []);
 
-    // --- ĐÃ FIX: Tự động lưu ID bài học mỗi khi người dùng chuyển bài ---
     useEffect(() => {
         if (idBaiHoc !== 0 && id) {
             const storageKey = `bai_hoc_dang_hoc_${id}`;
@@ -83,15 +83,12 @@ const NoiDungKhoaHoc = () => {
     const baiHocHienTai = KhoaHocService.timBaiHocTheoId(flatList, idBaiHoc);
     const nextId = KhoaHocService.timBaiTiepTheo(flatList, idBaiHoc);
     const prevId = KhoaHocService.timBaiTruoc(flatList, idBaiHoc);
-    useEffect(() => {
-        // Nếu tổng số bài > 0 và số bài đã học bằng đúng tổng số bài (Hoàn thành 100%)
-        if (tongSoBai > 0 && soBaiDaHoc === tongSoBai) {
 
-            // Đảm bảo tên biến khoaHoc.id và user.id khớp với biến trong file của bạn
+    useEffect(() => {
+        if (tongSoBai > 0 && soBaiDaHoc === tongSoBai) {
             const modalKey = `shown_congrats_modal_${khoaHoc?.maKhoaHoc}`;
             const hasShown = localStorage.getItem(modalKey);
 
-            // Nếu chưa từng hiện Modal chúc mừng này
             if (!hasShown) {
                 Swal.fire({
                     title: '🎉 Chúc mừng bạn!',
@@ -104,12 +101,9 @@ const NoiDungKhoaHoc = () => {
                     cancelButtonText: 'Để sau'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // Chuyển hướng sang tab đánh giá
                         setTabActive('danhgia');
                     }
                 });
-
-                // Lưu trạng thái để không hiện lại khi F5
                 localStorage.setItem(modalKey, 'true');
             }
         }
@@ -121,7 +115,8 @@ const NoiDungKhoaHoc = () => {
         }
     };
 
-    const handleVideoCompleted = useCallback((maBaiHocVuaXong: number) => {
+    // Hàm gọi chung để mở khóa bài tiếp theo (Cập nhật CSDL qua API đã thực hiện ở nơi khác)
+    const danhDauHoanThanhBai = (maBaiHoc: number) => {
         setKhoaHoc((prevData) => {
             if (!prevData) return null;
             return {
@@ -129,7 +124,7 @@ const NoiDungKhoaHoc = () => {
                 danhSachChuongHoc: prevData.danhSachChuongHoc.map((chuong) => ({
                     ...chuong,
                     danhSachBaiHoc: chuong.danhSachBaiHoc.map((bai) => {
-                        if (bai.id === maBaiHocVuaXong) {
+                        if (bai.id === maBaiHoc) {
                             return { ...bai, daXem: true };
                         }
                         return bai;
@@ -137,24 +132,44 @@ const NoiDungKhoaHoc = () => {
                 })),
             };
         });
+    };
+
+    // Khi Video chạy xong
+    const handleVideoCompleted = useCallback((maBaiHocVuaXong: number) => {
+        const baiHocVuaXong = flatList.find(b => b.id === maBaiHocVuaXong);
+        
+        if (baiHocVuaXong && baiHocVuaXong.thongTinQuiz) {
+            // NẾU CÓ QUIZ -> Chỉ lưu tạm thời để mở khóa quiz, tự nhảy sang quiz
+            setVideoDaXongLocal(prev => [...prev, maBaiHocVuaXong]);
+            
+            Swal.fire({
+                title: 'Đã hoàn thành lý thuyết!',
+                text: 'Hãy hoàn thành Bài tập Trắc nghiệm để mở khóa bài học tiếp theo nhé.',
+                icon: 'info',
+                timer: 3000,
+                showConfirmButton: false
+            }).then(() => {
+                setTabActive('quiz'); // Nhảy qua màn hình quiz
+            });
+        } else {
+            // NẾU KHÔNG CÓ QUIZ -> Hoàn thành bài, mở khóa bài sau luôn
+            danhDauHoanThanhBai(maBaiHocVuaXong);
+        }
     }, [flatList]);
 
-    const handleChonBaiHoc = (id: number) => {
+    const handleChonBaiHoc = (id: number, tabDeMo: 'hoc' | 'quiz' = 'hoc') => {
         const index = flatList.findIndex(b => b.id === id);
         if (index < 0) return;
         if (index === 0 || flatList[index - 1].daXem === true) {
             setIdBaiHoc(id);
-            setTabActive('hoc'); // Luôn chuyển về tab học khi sang bài mới
+            setTabActive(tabDeMo); // Chuyển luôn sang tab video hoặc quiz theo click
         } else {
-            console.log('Bài trước chưa hoàn thành, không thể chuyển!');
+            Swal.fire({ title: 'Bị khóa', text: 'Vui lòng hoàn thành bài học trước đó.', icon: 'warning' });
         }
     };
 
     const xuLyNopBaiTap = async (phanTramDiem: number, daDat: boolean, soCauDung: number, tongSoCau: number, chiTietTraLoi: { IdCauHoi: number; IndexLuaChon: number }[]) => {
-        if (!baiHocHienTai || !baiHocHienTai.thongTinQuiz) {
-            console.error("Dữ liệu bài tập chưa sẵn sàng");
-            return;
-        }
+        if (!baiHocHienTai || !baiHocHienTai.thongTinQuiz) return;
         try {
             const payload: LuuKetQuaQuizDTO = {
                 MaBaiHoc: idBaiHoc,
@@ -167,8 +182,29 @@ const NoiDungKhoaHoc = () => {
                 ChiTietLamBai: chiTietTraLoi
             };
             await KhoaHocService.luuKetQuaQuiz(payload);
+
             if (daDat) {
-                handleVideoCompleted(idBaiHoc);
+                // Vượt qua Quiz -> Đánh dấu hoàn thành toàn bộ bài học
+                danhDauHoanThanhBai(idBaiHoc);
+
+                // Hỏi xem có muốn học bài tiếp theo không
+                const nextId = KhoaHocService.timBaiTiepTheo(flatList, idBaiHoc);
+                if (nextId) {
+                    Swal.fire({
+                        title: 'Tuyệt vời!',
+                        text: 'Bạn đã vượt qua bài trắc nghiệm. Học bài tiếp theo chứ?',
+                        icon: 'success',
+                        showCancelButton: true,
+                        confirmButtonText: 'Học bài tiếp theo',
+                        cancelButtonText: 'Ở lại trang này',
+                        confirmButtonColor: '#f69050'
+                    }).then((res) => {
+                        if (res.isConfirmed) {
+                            setIdBaiHoc(nextId);
+                            setTabActive('hoc');
+                        }
+                    });
+                }
             }
         } catch (error) {
             console.error("Lỗi khi nộp bài:", error);
@@ -204,30 +240,12 @@ const NoiDungKhoaHoc = () => {
                             testCases: []
                         }}
                         khiHoanThanh={(phanTram: number, daDat: boolean) => {
-                            if (daDat) {
-                                handleVideoCompleted(idBaiHoc);
-                            }
+                            if (daDat) handleVideoCompleted(idBaiHoc);
                         }}
                     />
                 );
-            case 'Quiz':
-                if (baiHocHienTai.thongTinQuiz) {
-                    return (
-                        <BaiTapTracNghiem
-                            duLieu={{
-                                ...baiHocHienTai.thongTinQuiz,
-                                duLieuCauHoi: baiHocHienTai.thongTinQuiz.duLieuCauHoiJSON,
-                                maBaiTap: baiHocHienTai.thongTinQuiz.maBaiTap
-                            }}
-                            khiHoanThanh={(diem, daDat, soCauDung, tongSoCau, chiTietTraLoi) =>
-                                xuLyNopBaiTap(diem, daDat, soCauDung, tongSoCau, chiTietTraLoi)
-                            }
-                        />
-                    );
-                }
-                return <div className="p-5 text-center text-muted">Đang tải dữ liệu bài tập...</div>;
             default:
-                return <div className="p-5 text-center text-muted">Đang tải nội dung hoặc bài học không tồn tại...</div>;
+                return <div className="p-5 text-center text-muted">Đang tải nội dung...</div>;
         }
     };
 
@@ -245,60 +263,84 @@ const NoiDungKhoaHoc = () => {
 
             <main className="cp-shell">
                 <section className="cp-left">
-                    <div className="cp-tabs">
-                        <button
-                            className={`cp-tab ${tabActive === 'hoc' ? 'cp-tab-active' : ''}`}
-                            onClick={() => setTabActive('hoc')}
-                        >
-                            <i className="fas fa-play-circle"></i> Bài học
-                        </button>
-
-                        {/* Tab Tóm tắt chỉ hiện khi là Video */}
-                        {baiHocHienTai.loaiBaiHoc === 'Video' && (
+                    {/* CHỈ HIỆN TAB KHI KHÔNG LÀM QUIZ */}
+                    {tabActive !== 'quiz' && (
+                        <div className="cp-tabs">
                             <button
-                                className={`cp-tab ${tabActive === 'tomtat' ? 'cp-tab-active' : ''}`}
-                                onClick={() => setTabActive('tomtat')}
+                                className={`cp-tab ${tabActive === 'hoc' ? 'cp-tab-active' : ''}`}
+                                onClick={() => setTabActive('hoc')}
                             >
-                                <i className="fas fa-magic"></i> Tóm tắt nội dung Video AI
+                                <i className="fas fa-play-circle"></i> Bài học
                             </button>
-                        )}
 
-                        {/* Tab Đánh giá khóa học (Luôn hiện) */}
-                        <button
-                            className={`cp-tab ${tabActive === 'danhgia' ? 'cp-tab-active' : ''}`}
-                            onClick={() => setTabActive('danhgia')}
-                        >
-                            <i className="fas fa-star"></i> Đánh giá
-                        </button>
-                    </div>
+                            {baiHocHienTai.loaiBaiHoc === 'Video' && (
+                                <button
+                                    className={`cp-tab ${tabActive === 'tomtat' ? 'cp-tab-active' : ''}`}
+                                    onClick={() => setTabActive('tomtat')}
+                                >
+                                    <i className="fas fa-magic"></i> Tóm tắt nội dung Video AI
+                                </button>
+                            )}
+
+                            <button
+                                className={`cp-tab ${tabActive === 'danhgia' ? 'cp-tab-active' : ''}`}
+                                onClick={() => setTabActive('danhgia')}
+                            >
+                                <i className="fas fa-star"></i> Đánh giá
+                            </button>
+                        </div>
+                    )}
+
                     <div className="cp-main-content">
-                        <div style={{ display: tabActive === 'hoc' ? 'block' : 'none', height: '100%' }}>
-                            {renderMainContent()}
-                        </div>
+                        {/* HIỂN THỊ GIAO DIỆN QUIZ FULL NẾU ĐANG Ở TAB QUIZ */}
+                        {tabActive === 'quiz' ? (
+                            <div style={{ height: '100%', overflowY: 'auto', backgroundColor: '#fff' }}>
+                                {baiHocHienTai.thongTinQuiz && (
+                                    <BaiTapTracNghiem
+                                        duLieu={{
+                                            ...baiHocHienTai.thongTinQuiz,
+                                            duLieuCauHoi: baiHocHienTai.thongTinQuiz.duLieuCauHoiJSON,
+                                            maBaiTap: baiHocHienTai.thongTinQuiz.maBaiTap
+                                        }}
+                                        khiHoanThanh={(diem, daDat, soCauDung, tongSoCau, chiTietTraLoi) =>
+                                            xuLyNopBaiTap(diem, daDat, soCauDung, tongSoCau, chiTietTraLoi)
+                                        }
+                                    />
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                {/* Giao diện khi học bình thường */}
+                                <div style={{ display: tabActive === 'hoc' ? 'block' : 'none', height: '100%' }}>
+                                    {renderMainContent()}
+                                </div>
 
-                        {/* 2. KHUNG CHỨA TÓM TẮT: Chỉ hiện khi tabActive khác 'hoc' */}
-                        <div style={{ display: tabActive === 'tomtat' ? 'block' : 'none', height: '100%', overflowY: 'auto' }}>
-                            <VideoSummary
-                                maBaiHoc={baiHocHienTai?.id || 0}
-                                phuDeGoc={baiHocHienTai?.noiDung || ""}
-                                linkVideo={baiHocHienTai?.linkVideo || ""}
-                                tieuDe={baiHocHienTai?.tieuDe || ""}
-                            />
-                        </div>
-                        {/* 3. Nội dung Đánh giá khóa học */}
-                        <div style={{ display: tabActive === 'danhgia' ? 'block' : 'none', height: '100%', overflowY: 'auto', padding: '20px' }}>
-                            <TabDanhGia
-                                maKhoaHoc={khoaHoc.maKhoaHoc}
-                                maNguoiDung={maNguoiDung}
-                                daHoanThanhKhoaHoc={tongSoBai > 0 && soBaiDaHoc === tongSoBai}
-                            />
-                        </div>
+                                <div style={{ display: tabActive === 'tomtat' ? 'block' : 'none', height: '100%', overflowY: 'auto' }}>
+                                    <VideoSummary
+                                        maBaiHoc={baiHocHienTai?.id || 0}
+                                        phuDeGoc={baiHocHienTai?.noiDung || ""}
+                                        linkVideo={baiHocHienTai?.linkVideo || ""}
+                                        tieuDe={baiHocHienTai?.tieuDe || ""}
+                                    />
+                                </div>
+
+                                <div style={{ display: tabActive === 'danhgia' ? 'block' : 'none', height: '100%', overflowY: 'auto', padding: '20px' }}>
+                                    <TabDanhGia
+                                        maKhoaHoc={khoaHoc.maKhoaHoc}
+                                        maNguoiDung={maNguoiDung}
+                                        daHoanThanhKhoaHoc={tongSoBai > 0 && soBaiDaHoc === tongSoBai}
+                                    />
+                                </div>
+                            </>
+                        )}
                     </div>
                 </section>
 
                 <DanhSachBaiHoc
                     cacChuong={khoaHoc.danhSachChuongHoc}
                     idBaiHocHienTai={idBaiHoc}
+                    tabActive={tabActive}
+                    videoDaXongLocal={videoDaXongLocal}
                     onChonBaiHoc={handleChonBaiHoc}
                 />
             </main>
