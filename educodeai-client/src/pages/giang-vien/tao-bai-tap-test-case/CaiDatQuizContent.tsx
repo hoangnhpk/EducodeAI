@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { CreateQuizDTO } from './BaiTap';
 import { BaiTapService } from '@/services/bai-tap.service';
 import './CaiDatQuiz.css'; 
+import Swal from 'sweetalert2';
 
 const CaiDatQuizContent = () => {
     const navigate = useNavigate();
@@ -23,7 +24,7 @@ const CaiDatQuizContent = () => {
         const draftSettings = sessionStorage.getItem('draftQuizSettings');
         
         if (!draftData || !draftSettings) {
-            Swal.fire({ icon: 'error', text: "Oops! Mất kết nối dữ liệu rồi sếp ơi. Tạo lại từ đầu nha! 🥲" });
+            Swal.fire({ icon: 'error', text: "Mất kết nối dữ liệu rồi sếp ơi. Tạo lại từ đầu nha!" });
             navigate('/giang-vien/tao-quiz');
         }
     }, [navigate]);
@@ -56,13 +57,13 @@ const CaiDatQuizContent = () => {
                 DuLieuCauHoi: quizQuestionsString 
             };
 
-            console.log("🚀 Ném data lên BE nè:", payload);
+            console.log("Ném data lên BE nè:", payload);
 
             // Gọi API
             const response = await BaiTapService.xuatBanQuiz(payload);
 
             if (response.success) {
-                Swal.fire({ icon: 'success', text: `Trộm vía! ${response.message} 🎉` });
+                Swal.fire({ icon: 'success', text: `${response.message}` });
                 sessionStorage.removeItem('draftQuizData');
                 sessionStorage.removeItem('draftQuizSettings');
                 navigate('/giang-vien/bai-tap'); // Đá về trang danh sách
@@ -72,7 +73,7 @@ const CaiDatQuizContent = () => {
 
         } catch (error: any) {
             console.error("Lỗi sập nguồn:", error);
-            Swal.fire({ icon: 'error', text: "Server đang hờn dỗi, không lưu được rồi sếp ơi! 😭" });
+            Swal.fire({ icon: 'error', text: "Server đang lỗi, không lưu được rồi!" });
         } finally {
             setIsPublishing(false);
         }
