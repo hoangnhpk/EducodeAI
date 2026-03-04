@@ -122,7 +122,7 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpPost("upload-hinh-anh")]
         public async Task<IActionResult> UploadHinhAnh(
     IFormFile file,
-    [FromServices] IWebHostEnvironment env)  // ← inject thẳng vào method, không qua constructor
+    [FromServices] IWebHostEnvironment env)
         {
             if (file is null || file.Length == 0)
                 return BadRequest(new { message = "Vui lòng chọn file ảnh." });
