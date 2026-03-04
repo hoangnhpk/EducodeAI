@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { khoaHocCuaToiService } from '@/services/khoa-hoc-cua-toi.service';
-import type { KhoaHocGiangVienDetailDTO, HocVienTrongKhoaHocDTO, ChuongHocDetailDTO } from '../KhoaHocCuaToiDTO';
+import type { KhoaHocGiangVienDetailDTO, HocVienTrongKhoaHocDTO } from '../KhoaHocCuaToiDTO';
 import BangHocVien from './BangHocVien';
 import ChiTietHocVien from './ChiTietHocVien';
 import ModalKhoaHoc from './ModalKhoaHoc';
@@ -10,6 +10,14 @@ import { FaArrowLeft, FaEdit, FaUsers, FaBookOpen, FaStar, FaCheckCircle } from 
 
 type Tab = 'hoc-vien' | 'chuong-hoc';
 
+// Cùng hàm với DanhSachKhoaHoc
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+const getImageUrl = (url?: string): string => {
+    if (!url) return 'https://placehold.co/280x160/fb873f/white?text=No+Image';
+    if (url.startsWith('http')) return url;
+    return `${BASE_URL}${url}`;
+};
+
 interface Props {
     maGiangVien: number;
     maKhoaHoc:   number;
@@ -17,11 +25,11 @@ interface Props {
 }
 
 const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) => {
-    const [detail, setDetail]                     = useState<KhoaHocGiangVienDetailDTO | null>(null);
-    const [loadingDetail, setLoadingDetail]       = useState(true);
-    const [tab, setTab]                           = useState<Tab>('hoc-vien');
-    const [selectedHocVien, setSelectedHocVien]   = useState<HocVienTrongKhoaHocDTO | null>(null);
-    const [showModalSua, setShowModalSua]         = useState(false);
+    const [detail, setDetail]                   = useState<KhoaHocGiangVienDetailDTO | null>(null);
+    const [loadingDetail, setLoadingDetail]     = useState(true);
+    const [tab, setTab]                         = useState<Tab>('hoc-vien');
+    const [selectedHocVien, setSelectedHocVien] = useState<HocVienTrongKhoaHocDTO | null>(null);
+    const [showModalSua, setShowModalSua]       = useState(false);
 
     const loadDetail = useCallback(async () => {
         try {
@@ -64,7 +72,7 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
             <div className="khct-detail-header">
                 <div className="khct-detail-img-wrap">
                     <img
-                        src={detail.hinhAnh || 'https://placehold.co/280x160/fb873f/white?text=No+Image'}
+                        src={getImageUrl(detail.hinhAnh)}
                         alt={detail.tenKhoaHoc}
                         className="khct-detail-img"
                     />
@@ -84,22 +92,18 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
 
                     <div className="stat-row">
                         <div className="stat-card">
-                            <FaUsers       className="stat-icon text-primary" />
                             <div className="stat-value">{detail.soHocVien}</div>
                             <div className="small text-muted">Học viên</div>
                         </div>
                         <div className="stat-card">
-                            <FaCheckCircle className="stat-icon text-success" />
                             <div className="stat-value">{Math.round(detail.tiLeHoanThanh)}%</div>
                             <div className="small text-muted">Hoàn thành</div>
                         </div>
                         <div className="stat-card">
-                            <FaStar        className="stat-icon text-warning" />
                             <div className="stat-value text-warning">{detail.diemDanhGiaTB?.toFixed(1)}</div>
                             <div className="small text-muted">Đánh giá</div>
                         </div>
                         <div className="stat-card">
-                            <FaBookOpen    className="stat-icon text-info" />
                             <div className="stat-value">{detail.thoiLuongGio}h</div>
                             <div className="small text-muted">Thời lượng</div>
                         </div>
@@ -121,7 +125,6 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
                     onClick={() => setTab('chuong-hoc')}
                 >
                     <FaBookOpen className="me-2" />Chương &amp; Bài học
-                    {/* FIX: Hiển thị số chương thật */}
                     <span className="tab-badge">{detail.danhSachChuong.length}</span>
                 </button>
             </div>
@@ -145,8 +148,6 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
                     <PanelChuong
                         maGiangVien={maGiangVien}
                         maKhoaHoc={maKhoaHoc}
-                        // FIX: Truyền data chương thật từ detail xuống
-                        // Trước đây hardcode initialChuongs={[]} → tab luôn trống
                         initialChuongs={detail.danhSachChuong}
                     />
                 )}
@@ -167,7 +168,6 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
                         trinhDo:      detail.trinhDo,
                         thoiLuongGio: detail.thoiLuongGio,
                         trangThai:    detail.trangThai,
-                        // FIX: Truyền kyNangChinh vào modal — trước đây bị bỏ
                         kyNangChinh:  detail.kyNangChinh,
                     }}
                     onClose={() => setShowModalSua(false)}

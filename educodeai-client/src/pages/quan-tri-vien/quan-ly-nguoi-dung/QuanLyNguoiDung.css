@@ -1,296 +1,311 @@
-/* ===== Toolbar ===== */
+/* ===========================
+   BIẾN & RESET
+=========================== */
+:root {
+    --primary:   #f97316;
+    --primary-h: #ea6c0a;
+    --blue:      #0284c7;
+    --green:     #16a34a;
+    --red:       #dc2626;
+    --amber:     #d97706;
+    --purple:    #7c3aed;
+    --text:      #1e293b;
+    --text-muted:#64748b;
+    --border:    #e2e8f0;
+    --bg:        #f8fafc;
+    --radius:    8px;
+    --shadow:    0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* ===========================
+   TOOLBAR
+=========================== */
 .toolbar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
     gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 .search-input {
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    width: 250px;
-    outline: none;
-}
-
-.filter-select {
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    outline: none;
-}
-
-.btn-add {
-    background: #5b3df5;
-    color: white;
     padding: 8px 14px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-weight: 500;
-    transition: 0.2s;
-}
-
-.btn-add:hover {
-    background: #452dd8;
-}
-
-/* ===== Table ===== */
-.user-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.user-table thead {
-    background: #f4f6f9;
-}
-
-.user-table th,
-.user-table td {
-    padding: 12px;
-    text-align: left;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
     font-size: 14px;
-}
-
-.user-table th {
-    font-weight: 600;
-    color: #444;
-}
-
-.user-table tbody tr {
-    border-bottom: 1px solid #eee;
-    transition: 0.2s;
-}
-
-.user-table tbody tr:hover {
-    background: #f9f9ff;
-}
-
-/* ===== Badge vai trò ===== */
-.badge-role {
-    background: #eef2ff;
-    color: #5b3df5;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-}
-
-/* ===== Trạng thái ===== */
-.status-dot {
-    font-weight: 500;
-}
-
-.status-dot.active {
-    color: #2ecc71;
-}
-
-.status-dot.locked {
-    color: #e74c3c;
-}
-
-/* ===== Nút thao tác ===== */
-.user-table button {
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    margin-right: 6px;
-    font-size: 13px;
-}
-
-.user-table button:hover {
-    text-decoration: underline;
-}
-
-/* ===== Action Buttons ===== */
-
-.action-cell {
-    white-space: nowrap;
-}
-
-/*--Nút --*/
-.btn-action {
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    margin-right: 6px;
-    transition: 0.2s;
-    background: white;
-}
-
-/* ===== Sửa ===== */
-.btn-edit {
-    color: #0284c7;
-    border: 1px solid #0284c7;
-}
-
-.btn-edit:hover {
-    background: #0284c7;
-    color: white;
-}
-
-/* ===== Khóa ===== */
-.btn-lock {
-    color: #b45309;
-    border: 1px solid #f59e0b;
-}
-
-.btn-lock:hover {
-    background: #f59e0b;
-    color: white;
-}
-
-/* ===== Mở ===== */
-.btn-unlock {
-    color: #15803d;
-    border: 1px solid #22c55e;
-}
-
-.btn-unlock:hover {
-    background: #22c55e;
-    color: white;
-}
-
-/* ===== Xóa ===== */
-.btn-delete {
-    color: #b91c1c;
-    border: 1px solid #ef4444;
-}
-
-.btn-delete:hover {
-    background: #ef4444;
-    color: white;
-}
-/* ===== Modal Overlay ===== */
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(3px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-/* ===== Modal Container ===== */
-.modal-container {
-    background: #fff;
-    border-radius: 12px;
-    padding: 32px;
-    width: 100%;
-    max-width: 460px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-    animation: fadeInUp 0.25s ease;
-}
-
-.modal-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #1e1e2f;
-    margin-bottom: 20px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 16px;
-}
-
-.form-group label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #444;
-    margin-bottom: 6px;
-}
-
-.form-group input,
-.form-group select {
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    font-size: 14px;
+    width: 240px;
     outline: none;
     transition: border-color 0.2s;
 }
 
-.form-group input:focus,
-.form-group select:focus {
-    border-color: #5b3df5;
-    box-shadow: 0 0 0 3px rgba(91, 61, 245, 0.1);
+.search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.1);
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 24px;
-}
-
-.btn-cancel {
-    padding: 9px 20px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    background: white;
-    color: #555;
+.filter-select {
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
     font-size: 14px;
-    font-weight: 500;
+    outline: none;
+    background: white;
     cursor: pointer;
-    transition: 0.2s;
+    transition: border-color 0.2s;
 }
 
-.btn-cancel:hover {
-    background: #f4f4f4;
+.filter-select:focus {
+    border-color: var(--primary);
 }
 
-.btn-save {
-    padding: 9px 20px;
-    border-radius: 8px;
-    border: none;
-    background: #f97316;
+.btn-add {
+    margin-left: auto;
+    background: var(--primary);
     color: white;
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    border: none;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: 0.2s;
+    transition: background 0.2s;
+    white-space: nowrap;
 }
 
-.btn-save:hover {
-    background: #ea6c0a;
+.btn-add:hover { background: var(--primary-h); }
+
+/* ===========================
+   TABLE
+=========================== */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    font-size: 14px;
 }
 
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
+.user-table thead {
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
 }
-/* ===== Fix Modal Overlay ===== */
+
+.user-table th {
+    padding: 11px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.user-table td {
+    padding: 11px 16px;
+    color: var(--text);
+    vertical-align: middle;
+}
+
+.user-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+}
+
+.user-table tbody tr:last-child { border-bottom: none; }
+.user-table tbody tr:hover { background: #fff7f0; }
+
+/* ===========================
+   BADGE VAI TRÒ
+=========================== */
+.badge-role {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #ede9fe;
+    color: var(--purple);
+}
+
+/* ===========================
+   TRẠNG THÁI
+=========================== */
+.status-dot {
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-dot::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.active  { color: var(--green); }
+.status-dot.active::before  { background: var(--green); }
+.status-dot.locked  { color: var(--red); }
+.status-dot.locked::before  { background: var(--red); }
+
+/* ===========================
+   ACTION BUTTONS – 1 HÀNG
+=========================== */
+.action-cell {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;              /* khoảng cách giữa các nút */
+}
+
+.btn-action {
+    padding: 4px 10px;     /* nhỏ vừa đủ */
+    font-size: 12px;
+    border-radius: 6px;
+    white-space: nowrap;   /* không xuống dòng */
+}
+.action-cell button {
+    padding: 2px 6px !important;
+}
+.btn-edit   { color: var(--blue);  border: 1px solid var(--blue); }
+.btn-lock   { color: var(--amber); border: 1px solid var(--amber); }
+.btn-unlock { color: var(--green); border: 1px solid var(--green); }
+.btn-delete { color: var(--red);   border: 1px solid var(--red); }
+
+.btn-edit:hover   { background: var(--blue);  color: white; }
+.btn-lock:hover   { background: var(--amber); color: white; }
+.btn-unlock:hover { background: var(--green); color: white; }
+.btn-delete:hover { background: var(--red);   color: white; }
+
+/* ===========================
+   MODAL
+=========================== */
 .modal-overlay {
     position: fixed !important;
     inset: 0 !important;
-    background: rgba(0, 0, 0, 0.45) !important;
+    background: rgba(0,0,0,0.4);
     backdrop-filter: blur(3px);
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
     z-index: 9999 !important;
+    padding: 20px;
 }
 
+.modal-container,
 .modal-box {
-    background: #fff;
+    background: white;
     border-radius: 12px;
-    padding: 32px;
+    padding: 28px;
     width: 100%;
     max-width: 460px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
     animation: fadeInUp 0.25s ease;
-    /* Quan trọng: không để bị lệch */
-    position: relative;
-    margin: 0;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    font-size: 14px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.1);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.btn-cancel {
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.btn-cancel:hover { background: var(--bg); }
+
+.btn-save {
+    padding: 8px 20px;
+    border-radius: var(--radius);
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.btn-save:hover { background: var(--primary-h); }
+
+/* ===========================
+   ANIMATION
+=========================== */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.action-group {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.action-group .btn-action {
+    display: inline-flex !important;
+    align-items: center;
+    padding: 4px 10px !important;
+    font-size: 12px !important;
+    border-radius: 5px !important;
+    width: auto !important;
+    margin: 0 !important;
+    min-width: unset !important;
 }

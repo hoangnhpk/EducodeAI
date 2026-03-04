@@ -182,6 +182,7 @@ export const TabDanhGia: React.FC<Props> = ({ maKhoaHoc, maNguoiDung, daHoanThan
                         placeholder="Chia sẻ cảm nhận của bạn về khóa học này..."
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
+                        maxLength={500}
                     ></textarea>
 
                     <button

@@ -5,21 +5,33 @@ import { FaUserGraduate, FaClock, FaStar, FaTrash, FaCog } from 'react-icons/fa'
 const TRINH_DO_MAP: Record<string, { label: string; color: string }> = {
     nguoi_moi: { label: 'Người mới', color: '#27ae60' },
     trung_cap: { label: 'Trung cấp', color: '#f39c12' },
-    nang_cao: { label: 'Nâng cao', color: '#e74c3c' },
+    nang_cao:  { label: 'Nâng cao',  color: '#e74c3c' },
+};
+
+// Lấy base URL của BE từ biến môi trường
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
+
+// Hàm chuẩn hóa URL ảnh:
+// - Nếu đã là http/https (ảnh ngoài) → giữ nguyên
+// - Nếu là đường dẫn tương đối từ BE → thêm BASE_URL vào trước
+const getImageUrl = (url?: string): string => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    return `${BASE_URL}${url}`;
 };
 
 interface Props {
-    duLieu: KhoaHocGiangVienListDTO[];
+    duLieu:         KhoaHocGiangVienListDTO[];
     loadingDeleteId: number | null;
-    onXemChiTiet: (maKhoaHoc: number) => void;
-    onXoa: (maKhoaHoc: number) => void;
+    onXemChiTiet:   (maKhoaHoc: number) => void;
+    onXoa:          (maKhoaHoc: number) => void;
 }
 
 const DanhSachKhoaHoc: React.FC<Props> = ({ duLieu, loadingDeleteId, onXemChiTiet, onXoa }) => {
     return (
         <div className="course-grid">
             {duLieu.map(kh => {
-                const trinhDo = TRINH_DO_MAP[kh.trinhDo] ?? { label: kh.trinhDo, color: '#95a5a6' };
+                const trinhDo   = TRINH_DO_MAP[kh.trinhDo] ?? { label: kh.trinhDo, color: '#95a5a6' };
                 const isDeleting = loadingDeleteId === kh.maKhoaHoc;
 
                 return (
@@ -29,7 +41,8 @@ const DanhSachKhoaHoc: React.FC<Props> = ({ duLieu, loadingDeleteId, onXemChiTie
                     >
                         <div className="image-wrapper">
                             <img
-                                src={kh.hinhAnh || ''} alt={kh.tenKhoaHoc}
+                                src={getImageUrl(kh.hinhAnh)}
+                                alt={kh.tenKhoaHoc}
                             />
                             <span className="status-badge">{kh.trangThai || 'Hoạt động'}</span>
                             <span
