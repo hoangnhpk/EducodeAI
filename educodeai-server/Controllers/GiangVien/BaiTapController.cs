@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
 using educodeai_server.DTOs.BaiTap;
+using educodeai_server.Helpers;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Http;
@@ -21,22 +22,12 @@ namespace educodeai_server.Controllers.GiangVien
             _baiTapRepository = baiTapRepository;
         }
 
-        private int GetUserIdFromClaims()
-        {
-            var userIdClaim = User.FindFirstValue("id");
-            if (int.TryParse(userIdClaim, out int userId))
-            {
-                return userId;
-            }
-            throw new UnauthorizedAccessException("User ID claim is missing or invalid.");
-        }
-
         [HttpGet("ds-bai-tap")]
         public async Task<IActionResult> GetDanhSachBaiTap()
         {
             try
             {
-                int userId = GetUserIdFromClaims();
+                int userId = LayNguoiDungID.LayID(User);
                 var danhSachBaiTap = await _baiTapRepository.LayDanhSachBaiTapCuaGiangVienAsync(userId);
                 return Ok(danhSachBaiTap);
             }
@@ -130,7 +121,7 @@ namespace educodeai_server.Controllers.GiangVien
         {
             try
             {
-                int userId = GetUserIdFromClaims();
+                int userId = LayNguoiDungID.LayID(User);
                 var danhSachBaiTap = await _baiTapRepository.GetKhoaHocModelsByGiangVienAsync(userId);
                 return Ok(danhSachBaiTap);
             }
