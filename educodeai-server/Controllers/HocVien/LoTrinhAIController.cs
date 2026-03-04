@@ -1,4 +1,5 @@
 ﻿using educodeai_server.DTOs.AI;
+using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -18,20 +19,10 @@ namespace EduCodeAI.Controllers.HocVien
             _service = service;
         }
 
-        private int GetUserIdFromClaims()
-        {
-            var userIdClaim = User.FindFirstValue("id");
-            if (int.TryParse(userIdClaim, out int userId))
-            {
-                return userId;
-            }
-            throw new UnauthorizedAccessException("User ID claim is missing or invalid.");
-        }
-
         [HttpPost("them")]
         public async Task<IActionResult> TaoLoTrinh(CreateLoTrinhAIDto dto)
         {
-            int userId = GetUserIdFromClaims();
+            int userId = LayNguoiDungID.LayID(User);
             return Ok(await _service.TaoLoTrinhAsync(userId, dto));
         }
 
@@ -39,7 +30,7 @@ namespace EduCodeAI.Controllers.HocVien
         public async Task<IActionResult> CapNhatLoTrinh(
         [FromBody] UpdateLoTrinhDto dto)
         {
-            int userId = GetUserIdFromClaims();
+            int userId = LayNguoiDungID.LayID(User);
             var result = await _service.CapNhatLoTrinhAsync(userId, dto);
             return Ok(result);
         }
@@ -47,7 +38,7 @@ namespace EduCodeAI.Controllers.HocVien
         [HttpPost("xac-nhan/{maLoTrinh}")]
         public async Task<IActionResult> XacNhanLoTrinh(int maLoTrinh)
         {
-            int userId = GetUserIdFromClaims();
+            int userId = LayNguoiDungID.LayID(User);
             var result = await _service.XacNhanLoTrinhAsync(maLoTrinh, userId);
             return Ok(new { success = result, message = "Lộ trình đã được áp dụng thành công!" });
         }
@@ -55,7 +46,7 @@ namespace EduCodeAI.Controllers.HocVien
         [HttpGet("lay-tat-ca-lo-trinh")]
         public async Task<IActionResult> GetAllLoTrinhAI()
         {
-            int userId = GetUserIdFromClaims();
+            int userId = LayNguoiDungID.LayID(User);
             var result = await _service.GetLoTrinhCuaToiAsync(userId);
             return Ok(result);
         }
@@ -63,7 +54,7 @@ namespace EduCodeAI.Controllers.HocVien
         [HttpGet("chi-tiet/{maLoTrinh}")]
         public async Task<IActionResult> GetChiTietLoTrinh(int maLoTrinh)
         {
-            int userId = GetUserIdFromClaims();
+            int userId = LayNguoiDungID.LayID(User);
             var result = await _service.GetChiTietLoTrinhAsync(maLoTrinh, userId);
 
             if (result == null)
