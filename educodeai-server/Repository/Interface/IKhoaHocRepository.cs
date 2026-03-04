@@ -7,7 +7,7 @@ namespace educodeai_server.Repository.Interface
     public interface IKhoaHocRepository
     {
         // 1. Thêm hàm này để lấy danh sách cho trang chủ
-        Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync();
+        Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung);
 
         // 2. Các hàm AI và tìm kiếm
         Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto);

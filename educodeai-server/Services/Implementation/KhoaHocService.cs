@@ -15,9 +15,9 @@ namespace educodeai_server.Services.Implementation
             _khoaHocRepository = khoaHocRepository;
         }
 
-        public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync()
+        public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung)
         {
-            return await _khoaHocRepository.GetAllKhoaHocsAsync();
+            return await _khoaHocRepository.GetAllKhoaHocsAsync(maNguoiDung);
         }
 
         public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetKhoaHocByIdAsync(int maKhoaHoc, int maNguoiDung)
