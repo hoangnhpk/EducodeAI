@@ -16,6 +16,7 @@ const DangNhap: React.FC = () => {
 
     const GOOGLE_CLIENT_ID = "936326067432-hcndgs9gnnfculp14smdl8e6bnqb4is9.apps.googleusercontent.com";
     const FACEBOOK_APP_ID = "4257990231123156";
+    
     const validateForm = () => {
         const newErrors: { identifier?: string; password?: string } = {};
         if (!emailOrUsername.trim()) newErrors.identifier = "Vui lòng nhập tài khoản hoặc email";
@@ -56,36 +57,36 @@ const DangNhap: React.FC = () => {
         try {
             const token = credentialResponse.credential;
 
-            // 2. GỌI API GỬI LÊN BACKEND (Đây là bước bạn đang thiếu)
-            // Giả sử service của bạn là authService.googleLogin
+            // Gọi API gửi lên backend
             const res: any = await authService.googleLogin({ token: token });
 
-            // 3. Chỉ lưu vào localStorage KHI BACKEND trả về thành công
+            // Chỉ lưu vào localStorage KHI BACKEND trả về thành công
             if (res && res.token) {
                 localStorage.setItem('user_token', res.token);
                 localStorage.setItem('user_info', JSON.stringify(res.user));
 
-                alert(`Đăng nhập Google thành công!`);
+                Swal.fire({
+                    icon: "success",
+                    title: "Thành công!",
+                    text: "Đăng nhập Google thành công!",
+                });
                 navigate('/');
                 window.location.reload();
             }
         } catch (error: any) {
             console.error("❌ Lỗi API Google Login:", error);
-            const errorMsg = error.response?.data?.message || "Không thể đồng bộ tài khoản với SQL Server. Kiểm tra dung lượng đĩa!";
+            const errorMsg = error.response?.data?.message || "Không thể đồng bộ với Server. Kiểm tra URL API hoặc dung lượng đĩa!";
+            Swal.fire({
+                icon: "error",
+                title: "Lỗi đăng nhập",
+                text: errorMsg,
+            });
         } finally {
             setIsLoading(false);
         }
-    } catch (error: any) {
-        console.error("❌ Lỗi API Google Login:", error);
-        // Nếu lỗi 404, hãy kiểm tra xem URL trong service đã có /api/ chưa
-        const errorMsg = error.response?.data?.message || "Không thể đồng bộ với Server. Kiểm tra URL API hoặc dung lượng đĩa!";
-        alert(errorMsg);
-    } finally {
-        setIsLoading(false);
-    }
-};
+    };
 
-    // THÊM: XỬ LÝ ĐĂNG NHẬP FACEBOOK
+    // XỬ LÝ ĐĂNG NHẬP FACEBOOK
     const responseFacebook = async (response: any) => {
         if (response.accessToken) {
             setIsLoading(true);
@@ -197,7 +198,7 @@ const DangNhap: React.FC = () => {
                                             width="350px"
                                         />
 
-                                        {/* THÊM: Nút Facebook */}
+                                        {/* Nút Facebook */}
                                         <div style={{ width: '350px' }}>
                                             <FacebookLogin
                                                 appId={FACEBOOK_APP_ID}
