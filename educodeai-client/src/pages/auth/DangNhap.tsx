@@ -75,14 +75,22 @@ const DangNhap: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    } catch (error: any) {
+        console.error("❌ Lỗi API Google Login:", error);
+        // Nếu lỗi 404, hãy kiểm tra xem URL trong service đã có /api/ chưa
+        const errorMsg = error.response?.data?.message || "Không thể đồng bộ với Server. Kiểm tra URL API hoặc dung lượng đĩa!";
+        alert(errorMsg);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     // THÊM: XỬ LÝ ĐĂNG NHẬP FACEBOOK
     const responseFacebook = async (response: any) => {
         if (response.accessToken) {
             setIsLoading(true);
             try {
-                const res: any = await axiosClient.post("/api/NguoiDung/facebook-login", {
+                const res: any = await axiosClient.post("/NguoiDung/facebook-login", {
                     email: response.email,
                     name: response.name,
                     picture: response.picture.data.url,
