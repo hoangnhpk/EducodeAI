@@ -6,7 +6,7 @@ const api = axiosInstance as any;
 export const authService: any = {
   // ===== ĐĂNG NHẬP =====
   login: async (identifier: string, pass: string) => {
-    const data = await api.post('/api/NguoiDung/login', {
+    const data = await api.post('/NguoiDung/login', {
       UsernameOrEmail: identifier,
       Password: pass,
     });
@@ -28,31 +28,31 @@ export const authService: any = {
   // ===== KIỂM TRA EMAIL TỒN TẠI =====
   checkEmail: async (email: string) => {
     // Phải return trực tiếp kết quả để RegisterPage nhận được { exists: true/false }
-    return await api.get('/api/NguoiDung/check-email', {
+    return await api.get('/NguoiDung/check-email', {
       params: { email },
     });
   },
 
   // ===== GỬI OTP (ĐĂNG KÝ) =====
   sendOtp: async (registerData: any) => {
-    return await api.post('/api/NguoiDung/send-otp', registerData);
+    return await api.post('/NguoiDung/send-otp', registerData);
   },
 
   // ===== XÁC NHẬN ĐĂNG KÝ =====
   confirmRegister: async (registerData: any) => {
-    return await api.post('/api/NguoiDung/confirm-register', registerData);
+    return await api.post('/NguoiDung/confirm-register', registerData);
   },
 
   // ===== QUÊN MẬT KHẨU (GỬI OTP) =====
   forgotPasswordSendOtp: async (email: string) => {
-    return await api.post('/api/NguoiDung/forgot-password-send-otp', {
+    return await api.post('/NguoiDung/forgot-password-send-otp', {
       Email: email,
     });
   },
 
   // ===== ĐẶT LẠI MẬT KHẨU =====
   resetPassword: async (data: any) => {
-    return await api.post('/api/NguoiDung/reset-password', data);
+    return await api.post('/NguoiDung/reset-password', data);
   },
 
   // ===== ĐĂNG XUẤT =====
