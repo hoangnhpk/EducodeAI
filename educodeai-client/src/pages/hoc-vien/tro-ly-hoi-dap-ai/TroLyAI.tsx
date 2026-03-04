@@ -10,6 +10,7 @@ interface ChatBotProps {
     maBaiHoc?: number | null;
     tieuDeBaiHoc?: string | null;
     noiDungBaiHoc?: string | null;
+    isQuizMode?: boolean; // THÊM PROP NÀY: Xác định xem có đang làm quiz hay không
 }
 
 interface TinNhan {
@@ -17,7 +18,7 @@ interface TinNhan {
     NoiDung: string;
 }
 
-export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDungBaiHoc }) => {
+export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDungBaiHoc, isQuizMode = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [tinNhanList, setTinNhanList] = useState<TinNhan[]>([]);
@@ -27,10 +28,9 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
 
     const [savedContents, setSavedContents] = useState<string[]>([]);
 
-    // THÊM: Định nghĩa giới hạn số ký tự tối đa cho 1 tin nhắn
     const MAX_CHARS = 500; 
 
-    // 1. Khởi tạo & Lấy lịch sử chat + Lịch sử các nút đã lưu
+    // 1. Khởi tạo & Lấy lịch sử chat
     useEffect(() => {
         const lichSuCu = localStorage.getItem('educodeai_chat_history');
         const nutDaLuu = localStorage.getItem('educodeai_saved_indices');
@@ -75,8 +75,8 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
 
     // 3. Hàm gửi tin nhắn
     const handleSendMessage = async () => {
-        // THÊM: Kiểm tra cả độ dài trước khi gửi để chắc chắn an toàn
-        if (!inputValue.trim() || inputValue.length > MAX_CHARS) return;
+        // Chặn gửi nếu đang làm quiz hoặc vượt quá ký tự
+        if (isQuizMode || !inputValue.trim() || inputValue.length > MAX_CHARS) return;
 
         const tinNhanMoi: TinNhan = { VaiTro: 'user', NoiDung: inputValue };
         const lichSuCapNhat = [...tinNhanList, tinNhanMoi];
@@ -89,13 +89,8 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
             const response: any = await axiosClient.post('/api/ChatBotAI/tu-van-hoc-tap', {
                 LichSuChat: lichSuGuiDi,
                 TieuDeBaiHoc: tieuDeBaiHoc || null,
-                
-                // THÊM: (Tùy chọn) Giới hạn luôn cả Nội dung bài học gửi lên AI để tránh vượt quá Token limit của API (Ví dụ lấy 3000 ký tự đầu)
                 NoiDungBaiHoc: noiDungBaiHoc ? noiDungBaiHoc.substring(0, 3000) : null 
-            },
-                {
-                    timeout: 120000, 
-                });
+            }, { timeout: 120000 });
 
             const botReply: TinNhan = {
                 VaiTro: 'assistant',
@@ -160,7 +155,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
     return (
         <>
             <div className={`cp-chatbot-window ${!isOpen ? 'hidden' : ''} ${isExpanded ? 'expanded' : ''}`}>
-
                 {/* Header */}
                 <div className="cp-chatbot-header">
                     <div>
@@ -168,11 +162,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                         EduCode AI
                     </div>
                     <div className="cp-chatbot-header-actions">
-                        <i
-                            className={`fas ${isExpanded ? 'fa-compress-alt' : 'fa-expand-alt'}`}
-                            title={isExpanded ? "Thu nhỏ" : "Phóng to"}
-                            onClick={() => setIsExpanded(!isExpanded)}
-                        ></i>
+                        <i className={`fas ${isExpanded ? 'fa-compress-alt' : 'fa-expand-alt'}`} title={isExpanded ? "Thu nhỏ" : "Phóng to"} onClick={() => setIsExpanded(!isExpanded)}></i>
                         <i className="fas fa-trash-alt" title="Xóa lịch sử" onClick={handleClearChat}></i>
                         <i className="fas fa-times" title="Đóng" onClick={() => setIsOpen(false)}></i>
                     </div>
@@ -180,7 +170,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
 
                 {/* Danh sách tin nhắn */}
                 <div className="cp-chatbot-messages">
-                    {/* ... (Đoạn map render tin nhắn giữ nguyên) ... */}
                     {tinNhanList.map((msg, idx) => (
                         <div key={idx} className={`chat-msg ${msg.VaiTro}`}>
                             {msg.VaiTro === 'user' ? (
@@ -216,18 +205,11 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                                         {msg.NoiDung}
                                     </ReactMarkdown>
 
-                                    {/* NÚT LƯU KIẾN THỨC CÓ TRẠNG THÁI LƯU TRỮ */}
                                     <button
                                         className={`btn-save-ai-note ${savedContents.includes(msg.NoiDung) ? 'saved' : ''}`}
                                         onClick={() => handleSaveNote(msg.NoiDung, idx)}
                                         title={savedContents.includes(msg.NoiDung) ? "Đã lưu vào sổ tay" : "Lưu câu trả lời này vào sổ tay"}
-                                        style={savedContents.includes(msg.NoiDung) ? {
-                                            backgroundColor: '#28a745',
-                                            color: '#fff',
-                                            borderColor: '#28a745',
-                                            cursor: 'default',
-                                            opacity: 0.9
-                                        } : {}}
+                                        style={savedContents.includes(msg.NoiDung) ? { backgroundColor: '#28a745', color: '#fff', borderColor: '#28a745', cursor: 'default', opacity: 0.9 } : {}}
                                     >
                                         <i className={savedContents.includes(msg.NoiDung) ? "fas fa-check" : "far fa-bookmark"}></i>
                                         {savedContents.includes(msg.NoiDung) ? " Đã lưu kiến thức" : " Lưu kiến thức"}
@@ -246,33 +228,47 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Area */}
-                <div className="cp-chatbot-input-area" style={{ position: 'relative' }}>
-                    <input
-                        type="text"
-                        placeholder="Hỏi AI về bài học..."
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                        disabled={isLoading}
-                        maxLength={MAX_CHARS} // THÊM: Chặn gõ quá số ký tự quy định
-                        style={{ paddingRight: '50px' }} // Chừa chỗ cho bộ đếm ký tự
-                    />
-                    <button onClick={handleSendMessage} disabled={isLoading || !inputValue.trim() || inputValue.length > MAX_CHARS}>
-                        <i className="fas fa-paper-plane"></i>
-                    </button>
-                    
-                    {/* THÊM: Hiển thị bộ đếm ký tự (nhỏ nhắn ở góc input) */}
-                    <div style={{
-                        position: 'absolute',
-                        right: '90px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        fontSize: '0.7rem',
-                        color: inputValue.length >= MAX_CHARS ? '#ef4444' : '#9ca3af'
-                    }}>
-                        {inputValue.length}/{MAX_CHARS}
+                {/* Input Area - ĐÃ SỬA LẠI ĐỂ KHÓA KHI LÀM QUIZ */}
+                <div className="cp-chatbot-input-area" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                        <input
+                            type="text"
+                            // Cập nhật Placeholder và Disable input nếu đang làm quiz
+                            placeholder={isQuizMode ? "🔒 AI tạm khóa trong lúc làm bài thi" : "Hỏi AI về bài học..."}
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                            disabled={isLoading || isQuizMode} 
+                            maxLength={MAX_CHARS}
+                            style={{ 
+                                width: '100%', 
+                                paddingRight: '60px', 
+                                boxSizing: 'border-box',
+                                backgroundColor: isQuizMode ? '#f1f5f9' : '#fff', // Đổi màu nền xám đi khi bị khóa
+                                cursor: isQuizMode ? 'not-allowed' : 'text'
+                            }} 
+                        />
+                        
+                        {/* Ẩn bộ đếm số khi đang làm Quiz */}
+                        {!isQuizMode && (
+                            <div style={{
+                                position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)',
+                                fontSize: '0.7rem', fontWeight: 500, pointerEvents: 'none',
+                                color: inputValue.length >= MAX_CHARS ? '#ef4444' : '#9ca3af'
+                            }}>
+                                {inputValue.length}/{MAX_CHARS}
+                            </div>
+                        )}
                     </div>
+
+                    <button 
+                        onClick={handleSendMessage} 
+                        disabled={isLoading || isQuizMode || !inputValue.trim() || inputValue.length > MAX_CHARS}
+                        style={{ flexShrink: 0, cursor: isQuizMode ? 'not-allowed' : 'pointer', backgroundColor: isQuizMode ? '#cbd5e1' : undefined }}
+                    >
+                        {/* Đổi icon Gửi thành icon Ổ khóa khi làm quiz */}
+                        <i className={isQuizMode ? "fas fa-lock" : "fas fa-paper-plane"}></i>
+                    </button>
                 </div>
             </div>
 

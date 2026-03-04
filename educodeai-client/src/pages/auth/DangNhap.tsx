@@ -71,7 +71,7 @@ const DangNhap: React.FC = () => {
             const message = error.response?.data?.message || "Tài khoản hoặc mật khẩu không chính xác!";
             setErrors({ identifier: message });
         } finally {
-            setIsLoading(false);
+setIsLoading(false);
         }
     };
 
@@ -149,7 +149,7 @@ const DangNhap: React.FC = () => {
                             <form onSubmit={handleLogin} noValidate>
                                 <div className="text-center mb-4">
                                     <h1 className="h3 mb-2 fw-bold">Đăng nhập</h1>
-                                    <p className="text-muted small">Truy cập vào hệ thống EduCodeAI</p>
+<p className="text-muted small">Truy cập vào hệ thống EduCodeAI</p>
                                 </div>
 
                                 <div className="row g-3">
@@ -193,7 +193,7 @@ const DangNhap: React.FC = () => {
                                         <button
                                             className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill"
                                             type="submit"
-                                            style={{ backgroundColor: '#fb873f' }}
+style={{ backgroundColor: '#fb873f' }}
                                             disabled={isLoading}
                                         >
                                             {isLoading ? "Đang xử lý..." : "Đăng nhập"}
