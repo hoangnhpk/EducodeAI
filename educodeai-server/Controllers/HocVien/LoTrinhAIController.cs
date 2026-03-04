@@ -2,6 +2,7 @@
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace EduCodeAI.Controllers.HocVien
@@ -17,39 +18,53 @@ namespace EduCodeAI.Controllers.HocVien
             _service = service;
         }
 
+        private int GetUserIdFromClaims()
+        {
+            var userIdClaim = User.FindFirstValue("id");
+            if (int.TryParse(userIdClaim, out int userId))
+            {
+                return userId;
+            }
+            throw new UnauthorizedAccessException("User ID claim is missing or invalid.");
+        }
+
         [HttpPost("them")]
         public async Task<IActionResult> TaoLoTrinh(CreateLoTrinhAIDto dto)
         {
-
-            return Ok(await _service.TaoLoTrinhAsync(3, dto));
+            int userId = GetUserIdFromClaims();
+            return Ok(await _service.TaoLoTrinhAsync(userId, dto));
         }
 
         [HttpPut("cap-nhat")]
         public async Task<IActionResult> CapNhatLoTrinh(
         [FromBody] UpdateLoTrinhDto dto)
         {
-            var result = await _service.CapNhatLoTrinhAsync(3, dto);
+            int userId = GetUserIdFromClaims();
+            var result = await _service.CapNhatLoTrinhAsync(userId, dto);
             return Ok(result);
         }
 
         [HttpPost("xac-nhan/{maLoTrinh}")]
         public async Task<IActionResult> XacNhanLoTrinh(int maLoTrinh)
         {
-            var result = await _service.XacNhanLoTrinhAsync(maLoTrinh, 3);
+            int userId = GetUserIdFromClaims();
+            var result = await _service.XacNhanLoTrinhAsync(maLoTrinh, userId);
             return Ok(new { success = result, message = "Lộ trình đã được áp dụng thành công!" });
         }
 
         [HttpGet("lay-tat-ca-lo-trinh")]
         public async Task<IActionResult> GetAllLoTrinhAI()
         {
-            var result = await _service.GetLoTrinhCuaToiAsync(3);
+            int userId = GetUserIdFromClaims();
+            var result = await _service.GetLoTrinhCuaToiAsync(userId);
             return Ok(result);
         }
 
         [HttpGet("chi-tiet/{maLoTrinh}")]
         public async Task<IActionResult> GetChiTietLoTrinh(int maLoTrinh)
         {
-            var result = await _service.GetChiTietLoTrinhAsync(maLoTrinh, 3);
+            int userId = GetUserIdFromClaims();
+            var result = await _service.GetChiTietLoTrinhAsync(maLoTrinh, userId);
 
             if (result == null)
             {
