@@ -8,9 +8,6 @@ export default function HeaderGiangVien() {
         <p className="gv-page-subtitle">Quản lý khóa học và bài tập</p>
       </div>
       <div className="gv-header-right">
-        <button className="btn btn-primary">
-          <MdNotifications /> Thông báo
-        </button>
         <button className="btn btn-outline">
           <MdAccountCircle /> Tài khoản
         </button>

@@ -51,11 +51,11 @@ namespace educodeai_server.Services.Implementation
             return ketQua;
         }
 
-        public async Task<bool> LuuGhiChuAI(LuuGhiChuAIRequest yeuCau)
+        public async Task<bool> LuuGhiChuAI(LuuGhiChuAIRequest yeuCau, int maNguoiDung)
         {
             var duLieu = new GhiChuAIModel
             {
-                MaNguoiDung = 2,
+                MaNguoiDung = maNguoiDung,
                 MaBaiHoc = yeuCau.MaBaiHoc,
                 NoiDung = yeuCau.NoiDung,
                 NgayTao = DateTime.Now,
