@@ -77,10 +77,11 @@ namespace educodeai_server.Services.Implementation
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new[] {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim("id", user.MaNguoiDung.ToString()),
-                new Claim(ClaimTypes.Name, user.HoTen ?? ""),
-                //new Claim(ClaimTypes.Role, role)
+                new Claim(ClaimTypes.Email, user.Email), 
+    
+                new Claim(ClaimTypes.NameIdentifier, user.MaNguoiDung.ToString()),
+
+                new Claim(ClaimTypes.Name, user.HoTen ?? "")
             };
             var token = new JwtSecurityToken(
                 _configuration["Jwt:Issuer"],
