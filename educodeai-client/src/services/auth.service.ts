@@ -60,8 +60,4 @@ export const authService: any = {
     localStorage.removeItem('user_token');
     localStorage.removeItem('user_info');
   },
-  googleLogin: async (payload: { token: string }) => {
-    // Gửi token nhận từ Google lên Backend
-    return await api.post('/api/NguoiDung/google-login', payload);
-  },
 };

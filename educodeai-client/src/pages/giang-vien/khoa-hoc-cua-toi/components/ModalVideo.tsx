@@ -79,7 +79,7 @@ const ModalVideo: React.FC<Props> = ({ mode, maGiangVien, maChuong, duLieuCu, on
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content-custom" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
                 <div className="modal-header-custom">
-                    <h5 className="mb-0">{mode === 'tao' ? '🎬 Thêm bài học video' : '✏️ Sửa bài học'}</h5>
+                    <h5 className="mb-0">{mode === 'tao' ? ' Thêm bài học video' : ' Sửa bài học'}</h5>
                     <FaTimes style={{ cursor: 'pointer' }} onClick={onClose} />
                 </div>
                 <form onSubmit={handleSubmit}>
