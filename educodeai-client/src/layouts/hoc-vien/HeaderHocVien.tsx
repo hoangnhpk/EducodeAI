@@ -66,12 +66,12 @@ export default function HeaderHocVien() {
                 className="nav-link dropdown-toggle d-flex align-items-center"
                 data-bs-toggle="dropdown"
               >
-                <img
+                {/* <img
                   src={user.hinhAnh || user.picture || "/img/user-default.png"}
                   alt="avatar"
                   className="rounded-circle me-2"
                   style={{ width: "35px", height: "35px", objectFit: "cover", border: "1px solid #fb873f" }}
-                />
+                /> */}
                 <span className="fw-bold d-none d-lg-inline">{user.hoTen || user.name}</span>
               </a>
               <div className="dropdown-menu dropdown-menu-end fade-down m-0 shadow-sm border-0">
