@@ -17,7 +17,7 @@ namespace educodeai_server.Repository.Implementation
             _context = context;
         }
 
-        public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync()
+        public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung)
         {
             try
             {
@@ -34,7 +34,10 @@ namespace educodeai_server.Repository.Implementation
                         DiemDanhGiaTB = x.DiemDanhGiaTB,
                         ThoiLuongGio = x.ThoiLuongGio,
                         TrinhDo = x.TrinhDo,
-                        KyNangChinh = x.KyNangChinh
+                        KyNangChinh = x.KyNangChinh,
+                        KhoaHocDaDangKy = maNguoiDung > 0
+                              ? _context.DangKyKhoaHocs.Any(dk => dk.MaKhoaHoc == x.MaKhoaHoc && dk.MaNguoiDung == maNguoiDung)
+                              : false
                     })
                     .ToListAsync();
             }

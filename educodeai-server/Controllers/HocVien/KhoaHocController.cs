@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
+using educodeai_server.Helpers;
 
 namespace educodeai_server.Controllers.HocVien
 {
@@ -21,10 +22,11 @@ namespace educodeai_server.Controllers.HocVien
         [HttpGet("all")]
         public async Task<IActionResult> GetAll([FromQuery] string? search)
         {
+            int maNguoiDung = LayNguoiDungID.LayID(User);
             try
             {
                 // Lấy dữ liệu gốc từ Service
-                var allCourses = await _service.GetAllKhoaHocsAsync();
+                var allCourses = await _service.GetAllKhoaHocsAsync(maNguoiDung);
 
                 // Nếu người dùng có nhập từ khóa (search không trống)
                 if (!string.IsNullOrWhiteSpace(search))

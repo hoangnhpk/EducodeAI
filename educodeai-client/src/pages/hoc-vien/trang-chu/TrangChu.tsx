@@ -15,6 +15,7 @@ interface IKhoaHoc {
     thoiLuongGio: number;
     trinhDo: string;
     kyNangChinh: string;
+    khoaHocDaDangKy: boolean;
 }
 
 const TrangChu: React.FC = () => {
@@ -149,7 +150,21 @@ const TrangChu: React.FC = () => {
                                             </p>
                                             <div className="d-flex justify-content-between border-top pt-3 align-items-center">
                                                 <small className="text-muted"><i className="fa fa-clock text-primary me-2"></i>{kh.thoiLuongGio} giờ</small>
-                                                <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-sm btn-primary px-3 rounded-pill">Chi tiết</Link>
+                                                {kh.khoaHocDaDangKy ? (
+                                                    <Link
+                                                        to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`}
+                                                        className="btn btn-sm btn-success px-3 rounded-pill"
+                                                    >
+                                                        Tiếp tục học
+                                                    </Link>
+                                                ) : (
+                                                    <Link
+                                                        to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`}
+                                                        className="btn btn-sm btn-primary px-3 rounded-pill"
+                                                    >
+                                                        Chi tiết
+                                                    </Link>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

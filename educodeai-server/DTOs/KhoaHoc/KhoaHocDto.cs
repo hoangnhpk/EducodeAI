@@ -11,5 +11,6 @@
         public int ThoiLuongGio { get; set; }
         public string TrinhDo { get; set; }
         public string KyNangChinh { get; set; }
+        public bool KhoaHocDaDangKy { get; set; }
     }
 }
