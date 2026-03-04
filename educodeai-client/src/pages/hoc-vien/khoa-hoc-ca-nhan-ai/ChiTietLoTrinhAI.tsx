@@ -4,6 +4,7 @@ import { aiRoadmapService } from '../../../services/aiRoadmap.service';
 import type { LoTrinhAICuaToiDTO, ChiTietGiaiDoanDTO } from './LoTrinhAICuaToiDTO';
 import './ChiTietLoTrinhAI.css';
 import { decodeId } from '@/utils/id-helper';
+import { encodeId } from '@/utils/id-helper';
 
 const ChiTietLoTrinhAI = () => {
     const { id } = useParams<{ id: string }>();
@@ -11,6 +12,11 @@ const ChiTietLoTrinhAI = () => {
     const navigate = useNavigate();
     const [roadmap, setRoadmap] = useState<LoTrinhAICuaToiDTO | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+
+    const handleNavigateToCourse = (kh: any) => {
+        const safeSlug = kh.slug || 'khoa-hoc';
+        navigate(`/khoa-hoc/${safeSlug}/${encodeId(kh.maKhoaHoc)}`);
+    };
 
     useEffect(() => {
         if (!realId) return;
@@ -73,8 +79,8 @@ const ChiTietLoTrinhAI = () => {
                             <strong>Tiến độ tổng thể</strong>
                         </div>
                         <div className="progress-track-custom mb-2">
-                            <div 
-                                className="progress-bar-custom" 
+                            <div
+                                className="progress-bar-custom"
                                 style={{ width: `${roadmap.phanTramHoanThanh}%` }}
                             ></div>
                         </div>
@@ -94,16 +100,16 @@ const ChiTietLoTrinhAI = () => {
                 {/* Timeline Section */}
                 <div className="roadmap-timeline">
                     {roadmap.giaiDoan?.map((gd: ChiTietGiaiDoanDTO, index: number) => (
-                        <div 
-                            key={gd.giaiDoan} 
-                            className="stage-card" 
+                        <div
+                            key={gd.giaiDoan}
+                            className="stage-card"
                             data-stage={gd.giaiDoan}
                             style={{ animationDelay: `${index * 0.1}s` }}
                         >
                             <span className={`stage-badge ${getStageBadgeClass(gd.giaiDoan, roadmap.tongSoGiaiDoan)}`}>
                                 Giai đoạn {gd.giaiDoan} • {getStageLabel(gd.giaiDoan, roadmap.tongSoGiaiDoan)}
                             </span>
-                            
+
                             {/* Trạng thái giai đoạn */}
                             <div className="float-end">
                                 {gd.hoanThanh ? (
@@ -122,8 +128,13 @@ const ChiTietLoTrinhAI = () => {
                             <div className="stage-courses">
                                 {gd.danhSachKhoaHoc && gd.danhSachKhoaHoc.length > 0 ? (
                                     gd.danhSachKhoaHoc.map((kh) => (
-                                        <div key={kh.maKhoaHoc} className={`course-item`}>
-                                            <h6>{kh.tenKhoaHoc}</h6>
+                                        <div
+                                            key={kh.maKhoaHoc}
+                                            className="course-item"
+                                            style={{ cursor: 'pointer', transition: 'transform 0.2s' }} // Thêm tí css cho mượt
+                                            onClick={() => handleNavigateToCourse(kh)}
+                                        >
+                                            <h6 className="text-primary">{kh.tenKhoaHoc}</h6>
                                             <small>{kh.noiDungChinh}</small>
                                         </div>
                                     ))
