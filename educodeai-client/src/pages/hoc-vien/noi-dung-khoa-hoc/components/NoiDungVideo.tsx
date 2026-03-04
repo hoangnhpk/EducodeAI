@@ -236,8 +236,7 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
         lastRealTimeRef.current = currentRealTime;
         setThoiGianHienTai(currentVideoTime);
       }
-
-      if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.90) {
+      if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.1) {
         luuTienDo(currentVideoTime);
       }
     }, 1000);
