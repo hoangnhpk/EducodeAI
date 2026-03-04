@@ -8,12 +8,9 @@ export default function HeaderQuanTriVien() {
         <p className="qtv-page-subtitle">Quản lý toàn bộ hệ thống</p>
       </div>
       <div className="qtv-header-right">
-        <button className="btn btn-primary">
-          <MdNotifications /> Thông báo
-        </button>
-        <button className="btn btn-outline">
+        {/* <button className="btn btn-outline">
           <MdAccountCircle /> Tài khoản
-        </button>
+        </button> */}
       </div>
     </header>
   );
