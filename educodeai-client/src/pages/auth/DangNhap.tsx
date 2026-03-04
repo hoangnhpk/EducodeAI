@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
-import axiosClient from '../../configs/axios'; 
+import axiosClient from '../../configs/axios';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import FacebookLogin from 'react-facebook-login'; 
+import { jwtDecode } from 'jwt-decode';
+import FacebookLogin from 'react-facebook-login';
 
 const DangNhap: React.FC = () => {
     const navigate = useNavigate();
@@ -14,8 +15,8 @@ const DangNhap: React.FC = () => {
     const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
 
     const GOOGLE_CLIENT_ID = "936326067432-hcndgs9gnnfculp14smdl8e6bnqb4is9.apps.googleusercontent.com";
-    const FACEBOOK_APP_ID = "4257990231123156"; 
-
+    const FACEBOOK_APP_ID = "4257990231123156";
+    
     const validateForm = () => {
         const newErrors: { identifier?: string; password?: string } = {};
         if (!emailOrUsername.trim()) newErrors.identifier = "Vui lòng nhập tài khoản hoặc email";
@@ -85,18 +86,23 @@ const DangNhap: React.FC = () => {
                 localStorage.setItem('user_token', res.token);
                 localStorage.setItem('user_info', JSON.stringify(res.user));
 
-                await Swal.fire({
-                    icon: 'success',
-                    title: 'Google Login',
-                    text: 'Đăng nhập thành công!',
-                    timer: 1500,
-                    showConfirmButton: false
+                Swal.fire({
+                    icon: "success",
+                    title: "Thành công!",
+                    text: "Đăng nhập Google thành công!",
                 });
-
                 redirectByUserRole(res.user);
+                navigate('/');
+                window.location.reload();
             }
         } catch (error: any) {
-            Swal.fire('Lỗi', 'Không thể đồng bộ Google với hệ thống!', 'error');
+            console.error("❌ Lỗi API Google Login:", error);
+            const errorMsg = error.response?.data?.message || "Không thể đồng bộ với Server. Kiểm tra URL API hoặc dung lượng đĩa!";
+            Swal.fire({
+                icon: "error",
+                title: "Lỗi đăng nhập",
+                text: errorMsg,
+            });
         } finally {
             setIsLoading(false);
         }
@@ -145,14 +151,14 @@ const DangNhap: React.FC = () => {
                                     <h1 className="h3 mb-2 fw-bold">Đăng nhập</h1>
                                     <p className="text-muted small">Truy cập vào hệ thống EduCodeAI</p>
                                 </div>
-                                
+
                                 <div className="row g-3">
                                     <div className="col-12 text-start">
                                         <div className="form-floating">
-                                            <input 
-                                                type="text" 
-                                                className={`form-control ${errors.identifier ? 'is-invalid' : ''}`} 
-                                                id="email" 
+                                            <input
+                                                type="text"
+                                                className={`form-control ${errors.identifier ? 'is-invalid' : ''}`}
+                                                id="email"
                                                 placeholder="Tài khoản hoặc Email"
                                                 value={emailOrUsername}
                                                 onChange={(e) => setEmailOrUsername(e.target.value)}
@@ -162,13 +168,13 @@ const DangNhap: React.FC = () => {
                                             {errors.identifier && <div className="invalid-feedback">{errors.identifier}</div>}
                                         </div>
                                     </div>
-                                    
+
                                     <div className="col-12 text-start">
                                         <div className="form-floating">
-                                            <input 
-                                                type="password" 
-                                                className={`form-control ${errors.password ? 'is-invalid' : ''}`} 
-                                                id="password" 
+                                            <input
+                                                type="password"
+                                                className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                                                id="password"
                                                 placeholder="Mật khẩu"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
@@ -182,11 +188,11 @@ const DangNhap: React.FC = () => {
                                     <div className="col-12 text-end">
                                         <Link to="/quen-mat-khau" className="text-decoration-none small" style={{ color: '#fb873f' }}>Quên mật khẩu?</Link>
                                     </div>
-                                    
+
                                     <div className="col-12">
-                                        <button 
-                                            className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill" 
-                                            type="submit" 
+                                        <button
+                                            className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill"
+                                            type="submit"
                                             style={{ backgroundColor: '#fb873f' }}
                                             disabled={isLoading}
                                         >
@@ -223,9 +229,9 @@ const DangNhap: React.FC = () => {
                                             />
                                         </div>
                                     </div>
-                                    
+
                                     <div className="col-12 text-center mt-4">
-                                        <p className="mb-0 small">Chưa có tài khoản? <Link className="text-decoration-none fw-bold" style={{color: '#fb873f'}} to="/dang-ky">Đăng ký ngay</Link></p>
+                                        <p className="mb-0 small">Chưa có tài khoản? <Link className="text-decoration-none fw-bold" style={{ color: '#fb873f' }} to="/dang-ky">Đăng ký ngay</Link></p>
                                     </div>
                                 </div>
                             </form>

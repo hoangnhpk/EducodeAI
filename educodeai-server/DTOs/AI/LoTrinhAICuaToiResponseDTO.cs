@@ -40,6 +40,7 @@ namespace educodeai_server.DTOs.AI
         public string GhiChu { get; set; } = string.Empty;
         public int TuTuan { get; set; }
         public int DenTuan { get; set; }
+        public string Slug { get; set; } = null!;
     }
 
     public class NoiDungLoTrinhDTO

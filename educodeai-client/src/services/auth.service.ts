@@ -15,15 +15,15 @@ export const authService: any = {
     if (!data?.token) {
       throw new Error('Login response không có token');
     }
-    
+
     // Lưu token vào localStorage ngay tại đây để đồng bộ với Interceptor
     localStorage.setItem('user_token', data.token);
-    
+
     return data;
   },
  googleLogin: async (payload: { token: string }) => {
     // Gửi token nhận từ Google lên Backend
-    return await api.post('/NguoiDung/google-login', payload);
+    return await api.post('/api/NguoiDung/google-login', payload);
   },
   // ===== KIỂM TRA EMAIL TỒN TẠI =====
   checkEmail: async (email: string) => {
@@ -59,5 +59,9 @@ export const authService: any = {
   logout: () => {
     localStorage.removeItem('user_token');
     localStorage.removeItem('user_info');
+  },
+  googleLogin: async (payload: { token: string }) => {
+    // Gửi token nhận từ Google lên Backend
+    return await api.post('/api/NguoiDung/google-login', payload);
   },
 };

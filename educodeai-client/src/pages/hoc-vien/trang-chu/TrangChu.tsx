@@ -4,6 +4,7 @@ import axiosInstance from '@/configs/axios';
 import EduBanner from "./components/EduBanner";
 import { encodeId } from "@/utils/id-helper";
 import { ChatBot } from '@/pages/hoc-vien/tro-ly-hoi-dap-ai/TroLyAI';
+import { getUserId } from '@/utils/authHelper';
 interface IKhoaHoc {
     maKhoaHoc: number;
     tenKhoaHoc: string;
@@ -26,7 +27,7 @@ const TrangChu: React.FC = () => {
         setIsLoading(true);
         try {
             // Sử dụng params để gửi từ khóa tìm kiếm lên Backend
-            const data = await axiosInstance.get<IKhoaHoc[]>('/KhoaHoc/all', {
+            const data = await axiosInstance.get<IKhoaHoc[]>('api/KhoaHoc/all', {
                 params: { search: search }
             });
             setCourses(data);
