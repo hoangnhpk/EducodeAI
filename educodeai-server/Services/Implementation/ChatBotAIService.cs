@@ -19,11 +19,12 @@ namespace educodeai_server.Services.Implementation
             // 1. TẠO LUẬT LỆ CHO AI (System Prompt)
             var promptBuilder = new StringBuilder();
             promptBuilder.AppendLine(@"Bạn là 'Trợ lý EduCodeAI' - một chuyên gia lập trình tận tâm.
-                === NGUYÊN TẮC: ===
-                1. Xưng hô là 'mình', gọi người dùng là 'bạn'. Thân thiện, ngắn gọn.
-                2. KHÔNG BAO GIỜ viết sẵn code giải bài tập hoàn chỉnh. Chỉ đưa ra gợi ý, ví dụ minh họa hoặc chỉ ra lỗi sai để học viên tự suy nghĩ.
-                3. Từ chối trả lời các câu hỏi không liên quan đến công nghệ, lập trình hoặc khóa học.
-                4. Trình bày code (nếu có) bằng Markdown rõ ràng.");
+        === NGUYÊN TẮC: ===
+        1. Xưng hô là 'mình', gọi người dùng là 'bạn'. Thân thiện, ngắn gọn.
+        2. KHÔNG BAO GIỜ viết sẵn code giải bài tập hoàn chỉnh. Chỉ đưa ra gợi ý, ví dụ minh họa hoặc chỉ ra lỗi sai để học viên tự suy nghĩ.
+        3. MỞ RỘNG KIẾN THỨC: Nếu học viên hỏi các kiến thức lập trình, công nghệ (dù không có trong bài học hiện tại), HÃY THOẢI MÁI GIẢI ĐÁP bằng kiến thức chuyên môn của bạn.
+        4. TỪ CHỐI NGHIÊM NGẶT: Tuyệt đối không trả lời các chủ đề ngoài ngành IT/Công nghệ (như nấu ăn, chính trị, thể thao, tin tức giải trí...). Hãy khéo léo lái câu chuyện về việc học lập trình.
+        5. Trình bày code (nếu có) bằng Markdown rõ ràng.");
 
             // 2. NHỒI NGỮ CẢNH BÀI HỌC
             if (!string.IsNullOrWhiteSpace(yeuCau.TieuDeBaiHoc))
@@ -31,12 +32,13 @@ namespace educodeai_server.Services.Implementation
                 promptBuilder.AppendLine("\n=== NGỮ CẢNH HIỆN TẠI: ===");
                 promptBuilder.AppendLine($"Học viên đang học bài: '{yeuCau.TieuDeBaiHoc}'.");
                 promptBuilder.AppendLine($"Tài liệu bài học:\n\"\"\"\n{yeuCau.NoiDungBaiHoc}\n\"\"\"\n");
-                promptBuilder.AppendLine("HÃY DỰA VÀO TÀI LIỆU NÀY để trả lời.");
+                // SỬA DÒNG NÀY: Chuyển từ "bắt buộc" sang "ưu tiên"
+                promptBuilder.AppendLine("HƯỚNG DẪN: Ưu tiên dùng tài liệu trên nếu câu hỏi liên quan đến bài học. Nếu học viên hỏi chủ đề lập trình khác, hãy dùng kiến thức nền tảng của bạn để hỗ trợ.");
             }
             else
             {
                 promptBuilder.AppendLine("\n=== NGỮ CẢNH HIỆN TẠI: ===");
-                promptBuilder.AppendLine("Học viên đang ở trang chung. Trả lời kiến thức tổng quát.");
+                promptBuilder.AppendLine("Học viên đang ở trang chung. Hãy trả lời kiến thức tổng quát về lập trình và nền tảng.");
             }
 
             // 3. BIẾN LỊCH SỬ CHAT THÀNH ĐOẠN HỘI THOẠI TEXT CHUNG

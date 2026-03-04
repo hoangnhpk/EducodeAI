@@ -7,18 +7,18 @@ export default function SidebarQuanTriVien() {
         <h2><MdSettings /> Quản Trị</h2>
       </div>
       <nav className="qtv-sidebar-nav">
-        <a href="/quan-tri-vien" className="qtv-nav-link active">
+        {/* <a href="/quan-tri-vien" className="qtv-nav-link active">
           <MdDashboard /> Dashboard
-        </a>
+        </a> */}
         <a href="/quan-tri-vien/nguoi-dung" className="qtv-nav-link">
           <MdPeople /> Người Dùng
         </a>
-        <a href="/quan-tri-vien/quan-ly-binh-luan-review" className="qtv-nav-link">
+        {/* <a href="/quan-tri-vien/quan-ly-binh-luan-review" className="qtv-nav-link">
           <MdRateReview /> Review
         </a>
         <a href="/quan-tri-vien/cau-hinh" className="qtv-nav-link">
           <MdBuildCircle /> Cấu Hình
-        </a>
+        </a> */}
       </nav>
     </aside>
   );

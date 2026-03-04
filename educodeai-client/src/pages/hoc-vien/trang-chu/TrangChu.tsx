@@ -159,7 +159,7 @@ const TrangChu: React.FC = () => {
                                                     </Link>
                                                 ) : (
                                                     <Link
-                                                        to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`}
+                                                        to={`/khoa-hoc/${kh.maKhoaHoc}`}
                                                         className="btn btn-sm btn-primary px-3 rounded-pill"
                                                     >
                                                         Chi tiết
