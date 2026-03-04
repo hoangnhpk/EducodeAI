@@ -1,15 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 
-// 1. Interface khớp với cấu trúc JSON trong Database (C# Seed Data)
+// 1. Interface mô tả chính xác file JSON bạn truyền vào
+interface RawCauHoi {
+    cauHoi: string;
+    dapAnA: string;
+    dapAnB: string;
+    dapAnC: string;
+    dapAnD: string;
+    dapAnDung: string; // "A", "B", "C" hoặc "D"
+    giaiThich: string;
+}
+
+// 2. Interface sử dụng nội bộ trong Component
 interface CauHoiDTO {
     Id: number;
     NoiDung: string;
     LuaChon: string[];
-    DapAnDung: number;
+    DapAnDung: number; // Chuyển "A", "B", "C", "D" thành 0, 1, 2, 3
+    GiaiThich: string;
 }
 
-// 2. Props nhận từ Component Cha
+// Props nhận từ Component Cha
 interface DuLieuQuiz {
     maBaiTapQuiz: number;
     maBaiTap: number;
@@ -42,11 +54,24 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
     const [thoiGianConLai, setThoiGianConLai] = useState<number | null>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // --- EFFECT 1: Khởi tạo dữ liệu & Đồng hồ ---
+    // --- EFFECT 1: Khởi tạo & Chuyển đổi dữ liệu ---
     useEffect(() => {
         try {
             if (duLieu.duLieuCauHoi) {
-                let cauHoiParsed: CauHoiDTO[] = JSON.parse(duLieu.duLieuCauHoi);
+                // Parse chuỗi JSON thành mảng RawCauHoi
+                const rawData: RawCauHoi[] = JSON.parse(duLieu.duLieuCauHoi);
+
+                // Map A, B, C, D thành index 0, 1, 2, 3
+                const bangChuCai: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
+
+                // Chuyển đổi cấu trúc Raw sang cấu trúc Component dễ dùng
+                let cauHoiParsed: CauHoiDTO[] = rawData.map((item, index) => ({
+                    Id: index + 1, // Tạo ID giả định dựa trên thứ tự
+                    NoiDung: item.cauHoi,
+                    LuaChon: [item.dapAnA, item.dapAnB, item.dapAnC, item.dapAnD],
+                    DapAnDung: bangChuCai[item.dapAnDung?.toUpperCase()] ?? 0,
+                    GiaiThich: item.giaiThich
+                }));
 
                 // Chỉ đảo câu hỏi lúc khởi tạo
                 if (duLieu.daoCauHoi) {
@@ -67,14 +92,12 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
             console.error("Lỗi parse dữ liệu câu hỏi:", loi);
             Swal.fire("Lỗi", "Dữ liệu bài tập không hợp lệ.", "error");
         }
-        // CHỈ CHẠY LẠI KHI ID BÀI TẬP HOẶC NỘI DUNG CÂU HỎI THAY ĐỔI
     }, [duLieu.maBaiTapQuiz, duLieu.duLieuCauHoi]);
 
     // --- EFFECT 2: Chạy đồng hồ đếm ngược ---
     useEffect(() => {
         if (thoiGianConLai !== null && !daNopBai) {
             if (thoiGianConLai <= 0) {
-                // Hết giờ -> Tự động nộp
                 xuLyNopBai(true);
                 return;
             }
@@ -89,7 +112,7 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
         };
     }, [thoiGianConLai, daNopBai]);
 
-    // --- HELPER: Định dạng giây sang MM:SS ---
+    // --- HELPER ---
     const dinhDangThoiGian = (tongGiay: number) => {
         const phut = Math.floor(tongGiay / 60);
         const giay = tongGiay % 60;
@@ -116,7 +139,6 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
     };
 
     const xuLyNopBai = async (tuDongNop: boolean = false) => {
-        // Nếu không phải tự động nộp (do hết giờ) thì hỏi xác nhận
         if (!tuDongNop && Object.keys(dapAnNguoiDung).length < tongSoCau) {
             const result = await Swal.fire({
                 title: 'Bạn chưa chọn hết đáp án. Vẫn muốn nộp bài?',
@@ -130,29 +152,27 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
 
         setDaNopBai(true);
         if (timerRef.current) clearInterval(timerRef.current);
+        
         const danhSachTraLoi: { IdCauHoi: number; IndexLuaChon: number }[] = [];
         let soCauDung = 0;
+        
         danhSachCauHoi.forEach((cau, index) => {
             const luaChonCuaUser = dapAnNguoiDung[index];
-
             if (luaChonCuaUser !== undefined) {
                 danhSachTraLoi.push({
                     IdCauHoi: cau.Id,
                     IndexLuaChon: luaChonCuaUser
                 });
             }
-
             if (luaChonCuaUser === cau.DapAnDung) soCauDung++;
         });
 
         const phanTramDatDuoc = (soCauDung / tongSoCau) * 100;
         const daDat = phanTramDatDuoc >= duLieu.diemCanDat;
 
-        // --- SỬA LỖI TẠI ĐÂY: Truyền đủ 4 tham số ---
         if (khiHoanThanh) {
             khiHoanThanh(phanTramDatDuoc, daDat, soCauDung, tongSoCau, danhSachTraLoi);
         }
-        // -------------------------------------------
 
         Swal.fire({
             icon: daDat ? 'success' : 'error',
@@ -169,11 +189,9 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
         setDapAnNguoiDung({});
         setDaNopBai(false);
         setChiSoHienTai(0);
-        // Reset thời gian
         if (duLieu.thoiGianLamBai) {
             setThoiGianConLai(duLieu.thoiGianLamBai * 60);
         }
-        // Đảo lại câu hỏi nếu cần
         if (duLieu.daoCauHoi) {
             setDanhSachCauHoi([...danhSachCauHoi].sort(() => Math.random() - 0.5));
         }
@@ -187,12 +205,12 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
             return duocChon ? `${classCoBan} selected` : classCoBan;
         }
 
-        // Logic hiển thị màu sau khi nộp
         if (chiSoLuaChon === dapAnDung) return `${classCoBan} correct`;
         if (duocChon && chiSoLuaChon !== dapAnDung) return `${classCoBan} wrong`;
 
         return classCoBan;
     };
+    
     const phanTramTienDo = ((chiSoHienTai + 1) / tongSoCau) * 100;
 
     // --- RENDER ---
@@ -232,7 +250,7 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
                 </div>
             </div>
 
-            {/* BODY CÂU HỎI (Thêm animation key để reset hiệu ứng khi đổi câu) */}
+            {/* BODY CÂU HỎI */}
             <div className="cp-quiz-body">
                 <div key={chiSoHienTai} className="anim-enter">
                     <div className="cp-quiz-question">
@@ -240,17 +258,34 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
                     </div>
 
                     <div className="cp-quiz-options">
-                        {cauHoiHienTai.LuaChon.map((luaChon, index) => (
-                            <div
-                                key={index}
-                                className={`cp-option-card ${layClassDapAn(chiSoHienTai, index, cauHoiHienTai.DapAnDung)}`}
-                                onClick={() => xuLyChonDapAn(index)}
-                            >
-                                <div className="cp-option-circle"></div>
-                                <span>{luaChon}</span>
-                            </div>
-                        ))}
+                        {cauHoiHienTai.LuaChon.map((luaChon, index) => {
+                            // Map index (0,1,2,3) thành ký tự (A,B,C,D) để hiển thị cho đẹp
+                            const nhanDien = String.fromCharCode(65 + index); 
+                            
+                            return (
+                                <div
+                                    key={index}
+                                    className={`cp-option-card ${layClassDapAn(chiSoHienTai, index, cauHoiHienTai.DapAnDung)}`}
+                                    onClick={() => xuLyChonDapAn(index)}
+                                >
+                                    <div className="cp-option-circle">{nhanDien}</div>
+                                    <span>{luaChon}</span>
+                                </div>
+                            );
+                        })}
                     </div>
+                    
+                    {/* KHU VỰC HIỂN THỊ GIẢI THÍCH (Chỉ hiện sau khi nộp bài) */}
+                    {daNopBai && cauHoiHienTai.GiaiThich && (
+                        <div className="cp-quiz-explanation mt-4 p-3 rounded" style={{ backgroundColor: '#f0fdf4', borderLeft: '4px solid #22c55e' }}>
+                            <strong style={{ color: '#166534', display: 'block', marginBottom: '8px' }}>
+                                <i className="fas fa-lightbulb"></i> Giải thích đáp án:
+                            </strong>
+                            <span style={{ color: '#15803d', fontSize: '0.95rem' }}>
+                                {cauHoiHienTai.GiaiThich}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 

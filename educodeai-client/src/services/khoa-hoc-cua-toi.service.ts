@@ -9,7 +9,7 @@ import type {
     ThemVideoResponseDTO,
 } from '@/pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToiDTO';
 
-const BASE = '/giang-vien/khoa-hoc';
+const BASE = '/api/giang-vien/khoa-hoc';
 
 export const khoaHocCuaToiService = {
 
