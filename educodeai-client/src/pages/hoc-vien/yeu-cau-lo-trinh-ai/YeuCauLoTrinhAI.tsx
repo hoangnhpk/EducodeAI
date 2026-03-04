@@ -6,6 +6,7 @@ import "./Components/YeuCauLoTrinhAI.css"
 import { aiRoadmapService } from "../../../services/aiRoadmap.service";
 import TrangThaiKetQua from "./Components/TrangThaiKetQua"
 import Swal from "sweetalert2";
+import { getUserId } from "../../../utils/authHelper";
 
 export default function YeuCauLoTrinhAI() {
   const [trangThaiAI, setTrangThaiAI] = useState<TrangThaiAI>("cho");
@@ -13,6 +14,16 @@ export default function YeuCauLoTrinhAI() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const xuLyGuiForm = async (duLieu: DuLieuYeuCauLoTrinh) => {
+    const userId = getUserId();
+    if (!userId) {
+      Swal.fire({
+        icon: "warning",
+        text: "Bạn cần đăng nhập để tạo lộ trình AI"
+      });
+      window.location.href = "/dang-nhap";
+      return;
+    }
+
     try {
       setTrangThaiAI("dang_phan_tich");
       const ketQua = await aiRoadmapService.taoLoTrinh(duLieu);
@@ -44,7 +55,7 @@ export default function YeuCauLoTrinhAI() {
     try {
       setIsProcessing(true);
       await aiRoadmapService.xacNhanLoTrinh(ketQuaAI.maLoTrinh);
-      
+
       Swal.fire({ icon: 'success', text: "Chúc mừng! Lộ trình học tập đã được áp dụng.", timer: 1500, showConfirmButton: false });
       window.location.href = "/khoa-hoc-ai-cua-toi";
     } catch (error) {
@@ -67,23 +78,23 @@ export default function YeuCauLoTrinhAI() {
 
         <div className="row align-items-stretch">
           <div className="col-lg-6">
-            <FormYeuCauLoTrinh 
-                onSubmit={xuLyGuiForm} 
-                isSubmitting={trangThaiAI === "dang_phan_tich"} 
+            <FormYeuCauLoTrinh
+              onSubmit={xuLyGuiForm}
+              isSubmitting={trangThaiAI === "dang_phan_tich"}
             />
           </div>
 
           <div className="col-lg-6">
             {trangThaiAI === "da_co_ket_qua" ? (
-                // Render Component Kết quả với đầy đủ tính năng
-                <TrangThaiKetQua 
-                    ketQua={ketQuaAI}
-                    onModify={handleModify}
-                    onConfirm={handleConfirm}
-                    isProcessing={isProcessing}
-                />
+              // Render Component Kết quả với đầy đủ tính năng
+              <TrangThaiKetQua
+                ketQua={ketQuaAI}
+                onModify={handleModify}
+                onConfirm={handleConfirm}
+                isProcessing={isProcessing}
+              />
             ) : (
-                <AiPanel trangThaiAI={trangThaiAI} ketQua={null} />
+              <AiPanel trangThaiAI={trangThaiAI} ketQua={null} />
             )}
           </div>
         </div>

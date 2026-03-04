@@ -56,9 +56,7 @@ export default function HeaderHocVien() {
           <Link to="/yeu-cau-lo-trinh-ai" className="nav-item nav-link">
             Lộ trình AI
           </Link>
-          <Link to="/khoa-hoc-ai-cua-toi" className="nav-item nav-link">
-            Lộ trình của tôi
-          </Link>
+
 
           {/* KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP */}
           {user ? (
@@ -78,10 +76,13 @@ export default function HeaderHocVien() {
               </a>
               <div className="dropdown-menu dropdown-menu-end fade-down m-0 shadow-sm border-0">
                 <Link to="/profile" className="dropdown-item">
-                   Hồ sơ cá nhân
+                  Hồ sơ cá nhân
                 </Link>
                 <Link to="/my-courses" className="dropdown-item">
-                   Khóa học của tôi
+                  Khóa học của tôi
+                </Link>
+                <Link to="/khoa-hoc-ai-cua-toi" className="dropdown-item">
+                  Lộ trình của tôi
                 </Link>
                 <hr className="dropdown-divider" />
                 <button
