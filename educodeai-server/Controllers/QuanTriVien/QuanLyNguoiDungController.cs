@@ -5,7 +5,6 @@ namespace educodeai_server.Controllers
 {
     [Route("api/nguoi-dung")]
     [ApiController]
-    // [Authorize(Roles = "0")]
     public class QuanLyNguoiDungController : ControllerBase
     {
         private readonly IQuanLyNguoiDungService _service;

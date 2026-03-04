@@ -138,7 +138,8 @@ namespace educodeai_server.Controllers.HocVien
         [HttpPost("luu-ghi-chu-ai")]
         public async Task<IActionResult> LuuGhiChu([FromBody] LuuGhiChuAIRequest yeuCau)
         {
-            var thanhCong = await _khoaHocService.LuuGhiChuAI(yeuCau);
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            var thanhCong = await _khoaHocService.LuuGhiChuAI(yeuCau, maNguoiDung);
             if (thanhCong)
                 return Ok(new { thongBao = "Đã lưu vào sổ tay AI thành công!" });
 
