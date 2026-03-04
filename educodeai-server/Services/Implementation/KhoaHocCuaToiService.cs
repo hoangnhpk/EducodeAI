@@ -1,4 +1,4 @@
-using educodeai_server.DTOs;
+﻿using educodeai_server.DTOs;
 using educodeai_server.Models;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
@@ -89,7 +89,7 @@ namespace educodeai_server.Services.Implement
             };
         }
 
-        // ===== TẠO KHÓA HỌC =====
+        // ===== TẠO KHOÁ HỌC =====
         public async Task<bool> TaoKhoaHocAsync(int maGiangVien, KhoaHocCreateUpdateDTO dto)
         {
             var khoaHoc = new KhoaHocModel
@@ -103,7 +103,7 @@ namespace educodeai_server.Services.Implement
                 TrangThai = dto.TrangThai,
                 MaGiangVien = maGiangVien,
                 NgayTao = DateTime.Now,
-                KyNangChinh = dto.KyNangChinh,
+                KyNangChinh = dto.KyNangChinh ?? string.Empty,
             };
 
             await _repository.AddKhoaHocAsync(khoaHoc);
@@ -111,7 +111,7 @@ namespace educodeai_server.Services.Implement
             return true;
         }
 
-        // ===== CẬP NHẬT KHÓA HỌC =====
+        // ===== CẬP NHÂT KHOÁ HỌC =====
         public async Task<bool> CapNhatKhoaHocAsync(int maKhoaHoc, int maGiangVien, KhoaHocCreateUpdateDTO dto)
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
@@ -124,14 +124,14 @@ namespace educodeai_server.Services.Implement
             khoaHoc.TrinhDo = dto.TrinhDo;
             khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;
             khoaHoc.TrangThai = dto.TrangThai;
-            khoaHoc.KyNangChinh = dto.KyNangChinh;
+            khoaHoc.KyNangChinh = dto.KyNangChinh ?? string.Empty;
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
             return true;
         }
 
-        // ===== XÓA KHÓA HỌC =====
+        // ===== XOÁ KHOÁ HỌC =====
         public async Task<bool> XoaKhoaHocAsync(int maKhoaHoc, int maGiangVien)
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
@@ -177,7 +177,7 @@ namespace educodeai_server.Services.Implement
             return true;
         }
 
-        // ===== XÓA CHƯƠNG =====
+        // ===== XOÁ CHƯƠNG =====
         public async Task<bool> XoaChuongAsync(int maChuong, int maGiangVien)
         {
             var chuong = await _repository.GetChuongWithKhoaHocAsync(maChuong);
@@ -195,13 +195,13 @@ namespace educodeai_server.Services.Implement
         {
             var chuong = await _repository.GetChuongWithKhoaHocAsync(maChuong);
             if (chuong == null || chuong.KhoaHoc.MaGiangVien != maGiangVien)
-                throw new UnauthorizedAccessException("Không có quyền thêm video vào chương này.");
+                throw new UnauthorizedAccessException("KhÃ´ng cÃ³ quyá»n thÃªm video vÃ o chÆ°Æ¡ng nÃ y.");
 
             var baiHoc = new BaiHocModel
             {
                 MaChuong = maChuong,
                 TieuDe = dto.TieuDe,
-                LinkVideo = dto.LinkVideo,
+                LinkVideo = ExtractEmbedUrl(dto.LinkVideo),
                 ThoiLuong = dto.ThoiLuong,
                 ThuTu = dto.ThuTu,
                 LoaiBaiHoc = "Video",
@@ -214,7 +214,7 @@ namespace educodeai_server.Services.Implement
             {
                 MaBaiHoc = baiHoc.MaBaiHoc,
                 TieuDe = baiHoc.TieuDe,
-                LinkVideo = baiHoc.LinkVideo,
+                LinkVideo = dto.LinkVideo,
                 ThoiLuong = baiHoc.ThoiLuong ?? 0,
                 ThuTu = baiHoc.ThuTu,
             };
@@ -229,7 +229,7 @@ namespace educodeai_server.Services.Implement
             if (baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien) return false;
 
             baiHoc.TieuDe = dto.TieuDe;
-            baiHoc.LinkVideo = dto.LinkVideo;
+            baiHoc.LinkVideo = ExtractEmbedUrl(dto.LinkVideo);
             baiHoc.ThoiLuong = dto.ThoiLuong;
             baiHoc.ThuTu = dto.ThuTu;
 
@@ -238,7 +238,7 @@ namespace educodeai_server.Services.Implement
             return true;
         }
 
-        // ===== XÓA VIDEO =====
+        // ===== XOÁ VIDEO =====
         public async Task<bool> XoaVideoAsync(int maBaiHoc, int maGiangVien)
         {
             var baiHoc = await _repository.GetBaiHocWithChuongAsync(maBaiHoc);
@@ -249,6 +249,27 @@ namespace educodeai_server.Services.Implement
             await _repository.DeleteBaiHocAsync(baiHoc);
             await _repository.SaveChangesAsync();
             return true;
+        }
+        private static string? ExtractEmbedUrl(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return null;
+
+            var patterns = new[]
+            {
+                @"[?&]v=([^&]+)",
+                @"youtu\.be/([^?&]+)",
+                @"embed/([^?&/]+)",
+                @"shorts/([^?&]+)",
+    };
+
+            foreach (var pattern in patterns)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(url, pattern);
+                if (match.Success)
+                    return $"https://www.youtube.com/embed/{match.Groups[1].Value}";
+            }
+
+            return url;
         }
     }
 }

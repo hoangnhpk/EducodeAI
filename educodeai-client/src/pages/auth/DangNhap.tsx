@@ -16,6 +16,7 @@ const DangNhap: React.FC = () => {
 
     const GOOGLE_CLIENT_ID = "936326067432-hcndgs9gnnfculp14smdl8e6bnqb4is9.apps.googleusercontent.com";
     const FACEBOOK_APP_ID = "4257990231123156";
+    
     const validateForm = () => {
         const newErrors: { identifier?: string; password?: string } = {};
         if (!emailOrUsername.trim()) newErrors.identifier = "Vui lòng nhập tài khoản hoặc email";
@@ -28,20 +29,43 @@ const DangNhap: React.FC = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Đăng nhập bằng tài khoản mật khẩu thông thường
+
+    const redirectByUserRole = (user: any) => {
+        // Lưu ý: Kiểm tra xem backend trả về "vaiTro" hay "VaiTro"
+        const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
+
+        if (role === 0) {
+            navigate('/quan-tri-vien'); 
+        } else if (role === 1) {
+            navigate('/giang-vien');
+        } else {
+            navigate('/');
+        }
+        // Sau khi navigate, reload để cập nhật Header/Navbar nếu cần
+        window.location.reload();
+    };
+
+    // 1. Đăng nhập bằng tài khoản mật khẩu
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
         setIsLoading(true);
-        setErrors({});
 
         try {
             const response: any = await authService.login(emailOrUsername, password);
             if (response && response.token) {
                 localStorage.setItem('user_token', response.token);
                 localStorage.setItem('user_info', JSON.stringify(response.user));
-                navigate('/');
-                window.location.reload();
+
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công',
+                    text: `Chào mừng ${response.user?.hoTen || 'bạn'} quay trở lại!`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                redirectByUserRole(response.user);
             }
         } catch (error: any) {
             const message = error.response?.data?.message || "Tài khoản hoặc mật khẩu không chính xác!";
@@ -51,60 +75,82 @@ const DangNhap: React.FC = () => {
         }
     };
 
+    // 2. Đăng nhập Google
     const handleGoogleSuccess = async (credentialResponse: any) => {
         setIsLoading(true);
         try {
             const token = credentialResponse.credential;
+            const res: any = await authService.googleLogin({ token: token }); 
 
-            // 2. GỌI API GỬI LÊN BACKEND (Đây là bước bạn đang thiếu)
-            // Giả sử service của bạn là authService.googleLogin
-            const res: any = await authService.googleLogin({ token: token });
-
-            // 3. Chỉ lưu vào localStorage KHI BACKEND trả về thành công
             if (res && res.token) {
                 localStorage.setItem('user_token', res.token);
                 localStorage.setItem('user_info', JSON.stringify(res.user));
 
-                alert(`Đăng nhập Google thành công!`);
+                Swal.fire({
+                    icon: "success",
+                    title: "Thành công!",
+                    text: "Đăng nhập Google thành công!",
+                });
+                redirectByUserRole(res.user);
                 navigate('/');
                 window.location.reload();
             }
         } catch (error: any) {
             console.error("❌ Lỗi API Google Login:", error);
-            const errorMsg = error.response?.data?.message || "Không thể đồng bộ tài khoản với SQL Server. Kiểm tra dung lượng đĩa!";
-        } finally {
-            setIsLoading(false);
-        }
-};
-
-// THÊM: XỬ LÝ ĐĂNG NHẬP FACEBOOK
-const responseFacebook = async (response: any) => {
-    if (response.accessToken) {
-        setIsLoading(true);
-        try {
-            const res: any = await axiosClient.post("/NguoiDung/facebook-login", {
-                email: response.email,
-                name: response.name,
-                picture: response.picture.data.url,
-                userID: response.userID
-            });
-
-            localStorage.setItem('user_token', res.token);
-            localStorage.setItem('user_info', JSON.stringify(res.user));
-
-            navigate('/');
-            window.location.reload();
-        } catch (error: any) {
+            const errorMsg = error.response?.data?.message || "Không thể đồng bộ với Server. Kiểm tra URL API hoặc dung lượng đĩa!";
             Swal.fire({
                 icon: "error",
                 title: "Lỗi đăng nhập",
-                text: error.response?.data?.message || "Lỗi đồng bộ Facebook. Kiểm tra dung lượng đĩa!",
+                text: errorMsg,
             });
         } finally {
             setIsLoading(false);
         }
-    }
-};
+    };
+
+    // 3. Đăng nhập Facebook
+    const responseFacebook = async (response: any) => {
+        if (response.accessToken) {
+            setIsLoading(true);
+            try {
+                const res: any = await axiosClient.post("/api/NguoiDung/facebook-login", {
+                    email: response.email,
+                    name: response.name,
+                    picture: response.picture.data.url,
+                    userID: response.userID
+                });
+
+                localStorage.setItem('user_token', res.token);
+                localStorage.setItem('user_info', JSON.stringify(res.user));
+
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Facebook Login',
+                    text: 'Đăng nhập thành công!',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                redirectByUserRole(res.user);
+            } catch (error: any) {
+                Swal.fire('Lỗi', 'Lỗi đồng bộ dữ liệu Facebook!', 'error');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
+    return (
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+            <div className="container-xxl py-5 mt-4">
+                <div className="container">
+                    <div className="row g-4 justify-content-center">
+                        <div className="col-lg-5 shadow p-4 bg-white rounded-4">
+                            <form onSubmit={handleLogin} noValidate>
+                                <div className="text-center mb-4">
+                                    <h1 className="h3 mb-2 fw-bold">Đăng nhập</h1>
+                                    <p className="text-muted small">Truy cập vào hệ thống EduCodeAI</p>
+                                </div>
 
 return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
@@ -174,32 +220,26 @@ return (
                                     </div>
                                 </div>
 
-                                <div className="col-12 d-flex flex-column align-items-center gap-2">
-                                    {/* Nút Google */}
-                                    <GoogleLogin
-                                        onSuccess={handleGoogleSuccess}
-                                        onError={() => Swal.fire({
-                                            icon: "error",
-                                            title: "Lỗi đăng nhập Google",
-                                            text: "Đăng nhập Google thất bại!",
-                                        })}
-                                        shape="pill"
-                                        theme="outline"
-                                        text="signin_with"
-                                        width="350px"
-                                    />
-
-                                    {/* THÊM: Nút Facebook */}
-                                    <div style={{ width: '350px' }}>
-                                        <FacebookLogin
-                                            appId={FACEBOOK_APP_ID}
-                                            autoLoad={false}
-                                            fields="name,email,picture"
-                                            callback={responseFacebook}
-                                            cssClass="btn btn-primary w-100 rounded-pill py-2"
-                                            icon="fa-facebook"
-                                            textButton="&nbsp;&nbsp;Đăng nhập với Facebook"
+                                    <div className="col-12 d-flex flex-column align-items-center gap-2">
+                                        <GoogleLogin
+                                            onSuccess={handleGoogleSuccess}
+                                            onError={() => Swal.fire('Lỗi', 'Đăng nhập Google thất bại', 'error')}
+                                            shape="pill"
+                                            theme="outline"
+                                            width="350px"
                                         />
+
+                                        <div style={{ width: '350px' }}>
+                                            <FacebookLogin
+                                                appId={FACEBOOK_APP_ID}
+                                                autoLoad={false}
+                                                fields="name,email,picture"
+                                                callback={responseFacebook}
+                                                cssClass="btn btn-primary w-100 rounded-pill py-2"
+                                                icon="fa-facebook"
+                                                textButton="&nbsp;&nbsp;Đăng nhập với Facebook"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 

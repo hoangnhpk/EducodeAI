@@ -19,19 +19,21 @@ interface TinNhan {
 
 export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDungBaiHoc }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(false); // STATE: Phóng to toàn màn hình
+    const [isExpanded, setIsExpanded] = useState(false);
     const [tinNhanList, setTinNhanList] = useState<TinNhan[]>([]);
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // 0. THÊM STATE ĐỂ THEO DÕI NỘI DUNG TIN NHẮN ĐÃ LƯU
     const [savedContents, setSavedContents] = useState<string[]>([]);
+
+    // THÊM: Định nghĩa giới hạn số ký tự tối đa cho 1 tin nhắn
+    const MAX_CHARS = 500; 
 
     // 1. Khởi tạo & Lấy lịch sử chat + Lịch sử các nút đã lưu
     useEffect(() => {
         const lichSuCu = localStorage.getItem('educodeai_chat_history');
-        const nutDaLuu = localStorage.getItem('educodeai_saved_indices'); // Lấy trạng thái nội dung lưu từ local
+        const nutDaLuu = localStorage.getItem('educodeai_saved_indices');
 
         if (lichSuCu) {
             setTinNhanList(JSON.parse(lichSuCu));
@@ -40,9 +42,8 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
         }
 
         if (nutDaLuu) {
-            setSavedContents(JSON.parse(nutDaLuu)); // Load lại các nội dung đã lưu
+            setSavedContents(JSON.parse(nutDaLuu));
         }
-
     }, []);
 
     // 2. Tự động cuộn xuống cuối & Lưu lịch sử
@@ -52,9 +53,9 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
             localStorage.setItem('educodeai_chat_history', JSON.stringify(tinNhanList));
         }
     }, [tinNhanList, isLoading]);
+
     useEffect(() => {
         const handleStorageUpdate = () => {
-            // Khi nhận được sự kiện, đọc lại localStorage và cập nhật state
             const nutDaLuu = localStorage.getItem('educodeai_saved_indices');
             if (nutDaLuu) {
                 setSavedContents(JSON.parse(nutDaLuu));
@@ -63,21 +64,19 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
             }
         };
 
-        // Lắng nghe sự kiện custom 'storage_updated'
         window.addEventListener('storage_updated', handleStorageUpdate);
-
-        // Cũng lắng nghe sự kiện storage mặc định (phòng trường hợp)
         window.addEventListener('storage', handleStorageUpdate);
 
-        // Cleanup
         return () => {
             window.removeEventListener('storage_updated', handleStorageUpdate);
             window.removeEventListener('storage', handleStorageUpdate);
         };
     }, []);
+
     // 3. Hàm gửi tin nhắn
     const handleSendMessage = async () => {
-        if (!inputValue.trim()) return;
+        // THÊM: Kiểm tra cả độ dài trước khi gửi để chắc chắn an toàn
+        if (!inputValue.trim() || inputValue.length > MAX_CHARS) return;
 
         const tinNhanMoi: TinNhan = { VaiTro: 'user', NoiDung: inputValue };
         const lichSuCapNhat = [...tinNhanList, tinNhanMoi];
@@ -85,14 +84,17 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
         setInputValue("");
         setIsLoading(true);
         const lichSuGuiDi = lichSuCapNhat.slice(-10);
+
         try {
             const response: any = await axiosClient.post('/api/ChatBotAI/tu-van-hoc-tap', {
                 LichSuChat: lichSuGuiDi,
                 TieuDeBaiHoc: tieuDeBaiHoc || null,
-                NoiDungBaiHoc: noiDungBaiHoc || null
+                
+                // THÊM: (Tùy chọn) Giới hạn luôn cả Nội dung bài học gửi lên AI để tránh vượt quá Token limit của API (Ví dụ lấy 3000 ký tự đầu)
+                NoiDungBaiHoc: noiDungBaiHoc ? noiDungBaiHoc.substring(0, 3000) : null 
             },
                 {
-                    timeout: 120000, // 120s - Tha hồ cho AI suy ngẫm
+                    timeout: 120000, 
                 });
 
             const botReply: TinNhan = {
@@ -121,9 +123,9 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
             if (result.isConfirmed) {
                 const clearData: TinNhan[] = [{ VaiTro: 'assistant', NoiDung: 'Chào bạn! Mình là trợ lý AI của EduCode. Mình có thể giúp gì cho bạn hôm nay?' }];
                 setTinNhanList(clearData);
-                setSavedContents([]); // Reset trạng thái nội dung lưu
+                setSavedContents([]);
                 localStorage.setItem('educodeai_chat_history', JSON.stringify(clearData));
-                localStorage.removeItem('educodeai_saved_indices'); // Xóa sạch record nội dung đã lưu trong local
+                localStorage.removeItem('educodeai_saved_indices');
                 Swal.fire({ icon: 'success', text: 'Đã xóa lịch sử', timer: 1500, showConfirmButton: false });
             }
         });
@@ -136,7 +138,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
             return;
         }
 
-        // Chặn lưu lại nếu đã lưu rồi (dựa vào nội dung)
         if (savedContents.includes(noiDung)) return;
 
         try {
@@ -145,7 +146,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                 NoiDung: noiDung
             });
 
-            // Cập nhật state và lưu ngay vào localStorage (lưu nội dung để dễ so sánh)
             const updatedSaved = [...savedContents, noiDung];
             setSavedContents(updatedSaved);
             localStorage.setItem('educodeai_saved_indices', JSON.stringify(updatedSaved));
@@ -159,7 +159,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
 
     return (
         <>
-            {/* Cửa sổ Chat */}
             <div className={`cp-chatbot-window ${!isOpen ? 'hidden' : ''} ${isExpanded ? 'expanded' : ''}`}>
 
                 {/* Header */}
@@ -181,9 +180,9 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
 
                 {/* Danh sách tin nhắn */}
                 <div className="cp-chatbot-messages">
+                    {/* ... (Đoạn map render tin nhắn giữ nguyên) ... */}
                     {tinNhanList.map((msg, idx) => (
                         <div key={idx} className={`chat-msg ${msg.VaiTro}`}>
-
                             {msg.VaiTro === 'user' ? (
                                 msg.NoiDung
                             ) : (
@@ -235,7 +234,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                                     </button>
                                 </div>
                             )}
-
                         </div>
                     ))}
 
@@ -249,7 +247,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                 </div>
 
                 {/* Input Area */}
-                <div className="cp-chatbot-input-area">
+                <div className="cp-chatbot-input-area" style={{ position: 'relative' }}>
                     <input
                         type="text"
                         placeholder="Hỏi AI về bài học..."
@@ -257,10 +255,24 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                         disabled={isLoading}
+                        maxLength={MAX_CHARS} // THÊM: Chặn gõ quá số ký tự quy định
+                        style={{ paddingRight: '50px' }} // Chừa chỗ cho bộ đếm ký tự
                     />
-                    <button onClick={handleSendMessage} disabled={isLoading || !inputValue.trim()}>
+                    <button onClick={handleSendMessage} disabled={isLoading || !inputValue.trim() || inputValue.length > MAX_CHARS}>
                         <i className="fas fa-paper-plane"></i>
                     </button>
+                    
+                    {/* THÊM: Hiển thị bộ đếm ký tự (nhỏ nhắn ở góc input) */}
+                    <div style={{
+                        position: 'absolute',
+                        right: '90px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        fontSize: '0.7rem',
+                        color: inputValue.length >= MAX_CHARS ? '#ef4444' : '#9ca3af'
+                    }}>
+                        {inputValue.length}/{MAX_CHARS}
+                    </div>
                 </div>
             </div>
 

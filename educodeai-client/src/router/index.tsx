@@ -70,7 +70,7 @@ export default function AppRouter() {
 
         {/* GIẢNG VIÊN */}
         <Route path="/giang-vien" element={<LayoutGiangVien />}>
-          <Route path="/giang-vien/thong-ke" element={<ThongKeHocTap />} />
+          <Route path="thong-ke" element={<ThongKeHocTap />} />
           {/* <Route index element={<GVDashboard />} />*/}
           {/* <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} /> */}
           {/* <Route path="giao-trinh" element={<QuanLyGiaoTrinh />} /> */}
