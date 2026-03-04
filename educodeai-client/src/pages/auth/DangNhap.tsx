@@ -113,7 +113,7 @@ const DangNhap: React.FC = () => {
         if (response.accessToken) {
             setIsLoading(true);
             try {
-                const res: any = await axiosClient.post("/NguoiDung/facebook-login", {
+                const res: any = await axiosClient.post("/api/NguoiDung/facebook-login", {
                     email: response.email,
                     name: response.name,
                     picture: response.picture.data.url,
