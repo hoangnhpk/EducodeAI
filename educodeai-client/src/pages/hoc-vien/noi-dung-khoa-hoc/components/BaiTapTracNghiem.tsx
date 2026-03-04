@@ -58,31 +58,38 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
     useEffect(() => {
         try {
             if (duLieu.duLieuCauHoi) {
-                // Parse chuỗi JSON thành mảng RawCauHoi
                 const rawData: RawCauHoi[] = JSON.parse(duLieu.duLieuCauHoi);
-
-                // Map A, B, C, D thành index 0, 1, 2, 3
                 const bangChuCai: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
 
-                // Chuyển đổi cấu trúc Raw sang cấu trúc Component dễ dùng
                 let cauHoiParsed: CauHoiDTO[] = rawData.map((item, index) => ({
-                    Id: index + 1, // Tạo ID giả định dựa trên thứ tự
+                    Id: index + 1, 
                     NoiDung: item.cauHoi,
                     LuaChon: [item.dapAnA, item.dapAnB, item.dapAnC, item.dapAnD],
                     DapAnDung: bangChuCai[item.dapAnDung?.toUpperCase()] ?? 0,
                     GiaiThich: item.giaiThich
                 }));
 
-                // Chỉ đảo câu hỏi lúc khởi tạo
                 if (duLieu.daoCauHoi) {
                     cauHoiParsed = [...cauHoiParsed].sort(() => Math.random() - 0.5);
                 }
                 setDanhSachCauHoi(cauHoiParsed);
 
-                // Reset các state khác khi bài tập thay đổi ID
-                setDapAnNguoiDung({});
-                setDaNopBai(false);
-                setChiSoHienTai(0);
+                // THÊM LOGIC: Kiểm tra LocalStorage xem có dữ liệu cũ không
+                const storageKey = `quiz_progress_${duLieu.maBaiTap}`;
+                const savedProgress = localStorage.getItem(storageKey);
+                
+                if (savedProgress) {
+                    // Nếu có thì khôi phục lại toàn bộ đáp án, vị trí câu hỏi
+                    const parsedProgress = JSON.parse(savedProgress);
+                    setDapAnNguoiDung(parsedProgress.dapAnNguoiDung || {});
+                    setDaNopBai(parsedProgress.daNopBai || false);
+                    setChiSoHienTai(parsedProgress.chiSoHienTai || 0);
+                } else {
+                    // Nếu không có thì làm mới
+                    setDapAnNguoiDung({});
+                    setDaNopBai(false);
+                    setChiSoHienTai(0);
+                }
 
                 if (duLieu.thoiGianLamBai && duLieu.thoiGianLamBai > 0) {
                     setThoiGianConLai(duLieu.thoiGianLamBai * 60);
@@ -90,9 +97,21 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
             }
         } catch (loi) {
             console.error("Lỗi parse dữ liệu câu hỏi:", loi);
-            Swal.fire("Lỗi", "Dữ liệu bài tập không hợp lệ.", "error");
         }
-    }, [duLieu.maBaiTapQuiz, duLieu.duLieuCauHoi]);
+    }, [duLieu.maBaiTapQuiz, duLieu.duLieuCauHoi, duLieu.maBaiTap]);
+
+    // THÊM EFFECT MỚI NÀY: Liên tục lưu tiến độ vào LocalStorage mỗi khi user chọn đáp án hoặc nộp bài
+    useEffect(() => {
+        if (danhSachCauHoi.length > 0) {
+            const storageKey = `quiz_progress_${duLieu.maBaiTap}`;
+            const dataToSave = {
+                dapAnNguoiDung,
+                daNopBai,
+                chiSoHienTai
+            };
+            localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+        }
+    }, [dapAnNguoiDung, daNopBai, chiSoHienTai, duLieu.maBaiTap, danhSachCauHoi]);
 
     // --- EFFECT 2: Chạy đồng hồ đếm ngược ---
     useEffect(() => {
@@ -189,6 +208,10 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
         setDapAnNguoiDung({});
         setDaNopBai(false);
         setChiSoHienTai(0);
+        
+        // Xóa tiến độ cũ trong máy
+        localStorage.removeItem(`quiz_progress_${duLieu.maBaiTap}`);
+
         if (duLieu.thoiGianLamBai) {
             setThoiGianConLai(duLieu.thoiGianLamBai * 60);
         }
@@ -268,7 +291,7 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
                                     className={`cp-option-card ${layClassDapAn(chiSoHienTai, index, cauHoiHienTai.DapAnDung)}`}
                                     onClick={() => xuLyChonDapAn(index)}
                                 >
-                                    <div className="cp-option-circle">{nhanDien}</div>
+                                    <div className="cp-option-circle"></div>
                                     <span>{luaChon}</span>
                                 </div>
                             );
