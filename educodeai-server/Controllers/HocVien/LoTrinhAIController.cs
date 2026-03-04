@@ -1,4 +1,5 @@
 ﻿using educodeai_server.DTOs.AI;
+using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -20,10 +21,10 @@ namespace EduCodeAI.Controllers.HocVien
 
         private int GetUserIdFromClaims()
         {
-            var userIdClaim = User.FindFirstValue("id");
-            if (int.TryParse(userIdClaim, out int userId))
+            var userIdClaim = LayNguoiDungID.LayID(User);
+            if (userIdClaim > 0 )
             {
-                return userId;
+                return userIdClaim;
             }
             throw new UnauthorizedAccessException("User ID claim is missing or invalid.");
         }

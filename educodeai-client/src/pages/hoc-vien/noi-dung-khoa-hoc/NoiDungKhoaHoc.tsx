@@ -27,12 +27,12 @@ const NoiDungKhoaHoc = () => {
     const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia' | 'quiz'>('hoc');
     const videoRef = useRef<NoiDungVideoRef>(null);
     const [hienGhiChuAI, setHienGhiChuAI] = useState(false);
-    
+
     // Mảng lưu vết những video đã xem trong phiên này để mở khóa quiz
     const [videoDaXongLocal, setVideoDaXongLocal] = useState<number[]>([]);
-    
+
     const maNguoiDung = getUserId();
-    
+
     if (!maNguoiDung) {
         return <div>Vui lòng đăng nhập để xem nội dung khóa học.</div>;
     }
@@ -137,11 +137,11 @@ const NoiDungKhoaHoc = () => {
     // Khi Video chạy xong
     const handleVideoCompleted = useCallback((maBaiHocVuaXong: number) => {
         const baiHocVuaXong = flatList.find(b => b.id === maBaiHocVuaXong);
-        
+
         if (baiHocVuaXong && baiHocVuaXong.thongTinQuiz) {
             // NẾU CÓ QUIZ -> Chỉ lưu tạm thời để mở khóa quiz, tự nhảy sang quiz
             setVideoDaXongLocal(prev => [...prev, maBaiHocVuaXong]);
-            
+
             Swal.fire({
                 title: 'Đã hoàn thành lý thuyết!',
                 text: 'Hãy hoàn thành Bài tập Trắc nghiệm để mở khóa bài học tiếp theo nhé.',
@@ -212,7 +212,7 @@ const NoiDungKhoaHoc = () => {
     };
 
     if (!khoaHoc || !baiHocHienTai) return <div>Đang tải khóa học...</div>;
-
+    const dangLamQuiz = tabActive === 'quiz' || (tabActive === 'hoc' && baiHocHienTai?.loaiBaiHoc === 'Quiz');
     const renderMainContent = () => {
         switch (baiHocHienTai.loaiBaiHoc) {
             case 'Video':
@@ -373,6 +373,7 @@ const NoiDungKhoaHoc = () => {
                 maBaiHoc={baiHocHienTai.id}
                 tieuDeBaiHoc={baiHocHienTai.tieuDe}
                 noiDungBaiHoc={baiHocHienTai.noiDung}
+                isQuizMode={dangLamQuiz}
             />
         </div>
     );
