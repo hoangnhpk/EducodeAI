@@ -91,7 +91,7 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
 
   // --- LOGIC: Xử lý Gian lận (Anti-Cheat) ---
   const xuLyGianLan = (currentTime: number, lastValidTime: number) => {
-    return;
+    // return;
     if (dangCanhBaoRef.current) return; // Nếu đang tua từ ghi chú thì bỏ qua
 
     dangCanhBaoRef.current = true;
