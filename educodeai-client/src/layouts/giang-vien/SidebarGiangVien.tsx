@@ -7,21 +7,18 @@ export default function SidebarGiangVien() {
         <h2><MdSchool /> Giảng Viên</h2>
       </div>
       <nav className="gv-sidebar-nav">
-        <a href="/giang-vien" className="gv-nav-link active">
+        {/* <a href="/giang-vien" className="gv-nav-link active">
           <MdDashboard /> Dashboard
-        </a>
+        </a> */}
         <a href="/giang-vien/khoa-hoc-cua-toi" className="gv-nav-link">
           <MdBook /> Khóa Học
-        </a>
-        <a href="/giang-vien/giao-trinh" className="gv-nav-link">
-          <MdBook /> Giao Trình
         </a>
         <a href="/giang-vien/bai-tap" className="gv-nav-link">
           <MdEditNote /> Bài Tập
         </a>
-        <a href="/giang-vien/thong-ke" className="gv-nav-link">
+        {/* <a href="/giang-vien/thong-ke" className="gv-nav-link">
           <MdInsertChart /> Thống Kê
-        </a>
+        </a> */}
       </nav>
     </aside>
   );
