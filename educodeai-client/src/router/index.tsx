@@ -31,6 +31,7 @@ import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 // /* ===== ADMIN ===== */
 import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
+import QuanLyApiKey from "../pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
 
 export default function AppRouter() {
   return (
@@ -112,6 +113,7 @@ export default function AppRouter() {
           <Route index element={<QuanLyNguoiDung />} /> {/* Default load vào Quản lý người dùng */}
           <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
           <Route path="quan-ly-binh-luan-review" element={<QuanLyReview />} />
+          <Route path="quan-ly-api-key" element={<QuanLyApiKey />} />
         </Route>
 
       </Routes>
