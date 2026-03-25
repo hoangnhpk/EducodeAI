@@ -1,4 +1,4 @@
-﻿using educodeai_server.Services.Interface;
+using educodeai_server.Services.Interface;
 using StackExchange.Redis;
 
 namespace educodeai_server.Services
@@ -53,6 +53,13 @@ namespace educodeai_server.Services
                 danhSach.Add(giaTri.ToString());
             }
             return danhSach;
+        }
+
+        public IEnumerable<string> LayDanhSachKeyTheoPattern(string pattern)
+        {
+            var server = _db.Multiplexer.GetServer(_db.Multiplexer.GetEndPoints().First());
+            var keys = server.Keys(database: _db.Database, pattern: pattern);
+            return keys.Select(k => (string)k!).ToList();
         }
     }
 }

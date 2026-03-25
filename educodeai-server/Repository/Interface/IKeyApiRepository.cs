@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs.AI;
+using educodeai_server.DTOs.AI;
 using educodeai_server.Models;
 
 namespace educodeai_server.Repository.Interface
@@ -12,7 +12,8 @@ namespace educodeai_server.Repository.Interface
         Task<KeyAPISummaryDto?> GetByIdAsync(int id);
 
         // Thao tác nghiệp vụ
-        Task<bool> CreateKeyAsync(KeyAPIManageDto dto);
+        Task<int> CreateKeyAsync(KeyAPIManageDto dto);
+        Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto);
         Task<bool> UpdateStatusAsync(int id, bool status);
         Task<bool> DeleteKeyAsync(int id);
 

@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs.AI;
+using educodeai_server.DTOs.AI;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
 
@@ -17,13 +17,55 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<IEnumerable<KeyAPISummaryDto?>> GetAllKeysAsync()
         {
-            return await _keyApiRepo.GetSummaryListAsync();
+            var keys = (await _keyApiRepo.GetSummaryListAsync()).ToList();
+
+            foreach (var key in keys)
+            {
+                if (key != null && key.TrangThai)
+                {
+                    string redisKey = $"EduCodeAI:KeyPool:{key.ID}";
+                    var reqStr = await _redisService.LayHashAsync(redisKey, "RequestDaDung");
+                    var tokStr = await _redisService.LayHashAsync(redisKey, "TokenDaDung");
+
+                    if (int.TryParse(reqStr, out int req))
+                    {
+                        key.DaSuDungRequest = req;
+                    }
+                    if (int.TryParse(tokStr, out int tok))
+                    {
+                        key.DaSuDungToken = tok;
+                    }
+
+                    // Tính lại phần trăm sử dụng theo số từ Redis
+                    key.PhanTramSuDung = key.HanMucRequest > 0 
+                                         ? Math.Round((double)key.DaSuDungRequest / key.HanMucRequest * 100, 2) 
+                                         : 0;
+                }
+            }
+
+            return keys;
         }
 
         public async Task<KeyAPISummaryDto?> GetKeyByIdAsync(int id)
         {
             if (id <= 0) return null;
-            return await _keyApiRepo.GetByIdAsync(id);
+            var key = await _keyApiRepo.GetByIdAsync(id);
+
+            if (key != null && key.TrangThai)
+            {
+                string redisKey = $"EduCodeAI:KeyPool:{key.ID}";
+                var reqStr = await _redisService.LayHashAsync(redisKey, "RequestDaDung");
+                var tokStr = await _redisService.LayHashAsync(redisKey, "TokenDaDung");
+
+                if (int.TryParse(reqStr, out int req)) key.DaSuDungRequest = req;
+                if (int.TryParse(tokStr, out int tok)) key.DaSuDungToken = tok;
+
+                key.PhanTramSuDung = key.HanMucRequest > 0 
+                                     ? Math.Round((double)key.DaSuDungRequest / key.HanMucRequest * 100, 2) 
+                                     : 0;
+            }
+
+            return key;
         }
 
         public async Task<bool> CreateNewKeyAsync(KeyAPIManageDto dto)
@@ -32,7 +74,27 @@ namespace educodeai_server.Services.Implementation
             {
                 return false;
             }
-            return await _keyApiRepo.CreateKeyAsync(dto);
+            int newKeyId = await _keyApiRepo.CreateKeyAsync(dto);
+            if (newKeyId > 0)
+            {
+                // Default trạng thái Add vào là True nên sync lên luôn
+                await SyncKeyToRedisAsync(newKeyId);
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto)
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(dto.TenKey)) return false;
+
+            var isUpdated = await _keyApiRepo.UpdateKeyAsync(id, dto);
+            if (isUpdated)
+            {
+                // Đồng bộ thay đổi mới (hạn mức, mã khoá, v.v) lên Redis nếu Key đang chạy
+                await SyncKeyToRedisAsync(id);
+            }
+            return isUpdated;
         }
 
         public async Task<bool> ToggleKeyStatusAsync(int id, bool status)

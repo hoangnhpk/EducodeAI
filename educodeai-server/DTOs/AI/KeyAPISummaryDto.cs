@@ -1,4 +1,4 @@
-﻿namespace educodeai_server.DTOs.AI
+namespace educodeai_server.DTOs.AI
 {
     // Dùng để hiển thị danh sách ở Table (Không trả về mã Key)
     public class KeyAPISummaryDto
@@ -8,6 +8,11 @@
         public string LoaiKey { get; set; } = string.Empty;
         public bool TrangThai { get; set; }
         public int ThuTuUuTien { get; set; }
+        public int HanMucRequest { get; set; }
+        public int DaSuDungRequest { get; set; }
+        public int HanMucToken { get; set; }
+        public int DaSuDungToken { get; set; }
+        public string MaKeyFull { get; set; } = string.Empty;
         public double PhanTramSuDung { get; set; } // Tính toán từ Request đã dùng / Hạn mức
     }
 

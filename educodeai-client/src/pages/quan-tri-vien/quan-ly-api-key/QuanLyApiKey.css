@@ -186,6 +186,11 @@
   border-bottom: 1px solid var(--border-light);
 }
 
+/* Fix dropdown clipping off the bottom */
+.akm-table-visible-overflow {
+  overflow: visible !important;
+}
+
 .akm-tbl.table-hover tbody tr:hover > td {
   background: #fafbff;
 }

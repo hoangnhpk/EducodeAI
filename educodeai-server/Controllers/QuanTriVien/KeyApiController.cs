@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs.AI;
+using educodeai_server.DTOs.AI;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,6 +38,15 @@ namespace educodeai_server.Controllers
             if (!isCreated) return BadRequest("Tạo key thất bại, check lại data nghen!");
 
             return Ok("Tạo key mượt mà thành công!");
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateKey(int id, [FromBody] KeyAPIManageDto dto)
+        {
+            var isUpdated = await _keyApiService.UpdateKeyAsync(id, dto);
+            if (!isUpdated) return BadRequest("Cập nhật key thất bại, kiểm tra lại dữ liệu!");
+
+            return Ok("Cập nhật thành công!");
         }
 
         [HttpPut("{id}/status")]

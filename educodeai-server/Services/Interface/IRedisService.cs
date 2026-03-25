@@ -1,4 +1,4 @@
-﻿namespace educodeai_server.Services.Interface
+namespace educodeai_server.Services.Interface
 {
     public interface IRedisService
     {
@@ -11,5 +11,6 @@
         Task<long> TangGiaTriHashAsync(string key, string thuocTinh, long mucTang = 1);
         Task DayVaoCuoiListAsync(string key, string giaTri);
         Task<IEnumerable<string>> LayTuDauListAsync(string key, int soLuong);
+        IEnumerable<string> LayDanhSachKeyTheoPattern(string pattern);
     }
 }
