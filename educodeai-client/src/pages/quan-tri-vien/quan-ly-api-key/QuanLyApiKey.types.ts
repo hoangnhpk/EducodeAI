@@ -2,27 +2,34 @@
    TYPE DEFINITIONS – Quản lý API Key
    ============================================= */
 
-export type LoaiKey = "Chính" | "Phụ";
-export type TrangThaiKey = "Hoạt động" | "Đã khóa";
-export type TrangThaiHeThong = "Ổn định" | "Cảnh báo" | "Sự cố";
+export type TrangThaiHeThong = "Ổn định" | "Cảnh báo" | "Sự cố" | "Đang tải..." | "Mất kết nối API";
 
-export interface ApiKey {
-  id: string;
+export interface KeyApiSummary {
+  id: number;
   tenKey: string;
-  maKeyFull: string;
-  loai: LoaiKey;
-  trangThai: TrangThaiKey;
+  loaiKey: string;
+  trangThai: boolean;
+  thuTuUuTien: number;
+  phanTramSuDung: number;
   hanMucRequest: number;
   daSuDungRequest: number;
   hanMucToken: number;
   daSuDungToken: number;
-  ngayTao: string;
-  moTa?: string;
+  maKeyFull: string;
+}
+
+export interface KeyApiManage {
+  tenKey: string;
+  maKeyRaw: string;
+  loaiKey: string;
+  thuTuUuTien: number;
+  hanMucRequest: number;
+  hanMucToken: number;
 }
 
 export interface ThongKeHeThong {
   tongRequestHomNay: number;
   tongTokenDaDung: number;
-  trangThaiHeThong: TrangThaiHeThong;
+  trangThaiHeThong: TrangThaiHeThong | string;
   phanTramTang: number;
 }

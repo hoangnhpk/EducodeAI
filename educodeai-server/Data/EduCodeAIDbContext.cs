@@ -35,7 +35,7 @@ namespace educodeai_server.Data
         public DbSet<LoiGiaiMauModel> LoiGiaiMaus { get; set; }
 
         public DbSet<KeyAPIModel> KeyAPIs { get; set; }
-        public DbSet<NhatKySuDungModel> NhatKySuDungModels { get; set; }
+        public DbSet<NhatKySuDungModel> NhatKySuDungs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

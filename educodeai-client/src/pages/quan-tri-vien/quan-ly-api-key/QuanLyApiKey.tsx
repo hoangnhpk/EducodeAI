@@ -1,152 +1,141 @@
-import { useState } from "react";
-import type { ApiKey, ThongKeHeThong } from "./QuanLyApiKey.types";
+import { useState, useEffect } from "react";
+import type { KeyApiSummary, KeyApiManage, ThongKeHeThong } from "./QuanLyApiKey.types";
+import { keyApiService } from "../../../services/key-api.service";
 import StatCards from "./components/StatCards";
 import BangApiKey from "./components/BangApiKey";
+import ModalThemKey from "./components/ModalThemKey";
 import "./QuanLyApiKey.css";
 
-/* =====================================================================
-   MOCK DATA  –  Thay bằng dữ liệu thật khi kết nối API
-   ===================================================================== */
-
+// MOCK Thống kê hệ thống vì API chưa hỗ trợ dashboard tổng hợp
 const MOCK_THONG_KE: ThongKeHeThong = {
-  tongRequestHomNay: 14_832,
-  tongTokenDaDung: 2_187_400,
-  trangThaiHeThong: "Ổn định",
-  phanTramTang: 12,
+  tongRequestHomNay: 0,
+  tongTokenDaDung: 0,
+  trangThaiHeThong: "Đang tải...",
+  phanTramTang: 0,
 };
 
-const MOCK_API_KEYS: ApiKey[] = [
-  /* ---------- 3 Key Chính ---------- */
-  {
-    id: "AK-001",
-    tenKey: "GPT-4o Production",
-    maKeyFull: "sk-prod-aZ9mXkQrTP2fNwEB7LVjRcYsDhGpOt14",
-    loai: "Chính",
-    trangThai: "Hoạt động",
-    hanMucRequest: 5_000,
-    daSuDungRequest: 3_124,
-    hanMucToken: 2_000_000,
-    daSuDungToken: 987_500,
-    ngayTao: "2024-11-01",
-    moTa: "Key chính cho luồng sinh bài AI",
-  },
-  {
-    id: "AK-002",
-    tenKey: "GPT-4o Backup #1",
-    maKeyFull: "sk-bkp1-mNqLsW8xZoHdFvCU6gIyJKbRpA3eT0",
-    loai: "Chính",
-    trangThai: "Hoạt động",
-    hanMucRequest: 5_000,
-    daSuDungRequest: 4_853,
-    hanMucToken: 2_000_000,
-    daSuDungToken: 1_870_000,
-    ngayTao: "2024-11-15",
-    moTa: "Dự phòng khi key chính quá tải",
-  },
-  {
-    id: "AK-003",
-    tenKey: "Claude-3 Sonnet Main",
-    maKeyFull: "sk-ant-main-VrXtP5wKqMjN2sBz1dGA8eHoYLuC9fI0",
-    loai: "Chính",
-    trangThai: "Đã khóa",
-    hanMucRequest: 3_000,
-    daSuDungRequest: 0,
-    hanMucToken: 1_500_000,
-    daSuDungToken: 0,
-    ngayTao: "2024-10-20",
-    moTa: "Tạm khoá – chờ gia hạn quota",
-  },
-
-  /* ---------- 3 Key Phụ ---------- */
-  {
-    id: "AK-004",
-    tenKey: "Gemini 1.5 Flash (Test)",
-    maKeyFull: "AIzaSy-test-Kb9Qm3RpLe7TwFhXv4cUjNnOsD2",
-    loai: "Phụ",
-    trangThai: "Hoạt động",
-    hanMucRequest: 1_000,
-    daSuDungRequest: 215,
-    hanMucToken: 500_000,
-    daSuDungToken: 78_200,
-    ngayTao: "2025-01-08",
-    moTa: "Chạy thử nghiệm tính năng Gemini",
-  },
-  {
-    id: "AK-005",
-    tenKey: "Llama-3 (Local Proxy)",
-    maKeyFull: "sk-llama-local-Uo8EvT6mQnXjBcFA2sKpID1gNhRL9w",
-    loai: "Phụ",
-    trangThai: "Hoạt động",
-    hanMucRequest: 2_000,
-    daSuDungRequest: 1_560,
-    hanMucToken: 800_000,
-    daSuDungToken: 640_000,
-    ngayTao: "2025-02-14",
-    moTa: "Proxy tới Llama self-hosted nội bộ",
-  },
-  {
-    id: "AK-006",
-    tenKey: "Mistral (R&D)",
-    maKeyFull: "sk-mistral-rd-PwZ5xQmKoNvE3AcJ8bULT2fHdGsIY7",
-    loai: "Phụ",
-    trangThai: "Đã khóa",
-    hanMucRequest: 500,
-    daSuDungRequest: 0,
-    hanMucToken: 200_000,
-    daSuDungToken: 0,
-    ngayTao: "2025-03-02",
-    moTa: "Dùng cho nghiên cứu nội bộ",
-  },
-];
-
-/* =====================================================================
-   PAGE COMPONENT
-   ===================================================================== */
 const QuanLyApiKey = () => {
-  // Trạng thái local – giả lập toggle lock / rotate (không gọi API)
-  const [danhSach, setDanhSach] = useState<ApiKey[]>(MOCK_API_KEYS);
+  const [danhSach, setDanhSach] = useState<KeyApiSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingKey, setEditingKey] = useState<KeyApiSummary | null>(null);
+  const [thongKe, setThongKe] = useState<ThongKeHeThong>(MOCK_THONG_KE);
 
-  /* ---- Toggle khoá / mở khoá (mock) ---- */
-  const handleKhoa = (key: ApiKey) => {
-    setDanhSach((prev) =>
-      prev.map((k) =>
-        k.id === key.id
-          ? { ...k, trangThai: k.trangThai === "Hoạt động" ? "Đã khóa" : "Hoạt động" }
-          : k
-      )
-    );
+  // Fetch danh sách Key từ API
+  const fetchKeys = async () => {
+    setIsLoading(true);
+    try {
+      const res: any = await keyApiService.getAll();
+
+      // Axios trả về response.data nếu không có interceptor tự unwrap, 
+      // hoặc trả thẳng array nếu có. Ta check tuỳ trường hợp.
+      const rawData: any[] = Array.isArray(res) ? res : (res.data || []);
+
+      // Đề phòng trường hợp C# Serialize JSON giữ nguyên PascalCase thay vì camelCase mặc định
+      // Dùng || thay vì ?? để ghi đè chuỗi rỗng ("") nếu Backend đang chạy bản cũ chưa Rebuild
+      const data: KeyApiSummary[] = rawData.map((k: any) => ({
+        id: k.id ?? k.ID ?? k.Id ?? 0,
+        tenKey: k.tenKey || k.TenKey || "Không tên",
+        maKeyFull: k.maKeyFull || k.MaKeyFull || `sk-...${k.id || k.ID || k.Id || "0"}`,
+        loaiKey: k.loaiKey || k.LoaiKey || "Khác",
+        trangThai: k.trangThai ?? k.TrangThai ?? false,
+        thuTuUuTien: k.thuTuUuTien ?? k.ThuTuUuTien ?? 0,
+        hanMucRequest: k.hanMucRequest ?? k.HanMucRequest ?? 0,
+        daSuDungRequest: k.daSuDungRequest ?? k.DaSuDungRequest ?? 0,
+        hanMucToken: k.hanMucToken ?? k.HanMucToken ?? 0,
+        daSuDungToken: k.daSuDungToken ?? k.DaSuDungToken ?? 0,
+        phanTramSuDung: k.phanTramSuDung ?? k.PhanTramSuDung ?? 0
+      }));
+
+      setDanhSach(data);
+
+      // Tính toán thống kê nháp từ danh sách key
+      const sumReqs = data.reduce((sum, k: any) => sum + (k.daSuDungRequest ?? k.DaSuDungRequest ?? 0), 0);
+      const sumToks = data.reduce((sum, k: any) => sum + (k.daSuDungToken ?? k.DaSuDungToken ?? 0), 0);
+      setThongKe({
+        tongRequestHomNay: sumReqs,
+        tongTokenDaDung: sumToks,
+        trangThaiHeThong: "Ổn định",
+        phanTramTang: 12,
+      });
+    } catch (error) {
+      console.error("Lỗi khi tải API Key:", error);
+      setThongKe(prev => ({ ...prev, trangThaiHeThong: "Mất kết nối API" }));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  /* ---- Cấp / Xoay key mới (mock – thay suffix ngẫu nhiên) ---- */
-  const handleCapMoi = (key: ApiKey) => {
-    const suffix = Math.random().toString(36).slice(2, 10).toUpperCase();
-    setDanhSach((prev) =>
-      prev.map((k) =>
-        k.id === key.id
-          ? { ...k, maKeyFull: k.maKeyFull.slice(0, -8) + suffix }
-          : k
-      )
-    );
+  useEffect(() => {
+    fetchKeys();
+  }, []);
+
+  /* ---- Toggle khoá / mở khoá ---- */
+  const handleKhoa = async (key: KeyApiSummary) => {
+    const newStatus = !key.trangThai;
+    try {
+      await keyApiService.toggleStatus(key.id, newStatus);
+      // Cập nhật local state
+      setDanhSach(prev => prev.map(k => k.id === key.id ? { ...k, trangThai: newStatus } : k));
+    } catch (error) {
+      console.error("Lỗi đổi trạng thái:", error);
+    }
   };
 
-  /* ---- Mở modal sửa – TODO: tích hợp modal sau ---- */
-  const handleSua = (key: ApiKey) => {
-    console.log("[TODO] Mở modal sửa key:", key.id);
+  /* ---- Đồng bộ Redis ---- */
+  const handleCapMoi = async (key: KeyApiSummary) => {
+    try {
+      await keyApiService.syncToRedis(key.id);
+      fetchKeys();
+    } catch (error) {
+      console.error("Lỗi đồng bộ Redis:", error);
+    }
   };
 
-  /* ---- Thêm key mới – TODO: tích hợp modal sau ---- */
+  /* ---- Xóa Key ---- */
+  const handleXoa = async (key: KeyApiSummary) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa Key này không?")) return;
+    try {
+      await keyApiService.delete(key.id);
+      setDanhSach(prev => prev.filter(k => k.id !== key.id));
+    } catch (error) {
+      console.error("Lỗi xóa key:", error);
+    }
+  };
+
+  /* ---- Modal Thêm Mới ---- */
   const handleThemMoi = () => {
-    console.log("[TODO] Mở modal thêm key mới");
+    setEditingKey(null);
+    setIsModalOpen(true);
   };
 
-  // Đếm tổng hợp hiển thị ở header bảng
-  const soKeyChinh = danhSach.filter((k) => k.loai === "Chính").length;
-  const soKeyPhu = danhSach.filter((k) => k.loai === "Phụ").length;
-  const soKeyHoatDong = danhSach.filter((k) => k.trangThai === "Hoạt động").length;
+  /* ---- Chỉnh sửa Key ---- */
+  const handleSua = (key: KeyApiSummary) => {
+    setEditingKey(key);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveKey = async (data: KeyApiManage) => {
+    try {
+      if (editingKey) {
+        await keyApiService.update(editingKey.id, data);
+      } else {
+        await keyApiService.create(data);
+      }
+      setIsModalOpen(false);
+      fetchKeys(); // reload
+    } catch (err) {
+      console.error(err);
+      alert(editingKey ? "Lỗi cập nhật Key!" : "Lỗi khi tạo Key hoặc mất kết nối Server!");
+    }
+  };
+
+  const soKeyChinh = danhSach.filter((k) => k.loaiKey === "Chính").length;
+  const soKeyPhu = danhSach.filter((k) => k.loaiKey === "Phụ").length;
+  const soKeyHoatDong = danhSach.filter((k) => k.trangThai).length;
 
   return (
     <div className="akm-page">
-
       {/* ======= HEADER ======= */}
       <div className="akm-header d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div className="d-flex align-items-center gap-3">
@@ -156,7 +145,7 @@ const QuanLyApiKey = () => {
           <div>
             <h1 className="akm-page-title mb-0">Quản lý API Key</h1>
             <p className="akm-page-subtitle mb-0">
-              Quản lý toàn bộ API Key của hệ thống EduCodeAI
+              Quản lý toàn bộ API Key của hệ thống EduCodeAI {isLoading && "(Đang tải...)"}
             </p>
           </div>
         </div>
@@ -167,12 +156,10 @@ const QuanLyApiKey = () => {
       </div>
 
       {/* ======= STAT CARDS ======= */}
-      <StatCards thongKe={MOCK_THONG_KE} />
+      <StatCards thongKe={thongKe} />
 
       {/* ======= KEY POOL TABLE ======= */}
       <div className="card border-0 shadow-sm akm-table-card">
-
-        {/* Card header */}
         <div className="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
           <div className="d-flex align-items-center gap-2 flex-wrap">
             <span className="akm-section-title">
@@ -190,7 +177,6 @@ const QuanLyApiKey = () => {
             </span>
           </div>
 
-          {/* Thanh tìm kiếm + nút làm mới */}
           <div className="d-flex align-items-center gap-2">
             <div className="input-group input-group-sm akm-search-group">
               <span className="input-group-text bg-white border-end-0">
@@ -202,24 +188,28 @@ const QuanLyApiKey = () => {
                 placeholder="Tìm key..."
               />
             </div>
-            <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
-              <i className="bi bi-arrow-clockwise"></i>
+            <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onClick={fetchKeys}>
+              <i className={`bi bi-arrow-clockwise ${isLoading ? "fa-spin" : ""}`}></i>
               Làm mới
             </button>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="card-body p-0">
+        <div className="card-body p-0 position-relative">
+          {isLoading && (
+            <div className="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-75 d-flex align-items-center justify-content-center" style={{ zIndex: 10 }}>
+              <div className="spinner-border text-primary" role="status"></div>
+            </div>
+          )}
           <BangApiKey
             danhSach={danhSach}
             onSua={handleSua}
             onKhoa={handleKhoa}
             onCapMoi={handleCapMoi}
+            onXoa={handleXoa}
           />
         </div>
 
-        {/* Card footer */}
         <div className="akm-table-footer d-flex align-items-center justify-content-between">
           <span>
             <i className="bi bi-info-circle me-1"></i>
@@ -230,8 +220,15 @@ const QuanLyApiKey = () => {
             {new Date().toLocaleDateString("vi-VN")}
           </span>
         </div>
-
       </div>
+
+      {/* ======= MODAL ======= */}
+      <ModalThemKey
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveKey}
+        editData={editingKey}
+      />
     </div>
   );
 };
