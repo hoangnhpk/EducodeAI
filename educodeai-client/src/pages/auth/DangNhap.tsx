@@ -4,8 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import axiosClient from '../../configs/axios';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode';
-import FacebookLogin from 'react-facebook-login';
+import FacebookLogin from '@greatsumini/react-facebook-login';
 
 const DangNhap: React.FC = () => {
     const navigate = useNavigate();
@@ -222,11 +221,12 @@ style={{ backgroundColor: '#fb873f' }}
                                                 appId={FACEBOOK_APP_ID}
                                                 autoLoad={false}
                                                 fields="name,email,picture"
-                                                callback={responseFacebook}
-                                                cssClass="btn btn-primary w-100 rounded-pill py-2"
-                                                icon="fa-facebook"
-                                                textButton="&nbsp;&nbsp;Đăng nhập với Facebook"
-                                            />
+                                                onSuccess={responseFacebook}
+                                                onFail={() => Swal.fire('Lỗi', 'Đăng nhập Facebook thất bại', 'error')}
+                                                className="btn btn-primary w-100 rounded-pill py-2"
+                                            >
+                                                &nbsp;&nbsp;Đăng nhập với Facebook
+                                            </FacebookLogin>
                                         </div>
                                     </div>
 
