@@ -77,7 +77,6 @@ namespace educodeai_server.Services.Implementation
             int newKeyId = await _keyApiRepo.CreateKeyAsync(dto);
             if (newKeyId > 0)
             {
-                // Default trạng thái Add vào là True nên sync lên luôn
                 await SyncKeyToRedisAsync(newKeyId);
                 return true;
             }
@@ -91,7 +90,6 @@ namespace educodeai_server.Services.Implementation
             var isUpdated = await _keyApiRepo.UpdateKeyAsync(id, dto);
             if (isUpdated)
             {
-                // Đồng bộ thay đổi mới (hạn mức, mã khoá, v.v) lên Redis nếu Key đang chạy
                 await SyncKeyToRedisAsync(id);
             }
             return isUpdated;
@@ -105,17 +103,14 @@ namespace educodeai_server.Services.Implementation
 
             if (isUpdated)
             {
-                // Chuẩn hóa tên Key trên Redis để dễ quản lý
                 string redisKey = $"EduCodeAI:KeyPool:{id}";
 
                 if (status)
                 {
-                    // Mở khóa -> Đẩy toàn bộ thông tin lên Redis Hash
                     await SyncKeyToRedisAsync(id);
                 }
                 else
                 {
-                    // Khóa lại -> Dùng hàm thuần Việt "tiễn" nguyên cục Hash đi luôn
                     await _redisService.XoaKeyAsync(redisKey);
                 }
             }
@@ -131,7 +126,6 @@ namespace educodeai_server.Services.Implementation
 
             if (isDeleted)
             {
-                // Xóa DB thì cũng dọn dẹp sạch sẽ trên Redis
                 await _redisService.XoaKeyAsync($"EduCodeAI:KeyPool:{id}");
             }
 
@@ -150,7 +144,6 @@ namespace educodeai_server.Services.Implementation
             await _redisService.LuuHashAsync(redisKey, "HanMucRequest", rawKey.HanMucRequest.ToString());
             await _redisService.LuuHashAsync(redisKey, "HanMucToken", rawKey.HanMucToken.ToString());
 
-            // Khởi tạo bộ đếm (để mốt AI chạy xong thì dùng TangGiaTriHashAsync cộng vào)
             await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0");
             await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");
             await _redisService.LuuHashAsync(redisKey, "TrangThai", rawKey.TrangThai.ToString());

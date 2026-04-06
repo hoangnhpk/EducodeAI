@@ -16,6 +16,7 @@ const MOCK_THONG_KE: ThongKeHeThong = {
 
 const QuanLyApiKey = () => {
   const [danhSach, setDanhSach] = useState<KeyApiSummary[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingKey, setEditingKey] = useState<KeyApiSummary | null>(null);
@@ -26,13 +27,7 @@ const QuanLyApiKey = () => {
     setIsLoading(true);
     try {
       const res: any = await keyApiService.getAll();
-
-      // Axios trả về response.data nếu không có interceptor tự unwrap, 
-      // hoặc trả thẳng array nếu có. Ta check tuỳ trường hợp.
       const rawData: any[] = Array.isArray(res) ? res : (res.data || []);
-
-      // Đề phòng trường hợp C# Serialize JSON giữ nguyên PascalCase thay vì camelCase mặc định
-      // Dùng || thay vì ?? để ghi đè chuỗi rỗng ("") nếu Backend đang chạy bản cũ chưa Rebuild
       const data: KeyApiSummary[] = rawData.map((k: any) => ({
         id: k.id ?? k.ID ?? k.Id ?? 0,
         tenKey: k.tenKey || k.TenKey || "Không tên",
@@ -49,7 +44,6 @@ const QuanLyApiKey = () => {
 
       setDanhSach(data);
 
-      // Tính toán thống kê nháp từ danh sách key
       const sumReqs = data.reduce((sum, k: any) => sum + (k.daSuDungRequest ?? k.DaSuDungRequest ?? 0), 0);
       const sumToks = data.reduce((sum, k: any) => sum + (k.daSuDungToken ?? k.DaSuDungToken ?? 0), 0);
       setThongKe({
@@ -70,12 +64,10 @@ const QuanLyApiKey = () => {
     fetchKeys();
   }, []);
 
-  /* ---- Toggle khoá / mở khoá ---- */
   const handleKhoa = async (key: KeyApiSummary) => {
     const newStatus = !key.trangThai;
     try {
       await keyApiService.toggleStatus(key.id, newStatus);
-      // Cập nhật local state
       setDanhSach(prev => prev.map(k => k.id === key.id ? { ...k, trangThai: newStatus } : k));
     } catch (error) {
       console.error("Lỗi đổi trạng thái:", error);
@@ -134,6 +126,11 @@ const QuanLyApiKey = () => {
   const soKeyPhu = danhSach.filter((k) => k.loaiKey === "Phụ").length;
   const soKeyHoatDong = danhSach.filter((k) => k.trangThai).length;
 
+  const danhSachLoc = danhSach.filter((k) =>
+    k.tenKey.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    k.maKeyFull.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="akm-page">
       {/* ======= HEADER ======= */}
@@ -177,8 +174,9 @@ const QuanLyApiKey = () => {
             </span>
           </div>
 
-          <div className="d-flex align-items-center gap-2">
-            <div className="input-group input-group-sm akm-search-group">
+          {/* Thay đổi đoạn này trong code của ông */}
+          <div className="d-flex align-items-center gap-2 flex-nowrap"> {/* Thêm flex-nowrap để cấm xuống hàng */}
+            <div className="input-group input-group-sm akm-search-group" style={{ width: '200px' }}> {/* Set cứng width hoặc dùng class w-50 */}
               <span className="input-group-text bg-white border-end-0">
                 <i className="bi bi-search text-muted"></i>
               </span>
@@ -186,9 +184,11 @@ const QuanLyApiKey = () => {
                 type="text"
                 className="form-control border-start-0 ps-0"
                 placeholder="Tìm key..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onClick={fetchKeys}>
+            <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 text-nowrap" onClick={fetchKeys}>
               <i className={`bi bi-arrow-clockwise ${isLoading ? "fa-spin" : ""}`}></i>
               Làm mới
             </button>
@@ -202,7 +202,7 @@ const QuanLyApiKey = () => {
             </div>
           )}
           <BangApiKey
-            danhSach={danhSach}
+            danhSach={danhSachLoc} // Dùng danh sách đã lọc nè
             onSua={handleSua}
             onKhoa={handleKhoa}
             onCapMoi={handleCapMoi}

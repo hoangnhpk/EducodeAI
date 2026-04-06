@@ -5,13 +5,10 @@ namespace educodeai_server.Repository.Interface
 {
     public interface IKeyApiRepository
     {
-        // Trả về list DTO sạch sẽ để hiện UI
         Task<IEnumerable<KeyAPISummaryDto?>> GetSummaryListAsync();
 
-        // Trả về chi tiết (có thể dùng để Edit)
         Task<KeyAPISummaryDto?> GetByIdAsync(int id);
 
-        // Thao tác nghiệp vụ
         Task<int> CreateKeyAsync(KeyAPIManageDto dto);
         Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto);
         Task<bool> UpdateStatusAsync(int id, bool status);

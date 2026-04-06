@@ -101,7 +101,6 @@ namespace educodeai_server.Repository.Implementation
             var newKey = new KeyAPIModel
             {
                 TenKey = dto.TenKey,
-                // 🔥 Gọi Helper mã hóa thủ công AES-256 ngay tại đây
                 MaKeyMaHoa = MaHoaHelper.MaHoa(dto.MaKeyRaw, _secretKey),
                 LoaiKey = dto.LoaiKey,
                 TrangThai = true,
@@ -127,7 +126,6 @@ namespace educodeai_server.Repository.Implementation
             key.HanMucRequest = dto.HanMucRequest;
             key.HanMucToken = dto.HanMucToken;
             
-            // Nếu có nhập MaKeyRaw mới thì mới update lại mã hoá
             if (!string.IsNullOrWhiteSpace(dto.MaKeyRaw))
             {
                 key.MaKeyMaHoa = MaHoaHelper.MaHoa(dto.MaKeyRaw, _secretKey);

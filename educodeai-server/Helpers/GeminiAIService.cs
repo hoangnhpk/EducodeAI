@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using System.Text.Json;
+using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.Extensions.Configuration;
 
@@ -77,49 +79,58 @@ namespace educodeai_server.Helpers
                     generationConfig = new { temperature = 0.7, topP = 0.9 }
                 };
 
-                // Bước 1: Quét Redis tìm các Key còn hạn mức
                 var hopLeKeys = await LayDanhSachKeyHopLeTuRedisAsync();
                 
                 int soLanThuLai = 0;
                 int toiDaSoLanThu = hopLeKeys.Count == 0 ? 1 : hopLeKeys.Count;
 
-                // VÒNG LẶP RETRY: Thử gọi API, lỗi (429/403) thì đổi Key và gọi lại
                 while (soLanThuLai < toiDaSoLanThu)
                 {
-                    if (hopLeKeys.Count == 0) 
+                    if (hopLeKeys.Count == 0)
                         throw new Exception("Tất cả API Key đều hết hạn mức hoặc bị khóa.");
 
-                    // Lấy hash key Redis bằng thuật toán xoay vòng Round-Robin
                     string currentRedisKey = NextRedisKey(hopLeKeys);
-                    
-                    // Lôi chuỗi mã hoá AES từ Redis ra
+
                     string maHoa = await _redisService.LayHashAsync(currentRedisKey, "MaKeyMaHoa");
-                    // Giải mã thành Key Google thô (sk-...)
                     string rawKey = MaHoaHelper.GiaiMa(maHoa, _secretKey);
 
-                    // Gắn Raw Key vào URL gọi Google Gemini
                     string requestUrl = $"v1beta/models/gemma-3-27b-it:generateContent?key={rawKey}";
-                    var response = await _http.PostAsJsonAsync(requestUrl, requestBody);
+
+                    HttpResponseMessage response = null;
+
+                    try
+                    {
+                        // Phải bọc try-catch ở đây để chống lỗi SocketException văng ra ngoài
+                        response = await _http.PostAsJsonAsync(requestUrl, requestBody);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Gemini Lỗi Kết Nối] Google từ chối phũ phàng với key {currentRedisKey}. Chi tiết: {ex.Message}. Đang thử key khác...");
+                        soLanThuLai++;
+                        await Task.Delay(2000); // Delay 2 giây để nhịp thở ổn định lại rồi mới gọi tiếp
+                        continue;
+                    }
 
                     if (response.IsSuccessStatusCode)
                     {
                         var responseBody = await response.Content.ReadAsStringAsync();
 
-                        // ++ THÀNH CÔNG: Cập nhật Request vào Redis ngay lập tức ++
                         await _redisService.TangGiaTriHashAsync(currentRedisKey, "RequestDaDung", 1);
-                        
-                        // ++ Cập nhật THỐNG KÊ TOKEN ++
+
                         try
                         {
                             string usageMetaString = ChuanHoaJsonTuAIHelper.usageMetadata(responseBody);
                             var metaObj = Newtonsoft.Json.Linq.JObject.Parse(usageMetaString);
                             int totalTokens = (int?)metaObj["totalTokenCount"] ?? 0;
-                            
+
                             if (totalTokens > 0)
                             {
                                 await _redisService.TangGiaTriHashAsync(currentRedisKey, "TokenDaDung", totalTokens);
                                 Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {totalTokens} tokens.");
                             }
+
+                            // Lưu nhật ký thành công vào Redis để Worker xử lý đổ vào DB
+                            await LuuLogVaoRedisQueue(currentRedisKey, totalTokens, (int)response.StatusCode, requestUrl);
                         }
                         catch (Exception ex)
                         {
@@ -129,27 +140,55 @@ namespace educodeai_server.Helpers
                         return responseBody;
                     }
 
-                    // ++ THẤT BẠI QUÁ TẢI (429/403) ++
+                    // Nếu không Success, check xem có phải do Rate Limit hoặc sập server AI không
                     if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
-                        response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                        response.StatusCode == System.Net.HttpStatusCode.Forbidden ||
+                        response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
                     {
-                        Console.WriteLine($"[Gemini] Key {currentRedisKey} bị 429/403. Đã tăng bộ đếm RequestDaDung và đang chuyển Key khác...");
-                        
-                        // Yêu cầu: "nếu thất bại mà bị kiểu chạm limit thì cũng cập nhập request"
+                        Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
+
                         await _redisService.TangGiaTriHashAsync(currentRedisKey, "RequestDaDung", 1);
-                        
-                        // Nghỉ ngơi 1 giây trước khi xoay vòng sang Key kế tiếp
+
+                        // Lưu nhật ký lỗi vào Redis để Worker xử lý đổ vào DB
+                        await LuuLogVaoRedisQueue(currentRedisKey, 0, (int)response.StatusCode, requestUrl);
+
                         soLanThuLai++;
-                        await Task.Delay(1000);
+                        await Task.Delay(2000); // Cho nó nghỉ 2 giây rồi mới xoay vòng
                         continue;
                     }
 
-                    // Nếu lỗi nghiêm trọng khác (Bad Request sửa form...) thì quăng exception luôn
+                    // Nếu lỗi lạ lùng khác mà không catch được ở trên thì quăng lỗi
                     response.EnsureSuccessStatusCode();
                 }
 
                 throw new Exception("Tất cả các API Key đều đã vượt quá giới hạn hoặc quá tải. Vui lòng nạp thêm Key.");
             });
+        }
+
+        private async Task LuuLogVaoRedisQueue(string redisKey, int tokens, int statusCode, string url)
+        {
+            try
+            {
+                // Extract ID từ pattern "EduCodeAI:KeyPool:{ID}"
+                var parts = redisKey.Split(':');
+                if (parts.Length < 3 || !int.TryParse(parts[2], out int keyId)) return;
+
+                var nhatKy = new NhatKySuDungModel
+                {
+                    ID_Key = keyId,
+                    SoTokenTieuHao = tokens,
+                    ThoiGianGoi = DateTime.Now,
+                    MaTrangThai = statusCode,
+                    DuongDanAPI = url
+                };
+
+                string jsonLog = JsonSerializer.Serialize(nhatKy);
+                await _redisService.DayVaoCuoiListAsync("EduCodeAI:LogQueue", jsonLog);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Lỗi Lưu Log Redis] {ex.Message}");
+            }
         }
     }
 }

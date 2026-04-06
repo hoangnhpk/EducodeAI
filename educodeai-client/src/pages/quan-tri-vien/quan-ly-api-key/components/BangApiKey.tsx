@@ -22,6 +22,8 @@ const mauBar = (da: number, max: number) => {
 
 const BangApiKey = ({ danhSach, onSua, onKhoa, onCapMoi, onXoa }: Props) => {
     const [copiedId, setCopiedId] = useState<number | null>(null);
+    // Trạng thái lưu các ID của key đang hiển thị
+    const [visibleKeys, setVisibleKeys] = useState<number[]>([]);
 
     const copy = (key: KeyApiSummary) => {
         const textToCopy = key.maKeyFull || `sk-...${key.id || 0}`;
@@ -29,6 +31,13 @@ const BangApiKey = ({ danhSach, onSua, onKhoa, onCapMoi, onXoa }: Props) => {
             setCopiedId(key.id);
             setTimeout(() => setCopiedId(null), 1500);
         });
+    };
+
+    // Hàm ẩn/hiện key API
+    const toggleShowKey = (id: number) => {
+        setVisibleKeys((prev) =>
+            prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]
+        );
     };
 
     if (danhSach.length === 0) {
@@ -71,6 +80,13 @@ const BangApiKey = ({ danhSach, onSua, onKhoa, onCapMoi, onXoa }: Props) => {
                         const rWidth = rPct === 0 && daReq > 0 ? 2 : rPct;
                         const tWidth = tPct === 0 && daTok > 0 ? 2 : tPct;
 
+                        // Xử lý che mã Key (chỉ hiện 3 ký tự đầu và 3 ký tự cuối)
+                        const isVisible = visibleKeys.includes(key.id);
+                        const maskedKey = maKey.length > 8 
+                            ? `${maKey.substring(0, 3)}...${maKey.substring(maKey.length - 3)}`
+                            : "sk-...***";
+                        const displayKey = isVisible ? maKey : maskedKey;
+
                         return (
                             <tr key={key.id}>
                                 {/* Tên Key */}
@@ -82,13 +98,14 @@ const BangApiKey = ({ danhSach, onSua, onKhoa, onCapMoi, onXoa }: Props) => {
                                 {/* Mã Key — icons chỉ hiện khi hover (CSS) */}
                                 <td>
                                     <div className="akm-key-cell">
-                                        <span className="akm-key-mask">{maKey}</span>
+                                        <span className="akm-key-mask">{displayKey}</span>
                                         <span className="akm-key-btns">
                                             <button
                                                 className="akm-icon-btn"
-                                                title="Xem mã đầy đủ"
+                                                title={isVisible ? "Ẩn mã" : "Xem mã đầy đủ"}
+                                                onClick={() => toggleShowKey(key.id)}
                                             >
-                                                <i className="bi bi-eye"></i>
+                                                <i className={`bi ${isVisible ? "bi-eye-slash" : "bi-eye"}`}></i>
                                             </button>
                                             <button
                                                 className="akm-icon-btn"
