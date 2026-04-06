@@ -29,11 +29,9 @@ namespace educodeai_server.Services
 
         public async Task<long> TangGiaTriHashAsync(string key, string thuocTinh, long mucTang = 1)
         {
-            // Tự động cộng dồn và trả về giá trị sau khi cộng
             return await _db.HashIncrementAsync(key, thuocTinh, mucTang);
         }
 
-        // --- CÁC HÀM LIST ---
         public async Task DayVaoCuoiListAsync(string key, string giaTri)
         {
             await _db.ListRightPushAsync(key, giaTri);
@@ -44,10 +42,8 @@ namespace educodeai_server.Services
             var danhSach = new List<string>();
             for (int i = 0; i < soLuong; i++)
             {
-                // Rút ra khỏi hàng đợi
                 var giaTri = await _db.ListLeftPopAsync(key);
 
-                // Nếu Redis rỗng (không còn log nào chờ) thì dừng vòng lặp luôn
                 if (!giaTri.HasValue) break;
 
                 danhSach.Add(giaTri.ToString());

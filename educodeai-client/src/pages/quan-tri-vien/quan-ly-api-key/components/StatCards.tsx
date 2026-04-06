@@ -20,13 +20,13 @@ const StatCards = ({ thongKe }: Props) => {
               <p className="akm-stat-value mb-0">
                 {thongKe.tongRequestHomNay.toLocaleString("vi-VN")}
               </p>
-              <div className="d-flex align-items-center gap-2 mt-2">
+              {/* <div className="d-flex align-items-center gap-2 mt-2">
                 <span className="akm-stat-trend">
                   <i className="bi bi-arrow-up-short"></i>
                   +{thongKe.phanTramTang}%
                 </span>
                 <span className="akm-stat-sub mb-0">so với hôm qua</span>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -45,9 +45,9 @@ const StatCards = ({ thongKe }: Props) => {
                 {(thongKe.tongTokenDaDung / 1_000).toFixed(1)}
                 <span className="akm-stat-value-unit">K</span>
               </p>
-              <p className="akm-stat-sub mb-0 mt-2">
+              {/* <p className="akm-stat-sub mb-0 mt-2">
                 {thongKe.tongTokenDaDung.toLocaleString("vi-VN")} tokens trong ngày
-              </p>
+              </p> */}
             </div>
           </div>
         </div>
