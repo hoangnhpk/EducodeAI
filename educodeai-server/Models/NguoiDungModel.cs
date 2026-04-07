@@ -35,8 +35,8 @@ namespace educodeai_server.Models
         [StringLength(20)]
         public string? TrangThai { get; set; } = "Hoạt động";
 
-        public DateTime NgayThamGia { get; set; } = DateTime.Now;
-        // m?i th�m 
+        public DateTime NgayThamGia { get; set; } = DateTime.UtcNow;
+        // m?i th�m 
         public string? LyDoKhoa { get; set; }
 
 

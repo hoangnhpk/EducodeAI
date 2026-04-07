@@ -12,7 +12,7 @@ namespace educodeai_server.Models
 
         public int SoTokenTieuHao { get; set; }
 
-        public DateTime ThoiGianGoi { get; set; } = DateTime.Now;
+        public DateTime ThoiGianGoi { get; set; } = DateTime.UtcNow;
 
         public int MaTrangThai { get; set; } // 200, 429, 500...
 
