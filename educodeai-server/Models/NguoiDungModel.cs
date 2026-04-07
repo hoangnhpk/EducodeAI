@@ -36,6 +36,8 @@ namespace educodeai_server.Models
         public string? TrangThai { get; set; } = "Ho?t ??ng";
 
         public DateTime NgayThamGia { get; set; } = DateTime.Now;
+        // m?i thêm 
+        public string? LyDoKhoa { get; set; }
 
         // Navigation
         public virtual ICollection<KhoaHocModel> KhoaHocs { get; set; } = null!;

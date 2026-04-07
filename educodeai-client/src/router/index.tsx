@@ -27,10 +27,12 @@ import PreviewQuiz from "../pages/giang-vien/tao-bai-tap-test-case/PreviewQuizCo
 import CaiDatQuiz from "../pages/giang-vien/tao-bai-tap-test-case/CaiDatQuizContent";
 import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
-
+import QuanLyHocVienKhoaHoc from "../pages/giang-vien/quan-ly-hoc-vien/QuanLyHocVienKhoaHoc";
 // /* ===== ADMIN ===== */
 import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
+import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
+
 
 export default function AppRouter() {
   return (
@@ -95,6 +97,7 @@ export default function AppRouter() {
           <Route path="preview-quiz" element={<PreviewQuiz />} />
           <Route path="cai-dat" element={<CaiDatQuiz />} />
           <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
+          <Route path="lop-hoc" element={<QuanLyHocVienKhoaHoc />} />
         </Route>
 
 
@@ -112,6 +115,7 @@ export default function AppRouter() {
           <Route index element={<QuanLyNguoiDung />} /> {/* Default load vào Quản lý người dùng */}
           <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
           <Route path="quan-ly-binh-luan-review" element={<QuanLyReview />} />
+          <Route path="quan-ly-hoc-vien" element={<QuanLyHocVien />} />
         </Route>
 
       </Routes>
