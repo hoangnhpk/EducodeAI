@@ -1,0 +1,452 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import './QuanLyHocVienKhoaHoc.css';
+import {
+  BsPersonFill, BsSearch, BsChevronLeft, BsChevronRight,
+  BsEyeFill, BsCheckCircleFill, BsX, BsCircle, BsChevronDown
+} from 'react-icons/bs';
+
+interface KhoaHoc {
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  soLuongHocVien: number;
+}
+
+interface HocVien {
+  maNguoiDung: number;
+  hoTen: string;
+  email: string;
+  anhDaiDien: string | null;
+  ngayDangKy: string;
+  tenKhoaHoc: string;
+  trangThai: string;
+}
+
+interface KhoaHocHocVien {
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  ngayDangKy: string;
+  trangThai: string;
+}
+
+// Interfaces cho dữ liệu Popup Tiến độ (Cập nhật có thời gian)
+interface TienDoKhoaHocHocVienDTO {
+  tongThoiGianHocPhut: number;
+  danhSachChuong: ChuongHocTienDoDTO[];
+}
+
+interface ChuongHocTienDoDTO {
+  maChuong: number;
+  tenChuong: string;
+  danhSachBaiHoc: BaiHocTienDoDTO[];
+}
+
+interface BaiHocTienDoDTO {
+  maBaiHoc: number;
+  tenBaiHoc: string;
+  daHoanThanh: boolean;
+}
+
+const ALL_COURSES_VALUE = '0';
+const ITEMS_PER_PAGE = 5;
+
+const normalizeText = (value: string) =>
+  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+const getTrangThaiMeta = (raw: string) => {
+  const normalized = (raw ?? '').trim().toLowerCase();
+  if (['hoanthanh', 'hoàn thành', 'hoan thanh', 'completed'].includes(normalized)) {
+    return { className: 'hoan-thanh', label: 'Hoàn thành' };
+  }
+  if (['danghoc', 'đang học', 'dang hoc', 'learning'].includes(normalized)) {
+    return { className: 'dang-hoc', label: 'Đang học' };
+  }
+  if (['bikhoa', 'bị khóa', 'bi khoa', 'locked'].includes(normalized)) {
+    return { className: 'bi-khoa', label: 'Bị khóa' };
+  }
+  return { className: 'khong-xac-dinh', label: raw || 'Không xác định' };
+};
+
+export default function QuanLyHocVienKhoaHoc() {
+  const [khoaHocs, setKhoaHocs] = useState<KhoaHoc[]>([]);
+  const [hocViens, setHocViens] = useState<HocVien[]>([]);
+  const [selectedKhoaHoc, setSelectedKhoaHoc] = useState<string>('0');
+  const [searchInput, setSearchInput] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // --- STATE CHO PHÂN TRANG ---
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // --- STATE CHO POPUP CHI TIẾT ---
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [modalMode, setModalMode] = useState<'TIEN_DO' | 'DANH_SACH_KHOA'>('TIEN_DO');
+  const [selectedHocVienInfo, setSelectedHocVienInfo] = useState<HocVien | null>(null);
+
+  const [tienDoKhoaHoc, setTienDoKhoaHoc] = useState<TienDoKhoaHocHocVienDTO | null>(null);
+  const [studentCourses, setStudentCourses] = useState<KhoaHocHocVien[]>([]);
+  const [loadingModal, setLoadingModal] = useState<boolean>(false);
+  const [expandedChapters, setExpandedChapters] = useState<number[]>([]); // Quản lý trạng thái đóng/mở chương
+
+  const API_URL = import.meta.env.VITE_API_URL;
+  const maGiangVien = 1;
+
+  useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+
+  const fetchKhoaHocs = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/giang-vien/lop-hoc/danh-sach-khoa/${maGiangVien}`);
+      if (res.ok) {
+        const result = await res.json();
+        setKhoaHocs(result.data);
+      }
+    } catch (error) { console.error(error); }
+  }, [API_URL, maGiangVien]);
+
+  const fetchHocViens = useCallback(async (maKhoa: string) => {
+    setLoading(true);
+    try {
+      const url = maKhoa === ALL_COURSES_VALUE
+        ? `${API_URL}/api/giang-vien/lop-hoc/danh-sach-hoc-vien/${maGiangVien}`
+        : `${API_URL}/api/giang-vien/lop-hoc/danh-sach-hoc-vien/${maGiangVien}?maKhoaHoc=${maKhoa}`;
+
+      const res = await fetch(url);
+      if (res.ok) {
+        const result = await res.json();
+        setHocViens(result.data);
+      }
+    } catch (error) { console.error(error); } finally { setLoading(false); }
+  }, [API_URL, maGiangVien]);
+
+  useEffect(() => { fetchKhoaHocs(); }, [fetchKhoaHocs]);
+
+  useEffect(() => {
+    fetchHocViens(selectedKhoaHoc);
+    setCurrentPage(1);
+  }, [fetchHocViens, selectedKhoaHoc]);
+
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchTerm(searchInput.trim());
+  }, [searchInput]);
+
+  const openStudentCoursesModal = useCallback(async (maNguoiDung: number) => {
+    setModalMode('DANH_SACH_KHOA');
+    setStudentCourses([]);
+    const res = await fetch(`${API_URL}/api/giang-vien/lop-hoc/hoc-vien/${maNguoiDung}/khoa-hoc/${maGiangVien}`);
+    if (!res.ok) return;
+    const result = await res.json();
+    setStudentCourses(result.data);
+  }, [API_URL, maGiangVien]);
+
+  const openProgressModal = useCallback(async (maNguoiDung: number) => {
+    setModalMode('TIEN_DO');
+    setTienDoKhoaHoc(null);
+    setExpandedChapters([]);
+    const res = await fetch(`${API_URL}/api/giang-vien/lop-hoc/${selectedKhoaHoc}/hoc-vien/${maNguoiDung}/tien-do-chi-tiet`);
+    if (!res.ok) return;
+    const result = await res.json();
+    setTienDoKhoaHoc(result.data);
+
+    if (result.data?.danhSachChuong) {
+      const allChapterIds = result.data.danhSachChuong.map((c: ChuongHocTienDoDTO) => c.maChuong);
+      setExpandedChapters(allChapterIds);
+    }
+  }, [API_URL, selectedKhoaHoc]);
+
+  // --- XỬ LÝ KHI BẤM ICON CON MẮT ---
+  const handleViewDetailClick = useCallback(async (hv: HocVien) => {
+    setSelectedHocVienInfo(hv);
+    setShowModal(true);
+    setLoadingModal(true);
+
+    try {
+      if (selectedKhoaHoc === ALL_COURSES_VALUE) {
+        await openStudentCoursesModal(hv.maNguoiDung);
+      } else {
+        await openProgressModal(hv.maNguoiDung);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingModal(false);
+    }
+  }, [openProgressModal, openStudentCoursesModal, selectedKhoaHoc]);
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedHocVienInfo(null);
+    setTienDoKhoaHoc(null);
+    setStudentCourses([]);
+  };
+
+  const toggleChapter = useCallback((maChuong: number) => {
+    setExpandedChapters(prev =>
+      prev.includes(maChuong) ? prev.filter(id => id !== maChuong) : [...prev, maChuong]
+    );
+  }, []);
+
+  const formatTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours === 0) return `${mins} phút`;
+    if (mins === 0) return `${hours} tiếng`;
+    return `${hours} tiếng ${mins} phút`;
+  };
+
+  const filteredHocViens = useMemo(() => {
+    const normalizedQuery = normalizeText(searchTerm);
+    if (!normalizedQuery) return hocViens;
+    return hocViens.filter((hv) => {
+      const name = normalizeText(hv.hoTen ?? '');
+      const email = normalizeText(hv.email ?? '');
+      return name.includes(normalizedQuery) || email.includes(normalizedQuery);
+    });
+  }, [hocViens, searchTerm]);
+
+  const totalPages = useMemo(
+    () => Math.ceil(filteredHocViens.length / ITEMS_PER_PAGE),
+    [filteredHocViens.length]
+  );
+
+  const currentItems = useMemo(() => {
+    const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+    const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+    return filteredHocViens.slice(indexOfFirstItem, indexOfLastItem);
+  }, [currentPage, filteredHocViens]);
+
+  const paginationInfo = useMemo(() => {
+    const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+    const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+    return {
+      from: filteredHocViens.length === 0 ? 0 : indexOfFirstItem + 1,
+      to: Math.min(indexOfLastItem, filteredHocViens.length),
+      total: filteredHocViens.length,
+    };
+  }, [currentPage, filteredHocViens.length]);
+
+  const paginate = useCallback((pageNumber: number) => setCurrentPage(pageNumber), []);
+
+  return (
+    <div className="qllh-container">
+      <div className="qllh-header">
+        <h1 className="qllh-title">Quản Lý Lớp Học</h1>
+        <p className="qllh-subtitle">Xem và quản lý thông tin các học viên theo học khóa của bạn.</p>
+      </div>
+
+      <div className="qllh-filter-bar">
+        <form className="qllh-search-form" onSubmit={handleSearchSubmit}>
+          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+            <BsSearch style={{ position: 'absolute', left: '16px', color: '#9ca3af' }} />
+            <input
+              type="text"
+              placeholder="Tìm theo Họ tên hoặc Email học viên..."
+              className="qllh-search-input"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="qllh-btn-search">
+            <BsSearch /> Tìm kiếm
+          </button>
+        </form>
+
+        <select
+          className="qllh-select-course"
+          value={selectedKhoaHoc}
+          onChange={(e) => setSelectedKhoaHoc(e.target.value)}
+        >
+          <option value="0">Tất cả học viên</option>
+          {khoaHocs.map(k => (
+            <option key={k.maKhoaHoc} value={k.maKhoaHoc}>
+              {k.tenKhoaHoc} ({k.soLuongHocVien} HV)
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {loading && <p style={{ color: '#ea580c', fontWeight: 'bold', marginBottom: '16px' }}>Đang tải dữ liệu học viên...</p>}
+
+      {!loading && (
+        <div className="qllh-table-wrapper">
+          <table className="qllh-table">
+            <thead>
+              <tr>
+                <th className="qllh-col-student">Học viên</th>
+                <th>Email</th>
+                <th className="qllh-col-status">Trạng thái</th>
+                {selectedKhoaHoc !== ALL_COURSES_VALUE && (
+                  <>
+                    <th>Khóa học</th>
+                    <th>Ngày tham gia</th>
+                  </>
+                )}
+                <th className="qllh-col-actions">Chi tiết</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentItems.length === 0 ? (
+                <tr>
+                  <td colSpan={selectedKhoaHoc !== ALL_COURSES_VALUE ? 6 : 4} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    Không tìm thấy dữ liệu.
+                  </td>
+                </tr>
+              ) : (
+                currentItems.map((hv, index) => (
+                  <tr key={`${hv.maNguoiDung}-${index}`}>
+                    <td className="qllh-col-student">
+                      <div className="qllh-user-info">
+                        <div className="qllh-avatar">
+                          {hv.anhDaiDien ? <img src={`${API_URL}${hv.anhDaiDien}`} alt="avt" /> : <BsPersonFill size={24} color="#f97316" />}
+                        </div>
+                        <span className="qllh-user-name">{hv.hoTen}</span>
+                      </div>
+                    </td>
+                    <td style={{ color: '#4b5563' }}>{hv.email}</td>
+                    <td className="qllh-col-status">
+                      {(() => {
+                        const meta = getTrangThaiMeta(hv.trangThai);
+                        return <span className={`qllh-badge ${meta.className}`}>{meta.label}</span>;
+                      })()}
+                    </td>
+
+                    {selectedKhoaHoc !== ALL_COURSES_VALUE && (
+                      <>
+                        <td style={{ color: '#ea580c', fontWeight: '600' }}>{hv.tenKhoaHoc}</td>
+                        <td style={{ color: '#4b5563' }}>{new Date(hv.ngayDangKy).toLocaleDateString('vi-VN')}</td>
+                      </>
+                    )}
+
+                    <td className="qllh-col-actions">
+                      <button
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f97316', padding: '8px' }}
+                        title={selectedKhoaHoc === '0' ? "Xem các khóa đã đăng ký" : "Xem tiến độ chi tiết"}
+                        onClick={() => handleViewDetailClick(hv)}
+                      >
+                        <BsEyeFill size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                )))}
+            </tbody>
+          </table>
+
+          {filteredHocViens.length > 0 && (
+            <div className="qllh-pagination">
+              <span className="qllh-page-info">
+                Đang hiển thị {paginationInfo.from} - {paginationInfo.to} trong {paginationInfo.total} học viên
+              </span>
+              <button className="qllh-page-btn" onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}><BsChevronLeft size={12} /></button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                <button key={number} className={`qllh-page-btn ${currentPage === number ? 'active' : ''}`} onClick={() => paginate(number)}>{number}</button>
+              ))}
+              <button className="qllh-page-btn" onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages}><BsChevronRight size={12} /></button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* POPUP LINH HOẠT TÙY CHẾ ĐỘ */}
+      {showModal && (
+        <div className="qllh-modal-overlay" onClick={closeModal}>
+          <div className="qllh-modal-box" onClick={(e) => e.stopPropagation()}>
+
+            <div className="qllh-modal-header">
+              <div>
+                <h2>{modalMode === 'TIEN_DO' ? 'Tiến độ học tập chi tiết' : 'Các khóa học đã đăng ký'}</h2>
+                <p style={{ margin: '4px 0 0 0' }}>Học viên: <b>{selectedHocVienInfo?.hoTen}</b>
+                  {modalMode === 'TIEN_DO' && <span> - Khóa: <b>{selectedHocVienInfo?.tenKhoaHoc}</b></span>}
+                </p>
+                {modalMode === 'TIEN_DO' && !loadingModal && tienDoKhoaHoc && (
+                  <p style={{ marginTop: '8px', color: '#f97316', fontSize: '14px', fontWeight: 'bold' }}>
+                    Đã học được: {formatTime(tienDoKhoaHoc.tongThoiGianHocPhut)}
+                  </p>
+                )}
+              </div>
+              <button className="qllh-btn-close" onClick={closeModal}><BsX /></button>
+            </div>
+
+            <div className="qllh-modal-body">
+              {loadingModal && <p style={{ color: '#ea580c', textAlign: 'center' }}>Đang tải dữ liệu...</p>}
+
+              {/* CHẾ ĐỘ TIẾN ĐỘ BÀI HỌC  */}
+              {!loadingModal && modalMode === 'TIEN_DO' && tienDoKhoaHoc && (
+                <>
+                  {tienDoKhoaHoc.danhSachChuong.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#6b7280' }}>Khóa học này chưa cập nhật nội dung bài học.</p>
+                  ) : (
+                    tienDoKhoaHoc.danhSachChuong.map((chuong, index) => {
+                      const isOpen = expandedChapters.includes(chuong.maChuong);
+                      return (
+                        <div key={index} className="qllh-chuong-item">
+                          <div
+                            className="qllh-chuong-title"
+                            onClick={() => toggleChapter(chuong.maChuong)}
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', backgroundColor: '#f9fafb', padding: '12px', borderRadius: '8px' }}
+                          >
+                            <span style={{ color: '#111827', display: 'flex', alignItems: 'center' }}>
+                              <BsChevronDown style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', marginRight: '10px', color: '#ea580c' }} />
+                              {chuong.tenChuong}
+                            </span>
+                            <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 'normal' }}>
+                              {chuong.danhSachBaiHoc.length} bài
+                            </span>
+                          </div>
+
+                          {isOpen && (
+                            <ul className="qllh-bai-list" style={{ display: 'block', paddingLeft: '12px', marginTop: '8px' }}>
+                              {chuong.danhSachBaiHoc.map(bai => (
+                                <li key={bai.maBaiHoc} className="qllh-bai-item" style={{ padding: '10px 12px' }}>
+                                  {bai.daHoanThanh ? <BsCheckCircleFill color="#10b981" size={16} /> : <BsCircle color="#d1d5db" size={16} />}
+                                  <span className="qllh-bai-name" style={{ marginLeft: '12px', color: '#374151' }}>{bai.tenBaiHoc}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </>
+              )}
+
+              {/* CHẾ ĐỘ DANH SÁCH KHÓA HỌC */}
+              {!loadingModal && modalMode === 'DANH_SACH_KHOA' && (
+                <>
+                  {studentCourses.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#6b7280' }}>Học viên này chưa đăng ký khóa học nào.</p>
+                  ) : (
+                    <div className="qllh-chuong-item">
+                      <ul className="qllh-bai-list" style={{ display: 'block' }}>
+                        {studentCourses.map(k => (
+                          <li key={k.maKhoaHoc} className="qllh-bai-item" style={{ justifyContent: 'space-between', padding: '16px', backgroundColor: '#f9fafb', borderRadius: '8px', marginBottom: '8px', border: '1px solid #f3f4f6' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <BsCheckCircleFill color="#f97316" size={18} />
+                              <span className="qllh-bai-name" style={{ fontWeight: 'bold', fontSize: '15px' }}>{k.tenKhoaHoc}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                              <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                                {new Date(k.ngayDangKy).toLocaleDateString('vi-VN')}
+                              </span>
+                              {(() => {
+                                const meta = getTrangThaiMeta(k.trangThai);
+                                return <span className={`qllh-badge ${meta.className}`}>{meta.label}</span>;
+                              })()}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="qllh-modal-footer">
+              <button className="qllh-page-btn active" onClick={closeModal} style={{ padding: '8px 20px' }}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

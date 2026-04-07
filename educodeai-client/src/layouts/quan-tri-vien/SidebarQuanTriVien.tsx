@@ -19,6 +19,11 @@ export default function SidebarQuanTriVien() {
         <a href="/quan-tri-vien/cau-hinh" className="qtv-nav-link">
           <MdBuildCircle /> Cấu Hình
         </a> */}
+        
+        {/* <a href="/quan-tri-vien/quan-ly-hoc-vien" className="qtv-nav-link">
+          <MdPeople /> Học Viên
+        </a> */}
+
       </nav>
     </aside>
   );

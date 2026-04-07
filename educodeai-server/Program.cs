@@ -1,17 +1,18 @@
-﻿using educodeai_server.Config;
+﻿using System.Security.Claims;
+using System.Text;
+using educodeai_server.Config;
 using educodeai_server.Data;
 using educodeai_server.Helpers;
 using educodeai_server.Repository.Implementation;
 using educodeai_server.Repository.Interface;
+using educodeai_server.Services;
+using educodeai_server.Services.Implement;
 using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Security.Claims;
-using System.Text;
-using educodeai_server.Services.Implement;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
@@ -60,6 +61,7 @@ builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddHttpClient<BaiTapService>();
 
 // Người dùng & Thống kê
+
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
 builder.Services.AddScoped<IHocVienService, HocVienService>();
@@ -70,6 +72,8 @@ builder.Services.AddScoped<IKhoaHocCuaToiRepository, KhoaHocCuaToiRepository>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
 builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
+builder.Services.AddScoped<IQuanLyHocVienService,QuanLyHocVienService>();
+builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
