@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ProtectedRoute from "../pages/auth/ProtectedRoute"; // Đảm bảo đúng đường dẫn file này
+import ProtectedRoute from "../pages/auth/ProtectedRoute"; 
 
 import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
 import LayoutBlank from "../layouts/hoc-vien/LayoutBlank";
@@ -10,6 +10,7 @@ import LayoutQuanTriVien from "../layouts/quan-tri-vien/LayoutQuanTriVien";
 import DangNhap from "../pages/auth/DangNhap";
 import DangKy from "../pages/auth/DangKy";
 import QuenMatKhau from "../pages/auth/QuenMatKhau";
+import NotFound from "../pages/NotFound";
 
 // /* ===== HỌC VIÊN ===== */
 import TrangChuHocVien from "@/pages/hoc-vien/trang-chu/TrangChu";
@@ -19,6 +20,8 @@ import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinh
 import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
 import ChiTietLoTrinhAI from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/ChiTietLoTrinhAI";
 import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
+import DoiMatKhau from "../pages/hoc-vien/ho-so-hoc-vien/DoiMatKhau";
+import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 
 // /* ===== GIẢNG VIÊN ===== */
 import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
@@ -61,6 +64,8 @@ export default function AppRouter() {
         >
           <Route path="/yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
           <Route path="/ho-so" element={<HoSoHocVienPage />} />
+          <Route path="/bao-mat" element={<DoiMatKhau />} />
+          <Route path="/thiet-bi" element={<QuanLyThietBi />} />
           <Route path="/khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
           <Route path="/chi-tiet-lo-trinh/:id" element={<ChiTietLoTrinhAI />} />
         </Route>
@@ -113,6 +118,9 @@ export default function AppRouter() {
           <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
           <Route path="quan-ly-binh-luan-review" element={<QuanLyReview />} />
         </Route>
+
+        {/* CATCH ALL 404 */}
+        <Route path="*" element={<NotFound />} />
 
       </Routes>
     </BrowserRouter>
