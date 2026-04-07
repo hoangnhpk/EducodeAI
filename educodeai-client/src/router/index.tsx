@@ -36,6 +36,7 @@ import TaoLoTrinhAI from '../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI';
 import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
 import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
+import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
 
 
 export default function AppRouter() {
