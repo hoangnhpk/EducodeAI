@@ -13,6 +13,7 @@ namespace educodeai_server.Data
 
         // 16 bảng dữ liệu
         public DbSet<NguoiDungModel> NguoiDungs { get; set; }
+        public DbSet<PhienDangNhapModel> PhienDangNhaps { get; set; }
         public DbSet<NgonNguLapTrinhModel> NgonNguLapTrinhs { get; set; }
         public DbSet<KhoaHocModel> KhoaHocs { get; set; }
         public DbSet<ChuongHocModel> ChuongHocs { get; set; }
@@ -34,6 +35,9 @@ namespace educodeai_server.Data
         public DbSet<RangBuocBaiTapModel> RangBuocBaiTaps { get; set; }
         public DbSet<LoiGiaiMauModel> LoiGiaiMaus { get; set; }
 
+        public DbSet<KeyAPIModel> KeyAPIs { get; set; }
+        public DbSet<NhatKySuDungModel> NhatKySuDungs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -46,8 +50,14 @@ namespace educodeai_server.Data
             modelBuilder.Entity<DanhGiaModel>().HasIndex(d => new { d.MaNguoiDung, d.MaKhoaHoc }).IsUnique();
 
             // ====== RELATIONSHIPS CONFIGURATION ======
-            
+
             // NguoiDungModel relationships
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.DanhSachPhienDangNhap)
+                .WithOne(p => p.NguoiDung)
+                .HasForeignKey(p => p.MaNguoiDung)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<NguoiDungModel>()
                 .HasMany(n => n.KhoaHocs)
                 .WithOne(k => k.GiangVien)

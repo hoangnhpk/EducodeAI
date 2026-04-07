@@ -2635,13 +2635,17 @@ namespace educodeai_server.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("LyDoKhoa")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("MaOTP")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("MatKhau")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime?>("NgayDangNhapCuoi")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("NgayThamGia")
                         .HasColumnType("datetime2");
@@ -2650,6 +2654,9 @@ namespace educodeai_server.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("ThoiGianHetHanOTP")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("TrangThai")
                         .HasMaxLength(20)
@@ -2733,6 +2740,47 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaBaiTapThucHanh");
 
                     b.ToTable("PhienBanBaiTaps");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.PhienDangNhapModel", b =>
+                {
+                    b.Property<int>("MaPhien")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaPhien"));
+
+                    b.Property<bool>("DangHoatDong")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("DiaChiIP")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("MaNguoiDung")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MaThietBi")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("TenThietBi")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("ThoiGianDangNhap")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ThoiGianHoatDongCuoi")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MaPhien");
+
+                    b.HasIndex("MaNguoiDung");
+
+                    b.ToTable("PhienDangNhap");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.RangBuocBaiTapModel", b =>
@@ -3053,6 +3101,17 @@ namespace educodeai_server.Migrations
                     b.Navigation("BaiTapThucHanh");
                 });
 
+            modelBuilder.Entity("educodeai_server.Models.PhienDangNhapModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany("DanhSachPhienDangNhap")
+                        .HasForeignKey("MaNguoiDung")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NguoiDung");
+                });
+
             modelBuilder.Entity("educodeai_server.Models.RangBuocBaiTapModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.BaiTap_ThucHanhIDEModel", "BaiTapThucHanh")
@@ -3143,6 +3202,8 @@ namespace educodeai_server.Migrations
                     b.Navigation("DangKyKhoaHocs");
 
                     b.Navigation("DanhGias");
+
+                    b.Navigation("DanhSachPhienDangNhap");
 
                     b.Navigation("GhiChuBaiHocs");
 

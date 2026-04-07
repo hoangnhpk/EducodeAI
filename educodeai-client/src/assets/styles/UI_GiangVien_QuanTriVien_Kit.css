@@ -254,3 +254,105 @@ textarea:focus {
 .text-center { text-align: center; }
 .mt-2 { margin-top: 8px; }
 .mt-4 { margin-top: 16px; }
+
+.qtv-sidebar {
+  width: 260px;
+  height: 100vh;
+  background: linear-gradient(180deg, #1a237e 0%, #0d47a1 100%); /* Màu gradient sâu hơn */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.qtv-sidebar-header {
+  padding: 30px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.header-icon-spin {
+  font-size: 1.8rem;
+  color: #4fc3f7;
+}
+
+.system-label {
+  display: block;
+  margin-top: 5px;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.nav-group-label {
+  padding: 20px 25px 10px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  font-weight: 600;
+}
+
+.qtv-nav-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 25px;
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  transition: all 0.2s;
+  margin: 4px 15px;
+  border-radius: 12px;
+}
+
+.qtv-nav-link:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+  transform: translateX(5px);
+}
+
+.qtv-nav-link.active {
+  background: #2979ff; /* Màu xanh sáng hơn làm nổi bật */
+  color: white;
+  box-shadow: 0 4px 12px rgba(41, 121, 255, 0.3);
+}
+
+.link-icon {
+  font-size: 1.3rem;
+  margin-right: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.qtv-sidebar-footer {
+  margin-top: auto;
+  padding: 20px;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.3);
+  text-align: center;
+}
+
+.qtv-sidebar {
+  width: 260px;
+  /* Ép nó luôn cao bằng 100% viewport */
+  height: 100vh; 
+  min-height: 100vh;
+  
+  /* Nếu muốn sidebar đứng yên khi cuộn trang thì thêm dòng này */
+  position: sticky;
+  top: 0;
+  left: 0;
+
+  background: linear-gradient(180deg, #1a237e 0%, #0d47a1 100%);
+  display: flex;
+  flex-direction: column;
+  /* Loại bỏ các khoảng trắng mặc định */
+  margin: 0; 
+}
