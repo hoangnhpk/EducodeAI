@@ -17,7 +17,6 @@ namespace educodeai_server.Helpers
         private readonly IRedisService _redisService;
         private readonly string _secretKey;
 
-        // Dùng static để biến này tồn tại xuyên suốt ứng dụng, xoay vòng mượt mà
         private static int _currentKeyIndex = 0;
         private static readonly object _lock = new object();
 
@@ -44,7 +43,6 @@ namespace educodeai_server.Helpers
                         int.TryParse(reqMaxStr, out int max);
                         int.TryParse(reqUsedStr, out int used);
                         
-                        // Chấp nhận key chưa chạm trần
                         if (max == 0 || used < max)
                         {
                             validKeys.Add(k);
@@ -100,14 +98,13 @@ namespace educodeai_server.Helpers
 
                     try
                     {
-                        // Phải bọc try-catch ở đây để chống lỗi SocketException văng ra ngoài
                         response = await _http.PostAsJsonAsync(requestUrl, requestBody);
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"[Gemini Lỗi Kết Nối] Google từ chối phũ phàng với key {currentRedisKey}. Chi tiết: {ex.Message}. Đang thử key khác...");
                         soLanThuLai++;
-                        await Task.Delay(2000); // Delay 2 giây để nhịp thở ổn định lại rồi mới gọi tiếp
+                        await Task.Delay(2000);
                         continue;
                     }
 
@@ -129,7 +126,6 @@ namespace educodeai_server.Helpers
                                 Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {totalTokens} tokens.");
                             }
 
-                            // Lưu nhật ký thành công vào Redis để Worker xử lý đổ vào DB
                             await LuuLogVaoRedisQueue(currentRedisKey, totalTokens, (int)response.StatusCode, requestUrl);
                         }
                         catch (Exception ex)
@@ -140,7 +136,6 @@ namespace educodeai_server.Helpers
                         return responseBody;
                     }
 
-                    // Nếu không Success, check xem có phải do Rate Limit hoặc sập server AI không
                     if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
                         response.StatusCode == System.Net.HttpStatusCode.Forbidden ||
                         response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
@@ -149,15 +144,13 @@ namespace educodeai_server.Helpers
 
                         await _redisService.TangGiaTriHashAsync(currentRedisKey, "RequestDaDung", 1);
 
-                        // Lưu nhật ký lỗi vào Redis để Worker xử lý đổ vào DB
                         await LuuLogVaoRedisQueue(currentRedisKey, 0, (int)response.StatusCode, requestUrl);
 
                         soLanThuLai++;
-                        await Task.Delay(2000); // Cho nó nghỉ 2 giây rồi mới xoay vòng
+                        await Task.Delay(2000);
                         continue;
                     }
 
-                    // Nếu lỗi lạ lùng khác mà không catch được ở trên thì quăng lỗi
                     response.EnsureSuccessStatusCode();
                 }
 
@@ -169,7 +162,6 @@ namespace educodeai_server.Helpers
         {
             try
             {
-                // Extract ID từ pattern "EduCodeAI:KeyPool:{ID}"
                 var parts = redisKey.Split(':');
                 if (parts.Length < 3 || !int.TryParse(parts[2], out int keyId)) return;
 
