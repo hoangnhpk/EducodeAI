@@ -36,6 +36,8 @@ namespace educodeai_server.Models
         public string? TrangThai { get; set; } = "Hoạt động";
 
         public DateTime NgayThamGia { get; set; } = DateTime.Now;
+        // m?i th�m 
+        public string? LyDoKhoa { get; set; }
 
 
         // CÁC THƯỜNG CHO BẢO MẬT & OTP

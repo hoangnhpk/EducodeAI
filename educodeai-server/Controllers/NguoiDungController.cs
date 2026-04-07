@@ -212,5 +212,30 @@ namespace educodeai_server.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        // cái này là của module quản lý tài khoản, nhưng để đây tạm vì nó liên quan đến việc kiểm tra trạng thái tài khoản khi đăng nhập và t đang sài nó để làm chức năng 
+        //chuyển trạng thái ở module quản lý học viên để lúc khóa sẽ đá ra ngoài luôn (khiến)
+        [HttpGet("/api/auth/check-trang-thai")] // 👈 Dấu "/" ở đầu cực kỳ quan trọng!
+        [Authorize]
+        public async Task<IActionResult> CheckTrangThaiTaiKhoan()
+        {
+            // Lấy ID của user đang đăng nhập từ Token
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("id");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                return Unauthorized(); // Không có token hoặc token sai -> Báo lỗi
+
+            // Tìm user trong DB
+            var user = await _context.NguoiDungs.FindAsync(userId);
+            if (user == null) return Unauthorized();
+
+            // Nếu bị khóa -> Báo động cho Frontend sút ra ngoài!
+            if (user.TrangThai == "Bị khóa")
+            {
+                return Ok(new { isBanned = true, reason = user.LyDoKhoa ?? "Vi phạm quy định hệ thống." });
+            }
+
+            // Nếu bình thường -> Trả về an toàn
+            return Ok(new { isBanned = false });
+        }
+
     }
 }
