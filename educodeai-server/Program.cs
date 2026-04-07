@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
@@ -49,9 +51,19 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+builder.Services.AddSingleton<IConnectionMultiplexer>(
+    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"))
+);
+builder.Services.AddScoped<IRedisService, RedisService>();
+
 // ==========================================
 // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
 // ==========================================
+// Thêm bộ nhớ tạm để lưu OTP mà không cần dùng Database
+builder.Services.AddMemoryCache();
+// Dịch vụ Xác thực và Captcha mới
+builder.Services.AddScoped<ICaptchaService, CaptchaService>();
+builder.Services.AddScoped<IXacThucService, XacThucService>();
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
@@ -74,10 +86,15 @@ builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository
 builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
 builder.Services.AddScoped<IQuanLyHocVienService,QuanLyHocVienService>();
 builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocService>();
+builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
+builder.Services.AddScoped<ILoTrinhAIGvService, LoTrinhAIGvService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
+builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();
+builder.Services.AddScoped<IKeyApiService, KeyApiService>();
+
 
 // ==========================================
 // 5. CẤU HÌNH HTTP CLIENT CHO GEMINI (ĐÃ TỐI ƯU)
@@ -121,7 +138,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        In = ParameterLocation.Header,
+        In = ParameterLocation.Header,  
         Description = "Nhập theo format: Bearer {token}"
     });
 
@@ -138,6 +155,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
+educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 
 // ==========================================
 // 7. PIPELINE REQUEST (Middleware)

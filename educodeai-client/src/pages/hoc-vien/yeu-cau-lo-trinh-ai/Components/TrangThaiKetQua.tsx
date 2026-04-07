@@ -45,7 +45,7 @@ export default function TrangThaiKetQua({ ketQua, onModify, onConfirm, isProcess
               <i className="fas fa-edit me-2"></i>Chỉnh sửa lộ trình
             </button>
             <button 
-                className="btn btn-primary flex-grow-1 py-2 fw-bold"
+                className="btn btn-outline-primary flex-grow-1 py-2 fw-bold"
                 onClick={onConfirm}
                 disabled={isProcessing}
             >

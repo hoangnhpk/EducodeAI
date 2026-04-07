@@ -3,17 +3,11 @@ import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 
-interface OtpResponse {
-    tempOtp: string;
-    message: string;
-}
-
 const QuenMatKhau: React.FC = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState<'forgot' | 'reset'>('forgot');
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
-    const [generatedOtp, setGeneratedOtp] = useState(''); 
     const [countdown, setCountdown] = useState(0);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -44,9 +38,8 @@ const QuenMatKhau: React.FC = () => {
         setLoading(true);
         setErrors({}); // Xóa lỗi cũ
         try {
-            const res = await authService.forgotPasswordSendOtp(email) as unknown as OtpResponse;
-            if (res && res.tempOtp) {
-                setGeneratedOtp(res.tempOtp);
+            const res: any = await authService.forgotPasswordSendOtp(email);
+            if (res) {
                 setCountdown(120);
                 Swal.fire({ icon: 'success', text: "Mã xác thực đã được gửi tới email của bạn!", timer: 1500, showConfirmButton: false });
             }
@@ -62,17 +55,13 @@ const QuenMatKhau: React.FC = () => {
     const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
         setOtp(value);
-        setErrors({ ...errors, otp: null }); // Xóa lỗi OTP khi đang nhập
+        setErrors({ ...errors, otp: null }); 
         
         if (value.length === 6) {
-            if (value === String(generatedOtp)) {
-                setTimeout(() => {
-                    setErrors({});
-                    setStep('reset');
-                }, 500);
-            } else {
-                setErrors({ otp: 'Mã xác thực không chính xác' });
-            }
+            setTimeout(() => {
+                setErrors({});
+                setStep('reset');
+            }, 500);
         }
     };
 
@@ -94,12 +83,23 @@ const QuenMatKhau: React.FC = () => {
 
         setLoading(true);
         try {
-            await authService.resetPassword({
+            const response: any = await authService.resetPassword({
                 Email: email,
-                NewPassword: password
+                NewPassword: password,
+                OtpCode: otp // Truyền OTP vào đây
             });
-            Swal.fire({ icon: 'success', text: "Đặt lại mật khẩu thành công!", timer: 1500, showConfirmButton: false });
-            navigate('/dang-nhap');
+
+            if (response && response.token) {
+                localStorage.setItem('user_token', response.token);
+                localStorage.setItem('refresh_token', response.refreshToken); // Lưu refresh token
+                localStorage.setItem('user_info', JSON.stringify(response.user));
+                
+                Swal.fire({ text: "Đặt lại mật khẩu thành công. Đang tự động đăng nhập...", timer: 1500, showConfirmButton: false });
+                navigate('/');
+            } else {
+                navigate('/dang-nhap');
+            }
+
         } catch (error: any) {
             setErrors({ password: error.response?.data?.message || "Lỗi hệ thống khi đổi mật khẩu" });
         } finally {
@@ -111,11 +111,11 @@ const QuenMatKhau: React.FC = () => {
         <div className="container-xxl py-2 mt-4">
             <div className="container">
                 <div className="row g-4 justify-content-center">
-                    <form className="shadow p-4 bg-white" style={{ maxWidth: '550px' }} onSubmit={(e) => e.preventDefault()}>
+                    <form className="shadow p-4 bg-white rounded-4" style={{ maxWidth: '550px' }} onSubmit={(e) => e.preventDefault()}>
                         {step === 'forgot' ? (
                             <div id="step-forgot">
                                 <div className="text-center mb-4">
-                                    <h1 className="h3 mb-3">Quên mật khẩu?</h1>
+                                    <h1 className="h3 mb-3 fw-bold">Quên mật khẩu?</h1>
                                     <p className="text-muted small">Nhập email và chúng tôi sẽ gửi mã khôi phục.</p>
                                 </div>
                                 <div className="row g-3 text-start">
@@ -144,7 +144,7 @@ const QuenMatKhau: React.FC = () => {
                                                 <label>Mã xác nhận (6 chữ số)</label>
                                                 {errors.otp && <div className="invalid-feedback">{errors.otp}</div>}
                                             </div>
-                                            <button type="button" className="btn btn-outline-primary py-3" 
+                                            <button type="button" className="btn btn-outline-primary py-3 rounded-3" 
                                                 style={{ height: '58px', minWidth: '90px' }}
                                                 disabled={countdown > 0 || loading} 
                                                 onClick={handleSendCode}>
@@ -153,14 +153,14 @@ const QuenMatKhau: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="col-12 mt-3 text-center">
-                                        <Link to="/dang-nhap" className="text-decoration-none small" style={{color: '#fb873f'}}>Quay lại đăng nhập</Link>
+                                        <Link to="/dang-nhap" className="text-decoration-none small fw-bold" style={{color: '#fb873f'}}>Quay lại đăng nhập</Link>
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <div id="step-reset">
                                 <div className="text-center mb-4">
-                                    <h1 className="h3 mb-3">Đặt lại mật khẩu</h1>
+                                    <h1 className="h3 mb-3 fw-bold">Đặt lại mật khẩu</h1>
                                     <p className="text-muted small">Nhập mật khẩu mới an toàn hơn.</p>
                                 </div>
                                 <div className="row g-3 text-start">
@@ -188,7 +188,7 @@ const QuenMatKhau: React.FC = () => {
                                             {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
                                         </div>
                                     </div>
-                                    <button className="btn btn-primary w-100 py-3 mt-3 text-white fw-bold" 
+                                    <button className="btn btn-primary w-100 py-3 mt-3 text-white fw-bold rounded-pill" 
                                         style={{backgroundColor: '#fb873f', border: 'none'}}
                                         disabled={loading}
                                         onClick={handleResetPassword}>

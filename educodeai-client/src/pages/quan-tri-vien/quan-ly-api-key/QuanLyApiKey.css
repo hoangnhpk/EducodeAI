@@ -1,0 +1,381 @@
+/* ==========================================================================
+   QuanLyApiKey.css  –  Minimalist overrides
+   ========================================================================== */
+
+/* ── Page wrapper ──────────────────────────────────────────────────────── */
+.akm-page {
+  padding: 36px 40px;
+  min-height: 100%;
+  font-family: var(--font-main);
+  background: var(--bg-main);
+}
+
+/* ── Mới: Header & Page Title ──────────────────────────────────────────── */
+.akm-header {
+  margin-bottom: 24px;
+}
+
+.akm-header-icon {
+  width: 48px;
+  height: 48px;
+  background: #fff;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.akm-page-title {
+  font-size: 22px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-dark);
+  letter-spacing: -0.3px;
+}
+
+.akm-page-subtitle {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Add-key button ────────────────────────────────────────────────────── */
+.akm-btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-color);
+  background: #fff;
+  color: var(--text-dark);
+  font-size: 13.5px;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.akm-btn-add:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(246, 144, 80, 0.15);
+}
+
+/* ── Mới: Stat Cards (do user chỉnh sửa mốc 202) ───────────────────────── */
+.akm-stat-card {
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.akm-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Icon box */
+.akm-stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.akm-stat-icon--requests { background: #eff6ff; color: #2563eb; }
+.akm-stat-icon--tokens   { background: #fdf4ff; color: #c026d3; }
+.akm-stat-icon--status   { background: #ecfdf5; color: #059669; }
+
+/* Text */
+.akm-stat-label {
+  font-size: 12.5px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.akm-stat-value {
+  font-size: 28px;
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-dark);
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+
+.akm-stat-value-unit {
+  font-size: 18px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.akm-stat-trend {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--success);
+}
+
+.akm-stat-sub {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.akm-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px #d1fae5;
+  animation: akm-pulse 2s infinite;
+}
+
+@keyframes akm-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* ── Section heading / Card Header ─────────────────────────────────────── */
+.akm-section-title {
+  font-size: 16px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-dark);
+}
+
+.akm-table-card .card-header {
+  background: #fff;
+  border-bottom: 1px solid var(--border-light);
+  padding: 16px 20px;
+}
+
+.akm-search-group .input-group-text {
+  background: #fff;
+}
+.akm-search-group input {
+  font-size: 13.5px;
+  box-shadow: none !important;
+}
+
+/* ── Table ─────────────────────────────────────────────────────────────── */
+.akm-tbl thead th {
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--text-muted);
+  background: #f8faff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 16px;
+  white-space: nowrap;
+}
+
+.akm-tbl tbody td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  font-size: 13.5px;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* Fix dropdown clipping off the bottom */
+.akm-table-visible-overflow {
+  overflow: visible !important;
+}
+
+.akm-tbl.table-hover tbody tr:hover > td {
+  background: #fafbff;
+}
+
+/* ── Key name ──────────────────────────────────────────────────────────── */
+.akm-key-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-dark);
+  font-size: 13.5px;
+}
+
+.akm-key-id {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 1px;
+}
+
+/* ── Masked key + hover icons ──────────────────────────────────────────── */
+.akm-key-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.akm-key-mask {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+/* Hidden by default, shown on row hover */
+.akm-key-btns {
+  display: inline-flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.akm-tbl tbody tr:hover .akm-key-btns {
+  opacity: 1;
+}
+
+.akm-icon-btn {
+  border: none;
+  background: transparent;
+  padding: 3px 5px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-radius: 4px;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  line-height: 1;
+}
+
+.akm-icon-btn:hover {
+  background: var(--border-light);
+  color: var(--text-dark);
+}
+
+/* ── Badge overrides (soft) ────────────────────────────────────────────── */
+.akm-badge-chinh {
+  background: #eff6ff;
+  color: #2563eb;
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-weight: var(--font-weight-semibold);
+  border: 1px solid #dbeafe;
+}
+
+.akm-badge-phu {
+  background: #f8fafc;
+  color: #64748b;
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-weight: var(--font-weight-semibold);
+  border: 1px solid #e2e8f0;
+}
+
+.akm-badge-on {
+  background: #ecfdf5;
+  color: #059669;
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-weight: var(--font-weight-semibold);
+  border: 1px solid #a7f3d0;
+}
+
+.akm-badge-off {
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-weight: var(--font-weight-semibold);
+  border: 1px solid #fecaca;
+}
+
+/* ── Limit column (thin progress bars) ────────────────────────────────── */
+.akm-limit {
+  min-width: 150px;
+}
+
+.akm-limit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.akm-limit-row:last-child {
+  margin-bottom: 0;
+}
+
+.akm-limit-bar-wrap {
+  flex: 1;
+  height: 4px;   /* slight bump for visibility */
+  border-radius: 999px;
+  background: var(--border-light);
+  overflow: hidden;
+}
+
+.akm-limit-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--transition-normal);
+}
+
+.akm-limit-bar--ok  { background: var(--success); }
+.akm-limit-bar--mid { background: var(--warning);  }
+.akm-limit-bar--hi  { background: var(--danger);   }
+
+.akm-limit-pct {
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  min-width: 26px;
+  text-align: right;
+}
+
+/* ── Dropdown action button ────────────────────────────────────────────── */
+.akm-action-toggle {
+  font-size: 12.5px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.akm-action-toggle:hover {
+  border-color: var(--text-muted);
+  color: var(--text-dark);
+}
+
+/* ── Table footer ──────────────────────────────────────────────────────── */
+.akm-table-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-light);
+  font-size: 13px;
+  color: var(--text-muted);
+  background: #f8faff;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+
+/* ── Copy toast ────────────────────────────────────────────────────────── */
+.akm-copy-ok {
+  font-size: 11px;
+  color: var(--success);
+  animation: akm-fade 1.4s ease forwards;
+}
+
+@keyframes akm-fade {
+  0%, 60% { opacity: 1; }
+  100%     { opacity: 0; }
+}
