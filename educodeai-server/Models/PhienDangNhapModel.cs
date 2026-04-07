@@ -11,14 +11,14 @@ namespace educodeai_server.Models
 
         public int MaNguoiDung { get; set; }
         [ForeignKey("MaNguoiDung")]
-        public virtual NguoiDungModel NguoiDung { get; set; }
+        public virtual NguoiDungModel NguoiDung { get; set; } = null!;
 
         [Required]
         [MaxLength(255)]
-        public string MaThietBi { get; set; }
+        public required string MaThietBi { get; set; }
 
         [MaxLength(255)]
-        public string TenThietBi { get; set; }
+        public string TenThietBi { get; set; } = null!;
 
         [MaxLength(50)]
         public string? DiaChiIP { get; set; }
