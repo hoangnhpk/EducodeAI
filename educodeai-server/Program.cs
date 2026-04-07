@@ -12,6 +12,8 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text;
 using educodeai_server.Services.Implement;
+using StackExchange.Redis;
+using educodeai_server.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
@@ -48,6 +50,11 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+builder.Services.AddSingleton<IConnectionMultiplexer>(
+    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"))
+);
+builder.Services.AddScoped<IRedisService, RedisService>();
+
 // ==========================================
 // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
 // ==========================================
@@ -75,10 +82,15 @@ builder.Services.AddScoped<IKhoaHocCuaToiRepository, KhoaHocCuaToiRepository>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
 builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
+builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
+builder.Services.AddScoped<ILoTrinhAIGvService, LoTrinhAIGvService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
+builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();
+builder.Services.AddScoped<IKeyApiService, KeyApiService>();
+
 
 // ==========================================
 // 5. CẤU HÌNH HTTP CLIENT CHO GEMINI (ĐÃ TỐI ƯU)
