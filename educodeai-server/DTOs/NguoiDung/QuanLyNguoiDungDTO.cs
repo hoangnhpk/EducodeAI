@@ -1,4 +1,6 @@
-﻿namespace educodeai_server.DTOs.NguoiDung
+﻿
+namespace educodeai_server.DTOs.NguoiDung
+
 {
     public class QuanLyNguoiDungDTO
     {
@@ -26,6 +28,8 @@
         public string? AnhDaiDien {  get; set; }
         public int VaiTro { get; set; }
         public string? MatKhauMoi { get; set; }
+        public string? TrangThai { get; set; }
+        public string? LyDoKhoa { get; set; }
     }
     public class CapNhatVaiTroDTO
     {
