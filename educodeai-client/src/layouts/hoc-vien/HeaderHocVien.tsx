@@ -57,7 +57,6 @@ export default function HeaderHocVien() {
             Lộ trình AI
           </Link>
 
-
           {/* KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP */}
           {user ? (
             <div className="nav-item dropdown px-lg-4">
@@ -65,15 +64,12 @@ export default function HeaderHocVien() {
                 href="#"
                 className="nav-link dropdown-toggle d-flex align-items-center"
                 data-bs-toggle="dropdown"
+                onClick={(e) => e.preventDefault()}
               >
-                {/* <img
-                  src={user.hinhAnh || user.picture || "/img/user-default.png"}
-                  alt="avatar"
-                  className="rounded-circle me-2"
-                  style={{ width: "35px", height: "35px", objectFit: "cover", border: "1px solid #fb873f" }}
-                /> */}
                 <span className="fw-bold d-none d-lg-inline">{user.hoTen || user.name}</span>
               </a>
+
+              {/* DANH SÁCH MENU XỔ XUỐNG */}
               <div className="dropdown-menu dropdown-menu-end fade-down m-0 shadow-sm border-0">
                 <Link to="/profile" className="dropdown-item">
                   Hồ sơ cá nhân
@@ -84,6 +80,29 @@ export default function HeaderHocVien() {
                 <Link to="/khoa-hoc-ai-cua-toi" className="dropdown-item">
                   Lộ trình của tôi
                 </Link>
+
+                {/* --- ĐÂY LÀ PHẦN BẢO MẬT TÀI KHOẢN XỔ SANG TRÁI --- */}
+                <div className="dropdown-submenu position-relative"> {/* Thêm position-relative vào đây */}
+                  <Link
+                    to="#"
+                    className="dropdown-item d-flex justify-content-between align-items-center"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    Bảo mật tài khoản <i className="fa fa-chevron-left ms-2 text-muted" style={{ fontSize: '12px' }}></i>
+                  </Link>
+
+                  {/* Submenu con */}
+                  <div className="dropdown-menu shadow border-0">
+                    <Link to="/bao-mat" className="dropdown-item">
+                      Đổi mật khẩu
+                    </Link>
+                    <Link to="/thiet-bi" className="dropdown-item">
+                      Thiết bị đăng nhập
+                    </Link>
+                  </div>
+                </div>
+                {/* ------------------------------------------------ */}
+
                 <hr className="dropdown-divider" />
                 <button
                   onClick={handleLogout}

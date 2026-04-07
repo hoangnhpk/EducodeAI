@@ -1,0 +1,42 @@
+.text-orange {
+    color: #fb873f !important;
+}
+
+.bg-orange {
+    background-color: #fb873f !important;
+}
+
+.btn-orange {
+    background-color: #fb873f;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-orange:hover {
+    background-color: #e06d26;
+    color: white;
+}
+
+.btn-outline-orange {
+    color: #fb873f;
+    border-color: #fb873f;
+}
+
+.btn-outline-orange:hover {
+    background-color: #fb873f;
+    color: white;
+}
+
+.device-item {
+    transition: background-color 0.2s;
+}
+
+.device-item:hover {
+    background-color: #f8f9fa;
+}
+
+.otp-input {
+    letter-spacing: 0.5rem;
+    font-size: 1.5rem;
+}

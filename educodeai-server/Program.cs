@@ -51,6 +51,11 @@ builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
 // ==========================================
 // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
 // ==========================================
+// Thêm bộ nhớ tạm để lưu OTP mà không cần dùng Database
+builder.Services.AddMemoryCache();
+// Dịch vụ Xác thực và Captcha mới
+builder.Services.AddScoped<ICaptchaService, CaptchaService>();
+builder.Services.AddScoped<IXacThucService, XacThucService>();
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
@@ -117,7 +122,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        In = ParameterLocation.Header,
+        In = ParameterLocation.Header,  
         Description = "Nhập theo format: Bearer {token}"
     });
 
@@ -134,6 +139,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
+educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 
 // ==========================================
 // 7. PIPELINE REQUEST (Middleware)
