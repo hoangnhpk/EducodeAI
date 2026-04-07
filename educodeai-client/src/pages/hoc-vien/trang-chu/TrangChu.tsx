@@ -129,7 +129,7 @@ const TrangChu: React.FC = () => {
                                                 src={`/img/${kh.hinhAnh}`}
                                                 alt={kh.tenKhoaHoc}
                                                 style={{ height: '200px', objectFit: 'cover' }}
-                                                onError={(e) => (e.currentTarget.src = '/img/default.jpg')} />
+                                                onError={(e) => (e.currentTarget.src = 'https://careplusvn.com/Uploads/t/de/default-image_730.jpg')} />
                                             <div className="position-absolute top-0 start-0 m-3">
                                                 <span className="badge bg-dark-gradient px-3 py-2" style={{ borderRadius: '50px' }}>
                                                     {kh.linhVuc}

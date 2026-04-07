@@ -35,6 +35,9 @@ namespace educodeai_server.Data
         public DbSet<RangBuocBaiTapModel> RangBuocBaiTaps { get; set; }
         public DbSet<LoiGiaiMauModel> LoiGiaiMaus { get; set; }
 
+        public DbSet<KeyAPIModel> KeyAPIs { get; set; }
+        public DbSet<NhatKySuDungModel> NhatKySuDungs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
