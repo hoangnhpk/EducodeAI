@@ -27,6 +27,7 @@ import PreviewQuiz from "../pages/giang-vien/tao-bai-tap-test-case/PreviewQuizCo
 import CaiDatQuiz from "../pages/giang-vien/tao-bai-tap-test-case/CaiDatQuizContent";
 import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
+import TaoLoTrinhAI from '../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI';
 
 // /* ===== ADMIN ===== */
 import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
@@ -95,6 +96,7 @@ export default function AppRouter() {
           <Route path="preview-quiz" element={<PreviewQuiz />} />
           <Route path="cai-dat" element={<CaiDatQuiz />} />
           <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
+          <Route path="tao-lo-trinh-AI" element={<TaoLoTrinhAI />} />
         </Route>
 
 
