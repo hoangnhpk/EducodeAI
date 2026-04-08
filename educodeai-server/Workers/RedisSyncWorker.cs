@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using educodeai_server.Services.Interface;
 using educodeai_server.Models;
 using educodeai_server.Data;
@@ -10,10 +11,12 @@ namespace educodeai_server.Workers
     public class RedisSyncWorker : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger<RedisSyncWorker> _logger;
 
-        public RedisSyncWorker(IServiceScopeFactory scopeFactory)
+        public RedisSyncWorker(IServiceScopeFactory scopeFactory, ILogger<RedisSyncWorker> logger)
         {
             _scopeFactory = scopeFactory;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -30,23 +33,22 @@ namespace educodeai_server.Workers
                     // 1. GOM LOG TỪ REDIS ĐẨY XUỐNG BẢNG NhatKySuDung
                     await DongBoNhatKyAsync(redisService, dbContext);
 
-                    // 2. CHỐT SỐ TOKEN TỪ REDIS HASH VỀ BẢNG KeyAPI
-                    await DongBoHanMucKeyAsync(redisService, dbContext);
+                        // 2. CHỐT SỐ TOKEN TỪ REDIS HASH VỀ BẢNG KeyAPI
+                        await DongBoHanMucKeyAsync(redisService, dbContext);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Redis không available");
+                    }
                 }
             }
         }
 
         private async Task DongBoNhatKyAsync(IRedisService redisService, EduCodeAIDbContext dbContext)
         {
-            var danhSachLogJson = await redisService.LayTuDauListAsync("EduCodeAI:LogQueue", 100);
-
-            if (!danhSachLogJson.Any()) return;
-
-            var danhSachNhatKy = new List<NhatKySuDungModel>();
-
-            foreach (var logJson in danhSachLogJson)
+            try
             {
-                try
+                var danhSachLogJson = await redisService.LayTuDauListAsync("EduCodeAI:LogQueue", 100);
                 {
                     var nhatKy = JsonSerializer.Deserialize<NhatKySuDungModel>(logJson);
                     if (nhatKy != null)
