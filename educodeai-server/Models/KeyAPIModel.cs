@@ -26,7 +26,7 @@ namespace educodeai_server.Models
 
         public int HanMucToken { get; set; } = 2000000;
 
-        public DateTime NgayTao { get; set; } = DateTime.Now;
+        public DateTime NgayTao { get; set; } = DateTime.UtcNow;
 
         // Relationship: Một Key có nhiều Nhật ký sử dụng
         public virtual ICollection<NhatKySuDungModel> NhatKySuDungs { get; set; } = new List<NhatKySuDungModel>();

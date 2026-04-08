@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
+using educodeai_server.Repository.Interface;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace educodeai_server.Helpers
 {
@@ -15,15 +17,19 @@ namespace educodeai_server.Helpers
     {
         private readonly HttpClient _http;
         private readonly IRedisService _redisService;
+        private readonly IKeyApiRepository _keyApiRepo;
+        private readonly ILogger<GeminiAIService> _logger;
         private readonly string _secretKey;
 
         private static int _currentKeyIndex = 0;
         private static readonly object _lock = new object();
 
-        public GeminiAIService(HttpClient http, IConfiguration config, IRedisService redisService)
+        public GeminiAIService(HttpClient http, IConfiguration config, IRedisService redisService, IKeyApiRepository keyApiRepo, ILogger<GeminiAIService> logger)
         {
             _http = http;
             _redisService = redisService;
+            _keyApiRepo = keyApiRepo;
+            _logger = logger;
             _secretKey = config["ApiSecurity:SecretKey"] ?? throw new Exception("Chưa cấu hình SecretKey!");
         }
 
@@ -52,8 +58,44 @@ namespace educodeai_server.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Redis Error] Lỗi đọc Keys: {ex.Message}");
+                _logger.LogWarning(ex, "[Redis Error] Lỗi đọc Keys: {Message}", ex.Message);
             }
+
+            // Nếu không có keys từ Redis, thử lấy từ database
+            if (validKeys.Count == 0)
+            {
+                try
+                {
+                    var dbKeys = await _keyApiRepo.GetActiveKeysAsync();
+                    foreach (var key in dbKeys)
+                    {
+                        if (key.TrangThai && (key.HanMucRequest == 0 || key.DaSuDungRequest < key.HanMucRequest))
+                        {
+                            var redisKey = $"EduCodeAI:KeyPool:{key.ID}";
+                            
+                            // Đồng bộ key vào Redis/MemoryCache
+                            await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", key.MaKeyMaHoa);
+                            await _redisService.LuuHashAsync(redisKey, "HanMucRequest", key.HanMucRequest.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "HanMucToken", key.HanMucToken.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "RequestDaDung", key.DaSuDungRequest.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "TokenDaDung", key.DaSuDungToken.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "TrangThai", "true");
+                            
+                            validKeys.Add(redisKey);
+                        }
+                    }
+                    
+                    if (validKeys.Count > 0)
+                    {
+                        _logger.LogInformation("[Fallback] Đã tải {Count} keys từ database vào Redis/MemoryCache", validKeys.Count);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Fallback Error] Không thể lấy keys từ database: {Message}", ex.Message);
+                }
+            }
+
             return validKeys.OrderBy(k => k).ToList();
         }
 
