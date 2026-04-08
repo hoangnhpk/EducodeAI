@@ -135,8 +135,15 @@ namespace educodeai_server.Controllers
         [HttpGet("check-email")]
         public async Task<IActionResult> CheckEmail([FromQuery] string email)
         {
-            var userExists = await _userService.IsEmailExistAsync(email);
-            return Ok(new { exists = userExists });
+            try
+            {
+                var userExists = await _userService.IsEmailExistAsync(email);
+                return Ok(new { exists = userExists });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi kiểm tra email: " + ex.Message });
+            }
         }
 
         [HttpPost("send-otp")]
@@ -169,25 +176,39 @@ namespace educodeai_server.Controllers
         [HttpPost("forgot-password-send-otp")]
         public async Task<IActionResult> ForgotPasswordSendOtp([FromBody] ForgotPasswordDto model)
         {
-            var userExists = await _userService.IsEmailExistAsync(model.Email);
-            if (!userExists) return BadRequest("Email này không tồn tại trên hệ thống!");
+            try
+            {
+                var userExists = await _userService.IsEmailExistAsync(model.Email);
+                if (!userExists) return BadRequest("Email này không tồn tại trên hệ thống!");
 
-            string otp = new Random().Next(100000, 999999).ToString();
-            string subject = "Mã đặt lại mật khẩu EduCodeAI";
-            string body = $"Mã xác thực để đặt lại mật khẩu của bạn là: <b>{otp}</b>.";
+                string otp = new Random().Next(100000, 999999).ToString();
+                string subject = "Mã đặt lại mật khẩu EduCodeAI";
+                string body = $"Mã xác thực để đặt lại mật khẩu của bạn là: <b>{otp}</b>.";
 
-            bool isSent = await EmailHelper.SendEmailAsync(model.Email, subject, body);
-            if (isSent) return Ok(new { tempOtp = otp });
+                bool isSent = await EmailHelper.SendEmailAsync(model.Email, subject, body);
+                if (isSent) return Ok(new { tempOtp = otp });
 
-            return BadRequest("Không thể gửi email.");
+                return BadRequest("Không thể gửi email.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
+            }
         }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordDto model)
         {
-            var result = await _userService.UpdatePasswordAsync(model.Email, model.NewPassword);
-            if (result) return Ok(new { message = "Đặt lại mật khẩu thành công!" });
-            return BadRequest("Lỗi hệ thống hoặc email không tồn tại.");
+            try
+            {
+                var result = await _userService.UpdatePasswordAsync(model.Email, model.NewPassword);
+                if (result) return Ok(new { message = "Đặt lại mật khẩu thành công!" });
+                return BadRequest("Lỗi hệ thống hoặc email không tồn tại.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
+            }
         }
 
         [Authorize]
