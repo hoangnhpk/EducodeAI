@@ -69,16 +69,16 @@ namespace educodeai_server.Helpers
                     var dbKeys = await _keyApiRepo.GetActiveKeysAsync();
                     foreach (var key in dbKeys)
                     {
-                        if (key.TrangThai && (key.HanMucRequest == 0 || key.DaSuDungRequest < key.HanMucRequest))
+                        if (key.TrangThai) // Chá kiá tra trang thái vì không có fields DaSuDungRequest
                         {
                             var redisKey = $"EduCodeAI:KeyPool:{key.ID}";
                             
-                            // Đồng bộ key vào Redis/MemoryCache
+                            // Äông bá key vào Redis/MemoryCache
                             await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", key.MaKeyMaHoa);
                             await _redisService.LuuHashAsync(redisKey, "HanMucRequest", key.HanMucRequest.ToString());
                             await _redisService.LuuHashAsync(redisKey, "HanMucToken", key.HanMucToken.ToString());
-                            await _redisService.LuuHashAsync(redisKey, "RequestDaDung", key.DaSuDungRequest.ToString());
-                            await _redisService.LuuHashAsync(redisKey, "TokenDaDung", key.DaSuDungToken.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0"); // Bát dáu tù 0
+                            await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");  // Bát dáu tù 0
                             await _redisService.LuuHashAsync(redisKey, "TrangThai", "true");
                             
                             validKeys.Add(redisKey);
