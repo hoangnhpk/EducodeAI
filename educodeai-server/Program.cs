@@ -51,10 +51,26 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(
-    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis"))
-);
-builder.Services.AddScoped<IRedisService, RedisService>();
+try
+{
+    var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+    if (!string.IsNullOrEmpty(redisConnectionString))
+    {
+        var redis = ConnectionMultiplexer.Connect(redisConnectionString);
+        builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
+        builder.Services.AddScoped<IRedisService, RedisService>();
+        Console.WriteLine("Redis connected successfully");
+    }
+    else
+    {
+        throw new Exception("Redis connection string is empty");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Redis connection failed, using MemoryCache fallback: {ex.Message}");
+    builder.Services.AddScoped<IRedisService, FallbackRedisService>();
+}
 
 // ==========================================
 // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
@@ -164,10 +180,11 @@ educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 // ==========================================
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+   app.UseSwagger();
+   app.UseSwaggerUI();
 }
-
+// app.UseSwagger();
+// app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
 // Kích hoạt CORS (Phải đặt trước UseAuthorization)
