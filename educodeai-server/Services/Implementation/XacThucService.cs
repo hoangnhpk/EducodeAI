@@ -97,7 +97,7 @@ namespace educodeai_server.Services.Implementation
                     MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
                     VaiTro = 2,
                     TrangThai = "Hoạt động",
-                    NgayThamGia = DateTime.Now,
+                    NgayThamGia = DateTime.UtcNow,
                     DanhSachPhienDangNhap = new List<PhienDangNhapModel>()
                 };
                 _context.NguoiDungs.Add(user);
@@ -128,7 +128,7 @@ namespace educodeai_server.Services.Implementation
                     MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
                     VaiTro = 2,
                     TrangThai = "Hoạt động",
-                    NgayThamGia = DateTime.Now,
+                    NgayThamGia = DateTime.UtcNow,
                     DanhSachPhienDangNhap = new List<PhienDangNhapModel>()
                 };
                 _context.NguoiDungs.Add(user);
@@ -177,7 +177,7 @@ namespace educodeai_server.Services.Implementation
             if (user == null)
                 throw new Exception("Tài khoản không tồn tại.");
 
-            if (user.MaOTP != request.OtpCode || user.ThoiGianHetHanOTP < DateTime.Now)
+            if (user.MaOTP != request.OtpCode || user.ThoiGianHetHanOTP < DateTime.UtcNow)
             {
                 GhiNhanSpam(request.TaiKhoan, "");
                 throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
@@ -240,7 +240,7 @@ namespace educodeai_server.Services.Implementation
                 MatKhau = BCrypt.Net.BCrypt.HashPassword(cacheData.Request.MatKhau),
                 VaiTro = 2,
                 TrangThai = "Hoạt động",
-                NgayThamGia = DateTime.Now,
+                NgayThamGia = DateTime.UtcNow,
 
                 // QUAN TRỌNG: Phải khởi tạo list này để hàm XuLyDangNhapThanhCongAsync không bị lỗi Null
                 DanhSachPhienDangNhap = new List<PhienDangNhapModel>()
@@ -302,7 +302,7 @@ namespace educodeai_server.Services.Implementation
             await ValidateCaptchaAsync(request.CaptchaToken);
 
             var user = await _context.NguoiDungs.FindAsync(maNguoiDung);
-            if (user == null || user.MaOTP != request.OtpCode || user.ThoiGianHetHanOTP < DateTime.Now)
+            if (user == null || user.MaOTP != request.OtpCode || user.ThoiGianHetHanOTP < DateTime.UtcNow)
                 throw new Exception("Mã OTP không hợp lệ hoặc đã hết hạn.");
 
             var phienDangHoatDong = _context.PhienDangNhaps.Where(p => p.MaNguoiDung == maNguoiDung && p.DangHoatDong);
@@ -342,7 +342,7 @@ namespace educodeai_server.Services.Implementation
             // 2. Tạo mã OTP 6 số
             string otp = new Random().Next(100000, 999999).ToString();
             user.MaOTP = otp;
-            user.ThoiGianHetHanOTP = DateTime.Now.AddMinutes(5);
+            user.ThoiGianHetHanOTP = DateTime.UtcNow.AddMinutes(5);
             await _context.SaveChangesAsync();
 
             // 3. Gửi Email cho người dùng
@@ -365,7 +365,7 @@ namespace educodeai_server.Services.Implementation
                 throw new Exception("Tài khoản không tồn tại.");
 
             // KIỂM TRA OTP
-            if (user.MaOTP != request.OtpCode || user.ThoiGianHetHanOTP < DateTime.Now)
+            if (user.MaOTP != request.OtpCode || user.ThoiGianHetHanOTP < DateTime.UtcNow)
                 throw new Exception("Mã xác thực không chính xác hoặc đã hết hạn.");
 
             user.MatKhau = BCrypt.Net.BCrypt.HashPassword(request.MatKhauMoi);
@@ -392,8 +392,10 @@ namespace educodeai_server.Services.Implementation
         {
             try
             {
-                var host = new System.Net.Mail.MailAddress(email).Host;
-                return System.Net.Dns.GetHostEntry(host).AddressList.Length > 0;
+                // Chỉ cần kiểm tra định dạng email bằng MailAddress
+                // Tránh dùng Dns.GetHostEntry vì nó hay ném SocketException 11004 nếu tên miền không có bản ghi A/AAAA
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
             }
             catch
             {
@@ -425,7 +427,7 @@ namespace educodeai_server.Services.Implementation
 
             if (phien == null) return true;
 
-            if ((DateTime.Now - phien.ThoiGianHoatDongCuoi).TotalDays > soNgayToiDa) return true;
+            if ((DateTime.UtcNow - phien.ThoiGianHoatDongCuoi).TotalDays > soNgayToiDa) return true;
 
             if (!phien.DangHoatDong) return true;
 
@@ -436,7 +438,7 @@ namespace educodeai_server.Services.Implementation
         {
             string otp = new Random().Next(100000, 999999).ToString();
             user.MaOTP = otp;
-            user.ThoiGianHetHanOTP = DateTime.Now.AddMinutes(5);
+            user.ThoiGianHetHanOTP = DateTime.UtcNow.AddMinutes(5);
             await _context.SaveChangesAsync();
 
             string body = $"{messagePrefix} Mã OTP của bạn là: <b>{otp}</b>. Mã có hiệu lực trong 5 phút.";
@@ -453,14 +455,14 @@ namespace educodeai_server.Services.Implementation
                     MaNguoiDung = user.MaNguoiDung,
                     MaThietBi = maThietBi,
                     TenThietBi = tenThietBi ?? "Thiết bị không xác định",
-                    ThoiGianDangNhap = DateTime.Now
+                    ThoiGianDangNhap = DateTime.UtcNow
                 };
                 _context.PhienDangNhaps.Add(phien);
             }
 
-            phien.ThoiGianHoatDongCuoi = DateTime.Now;
+            phien.ThoiGianHoatDongCuoi = DateTime.UtcNow;
             phien.DangHoatDong = true;
-            user.NgayDangNhapCuoi = DateTime.Now;
+            user.NgayDangNhapCuoi = DateTime.UtcNow;
             user.MaOTP = null;
 
             await _context.SaveChangesAsync();
@@ -502,7 +504,7 @@ namespace educodeai_server.Services.Implementation
 
             // Access Token có thời hạn ngắn (ví dụ 1 giờ)
             var token = new JwtSecurityToken(_config["Jwt:Issuer"], _config["Jwt:Audience"], claims,
-                expires: DateTime.Now.AddHours(1), signingCredentials: credentials);
+                expires: DateTime.UtcNow.AddHours(1), signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
@@ -576,7 +578,7 @@ namespace educodeai_server.Services.Implementation
             if (user == null) throw new Exception("Không tìm thấy tài khoản.");
 
             // 1. Kiểm tra OTP
-            if (user.MaOTP != request.OtpCode || user.ThoiGianHetHanOTP < DateTime.Now)
+            if (user.MaOTP != request.OtpCode || user.ThoiGianHetHanOTP < DateTime.UtcNow)
                 throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
 
             // 2. Kiểm tra Mật khẩu cũ
