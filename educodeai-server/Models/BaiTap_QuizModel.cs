@@ -22,7 +22,7 @@ namespace educodeai_server.Models
         public bool DaoCauHoi { get; set; } = false;
 
         [Required]
-        [Column(TypeName = "nvarchar(max)")]
+        [Column(TypeName = "text")]
         public string DuLieuCauHoi { get; set; } = string.Empty;
 
 

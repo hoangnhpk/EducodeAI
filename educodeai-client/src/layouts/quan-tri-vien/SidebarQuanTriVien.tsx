@@ -29,6 +29,11 @@ export default function SidebarQuanTriVien() {
           <div className="link-icon"><MdRateReview /></div>
           <span>Review & Đánh giá</span>
         </a> */}
+        
+        {/* <a href="/quan-tri-vien/quan-ly-hoc-vien" className="qtv-nav-link">
+          <MdPeople /> Học Viên
+        </a> */}
+
       </nav>
 
       {/* <div className="qtv-sidebar-footer">

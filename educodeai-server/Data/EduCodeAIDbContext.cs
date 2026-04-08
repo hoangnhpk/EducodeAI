@@ -1,6 +1,7 @@
 using educodeai_server.Data.DuLieuMau;
 using educodeai_server.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq;
 
 namespace educodeai_server.Data
@@ -13,6 +14,7 @@ namespace educodeai_server.Data
 
         // 16 bảng dữ liệu
         public DbSet<NguoiDungModel> NguoiDungs { get; set; }
+        public DbSet<PhienDangNhapModel> PhienDangNhaps { get; set; }
         public DbSet<NgonNguLapTrinhModel> NgonNguLapTrinhs { get; set; }
         public DbSet<KhoaHocModel> KhoaHocs { get; set; }
         public DbSet<ChuongHocModel> ChuongHocs { get; set; }
@@ -39,6 +41,20 @@ namespace educodeai_server.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entity.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime))
+                    {
+                        property.SetValueConverter(
+                            new ValueConverter<DateTime, DateTime>(
+                                v => v.ToUniversalTime(),
+                                v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
+                            ));
+                    }
+                }
+            }
             base.OnModelCreating(modelBuilder);
 
             // ====== INDEXES ======
@@ -49,8 +65,14 @@ namespace educodeai_server.Data
             modelBuilder.Entity<DanhGiaModel>().HasIndex(d => new { d.MaNguoiDung, d.MaKhoaHoc }).IsUnique();
 
             // ====== RELATIONSHIPS CONFIGURATION ======
-            
+
             // NguoiDungModel relationships
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.DanhSachPhienDangNhap)
+                .WithOne(p => p.NguoiDung)
+                .HasForeignKey(p => p.MaNguoiDung)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<NguoiDungModel>()
                 .HasMany(n => n.KhoaHocs)
                 .WithOne(k => k.GiangVien)
