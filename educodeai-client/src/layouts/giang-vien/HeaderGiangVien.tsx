@@ -1,5 +1,3 @@
-import { MdNotifications, MdAccountCircle } from 'react-icons/md';
-
 export default function HeaderGiangVien() {
   return (
     <header className="gv-header">
