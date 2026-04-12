@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, useImperativeHandle,
 import YouTube, { type YouTubeEvent } from 'react-youtube';
 import Swal from 'sweetalert2';
 import { KhoaHocService, type LuuGhiChuDTO, type LuuTienDoDTO } from '@/services/khoa-hoc.service';
+import { VideoAIService, type VideoChapterDTO } from '@/services/video-ai.service';
 
 // 1. Định nghĩa kiểu dữ liệu cho Ref để component cha (NoiDungKhoaHoc) hiểu
 export interface NoiDungVideoRef {
@@ -22,6 +23,14 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
   const [daSanSang, setDaSanSang] = useState(false);
   const [thoiLuongVideo, setThoiLuongVideo] = useState(0);
   const [thoiGianHienTai, setThoiGianHienTai] = useState(0);
+
+  // --- AI Video Interactive ---
+  const [chapters, setChapters] = useState<VideoChapterDTO[]>([]);
+  const chaptersRef = useRef<VideoChapterDTO[]>([]); // Fix stale closure trong setInterval
+  const [quizChapter, setQuizChapter] = useState<VideoChapterDTO | null>(null);
+  const [cauHoiHienTai, setCauHoiHienTai] = useState(0);
+  const [dapAnDaChon, setDapAnDaChon] = useState<string>("");
+  const [ketQuaDung, setKetQuaDung] = useState<boolean | null>(null);
 
   // Refs cho logic Anti-cheat
   const daLuuTienDoRef = useRef(false);
@@ -91,7 +100,7 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
 
   // --- LOGIC: Xử lý Gian lận (Anti-Cheat) ---
   const xuLyGianLan = (currentTime: number, lastValidTime: number) => {
-    // return;
+    return;
     if (dangCanhBaoRef.current) return; // Nếu đang tua từ ghi chú thì bỏ qua
 
     dangCanhBaoRef.current = true;
@@ -203,7 +212,36 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
     }
   };
 
-  // --- Loop Check Anti-Cheat ---
+  // Helper: Đánh dấu Chapter đã kiểm tra → cập nhật cả ref (để interval thấy ngay) và state (để UI re-render)
+  const danhDauDaKiemTra = useCallback((maChapter: number) => {
+    const updated = chaptersRef.current.map((c: VideoChapterDTO) =>
+      c.maChapter === maChapter ? { ...c, daKiemTra: true } : c
+    );
+    chaptersRef.current = updated; // interval đọc ref này ngay lập tức → không trigger quiz lại
+    setChapters(updated);
+    setQuizChapter(null);
+    dangCanhBaoRef.current = false;
+    playerRef.current?.playVideo();
+  }, []);
+
+  // --- Lấy dữ liệu Chapters (AI Interactive) ---
+  // dangTaiBaiRef chặn gọi API nhiều lần (React StrictMode, parent re-render)
+  const dangTaiBaiRef = useRef<number>(0);
+  useEffect(() => {
+    if (dangTaiBaiRef.current === maBaiHoc) return; // Đã đang tải bài này rồi, bỏ qua
+    dangTaiBaiRef.current = maBaiHoc;
+
+    chaptersRef.current = [];
+    setChapters([]);
+
+    VideoAIService.khoiTaoVideoInteractive(maBaiHoc).then(data => {
+      if (dangTaiBaiRef.current !== maBaiHoc) return; // Học viên đã chuyển sang bài khác rồi
+      chaptersRef.current = data;
+      setChapters(data);
+    });
+  }, [maBaiHoc]);
+
+  // --- Loop Check Anti-Cheat & Quiz ---
   useEffect(() => {
     if (!daSanSang || daLuuTienDoRef.current) return;
 
@@ -236,7 +274,26 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
         lastRealTimeRef.current = currentRealTime;
         setThoiGianHienTai(currentVideoTime);
       }
-      if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.1) {
+
+      // KIỂM TRA MỐC THỜI GIAN ĐỂ HIỆN QUIZ
+      // Dùng chaptersRef.current thay vì chapters để tránh stale closure
+      const currentChapters = chaptersRef.current;
+      if (currentChapters.length > 0) {
+        const chuaKiemTra = currentChapters.find(c => !c.daKiemTra && currentVideoTime >= c.thoiGianKetThuc);
+        if (chuaKiemTra) {
+          setQuizChapter(prev => {
+            if (prev?.maChapter === chuaKiemTra.maChapter) return prev; // Đang hiện rồi, không làm gì
+            playerRef.current.pauseVideo();
+            dangCanhBaoRef.current = true;
+            setCauHoiHienTai(0);
+            setDapAnDaChon("");
+            setKetQuaDung(null);
+            return chuaKiemTra;
+          });
+        }
+      }
+
+      if (thoiLuongVideo > 0 && currentVideoTime >= thoiLuongVideo * 0.95) {
         luuTienDo(currentVideoTime);
       }
     }, 1000);
@@ -283,10 +340,46 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div style={{ fontWeight: '600', color: '#555', fontSize: '0.95rem' }}>
-            <i className="far fa-clock me-2"></i>
-            {Math.floor(thoiGianHienTai / 60)}:{Math.floor(thoiGianHienTai % 60).toString().padStart(2, '0')} /{' '}
-            {Math.floor(thoiLuongVideo / 60)}:{Math.floor(thoiLuongVideo % 60).toString().padStart(2, '0')}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ fontWeight: '600', color: '#555', fontSize: '0.95rem' }}>
+              <i className="far fa-clock me-2"></i>
+              {Math.floor(thoiGianHienTai / 60)}:{Math.floor(thoiGianHienTai % 60).toString().padStart(2, '0')} /{' '}
+              {Math.floor(thoiLuongVideo / 60)}:{Math.floor(thoiLuongVideo % 60).toString().padStart(2, '0')}
+            </div>
+
+            {/* Badge hiển thị số mốc Quiz trong bài */}
+            {chapters.length > 0 && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: '#fff', borderRadius: 20, padding: '3px 10px',
+                fontSize: '0.78rem', fontWeight: 700,
+                boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+              }}>
+                🧠 {chapters.length} mốc Quiz
+              </div>
+            )}
+
+            {/* Hiển thị mốc Quiz tiếp theo sắp đến */}
+            {(() => {
+              const tiep = chapters.find(c => !c.daKiemTra && c.thoiGianKetThuc > thoiGianHienTai);
+              if (!tiep) return null;
+              const conLai = Math.max(0, Math.ceil(tiep.thoiGianKetThuc - thoiGianHienTai));
+              if (conLai > 30) return null; // Chỉ hiện khi còn ≤30 giây
+              return (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  background: '#fef3c7', color: '#92400e',
+                  borderRadius: 20, padding: '3px 10px',
+                  fontSize: '0.78rem', fontWeight: 700,
+                  border: '1px solid #fcd34d',
+                  animation: 'pulse 1s infinite',
+                }}>
+                  <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }`}</style>
+                  ⏰ Quiz sau {conLai}s
+                </div>
+              );
+            })()}
           </div>
 
           <button
@@ -305,6 +398,216 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
           </button>
         </div>
       )}
+
+      {/* OVERLAY QUIZ INTERACTIVE - PREMIUM UI */}
+      {quizChapter && (() => {
+        const quiz = quizChapter.videoQuizs?.[cauHoiHienTai];
+        const totalQuiz = quizChapter.videoQuizs?.length ?? 0;
+        const progressPct = totalQuiz > 0 ? ((cauHoiHienTai) / totalQuiz) * 100 : 0;
+        const answerKeys = ['A', 'B', 'C', 'D'] as const;
+        type AnsKey = typeof answerKeys[number];
+        const answerColors: Record<AnsKey, string> = { A: '#f69050', B: '#0ea5e9', C: '#10b981', D: '#a855f7' };
+
+        return (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(40,20,10,0.97) 50%, rgba(15,23,42,0.98) 100%)',
+            zIndex: 99999, display: 'flex', flexDirection: 'column',
+            justifyContent: 'center', alignItems: 'center',
+            padding: '1.5rem',
+            backdropFilter: 'blur(12px)',
+            animation: 'fadeInQuiz 0.3s ease-out',
+            overflowY: 'auto',
+          }}>
+            <style>{`
+              @keyframes fadeInQuiz { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+              @keyframes slideUpAns { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+              .quiz-ans-btn { transition: all 0.2s ease; cursor: pointer; border: none; text-align: left; padding: 12px 18px; border-radius: 12px; font-size: 0.95rem; font-weight: 500; width: 100%; display: flex; align-items: center; gap: 12px; animation: slideUpAns 0.3s ease both; }
+              .quiz-ans-btn:hover { transform: translateX(5px) scale(1.01); filter: brightness(1.1); }
+              .quiz-submit-btn { transition: all 0.2s ease; cursor: pointer; }
+              .quiz-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(246,144,80,0.5) !important; }
+              .quiz-skip-btn { transition: all 0.2s ease; cursor: pointer; }
+              .quiz-skip-btn:hover { background: rgba(255,255,255,0.1) !important; }
+            `}</style>
+
+            {/* Tiêu đề top */}
+            <div style={{ textAlign: 'center', marginBottom: '1.2rem' }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: 'linear-gradient(135deg, #f69050, #e67e22)',
+                borderRadius: 30, padding: '6px 18px', marginBottom: 10,
+                boxShadow: '0 4px 20px rgba(246,144,80,0.4)'
+              }}>
+                <span style={{ fontSize: '1.1rem' }}>🧠</span>
+                <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.85rem', letterSpacing: 1 }}>
+                  KIỂM TRA NHANH
+                </span>
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.82rem' }}>
+                {quizChapter.kienThucChinh}
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            {totalQuiz > 1 && (
+              <div style={{ width: '100%', maxWidth: 580, marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>Tiến độ</span>
+                  <span style={{ color: '#fed7aa', fontSize: '0.75rem', fontWeight: 600 }}>{cauHoiHienTai + 1} / {totalQuiz}</span>
+                </div>
+                <div style={{ height: 5, background: 'rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ width: `${progressPct}%`, height: '100%', background: 'linear-gradient(90deg, #f69050, #e67e22)', borderRadius: 10, transition: 'width 0.4s ease' }} />
+                </div>
+              </div>
+            )}
+
+            {/* Card câu hỏi */}
+            {quiz ? (
+              <div style={{ width: '100%', maxWidth: 580 }}>
+                <div style={{
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 20, padding: '1.5rem', marginBottom: 14,
+                  backdropFilter: 'blur(10px)'
+                }}>
+                  {/* Câu hỏi */}
+                  <p style={{ color: '#e2e8f0', fontSize: '1.05rem', fontWeight: 600, marginBottom: 16, lineHeight: 1.6 }}>
+                    <span style={{
+                      display: 'inline-block', background: 'linear-gradient(135deg, #f69050, #e67e22)',
+                      color: '#fff', borderRadius: 8, padding: '2px 10px', fontSize: '0.8rem',
+                      marginRight: 8, verticalAlign: 'middle', fontWeight: 700
+                    }}>
+                      C{cauHoiHienTai + 1}
+                    </span>
+                    {quiz.cauHoi}
+                  </p>
+
+                  {/* Các đáp án */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {answerKeys.map((key, i) => {
+                      const ansText = quiz[`dapAn${key}` as keyof typeof quiz] as string | undefined;
+                      if (!ansText) return null;
+                      const isSelected = dapAnDaChon === key;
+                      const isCorrect = ketQuaDung === true && isSelected;
+                      const isWrong = ketQuaDung === false && isSelected;
+                      const color = answerColors[key];
+
+                      return (
+                        <button
+                          key={key}
+                          className="quiz-ans-btn"
+                          style={{
+                            animationDelay: `${i * 0.06}s`,
+                            background: isCorrect
+                              ? 'linear-gradient(135deg, #10b981, #059669)'
+                              : isWrong
+                                ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                                : isSelected
+                                  ? `linear-gradient(135deg, ${color}dd, ${color}aa)`
+                                  : 'rgba(255,255,255,0.07)',
+                            border: isSelected ? `2px solid ${color}` : '2px solid transparent',
+                            color: isSelected ? '#fff' : 'rgba(255,255,255,0.85)',
+                            transform: isSelected ? 'translateX(5px)' : 'none',
+                          }}
+                          onClick={() => { if (ketQuaDung !== true) { setDapAnDaChon(key); setKetQuaDung(null); } }}
+                        >
+                          <span style={{
+                            minWidth: 32, height: 32, borderRadius: 8,
+                            background: isSelected ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: 700, fontSize: '0.9rem', color: isSelected ? '#fff' : color,
+                            flexShrink: 0
+                          }}>
+                            {isCorrect ? '✓' : isWrong ? '✗' : key}
+                          </span>
+                          {ansText}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Feedback */}
+                  {ketQuaDung === false && (
+                    <div style={{
+                      marginTop: 12, padding: '10px 14px', borderRadius: 10,
+                      background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
+                      color: '#fca5a5', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 8
+                    }}>
+                      <span>❌</span> Chưa đúng rồi! Hãy suy nghĩ lại và thử chọn đáp án khác nhé.
+                    </div>
+                  )}
+                  {ketQuaDung === true && (
+                    <div style={{
+                      marginTop: 12, padding: '10px 14px', borderRadius: 10,
+                      background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)',
+                      color: '#6ee7b7', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 8
+                    }}>
+                      <span>🎉</span> Xuất sắc! Bạn trả lời chính xác.
+                    </div>
+                  )}
+                </div>
+
+                {/* Nút hành động */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                  {!quizChapter.batBuoc ? (
+                    <button className="quiz-skip-btn" onClick={() => danhDauDaKiemTra(quizChapter.maChapter)} style={{
+                      background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.5)',
+                      borderRadius: 10, padding: '9px 16px', fontSize: '0.85rem', cursor: 'pointer',
+                    }}>
+                      Bỏ qua ⏭
+                    </button>
+                  ) : (
+                    <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      🔒 Bắt buộc hoàn thành
+                    </div>
+                  )}
+
+                  <button className="quiz-submit-btn" onClick={() => {
+                    if (!dapAnDaChon || ketQuaDung === true) return;
+                    if (dapAnDaChon === quiz.dapAnDung) {
+                      setKetQuaDung(true);
+                      setTimeout(() => {
+                        if (cauHoiHienTai < totalQuiz - 1) {
+                          setCauHoiHienTai(cauHoiHienTai + 1); setDapAnDaChon(''); setKetQuaDung(null);
+                        } else {
+                          danhDauDaKiemTra(quizChapter.maChapter);
+                        }
+                      }, 1200);
+                    } else {
+                      setKetQuaDung(false);
+                    }
+                  }} style={{
+                    background: dapAnDaChon ? 'linear-gradient(135deg, #f69050, #e67e22)' : 'rgba(255,255,255,0.1)',
+                    color: dapAnDaChon ? '#fff' : 'rgba(255,255,255,0.3)',
+                    border: 'none', borderRadius: 12, padding: '10px 28px', fontWeight: 700,
+                    fontSize: '0.95rem', cursor: dapAnDaChon ? 'pointer' : 'not-allowed',
+                    boxShadow: dapAnDaChon ? '0 4px 15px rgba(246,144,80,0.4)' : 'none',
+                    minWidth: 150,
+                  }}>
+                    {ketQuaDung === true
+                      ? (cauHoiHienTai < totalQuiz - 1 ? '➡ Câu tiếp theo' : '🏁 Hoàn tất!')
+                      : (dapAnDaChon ? '✔ Xác nhận' : 'Chọn đáp án')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Không có quiz, chỉ thông báo kiến thức mới
+              <div style={{ textAlign: 'center', maxWidth: 400 }}>
+                <div style={{ fontSize: '3rem', marginBottom: 12 }}>📚</div>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', marginBottom: 20 }}>
+                  Bạn vừa hoàn thành một phần kiến thức quan trọng!
+                </p>
+                <button onClick={() => danhDauDaKiemTra(quizChapter.maChapter)} style={{
+                  background: 'linear-gradient(135deg, #f69050, #e67e22)', color: '#fff',
+                  border: 'none', borderRadius: 12, padding: '12px 32px', fontWeight: 700,
+                  fontSize: '1rem', cursor: 'pointer', boxShadow: '0 4px 20px rgba(246,144,80,0.4)'
+                }}>
+                  Tiếp tục xem ▶
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 });
