@@ -14,7 +14,7 @@ namespace educodeai_server.Models
         [Required]
         public string SnapshotJSON { get; set; } = null!;
 
-        public DateTime NgayTao { get; set; } = DateTime.Now;
+        public DateTime NgayTao { get; set; } = DateTime.UtcNow;
 
         [ForeignKey("MaBaiTapThucHanh")]
         public virtual BaiTap_ThucHanhIDEModel BaiTapThucHanh { get; set; } = null!;

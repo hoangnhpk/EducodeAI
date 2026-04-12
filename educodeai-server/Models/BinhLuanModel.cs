@@ -22,7 +22,7 @@ namespace educodeai_server.Models
         [ForeignKey("MaBinhLuanCha")]
         public virtual BinhLuanModel? BinhLuanCha { get; set; }
 
-        public DateTime NgayTao { get; set; } = DateTime.Now;
+        public DateTime NgayTao { get; set; } = DateTime.UtcNow;
 
         // Navigation
         public virtual ICollection<BinhLuanModel> BinhLuans { get; set; } = null!;

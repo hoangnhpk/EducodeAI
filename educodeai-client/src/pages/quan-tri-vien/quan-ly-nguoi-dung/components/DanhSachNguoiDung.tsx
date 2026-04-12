@@ -55,7 +55,7 @@ const DanhSachNguoiDung = ({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai }: Pr
                                             color: 'white', display: 'flex', alignItems: 'center',
                                             justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0
                                         }}>
-                                            {(u.hoTen ?? 'U')[0].toUpperCase()}
+                                            {/* {(u.hoTen ?? 'U')[0].toUpperCase()} */}
                                         </div>
                                     }
                                     <span style={{ fontWeight: 500 }}>{u.hoTen}</span>

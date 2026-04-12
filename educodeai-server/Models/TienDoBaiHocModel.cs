@@ -17,6 +17,6 @@ namespace educodeai_server.Models
 
         public bool DaXem { get; set; } = false;
         public int ThoiGianHoc { get; set; } = 0;
-        public DateTime NgayCapNhat { get; set; } = DateTime.Now;
+        public DateTime NgayCapNhat { get; set; } = DateTime.UtcNow;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -8,18 +9,38 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace educodeai_server.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class IntCreateDb07_04 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "KeyAPIs",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenKey = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    MaKeyMaHoa = table.Column<string>(type: "text", nullable: false),
+                    LoaiKey = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    TrangThai = table.Column<bool>(type: "boolean", nullable: false),
+                    ThuTuUuTien = table.Column<int>(type: "integer", nullable: false),
+                    HanMucRequest = table.Column<int>(type: "integer", nullable: false),
+                    HanMucToken = table.Column<int>(type: "integer", nullable: false),
+                    NgayTao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KeyAPIs", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "NgonNguLapTrinhs",
                 columns: table => new
                 {
-                    MaNgonNgu = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TenNgonNgu = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    MaNgonNgu = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenNgonNgu = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -30,17 +51,21 @@ namespace educodeai_server.Migrations
                 name: "NguoiDungs",
                 columns: table => new
                 {
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TaiKhoan = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    MatKhau = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    GoogleID = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    HoTen = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    AnhDaiDien = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    VaiTro = table.Column<int>(type: "int", nullable: false),
-                    TrangThai = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    NgayThamGia = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TaiKhoan = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    MatKhau = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    GoogleID = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    HoTen = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Email = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    AnhDaiDien = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    VaiTro = table.Column<int>(type: "integer", nullable: false),
+                    TrangThai = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    NgayThamGia = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LyDoKhoa = table.Column<string>(type: "text", nullable: true),
+                    NgayDangNhapCuoi = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    MaOTP = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
+                    ThoiGianHetHanOTP = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -48,22 +73,45 @@ namespace educodeai_server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "NhatKySuDungs",
+                columns: table => new
+                {
+                    ID = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ID_Key = table.Column<int>(type: "integer", nullable: false),
+                    SoTokenTieuHao = table.Column<int>(type: "integer", nullable: false),
+                    ThoiGianGoi = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    MaTrangThai = table.Column<int>(type: "integer", nullable: false),
+                    DuongDanAPI = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NhatKySuDungs", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_NhatKySuDungs_KeyAPIs_ID_Key",
+                        column: x => x.ID_Key,
+                        principalTable: "KeyAPIs",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "KhoaHocs",
                 columns: table => new
                 {
-                    MaKhoaHoc = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaGiangVien = table.Column<int>(type: "int", nullable: false),
-                    TenKhoaHoc = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    MoTa = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    HinhAnh = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    TrangThai = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    DiemDanhGiaTB = table.Column<double>(type: "float", nullable: false),
-                    LinhVuc = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    TrinhDo = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    ThoiLuongGio = table.Column<int>(type: "int", nullable: false),
-                    KyNangChinh = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    NgayTao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    MaKhoaHoc = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaGiangVien = table.Column<int>(type: "integer", nullable: false),
+                    TenKhoaHoc = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    MoTa = table.Column<string>(type: "text", nullable: true),
+                    HinhAnh = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    TrangThai = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    DiemDanhGiaTB = table.Column<double>(type: "double precision", nullable: false),
+                    LinhVuc = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    TrinhDo = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ThoiLuongGio = table.Column<int>(type: "integer", nullable: false),
+                    KyNangChinh = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    NgayTao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -79,13 +127,13 @@ namespace educodeai_server.Migrations
                 name: "LoTrinhAIs",
                 columns: table => new
                 {
-                    MaLoTrinh = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
-                    YeuCau = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    NoiDungJSON = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TrangThai = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    NgayTao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    MaLoTrinh = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false),
+                    YeuCau = table.Column<string>(type: "text", nullable: false),
+                    NoiDungJSON = table.Column<string>(type: "text", nullable: false),
+                    TrangThai = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    NgayTao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -98,14 +146,39 @@ namespace educodeai_server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PhienDangNhap",
+                columns: table => new
+                {
+                    MaPhien = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false),
+                    MaThietBi = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    TenThietBi = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    DiaChiIP = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    ThoiGianDangNhap = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ThoiGianHoatDongCuoi = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DangHoatDong = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PhienDangNhap", x => x.MaPhien);
+                    table.ForeignKey(
+                        name: "FK_PhienDangNhap_NguoiDungs_MaNguoiDung",
+                        column: x => x.MaNguoiDung,
+                        principalTable: "NguoiDungs",
+                        principalColumn: "MaNguoiDung",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ChuongHocs",
                 columns: table => new
                 {
-                    MaChuong = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaKhoaHoc = table.Column<int>(type: "int", nullable: false),
-                    TenChuong = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    ThuTu = table.Column<int>(type: "int", nullable: false)
+                    MaChuong = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaKhoaHoc = table.Column<int>(type: "integer", nullable: false),
+                    TenChuong = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    ThuTu = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -121,13 +194,13 @@ namespace educodeai_server.Migrations
                 name: "DangKyKhoaHocs",
                 columns: table => new
                 {
-                    MaDangKy = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
-                    MaKhoaHoc = table.Column<int>(type: "int", nullable: false),
-                    NgayDangKy = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    TrangThai = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    TienDo = table.Column<int>(type: "int", nullable: false)
+                    MaDangKy = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false),
+                    MaKhoaHoc = table.Column<int>(type: "integer", nullable: false),
+                    NgayDangKy = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    TrangThai = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    TienDo = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -148,13 +221,13 @@ namespace educodeai_server.Migrations
                 name: "DanhGias",
                 columns: table => new
                 {
-                    MaDanhGia = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
-                    MaKhoaHoc = table.Column<int>(type: "int", nullable: false),
-                    SoSao = table.Column<int>(type: "int", nullable: false),
-                    NhanXet = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    NgayDanhGia = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    MaDanhGia = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false),
+                    MaKhoaHoc = table.Column<int>(type: "integer", nullable: false),
+                    SoSao = table.Column<int>(type: "integer", nullable: false),
+                    NhanXet = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    NgayDanhGia = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -175,15 +248,15 @@ namespace educodeai_server.Migrations
                 name: "BaiHocs",
                 columns: table => new
                 {
-                    MaBaiHoc = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaChuong = table.Column<int>(type: "int", nullable: false),
-                    TieuDe = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    LoaiBaiHoc = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    NoiDung = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ThoiLuong = table.Column<int>(type: "int", nullable: true),
-                    LinkVideo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ThuTu = table.Column<int>(type: "int", nullable: false)
+                    MaBaiHoc = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaChuong = table.Column<int>(type: "integer", nullable: false),
+                    TieuDe = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    LoaiBaiHoc = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    NoiDung = table.Column<string>(type: "text", nullable: true),
+                    ThoiLuong = table.Column<int>(type: "integer", nullable: true),
+                    LinkVideo = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ThuTu = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -199,9 +272,9 @@ namespace educodeai_server.Migrations
                 name: "BaiTaps",
                 columns: table => new
                 {
-                    MaBaiTap = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiHoc = table.Column<int>(type: "int", nullable: false)
+                    MaBaiTap = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaBaiHoc = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -217,13 +290,13 @@ namespace educodeai_server.Migrations
                 name: "BinhLuans",
                 columns: table => new
                 {
-                    MaBinhLuan = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
-                    MaBaiHoc = table.Column<int>(type: "int", nullable: false),
-                    NoiDung = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MaBinhLuanCha = table.Column<int>(type: "int", nullable: true),
-                    NgayTao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    MaBinhLuan = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false),
+                    MaBaiHoc = table.Column<int>(type: "integer", nullable: false),
+                    NoiDung = table.Column<string>(type: "text", nullable: false),
+                    MaBinhLuanCha = table.Column<int>(type: "integer", nullable: true),
+                    NgayTao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -249,13 +322,13 @@ namespace educodeai_server.Migrations
                 name: "GhiChuAIs",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
-                    MaBaiHoc = table.Column<int>(type: "int", nullable: false),
-                    NoiDung = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    NgayTao = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    NgayCapNhat = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false),
+                    MaBaiHoc = table.Column<int>(type: "integer", nullable: false),
+                    NoiDung = table.Column<string>(type: "text", nullable: false),
+                    NgayTao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    NgayCapNhat = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -278,13 +351,13 @@ namespace educodeai_server.Migrations
                 name: "GhiChuBaiHocs",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
-                    MaBaiHoc = table.Column<int>(type: "int", nullable: false),
-                    ThoiGianVideo = table.Column<int>(type: "int", nullable: false),
-                    NoiDung = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                    NgayTao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false),
+                    MaBaiHoc = table.Column<int>(type: "integer", nullable: false),
+                    ThoiGianVideo = table.Column<int>(type: "integer", nullable: false),
+                    NoiDung = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    NgayTao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -305,13 +378,13 @@ namespace educodeai_server.Migrations
                 name: "TienDoBaiHocs",
                 columns: table => new
                 {
-                    MaTienDo = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
-                    MaBaiHoc = table.Column<int>(type: "int", nullable: false),
-                    DaXem = table.Column<bool>(type: "bit", nullable: false),
-                    ThoiGianHoc = table.Column<int>(type: "int", nullable: false),
-                    NgayCapNhat = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    MaTienDo = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false),
+                    MaBaiHoc = table.Column<int>(type: "integer", nullable: false),
+                    DaXem = table.Column<bool>(type: "boolean", nullable: false),
+                    ThoiGianHoc = table.Column<int>(type: "integer", nullable: false),
+                    NgayCapNhat = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -332,14 +405,14 @@ namespace educodeai_server.Migrations
                 name: "BaiTap_Quizs",
                 columns: table => new
                 {
-                    MaBaiTapQuiz = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiTap = table.Column<int>(type: "int", nullable: false),
-                    ThoiGianLamBai = table.Column<int>(type: "int", nullable: true),
-                    DiemCanDat = table.Column<double>(type: "float", nullable: false),
-                    ChoPhepLamLai = table.Column<bool>(type: "bit", nullable: false),
-                    DaoCauHoi = table.Column<bool>(type: "bit", nullable: false),
-                    DuLieuCauHoi = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    MaBaiTapQuiz = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaBaiTap = table.Column<int>(type: "integer", nullable: false),
+                    ThoiGianLamBai = table.Column<int>(type: "integer", nullable: true),
+                    DiemCanDat = table.Column<double>(type: "double precision", nullable: false),
+                    ChoPhepLamLai = table.Column<bool>(type: "boolean", nullable: false),
+                    DaoCauHoi = table.Column<bool>(type: "boolean", nullable: false),
+                    DuLieuCauHoi = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -355,12 +428,12 @@ namespace educodeai_server.Migrations
                 name: "BaiTap_ThucHanhIDEs",
                 columns: table => new
                 {
-                    MaBaiTapThucHanh = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiTap = table.Column<int>(type: "int", nullable: false),
-                    MaNgonNgu = table.Column<int>(type: "int", nullable: false),
-                    DeBai = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CodeMau = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    MaBaiTapThucHanh = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaBaiTap = table.Column<int>(type: "integer", nullable: false),
+                    MaNgonNgu = table.Column<int>(type: "integer", nullable: false),
+                    DeBai = table.Column<string>(type: "text", nullable: false),
+                    CodeMau = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -381,14 +454,14 @@ namespace educodeai_server.Migrations
                 name: "KetQuaLamBais",
                 columns: table => new
                 {
-                    MaKetQuaBaiNop = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaNguoiDung = table.Column<int>(type: "int", nullable: false),
-                    MaBaiTap = table.Column<int>(type: "int", nullable: false),
-                    NoiDungNopJSON = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaKetQuaBaiNop = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaNguoiDung = table.Column<int>(type: "integer", nullable: false),
+                    MaBaiTap = table.Column<int>(type: "integer", nullable: false),
+                    NoiDungNopJSON = table.Column<string>(type: "text", nullable: false),
                     DiemSo = table.Column<float>(type: "real", nullable: false),
-                    TrangThai = table.Column<bool>(type: "bit", nullable: false),
-                    NgayNop = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    TrangThai = table.Column<bool>(type: "boolean", nullable: false),
+                    NgayNop = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -409,16 +482,16 @@ namespace educodeai_server.Migrations
                 name: "BoThuNghiems",
                 columns: table => new
                 {
-                    MaBoThu = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiTapThucHanh = table.Column<int>(type: "int", nullable: false),
-                    DauVao = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DauRaMongMuon = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    GioiHanThoiGian = table.Column<int>(type: "int", nullable: false),
-                    GioiHanBoNho = table.Column<int>(type: "int", nullable: false),
-                    AnDanh = table.Column<bool>(type: "bit", nullable: false),
-                    Diem = table.Column<int>(type: "int", nullable: false),
-                    LaEdgeCase = table.Column<bool>(type: "bit", nullable: false)
+                    MaBoThu = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaBaiTapThucHanh = table.Column<int>(type: "integer", nullable: false),
+                    DauVao = table.Column<string>(type: "text", nullable: false),
+                    DauRaMongMuon = table.Column<string>(type: "text", nullable: false),
+                    GioiHanThoiGian = table.Column<int>(type: "integer", nullable: false),
+                    GioiHanBoNho = table.Column<int>(type: "integer", nullable: false),
+                    AnDanh = table.Column<bool>(type: "boolean", nullable: false),
+                    Diem = table.Column<int>(type: "integer", nullable: false),
+                    LaEdgeCase = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -434,13 +507,13 @@ namespace educodeai_server.Migrations
                 name: "GoiYAI_TaoBaiTapS",
                 columns: table => new
                 {
-                    MaGoiY = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiTapThucHanh = table.Column<int>(type: "int", nullable: false),
-                    LoaiGoiY = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    NoiDung = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TrangThai = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    NgayTao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    MaGoiY = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaBaiTapThucHanh = table.Column<int>(type: "integer", nullable: false),
+                    LoaiGoiY = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    NoiDung = table.Column<string>(type: "text", nullable: false),
+                    TrangThai = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    NgayTao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -456,13 +529,13 @@ namespace educodeai_server.Migrations
                 name: "LoiGiaiMaus",
                 columns: table => new
                 {
-                    MaLoiGiai = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiTapThucHanh = table.Column<int>(type: "int", nullable: false),
-                    MaNgonNgu = table.Column<int>(type: "int", nullable: false),
-                    CodeMau = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DoPhucTap = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    GiaiThich = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    MaLoiGiai = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaBaiTapThucHanh = table.Column<int>(type: "integer", nullable: false),
+                    MaNgonNgu = table.Column<int>(type: "integer", nullable: false),
+                    CodeMau = table.Column<string>(type: "text", nullable: false),
+                    DoPhucTap = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    GiaiThich = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -483,11 +556,11 @@ namespace educodeai_server.Migrations
                 name: "PhienBanBaiTaps",
                 columns: table => new
                 {
-                    MaPhienBan = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiTapThucHanh = table.Column<int>(type: "int", nullable: false),
-                    SnapshotJSON = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    NgayTao = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    MaPhienBan = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaBaiTapThucHanh = table.Column<int>(type: "integer", nullable: false),
+                    SnapshotJSON = table.Column<string>(type: "text", nullable: false),
+                    NgayTao = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -503,11 +576,11 @@ namespace educodeai_server.Migrations
                 name: "RangBuocBaiTaps",
                 columns: table => new
                 {
-                    MaRangBuoc = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaBaiTapThucHanh = table.Column<int>(type: "int", nullable: false),
-                    TenRangBuoc = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    GiaTri = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    MaRangBuoc = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    MaBaiTapThucHanh = table.Column<int>(type: "integer", nullable: false),
+                    TenRangBuoc = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    GiaTri = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -521,12 +594,12 @@ namespace educodeai_server.Migrations
 
             migrationBuilder.InsertData(
                 table: "NguoiDungs",
-                columns: new[] { "MaNguoiDung", "AnhDaiDien", "Email", "GoogleID", "HoTen", "MatKhau", "NgayThamGia", "TaiKhoan", "TrangThai", "VaiTro" },
+                columns: new[] { "MaNguoiDung", "AnhDaiDien", "Email", "GoogleID", "HoTen", "LyDoKhoa", "MaOTP", "MatKhau", "NgayDangNhapCuoi", "NgayThamGia", "TaiKhoan", "ThoiGianHetHanOTP", "TrangThai", "VaiTro" },
                 values: new object[,]
                 {
-                    { 1, "giangvien-avatar.jpg", "giangvien@educodeai.com", "google_giangvien_123", "Trần Thị Giảng Viên", "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "giangvien", "Hoạt động", 1 },
-                    { 2, "admin-avatar.jpg", "nguyenhung22032006@gmail.com", null, "Nguyễn Quốc Hùng", "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin", "Hoạt động", 0 },
-                    { 3, "hocvien-avatar.jpg", "hocvien@gmail.com", "google_hocvien_456", "Lê Văn Học Viên", "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "hocvien", "Hoạt động", 2 }
+                    { 1, "giangvien-avatar.jpg", "giangvien@educodeai.com", "google_giangvien_123", "Trần Thị Giảng Viên", null, null, "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4", null, new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "giangvien", null, "Hoạt động", 1 },
+                    { 2, "admin-avatar.jpg", "nguyenhung22032006@gmail.com", null, "Nguyễn Quốc Hùng", null, null, "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4", null, new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "admin", null, "Hoạt động", 0 },
+                    { 3, "hocvien-avatar.jpg", "hocvien@gmail.com", "google_hocvien_456", "Lê Văn Học Viên", null, null, "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4", null, new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "hocvien", null, "Hoạt động", 2 }
                 });
 
             migrationBuilder.InsertData(
@@ -534,14 +607,14 @@ namespace educodeai_server.Migrations
                 columns: new[] { "MaKhoaHoc", "DiemDanhGiaTB", "HinhAnh", "KyNangChinh", "LinhVuc", "MaGiangVien", "MoTa", "NgayTao", "TenKhoaHoc", "ThoiLuongGio", "TrangThai", "TrinhDo" },
                 values: new object[,]
                 {
-                    { 1, 4.7000000000000002, "cpp-course.jpg", "C++, OOP, Con trỏ, Cấu trúc dữ liệu", "Lập trình hệ thống", 1, "Khóa học toàn diện về lập trình C++, từ cú pháp cơ bản đến các kỹ thuật lập trình nâng cao như con trỏ, OOP, xử lý file", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Lập trình C++ cơ bản, nâng cao", 35, "Hoạt động", "Người mới" },
-                    { 2, 4.9000000000000004, "it-foundation.jpg", "IT Foundation, Client-Server, Domain, Career Guidance", "Công nghệ thông tin", 1, "Khóa học cung cấp kiến thức nền tảng về công nghệ thông tin, mô hình client-server, domain, và định hướng nghề nghiệp cho người mới bắt đầu", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Kiến Thức Nhập Môn IT", 8, "Hoạt động", "Người mới" },
-                    { 3, 4.7999999999999998, "js-advanced.jpg", "JavaScript, Closure, This, Bind, Call, Apply, Redux", "Web Development", 1, "Khóa học nâng cao về JavaScript, tập trung vào các khái niệm quan trọng như IIFE, Scope, Closure, Hoisting, This, Bind, Call, Apply và thực hành với Redux", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Lập Trình Javascript nâng cao", 15, "Hoạt động", "Trung cấp" },
-                    { 4, 4.5999999999999996, "js-basic.jpg", "JavaScript, Functions, Arrays, DOM, Form Validation", "Web Development", 1, "Khóa học JavaScript cơ bản dành cho người mới bắt đầu, từ biến, toán tử, hàm, mảng đến thực hành form validation", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Lập Trình JavaScript Cơ Bản", 20, "Hoạt động", "Người mới" },
-                    { 5, 4.9000000000000004, "dont-touch-face.jpg", "React, TensorFlow.js, Machine Learning, Computer Vision", "AI & Machine Learning", 1, "Khóa học thực hành xây dựng ứng dụng AI phát hiện hành vi chạm tay lên mặt sử dụng React, TensorFlow.js và machine learning", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "App 'Đừng Chạm Tay Lên Mặt' - Xây dựng ứng dụng AI với React và TensorFlow", 12, "Hoạt động", "Trung cấp" },
-                    { 6, 4.7000000000000002, "node-express.jpg", "Node.js, ExpressJS, MongoDB, REST API, MVC Pattern", "Backend Development", 1, "Khóa học toàn diện về Node.js và ExpressJS, từ cơ bản đến nâng cao, xây dựng RESTful API, MVC pattern, kết nối MongoDB và triển khai ứng dụng web hoàn chỉnh", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Node & ExpressJS - Xây dựng Backend chuyên nghiệp", 25, "Hoạt động", "Người mới" },
-                    { 7, 4.7999999999999998, "responsive-grid.jpg", "CSS Grid, Responsive Design, Media Queries, Flexbox, Viewport", "Web Design & UI/UX", 1, "Khóa học chuyên sâu về responsive web design, Grid System, media queries, viewport và kỹ thuật thiết kế website tương thích trên mọi thiết bị", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Responsive Với Grid System - Thiết kế website đa thiết bị", 10, "Hoạt động", "Người mới" },
-                    { 8, 4.9000000000000004, "terminal-ubuntu.jpg", "Linux, Ubuntu, WSL, Terminal Commands, Server Deployment, Nginx", "System Administration & DevOps", 1, "Khóa học toàn diện về làm việc với Terminal, WSL, Ubuntu, các lệnh Linux cơ bản đến nâng cao, cài đặt môi trường phát triển và deploy ứng dụng web lên server thật", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Làm việc với Terminal & Ubuntu - Lập trình chuyên nghiệp với Linux", 18, "Hoạt động", "Người mới" }
+                    { 1, 4.7000000000000002, "cpp-course.jpg", "C++, OOP, Con trỏ, Cấu trúc dữ liệu", "Lập trình hệ thống", 1, "Khóa học toàn diện về lập trình C++, từ cú pháp cơ bản đến các kỹ thuật lập trình nâng cao như con trỏ, OOP, xử lý file", new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "Lập trình C++ cơ bản, nâng cao", 35, "Hoạt động", "Người mới" },
+                    { 2, 4.9000000000000004, "it-foundation.jpg", "IT Foundation, Client-Server, Domain, Career Guidance", "Công nghệ thông tin", 1, "Khóa học cung cấp kiến thức nền tảng về công nghệ thông tin, mô hình client-server, domain, và định hướng nghề nghiệp cho người mới bắt đầu", new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "Kiến Thức Nhập Môn IT", 8, "Hoạt động", "Người mới" },
+                    { 3, 4.7999999999999998, "js-advanced.jpg", "JavaScript, Closure, This, Bind, Call, Apply, Redux", "Web Development", 1, "Khóa học nâng cao về JavaScript, tập trung vào các khái niệm quan trọng như IIFE, Scope, Closure, Hoisting, This, Bind, Call, Apply và thực hành với Redux", new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "Lập Trình Javascript nâng cao", 15, "Hoạt động", "Trung cấp" },
+                    { 4, 4.5999999999999996, "js-basic.jpg", "JavaScript, Functions, Arrays, DOM, Form Validation", "Web Development", 1, "Khóa học JavaScript cơ bản dành cho người mới bắt đầu, từ biến, toán tử, hàm, mảng đến thực hành form validation", new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "Lập Trình JavaScript Cơ Bản", 20, "Hoạt động", "Người mới" },
+                    { 5, 4.9000000000000004, "dont-touch-face.jpg", "React, TensorFlow.js, Machine Learning, Computer Vision", "AI & Machine Learning", 1, "Khóa học thực hành xây dựng ứng dụng AI phát hiện hành vi chạm tay lên mặt sử dụng React, TensorFlow.js và machine learning", new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "App 'Đừng Chạm Tay Lên Mặt' - Xây dựng ứng dụng AI với React và TensorFlow", 12, "Hoạt động", "Trung cấp" },
+                    { 6, 4.7000000000000002, "node-express.jpg", "Node.js, ExpressJS, MongoDB, REST API, MVC Pattern", "Backend Development", 1, "Khóa học toàn diện về Node.js và ExpressJS, từ cơ bản đến nâng cao, xây dựng RESTful API, MVC pattern, kết nối MongoDB và triển khai ứng dụng web hoàn chỉnh", new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "Node & ExpressJS - Xây dựng Backend chuyên nghiệp", 25, "Hoạt động", "Người mới" },
+                    { 7, 4.7999999999999998, "responsive-grid.jpg", "CSS Grid, Responsive Design, Media Queries, Flexbox, Viewport", "Web Design & UI/UX", 1, "Khóa học chuyên sâu về responsive web design, Grid System, media queries, viewport và kỹ thuật thiết kế website tương thích trên mọi thiết bị", new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "Responsive Với Grid System - Thiết kế website đa thiết bị", 10, "Hoạt động", "Người mới" },
+                    { 8, 4.9000000000000004, "terminal-ubuntu.jpg", "Linux, Ubuntu, WSL, Terminal Commands, Server Deployment, Nginx", "System Administration & DevOps", 1, "Khóa học toàn diện về làm việc với Terminal, WSL, Ubuntu, các lệnh Linux cơ bản đến nâng cao, cài đặt môi trường phát triển và deploy ứng dụng web lên server thật", new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc), "Làm việc với Terminal & Ubuntu - Lập trình chuyên nghiệp với Linux", 18, "Hoạt động", "Người mới" }
                 });
 
             migrationBuilder.InsertData(
@@ -881,8 +954,7 @@ namespace educodeai_server.Migrations
                 name: "IX_NguoiDungs_Email",
                 table: "NguoiDungs",
                 column: "Email",
-                unique: true,
-                filter: "[Email] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_NguoiDungs_TaiKhoan",
@@ -891,9 +963,19 @@ namespace educodeai_server.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_NhatKySuDungs_ID_Key",
+                table: "NhatKySuDungs",
+                column: "ID_Key");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PhienBanBaiTaps_MaBaiTapThucHanh",
                 table: "PhienBanBaiTaps",
                 column: "MaBaiTapThucHanh");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PhienDangNhap_MaNguoiDung",
+                table: "PhienDangNhap",
+                column: "MaNguoiDung");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RangBuocBaiTaps_MaBaiTapThucHanh",
@@ -949,13 +1031,22 @@ namespace educodeai_server.Migrations
                 name: "LoTrinhAIs");
 
             migrationBuilder.DropTable(
+                name: "NhatKySuDungs");
+
+            migrationBuilder.DropTable(
                 name: "PhienBanBaiTaps");
+
+            migrationBuilder.DropTable(
+                name: "PhienDangNhap");
 
             migrationBuilder.DropTable(
                 name: "RangBuocBaiTaps");
 
             migrationBuilder.DropTable(
                 name: "TienDoBaiHocs");
+
+            migrationBuilder.DropTable(
+                name: "KeyAPIs");
 
             migrationBuilder.DropTable(
                 name: "BaiTap_ThucHanhIDEs");
