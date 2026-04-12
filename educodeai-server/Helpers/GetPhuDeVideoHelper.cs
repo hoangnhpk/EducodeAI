@@ -22,8 +22,14 @@ namespace educodeai_server.Helpers
                 if (trackInfo != null)
                 {
                     var track = await youtube.Videos.ClosedCaptions.GetAsync(trackInfo);
-                    // Gộp tất cả các dòng phụ đề thành một đoạn văn bản
-                    var text = string.Join(" ", track.Captions.Select(c => c.Text));
+                    // Gộp phụ đề kèm timestamp [mm:ss] để Gemini biết mốc thời gian chính xác
+                    var lines = track.Captions.Select(c =>
+                    {
+                        var t = c.Offset;
+                        var timestamp = $"[{(int)t.TotalMinutes:D2}:{t.Seconds:D2}]";
+                        return $"{timestamp} {c.Text}";
+                    });
+                    var text = string.Join("\n", lines);
                     return text;
                 }
 

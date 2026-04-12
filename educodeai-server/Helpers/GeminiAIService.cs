@@ -96,7 +96,61 @@ namespace educodeai_server.Helpers
                 }
             }
 
-            return validKeys.OrderBy(k => k).ToList();
+            // Sáp xep theo uu tiên: Key Chính (LoaiKey="Chinh") có ThuTuUuTien thap hon
+                var keyPriorities = new List<(string Key, int Priority)>();
+                
+                foreach (var k in validKeys)
+                {
+                    var parts = k.Split(':');
+                    if (parts.Length < 3 || !int.TryParse(parts[2], out int keyId)) 
+                    {
+                        keyPriorities.Add((k, int.MaxValue));
+                        continue;
+                    }
+                    
+                    try
+                    {
+                        var dbKey = await _keyApiRepo.GetByIdAsync(keyId);
+                        if (dbKey == null) 
+                        {
+                            keyPriorities.Add((k, int.MaxValue));
+                            continue;
+                        }
+                        
+                        // Key Chính có uu tiên cao hán (LoaiKey="Chinh" -> priority = 0)
+                        // Key Phú có uu tiên tháp hán (LoaiKey="Phu" -> priority = 1)
+                        int loaiKeyPriority = dbKey.LoaiKey == "Chinh" ? 0 : 1;
+                        
+                        // Tong priority = loaiKeyPriority * 1000 + ThuTuUuTien
+                        // Dáa này Key Chính luôn có uu tiên cao hán Key Phú
+                        int totalPriority = loaiKeyPriority * 1000 + dbKey.ThuTuUuTien;
+                        
+                        keyPriorities.Add((k, totalPriority));
+                    }
+                    catch
+                    {
+                        keyPriorities.Add((k, int.MaxValue));
+                    }
+                }
+                
+                var sortedKeys = keyPriorities
+                    .OrderBy(x => x.Priority)
+                    .Select(x => x.Key)
+                    .ToList();
+                
+                // Log thu tu uu tien de debug
+                if (sortedKeys.Any())
+                {
+                    _logger.LogInformation("[Key Priority] Sáp xep {Count} keys theo uu tiên:", sortedKeys.Count);
+                    foreach (var (key, priority) in keyPriorities.OrderBy(x => x.Priority))
+                    {
+                        var parts = key.Split(':');
+                        var keyId = parts.Length >= 3 ? parts[2] : "unknown";
+                        _logger.LogInformation("  Key {KeyId} - Priority: {Priority}", keyId, priority);
+                    }
+                }
+                
+                return sortedKeys;
         }
 
         private string NextRedisKey(List<string> keys)
