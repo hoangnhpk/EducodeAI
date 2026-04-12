@@ -26,10 +26,15 @@ namespace educodeai_server.Models
 
         public int ThuTu { get; set; }
 
+        // Bật/tắt tính năng Quiz tương tác cho bài học này (default: true = bật)
+        // Sau này có thể quản lý qua trang Giảng viên
+        public bool CoQuiz { get; set; } = true;
+
         // Navigation
         public virtual ICollection<BaiTapModel> BaiTaps { get; set; } = null!;
         public virtual ICollection<TienDoBaiHocModel> TienDoBaiHocs { get; set; } = null!;
         public virtual ICollection<BinhLuanModel> BinhLuans { get; set; } = null!;
         public virtual ICollection<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; } = null!;
+        public virtual ICollection<VideoChapterModel> VideoChapters { get; set; } = null!;
     }
 }
