@@ -9,6 +9,7 @@ import ReviewStats from './components/ReviewStats';
 import ReviewFilters from './components/ReviewFilters';
 import ReviewTable from './components/ReviewTable';
 import './components/Review.css';
+import Swal from 'sweetalert2';
 
 export default function QuanLyReview() {
   // ================== STATES ==================
