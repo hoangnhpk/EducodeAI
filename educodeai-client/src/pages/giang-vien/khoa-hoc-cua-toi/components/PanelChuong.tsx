@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { khoaHocCuaToiService } from '@/services/khoa-hoc-cua-toi.service';
-import type { ChuongHocDetailDTO, BaiHocVideoDTO, BaiHocVideoDetailDTO } from '../KhoaHocCuaToiDTO';
+import type { ChuongHocDetailDTO, BaiHocVideoDetailDTO } from '../KhoaHocCuaToiDTO';
 import Swal from 'sweetalert2';
 import { FaPlus, FaEdit, FaTrash, FaVideo, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import ModalChuong from './ModalChuong';
