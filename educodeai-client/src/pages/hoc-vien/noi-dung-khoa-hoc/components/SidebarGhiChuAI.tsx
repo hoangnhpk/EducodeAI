@@ -35,7 +35,7 @@ export const SidebarGhiChuAI: React.FC<SidebarDanhSachGhiChuProps> = ({ isOpen, 
         try {
             // Thay đường dẫn này bằng API Get thực tế của bạn
             const response: any = await axiosClient.get(`/api/GhiChuAI/danh-sach/${maNguoiDung}`);
-            setDanhSachGhiChu(response.data || []);
+            setDanhSachGhiChu(response || []);
         } catch (error) {
             console.error("Lỗi tải ghi chú:", error);
         } finally {
