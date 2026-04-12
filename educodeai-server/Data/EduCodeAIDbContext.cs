@@ -35,7 +35,8 @@ namespace educodeai_server.Data
         public DbSet<PhienBanBaiTapModel> PhienBanBaiTaps { get; set; }
         public DbSet<RangBuocBaiTapModel> RangBuocBaiTaps { get; set; }
         public DbSet<LoiGiaiMauModel> LoiGiaiMaus { get; set; }
-
+public DbSet<VideoChapterModel> VideoChapters { get; set; }
+public DbSet<VideoQuizModel> VideoQuizs { get; set; }
         public DbSet<KeyAPIModel> KeyAPIs { get; set; }
         public DbSet<NhatKySuDungModel> NhatKySuDungs { get; set; }
 
@@ -246,13 +247,25 @@ namespace educodeai_server.Data
                 .WithMany(b => b.BinhLuans)
                 .HasForeignKey(b => b.MaBinhLuanCha)
                 .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<BaiHocModel>()
+                .HasMany(b => b.VideoChapters)
+                .WithOne(c => c.BaiHoc)
+                .HasForeignKey(c => c.MaBaiHoc)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<VideoChapterModel>()
+                .HasMany(c => c.VideoQuizs)
+                .WithOne(q => q.Chapter)
+                .HasForeignKey(q => q.MaChapter)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ====== SEED DATA ======
             KhoaHocDuLieu.SeedKhoaHoc(modelBuilder);
             ChuongHocDuLieu.SeedChuongHoc(modelBuilder);
             BaiHocDuLieu.SeedBaiHoc(modelBuilder);
             NguoiDungDuLieu.SeedNguoiDung(modelBuilder);
+
+            
         }
     }
 }

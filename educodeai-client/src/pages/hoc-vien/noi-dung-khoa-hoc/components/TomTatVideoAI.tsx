@@ -57,20 +57,20 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
         }
     };
 
-    const handleLamMoi = () => {
-        Swal.fire({
-            title: 'Bạn muốn AI phân tích và tóm tắt lại từ đầu?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Có',
-            cancelButtonText: 'Hủy'
-        }).then(result => {
-            if (result.isConfirmed) {
-                localStorage.removeItem(storageKey);
-                xuLyTomTatVideo();
-            }
-        });
-    }
+    // const handleLamMoi = () => {
+    //     Swal.fire({
+    //         title: 'Bạn muốn AI phân tích và tóm tắt lại từ đầu?',
+    //         icon: 'question',
+    //         showCancelButton: true,
+    //         confirmButtonText: 'Có',
+    //         cancelButtonText: 'Hủy'
+    //     }).then(result => {
+    //         if (result.isConfirmed) {
+    //             localStorage.removeItem(storageKey);
+    //             xuLyTomTatVideo();
+    //         }
+    //     });
+    // }
 
     return (
         <div className="ai-summary-container">

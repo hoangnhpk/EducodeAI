@@ -111,7 +111,7 @@ const QuanLyNguoiDung = () => {
         Swal.fire('Lỗi', 'Không thể xóa người dùng.', 'error');
     }
 }}
-                onDoiTrangThai={async (u: NguoiDung, lyDo?: string) => {  // ← thêm type rõ ràng
+                onDoiTrangThai={async (u: NguoiDung) => {  // ← thêm type rõ ràng
     try {
         await NguoiDungService.thayDoiTrangThai(u.maNguoiDung);
         taiDanhSach();

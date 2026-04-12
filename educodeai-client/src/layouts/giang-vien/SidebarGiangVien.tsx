@@ -1,4 +1,4 @@
-import { MdDashboard, MdSchool, MdBook, MdEditNote, MdInsertChart } from 'react-icons/md';
+import { MdSchool, MdBook, MdEditNote } from 'react-icons/md';
 
 export default function SidebarGiangVien() {
   return (

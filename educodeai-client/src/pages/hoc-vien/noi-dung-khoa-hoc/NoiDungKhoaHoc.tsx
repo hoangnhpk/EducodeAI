@@ -27,6 +27,7 @@ const NoiDungKhoaHoc = () => {
     const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia' | 'quiz'>('hoc');
     const videoRef = useRef<NoiDungVideoRef>(null);
     const [hienGhiChuAI, setHienGhiChuAI] = useState(false);
+    const [hienSidebarMobile, setHienSidebarMobile] = useState(false); // Drawer danh sách bài trên mobile
 
     // Mảng lưu vết những video đã xem trong phiên này để mở khóa quiz
     const [videoDaXongLocal, setVideoDaXongLocal] = useState<number[]>([]);
@@ -239,10 +240,27 @@ const NoiDungKhoaHoc = () => {
                             templateCode: "# Viết code của bạn tại đây\n",
                             testCases: []
                         }}
-                        khiHoanThanh={(phanTram: number, daDat: boolean) => {
+                        khiHoanThanh={(_phanTram: number, daDat: boolean) => {
                             if (daDat) handleVideoCompleted(idBaiHoc);
                         }}
                     />
+                );
+            case 'Quiz':
+                return (
+                    <div style={{ height: '100%', overflowY: 'auto', backgroundColor: '#fff' }}>
+                        {baiHocHienTai.thongTinQuiz && (
+                            <BaiTapTracNghiem
+                                duLieu={{
+                                    ...baiHocHienTai.thongTinQuiz,
+                                    duLieuCauHoi: baiHocHienTai.thongTinQuiz.duLieuCauHoiJSON,
+                                    maBaiTap: baiHocHienTai.thongTinQuiz.maBaiTap
+                                }}
+                                khiHoanThanh={(diem, daDat, soCauDung, tongSoCau, chiTietTraLoi) =>
+                                    xuLyNopBaiTap(diem, daDat, soCauDung, tongSoCau, chiTietTraLoi)
+                                }
+                            />
+                        )}
+                    </div>
                 );
             default:
                 return <div className="p-5 text-center text-muted">Đang tải nội dung...</div>;
@@ -259,6 +277,27 @@ const NoiDungKhoaHoc = () => {
                 tongSoBai={tongSoBai}
                 onMoGhiChu={() => setHienSidebar(true)}
                 onMoGhiChuAI={() => setHienGhiChuAI(true)}
+            />
+
+            {/* Nút mở danh sách bài trên mobile */}
+            <button
+                className="cp-mobile-toggle-sidebar btn btn-sm"
+                onClick={() => setHienSidebarMobile(true)}
+                style={{
+                    position: 'fixed', bottom: 72, right: 16, zIndex: 250,
+                    background: '#f69050', color: '#fff', border: 'none',
+                    borderRadius: 50, width: 46, height: 46,
+                    boxShadow: '0 4px 14px rgba(246,144,80,0.45)',
+                    alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem'
+                }}
+            >
+                <i className="fas fa-list" />
+            </button>
+
+            {/* Overlay mờ khi drawer mở trên mobile */}
+            <div
+                className={`cp-drawer-overlay${hienSidebarMobile ? ' show' : ''}`}
+                onClick={() => setHienSidebarMobile(false)}
             />
 
             <main className="cp-shell">
@@ -341,7 +380,11 @@ const NoiDungKhoaHoc = () => {
                     idBaiHocHienTai={idBaiHoc}
                     tabActive={tabActive}
                     videoDaXongLocal={videoDaXongLocal}
-                    onChonBaiHoc={handleChonBaiHoc}
+                    onChonBaiHoc={(id, tab) => {
+                        handleChonBaiHoc(id, tab);
+                        setHienSidebarMobile(false); // Đóng drawer sau khi chọn bài
+                    }}
+                    className={hienSidebarMobile ? 'mobile-open' : ''}
                 />
             </main>
 
