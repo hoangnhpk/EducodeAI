@@ -16,11 +16,11 @@ namespace educodeai_server.Models
         public virtual BaiTapModel BaiTap { get; set; } = null!;
 
         [Required]
-        [Column(TypeName = "nvarchar(max)")]
+        [Column(TypeName = "text")]
         public required string NoiDungNopJSON { get; set; }
 
         public float DiemSo { get; set; }
         public bool TrangThai { get; set; } = false;
-        public DateTime NgayNop { get; set; } = DateTime.Now;
+        public DateTime NgayNop { get; set; } = DateTime.UtcNow;
     }
 }

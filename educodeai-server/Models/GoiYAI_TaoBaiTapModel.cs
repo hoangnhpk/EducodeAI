@@ -23,6 +23,6 @@ namespace educodeai_server.Models
         [StringLength(50)]
         public string TrangThai { get; set; } = null!;
 
-        public DateTime NgayTao { get; set; } = DateTime.Now;
+        public DateTime NgayTao { get; set; } = DateTime.UtcNow;
     }
 }
