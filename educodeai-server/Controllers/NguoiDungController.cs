@@ -92,7 +92,15 @@ namespace educodeai_server.Controllers
             {
                 message = "Đăng nhập thành công",
                 token = token,
-                user = new { user.MaNguoiDung, user.Email, user.TaiKhoan, user.HoTen, user.AnhDaiDien, user.VaiTro }
+                user = new { 
+                    maNguoiDung = user.MaNguoiDung, 
+                    id = user.MaNguoiDung,
+                    email = user.Email, 
+                    taiKhoan = user.TaiKhoan, 
+                    hoTen = user.HoTen, 
+                    anhDaiDien = user.AnhDaiDien, 
+                    vaiTro = user.VaiTro 
+                }
             });
         }
 
@@ -128,7 +136,15 @@ namespace educodeai_server.Controllers
             {
                 message = "Đăng nhập Google thành công",
                 token = token,
-                user = new { user.Email, user.TaiKhoan, user.HoTen, user.AnhDaiDien, user.MaNguoiDung }
+                user = new { 
+                    maNguoiDung = user.MaNguoiDung,
+                    id = user.MaNguoiDung,
+                    email = user.Email, 
+                    taiKhoan = user.TaiKhoan, 
+                    hoTen = user.HoTen, 
+                    anhDaiDien = user.AnhDaiDien,
+                    vaiTro = user.VaiTro
+                }
             });
         }
 

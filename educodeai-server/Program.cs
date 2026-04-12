@@ -59,6 +59,7 @@ builder.Services.AddScoped<IRedisService, RedisService>();
 // ==========================================
 // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
 // ==========================================
+builder.Services.AddHttpContextAccessor();
 // Thêm bộ nhớ tạm để lưu OTP mà không cần dùng Database
 builder.Services.AddMemoryCache();
 // Dịch vụ Xác thực và Captcha mới
@@ -175,6 +176,7 @@ app.UseCors("AllowReactApp");
 app.UseStaticFiles();
 
 app.UseAuthentication();
+app.UseSessionCheck();
 app.UseAuthorization();
 
 app.MapControllers();
