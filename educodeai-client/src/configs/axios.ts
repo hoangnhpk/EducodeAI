@@ -76,8 +76,31 @@ axiosClient.interceptors.response.use(
 
       if (!refreshToken) {
         isRefreshing = false;
-        localStorage.clear();
-        window.location.href = "/dang-nhap";
+        // Hiển thị thông báo và đếm ngược 3 giây
+        import("sweetalert2").then((Swal) => {
+          Swal.default.fire({
+            title: "Hết phiên đăng nhập!",
+            html: "Tài khoản của bạn đã được đăng xuất từ thiết bị khác hoặc phiên làm việc đã hết hạn. Hệ thống sẽ chuyển hướng sau <b>3</b> giây...",
+            icon: "warning",
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+              const b = Swal.default.getHtmlContainer()?.querySelector("b");
+              let timerInterval = setInterval(() => {
+                if (b) b.textContent = Math.ceil(Swal.default.getTimerLeft()! / 1000).toString();
+              }, 100);
+              (Swal as any)._timerInterval = timerInterval;
+            },
+            willClose: () => {
+              clearInterval((Swal as any)._timerInterval);
+            }
+          }).then(() => {
+            localStorage.clear();
+            window.location.href = "/dang-nhap";
+          });
+        });
         return Promise.reject(error);
       }
 
@@ -93,10 +116,35 @@ axiosClient.interceptors.response.use(
         axiosClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         processQueue(null, token);
         return axiosClient(originalRequest);
-      } catch (err) {
+      } catch (err: any) {
         processQueue(err, null);
-        localStorage.clear();
-        window.location.href = "/dang-nhap";
+        
+        // NẾU REFRESH TOKEN CŨNG LỖI (Ví dụ: do bị logout từ xa)
+        // Hiển thị thông báo và đếm ngược 3 giây để logout
+        import("sweetalert2").then((Swal) => {
+          Swal.default.fire({
+            title: "Hết phiên đăng nhập!",
+            html: "Phiên làm việc của bạn đã kết thúc hoặc đã bị đăng xuất từ thiết bị khác. Hệ thống sẽ chuyển hướng sau <b>3</b> giây...",
+            icon: "error",
+            timer: 3000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: () => {
+              const b = Swal.default.getHtmlContainer()?.querySelector("b");
+              let timerInterval = setInterval(() => {
+                if (b) b.textContent = Math.ceil(Swal.default.getTimerLeft()! / 1000).toString();
+              }, 100);
+              (Swal as any)._timerInterval = timerInterval;
+            },
+            willClose: () => {
+              clearInterval((Swal as any)._timerInterval);
+            }
+          }).then(() => {
+            localStorage.clear();
+            window.location.href = "/dang-nhap";
+          });
+        });
         return Promise.reject(err);
       } finally {
         isRefreshing = false;
