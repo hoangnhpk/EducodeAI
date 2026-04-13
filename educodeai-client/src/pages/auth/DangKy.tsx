@@ -153,10 +153,16 @@ const RegisterPage = () => {
     };
 
     return (
-        <div className="container-xxl py-5 mt-4">
+        <div className="min-vh-100 d-flex align-items-center justify-content-center py-5" 
+            style={{ 
+                backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/img/carousel-1.jpg")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed'
+            }}>
             <div className="container">
                 <div className="row justify-content-center">
-                    <div className="col-lg-6 shadow p-4 bg-white rounded-4" style={{ maxWidth: '500px' }}>
+                    <div className="col-lg-6 shadow-lg p-4 bg-white rounded-4 animate__animated animate__fadeIn" style={{ maxWidth: '500px' }}>
 
                         {errors.server && <div className="alert alert-danger small py-2">{errors.server}</div>}
 
