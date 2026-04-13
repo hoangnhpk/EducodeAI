@@ -40,11 +40,21 @@ namespace educodeai_server.Models
         [StringLength(500)]
         public string KyNangChinh { get; set; } = null!;  // Ví dụ: ["C#","SQL","REACT"]
 
+        [Range(10000, 15000)]
+        [Column(TypeName = "numeric(18,2)")]
+        public decimal GiaKhoaHoc { get; set; } = 10000;
+
+        [StringLength(10)]
+        public string DonViTienTe { get; set; } = "VND";
+
+        public bool ChoPhepMua { get; set; } = true;
+
         public DateTime NgayTao { get; set; } = DateTime.UtcNow;
 
         // Navigation
         public virtual ICollection<ChuongHocModel> ChuongHocs { get; set; } = null!;
         public virtual ICollection<DangKyKhoaHocModel> DangKyKhoaHocs { get; set; } = null!;
         public virtual ICollection<DanhGiaModel> DanhGias { get; set; } = null!;
+        public virtual ICollection<ChiTietDonHangModel> ChiTietDonHangs { get; set; } = null!;
     }
 }

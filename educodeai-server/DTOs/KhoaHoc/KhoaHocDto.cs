@@ -12,5 +12,7 @@
         public string TrinhDo { get; set; }
         public string KyNangChinh { get; set; }
         public bool KhoaHocDaDangKy { get; set; }
+        public decimal GiaKhoaHoc { get; set; }
+        public string DonViTienTe { get; set; }
     }
 }

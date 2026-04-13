@@ -1,5 +1,5 @@
 import { CheckCircle, XCircle, Trash2, MessageSquare, Star } from 'lucide-react';
-import type { ReviewItem } from './types';
+import type { ReviewItem } from './Types';
 import { formatDate } from './utils';
 import Swal from 'sweetalert2';
 

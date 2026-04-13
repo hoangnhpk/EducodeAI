@@ -16,6 +16,7 @@ import NotFound from "../pages/NotFound";
 import TrangChuHocVien from "@/pages/hoc-vien/trang-chu/TrangChu";
 import NoiDungKhoaHoc from "@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHoc";
 import ChiTietKhoaHoc from "../pages/hoc-vien/chi-tiet-khoa-hoc/ChiTietKhoaHoc";
+import MuaKhoaHoc from "../pages/hoc-vien/mua-khoa-hoc/MuaKhoaHoc";
 import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinhAI";
 import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
 import ChiTietLoTrinhAI from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/ChiTietLoTrinhAI";
@@ -67,6 +68,7 @@ export default function AppRouter() {
           }
         >
           <Route path="/yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
+          <Route path="/mua-khoa-hoc/:id" element={<MuaKhoaHoc />} />
           <Route path="/ho-so" element={<HoSoHocVienPage />} />
           <Route path="/bao-mat" element={<DoiMatKhau />} />
           <Route path="/thiet-bi" element={<QuanLyThietBi />} />

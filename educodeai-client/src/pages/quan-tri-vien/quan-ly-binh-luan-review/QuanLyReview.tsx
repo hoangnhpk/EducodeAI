@@ -3,7 +3,7 @@ import type {
   ThongKeReview,
   ReviewItem,
   ReviewFilterParams,
-} from './components/types';
+} from './components/Types';
 import { reviewService } from '../../../services/review.service';
 import ReviewStats from './components/ReviewStats';
 import ReviewFilters from './components/ReviewFilters';
