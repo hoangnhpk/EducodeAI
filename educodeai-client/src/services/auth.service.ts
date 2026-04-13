@@ -89,11 +89,12 @@ export const authService = {
   },
 
   // 9. ĐẶT LẠI MẬT KHẨU MỚI
-  resetPassword: async (payload: { Email: string, NewPassword: string }) => {
+  resetPassword: async (payload: { Email: string, NewPassword: string, OtpCode: string }) => {
     const { maThietBi, tenThietBi } = getDeviceInfo();
     return await api.post('/api/XacThuc/dat-lai-mat-khau', {
         email: payload.Email,
-        matKhauMoi: payload.NewPassword,
+        NewPassword: payload.NewPassword, // Gửi đúng tên trường cho Backend
+        OtpCode: payload.OtpCode,
         maThietBi,
         tenThietBi
     });

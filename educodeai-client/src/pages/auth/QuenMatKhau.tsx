@@ -36,7 +36,8 @@ const QuenMatKhau: React.FC = () => {
         }
 
         setLoading(true);
-        setErrors({}); // Xóa lỗi cũ
+        setErrors({}); 
+        setOtp(''); // Reset OTP khi yêu cầu mã mới
         try {
             const res: any = await authService.forgotPasswordSendOtp(email);
             if (res) {
@@ -86,7 +87,7 @@ const QuenMatKhau: React.FC = () => {
             const response: any = await authService.resetPassword({
                 Email: email,
                 NewPassword: password,
-                // OtpCode: otp // Truyền OTP vào đây
+                OtpCode: otp // Truyền OTP vào đây
             });
 
             if (response && response.token) {
@@ -108,7 +109,7 @@ const QuenMatKhau: React.FC = () => {
     };
 
     return (
-        <div className="container-xxl py-2 mt-4">
+        <div className="container-xxl py-2 mt-4" translate="no">
             <div className="container">
                 <div className="row g-4 justify-content-center">
                     <form className="shadow p-4 bg-white rounded-4" style={{ maxWidth: '550px' }} onSubmit={(e) => e.preventDefault()}>
