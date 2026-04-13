@@ -19,7 +19,7 @@ const DoiMatKhau: React.FC = () => {
 
         setLoading(true);
         try {
-            await authService.yeuCauOtpDoiMatKhau();
+            await authService.requestOtpDoiMatKhau();
             Swal.fire({ icon: 'success', title: 'Đã gửi OTP', text: 'Mã OTP đã được gửi về Email của bạn', timer: 2000, showConfirmButton: false });
             setStep(2);
         } catch (error: any) {
