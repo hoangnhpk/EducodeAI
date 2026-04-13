@@ -1,5 +1,5 @@
 import { Search, Filter } from 'lucide-react';
-import type { ReviewFilterParams } from './types';
+import type { ReviewFilterParams } from './Types';
 
 interface Props {
   filters: ReviewFilterParams;
