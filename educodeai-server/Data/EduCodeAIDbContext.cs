@@ -15,7 +15,6 @@ namespace educodeai_server.Data
         // 16 bảng dữ liệu
         public DbSet<NguoiDungModel> NguoiDungs { get; set; }
         public DbSet<PhienDangNhapModel> PhienDangNhaps { get; set; }
-        public DbSet<NgonNguLapTrinhModel> NgonNguLapTrinhs { get; set; }
         public DbSet<KhoaHocModel> KhoaHocs { get; set; }
         public DbSet<ChuongHocModel> ChuongHocs { get; set; }
         public DbSet<BaiHocModel> BaiHocs { get; set; }
