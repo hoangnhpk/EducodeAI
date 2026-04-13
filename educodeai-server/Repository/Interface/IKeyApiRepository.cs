@@ -15,5 +15,6 @@ namespace educodeai_server.Repository.Interface
         Task<bool> DeleteKeyAsync(int id);
 
         Task<KeyAPIModel?> GetRawKeyForRedisAsync(int id);
+        Task<IEnumerable<KeyAPIModel>> GetActiveKeysAsync();
     }
 }

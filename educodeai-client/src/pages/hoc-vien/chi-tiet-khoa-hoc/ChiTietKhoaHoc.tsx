@@ -104,7 +104,7 @@ const ChiTietKhoaHoc = () => {
       setIsEnrolling(true);
 
       // Gọi API Đăng ký bạn vừa viết ở Backend
-      const response = await axios.post(
+      await axios.post(
         `https://localhost:7284/api/hocvien/chitietkhoahoc/dang-ky`, // <-- SỬA ĐÚNG ĐƯỜNG DẪN API ĐĂNG KÝ CỦA BẠN
         { maKhoaHoc: course.maKhoaHoc },
         {
