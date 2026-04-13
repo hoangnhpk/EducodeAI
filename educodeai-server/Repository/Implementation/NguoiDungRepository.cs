@@ -42,19 +42,43 @@ namespace educodeai_server.Repository.Implementation
         // 3. Tìm user theo Email (Dùng cho Quên mật khẩu)
         public async Task<NguoiDungModel?> GetUserByEmailAsync(string email)
         {
-            if (string.IsNullOrWhiteSpace(email)) return null;
-            return await _context.NguoiDungs
-                .FirstOrDefaultAsync(u => u.Email == email.Trim());
+            try
+            {
+                if (string.IsNullOrWhiteSpace(email)) return null;
+                return await _context.NguoiDungs
+                    .FirstOrDefaultAsync(u => u.Email == email.Trim());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Lỗi GetUserByEmailAsync: {ex.Message}");
+                if (ex.InnerException is System.Net.Sockets.SocketException || ex.Message.Contains("Socket"))
+                {
+                    throw new Exception("Lỗi kết nối đến Supabase (DNS/Socket 11004). Vui lòng kiểm tra lại kết nối mạng hoặc IPv6.");
+                }
+                return null;
+            }
         }
 
         // 4. MỚI: Tìm bằng Email HOẶC Tài khoản (Dùng để kiểm tra trùng lặp khi đăng ký)
         public async Task<NguoiDungModel?> GetUserByIdentifierAsync(string identifier)
         {
-            if (string.IsNullOrWhiteSpace(identifier)) return null;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(identifier)) return null;
 
-            var search = identifier.Trim().ToLower();
-            return await _context.NguoiDungs
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == search || u.TaiKhoan.ToLower() == search);
+                var search = identifier.Trim().ToLower();
+                return await _context.NguoiDungs
+                    .FirstOrDefaultAsync(u => u.Email.ToLower() == search || u.TaiKhoan.ToLower() == search);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Lỗi GetUserByIdentifierAsync: {ex.Message}");
+                if (ex.InnerException is System.Net.Sockets.SocketException || ex.Message.Contains("Socket"))
+                {
+                    throw new Exception("Lỗi kết nối đến Supabase (DNS/Socket 11004). Vui lòng kiểm tra lại kết nối mạng hoặc IPv6.");
+                }
+                return null;
+            }
         }
 
         // 5. Cập nhật thông tin user (Dùng cho Đổi mật khẩu)
