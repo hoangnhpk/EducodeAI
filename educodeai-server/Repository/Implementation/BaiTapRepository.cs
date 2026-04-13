@@ -22,7 +22,6 @@ namespace educodeai_server.Repository.Implementation
                     .ThenInclude(bh => bh.ChuongHoc)
                         .ThenInclude(ch => ch.KhoaHoc)
                 .Include(b => b.BaiTap_Quiz)
-                .Include(b => b.BaiTap_NgonNgus)
 
                 .Where(b => b.BaiHoc.ChuongHoc.KhoaHoc.MaGiangVien == maNguoiDung)
                 .Select(b => new DanhSachBaiTapDTO

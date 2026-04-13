@@ -1,4 +1,4 @@
-import { MdSettings, MdPeople, MdDashboard, MdRateReview, MdBuildCircle } from 'react-icons/md';
+import { MdSettings, MdPeople} from 'react-icons/md';
 import { NavLink } from 'react-router-dom'; // Dùng NavLink để tự động active cho xịn
 
 export default function SidebarQuanTriVien() {

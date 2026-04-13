@@ -283,7 +283,6 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
                     <div className="cp-quiz-options">
                         {cauHoiHienTai.LuaChon.map((luaChon, index) => {
                             // Map index (0,1,2,3) thành ký tự (A,B,C,D) để hiển thị cho đẹp
-                            const nhanDien = String.fromCharCode(65 + index); 
                             
                             return (
                                 <div

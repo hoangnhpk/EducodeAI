@@ -6,7 +6,7 @@ import ChiTietHocVien from './ChiTietHocVien';
 import ModalKhoaHoc from './ModalKhoaHoc';
 import PanelChuong from './PanelChuong';
 import Swal from 'sweetalert2';
-import { FaArrowLeft, FaEdit, FaUsers, FaBookOpen, FaStar, FaCheckCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaUsers, FaBookOpen} from 'react-icons/fa';
 
 type Tab = 'hoc-vien' | 'chuong-hoc';
 

@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import EduBanner from "./components/EduBanner";
 import { encodeId } from "@/utils/id-helper";
-import { ChatBot } from '@/pages/hoc-vien/tro-ly-hoi-dap-ai/TroLyAI';
-import { getUserId } from '@/utils/authHelper';
 interface IKhoaHoc {
     maKhoaHoc: number;
     tenKhoaHoc: string;

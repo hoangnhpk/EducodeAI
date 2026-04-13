@@ -20,7 +20,7 @@ const QuanLyPhienDangNhap: React.FC = () => {
     const fetchSessions = async () => {
         setLoading(true);
         try {
-            const res: any = await authService.getDanhSachThietBi();
+            const res: any = await authService.getDevices(""); // Pass empty string for current device if not needed or get actual one
             setSessions(res);
         } catch (error) {
             console.error(error);
@@ -34,7 +34,7 @@ const QuanLyPhienDangNhap: React.FC = () => {
         if (sessionId) setSelectedSessionId(sessionId);
         
         try {
-            await authService.yeuCauOtpDangXuatTuXa();
+            await authService.requestOtpDangXuatTuXa();
             setShowOtpDiv(true);
             Swal.fire({ icon: 'info', title: 'Xác minh', text: 'Mã OTP xác nhận đã được gửi đến Email của bạn!', timer: 2500, showConfirmButton: false });
         } catch (error: any) {
