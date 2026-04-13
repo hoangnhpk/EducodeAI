@@ -87,7 +87,7 @@ const QuenMatKhau: React.FC = () => {
             const response: any = await authService.resetPassword({
                 Email: email,
                 NewPassword: password,
-                // OtpCode: otp // Truyền OTP vào đây
+                OtpCode: otp // Truyền OTP vào đây
             });
 
             if (response && response.token) {
