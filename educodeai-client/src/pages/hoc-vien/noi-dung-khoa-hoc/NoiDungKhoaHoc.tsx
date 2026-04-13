@@ -276,7 +276,6 @@ const NoiDungKhoaHoc = () => {
                 soBaiDaHoc={soBaiDaHoc}
                 tongSoBai={tongSoBai}
                 onMoGhiChu={() => setHienSidebar(true)}
-                onMoGhiChuAI={() => setHienGhiChuAI(true)}
             />
 
             {/* Nút mở danh sách bài trên mobile */}

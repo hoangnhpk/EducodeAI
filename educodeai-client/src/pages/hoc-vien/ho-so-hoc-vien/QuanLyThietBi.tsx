@@ -28,13 +28,16 @@ const QuanLyThietBi: React.FC = () => {
 
     const handleLogoutRemote = (all: boolean, maPhien?: number) => {
         setLogoutAction({ all, ids: maPhien ? [maPhien] : [] });
+        setOtp(''); // Đảm bảo OTP luôn trống khi bắt đầu luồng mới
         Swal.fire({
             title: 'Xác minh bảo mật',
-            text: 'Để thực hiện đăng xuất từ xa, hệ thống sẽ gửi mã OTP về email của bạn.',
+            text: 'Hệ thống sẽ gửi mã OTP về email của bạn để thực hiện đăng xuất thiết bị.',
             icon: 'info',
             showCancelButton: true,
             confirmButtonText: 'Gửi OTP',
-            confirmButtonColor: '#fb873f'
+            cancelButtonText: 'Hủy',
+            confirmButtonColor: '#fb873f',
+            reverseButtons: true
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
@@ -48,19 +51,52 @@ const QuanLyThietBi: React.FC = () => {
     };
 
     const confirmLogoutRemote = async () => {
+        if (!otp || otp.length !== 6) {
+            Swal.fire('Lỗi', 'Vui lòng nhập đúng mã OTP 6 chữ số', 'error');
+            return;
+        }
+
         try {
             await authService.xacNhanDangXuatTuXa({
                 DangXuatTatCa: logoutAction.all,
                 DanhSachMaPhien: logoutAction.ids,
-                OtpCode: otp,
+                OtpCode: otp, 
                 CaptchaToken: "SKIP_CAPTCHA"
             });
-            Swal.fire('Thành công', 'Đã đăng xuất thiết bị từ xa!', 'success');
+            
             setShowOtpModal(false);
             setOtp('');
-            fetchDevices();
+
+            if (logoutAction.all) {
+                // Nếu đăng xuất tất cả -> Hiển thị thông báo và đếm ngược 3 giây
+                Swal.fire({
+                    title: 'Đã đăng xuất tất cả!',
+                    html: 'Tài khoản đã được đăng xuất khỏi mọi thiết bị. Hệ thống sẽ đăng xuất sau <b>3</b> giây...',
+                    icon: 'success',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        const b = Swal.getHtmlContainer()?.querySelector('b');
+                        let timerInterval = setInterval(() => {
+                            if (b) b.textContent = Math.ceil(Swal.getTimerLeft()! / 1000).toString();
+                        }, 100);
+                        (Swal as any)._timerInterval = timerInterval;
+                    },
+                    willClose: () => {
+                        clearInterval((Swal as any)._timerInterval);
+                    }
+                }).then(() => {
+                    localStorage.clear();
+                    window.location.href = '/dang-nhap';
+                });
+            } else {
+                Swal.fire('Thành công', 'Đã đăng xuất thiết bị từ xa!', 'success');
+                fetchDevices();
+            }
         } catch (error: any) {
-            Swal.fire('Lỗi', error.response?.data?.message || 'Mã OTP không đúng', 'error');
+            Swal.fire('Lỗi', error.response?.data?.message || 'Mã OTP không chính xác', 'error');
         }
     };
 
@@ -110,20 +146,55 @@ const QuanLyThietBi: React.FC = () => {
                 )}
             </div>
 
-            {/* Modal OTP */}
+            {/* Modal OTP - Tối ưu hóa để giảm giật lag */}
             {showOtpModal && (
-                <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1060 }}>
                     <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content border-0 rounded-4 shadow p-4">
+                        <div className="modal-content border-0 rounded-4 shadow-lg p-4">
                             <div className="text-center">
-                                <h4 className="fw-bold mb-3">Xác nhận OTP</h4>
-                                <p>Nhập mã OTP vừa được gửi đến email để thực hiện đăng xuất thiết bị.</p>
-                                <input type="text" className="form-control text-center fs-2 fw-bold mb-4" 
-                                    maxLength={6} value={otp} onChange={e => setOtp(e.target.value)} />
-                                <div className="d-flex gap-2">
-                                    <button className="btn btn-light flex-grow-1 rounded-pill py-2" onClick={() => setShowOtpModal(false)}>Hủy</button>
-                                    <button className="btn btn-primary flex-grow-1 rounded-pill py-2 text-white border-0" 
-                                        style={{ backgroundColor: '#fb873f' }} onClick={confirmLogoutRemote}>Xác nhận</button>
+                                <div className="mb-4">
+                                    <div className="bg-primary-subtle d-inline-block p-3 rounded-circle mb-3">
+                                        <i className="bi bi-shield-lock fs-2 text-primary" style={{ color: '#fb873f !important' }}></i>
+                                    </div>
+                                    <h4 className="fw-bold">Xác minh OTP</h4>
+                                    <p className="text-muted small">Nhập mã OTP 6 số đã được gửi đến email của bạn.</p>
+                                </div>
+                                
+                                <div className="mb-4">
+                                    <input 
+                                        type="text" 
+                                        className="form-control text-center fs-2 fw-bold rounded-3 border-2" 
+                                        style={{ 
+                                            letterSpacing: '8px', 
+                                            height: '70px',
+                                            borderColor: '#eee',
+                                            backgroundColor: '#f8f9fa'
+                                        }} 
+                                        maxLength={6} 
+                                        placeholder="000000"
+                                        value={otp} 
+                                        onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))} 
+                                    />
+                                </div>
+
+                                <div className="row g-3">
+                                    <div className="col-6">
+                                        <button 
+                                            className="btn btn-light w-100 rounded-pill py-3 fw-bold border" 
+                                            onClick={() => setShowOtpModal(false)}
+                                        >
+                                            Hủy bỏ
+                                        </button>
+                                    </div>
+                                    <div className="col-6">
+                                        <button 
+                                            className="btn btn-primary w-100 rounded-pill py-3 text-white border-0 fw-bold shadow-sm" 
+                                            style={{ backgroundColor: '#fb873f' }} 
+                                            onClick={confirmLogoutRemote}
+                                        >
+                                            Xác nhận
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

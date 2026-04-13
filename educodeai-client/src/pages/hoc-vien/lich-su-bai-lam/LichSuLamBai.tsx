@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "../../../layouts/hoc-vien/LichSuLamBai.css";
 
 type Course = {
