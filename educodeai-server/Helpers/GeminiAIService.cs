@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
+using educodeai_server.Repository.Interface;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace educodeai_server.Helpers
 {
@@ -15,15 +17,19 @@ namespace educodeai_server.Helpers
     {
         private readonly HttpClient _http;
         private readonly IRedisService _redisService;
+        private readonly IKeyApiRepository _keyApiRepo;
+        private readonly ILogger<GeminiAIService> _logger;
         private readonly string _secretKey;
 
         private static int _currentKeyIndex = 0;
         private static readonly object _lock = new object();
 
-        public GeminiAIService(HttpClient http, IConfiguration config, IRedisService redisService)
+        public GeminiAIService(HttpClient http, IConfiguration config, IRedisService redisService, IKeyApiRepository keyApiRepo, ILogger<GeminiAIService> logger)
         {
             _http = http;
             _redisService = redisService;
+            _keyApiRepo = keyApiRepo;
+            _logger = logger;
             _secretKey = config["ApiSecurity:SecretKey"] ?? throw new Exception("Chưa cấu hình SecretKey!");
         }
 
@@ -52,9 +58,99 @@ namespace educodeai_server.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Redis Error] Lỗi đọc Keys: {ex.Message}");
+                _logger.LogWarning(ex, "[Redis Error] Lỗi đọc Keys: {Message}", ex.Message);
             }
-            return validKeys.OrderBy(k => k).ToList();
+
+            // Nếu không có keys từ Redis, thử lấy từ database
+            if (validKeys.Count == 0)
+            {
+                try
+                {
+                    var dbKeys = await _keyApiRepo.GetActiveKeysAsync();
+                    foreach (var key in dbKeys)
+                    {
+                        if (key.TrangThai) // Chá kiá tra trang thái vì không có fields DaSuDungRequest
+                        {
+                            var redisKey = $"EduCodeAI:KeyPool:{key.ID}";
+                            
+                            // Äông bá key vào Redis/MemoryCache
+                            await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", key.MaKeyMaHoa);
+                            await _redisService.LuuHashAsync(redisKey, "HanMucRequest", key.HanMucRequest.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "HanMucToken", key.HanMucToken.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0"); // Bát dáu tù 0
+                            await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");  // Bát dáu tù 0
+                            await _redisService.LuuHashAsync(redisKey, "TrangThai", "true");
+                            
+                            validKeys.Add(redisKey);
+                        }
+                    }
+                    
+                    if (validKeys.Count > 0)
+                    {
+                        _logger.LogInformation("[Fallback] Đã tải {Count} keys từ database vào Redis/MemoryCache", validKeys.Count);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[Fallback Error] Không thể lấy keys từ database: {Message}", ex.Message);
+                }
+            }
+
+            // Sáp xep theo uu tiên: Key Chính (LoaiKey="Chinh") có ThuTuUuTien thap hon
+                var keyPriorities = new List<(string Key, int Priority)>();
+                
+                foreach (var k in validKeys)
+                {
+                    var parts = k.Split(':');
+                    if (parts.Length < 3 || !int.TryParse(parts[2], out int keyId)) 
+                    {
+                        keyPriorities.Add((k, int.MaxValue));
+                        continue;
+                    }
+                    
+                    try
+                    {
+                        var dbKey = await _keyApiRepo.GetByIdAsync(keyId);
+                        if (dbKey == null) 
+                        {
+                            keyPriorities.Add((k, int.MaxValue));
+                            continue;
+                        }
+                        
+                        // Key Chính có uu tiên cao hán (LoaiKey="Chinh" -> priority = 0)
+                        // Key Phú có uu tiên tháp hán (LoaiKey="Phu" -> priority = 1)
+                        int loaiKeyPriority = dbKey.LoaiKey == "Chinh" ? 0 : 1;
+                        
+                        // Tong priority = loaiKeyPriority * 1000 + ThuTuUuTien
+                        // Dáa này Key Chính luôn có uu tiên cao hán Key Phú
+                        int totalPriority = loaiKeyPriority * 1000 + dbKey.ThuTuUuTien;
+                        
+                        keyPriorities.Add((k, totalPriority));
+                    }
+                    catch
+                    {
+                        keyPriorities.Add((k, int.MaxValue));
+                    }
+                }
+                
+                var sortedKeys = keyPriorities
+                    .OrderBy(x => x.Priority)
+                    .Select(x => x.Key)
+                    .ToList();
+                
+                // Log thu tu uu tien de debug
+                if (sortedKeys.Any())
+                {
+                    _logger.LogInformation("[Key Priority] Sáp xep {Count} keys theo uu tiên:", sortedKeys.Count);
+                    foreach (var (key, priority) in keyPriorities.OrderBy(x => x.Priority))
+                    {
+                        var parts = key.Split(':');
+                        var keyId = parts.Length >= 3 ? parts[2] : "unknown";
+                        _logger.LogInformation("  Key {KeyId} - Priority: {Priority}", keyId, priority);
+                    }
+                }
+                
+                return sortedKeys;
         }
 
         private string NextRedisKey(List<string> keys)

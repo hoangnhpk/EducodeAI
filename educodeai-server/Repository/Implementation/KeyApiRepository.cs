@@ -156,5 +156,12 @@ namespace educodeai_server.Repository.Implementation
         {
             return await _context.KeyAPIs.FindAsync(id);
         }
+
+        public async Task<IEnumerable<KeyAPIModel>> GetActiveKeysAsync()
+        {
+            return await _context.KeyAPIs
+                .Where(k => k.TrangThai)
+                .ToListAsync();
+        }
     }
 }
