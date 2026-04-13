@@ -5,12 +5,10 @@ interface Props {
     tenKhoaHoc: string; 
     soBaiDaHoc: number; 
     tongSoBai: number; 
-    // Callback cho 2 loại ghi chú
     onMoGhiChu?: () => void;   // Mở sổ tay tự viết
-    onMoGhiChuAI?: () => void; // Mở danh sách tóm tắt AI
 }
 
-export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai, onMoGhiChu, onMoGhiChuAI }) => {
+export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai, onMoGhiChu }) => {
     // Logic vẽ vòng tròn tiến độ SVG
     const radius = 16; 
     const circumference = 2 * Math.PI * radius; 

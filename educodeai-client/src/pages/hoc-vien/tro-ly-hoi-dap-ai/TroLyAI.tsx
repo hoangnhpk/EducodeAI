@@ -127,7 +127,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
     };
 
     // 5. Hàm Lưu ghi chú AI
-    const handleSaveNote = async (noiDung: string, index: number) => {
+    const handleSaveNote = async (noiDung: string) => {
         if (!maBaiHoc) {
             Swal.fire({ icon: 'warning', text: "Bạn chỉ có thể lưu kiến thức khi đang ở trong một bài học cụ thể!" });
             return;
@@ -207,7 +207,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
 
                                     <button
                                         className={`btn-save-ai-note ${savedContents.includes(msg.NoiDung) ? 'saved' : ''}`}
-                                        onClick={() => handleSaveNote(msg.NoiDung, idx)}
+                                        onClick={() => handleSaveNote(msg.NoiDung)}
                                         title={savedContents.includes(msg.NoiDung) ? "Đã lưu vào sổ tay" : "Lưu câu trả lời này vào sổ tay"}
                                         style={savedContents.includes(msg.NoiDung) ? { backgroundColor: '#28a745', color: '#fff', borderColor: '#28a745', cursor: 'default', opacity: 0.9 } : {}}
                                     >
