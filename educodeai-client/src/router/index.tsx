@@ -33,7 +33,7 @@ import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 import QuanLyHocVienKhoaHoc from "../pages/giang-vien/quan-ly-hoc-vien/QuanLyHocVienKhoaHoc";
 import TaoLoTrinhAI from '../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI';
 // /* ===== ADMIN ===== */
-import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
+import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReviewMoi";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
 import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
 import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";

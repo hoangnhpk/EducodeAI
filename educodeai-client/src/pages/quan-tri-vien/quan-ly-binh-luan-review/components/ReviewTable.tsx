@@ -1,5 +1,6 @@
 import { CheckCircle, XCircle, Trash2, MessageSquare, Star } from 'lucide-react';
-import type { ReviewItem } from './types';
+import Swal from 'sweetalert2';
+import type { ReviewItem } from './Types';
 import { formatDate } from './utils';
 
 interface Props {
@@ -176,7 +177,7 @@ export default function ReviewTable({
                         showCancelButton: true,
                         confirmButtonText: 'Xóa',
                         cancelButtonText: 'Hủy'
-                      }).then(res => {
+                      }).then((res: any) => {
                         if (res.isConfirmed) onDelete(review.id, review.loai);
                       });
                     }}

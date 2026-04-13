@@ -1,5 +1,5 @@
 import { MessageSquare, Star, Clock, CheckCircle, XCircle } from 'lucide-react';
-import type { ThongKeReview } from './types';
+import type { ThongKeReview } from './Types';
 
 interface Props {
   data: ThongKeReview | null;

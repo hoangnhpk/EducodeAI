@@ -1,0 +1,287 @@
+import axiosInstance from '@/configs/axios';
+import type {
+  PagedResult,
+  ReviewFilterParams,
+  ReviewItem,
+  ReviewMutationResponse,
+  ReviewServiceResult,
+  ThongKeReview,
+} from '../pages/quan-tri-vien/quan-ly-binh-luan-review/components/ReviewAdmin.types';
+
+const mockSeed: ReviewItem[] = [
+  {
+    id: 1001,
+    loai: 'BinhLuan',
+    nguoiDung: {
+      id: 12,
+      ten: 'Nguyen Van An',
+      email: 'an.nguyen@example.com',
+      avatar: 'https://ui-avatars.com/api/?name=Nguyen+Van+An',
+    },
+    tieuDe: 'Bai 3: React State va Props',
+    noiDung: 'Noi dung bai hoc de hieu, nhung phan setState bat dong bo nen duoc bo sung them vi du thuc te.',
+    ngayTao: '2026-04-12T08:15:00Z',
+    trangThai: 'ChoDuyet',
+    lienKet: {
+      loaiDoiTuong: 'BaiHoc',
+      tenDoiTuong: 'React State va Props',
+      tenKhoaHoc: 'ReactJS tu co ban den nang cao',
+    },
+  },
+  {
+    id: 1002,
+    loai: 'BinhLuan',
+    nguoiDung: {
+      id: 18,
+      ten: 'Tran Thi Mai',
+      email: 'mai.tran@example.com',
+      avatar: 'https://ui-avatars.com/api/?name=Tran+Thi+Mai',
+    },
+    tieuDe: 'Bai 5: JWT Authentication',
+    noiDung: 'Can kiem tra lai vi du refresh token. Minh thay response tra ve chua mo ta ro thoi han het han.',
+    ngayTao: '2026-04-11T10:40:00Z',
+    trangThai: 'DaDuyet',
+    lienKet: {
+      loaiDoiTuong: 'BaiHoc',
+      tenDoiTuong: 'JWT Authentication',
+      tenKhoaHoc: 'NodeJS Backend API',
+    },
+  },
+  {
+    id: 2001,
+    loai: 'DanhGia',
+    nguoiDung: {
+      id: 26,
+      ten: 'Le Minh Khoa',
+      email: 'khoa.le@example.com',
+      avatar: 'https://ui-avatars.com/api/?name=Le+Minh+Khoa',
+    },
+    tieuDe: 'Khoa hoc Python co ban',
+    noiDung: 'Lo trinh rat ro rang, bai tap vua suc. Mong co them project tong hop cuoi khoa.',
+    soSao: 5,
+    ngayTao: '2026-04-10T15:30:00Z',
+    trangThai: 'DaDuyet',
+    lienKet: {
+      loaiDoiTuong: 'KhoaHoc',
+      tenDoiTuong: 'Python co ban',
+      tenKhoaHoc: 'Python co ban',
+    },
+  },
+  {
+    id: 2002,
+    loai: 'DanhGia',
+    nguoiDung: {
+      id: 30,
+      ten: 'Pham Gia Huy',
+      email: 'huy.pham@example.com',
+      avatar: 'https://ui-avatars.com/api/?name=Pham+Gia+Huy',
+    },
+    tieuDe: 'Khoa hoc HTML CSS',
+    noiDung: 'Noi dung on nhung chat luong hinh anh minh hoa chua dong deu, co bai rat mo.',
+    soSao: 3,
+    ngayTao: '2026-04-09T06:20:00Z',
+    trangThai: 'ChoDuyet',
+    lienKet: {
+      loaiDoiTuong: 'KhoaHoc',
+      tenDoiTuong: 'HTML CSS cho nguoi moi',
+      tenKhoaHoc: 'HTML CSS cho nguoi moi',
+    },
+  },
+  {
+    id: 2003,
+    loai: 'DanhGia',
+    nguoiDung: {
+      id: 31,
+      ten: 'Vo Bao Chau',
+      email: 'chau.vo@example.com',
+      avatar: 'https://ui-avatars.com/api/?name=Vo+Bao+Chau',
+    },
+    tieuDe: 'Khoa hoc Java nang cao',
+    noiDung: 'Noi dung review khong phu hop va mang tinh cong kich, can loai bo khoi he thong.',
+    soSao: 1,
+    ngayTao: '2026-04-08T13:05:00Z',
+    trangThai: 'TuChoi',
+    lienKet: {
+      loaiDoiTuong: 'KhoaHoc',
+      tenDoiTuong: 'Java nang cao',
+      tenKhoaHoc: 'Java nang cao',
+    },
+  },
+];
+
+let mockStore = [...mockSeed];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const shouldFallbackToMock = (error: unknown) =>
+  (error as { response?: { status?: number } })?.response?.status === 404;
+
+const calculateThongKe = (items: ReviewItem[]): ThongKeReview => {
+  const danhGiaItems = items.filter((item) => item.loai === 'DanhGia');
+
+  return {
+    tongBinhLuan: items.filter((item) => item.loai === 'BinhLuan').length,
+    tongDanhGia: danhGiaItems.length,
+    choDuyet: items.filter((item) => item.trangThai === 'ChoDuyet').length,
+    daDuyet: items.filter((item) => item.trangThai === 'DaDuyet').length,
+    tuChoi: items.filter((item) => item.trangThai === 'TuChoi').length,
+    danhGiaTrungBinh:
+      danhGiaItems.length > 0
+        ? danhGiaItems.reduce((sum, item) => sum + (item.soSao || 0), 0) / danhGiaItems.length
+        : 0,
+    phanBoSao: {
+      star1: danhGiaItems.filter((item) => item.soSao === 1).length,
+      star2: danhGiaItems.filter((item) => item.soSao === 2).length,
+      star3: danhGiaItems.filter((item) => item.soSao === 3).length,
+      star4: danhGiaItems.filter((item) => item.soSao === 4).length,
+      star5: danhGiaItems.filter((item) => item.soSao === 5).length,
+    },
+  };
+};
+
+const applyFilters = (items: ReviewItem[], filters?: ReviewFilterParams) => {
+  let result = [...items];
+
+  if (filters?.loai && filters.loai !== 'TatCa') {
+    result = result.filter((item) => item.loai === filters.loai);
+  }
+
+  if (filters?.trangThai && filters.trangThai !== 'TatCa') {
+    result = result.filter((item) => item.trangThai === filters.trangThai);
+  }
+
+  if (filters?.soSao && filters.soSao !== 'TatCa') {
+    result = result.filter((item) => item.loai === 'DanhGia' && item.soSao === filters.soSao);
+  }
+
+  if (filters?.search?.trim()) {
+    const keyword = filters.search.trim().toLowerCase();
+    result = result.filter((item) =>
+      [
+        item.nguoiDung.ten,
+        item.nguoiDung.email,
+        item.tieuDe,
+        item.noiDung,
+        item.lienKet.tenKhoaHoc,
+        item.lienKet.tenDoiTuong,
+      ]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(keyword))
+    );
+  }
+
+  result.sort((a, b) => new Date(b.ngayTao).getTime() - new Date(a.ngayTao).getTime());
+  return result;
+};
+
+const paginate = (items: ReviewItem[], page = 1, pageSize = 10): PagedResult<ReviewItem> => ({
+  data: items.slice((page - 1) * pageSize, page * pageSize),
+  total: items.length,
+  page,
+  pageSize,
+  totalPages: Math.max(1, Math.ceil(items.length / pageSize)),
+});
+
+const buildMockReviews = async (
+  filters?: ReviewFilterParams
+): Promise<ReviewServiceResult<PagedResult<ReviewItem>>> => {
+  await sleep(180);
+  const filtered = applyFilters(mockStore, filters);
+  return {
+    source: 'mock',
+    data: paginate(filtered, filters?.page || 1, filters?.pageSize || 10),
+  };
+};
+
+const buildMockThongKe = async (): Promise<ReviewServiceResult<ThongKeReview>> => {
+  await sleep(120);
+  return { source: 'mock', data: calculateThongKe(mockStore) };
+};
+
+const updateMockStatus = async (
+  id: number,
+  trangThai: ReviewItem['trangThai']
+): Promise<ReviewServiceResult<ReviewMutationResponse>> => {
+  await sleep(120);
+  mockStore = mockStore.map((item) => (item.id === id ? { ...item, trangThai } : item));
+  return { source: 'mock', data: { success: true, message: 'Cap nhat thanh cong' } };
+};
+
+const removeMockReview = async (
+  id: number
+): Promise<ReviewServiceResult<ReviewMutationResponse>> => {
+  await sleep(120);
+  mockStore = mockStore.filter((item) => item.id !== id);
+  return { source: 'mock', data: { success: true, message: 'Da xoa thanh cong' } };
+};
+
+export const reviewAdminService = {
+  async getThongKe(): Promise<ReviewServiceResult<ThongKeReview>> {
+    try {
+      const data = await axiosInstance.get<ThongKeReview>('api/admin/reviews/thong-ke');
+      return { source: 'api', data };
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) throw error;
+      return buildMockThongKe();
+    }
+  },
+
+  async getReviews(
+    params?: ReviewFilterParams
+  ): Promise<ReviewServiceResult<PagedResult<ReviewItem>>> {
+    try {
+      const data = await axiosInstance.get<PagedResult<ReviewItem>>('api/admin/reviews', { params });
+      return { source: 'api', data };
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) throw error;
+      return buildMockReviews(params);
+    }
+  },
+
+  async approveReview(
+    id: number,
+    loai: ReviewItem['loai']
+  ): Promise<ReviewServiceResult<ReviewMutationResponse>> {
+    try {
+      const data = await axiosInstance.put<ReviewMutationResponse>(
+        `api/admin/reviews/${loai.toLowerCase()}/${id}/approve`
+      );
+      return { source: 'api', data };
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) throw error;
+      return updateMockStatus(id, 'DaDuyet');
+    }
+  },
+
+  async rejectReview(
+    id: number,
+    loai: ReviewItem['loai']
+  ): Promise<ReviewServiceResult<ReviewMutationResponse>> {
+    try {
+      const data = await axiosInstance.put<ReviewMutationResponse>(
+        `api/admin/reviews/${loai.toLowerCase()}/${id}/reject`
+      );
+      return { source: 'api', data };
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) throw error;
+      return updateMockStatus(id, 'TuChoi');
+    }
+  },
+
+  async deleteReview(
+    id: number,
+    loai: ReviewItem['loai']
+  ): Promise<ReviewServiceResult<ReviewMutationResponse>> {
+    try {
+      const data = await axiosInstance.delete<ReviewMutationResponse>(
+        `api/admin/reviews/${loai.toLowerCase()}/${id}`
+      );
+      return { source: 'api', data };
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) throw error;
+      return removeMockReview(id);
+    }
+  },
+};
+
+export default reviewAdminService;
