@@ -73,14 +73,14 @@ namespace educodeai_server.Services.Implementation
 
         public string GenerateJwtToken(NguoiDungModel user)
         {
-            // Logic tạo Token giữ nguyên như bạn đã viết...
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new[] {
                 new Claim(ClaimTypes.Email, user.Email), 
-    
                 new Claim(ClaimTypes.NameIdentifier, user.MaNguoiDung.ToString()),
-
+                new Claim("id", user.MaNguoiDung.ToString()),
+                new Claim("MaNguoiDung", user.MaNguoiDung.ToString()),
+                new Claim(ClaimTypes.Role, user.VaiTro == 0 ? "Admin" : (user.VaiTro == 1 ? "GiangVien" : "HocVien")),
                 new Claim(ClaimTypes.Name, user.HoTen ?? "")
             };
             var token = new JwtSecurityToken(
