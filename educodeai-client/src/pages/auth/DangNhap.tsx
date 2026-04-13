@@ -122,7 +122,7 @@ const DangNhap: React.FC = () => {
 
     return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <div className="container-xxl py-5 mt-4">
+            <div className="container-xxl py-5 mt-4" translate="no">
                 <div className="container">
                     <div className="row g-4 justify-content-center">
                         <div className="col-lg-5 shadow p-4 bg-white rounded-4">
@@ -130,7 +130,7 @@ const DangNhap: React.FC = () => {
                             {step === 1 ? (
                                 <form onSubmit={handleLogin} noValidate>
                                     <div className="text-center mb-4">
-                                        <Link to="/" className="d-flex align-items-center justify-content-center text-decoration-none mb-3">
+                                        <Link to="/" className="d-flex align-items-center justify-content-center text-decoration-none mb-3" translate="no">
                                             <p className="m-0 fw-bold text-dark" style={{ fontSize: 25 }}>
                                                 EDUCODE<span style={{ color: "#fb873f" }}>AI</span>
                                             </p>
