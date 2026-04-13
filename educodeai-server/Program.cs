@@ -84,6 +84,7 @@ builder.Services.AddScoped<IXacThucService, XacThucService>();
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
+builder.Services.AddScoped<IThanhToanKhoaHocService, ThanhToanKhoaHocService>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();

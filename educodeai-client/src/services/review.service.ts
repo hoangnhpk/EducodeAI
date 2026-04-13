@@ -5,7 +5,7 @@ import type {
   ReviewFilterParams,
   PagedResult,
   ReviewItem,
-} from '../pages/quan-tri-vien/quan-ly-binh-luan-review/components/types';
+} from '../pages/quan-tri-vien/quan-ly-binh-luan-review/components/Types';
 
 // ==================== MOCK DATA ====================
 

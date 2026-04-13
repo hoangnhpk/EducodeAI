@@ -55,6 +55,8 @@ namespace educodeai_server.Models
         public virtual ICollection<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; } = null!;
         public virtual ICollection<KetQuaLamBaiModel> BaiNops { get; set; } = null!;
         public virtual ICollection<LoTrinhAIModel> LoTrinhAIs { get; set; } = null!;
+        public virtual ICollection<DonHangKhoaHocModel> DonHangKhoaHocs { get; set; } = null!;
+        public virtual ICollection<DoanhThuGiangVienModel> DoanhThuGiangViens { get; set; } = null!;
 
         // Navigation mới cho tính năng quản lý thiết bị
         public virtual ICollection<PhienDangNhapModel> DanhSachPhienDangNhap { get; set; } = new List<PhienDangNhapModel>();
