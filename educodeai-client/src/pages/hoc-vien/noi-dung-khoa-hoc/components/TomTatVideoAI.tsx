@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '@/configs/axios';
 import ReactMarkdown from 'react-markdown';
-import Swal from 'sweetalert2';
 // THÊM 2 DÒNG IMPORT NÀY VÀO ĐÂY:
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
