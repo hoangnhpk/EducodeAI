@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import './QuanLyLoTrinh.css';
 
 interface KhoaHocCon {
@@ -17,7 +17,7 @@ interface LoTrinhAI {
 
 const QuanLyLoTrinh = () => {
     const [danhSach, setDanhSach] = useState<LoTrinhAI[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [, setIsLoading] = useState<boolean>(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     
     // State phân biệt đang "Thêm mới" hay "Chỉnh sửa"
