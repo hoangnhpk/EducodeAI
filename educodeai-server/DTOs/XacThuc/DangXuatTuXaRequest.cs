@@ -1,18 +1,20 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace educodeai_server.DTOs.XacThuc
 {
     public class DangXuatTuXaRequest
     {
-        [Required(ErrorMessage = "Thiếu mã xác minh Captcha.")]
-        public string CaptchaToken { get; set; }
+        // Gỡ bỏ Captcha hoàn toàn
+        public string? CaptchaToken { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng nhập mã OTP.")]
-        public string OtpCode { get; set; }
+        [JsonPropertyName("OtpCode")]
+        [JsonProperty("OtpCode")]
+        public string? OtpCode { get; set; }
 
-        public bool DangXuatTatCa { get; set; } // True: Xóa hết thiết bị khác. False: Xóa theo danh sách.
+        public bool DangXuatTatCa { get; set; } 
 
-        public List<int>? DanhSachMaPhien { get; set; } // Chứa ID các phiên bị chọn đăng xuất
+        public List<int>? DanhSachMaPhien { get; set; } 
     }
 }
