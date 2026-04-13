@@ -109,10 +109,16 @@ const QuenMatKhau: React.FC = () => {
     };
 
     return (
-        <div className="container-xxl py-2 mt-4" translate="no">
+        <div className="min-vh-100 d-flex align-items-center justify-content-center py-5" 
+            style={{ 
+                backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/img/carousel-1.jpg")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed'
+            }}>
             <div className="container">
                 <div className="row g-4 justify-content-center">
-                    <form className="shadow p-4 bg-white rounded-4" style={{ maxWidth: '550px' }} onSubmit={(e) => e.preventDefault()}>
+                    <form className="shadow-lg p-4 bg-white rounded-4 animate__animated animate__fadeIn" style={{ maxWidth: '550px' }} onSubmit={(e) => e.preventDefault()}>
                         {step === 'forgot' ? (
                             <div id="step-forgot">
                                 <div className="text-center mb-4">

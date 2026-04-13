@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../pages/auth/ProtectedRoute"; 
 
 import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
@@ -38,6 +38,18 @@ import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNgu
 import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
 import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
 
+// Component để điều hướng trang chủ dựa trên Role
+const HomeRedirect = () => {
+  const userRaw = localStorage.getItem('user_info');
+  if (!userRaw) return <TrangChuHocVien />;
+
+  const user = JSON.parse(userRaw);
+  const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
+
+  if (role === 0) return <Navigate to="/quan-tri-vien" replace />;
+  if (role === 1) return <Navigate to="/giang-vien" replace />;
+  return <TrangChuHocVien />;
+};
 
 export default function AppRouter() {
   return (
@@ -51,7 +63,7 @@ export default function AppRouter() {
         <Route path="/quen-mat-khau" element={<QuenMatKhau />} />
 
         <Route element={<LayoutHocVien />}>
-          <Route path="/" element={<TrangChuHocVien />} />
+          <Route path="/" element={<HomeRedirect />} />
           <Route path="/khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
         </Route>
 
