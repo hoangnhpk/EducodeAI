@@ -13,10 +13,14 @@ namespace educodeai_server.Controllers.HocVien
     public class ThanhToanKhoaHocController : ControllerBase
     {
         private readonly IThanhToanKhoaHocService _thanhToanKhoaHocService;
+        private readonly IRutTienGiangVienService _rutTienGiangVienService;
 
-        public ThanhToanKhoaHocController(IThanhToanKhoaHocService thanhToanKhoaHocService)
+        public ThanhToanKhoaHocController(
+            IThanhToanKhoaHocService thanhToanKhoaHocService,
+            IRutTienGiangVienService rutTienGiangVienService)
         {
             _thanhToanKhoaHocService = thanhToanKhoaHocService;
+            _rutTienGiangVienService = rutTienGiangVienService;
         }
 
         [HttpGet("{maKhoaHoc:int}")]
@@ -113,8 +117,9 @@ namespace educodeai_server.Controllers.HocVien
         {
             try
             {
-                bool ketQua = await _thanhToanKhoaHocService.XuLyThongBaoSePayAsync(duLieuWebhook);
-                return Ok(new { thanhCong = ketQua });
+                bool ketQuaThanhToanKhoaHoc = await _thanhToanKhoaHocService.XuLyThongBaoSePayAsync(duLieuWebhook);
+                bool ketQuaRutTien = await _rutTienGiangVienService.XuLyWebhookRutTienAsync(duLieuWebhook);
+                return Ok(new { thanhCong = ketQuaThanhToanKhoaHoc || ketQuaRutTien });
             }
             catch (Exception ex)
             {

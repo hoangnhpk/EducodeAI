@@ -39,6 +39,7 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
         public DbSet<GiaoDichThanhToanModel> GiaoDichThanhToans { get; set; }
         public DbSet<MaGiamGiaModel> MaGiamGias { get; set; }
         public DbSet<DoanhThuGiangVienModel> DoanhThuGiangViens { get; set; }
+        public DbSet<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -66,6 +67,8 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
             modelBuilder.Entity<DonHangKhoaHocModel>().HasIndex(d => d.IdempotencyKey).IsUnique();
             modelBuilder.Entity<GiaoDichThanhToanModel>().HasIndex(g => g.MaThamChieuNgoai).IsUnique();
             modelBuilder.Entity<MaGiamGiaModel>().HasIndex(v => v.Code).IsUnique();
+            modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.NoiDungChuyenKhoan).IsUnique();
+            modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.MaGiaoDichSePay).IsUnique();
 
             // ====== RELATIONSHIPS CONFIGURATION ======
 
@@ -134,6 +137,18 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
                 .HasMany(n => n.DoanhThuGiangViens)
                 .WithOne(dt => dt.GiangVien)
                 .HasForeignKey(dt => dt.MaGiangVien)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.YeuCauRutTienGiangViens)
+                .WithOne(x => x.GiangVien)
+                .HasForeignKey(x => x.MaGiangVien)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.YeuCauDaDuyets)
+                .WithOne(x => x.QuanTriVienDuyet)
+                .HasForeignKey(x => x.MaQuanTriVienDuyet)
                 .OnDelete(DeleteBehavior.NoAction);
 
             // KhoaHocModel relationships
@@ -251,6 +266,9 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
                 .WithOne(g => g.DonHang)
                 .HasForeignKey(g => g.MaDonHang)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<YeuCauRutTienGiangVienModel>()
+                .ToTable(t => t.HasCheckConstraint("CK_YeuCauRutTienGiangVien_SoTienYeuCau_Duong", "\"SoTienYeuCau\" > 0"));
 
             // ====== SEED DATA ======
             KhoaHocDuLieu.SeedKhoaHoc(modelBuilder);
