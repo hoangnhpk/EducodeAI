@@ -76,13 +76,13 @@ namespace educodeai_server.Services.Implementation
             return await _khoaHocRepository.DeleteGhiChuAI(id);
         }
 
-        public async Task<object> LayThongKeVaDanhSachAsync(int maKhoaHoc)
+        public async Task<object> LayThongKeVaDanhSachAsync(int maKhoaHoc, int maNguoiDung)
         {
-            var danhSachRaw = await _khoaHocRepository.LayDanhSachTheoKhoaHocAsync(maKhoaHoc);
+            var danhSachRaw = await _khoaHocRepository.LayDanhSachTheoKhoaHocAsync(maKhoaHoc, maNguoiDung);
+            var danhSachCongKhai = danhSachRaw.Where(x => x.TrangThai == "DaDuyet").ToList();
 
-            var tongSo = danhSachRaw.Count;
-            // Tính trung bình cộng số sao, làm tròn 1 chữ số thập phân
-            var trungBinh = tongSo > 0 ? Math.Round(danhSachRaw.Average(x => x.SoSao), 1) : 0;
+            var tongSo = danhSachCongKhai.Count;
+            var trungBinh = tongSo > 0 ? Math.Round(danhSachCongKhai.Average(x => x.SoSao), 1) : 0;
 
             var thongKe = new
             {
@@ -90,11 +90,11 @@ namespace educodeai_server.Services.Implementation
                 TongSo = tongSo,
                 TyLe = new
                 {
-                    sao5 = tongSo > 0 ? (danhSachRaw.Count(x => x.SoSao == 5) * 100) / tongSo : 0,
-                    sao4 = tongSo > 0 ? (danhSachRaw.Count(x => x.SoSao == 4) * 100) / tongSo : 0,
-                    sao3 = tongSo > 0 ? (danhSachRaw.Count(x => x.SoSao == 3) * 100) / tongSo : 0,
-                    sao2 = tongSo > 0 ? (danhSachRaw.Count(x => x.SoSao == 2) * 100) / tongSo : 0,
-                    sao1 = tongSo > 0 ? (danhSachRaw.Count(x => x.SoSao == 1) * 100) / tongSo : 0,
+                    sao5 = tongSo > 0 ? (danhSachCongKhai.Count(x => x.SoSao == 5) * 100) / tongSo : 0,
+                    sao4 = tongSo > 0 ? (danhSachCongKhai.Count(x => x.SoSao == 4) * 100) / tongSo : 0,
+                    sao3 = tongSo > 0 ? (danhSachCongKhai.Count(x => x.SoSao == 3) * 100) / tongSo : 0,
+                    sao2 = tongSo > 0 ? (danhSachCongKhai.Count(x => x.SoSao == 2) * 100) / tongSo : 0,
+                    sao1 = tongSo > 0 ? (danhSachCongKhai.Count(x => x.SoSao == 1) * 100) / tongSo : 0,
                 }
             };
 
@@ -127,7 +127,8 @@ namespace educodeai_server.Services.Implementation
                 MaNguoiDung = yeuCau.MaNguoiDung,
                 SoSao = yeuCau.SoSao,
                 NhanXet = yeuCau.NhanXet,
-                NgayDanhGia = DateTime.Now
+                NgayDanhGia = DateTime.Now,
+                TrangThai = "ChoDuyet"
             };
 
             return await _khoaHocRepository.ThemDanhGiaAsync(model);
