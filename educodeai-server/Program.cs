@@ -11,6 +11,7 @@ using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
@@ -85,6 +86,17 @@ builder.Services.AddScoped<IXacThucService, XacThucService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
 builder.Services.AddScoped<IThanhToanKhoaHocService, ThanhToanKhoaHocService>();
+builder.Services.AddScoped<IRutTienGiangVienService, RutTienGiangVienService>();
+builder.Services.Configure<VietQrLookupOptions>(builder.Configuration.GetSection("VietQrLookup"));
+builder.Services.AddHttpClient<IVietQrLookupApiService, VietQrLookupApiService>((sp, client) =>
+{
+    var opt = sp.GetRequiredService<IOptions<VietQrLookupOptions>>().Value;
+    var baseUrl = string.IsNullOrWhiteSpace(opt.BaseUrl)
+        ? "https://api.vietqr.io/v2"
+        : opt.BaseUrl.TrimEnd('/');
+    client.BaseAddress = new Uri(baseUrl + "/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
