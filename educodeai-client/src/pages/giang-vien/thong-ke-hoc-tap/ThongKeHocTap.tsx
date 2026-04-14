@@ -149,7 +149,7 @@ export default function ThongKeHocTap() {
 
         <StatCard
           title="KHÓA HỌC ĐANG DẠY"
-          value={overview?.soKhoaHocDangDay || 0}
+          value={String(overview?.soKhoaHocDangDay || 0)}
           subtitle="Khóa học đang hoạt động"
           icon={BookOpen}
           gradient="icon-blue"
@@ -157,7 +157,7 @@ export default function ThongKeHocTap() {
 
         <StatCard
           title="TỔNG BÀI TẬP"
-          value={overview?.tongBaiTap || 0}
+          value={String(overview?.tongBaiTap || 0)}
           subtitle="Tổng số bài tập đã giao"
           icon={ClipboardCheck}
           gradient="icon-yellow"

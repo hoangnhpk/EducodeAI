@@ -236,22 +236,6 @@ namespace educodeai_server.Controllers
         #region 5. API ĐỔI MẬT KHẨU
 
         [Authorize]
-        [HttpPost("yeu-cau-otp-doi-mat-khau")]
-        public async Task<IActionResult> YeuCauOtpDoiMatKhau()
-        {
-            try
-            {
-                int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
-                await _xacThucService.YeuCauOtpDoiMatKhauAsync(userId);
-                return Ok(new { message = "Mã OTP đã được gửi đến email của bạn." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [Authorize]
         [HttpPost("doi-mat-khau")]
         public async Task<IActionResult> DoiMatKhau([FromBody] DoiMatKhauRequest request)
         {
