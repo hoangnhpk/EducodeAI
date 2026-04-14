@@ -9,12 +9,6 @@ interface Props {
   onRefresh: () => void;
 }
 
-const loaiOptions = [
-  { value: 'TatCa', label: 'Tat ca' },
-  { value: 'BinhLuan', label: 'Binh luan' },
-  { value: 'DanhGia', label: 'Danh gia' },
-] as const;
-
 export default function ReviewAdminFilters({
   filters,
   source,
@@ -33,7 +27,7 @@ export default function ReviewAdminFilters({
           <Filter size={18} />
           <div>
             <h3>Bo loc va xu ly</h3>
-            <p>Tim nhanh noi dung can duyet theo loai, trang thai va muc sao.</p>
+            <p>Tim nhanh danh gia can xu ly theo trang thai, so sao va noi dung.</p>
           </div>
         </div>
 
@@ -53,7 +47,7 @@ export default function ReviewAdminFilters({
           <Search size={18} />
           <input
             type="text"
-            placeholder="Tim theo nguoi dung, tieu de, khoa hoc..."
+            placeholder="Tim theo hoc vien, khoa hoc, noi dung danh gia..."
             value={filters.search || ''}
             onChange={(e) => handleChange('search', e.target.value)}
           />
@@ -92,7 +86,6 @@ export default function ReviewAdminFilters({
             className="qtrv-reset-btn"
             onClick={() =>
               onFilterChange({
-                loai: 'TatCa',
                 trangThai: 'TatCa',
                 soSao: 'TatCa',
                 search: '',
@@ -104,19 +97,6 @@ export default function ReviewAdminFilters({
             Dat lai
           </button>
         </div>
-      </div>
-
-      <div className="qtrv-tab-row">
-        {loaiOptions.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            className={`qtrv-tab-btn ${filters.loai === option.value ? 'active' : ''}`}
-            onClick={() => handleChange('loai', option.value)}
-          >
-            {option.label}
-          </button>
-        ))}
       </div>
     </section>
   );

@@ -9,7 +9,7 @@ import type {
 
 // ==================== MOCK DATA ====================
 
-const mockBinhLuan: BinhLuan[] = [
+const mockBinhLuan: (BinhLuan & { maKhoaHoc: number })[] = [
   {
     maBinhLuan: 1,
     maNguoiDung: 101,
@@ -21,6 +21,7 @@ const mockBinhLuan: BinhLuan[] = [
     maBinhLuanCha: null,
     ngayTao: '2025-01-20T10:30:00',
     trangThai: 'ChoDuyet',
+    maKhoaHoc: 301,
   },
   {
     maBinhLuan: 2,
@@ -33,6 +34,7 @@ const mockBinhLuan: BinhLuan[] = [
     maBinhLuanCha: null,
     ngayTao: '2025-01-21T14:20:00',
     trangThai: 'DaDuyet',
+    maKhoaHoc: 301,
   },
   {
     maBinhLuan: 3,
@@ -45,58 +47,36 @@ const mockBinhLuan: BinhLuan[] = [
     maBinhLuanCha: null,
     ngayTao: '2025-01-22T09:15:00',
     trangThai: 'TuChoi',
+    maKhoaHoc: 301,
   },
+  ...Array.from({ length: 10 }, (_, i) => ({
+    maBinhLuan: 10 + i,
+    maNguoiDung: 200 + i,
+    tenNguoiDung: `Học viên ${i + 1}`,
+    avatarUrl: `https://ui-avatars.com/api/?name=Student+${i + 1}`,
+    maBaiHoc: 201 + (i % 3),
+    tenBaiHoc: `Bài học nâng cao phần ${i + 1}`,
+    noiDung: `Nội dung phản hồi thứ ${i + 1} của học viên về bài học này.`,
+    maBinhLuanCha: null,
+    ngayTao: new Date(Date.now() - i * 86400000).toISOString(),
+    trangThai: (i % 3 === 0 ? 'ChoDuyet' : 'DaDuyet') as any,
+    maKhoaHoc: 301 + (i % 3),
+  }))
 ];
 
 const mockDanhGia: DanhGia[] = [
-  {
-    maDanhGia: 1,
-    maNguoiDung: 101,
-    tenNguoiDung: 'Nguyễn Văn A',
-    avatarUrl: 'https://ui-avatars.com/api/?name=Nguyen+Van+A',
-    maKhoaHoc: 301,
-    tenKhoaHoc: 'Khóa học Python cơ bản',
-    soSao: 5,
-    nhanXet: 'Khóa học xuất sắc! Nội dung chi tiết, dễ hiểu. Rất đáng để học.',
-    ngayDanhGia: '2025-01-23T16:45:00',
-    trangThai: 'DaDuyet',
-  },
-  {
-    maDanhGia: 2,
-    maNguoiDung: 102,
-    tenNguoiDung: 'Trần Thị B',
-    avatarUrl: 'https://ui-avatars.com/api/?name=Tran+Thi+B',
-    maKhoaHoc: 302,
-    tenKhoaHoc: 'Khóa học JavaScript nâng cao',
-    soSao: 4,
-    nhanXet: 'Khóa học tốt nhưng hơi khó với người mới bắt đầu.',
-    ngayDanhGia: '2025-01-24T11:30:00',
-    trangThai: 'ChoDuyet',
-  },
-  {
-    maDanhGia: 3,
-    maNguoiDung: 103,
-    tenNguoiDung: 'Lê Minh C',
-    avatarUrl: 'https://ui-avatars.com/api/?name=Le+Minh+C',
-    maKhoaHoc: 303,
-    tenKhoaHoc: 'Khóa học React từ đầu',
-    soSao: 1,
-    nhanXet: 'Khóa học quá tệ, lãng phí tiền!!!',
-    ngayDanhGia: '2025-01-25T08:20:00',
-    trangThai: 'TuChoi',
-  },
-  {
-    maDanhGia: 4,
-    maNguoiDung: 104,
-    tenNguoiDung: 'Phạm Thị D',
-    avatarUrl: 'https://ui-avatars.com/api/?name=Pham+Thi+D',
-    maKhoaHoc: 301,
-    tenKhoaHoc: 'Khóa học Python cơ bản',
-    soSao: 5,
-    nhanXet: 'Thầy giảng rất nhiệt tình, bài tập thực hành hay.',
-    ngayDanhGia: '2025-01-26T13:10:00',
-    trangThai: 'ChoDuyet',
-  },
+  ...Array.from({ length: 15 }, (_, i) => ({
+    maDanhGia: 1 + i,
+    maNguoiDung: 101 + i,
+    tenNguoiDung: `Người dùng ${i + 1}`,
+    avatarUrl: `https://ui-avatars.com/api/?name=User+${i + 1}`,
+    maKhoaHoc: 301 + (i % 3),
+    tenKhoaHoc: i % 3 === 0 ? 'Khóa học Python cơ bản' : (i % 3 === 1 ? 'Khóa học JavaScript nâng cao' : 'Khóa học React từ đầu'),
+    soSao: 3 + (i % 3),
+    nhanXet: `Đây là đánh giá thứ ${i + 1} của tôi về khóa học này. Rất bổ ích!`,
+    ngayDanhGia: new Date(Date.now() - i * 43200000).toISOString(),
+    trangThai: (i % 5 === 0 ? 'ChoDuyet' : 'DaDuyet') as any,
+  }))
 ];
 
 // ==================== SERVICE FUNCTIONS ====================
@@ -112,23 +92,23 @@ export const reviewService = {
     const tongBinhLuan = mockBinhLuan.length;
     const tongDanhGia = mockDanhGia.length;
 
-    const choDuyet = [
+    const choDuyetArr = [
       ...mockBinhLuan.filter((x) => x.trangThai === 'ChoDuyet'),
       ...mockDanhGia.filter((x) => x.trangThai === 'ChoDuyet'),
-    ].length;
+    ];
 
-    const daDuyet = [
+    const daDuyetArr = [
       ...mockBinhLuan.filter((x) => x.trangThai === 'DaDuyet'),
       ...mockDanhGia.filter((x) => x.trangThai === 'DaDuyet'),
-    ].length;
+    ];
 
-    const tuChoi = [
+    const tuChoiArr = [
       ...mockBinhLuan.filter((x) => x.trangThai === 'TuChoi'),
       ...mockDanhGia.filter((x) => x.trangThai === 'TuChoi'),
-    ].length;
+    ];
 
     const danhGiaTrungBinh =
-      mockDanhGia.reduce((sum, x) => sum + x.soSao, 0) / mockDanhGia.length;
+      mockDanhGia.reduce((sum, x) => sum + x.soSao, 0) / (mockDanhGia.length || 1);
 
     const phanBoSao = {
       star1: mockDanhGia.filter((x) => x.soSao === 1).length,
@@ -141,9 +121,9 @@ export const reviewService = {
     return {
       tongBinhLuan,
       tongDanhGia,
-      choDuyet,
-      daDuyet,
-      tuChoi,
+      choDuyet: choDuyetArr.length,
+      daDuyet: daDuyetArr.length,
+      tuChoi: tuChoiArr.length,
       danhGiaTrungBinh,
       phanBoSao,
     };
@@ -159,10 +139,10 @@ export const reviewService = {
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     // Convert to ReviewItem
-    let allItems: ReviewItem[] = [];
+    let allItems: (ReviewItem & { maKhoaHoc?: number })[] = [];
 
     if (!params?.loai || params.loai === 'TatCa' || params.loai === 'BinhLuan') {
-      const binhLuanItems: ReviewItem[] = mockBinhLuan.map((x) => ({
+      const binhLuanItems = mockBinhLuan.map((x) => ({
         id: x.maBinhLuan,
         loai: 'BinhLuan' as const,
         nguoiDung: {
@@ -174,12 +154,13 @@ export const reviewService = {
         noiDung: x.noiDung,
         ngayTao: x.ngayTao,
         trangThai: x.trangThai,
+        maKhoaHoc: x.maKhoaHoc,
       }));
       allItems = [...allItems, ...binhLuanItems];
     }
 
     if (!params?.loai || params.loai === 'TatCa' || params.loai === 'DanhGia') {
-      const danhGiaItems: ReviewItem[] = mockDanhGia.map((x) => ({
+      const danhGiaItems = mockDanhGia.map((x) => ({
         id: x.maDanhGia,
         loai: 'DanhGia' as const,
         nguoiDung: {
@@ -192,6 +173,7 @@ export const reviewService = {
         soSao: x.soSao,
         ngayTao: x.ngayDanhGia,
         trangThai: x.trangThai,
+        maKhoaHoc: x.maKhoaHoc,
       }));
       allItems = [...allItems, ...danhGiaItems];
     }
@@ -206,6 +188,11 @@ export const reviewService = {
       allItems = allItems.filter(
         (x) => x.loai === 'DanhGia' && x.soSao === params.soSao
       );
+    }
+
+    // Filter by course
+    if (params?.maKhoaHoc && params.maKhoaHoc !== 'TatCa') {
+      allItems = allItems.filter((x) => x.maKhoaHoc === params.maKhoaHoc);
     }
 
     // Filter by search
@@ -233,7 +220,7 @@ export const reviewService = {
     const paginatedItems = allItems.slice(startIndex, endIndex);
 
     return {
-      data: paginatedItems,
+      data: paginatedItems as ReviewItem[],
       total: allItems.length,
       page,
       pageSize,

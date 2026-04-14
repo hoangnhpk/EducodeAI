@@ -1,36 +1,76 @@
-import { Search, Filter } from 'lucide-react';
-import type { ReviewFilterParams } from './Types';
+import { Filter, RotateCcw } from 'lucide-react';
+import type { ReviewFilterParams, KhoaHoc } from './Types';
 
 interface Props {
   filters: ReviewFilterParams;
   onFilterChange: (filters: ReviewFilterParams) => void;
+  khoaHocs: KhoaHoc[];
 }
 
-export default function ReviewFilters({ filters, onFilterChange }: Props) {
+export default function ReviewFilters({ filters, onFilterChange, khoaHocs }: Props) {
   const handleChange = (key: keyof ReviewFilterParams, value: any) => {
     onFilterChange({ ...filters, [key]: value, page: 1 });
   };
 
+  const resetFilters = () => {
+    onFilterChange({
+      loai: 'TatCa',
+      trangThai: 'TatCa',
+      soSao: 'TatCa',
+      maKhoaHoc: 'TatCa',
+      search: '',
+      page: 1,
+      pageSize: 10,
+    });
+  };
+
   return (
-    <div className="review-filters">
+    <div className="review-filters-premium">
       <div className="filters-header">
-        <Filter size={20} />
-        <h3>Bộ lọc</h3>
+        <div className="header-title">
+          <Filter size={18} />
+          <h3>Bộ lọc nâng cao</h3>
+        </div>
+        <button className="btn-reset-premium" onClick={resetFilters}>
+          <RotateCcw size={14} />
+          Đặt lại
+        </button>
       </div>
 
       <div className="filters-grid">
         {/* Search */}
-        <div className="filter-item full-width">
+        <div className="filter-item">
           <label>Tìm kiếm</label>
-          <div className="search-input">
-            <Search size={18} />
+          <div className="premium-input-wrapper">
             <input
               type="text"
-              placeholder="Tìm theo tên, nội dung..."
+              placeholder="Tên học viên, nội dung..."
               value={filters.search || ''}
               onChange={(e) => handleChange('search', e.target.value)}
             />
           </div>
+        </div>
+
+        {/* Khóa học */}
+        <div className="filter-item">
+          <label>Khóa học</label>
+          <select
+            value={filters.maKhoaHoc || 'TatCa'}
+            onChange={(e) =>
+              handleChange(
+                'maKhoaHoc',
+                e.target.value === 'TatCa' ? 'TatCa' : Number(e.target.value)
+              )
+            }
+            className="premium-select"
+          >
+            <option value="TatCa">Tất cả khóa</option>
+            {khoaHocs.map((kh) => (
+              <option key={kh.id} value={kh.id}>
+                {kh.tenKhoaHoc}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Loại */}
@@ -39,6 +79,7 @@ export default function ReviewFilters({ filters, onFilterChange }: Props) {
           <select
             value={filters.loai || 'TatCa'}
             onChange={(e) => handleChange('loai', e.target.value)}
+            className="premium-select"
           >
             <option value="TatCa">Tất cả</option>
             <option value="BinhLuan">Bình luận</option>
@@ -52,6 +93,7 @@ export default function ReviewFilters({ filters, onFilterChange }: Props) {
           <select
             value={filters.trangThai || 'TatCa'}
             onChange={(e) => handleChange('trangThai', e.target.value)}
+            className="premium-select"
           >
             <option value="TatCa">Tất cả</option>
             <option value="ChoDuyet">Chờ duyệt</option>
@@ -60,47 +102,26 @@ export default function ReviewFilters({ filters, onFilterChange }: Props) {
           </select>
         </div>
 
-        {/* Số sao (chỉ hiện khi filter = DanhGia) */}
-        {(filters.loai === 'DanhGia' || filters.loai === 'TatCa') && (
-          <div className="filter-item">
-            <label>Số sao</label>
-            <select
-              value={filters.soSao || 'TatCa'}
-              onChange={(e) =>
-                handleChange(
-                  'soSao',
-                  e.target.value === 'TatCa' ? 'TatCa' : Number(e.target.value)
-                )
-              }
-            >
-              <option value="TatCa">Tất cả</option>
-              <option value="5">⭐⭐⭐⭐⭐ (5 sao)</option>
-              <option value="4">⭐⭐⭐⭐ (4 sao)</option>
-              <option value="3">⭐⭐⭐ (3 sao)</option>
-              <option value="2">⭐⭐ (2 sao)</option>
-              <option value="1">⭐ (1 sao)</option>
-            </select>
-          </div>
-        )}
-
-        {/* Reset button */}
+        {/* Số sao */}
         <div className="filter-item">
-          <label>&nbsp;</label>
-          <button
-            className="btn-reset"
-            onClick={() =>
-              onFilterChange({
-                loai: 'TatCa',
-                trangThai: 'TatCa',
-                soSao: 'TatCa',
-                search: '',
-                page: 1,
-                pageSize: 10,
-              })
+          <label>Số sao</label>
+          <select
+            value={filters.soSao || 'TatCa'}
+            onChange={(e) =>
+              handleChange(
+                'soSao',
+                e.target.value === 'TatCa' ? 'TatCa' : Number(e.target.value)
+              )
             }
+            className="premium-select"
           >
-            Đặt lại bộ lọc
-          </button>
+            <option value="TatCa">Tất cả</option>
+            <option value="5">5 ⭐</option>
+            <option value="4">4 ⭐</option>
+            <option value="3">3 ⭐</option>
+            <option value="2">2 ⭐</option>
+            <option value="1">1 ⭐</option>
+          </select>
         </div>
       </div>
     </div>

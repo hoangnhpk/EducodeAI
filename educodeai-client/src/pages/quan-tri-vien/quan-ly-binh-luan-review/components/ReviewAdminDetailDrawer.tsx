@@ -1,12 +1,12 @@
-import { MessageSquareText, Star, X } from 'lucide-react';
+import { Star, X } from 'lucide-react';
 import type { ReviewItem } from './ReviewAdmin.types';
-import { formatDate, getLoaiLabel, getRelativeTime, getTrangThaiClass, getTrangThaiLabel } from './review-admin.utils';
+import { formatDate, getRelativeTime, getTrangThaiClass, getTrangThaiLabel } from './review-admin.utils';
 
 interface Props {
   review: ReviewItem | null;
   onClose: () => void;
-  onApprove: (id: number, loai: ReviewItem['loai']) => void;
-  onReject: (id: number, loai: ReviewItem['loai']) => void;
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
 }
 
 export default function ReviewAdminDetailDrawer({ review, onClose, onApprove, onReject }: Props) {
@@ -20,12 +20,12 @@ export default function ReviewAdminDetailDrawer({ review, onClose, onApprove, on
           <>
             <div className="qtrv-drawer__header">
               <div>
-                <span className={`qtrv-type-badge ${review.loai === 'DanhGia' ? 'is-rating' : 'is-comment'}`}>
-                  {review.loai === 'DanhGia' ? <Star size={14} /> : <MessageSquareText size={14} />}
-                  {getLoaiLabel(review.loai)}
+                <span className="qtrv-type-badge is-rating">
+                  <Star size={14} />
+                  Danh gia khoa hoc
                 </span>
-                <h3>{review.tieuDe}</h3>
-                <p>{review.lienKet.tenKhoaHoc}</p>
+                <h3>{review.khoaHoc.tenKhoaHoc}</h3>
+                <p>{review.khoaHoc.giangVien || 'Noi dung danh gia tu hoc vien'}</p>
               </div>
               <button type="button" className="qtrv-close-btn" onClick={onClose}>
                 <X size={18} />
@@ -61,12 +61,12 @@ export default function ReviewAdminDetailDrawer({ review, onClose, onApprove, on
                 </div>
                 <div className="qtrv-detail-card">
                   <label>Doi tuong</label>
-                  <strong>{review.lienKet.tenDoiTuong}</strong>
-                  <small>{review.lienKet.loaiDoiTuong}</small>
+                  <strong>{review.khoaHoc.tenKhoaHoc}</strong>
+                  <small>Khoa hoc</small>
                 </div>
                 <div className="qtrv-detail-card">
                   <label>Muc sao</label>
-                  <strong>{review.soSao ? `${review.soSao}/5 sao` : 'Khong ap dung'}</strong>
+                  <strong>{review.soSao}/5 sao</strong>
                 </div>
               </section>
 
@@ -78,12 +78,12 @@ export default function ReviewAdminDetailDrawer({ review, onClose, onApprove, on
 
             <div className="qtrv-drawer__footer">
               {review.trangThai !== 'DaDuyet' && (
-                <button type="button" className="qtrv-primary-btn" onClick={() => onApprove(review.id, review.loai)}>
+                <button type="button" className="qtrv-primary-btn" onClick={() => onApprove(review.id)}>
                   Duyet noi dung
                 </button>
               )}
               {review.trangThai !== 'TuChoi' && (
-                <button type="button" className="qtrv-secondary-btn" onClick={() => onReject(review.id, review.loai)}>
+                <button type="button" className="qtrv-secondary-btn" onClick={() => onReject(review.id)}>
                   Tu choi
                 </button>
               )}

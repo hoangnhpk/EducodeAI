@@ -1,6 +1,29 @@
 import { MessageSquareText, Star, X } from 'lucide-react';
-import type { ReviewItem } from './ReviewAdmin.types';
-import { formatDate, getLoaiLabel, getRelativeTime, getTrangThaiClass, getTrangThaiLabel } from './review-admin.utils';
+import type { ReviewItem } from './Types';
+import { formatDate, getRelativeTime } from './utils';
+
+const getLoaiLabel = (loai: ReviewItem['loai']) => (loai === 'BinhLuan' ? 'Binh luan' : 'Danh gia');
+const getTrangThaiLabel = (trangThai: ReviewItem['trangThai']) => {
+  switch (trangThai) {
+    case 'DaDuyet':
+      return 'Da duyet';
+    case 'TuChoi':
+      return 'Tu choi';
+    default:
+      return 'Cho duyet';
+  }
+};
+
+const getTrangThaiClass = (trangThai: ReviewItem['trangThai']) => {
+  switch (trangThai) {
+    case 'DaDuyet':
+      return 'approved';
+    case 'TuChoi':
+      return 'rejected';
+    default:
+      return 'pending';
+  }
+};
 
 interface Props {
   review: ReviewItem | null;
@@ -25,7 +48,7 @@ export default function ReviewDetailDrawer({ review, onClose, onApprove, onRejec
                   {getLoaiLabel(review.loai)}
                 </span>
                 <h3>{review.tieuDe}</h3>
-                <p>{review.lienKet.tenKhoaHoc}</p>
+                <p>{review.tieuDe}</p>
               </div>
               <button type="button" className="qtrv-close-btn" onClick={onClose}>
                 <X size={18} />
@@ -42,7 +65,7 @@ export default function ReviewDetailDrawer({ review, onClose, onApprove, onRejec
                   />
                   <div>
                     <strong>{review.nguoiDung.ten}</strong>
-                    <span>{review.nguoiDung.email || 'Khong co email'}</span>
+                    <span>Khong co email</span>
                   </div>
                 </div>
               </section>
@@ -61,8 +84,8 @@ export default function ReviewDetailDrawer({ review, onClose, onApprove, onRejec
                 </div>
                 <div className="qtrv-detail-card">
                   <label>Doi tuong</label>
-                  <strong>{review.lienKet.tenDoiTuong}</strong>
-                  <small>{review.lienKet.loaiDoiTuong}</small>
+                  <strong>{review.tieuDe}</strong>
+                  <small>{review.loai === 'DanhGia' ? 'Khoa hoc' : 'Bai hoc'}</small>
                 </div>
                 <div className="qtrv-detail-card">
                   <label>Muc sao</label>

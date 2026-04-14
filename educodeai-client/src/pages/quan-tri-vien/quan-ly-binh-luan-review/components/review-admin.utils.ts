@@ -1,4 +1,4 @@
-import type { ReviewLoai, ReviewTrangThai } from './ReviewAdmin.types';
+import type { ReviewTrangThai } from './ReviewAdmin.types';
 
 export const formatDate = (dateString: string): string =>
   new Intl.DateTimeFormat('vi-VN', {
@@ -25,9 +25,6 @@ export const getRelativeTime = (dateString: string): string => {
 
   return formatDate(dateString);
 };
-
-export const getLoaiLabel = (loai: ReviewLoai) =>
-  loai === 'BinhLuan' ? 'Binh luan' : 'Danh gia';
 
 export const getTrangThaiLabel = (trangThai: ReviewTrangThai) => {
   switch (trangThai) {

@@ -10,7 +10,6 @@ import type { ReviewFilterParams, ReviewItem, ReviewSource, ThongKeReview } from
 import './ReviewAdmin.css';
 
 const DEFAULT_FILTERS: ReviewFilterParams = {
-  loai: 'TatCa',
   trangThai: 'TatCa',
   soSao: 'TatCa',
   search: '',
@@ -47,7 +46,7 @@ export default function QuanLyReviewMoi() {
       setSource(result.source);
     } catch (err: any) {
       console.error('Error fetching reviews:', err);
-      setError(err.response?.data?.message || 'Khong the tai module quan ly binh luan va danh gia.');
+      setError(err.response?.data?.message || 'Khong the tai module quan ly danh gia khoa hoc.');
     } finally {
       setLoading(false);
     }
@@ -86,22 +85,22 @@ export default function QuanLyReviewMoi() {
     }
   };
 
-  const handleApprove = async (id: number, loai: ReviewItem['loai']) => {
-    await handleMutation(() => reviewAdminService.approveReview(id, loai), 'Da duyet noi dung thanh cong.');
+  const handleApprove = async (id: number) => {
+    await handleMutation(() => reviewAdminService.approveReview(id), 'Da duyet noi dung thanh cong.');
     if (selectedReview?.id === id) {
       setSelectedReview((prev) => (prev ? { ...prev, trangThai: 'DaDuyet' } : prev));
     }
   };
 
-  const handleReject = async (id: number, loai: ReviewItem['loai']) => {
-    await handleMutation(() => reviewAdminService.rejectReview(id, loai), 'Da tu choi noi dung.');
+  const handleReject = async (id: number) => {
+    await handleMutation(() => reviewAdminService.rejectReview(id), 'Da tu choi noi dung.');
     if (selectedReview?.id === id) {
       setSelectedReview((prev) => (prev ? { ...prev, trangThai: 'TuChoi' } : prev));
     }
   };
 
-  const handleDelete = async (id: number, loai: ReviewItem['loai']) => {
-    await handleMutation(() => reviewAdminService.deleteReview(id, loai), 'Da xoa noi dung khoi danh sach.');
+  const handleDelete = async (id: number) => {
+    await handleMutation(() => reviewAdminService.deleteReview(id), 'Da xoa noi dung khoi danh sach.');
     if (selectedReview?.id === id) {
       setSelectedReview(null);
     }
@@ -115,10 +114,10 @@ export default function QuanLyReviewMoi() {
             <ShieldCheck size={24} />
           </div>
           <div>
-            <h1>Quan ly binh luan va danh gia</h1>
+            <h1>Quan ly danh gia khoa hoc</h1>
             <p>
-              Kiem duyet phan hoi hoc vien, theo doi chat luong khoa hoc va xu ly noi dung nhay cam
-              trong cung giao dien quan tri hien co.
+              Theo doi chat luong khoa hoc, kiem duyet nhan xet hoc vien va xu ly cac danh gia
+              khong phu hop trong giao dien quan tri hien co.
             </p>
           </div>
         </div>

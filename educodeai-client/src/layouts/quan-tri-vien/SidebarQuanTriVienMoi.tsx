@@ -25,7 +25,7 @@ export default function SidebarQuanTriVienMoi() {
 
         <NavLink to="/quan-tri-vien/quan-ly-binh-luan-review" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><MdRateReview /></div>
-          <span>Binh luan & Danh gia</span>
+          <span>Danh gia khoa hoc</span>
         </NavLink>
       </nav>
     </aside>

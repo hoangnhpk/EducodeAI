@@ -1,7 +1,7 @@
 import { CheckCircle2, Eye, MessageSquareText, ShieldX, Star, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import type { ReviewItem } from './ReviewAdmin.types';
-import { formatDate, getLoaiLabel, getTrangThaiClass, getTrangThaiLabel, truncateText } from './review-admin.utils';
+import { formatDate, getTrangThaiClass, getTrangThaiLabel, truncateText } from './review-admin.utils';
 
 interface Props {
   reviews: ReviewItem[];
@@ -11,9 +11,9 @@ interface Props {
   loading: boolean;
   onPageChange: (page: number) => void;
   onPreview: (review: ReviewItem) => void;
-  onApprove: (id: number, loai: ReviewItem['loai']) => void;
-  onReject: (id: number, loai: ReviewItem['loai']) => void;
-  onDelete: (id: number, loai: ReviewItem['loai']) => void;
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onDelete: (id: number) => void;
 }
 
 const renderStars = (count: number) => (
@@ -45,7 +45,7 @@ export default function ReviewAdminTable({
     return (
       <div className="qtrv-table-state">
         <div className="qtrv-spinner" />
-        <p>Dang tai danh sach review...</p>
+        <p>Dang tai danh sach danh gia...</p>
       </div>
     );
   }
@@ -54,7 +54,7 @@ export default function ReviewAdminTable({
     return (
       <div className="qtrv-table-state">
         <MessageSquareText size={42} />
-        <p>Khong co binh luan hoac danh gia nao phu hop bo loc hien tai.</p>
+        <p>Khong co danh gia nao phu hop bo loc hien tai.</p>
       </div>
     );
   }
@@ -74,10 +74,9 @@ export default function ReviewAdminTable({
         <table className="qtrv-table">
           <thead>
             <tr>
-              <th>Loai</th>
               <th>Nguoi dung</th>
-              <th>Noi dung</th>
-              <th>Lien ket</th>
+              <th>Khoa hoc</th>
+              <th>Noi dung danh gia</th>
               <th>Sao</th>
               <th>Thoi gian</th>
               <th>Trang thai</th>
@@ -86,13 +85,7 @@ export default function ReviewAdminTable({
           </thead>
           <tbody>
             {reviews.map((review) => (
-              <tr key={`${review.loai}-${review.id}`}>
-                <td>
-                  <span className={`qtrv-type-badge ${review.loai === 'DanhGia' ? 'is-rating' : 'is-comment'}`}>
-                    {review.loai === 'DanhGia' ? <Star size={14} /> : <MessageSquareText size={14} />}
-                    {getLoaiLabel(review.loai)}
-                  </span>
-                </td>
+              <tr key={review.id}>
                 <td>
                   <div className="qtrv-user-cell">
                     <img
@@ -106,18 +99,17 @@ export default function ReviewAdminTable({
                   </div>
                 </td>
                 <td>
-                  <div className="qtrv-content-cell">
-                    <strong>{review.tieuDe}</strong>
-                    <p>{truncateText(review.noiDung, 100)}</p>
+                  <div className="qtrv-linked-cell">
+                    <strong>{review.khoaHoc.tenKhoaHoc}</strong>
+                    <span>{review.khoaHoc.giangVien || 'Khoa hoc trong he thong'}</span>
                   </div>
                 </td>
                 <td>
-                  <div className="qtrv-linked-cell">
-                    <strong>{review.lienKet.tenDoiTuong}</strong>
-                    <span>{review.lienKet.tenKhoaHoc}</span>
+                  <div className="qtrv-content-cell">
+                    <p>{truncateText(review.noiDung, 100)}</p>
                   </div>
                 </td>
-                <td>{review.soSao ? renderStars(review.soSao) : <span className="qtrv-muted">Khong ap dung</span>}</td>
+                <td>{renderStars(review.soSao)}</td>
                 <td>
                   <span className="qtrv-date-cell">{formatDate(review.ngayTao)}</span>
                 </td>
@@ -136,7 +128,7 @@ export default function ReviewAdminTable({
                       <button
                         type="button"
                         className="qtrv-icon-btn success"
-                        onClick={() => onApprove(review.id, review.loai)}
+                        onClick={() => onApprove(review.id)}
                         title="Duyet"
                       >
                         <CheckCircle2 size={16} />
@@ -147,7 +139,7 @@ export default function ReviewAdminTable({
                       <button
                         type="button"
                         className="qtrv-icon-btn warning"
-                        onClick={() => onReject(review.id, review.loai)}
+                        onClick={() => onReject(review.id)}
                         title="Tu choi"
                       >
                         <ShieldX size={16} />
@@ -168,7 +160,7 @@ export default function ReviewAdminTable({
                           confirmButtonColor: '#dc2626',
                         }).then((result) => {
                           if (result.isConfirmed) {
-                            onDelete(review.id, review.loai);
+                            onDelete(review.id);
                           }
                         });
                       }}
