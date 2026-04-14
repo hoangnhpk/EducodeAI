@@ -1,14 +1,12 @@
-export type ReviewLoai = 'BinhLuan' | 'DanhGia';
 export type ReviewTrangThai = 'ChoDuyet' | 'DaDuyet' | 'TuChoi';
-export type FilterLoai = ReviewLoai | 'TatCa';
 export type FilterTrangThai = ReviewTrangThai | 'TatCa';
 export type FilterSoSao = 1 | 2 | 3 | 4 | 5 | 'TatCa';
 export type ReviewSource = 'api' | 'mock';
 
-export interface ReviewLinkedTarget {
-  loaiDoiTuong: 'BaiHoc' | 'KhoaHoc';
-  tenDoiTuong: string;
+export interface ReviewCourseInfo {
+  id: number;
   tenKhoaHoc: string;
+  giangVien?: string;
 }
 
 export interface ReviewUserInfo {
@@ -20,18 +18,17 @@ export interface ReviewUserInfo {
 
 export interface ReviewItem {
   id: number;
-  loai: ReviewLoai;
+  maNguoiDung: number;
+  maKhoaHoc: number;
   nguoiDung: ReviewUserInfo;
-  tieuDe: string;
+  khoaHoc: ReviewCourseInfo;
   noiDung: string;
-  soSao?: number;
+  soSao: number;
   ngayTao: string;
   trangThai: ReviewTrangThai;
-  lienKet: ReviewLinkedTarget;
 }
 
 export interface ThongKeReview {
-  tongBinhLuan: number;
   tongDanhGia: number;
   choDuyet: number;
   daDuyet: number;
@@ -47,7 +44,6 @@ export interface ThongKeReview {
 }
 
 export interface ReviewFilterParams {
-  loai?: FilterLoai;
   trangThai?: FilterTrangThai;
   soSao?: FilterSoSao;
   search?: string;

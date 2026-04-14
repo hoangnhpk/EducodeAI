@@ -33,7 +33,7 @@ namespace educodeai_server.Repository.Interface
         Task<bool> LuuGhiChuAI(GhiChuAIModel duLieu);
         Task<bool> UpdateGhiChuAI(int id, string noiDung);
         Task<bool> DeleteGhiChuAI(int id);
-        Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc);
+        Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> KiemTraDaDanhGiaAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> ThemDanhGiaAsync(DanhGiaModel danhGia);
         Task<bool> KiemTraHoanThanhKhoaHocAsync(int maKhoaHoc, int maNguoiDung);

@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock3, MessageSquareText, ShieldAlert, Star } from 'lucide-react';
+import { CheckCircle2, Clock3, ShieldAlert, Star } from 'lucide-react';
 import type { ThongKeReview } from './ReviewAdmin.types';
 
 interface Props {
@@ -6,8 +6,7 @@ interface Props {
 }
 
 const cards = [
-  { key: 'tongBinhLuan', title: 'Binh luan', icon: MessageSquareText, className: 'qtrv-card qtrv-card--blue' },
-  { key: 'tongDanhGia', title: 'Danh gia', icon: Star, className: 'qtrv-card qtrv-card--amber' },
+  { key: 'tongDanhGia', title: 'Tong danh gia', icon: Star, className: 'qtrv-card qtrv-card--amber' },
   { key: 'choDuyet', title: 'Cho duyet', icon: Clock3, className: 'qtrv-card qtrv-card--orange' },
   { key: 'daDuyet', title: 'Da duyet', icon: CheckCircle2, className: 'qtrv-card qtrv-card--green' },
   { key: 'tuChoi', title: 'Tu choi', icon: ShieldAlert, className: 'qtrv-card qtrv-card--red' },
