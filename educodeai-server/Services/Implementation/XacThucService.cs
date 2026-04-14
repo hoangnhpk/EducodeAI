@@ -167,7 +167,7 @@ namespace educodeai_server.Services.Implementation
             string otp = new Random().Next(100000, 999999).ToString();
             _memoryCache.Set("Reg_" + request.Email, request, TimeSpan.FromMinutes(5));
             LuuOtpVaoCookie(request.Email, otp);
-            await EmailHelper.SendEmailAsync(request.Email, "Xác minh", $"Mã: {otp}");
+            await EmailHelper.SendEmailAsync(request.Email, "Xác minh đăng ký - EduCodeAI", GetEmailTemplate("Xác minh đăng ký", $"Chào mừng bạn đến với EduCodeAI! Mã xác nhận của bạn là:", otp));
             return true;
         }
 
@@ -207,7 +207,7 @@ namespace educodeai_server.Services.Implementation
             // Lưu OTP vào Cache cho việc Đăng xuất từ xa
             _memoryCache.Set($"LogoutOTP_{maNguoiDung}", otp, TimeSpan.FromMinutes(10));
             
-            await EmailHelper.SendEmailAsync(user.Email, "Xác nhận đăng xuất từ xa", $"Mã OTP xác nhận đăng xuất thiết bị của bạn là: {otp}");
+            await EmailHelper.SendEmailAsync(user.Email, "Xác nhận đăng xuất từ xa - EduCodeAI", GetEmailTemplate("Xác nhận đăng xuất", "Bạn đang yêu cầu đăng xuất các thiết bị từ xa. Mã OTP xác nhận là:", otp));
             return true;
         }
 
@@ -248,7 +248,7 @@ namespace educodeai_server.Services.Implementation
             // Lưu OTP vào Cache thay vì Cookie để ổn định hơn
             _memoryCache.Set("ForgotPassOTP_" + user.Email, otp, TimeSpan.FromMinutes(10));
             
-            await EmailHelper.SendEmailAsync(user.Email, "Quên mật khẩu", $"Mã OTP đặt lại mật khẩu của bạn là: {otp}");
+            await EmailHelper.SendEmailAsync(user.Email, "Khôi phục mật khẩu - EduCodeAI", GetEmailTemplate("Khôi phục mật khẩu", "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Mã OTP của bạn là:", otp));
             return new { message = "Đã gửi mã OTP về Email của bạn." };
         }
 
@@ -284,11 +284,38 @@ namespace educodeai_server.Services.Implementation
 
         #region HELPERS
 
+        private string GetEmailTemplate(string actionName, string message, string otp)
+        {
+            return $@"
+            <div style=""font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;"">
+                <div style=""background-color: #fb873f; padding: 20px; text-align: center;"">
+                    <h1 style=""color: white; margin: 0; font-size: 24px;"">EDUCODEAI</h1>
+                </div>
+                <div style=""padding: 30px; color: #333; line-height: 1.6;"">
+                    <h2 style=""color: #fb873f; margin-top: 0;"">{actionName}</h2>
+                    <p>{message}</p>
+                    <div style=""background-color: #fff5eb; border: 2px dashed #fb873f; border-radius: 8px; padding: 20px; text-align: center; margin: 25px 0;"">
+                        <span style=""font-size: 32px; font-weight: bold; color: #fb873f; letter-spacing: 5px;"">{otp}</span>
+                    </div>
+                    <p style=""font-size: 14px; color: #666;"">Mã này có hiệu lực trong vòng 10 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+                    <hr style=""border: 0; border-top: 1px solid #eee; margin: 25px 0;"">
+                    <p style=""font-size: 12px; color: #999; text-align: center;"">
+                        Đây là email tự động, vui lòng không phản hồi.<br>
+                        © 2026 EduCodeAI - Hệ thống đào tạo lập trình thông minh.
+                    </p>
+                </div>
+            </div>";
+        }
+
         private async Task ValidateCaptchaAsync(string? token) { if (token == "SKIP_CAPTCHA" || string.IsNullOrEmpty(token)) return; if (!await _captchaService.XacNhanCaptchaAsync(token)) throw new Exception("Captcha thất bại."); }
         private async Task<NguoiDungModel?> LayNguoiDungKemThietBiAsync(string t) => await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.TaiKhoan == t || u.Email == t);
         private void KiemTraGioiHanThietBi(NguoiDungModel u, string d) { if (u.DanhSachPhienDangNhap.Count(p => p.DangHoatDong) >= 3 && !u.DanhSachPhienDangNhap.Any(p => p.MaThietBi == d && p.DangHoatDong)) throw new Exception("Đã đạt giới hạn 3 thiết bị."); }
         private bool LaThietBiMoiHoacQuaHan(NguoiDungModel u, string d, int days) { var p = u.DanhSachPhienDangNhap.FirstOrDefault(x => x.MaThietBi == d); return p == null || (DateTime.UtcNow - p.ThoiGianHoatDongCuoi).TotalDays > days || !p.DangHoatDong; }
-        private async Task TaoVaGuiOtpAsync(NguoiDungModel u, string s, string p) { string otp = new Random().Next(100000, 999999).ToString(); LuuOtpVaoCookie(u.Email, otp); await EmailHelper.SendEmailAsync(u.Email, s, $"{p} Mã: {otp}"); }
+        private async Task TaoVaGuiOtpAsync(NguoiDungModel u, string s, string p) { 
+            string otp = new Random().Next(100000, 999999).ToString(); 
+            LuuOtpVaoCookie(u.Email, otp); 
+            await EmailHelper.SendEmailAsync(u.Email, $"{s} - EduCodeAI", GetEmailTemplate(s, p, otp)); 
+        }
         
         private async Task<object> XuLyDangNhapThanhCongAsync(NguoiDungModel u, string? d, string? t) { 
             string devId = string.IsNullOrEmpty(d) ? "DEV_" + Guid.NewGuid().ToString("N").Substring(0, 8) : d;
@@ -329,10 +356,21 @@ namespace educodeai_server.Services.Implementation
 
         #region 5. ĐỔI MẬT KHẨU
 
-        public async Task<bool> YeuCauOtpDoiMatKhauAsync(int maNguoiDung) { var user = await _context.NguoiDungs.FindAsync(maNguoiDung); if (user == null) return false; await TaoVaGuiOtpAsync(user, "OTP Đổi mật khẩu", "Mã xác thực."); return true; }
         public async Task<bool> DoiMatKhauAsync(int maNguoiDung, DoiMatKhauRequest request) { 
             var user = await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.MaNguoiDung == maNguoiDung);
-            if (user == null || !XacThucOtpTuCookie(user.Email, request.OtpCode)) throw new Exception("OTP sai.");
+            if (user == null) throw new Exception("Tài khoản không tồn tại.");
+
+            if (string.IsNullOrEmpty(request.MatKhauCu) || string.IsNullOrEmpty(request.MatKhauMoi))
+                throw new Exception("Mật khẩu cũ và mật khẩu mới không được để trống.");
+
+            // 1. Xác thực mật khẩu cũ
+            if (!BCrypt.Net.BCrypt.Verify(request.MatKhauCu, user.MatKhau))
+                throw new Exception("Mật khẩu cũ không chính xác.");
+
+            // 2. Kiểm tra mật khẩu mới không trùng mật khẩu cũ
+            if (BCrypt.Net.BCrypt.Verify(request.MatKhauMoi, user.MatKhau))
+                throw new Exception("Mật khẩu mới không được giống với mật khẩu cũ.");
+
             user.MatKhau = BCrypt.Net.BCrypt.HashPassword(request.MatKhauMoi);
             
             // Khi đổi mật khẩu, hủy hết các phiên khác
@@ -340,7 +378,6 @@ namespace educodeai_server.Services.Implementation
             foreach (var p in phienCu) p.DangHoatDong = false;
 
             await _context.SaveChangesAsync();
-            XoaOtpCookie();
             return true;
         }
 

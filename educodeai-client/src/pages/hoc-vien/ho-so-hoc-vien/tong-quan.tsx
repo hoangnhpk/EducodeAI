@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { HoSoHocVienDTO } from "../../../services/ho-so-hoc-vien.service";
 import { updateHoSoHocVien } from "../../../services/ho-so-hoc-vien.service";
 import "./css/tong-quan.css";
+import Swal from "sweetalert2";
 
 // 👉 URL backend (bỏ /api)
 const BE_URL = import.meta.env.VITE_API_URL.replace("/api", "");

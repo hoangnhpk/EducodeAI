@@ -1,6 +1,7 @@
 import { CheckCircle, XCircle, Trash2, MessageSquare, Star, Calendar, Clock, ArrowRight } from 'lucide-react';
 import type { ReviewItem } from './Types';
 import { formatDate } from './utils';
+import Swal from 'sweetalert2';
 
 interface Props {
   reviews: ReviewItem[];
