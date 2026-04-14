@@ -442,11 +442,13 @@ namespace educodeai_server.Repository.Implementation
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc)
+        public async Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
         {
             return await _context.DanhGias
+                .AsNoTracking()
                 .Include(d => d.NguoiDung)
-                .Where(d => d.MaKhoaHoc == maKhoaHoc)
+                .Where(d => d.MaKhoaHoc == maKhoaHoc
+                    && (d.TrangThai == "DaDuyet" || d.MaNguoiDung == maNguoiDung))
                 .OrderByDescending(d => d.NgayDanhGia)
                 .ToListAsync();
         }

@@ -16,7 +16,7 @@ namespace educodeai_server.Services.Interface
         Task<bool> LuuGhiChuAI(LuuGhiChuAIRequest yeuCau, int maNguoiDung);
         Task<bool> UpdateGhiChuAI(UpdateGhiChuAIDTO dto);
         Task<bool> DeleteGhiChuAI(int id);
-        Task<object> LayThongKeVaDanhSachAsync(int maKhoaHoc);
+        Task<object> LayThongKeVaDanhSachAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> TaoDanhGiaMoiAsync(DanhGiaDTO yeuCau);
     }
 }

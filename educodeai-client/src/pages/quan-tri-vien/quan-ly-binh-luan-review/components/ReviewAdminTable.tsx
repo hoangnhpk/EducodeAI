@@ -1,0 +1,205 @@
+import { CheckCircle2, Eye, MessageSquareText, ShieldX, Star, Trash2 } from 'lucide-react';
+import Swal from 'sweetalert2';
+import type { ReviewItem } from './ReviewAdmin.types';
+import { formatDate, getTrangThaiClass, getTrangThaiLabel, truncateText } from './review-admin.utils';
+
+interface Props {
+  reviews: ReviewItem[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  loading: boolean;
+  onPageChange: (page: number) => void;
+  onPreview: (review: ReviewItem) => void;
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+const renderStars = (count: number) => (
+  <div className="qtrv-stars-cell">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <Star
+        key={star}
+        size={14}
+        fill={star <= count ? '#f59e0b' : 'none'}
+        color={star <= count ? '#f59e0b' : '#d1d5db'}
+      />
+    ))}
+  </div>
+);
+
+export default function ReviewAdminTable({
+  reviews,
+  currentPage,
+  totalPages,
+  totalItems,
+  loading,
+  onPageChange,
+  onPreview,
+  onApprove,
+  onReject,
+  onDelete,
+}: Props) {
+  if (loading) {
+    return (
+      <div className="qtrv-table-state">
+        <div className="qtrv-spinner" />
+        <p>Dang tai danh sach danh gia...</p>
+      </div>
+    );
+  }
+
+  if (reviews.length === 0) {
+    return (
+      <div className="qtrv-table-state">
+        <MessageSquareText size={42} />
+        <p>Khong co danh gia nao phu hop bo loc hien tai.</p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="qtrv-table-card">
+      <div className="qtrv-table-card__header">
+        <div>
+          <h3>Danh sach kiem duyet</h3>
+          <p>
+            Tong cong {totalItems} muc. Trang {currentPage}/{totalPages}.
+          </p>
+        </div>
+      </div>
+
+      <div className="qtrv-table-wrap">
+        <table className="qtrv-table">
+          <thead>
+            <tr>
+              <th>Nguoi dung</th>
+              <th>Khoa hoc</th>
+              <th>Noi dung danh gia</th>
+              <th>Sao</th>
+              <th>Thoi gian</th>
+              <th>Trang thai</th>
+              <th>Thao tac</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reviews.map((review) => (
+              <tr key={review.id}>
+                <td>
+                  <div className="qtrv-user-cell">
+                    <img
+                      src={review.nguoiDung.avatar || 'https://ui-avatars.com/api/?name=EduCodeAI'}
+                      alt={review.nguoiDung.ten}
+                    />
+                    <div>
+                      <strong>{review.nguoiDung.ten}</strong>
+                      <span>{review.nguoiDung.email || 'Khong co email'}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div className="qtrv-linked-cell">
+                    <strong>{review.khoaHoc.tenKhoaHoc}</strong>
+                    <span>{review.khoaHoc.giangVien || 'Khoa hoc trong he thong'}</span>
+                  </div>
+                </td>
+                <td>
+                  <div className="qtrv-content-cell">
+                    <p>{truncateText(review.noiDung, 100)}</p>
+                  </div>
+                </td>
+                <td>{renderStars(review.soSao)}</td>
+                <td>
+                  <span className="qtrv-date-cell">{formatDate(review.ngayTao)}</span>
+                </td>
+                <td>
+                  <span className={`qtrv-status-badge ${getTrangThaiClass(review.trangThai)}`}>
+                    {getTrangThaiLabel(review.trangThai)}
+                  </span>
+                </td>
+                <td>
+                  <div className="qtrv-action-row">
+                    <button type="button" className="qtrv-icon-btn" onClick={() => onPreview(review)} title="Xem chi tiet">
+                      <Eye size={16} />
+                    </button>
+
+                    {review.trangThai !== 'DaDuyet' && (
+                      <button
+                        type="button"
+                        className="qtrv-icon-btn success"
+                        onClick={() => onApprove(review.id)}
+                        title="Duyet"
+                      >
+                        <CheckCircle2 size={16} />
+                      </button>
+                    )}
+
+                    {review.trangThai !== 'TuChoi' && (
+                      <button
+                        type="button"
+                        className="qtrv-icon-btn warning"
+                        onClick={() => onReject(review.id)}
+                        title="Tu choi"
+                      >
+                        <ShieldX size={16} />
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      className="qtrv-icon-btn danger"
+                      onClick={() => {
+                        Swal.fire({
+                          title: 'Xoa noi dung nay?',
+                          text: 'Hanh dong nay khong the hoan tac.',
+                          icon: 'warning',
+                          showCancelButton: true,
+                          confirmButtonText: 'Xoa',
+                          cancelButtonText: 'Huy',
+                          confirmButtonColor: '#dc2626',
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            onDelete(review.id);
+                          }
+                        });
+                      }}
+                      title="Xoa"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="qtrv-pagination">
+        <button type="button" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage <= 1}>
+          Truoc
+        </button>
+
+        <div className="qtrv-pagination__numbers">
+          {Array.from({ length: totalPages }, (_, index) => index + 1)
+            .slice(Math.max(0, currentPage - 3), Math.max(5, currentPage + 2))
+            .map((page) => (
+              <button
+                key={page}
+                type="button"
+                className={page === currentPage ? 'active' : ''}
+                onClick={() => onPageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
+        </div>
+
+        <button type="button" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage >= totalPages}>
+          Sau
+        </button>
+      </div>
+    </section>
+  );
+}

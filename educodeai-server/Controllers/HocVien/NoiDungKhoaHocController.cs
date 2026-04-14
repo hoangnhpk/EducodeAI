@@ -165,7 +165,8 @@ namespace educodeai_server.Controllers.HocVien
         [HttpGet("ds-danh-gia-khoa-hoc/{maKhoaHoc}")]
         public async Task<IActionResult> LayDanhGia(int maKhoaHoc)
         {
-            var data = await _khoaHocService.LayThongKeVaDanhSachAsync(maKhoaHoc);
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            var data = await _khoaHocService.LayThongKeVaDanhSachAsync(maKhoaHoc, maNguoiDung);
             return Ok(data);
         }
 
