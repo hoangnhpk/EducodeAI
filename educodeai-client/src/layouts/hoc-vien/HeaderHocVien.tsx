@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSystemConfig } from "../../contexts/SystemConfigContext";
 
 export default function HeaderHocVien() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const { configs } = useSystemConfig();
 
   // Kiểm tra trạng thái đăng nhập khi component mount
   useEffect(() => {
