@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import './QuanLyHocVienKhoaHoc.css';
 import {
   BsPersonFill, BsSearch, BsChevronLeft, BsChevronRight,
@@ -71,7 +71,6 @@ export default function QuanLyHocVienKhoaHoc() {
   const [hocViens, setHocViens] = useState<HocVien[]>([]);
   const [selectedKhoaHoc, setSelectedKhoaHoc] = useState<string>('0');
   const [searchInput, setSearchInput] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
   // --- STATE CHO PHÂN TRANG ---
@@ -90,7 +89,7 @@ export default function QuanLyHocVienKhoaHoc() {
   const API_URL = import.meta.env.VITE_API_URL;
   const maGiangVien = 1;
 
-  useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+  useEffect(() => { setCurrentPage(1); }, [searchInput]);
 
   const fetchKhoaHocs = useCallback(async () => {
     try {
@@ -124,11 +123,6 @@ export default function QuanLyHocVienKhoaHoc() {
     setCurrentPage(1);
   }, [fetchHocViens, selectedKhoaHoc]);
 
-  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    setSearchTerm(searchInput.trim());
-  }, [searchInput]);
-
   const openStudentCoursesModal = useCallback(async (maNguoiDung: number) => {
     setModalMode('DANH_SACH_KHOA');
     setStudentCourses([]);
@@ -146,11 +140,6 @@ export default function QuanLyHocVienKhoaHoc() {
     if (!res.ok) return;
     const result = await res.json();
     setTienDoKhoaHoc(result.data);
-
-    if (result.data?.danhSachChuong) {
-      const allChapterIds = result.data.danhSachChuong.map((c: ChuongHocTienDoDTO) => c.maChuong);
-      setExpandedChapters(allChapterIds);
-    }
   }, [API_URL, selectedKhoaHoc]);
 
   // --- XỬ LÝ KHI BẤM ICON CON MẮT ---
@@ -193,15 +182,29 @@ export default function QuanLyHocVienKhoaHoc() {
     return `${hours} tiếng ${mins} phút`;
   };
 
+  const tienDoPhanTramKhoaHoc = useMemo(() => {
+    if (!tienDoKhoaHoc?.danhSachChuong?.length) return 0;
+    let tong = 0;
+    let xong = 0;
+    for (const ch of tienDoKhoaHoc.danhSachChuong) {
+      for (const b of ch.danhSachBaiHoc) {
+        tong += 1;
+        if (b.daHoanThanh) xong += 1;
+      }
+    }
+    if (tong === 0) return 0;
+    return Math.round((xong / tong) * 100);
+  }, [tienDoKhoaHoc]);
+
   const filteredHocViens = useMemo(() => {
-    const normalizedQuery = normalizeText(searchTerm);
+    const normalizedQuery = normalizeText(searchInput);
     if (!normalizedQuery) return hocViens;
     return hocViens.filter((hv) => {
       const name = normalizeText(hv.hoTen ?? '');
       const email = normalizeText(hv.email ?? '');
       return name.includes(normalizedQuery) || email.includes(normalizedQuery);
     });
-  }, [hocViens, searchTerm]);
+  }, [hocViens, searchInput]);
 
   const totalPages = useMemo(
     () => Math.ceil(filteredHocViens.length / ITEMS_PER_PAGE),
@@ -234,21 +237,19 @@ export default function QuanLyHocVienKhoaHoc() {
       </div>
 
       <div className="qllh-filter-bar">
-        <form className="qllh-search-form" onSubmit={handleSearchSubmit}>
+        <div className="qllh-search-form">
           <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
             <BsSearch style={{ position: 'absolute', left: '16px', color: '#9ca3af' }} />
             <input
-              type="text"
+              type="search"
               placeholder="Tìm theo Họ tên hoặc Email học viên..."
               className="qllh-search-input"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
+              aria-label="Tìm học viên theo họ tên hoặc email"
             />
           </div>
-          <button type="submit" className="qllh-btn-search">
-            <BsSearch /> Tìm kiếm
-          </button>
-        </form>
+        </div>
 
         <select
           className="qllh-select-course"
@@ -357,9 +358,14 @@ export default function QuanLyHocVienKhoaHoc() {
                   {modalMode === 'TIEN_DO' && <span> - Khóa: <b>{selectedHocVienInfo?.tenKhoaHoc}</b></span>}
                 </p>
                 {modalMode === 'TIEN_DO' && !loadingModal && tienDoKhoaHoc && (
-                  <p style={{ marginTop: '8px', color: '#f97316', fontSize: '14px', fontWeight: 'bold' }}>
-                    Đã học được: {formatTime(tienDoKhoaHoc.tongThoiGianHocPhut)}
-                  </p>
+                  <>
+                    <p style={{ marginTop: '8px', marginBottom: 0, color: '#f97316', fontSize: '14px', fontWeight: 'bold' }}>
+                      Đã học được: {formatTime(tienDoKhoaHoc.tongThoiGianHocPhut)}
+                    </p>
+                    <p style={{ marginTop: '6px', color: '#f97316', fontSize: '14px', fontWeight: 'bold' }}>
+                      Tiến độ khóa học: {tienDoPhanTramKhoaHoc}%
+                    </p>
+                  </>
                 )}
               </div>
               <button className="qllh-btn-close" onClick={closeModal}><BsX /></button>
