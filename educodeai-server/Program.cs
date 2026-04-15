@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -94,6 +94,7 @@ builder.Services.AddHttpClient<BaiTapService>();
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
 builder.Services.AddScoped<IHocVienService, HocVienService>();
+builder.Services.AddScoped<IKhongGianHocTapService, KhongGianHocTapService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
 
 // AI & Lộ trình
