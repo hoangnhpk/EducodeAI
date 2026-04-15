@@ -128,6 +128,24 @@ namespace educodeai_server.Controllers.HocVien
             }
         }
 
+        [HttpPost("chung-chi/nop-bai")]
+        public async Task<IActionResult> NopBaiKiemTraChungChi([FromBody] NopBaiKiemTraChungChiDTO dto)
+        {
+            var maNguoiDung = LayNguoiDungID.LayID(User);
+            if (maNguoiDung > 0)
+            {
+                dto.MaNguoiDung = maNguoiDung;
+            }
+
+            var ketQua = await _khoaHocService.NopBaiKiemTraChungChiAsync(dto);
+            if (!ketQua.ThanhCong)
+            {
+                return BadRequest(ketQua);
+            }
+
+            return Ok(ketQua);
+        }
+
         [HttpGet("lay-ds-ghi-chu-ai/{maNguoiDung}")]
         public async Task<IActionResult> LayDanhSach(int maNguoiDung)
         {
@@ -165,7 +183,8 @@ namespace educodeai_server.Controllers.HocVien
         [HttpGet("ds-danh-gia-khoa-hoc/{maKhoaHoc}")]
         public async Task<IActionResult> LayDanhGia(int maKhoaHoc)
         {
-            var data = await _khoaHocService.LayThongKeVaDanhSachAsync(maKhoaHoc);
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            var data = await _khoaHocService.LayThongKeVaDanhSachAsync(maKhoaHoc, maNguoiDung);
             return Ok(data);
         }
 
