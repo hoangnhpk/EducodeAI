@@ -6,6 +6,7 @@ import type {
   ReviewMutationResponse,
   ReviewServiceResult,
   ThongKeReview,
+  ReviewCourseInfo,
 } from '../pages/quan-tri-vien/quan-ly-binh-luan-review/components/ReviewAdmin.types';
 
 const mockSeed: ReviewItem[] = [
@@ -27,7 +28,7 @@ const mockSeed: ReviewItem[] = [
     noiDung: 'Lo trinh hoc ro rang, de theo. Mong co them project tong hop cuoi khoa de luyen tap.',
     soSao: 5,
     ngayTao: '2026-04-12T08:15:00Z',
-    trangThai: 'ChoDuyet',
+    trangThai: 'DaDuyet',
   },
   {
     id: 1002,
@@ -87,7 +88,7 @@ const mockSeed: ReviewItem[] = [
     noiDung: 'Noi dung on nhung chat luong hinh anh minh hoa chua dong deu, co bai rat mo.',
     soSao: 3,
     ngayTao: '2026-04-09T06:20:00Z',
-    trangThai: 'ChoDuyet',
+    trangThai: 'DaDuyet',
   },
   {
     id: 2003,
@@ -121,7 +122,6 @@ const shouldFallbackToMock = (error: unknown) =>
 const calculateThongKe = (items: ReviewItem[]): ThongKeReview => {
   return {
     tongDanhGia: items.length,
-    choDuyet: items.filter((item) => item.trangThai === 'ChoDuyet').length,
     daDuyet: items.filter((item) => item.trangThai === 'DaDuyet').length,
     tuChoi: items.filter((item) => item.trangThai === 'TuChoi').length,
     danhGiaTrungBinh: items.length > 0 ? items.reduce((sum, item) => sum + item.soSao, 0) / items.length : 0,
@@ -144,6 +144,10 @@ const applyFilters = (items: ReviewItem[], filters?: ReviewFilterParams) => {
 
   if (filters?.soSao && filters.soSao !== 'TatCa') {
     result = result.filter((item) => item.soSao === filters.soSao);
+  }
+
+  if (filters?.maKhoaHoc && filters.maKhoaHoc !== 'TatCa') {
+    result = result.filter((item) => item.maKhoaHoc === Number(filters.maKhoaHoc));
   }
 
   if (filters?.search?.trim()) {
@@ -189,6 +193,20 @@ const buildMockThongKe = async (): Promise<ReviewServiceResult<ThongKeReview>> =
   return { source: 'mock', data: calculateThongKe(mockStore) };
 };
 
+const buildMockKhoaHocFilters = async (): Promise<ReviewServiceResult<ReviewCourseInfo[]>> => {
+  await sleep(120);
+  // Derive unique courses from store
+  const uniqueCourses = mockStore.reduce((acc, current) => {
+    const x = acc.find(item => item.id === current.khoaHoc.id);
+    if (!x) {
+      return acc.concat([current.khoaHoc]);
+    } else {
+      return acc;
+    }
+  }, [] as ReviewCourseInfo[]);
+  return { source: 'mock', data: uniqueCourses };
+};
+
 const updateMockStatus = async (
   id: number,
   trangThai: ReviewItem['trangThai']
@@ -207,13 +225,16 @@ const removeMockReview = async (
 };
 
 export const reviewAdminService = {
-  async getThongKe(): Promise<ReviewServiceResult<ThongKeReview>> {
+  async getThongKe(maKhoaHoc?: number): Promise<ReviewServiceResult<ThongKeReview>> {
     try {
-      const data = await axiosInstance.get<ThongKeReview>('api/admin/danh-gia/thong-ke');
+      const params = maKhoaHoc ? { maKhoaHoc } : undefined;
+      const data = await axiosInstance.get<ThongKeReview>('api/admin/danh-gia/thong-ke', { params });
       return { source: 'api', data };
     } catch (error) {
       if (!shouldFallbackToMock(error)) throw error;
-      return buildMockThongKe();
+      const filteredStore = maKhoaHoc ? mockStore.filter(x => x.khoaHoc.id === maKhoaHoc) : mockStore;
+      await sleep(120);
+      return { source: 'mock', data: calculateThongKe(filteredStore) };
     }
   },
 
@@ -221,11 +242,27 @@ export const reviewAdminService = {
     params?: ReviewFilterParams
   ): Promise<ReviewServiceResult<PagedResult<ReviewItem>>> {
     try {
-      const data = await axiosInstance.get<PagedResult<ReviewItem>>('api/admin/danh-gia', { params });
+      const cleanParams: Record<string, any> = { ...params };
+      if (cleanParams.trangThai === 'TatCa') delete cleanParams.trangThai;
+      if (cleanParams.soSao === 'TatCa') delete cleanParams.soSao;
+      if (cleanParams.maKhoaHoc === 'TatCa') delete cleanParams.maKhoaHoc;
+      if (!cleanParams.search?.trim()) delete cleanParams.search;
+
+      const data = await axiosInstance.get<PagedResult<ReviewItem>>('api/admin/danh-gia', { params: cleanParams });
       return { source: 'api', data };
     } catch (error) {
       if (!shouldFallbackToMock(error)) throw error;
       return buildMockReviews(params);
+    }
+  },
+
+  async getKhoaHocFilters(): Promise<ReviewServiceResult<ReviewCourseInfo[]>> {
+    try {
+      const data = await axiosInstance.get<ReviewCourseInfo[]>('api/admin/danh-gia/khoa-hoc');
+      return { source: 'api', data };
+    } catch (error) {
+      if (!shouldFallbackToMock(error)) throw error;
+      return buildMockKhoaHocFilters();
     }
   },
 

@@ -186,18 +186,90 @@ namespace educodeai_server.Services.Implementation
             bool daTonTai = await _khoaHocRepository.KiemTraDaDanhGiaAsync(yeuCau.MaKhoaHoc, yeuCau.MaNguoiDung);
             if (daTonTai) throw new Exception("Bạn đã đánh giá khóa học này rồi!");
 
+            // Lọc từ nhạy cảm
+            string nhanXetDaLoc = LocTuNhayCam(yeuCau.NhanXet);
+
             var model = new DanhGiaModel
             {
                 MaKhoaHoc = yeuCau.MaKhoaHoc,
                 MaNguoiDung = yeuCau.MaNguoiDung,
                 SoSao = yeuCau.SoSao,
-                NhanXet = yeuCau.NhanXet,
+                NhanXet = nhanXetDaLoc,
                 NgayDanhGia = DateTime.Now,
-                TrangThai = "ChoDuyet"
+                TrangThai = "DaDuyet"
             };
 
             return await _khoaHocRepository.ThemDanhGiaAsync(model);
         }
+
+private static string LocTuNhayCam(string input)
+{
+    if (string.IsNullOrWhiteSpace(input))
+        return input;
+
+    var patterns = new[]
+    {
+        @"(?<!\p{L})n+g+u+(?!\p{L})",                 // ngu, nguuu
+        @"(?<!\p{L})d+\W*m+(?!\p{L})",               // dm, d m, d.m, d-m, dmmm
+        @"(?<!\p{L})d+\W*c+\W*m+(?!\p{L})",          // dcm, d c m, d.c.m, dcmm
+        @"(?<!\p{L})v+\W*c+\W*l+(?!\p{L})",          // vcl
+        @"(?<!\p{L})v+\W*l+(?!\p{L})",               // vl
+        @"(?<!\p{L})c+h+[o0]+(?!\p{L})",             // chó, cho, chooo
+        @"(?<!\p{L})l+[o0]+n+(?!\p{L})",             // lồn, lon, l0n
+        @"(?<!\p{L})c+[a4]+c+(?!\p{L})",             // cặc, cac, c4c
+        @"(?<!\p{L})d+[i1]+(?!\p{L})",               // đĩ, di, d1
+        @"(?<!\p{L})d+[i1]+t+(?!\p{L})",             // địt, dit, d1t
+        @"(?<!\p{L})d+u+(?!\p{L})",                  // đù, du
+        @"(?<!\p{L})c+[uư]+t+(?!\p{L})"              // cứt, cut
+    };
+
+    var lowered = input.ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
+    var normalizedChars = new System.Text.StringBuilder(lowered.Length);
+
+    foreach (var c in lowered)
+    {
+        var cat = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+        if (cat == System.Globalization.UnicodeCategory.NonSpacingMark)
+            continue;
+
+        normalizedChars.Append(c switch
+        {
+            'đ' => 'd',
+            '0' => 'o',
+            '1' => 'i',
+            '4' => 'a',
+            _ => c
+        });
+    }
+
+    var normalized = normalizedChars.ToString();
+    var masked = new bool[input.Length];
+
+    foreach (var pattern in patterns)
+    {
+        foreach (System.Text.RegularExpressions.Match match in
+                 System.Text.RegularExpressions.Regex.Matches(
+                     normalized,
+                     pattern,
+                     System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        {
+            for (int i = match.Index; i < match.Index + match.Length && i < masked.Length; i++)
+            {
+                if (!char.IsWhiteSpace(input[i]))
+                    masked[i] = true;
+            }
+        }
+    }
+
+    var result = input.ToCharArray();
+    for (int i = 0; i < result.Length; i++)
+    {
+        if (masked[i])
+            result[i] = '*';
+    }
+
+    return new string(result);
+}
 
         private static string TaoNoiDungEmailChungChi(
             KhoaHocModel khoaHoc,

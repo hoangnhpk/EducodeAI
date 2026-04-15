@@ -1,4 +1,4 @@
-export type ReviewTrangThai = 'ChoDuyet' | 'DaDuyet' | 'TuChoi';
+export type ReviewTrangThai = 'DaDuyet' | 'TuChoi';
 export type FilterTrangThai = ReviewTrangThai | 'TatCa';
 export type FilterSoSao = 1 | 2 | 3 | 4 | 5 | 'TatCa';
 export type ReviewSource = 'api' | 'mock';
@@ -30,7 +30,6 @@ export interface ReviewItem {
 
 export interface ThongKeReview {
   tongDanhGia: number;
-  choDuyet: number;
   daDuyet: number;
   tuChoi: number;
   danhGiaTrungBinh: number;
@@ -43,9 +42,12 @@ export interface ThongKeReview {
   };
 }
 
+export type FilterMaKhoaHoc = number | 'TatCa';
+
 export interface ReviewFilterParams {
   trangThai?: FilterTrangThai;
   soSao?: FilterSoSao;
+  maKhoaHoc?: FilterMaKhoaHoc;
   search?: string;
   page?: number;
   pageSize?: number;
