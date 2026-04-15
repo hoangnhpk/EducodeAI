@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "../pages/auth/ProtectedRoute"; 
 
 import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
@@ -33,11 +33,23 @@ import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 import QuanLyHocVienKhoaHoc from "../pages/giang-vien/quan-ly-hoc-vien/QuanLyHocVienKhoaHoc";
 import TaoLoTrinhAI from '../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI';
 // /* ===== ADMIN ===== */
-import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
+import QuanLyReviewMoi from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReviewMoi";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
 import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
 import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
 
+// Component để điều hướng trang chủ dựa trên Role
+const HomeRedirect = () => {
+  const userRaw = localStorage.getItem('user_info');
+  if (!userRaw) return <TrangChuHocVien />;
+
+  const user = JSON.parse(userRaw);
+  const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
+
+  if (role === 0) return <Navigate to="/quan-tri-vien" replace />;
+  if (role === 1) return <Navigate to="/giang-vien" replace />;
+  return <TrangChuHocVien />;
+};
 
 export default function AppRouter() {
   return (
@@ -51,7 +63,7 @@ export default function AppRouter() {
         <Route path="/quen-mat-khau" element={<QuenMatKhau />} />
 
         <Route element={<LayoutHocVien />}>
-          <Route path="/" element={<TrangChuHocVien />} />
+          <Route path="/" element={<HomeRedirect />} />
           <Route path="/khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
         </Route>
 
@@ -122,7 +134,7 @@ export default function AppRouter() {
         >
           <Route index element={<QuanLyNguoiDung />} /> {/* Default load vào Quản lý người dùng */}
           <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
-          <Route path="quan-ly-binh-luan-review" element={<QuanLyReview />} />
+          <Route path="quan-ly-binh-luan-review" element={<QuanLyReviewMoi />} />
           <Route path="quan-ly-hoc-vien" element={<QuanLyHocVien />} />
           <Route path="quan-ly-api-key" element={<QuanLyApiKey />} />
         </Route>

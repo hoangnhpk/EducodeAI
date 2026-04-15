@@ -23,6 +23,7 @@ namespace educodeai_server.Repository.Interface
         Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto);
         Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung);
         Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto);
+        Task<KetQuaNopBaiKiemTraChungChiDTO> NopBaiKiemTraChungChiAsync(NopBaiKiemTraChungChiDTO dto);
 
         Task<List<int>> GetMaKhoaHocDaDangKyAsync(int maNguoiDung,List<int> danhSachMaKhoaHoc);
 
@@ -33,7 +34,7 @@ namespace educodeai_server.Repository.Interface
         Task<bool> LuuGhiChuAI(GhiChuAIModel duLieu);
         Task<bool> UpdateGhiChuAI(int id, string noiDung);
         Task<bool> DeleteGhiChuAI(int id);
-        Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc);
+        Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> KiemTraDaDanhGiaAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> ThemDanhGiaAsync(DanhGiaModel danhGia);
         Task<bool> KiemTraHoanThanhKhoaHocAsync(int maKhoaHoc, int maNguoiDung);
