@@ -1,4 +1,4 @@
-import { MdSchool, MdBook, MdEditNote, MdQuiz, MdCode } from 'react-icons/md';
+import { MdSchool, MdBook, MdEditNote, MdQuiz, MdCode, MdPeople } from 'react-icons/md';
 
 export default function SidebarGiangVien() {
   return (
