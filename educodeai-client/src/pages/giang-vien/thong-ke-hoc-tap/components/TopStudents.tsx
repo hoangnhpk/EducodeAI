@@ -7,9 +7,9 @@ interface Props {
 }
 
 const TopStudents = ({ students }: Props) => {
-  // Sắp xếp theo điểm TB giảm dần và lấy top 5
+  // Sắp xếp theo tiến độ giảm dần và lấy top 5
   const topStudents = [...students]
-    .sort((a, b) => b.diemTrungBinh - a.diemTrungBinh)
+    .sort((a, b) => b.tienDo - a.tienDo)
     .slice(0, 5);
 
   return (
@@ -23,19 +23,19 @@ const TopStudents = ({ students }: Props) => {
       {/* ===== LIST ===== */}
       <div className="top-students-list">
         {topStudents.map((hocVien, index) => (
-          <div key={hocVien.maHocVien} className="top-student-item">
+          <div key={hocVien.maNguoiDung} className="top-student-item">
             <div className="top-rank">{index + 1}</div>
 
             <div className="top-info">
-              <strong>{hocVien.tenHocVien}</strong>
+              <strong>{hocVien.hoTen}</strong>
               <span>{hocVien.email}</span>
               <small style={{ color: '#10b981', fontSize: '12px' }}>
-                Hoàn thành: {hocVien.tyLeHoanThanh.toFixed(1)}%
+                Hoàn thành: {hocVien.tienDo?.toFixed(1) || 0}%
               </small>
             </div>
 
             <div className="top-score">
-              {hocVien.diemTrungBinh.toFixed(1)}/10
+              {hocVien.soBaiDaNop} bài
             </div>
           </div>
         ))}

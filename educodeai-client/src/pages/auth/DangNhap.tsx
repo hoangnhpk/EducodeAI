@@ -61,7 +61,6 @@ const DangNhap: React.FC = () => {
         } catch (error: any) {
             setErrors({ identifier: error.response?.data?.message || "Tài khoản hoặc mật khẩu không chính xác!" });
             setCaptchaToken(null);
-            setShowCaptcha(false);
         } finally {
             setIsLoading(false);
         }
@@ -164,10 +163,14 @@ const DangNhap: React.FC = () => {
                                             </div>
                                         </div>
 
+                                        <div className="col-12 text-end">
+                                            <Link to="/quen-mat-khau" className="text-decoration-none small" style={{ color: '#fb873f' }}>Quên mật khẩu?</Link>
+                                        </div>
+
                                         {/* WIDGET CAPTCHA - Chỉ hiện khi Backend yêu cầu */}
                                         {showCaptcha && (
                                             <div className="col-12 d-flex flex-column align-items-center my-2 animate__animated animate__zoomIn">
-                                                <p className="small text-success fw-bold mb-2">Vui lòng xác thực Captcha.</p>
+                                                <p className="small text-danger fw-bold mb-2">Vui lòng xác thực mã bên dưới.</p>
                                                 <ReCAPTCHA
                                                     sitekey="6Legm5csAAAAABr5FTIC25geZIxrxlmF5ORzuiYt"
                                                     onChange={onCaptchaVerify}
@@ -175,19 +178,16 @@ const DangNhap: React.FC = () => {
                                             </div>
                                         )}
 
-                                        <div className="col-12 text-end">
-                                            <Link to="/quen-mat-khau" className="text-decoration-none small" style={{ color: '#fb873f' }}>Quên mật khẩu?</Link>
+                                        <div className="col-12">
+                                            <button className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill" 
+                                                type="submit" style={{ backgroundColor: '#fb873f' }} 
+                                                disabled={isLoading || (showCaptcha && !captchaToken)}>
+                                                {isLoading ? "Đang xử lý..." : "Tiếp theo"}
+                                            </button>
                                         </div>
 
-                                        {/* Chỉ hiện nút đăng nhập khi chưa show captcha */}
                                         {!showCaptcha && (
                                             <>
-                                                <div className="col-12">
-                                                    <button className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill" type="submit" style={{ backgroundColor: '#fb873f' }} disabled={isLoading}>
-                                                        {isLoading ? "Đang xử lý..." : "Tiếp theo"}
-                                                    </button>
-                                                </div>
-
                                                 <div className="col-12 my-3 text-center position-relative">
                                                     <hr />
                                                     <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted">Hoặc đăng nhập với</span>

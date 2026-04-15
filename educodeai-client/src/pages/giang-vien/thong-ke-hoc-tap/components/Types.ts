@@ -31,16 +31,14 @@ export interface TienDoTheoThoiGian {
 // ================== HỌC VIÊN ==================
 
 export interface HocVien {
-  maHocVien: number;
-  tenHocVien: string;
+  maNguoiDung: number;
+  hoTen: string;
   email: string;
   anhDaiDien?: string;
-  soKhoaHocThamGia: number;
-  soBaiTapHoanThanh: number;
-  tongBaiTap: number;
-  tyLeHoanThanh: number;
-  diemTrungBinh: number;
-  trangThai: string; // "Hoàn thành" | "Đang học" | "Nguy cơ bỏ học"
+  tienDo: number;
+  soBaiDaNop: number;
+  gioHoc: number;
+  trangThai: string; // "Hoàn thành" | "Đang học" | "Chưa học"
 }
 
 // ================== API PARAMS ==================
