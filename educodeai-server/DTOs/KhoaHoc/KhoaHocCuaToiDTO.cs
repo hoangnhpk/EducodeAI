@@ -156,3 +156,29 @@ public class ThemVideoResponseDTO
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
 }
+
+// ─── REORDER DTOs ───
+public class ChapterReorderDTO
+{
+    public int MaChuong { get; set; }
+    public int ThuTu { get; set; }
+}
+
+public class LessonReorderDTO
+{
+    public int MaBaiHoc { get; set; }
+    public int ThuTu { get; set; }
+}
+
+// ─── CERTIFICATE CONFIG DTOs ───
+public class CertificateConfigDTO
+{
+    public bool CoChungChi { get; set; }
+    public string? TenChungChi { get; set; }
+    public double DiemDatChungChi { get; set; } = 80;
+    public int SoCauHoiChungChi { get; set; } = 20;
+    public int ThoiGianLamBaiChungChi { get; set; } = 30;
+    public bool DaCoDeThiChungChi { get; set; }
+    public string? NguonDeChungChi { get; set; }
+    public DateTime? NgayTaoDeChungChi { get; set; }
+}

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
+using educodeai_server.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,10 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Configuration.AddUserSecrets<Program>();
+// ==========================================
+// THÊM: ĐĂNG KÝ SIGNALR
+// ==========================================
+builder.Services.AddSignalR();
 
 // ==========================================
 // 2. CẤU HÌNH XÁC THỰC (JWT)
@@ -82,11 +87,13 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddScoped<IXacThucService, XacThucService>();
 // Khóa học & Bài tập
+builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
 builder.Services.AddHttpClient<BaiTapService>();
 
 // Người dùng & Thống kê
@@ -94,7 +101,9 @@ builder.Services.AddHttpClient<BaiTapService>();
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
 builder.Services.AddScoped<IHocVienService, HocVienService>();
+builder.Services.AddScoped<IKhongGianHocTapService, KhongGianHocTapService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
+builder.Services.AddScoped<IThongKeAdminService, ThongKeAdminService>();
 
 // AI & Lộ trình
 builder.Services.AddScoped<IKhoaHocCuaToiRepository, KhoaHocCuaToiRepository>();
@@ -130,6 +139,9 @@ builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =
 
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
 
+// YouTube Service
+builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();
+
 // ==========================================
 // 6. CẤU HÌNH CORS & SWAGGER
 // ==========================================
@@ -137,7 +149,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://educodeai-client.vercel.app", "http://localhost:5173", "http://localhost:5210")
+        policy.WithOrigins("https://educodeai-client.vercel.app", "http://localhost:5173", "http://localhost:5210", "http://localhost:3000")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -196,6 +208,7 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseSessionCheck();
 app.UseAuthorization();
+app.MapHub<SystemConfigHub>("/systemConfigHub");
 
 app.MapControllers();
 

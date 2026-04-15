@@ -1,0 +1,266 @@
+/* ============================================================
+   QuanLyBaiTapThucHanh.css
+   Style phục vụ module Bài Tập Thực Hành AI (Giảng viên)
+   ============================================================ */
+
+.btth-container {
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: #334155;
+}
+
+.btth-main-title {
+  font-weight: 800;
+  color: #0F172A;
+  margin-bottom: 4px;
+  font-size: 24px;
+}
+
+.btth-main-subtitle {
+  color: #64748B;
+  font-size: 14px;
+  margin: 0;
+}
+
+.btth-breadcrumb {
+  font-size: 12px;
+  color: #94A3B8;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ── Tabs ── */
+.btth-tabs-wrapper .tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 0;
+}
+
+.btth-tabs-wrapper .tab {
+  padding: 12px 24px;
+  border: none;
+  background: transparent;
+  color: #64748B;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.btth-tabs-wrapper .tab i {
+  font-size: 16px;
+}
+
+.btth-tabs-wrapper .tab:hover {
+  color: #3B82F6;
+  background: #EFF6FF;
+}
+
+.btth-tabs-wrapper .tab.active {
+  color: #3B82F6;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-bottom: 2px solid white;
+  margin-bottom: -1px;
+}
+
+.btth-tabs-wrapper .tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #3B82F6;
+}
+
+/* ── Panels & Cards ── */
+.btth-section-header {
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.btth-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #334155;
+  margin: 0;
+}
+
+/* ── Badges (High Contrast Fix) ── */
+.badge {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800 !important;
+}
+
+.btth-badge-easy {
+  background: #D1FAE5 !important;
+  color: #065F46 !important;
+}
+
+.btth-badge-medium {
+  background: #FEF3C7 !important;
+  color: #78350F !important;
+}
+
+.btth-badge-hard {
+  background: #FEE2E2 !important;
+  color: #991B1B !important;
+}
+
+.btth-badge-hidden {
+  background: #FFF7ED !important;
+  color: #92400E !important;
+  border: 1.5px solid #F59E0B !important;
+}
+
+.btth-badge-public {
+  background: #ECFDF5 !important;
+  color: #064E3B !important;
+  border: 1.5px solid #34D399 !important;
+}
+
+.btth-lang-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #E0E7FF;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1E1B4B;
+  letter-spacing: 0.5px;
+}
+
+/* ── Preview Elements ── */
+/* ── Metadata & Labels ── */
+.btth-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.btth-section-block {
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Form Elements ── */
+.form-control {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-control:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+  background-color: #fff;
+}
+
+.form-control:disabled {
+  background-color: #f8fafc;
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+/* ── Badges (Refined) ── */
+.badge {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.btth-badge-easy {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+  border: 1px solid #dcfce7 !important;
+}
+
+.btth-badge-medium {
+  background: #fffbeb !important;
+  color: #92400e !important;
+  border: 1px solid #fef3c7 !important;
+}
+
+.btth-badge-hard {
+  background: #fef2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fee2e2 !important;
+}
+
+/* ── Custom Modal Utilities ── */
+.quiz-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.quiz-modal-content {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  max-width: 1200px;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalEnter 0.3s ease-out;
+}
+
+@keyframes modalEnter {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.quiz-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.quiz-modal-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.quiz-modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.quiz-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ── Animations ── */
+.fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
