@@ -1,4 +1,4 @@
-namespace educodeai_server.DTOs.KhoaHoc
+namespace educodeai_server.DTOs
 {
     public class KhongGianHocTapItemDTO
     {
