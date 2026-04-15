@@ -45,6 +45,11 @@ namespace educodeai_server.Services.Implementation
             return await _khoaHocRepository.LuuKetQuaBaiTap(dto);
         }
 
+        public async Task<KetQuaNopBaiKiemTraChungChiDTO> NopBaiKiemTraChungChiAsync(NopBaiKiemTraChungChiDTO dto)
+        {
+            return await _khoaHocRepository.NopBaiKiemTraChungChiAsync(dto);
+        }
+
         public async Task<List<GhiChuAIModel>> LayGhiChuAI(int maNguoiDung)
         {
             var ketQua = await _khoaHocRepository.LayDanhSachGhiChuAI(maNguoiDung);

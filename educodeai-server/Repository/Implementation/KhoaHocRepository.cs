@@ -5,12 +5,16 @@ using educodeai_server.Models;
 using educodeai_server.DTOs.AI;
 using educodeai_server.DTOs.KhoaHoc;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace educodeai_server.Repository.Implementation
 {
     public class KhoaHocRepository : IKhoaHocRepository
     {
         private readonly EduCodeAIDbContext _context;
+        private const double DiemDatChungChi = 80;
+        private const int ThoiGianLamBaiChungChiPhut = 30;
+        private const int HeSoSinhIdCauHoi = 100000;
 
         public KhoaHocRepository(EduCodeAIDbContext context)
         {
@@ -105,7 +109,7 @@ namespace educodeai_server.Repository.Implementation
 
         public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
         {
-            return await _context.KhoaHocs
+            var duLieuKhoaHoc = await _context.KhoaHocs
                 .AsNoTracking()
                 .Where(kh => kh.MaKhoaHoc == maKhoaHoc)
                 .Select(kh => new KhoaHoc_NoiDungKhoaHocDTO
@@ -147,6 +151,26 @@ namespace educodeai_server.Repository.Implementation
                                 }).ToList()
                         }).ToList()
                 }).FirstOrDefaultAsync();
+
+            if (duLieuKhoaHoc == null)
+            {
+                return null;
+            }
+
+            var daHoanThanhKhoaHoc = maNguoiDung > 0 && await KiemTraHoanThanhKhoaHocAsync(maKhoaHoc, maNguoiDung);
+            var nganHangCauHoi = await LayNganHangCauHoiChungChiAsync(maKhoaHoc);
+
+            duLieuKhoaHoc.BaiKiemTraChungChi = TaoBaiKiemTraChungChi(duLieuKhoaHoc, nganHangCauHoi, daHoanThanhKhoaHoc);
+            duLieuKhoaHoc.ThongTinChungChi = maNguoiDung > 0
+                ? await LayThongTinChungChiAsync(maKhoaHoc, maNguoiDung, duLieuKhoaHoc.TenKhoaHoc, nganHangCauHoi.Count)
+                : new ThongTinChungChiDTO
+                {
+                    DaCap = false,
+                    TongSoCauHoi = nganHangCauHoi.Count,
+                    TenKhoaHoc = duLieuKhoaHoc.TenKhoaHoc
+                };
+
+            return duLieuKhoaHoc;
         }
 
         // 5. Các hàm hỗ trợ AI
@@ -453,6 +477,143 @@ namespace educodeai_server.Repository.Implementation
                 .ToListAsync();
         }
 
+        public async Task<KetQuaNopBaiKiemTraChungChiDTO> NopBaiKiemTraChungChiAsync(NopBaiKiemTraChungChiDTO dto)
+        {
+            if (dto == null)
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Dữ liệu bài kiểm tra không hợp lệ."
+                };
+            }
+
+            var daHoanThanhKhoaHoc = await KiemTraHoanThanhKhoaHocAsync(dto.MaKhoaHoc, dto.MaNguoiDung);
+            if (!daHoanThanhKhoaHoc)
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Bạn cần hoàn thành toàn bộ khóa học trước khi thi nhận chứng chỉ."
+                };
+            }
+
+            var khoaHoc = await _context.KhoaHocs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.MaKhoaHoc == dto.MaKhoaHoc);
+
+            if (khoaHoc == null)
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Không tìm thấy khóa học."
+                };
+            }
+
+            var nganHangCauHoi = await LayNganHangCauHoiChungChiAsync(dto.MaKhoaHoc);
+            if (nganHangCauHoi.Count == 0)
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Khóa học này chưa có đủ câu hỏi để tạo bài kiểm tra chứng chỉ."
+                };
+            }
+
+            var bangTraLoi = dto.ChiTietLamBai
+                .GroupBy(x => x.IdCauHoi)
+                .ToDictionary(g => g.Key, g => g.Last().IndexLuaChon);
+
+            var tongSoCau = nganHangCauHoi.Count;
+            var soCauDung = nganHangCauHoi.Count(cauHoi =>
+                bangTraLoi.TryGetValue(cauHoi.Id, out var luaChon)
+                && luaChon == ChuyenDapAnDungSangIndex(cauHoi.DapAnDung));
+
+            var diemSo = tongSoCau > 0
+                ? Math.Round((double)soCauDung / tongSoCau * 100, 2)
+                : 0;
+            var daDat = diemSo >= DiemDatChungChi;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var ketQuaThi = new KetQuaKiemTraChungChiModel
+                {
+                    MaKhoaHoc = dto.MaKhoaHoc,
+                    MaNguoiDung = dto.MaNguoiDung,
+                    DiemSo = diemSo,
+                    SoCauDung = soCauDung,
+                    TongSoCau = tongSoCau,
+                    DaDat = daDat,
+                    ChiTietLamBaiJSON = JsonSerializer.Serialize(new
+                    {
+                        dto.ChiTietLamBai,
+                        TongSoCau = tongSoCau,
+                        SoCauDung = soCauDung,
+                        DiemSo = diemSo,
+                        NgayThi = DateTime.UtcNow
+                    }),
+                    NgayThi = DateTime.UtcNow
+                };
+
+                _context.KetQuaKiemTraChungChis.Add(ketQuaThi);
+                await _context.SaveChangesAsync();
+
+                if (daDat)
+                {
+                    var chungChi = await _context.ChungChiKhoaHocs
+                        .FirstOrDefaultAsync(x => x.MaKhoaHoc == dto.MaKhoaHoc && x.MaNguoiDung == dto.MaNguoiDung);
+
+                    if (chungChi == null)
+                    {
+                        chungChi = new ChungChiKhoaHocModel
+                        {
+                            MaKhoaHoc = dto.MaKhoaHoc,
+                            MaNguoiDung = dto.MaNguoiDung,
+                            MaChungChi = TaoMaChungChi(dto.MaKhoaHoc, dto.MaNguoiDung),
+                            MaKetQuaKiemTraChungChi = ketQuaThi.MaKetQuaKiemTraChungChi,
+                            NgayCap = DateTime.UtcNow
+                        };
+                        _context.ChungChiKhoaHocs.Add(chungChi);
+                    }
+                    else
+                    {
+                        chungChi.MaKetQuaKiemTraChungChi = ketQuaThi.MaKetQuaKiemTraChungChi;
+                        _context.ChungChiKhoaHocs.Update(chungChi);
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = true,
+                    DaDat = daDat,
+                    DiemSo = diemSo,
+                    SoCauDung = soCauDung,
+                    TongSoCau = tongSoCau,
+                    ThongBao = daDat
+                        ? "Bạn đã đạt yêu cầu và nhận được chứng chỉ khóa học."
+                        : "Bạn chưa đạt ngưỡng nhận chứng chỉ. Hãy ôn tập và thử lại.",
+                    ThongTinChungChi = await LayThongTinChungChiAsync(dto.MaKhoaHoc, dto.MaNguoiDung, khoaHoc.TenKhoaHoc, tongSoCau)
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = $"Không thể lưu kết quả bài kiểm tra chứng chỉ: {ex.Message}"
+                };
+            }
+        }
+
         public async Task<bool> KiemTraDaDanhGiaAsync(int maKhoaHoc, int maNguoiDung)
         {
             return await _context.DanhGias
@@ -480,6 +641,189 @@ namespace educodeai_server.Repository.Implementation
                 .CountAsync();
 
             return soBaiDaHoc == tongSoBaiHoc;
+        }
+
+        private BaiKiemTraChungChiDTO TaoBaiKiemTraChungChi(
+            KhoaHoc_NoiDungKhoaHocDTO duLieuKhoaHoc,
+            List<CauHoiChungChiItem> nganHangCauHoi,
+            bool daHoanThanhKhoaHoc)
+        {
+            return new BaiKiemTraChungChiDTO
+            {
+                MaBaiKiemTra = duLieuKhoaHoc.MaKhoaHoc * -1,
+                TieuDe = $"Bài kiểm tra cuối khóa: {duLieuKhoaHoc.TenKhoaHoc}",
+                MoTa = "Hoàn thành bài kiểm tra cuối khóa để mở khóa chứng chỉ. Bạn có thể thi lại nếu chưa đạt.",
+                SoCauHoi = nganHangCauHoi.Count,
+                ThoiGianLamBai = ThoiGianLamBaiChungChiPhut,
+                DiemCanDat = DiemDatChungChi,
+                ChoPhepLamLai = true,
+                DaoCauHoi = true,
+                DuDieuKienDuThi = daHoanThanhKhoaHoc && nganHangCauHoi.Count > 0,
+                LyDoChuaDuDieuKien = nganHangCauHoi.Count == 0
+                    ? "Khóa học này chưa có đủ câu hỏi để tạo bài kiểm tra chứng chỉ."
+                    : daHoanThanhKhoaHoc
+                        ? null
+                        : "Bạn cần hoàn thành 100% bài học trước khi bắt đầu bài kiểm tra.",
+                DuLieuCauHoiJSON = JsonSerializer.Serialize(nganHangCauHoi)
+            };
+        }
+
+        private async Task<ThongTinChungChiDTO> LayThongTinChungChiAsync(
+            int maKhoaHoc,
+            int maNguoiDung,
+            string tenKhoaHoc,
+            int tongSoCauHoi)
+        {
+            var thongTinHocVien = await _context.NguoiDungs
+                .AsNoTracking()
+                .Where(x => x.MaNguoiDung == maNguoiDung)
+                .Select(x => x.HoTen ?? x.TaiKhoan)
+                .FirstOrDefaultAsync();
+
+            var soLanThi = await _context.KetQuaKiemTraChungChis
+                .AsNoTracking()
+                .CountAsync(x => x.MaKhoaHoc == maKhoaHoc && x.MaNguoiDung == maNguoiDung);
+
+            var lanThiGanNhat = await _context.KetQuaKiemTraChungChis
+                .AsNoTracking()
+                .Where(x => x.MaKhoaHoc == maKhoaHoc && x.MaNguoiDung == maNguoiDung)
+                .OrderByDescending(x => x.NgayThi)
+                .FirstOrDefaultAsync();
+
+            var chungChi = await _context.ChungChiKhoaHocs
+                .AsNoTracking()
+                .Where(x => x.MaKhoaHoc == maKhoaHoc && x.MaNguoiDung == maNguoiDung)
+                .OrderByDescending(x => x.NgayCap)
+                .FirstOrDefaultAsync();
+
+            return new ThongTinChungChiDTO
+            {
+                DaCap = chungChi != null,
+                MaChungChi = chungChi?.MaChungChi,
+                NgayCap = chungChi?.NgayCap,
+                SoLanThi = soLanThi,
+                DiemLanGanNhat = lanThiGanNhat?.DiemSo,
+                DatLanGanNhat = lanThiGanNhat?.DaDat,
+                SoCauDungLanGanNhat = lanThiGanNhat?.SoCauDung,
+                TongSoCauHoi = tongSoCauHoi,
+                TenHocVien = thongTinHocVien,
+                TenKhoaHoc = tenKhoaHoc
+            };
+        }
+
+        private async Task<List<CauHoiChungChiItem>> LayNganHangCauHoiChungChiAsync(int maKhoaHoc)
+        {
+            var quizCuaKhoaHoc = await _context.BaiTap_Quizs
+                .AsNoTracking()
+                .Where(x => x.BaiTap.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc && !string.IsNullOrEmpty(x.DuLieuCauHoi))
+                .Select(x => new
+                {
+                    x.MaBaiTap,
+                    x.DuLieuCauHoi
+                })
+                .ToListAsync();
+
+            var ketQua = new List<CauHoiChungChiItem>();
+
+            foreach (var quiz in quizCuaKhoaHoc)
+            {
+                try
+                {
+                    var danhSachCauHoi = JsonSerializer.Deserialize<List<CauHoiQuizRaw>>(quiz.DuLieuCauHoi)
+                        ?? new List<CauHoiQuizRaw>();
+
+                    for (var index = 0; index < danhSachCauHoi.Count; index++)
+                    {
+                        var cauHoi = danhSachCauHoi[index];
+
+                        ketQua.Add(new CauHoiChungChiItem
+                        {
+                            Id = quiz.MaBaiTap * HeSoSinhIdCauHoi + index + 1,
+                            CauHoi = cauHoi.CauHoi,
+                            DapAnA = cauHoi.DapAnA,
+                            DapAnB = cauHoi.DapAnB,
+                            DapAnC = cauHoi.DapAnC,
+                            DapAnD = cauHoi.DapAnD,
+                            DapAnDung = cauHoi.DapAnDung,
+                            GiaiThich = cauHoi.GiaiThich ?? string.Empty
+                        });
+                    }
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+
+            return ketQua;
+        }
+
+        private static int ChuyenDapAnDungSangIndex(string? dapAnDung)
+        {
+            return dapAnDung?.Trim().ToUpperInvariant() switch
+            {
+                "A" => 0,
+                "B" => 1,
+                "C" => 2,
+                "D" => 3,
+                _ => 0
+            };
+        }
+
+        private static string TaoMaChungChi(int maKhoaHoc, int maNguoiDung)
+        {
+            return $"CC-{maKhoaHoc}-{maNguoiDung}-{DateTime.UtcNow:yyyyMMddHHmmss}";
+        }
+
+        private sealed class CauHoiQuizRaw
+        {
+            [JsonPropertyName("cauHoi")]
+            public string CauHoi { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnA")]
+            public string DapAnA { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnB")]
+            public string DapAnB { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnC")]
+            public string DapAnC { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnD")]
+            public string DapAnD { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnDung")]
+            public string DapAnDung { get; set; } = string.Empty;
+
+            [JsonPropertyName("giaiThich")]
+            public string? GiaiThich { get; set; }
+        }
+
+        private sealed class CauHoiChungChiItem
+        {
+            [JsonPropertyName("id")]
+            public int Id { get; set; }
+
+            [JsonPropertyName("cauHoi")]
+            public string CauHoi { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnA")]
+            public string DapAnA { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnB")]
+            public string DapAnB { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnC")]
+            public string DapAnC { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnD")]
+            public string DapAnD { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnDung")]
+            public string DapAnDung { get; set; } = string.Empty;
+
+            [JsonPropertyName("giaiThich")]
+            public string GiaiThich { get; set; } = string.Empty;
         }
     }
 }
