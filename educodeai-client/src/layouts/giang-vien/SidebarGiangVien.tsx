@@ -1,4 +1,4 @@
-import { MdSchool, MdBook, MdEditNote, MdPeople } from 'react-icons/md';
+import { MdSchool, MdBook, MdEditNote, MdQuiz, MdCode } from 'react-icons/md';
 
 export default function SidebarGiangVien() {
   return (
@@ -13,8 +13,11 @@ export default function SidebarGiangVien() {
         <a href="/giang-vien/khoa-hoc-cua-toi" className="gv-nav-link">
           <MdBook /> Khóa Học
         </a>
+        <a href="/giang-vien/bai-tap-thuc-hanh" className="gv-nav-link">
+          <MdCode /> Bài tập thực hành (AI)
+        </a>
         <a href="/giang-vien/bai-tap" className="gv-nav-link">
-          <MdEditNote /> Bài Tập
+          <MdQuiz /> Quản lý bài tập (Quiz)
         </a>
         <a href="/giang-vien/lop-hoc" className="gv-nav-link">
           <MdPeople /> Quản Lý Lớp Học
