@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
+using educodeai_server.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,10 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Configuration.AddUserSecrets<Program>();
+// ==========================================
+// THÊM: ĐĂNG KÝ SIGNALR
+// ==========================================
+builder.Services.AddSignalR();
 
 // ==========================================
 // 2. CẤU HÌNH XÁC THỰC (JWT)
@@ -196,6 +201,7 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseSessionCheck();
 app.UseAuthorization();
+app.MapHub<SystemConfigHub>("/systemConfigHub");
 
 app.MapControllers();
 
