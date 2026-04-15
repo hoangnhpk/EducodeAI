@@ -22,6 +22,7 @@ import ChiTietLoTrinhAI from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/ChiTietLoTri
 import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
 import DoiMatKhau from "../pages/hoc-vien/ho-so-hoc-vien/DoiMatKhau";
 import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
+import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
 
 // /* ===== GIẢNG VIÊN ===== */
 import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
@@ -84,6 +85,7 @@ export default function AppRouter() {
           <Route path="/thiet-bi" element={<QuanLyThietBi />} />
           <Route path="/khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
           <Route path="/chi-tiet-lo-trinh/:id" element={<ChiTietLoTrinhAI />} />
+          <Route path="/kham-pha-lo-trinh" element={<KhamPhaLoTrinh />} />
         </Route>
 
         {/* NỘI DUNG KHÓA HỌC (Layout trống, Role 0, 1, 2) */}
