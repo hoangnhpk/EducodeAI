@@ -108,7 +108,7 @@ axiosClient.interceptors.response.use(
         const response: any = await axios.post(
           `${import.meta.env.VITE_API_URL}/api/XacThuc/refresh-token?refreshToken=${refreshToken}&maThietBi=${maThietBi}`
         );
-        
+
         const { token, refreshToken: newRefreshToken } = response.data;
         localStorage.setItem("user_token", token);
         localStorage.setItem("refresh_token", newRefreshToken);
@@ -118,7 +118,7 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
       } catch (err: any) {
         processQueue(err, null);
-        
+
         // NẾU REFRESH TOKEN CŨNG LỖI (Ví dụ: do bị logout từ xa)
         // Hiển thị thông báo và đếm ngược 3 giây để logout
         import("sweetalert2").then((Swal) => {
