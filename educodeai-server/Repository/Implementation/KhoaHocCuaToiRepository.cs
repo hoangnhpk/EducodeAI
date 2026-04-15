@@ -35,6 +35,15 @@ namespace educodeai_server.Repository.Implementation
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<KhoaHocModel?> GetKhoaHocForCertificateAsync(int maKhoaHoc, int maGiangVien)
+        {
+            return await _context.KhoaHocs
+                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien)
+                .Include(k => k.ChuongHocs)
+                    .ThenInclude(ch => ch.BaiHocs)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task AddKhoaHocAsync(KhoaHocModel khoaHoc)
             => await _context.KhoaHocs.AddAsync(khoaHoc);
 

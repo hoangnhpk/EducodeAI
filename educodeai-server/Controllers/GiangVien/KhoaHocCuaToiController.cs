@@ -59,6 +59,16 @@ namespace educodeai_server.Controllers.GiangVien
             return Ok(result);
         }
 
+        [HttpPost("{maGiangVien}/{maKhoaHoc}/chung-chi/tao-de-ai")]
+        public async Task<IActionResult> TaoDeChungChiBangAI(int maGiangVien, int maKhoaHoc)
+        {
+            var result = await _service.TaoDeChungChiBangAIAsync(maKhoaHoc, maGiangVien);
+            if (!result.ThanhCong)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
         [HttpPost("{maGiangVien}/chuong/{maKhoaHoc}")]
         public async Task<IActionResult> ThemChuong(int maGiangVien, int maKhoaHoc, [FromBody] ChuongHocCreateUpdateDTO dto)
         {

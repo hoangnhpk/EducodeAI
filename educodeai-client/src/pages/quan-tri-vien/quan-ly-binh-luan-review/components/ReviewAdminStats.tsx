@@ -6,10 +6,10 @@ interface Props {
 }
 
 const cards = [
-  { key: 'tongDanhGia', title: 'Tong danh gia', icon: Star, className: 'qtrv-card qtrv-card--amber' },
-  { key: 'choDuyet', title: 'Cho duyet', icon: Clock3, className: 'qtrv-card qtrv-card--orange' },
-  { key: 'daDuyet', title: 'Da duyet', icon: CheckCircle2, className: 'qtrv-card qtrv-card--green' },
-  { key: 'tuChoi', title: 'Tu choi', icon: ShieldAlert, className: 'qtrv-card qtrv-card--red' },
+  { key: 'tongDanhGia', title: 'Tổng đánh giá', icon: Star, className: 'qtrv-card qtrv-card--amber' },
+  { key: 'choDuyet', title: 'Chờ duyệt', icon: Clock3, className: 'qtrv-card qtrv-card--orange' },
+  { key: 'daDuyet', title: 'Đã duyệt', icon: CheckCircle2, className: 'qtrv-card qtrv-card--green' },
+  { key: 'tuChoi', title: 'Từ chối', icon: ShieldAlert, className: 'qtrv-card qtrv-card--red' },
 ] as const;
 
 export default function ReviewAdminStats({ data }: Props) {
@@ -36,8 +36,8 @@ export default function ReviewAdminStats({ data }: Props) {
       <aside className="qtrv-rating-panel">
         <div className="qtrv-rating-panel__header">
           <div>
-            <h3>Chat luong danh gia</h3>
-            <p>Phan bo muc sao cua hoc vien tren toan he thong.</p>
+            <h3>Chất lượng đánh giá</h3>
+            <p>Phân bổ mức sao của học viên trên toàn hệ thống.</p>
           </div>
           <div className="qtrv-rating-panel__score">
             <strong>{data.danhGiaTrungBinh.toFixed(1)}</strong>
@@ -54,7 +54,7 @@ export default function ReviewAdminStats({ data }: Props) {
               color={star <= Math.round(data.danhGiaTrungBinh) ? '#f59e0b' : '#d1d5db'}
             />
           ))}
-          <span>{totalRatings} danh gia</span>
+          <span>{totalRatings} đánh giá</span>
         </div>
 
         <div className="qtrv-rating-bars">

@@ -1735,7 +1735,7 @@ video::-webkit-media-controls-playback-rate-button {
 
 /* �n n�t mobile toggle tr�n desktop */
 .cp-mobile-toggle-sidebar {
-    display: none;
+    display: none !important;
 }
 
 /* ---- Tablet: 768 � 1024px ---- */
@@ -2255,6 +2255,83 @@ video::-webkit-media-controls-playback-rate-button {
     pointer-events: none;
 }
 
+.cp-certificate-form {
+    margin-top: 1.25rem;
+    display: grid;
+    gap: 0.85rem;
+}
+
+.cp-certificate-form h5 {
+    margin: 0;
+    font-size: 1rem;
+    color: #181d38;
+}
+
+.cp-certificate-field {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.cp-certificate-field span {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #25314f;
+}
+
+.cp-certificate-field input {
+    border: 1px solid rgba(37, 49, 79, 0.16);
+    border-radius: 14px;
+    padding: 0.8rem 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cp-certificate-field input:focus {
+    border-color: rgba(246, 144, 80, 0.7);
+    box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.12);
+}
+
+.cp-certificate-email-status {
+    margin-top: 1rem;
+    padding: 0.95rem 1rem;
+    border-radius: 16px;
+    background: #f8f9ff;
+    border: 1px solid rgba(24, 29, 56, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.cp-certificate-email-status strong {
+    display: block;
+    color: #181d38;
+    margin-bottom: 0.2rem;
+}
+
+.cp-certificate-email-status p {
+    margin: 0;
+    color: #52607a;
+}
+
+.cp-certificate-email-status span {
+    flex-shrink: 0;
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.cp-certificate-email-status .sent {
+    background: rgba(27, 172, 111, 0.12);
+    color: #16835a;
+}
+
+.cp-certificate-email-status .pending {
+    background: rgba(246, 144, 80, 0.14);
+    color: #bf5f22;
+}
+
 @media (max-width: 992px) {
     .cp-certificate-hero,
     .cp-certificate-exam-head {
@@ -2277,6 +2354,11 @@ video::-webkit-media-controls-playback-rate-button {
     .cp-certificate-card {
         min-height: 280px;
         padding: 1.2rem;
+    }
+
+    .cp-certificate-email-status {
+        flex-direction: column;
+        align-items: flex-start;
     }
 
     .cp-certificate-course-name {

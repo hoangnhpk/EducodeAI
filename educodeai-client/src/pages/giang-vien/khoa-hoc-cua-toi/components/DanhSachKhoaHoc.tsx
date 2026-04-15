@@ -1,54 +1,41 @@
-import React from 'react';
+﻿import React from 'react';
 import type { KhoaHocGiangVienListDTO } from '../KhoaHocCuaToiDTO';
-import { FaUserGraduate, FaClock, FaStar, FaTrash, FaCog } from 'react-icons/fa';
+import { FaUserGraduate, FaClock, FaStar, FaTrash, FaCog, FaAward } from 'react-icons/fa';
 
 const TRINH_DO_MAP: Record<string, { label: string; color: string }> = {
     nguoi_moi: { label: 'Người mới', color: '#27ae60' },
     trung_cap: { label: 'Trung cấp', color: '#f39c12' },
-    nang_cao:  { label: 'Nâng cao',  color: '#e74c3c' },
+    nang_cao: { label: 'Nâng cao', color: '#e74c3c' },
 };
 
-// Lấy base URL của BE từ biến môi trường
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 
-// Hàm chuẩn hóa URL ảnh:
-// - Nếu đã là http/https (ảnh ngoài) → giữ nguyên
-// - Nếu là đường dẫn tương đối từ BE → thêm BASE_URL vào trước
 const getImageUrl = (url?: string): string => {
-    if (!url) return '';
+    if (!url) return 'https://placehold.co/280x160/fb873f/white?text=No+Image';
     if (url.startsWith('http')) return url;
     return `${BASE_URL}${url}`;
 };
 
 interface Props {
-    duLieu:         KhoaHocGiangVienListDTO[];
+    duLieu: KhoaHocGiangVienListDTO[];
     loadingDeleteId: number | null;
-    onXemChiTiet:   (maKhoaHoc: number) => void;
-    onXoa:          (maKhoaHoc: number) => void;
+    onXemChiTiet: (maKhoaHoc: number) => void;
+    onXoa: (maKhoaHoc: number) => void;
 }
 
 const DanhSachKhoaHoc: React.FC<Props> = ({ duLieu, loadingDeleteId, onXemChiTiet, onXoa }) => {
     return (
         <div className="course-grid">
-            {duLieu.map(kh => {
-                const trinhDo   = TRINH_DO_MAP[kh.trinhDo] ?? { label: kh.trinhDo, color: '#95a5a6' };
+            {duLieu.map((kh) => {
+                const trinhDo = TRINH_DO_MAP[kh.trinhDo] ?? { label: kh.trinhDo, color: '#95a5a6' };
                 const isDeleting = loadingDeleteId === kh.maKhoaHoc;
 
                 return (
-                    <div
-                        className={`course-card ${isDeleting ? 'opacity-50' : ''}`}
-                        key={kh.maKhoaHoc}
-                    >
+                    <div className={`course-card ${isDeleting ? 'opacity-50' : ''}`} key={kh.maKhoaHoc}>
                         <div className="image-wrapper">
-                            <img
-                                src={getImageUrl(kh.hinhAnh)}
-                                alt={kh.tenKhoaHoc}
-                            />
+                            <img src={getImageUrl(kh.hinhAnh)} alt={kh.tenKhoaHoc} />
                             <span className="status-badge">{kh.trangThai || 'Hoạt động'}</span>
-                            <span
-                                className="trinh-do-badge"
-                                style={{ backgroundColor: trinhDo.color }}
-                            >
+                            <span className="trinh-do-badge" style={{ backgroundColor: trinhDo.color }}>
                                 {trinhDo.label}
                             </span>
                         </div>
@@ -60,13 +47,22 @@ const DanhSachKhoaHoc: React.FC<Props> = ({ duLieu, loadingDeleteId, onXemChiTie
                             <div className="course-meta">
                                 <span><FaUserGraduate /> {kh.soHocVien} học viên</span>
                                 <span><FaClock /> {kh.thoiLuongGio}h</span>
-                                <span className="text-warning">
-                                    <FaStar /> {kh.diemDanhGiaTB?.toFixed(1) || '0.0'}
+                                <span className="text-warning"><FaStar /> {kh.diemDanhGiaTB?.toFixed(1) || '0.0'}</span>
+                            </div>
+
+                            <div className="d-flex flex-wrap gap-2 mb-2">
+                                <span className={`badge ${kh.coChungChi ? 'bg-success-subtle text-success' : 'bg-light text-muted'}`}>
+                                    <FaAward className="me-1" /> {kh.coChungChi ? 'Có chứng chỉ' : 'Không có chứng chỉ'}
                                 </span>
+                                {kh.coChungChi && (
+                                    <span className={`badge ${kh.daCoDeThiChungChi ? 'bg-info-subtle text-info' : 'bg-warning-subtle text-warning'}`}>
+                                        {kh.daCoDeThiChungChi ? 'Đã có đề chứng chỉ' : 'Chưa có đề chứng chỉ'}
+                                    </span>
+                                )}
                             </div>
 
                             <div className="pg-label">
-                                <span className="small text-muted">Tiến độ TB</span>
+                                <span className="small text-muted">Tiến độ trung bình</span>
                                 <span className="small fw-bold">{Math.round(kh.tienDoTrungBinh || 0)}%</span>
                             </div>
                             <div className="pg-container">
@@ -74,23 +70,11 @@ const DanhSachKhoaHoc: React.FC<Props> = ({ duLieu, loadingDeleteId, onXemChiTie
                             </div>
 
                             <div className="course-card-actions">
-                                <button
-                                    className="btn-orange"
-                                    onClick={() => onXemChiTiet(kh.maKhoaHoc)}
-                                    disabled={isDeleting}
-                                >
+                                <button className="btn-orange" onClick={() => onXemChiTiet(kh.maKhoaHoc)} disabled={isDeleting}>
                                     <FaCog /> Quản lý
                                 </button>
-                                <button
-                                    className="btn-danger-outline"
-                                    onClick={() => onXoa(kh.maKhoaHoc)}
-                                    disabled={isDeleting}
-                                    title="Xóa khóa học"
-                                >
-                                    {isDeleting
-                                        ? <span className="spinner-border spinner-border-sm" />
-                                        : <FaTrash />
-                                    }
+                                <button className="btn-danger-outline" onClick={() => onXoa(kh.maKhoaHoc)} disabled={isDeleting} title="Xóa khóa học">
+                                    {isDeleting ? <span className="spinner-border spinner-border-sm" /> : <FaTrash />}
                                 </button>
                             </div>
                         </div>
