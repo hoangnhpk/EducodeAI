@@ -28,7 +28,6 @@ export default function HeaderQuanTriVien() {
     <header className="qtv-header">
       <div className="qtv-header-left">
         <h1 className="qtv-page-title">Quản Trị Hệ Thống</h1>
-        <p className="qtv-page-subtitle">Quản lý toàn bộ hệ thống</p>
       </div>
       <div className="qtv-header-right d-flex align-items-center gap-3">
         <button className="btn btn-outline-danger d-flex align-items-center gap-2" onClick={handleLogout}>

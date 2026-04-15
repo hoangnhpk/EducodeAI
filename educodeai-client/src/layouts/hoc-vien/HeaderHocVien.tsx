@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSystemConfig } from "../../contexts/SystemConfigContext";
 
 export default function HeaderHocVien() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const { configs } = useSystemConfig();
 
   // Kiểm tra trạng thái đăng nhập khi component mount
   useEffect(() => {
@@ -57,6 +59,10 @@ export default function HeaderHocVien() {
             Lộ trình AI
           </Link>
 
+          <Link to="/khong-gian-hoc-tap" className="nav-item nav-link">
+            Không gian học tập
+          </Link>
+
           {/* KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP */}
           {user ? (
             <div className="nav-item dropdown px-lg-4">
@@ -74,8 +80,8 @@ export default function HeaderHocVien() {
                 <Link to="/profile" className="dropdown-item">
                   Hồ sơ cá nhân
                 </Link>
-                <Link to="/my-courses" className="dropdown-item">
-                  Khóa học của tôi
+                <Link to="/khong-gian-hoc-tap" className="dropdown-item">
+                  Không gian học tập
                 </Link>
                 <Link to="/khoa-hoc-ai-cua-toi" className="dropdown-item">
                   Lộ trình của tôi

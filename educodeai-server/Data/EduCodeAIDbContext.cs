@@ -29,6 +29,7 @@ namespace educodeai_server.Data
         public DbSet<KetQuaLamBaiModel> KetQuaLamBais { get; set; }
         public DbSet<KetQuaKiemTraChungChiModel> KetQuaKiemTraChungChis { get; set; }
         public DbSet<ChungChiKhoaHocModel> ChungChiKhoaHocs { get; set; }
+        public DbSet<CauHinhHeThongModel> CauHinhs { get; set; }
         public DbSet<LoTrinhAIModel> LoTrinhAIs { get; set; }
         public DbSet<GhiChuAIModel> GhiChuAIs { get; set; }
         public DbSet<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; }
@@ -197,7 +198,7 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
 
             // BaiTapModel relationships
             modelBuilder.Entity<BaiTapModel>()
-                .HasOne(bt => bt.BaiTap_ThucHanh)
+                .HasOne(bt => bt.BaiTapThucHanh)
                 .WithOne(bth => bth.BaiTap)
                 .HasForeignKey<BaiTapThucHanhModel>(bth => bth.MaBaiTap)
                 .OnDelete(DeleteBehavior.NoAction);
