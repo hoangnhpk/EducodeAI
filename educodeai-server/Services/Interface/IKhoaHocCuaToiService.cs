@@ -16,5 +16,6 @@ namespace educodeai_server.Services.Interface
         Task<ThemVideoResponseDTO> ThemVideoAsync(int maChuong, int maGiangVien, BaiHocVideoCreateUpdateDTO dto);
         Task<bool> CapNhatVideoAsync(int maBaiHoc, int maGiangVien, BaiHocVideoCreateUpdateDTO dto);
         Task<bool> XoaVideoAsync(int maBaiHoc, int maGiangVien);
+        Task<KetQuaTaoDeChungChiAIDTO> TaoDeChungChiBangAIAsync(int maKhoaHoc, int maGiangVien);
     }
 }
