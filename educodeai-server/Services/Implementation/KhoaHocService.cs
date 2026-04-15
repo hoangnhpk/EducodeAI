@@ -1,4 +1,7 @@
-﻿using educodeai_server.DTOs.AI;
+using System.Text;
+using educodeai_server.Helpers;
+using Microsoft.Extensions.DependencyInjection;
+using educodeai_server.DTOs.AI;
 using educodeai_server.DTOs.KhoaHoc;
 using educodeai_server.Models;
 using educodeai_server.Repository.Interface;
@@ -10,9 +13,12 @@ namespace educodeai_server.Services.Implementation
     {
         private readonly IKhoaHocRepository _khoaHocRepository;
 
-        public KhoaHocService(IKhoaHocRepository khoaHocRepository)
+        private readonly IServiceScopeFactory _scopeFactory;
+
+        public KhoaHocService(IKhoaHocRepository khoaHocRepository, IServiceScopeFactory scopeFactory)
         {
             _khoaHocRepository = khoaHocRepository;
+            _scopeFactory = scopeFactory;
         }
 
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung)
@@ -47,7 +53,61 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<KetQuaNopBaiKiemTraChungChiDTO> NopBaiKiemTraChungChiAsync(NopBaiKiemTraChungChiDTO dto)
         {
-            return await _khoaHocRepository.NopBaiKiemTraChungChiAsync(dto);
+            var rs = await _khoaHocRepository.NopBaiKiemTraChungChiAsync(dto);
+
+            if (rs.ThanhCong && rs.DaDat && rs.ThongTinChungChi != null)
+            {
+                var tc = rs.ThongTinChungChi;
+                
+                // Chạy ngầm việc tạo PDF và gửi Email
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        // 1. Tạo PDF
+                        var pdfBytes = ChungChiPdfHelper.TaoPdf(new ChungChiPdfRequest
+                        {
+                            TenChungChi = tc.TenChungChi ?? "Chứng nhận hoàn thành",
+                            HoTenHocVien = dto.HoTenHienThi,
+                            TenKhoaHoc = tc.TenKhoaHoc ?? "Khóa học",
+                            MaChungChi = tc.MaChungChi ?? "",
+                            NgayCap = tc.NgayCap ?? DateTime.UtcNow,
+                            DiemSo = rs.DiemSo
+                        });
+
+                        // 2. Gửi Email
+                        var attachment = new[]
+                        {
+                            new EmailAttachmentData
+                            {
+                                FileName = TaoTenFileChungChi(tc.TenKhoaHoc ?? "KhoaHoc", dto.HoTenHienThi),
+                                Content = pdfBytes,
+                                MediaType = "application/pdf"
+                            }
+                        };
+
+                        var emailSent = await EmailHelper.SendEmailAsync(
+                            dto.EmailNhan,
+                            $"[{tc.TenKhoaHoc}] Chứng chỉ hoàn thành khóa học",
+                            TaoNoiDungEmailChungChi(new KhoaHocModel { TenKhoaHoc = tc.TenKhoaHoc }, dto.HoTenHienThi, tc.MaChungChi, rs.DiemSo),
+                            attachment);
+
+                        // 3. Cập nhật DB trạng thái gửi email
+                        if (emailSent)
+                        {
+                            using var scope = _scopeFactory.CreateScope();
+                            var repo = scope.ServiceProvider.GetRequiredService<IKhoaHocRepository>();
+                            await repo.CapNhatTrangThaiGuiEmailChungChiAsync(dto.MaKhoaHoc, dto.MaNguoiDung, true);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[EmailBgTask] Lỗi: {ex.Message}");
+                    }
+                });
+            }
+
+            return rs;
         }
 
         public async Task<List<GhiChuAIModel>> LayGhiChuAI(int maNguoiDung)
@@ -137,6 +197,88 @@ namespace educodeai_server.Services.Implementation
             };
 
             return await _khoaHocRepository.ThemDanhGiaAsync(model);
+        }
+
+        private static string TaoNoiDungEmailChungChi(
+            KhoaHocModel khoaHoc,
+            string hoTenHienThi,
+            string maChungChi,
+            double diemSo)
+        {
+            var diemHienThi = $"{Math.Round(diemSo, 1):0.#}%";
+            var ngayCapStr  = DateTime.UtcNow.ToLocalTime().ToString("dd/MM/yyyy");
+
+            return $"""
+                <div style="margin:0;padding:40px 0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;color:#1A2B4A">
+                  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.04)">
+                    
+                    <!-- Header -->
+                    <div style="background:#1A2B4A;padding:40px 30px;text-align:center;">
+                      <div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:#A0B3C6;text-transform:uppercase;margin-bottom:12px">
+                        EduCodeAI · Certificate of Completion
+                      </div>
+                      <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#ffffff;line-height:1.3">
+                        Chúc mừng, {hoTenHienThi}! 🎉
+                      </h1>
+                      <p style="margin:0;font-size:15px;line-height:1.6;color:#D8E2ED">
+                        Bạn đã xuất sắc vượt qua bài kiểm tra và hoàn thành khóa học<br>
+                        <strong style="color:#F5A623;font-size:16px;">{khoaHoc.TenKhoaHoc}</strong>
+                      </p>
+                    </div>
+
+                    <!-- Body -->
+                    <div style="padding:40px 30px;">
+                      
+                      <!-- Meta Details -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:30px;background:#F8FAFD;border:1px solid #E2E8F0;border-radius:8px;">
+                        <tr>
+                          <td style="padding:20px;text-align:center;border-right:1px solid #E2E8F0;width:33%;">
+                            <div style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:8px">Điểm số</div>
+                            <div style="font-size:22px;font-weight:800;color:#0F172A">{diemHienThi}</div>
+                          </td>
+                          <td style="padding:20px;text-align:center;border-right:1px solid #E2E8F0;width:33%;">
+                            <div style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:8px">Ngày cấp</div>
+                            <div style="font-size:16px;font-weight:700;color:#0F172A">{ngayCapStr}</div>
+                          </td>
+                          <td style="padding:20px;text-align:center;width:34%;">
+                            <div style="font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:8px">ID Chứng chỉ</div>
+                            <div style="font-size:13px;font-weight:600;color:#0F172A;word-break:break-all">{maChungChi}</div>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <div style="padding:20px;background:#EFF6FF;border-left:4px solid #3B82F6;border-radius:4px;margin-bottom:24px">
+                        <strong style="display:block;font-size:14px;color:#1E3A8A;margin-bottom:6px">📎 PDF đính kèm</strong>
+                        <span style="font-size:14px;color:#1E40AF;line-height:1.6">Chứng chỉ định dạng PDF đã được gửi đính kèm trong email này. Bạn có thể tải xuống, in ra để đính kèm vào hồ sơ cá nhân.</span>
+                      </div>
+
+                      <p style="font-size:13px;color:#64748B;text-align:center;margin:0 0 30px;">
+                        Hệ thống sẽ cập nhật tự động chứng chỉ mới nhất về email nếu bạn thi lại đạt điểm cao hơn.
+                      </p>
+
+                      <!-- Footer Div -->
+                      <div style="border-top:1px solid #E2E8F0;padding-top:20px;text-align:center;">
+                        <div style="font-size:15px;font-weight:700;color:#0F172A;">EduCodeAI</div>
+                        <div style="font-size:13px;color:#64748B;margin-top:4px;margin-bottom:12px;">Nền tảng học lập trình thông minh</div>
+                        <div style="font-size:11px;color:#94A3B8;">Đây là email tự động, vui lòng không trả lời.</div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+                """;
+        }
+
+        private static string TaoTenFileChungChi(string tenKhoaHoc, string hoTenHienThi)
+        {
+            var tenFile = $"{hoTenHienThi}-{tenKhoaHoc}"
+                .Normalize(NormalizationForm.FormD);
+            var builder = new string(tenFile
+                .Where(c => char.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                .Select(c => Array.IndexOf(Path.GetInvalidFileNameChars(), c) >= 0 ? '-' : c)
+                .ToArray());
+
+            return $"{builder.Replace(' ', '-')}.pdf";
         }
     }
 }

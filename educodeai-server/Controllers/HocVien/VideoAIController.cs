@@ -45,6 +45,14 @@ namespace educodeai_server.Controllers.HocVien
             try
             {
                 var aiResult = await _chatBotAIService.PhanTichVideoAsync(baiHoc.LinkVideo, baiHoc.TieuDe);
+                if (aiResult?.Chapters == null) return BadRequest("AI không trả về kết quả.");
+
+                // Xóa dữ liệu cũ của bài học này trước khi lưu mới để tránh trùng lặp
+                var chaptersCu = await _context.VideoChapters.Where(c => c.MaBaiHoc == maBaiHoc).ToListAsync();
+                if (chaptersCu.Any())
+                {
+                    _context.VideoChapters.RemoveRange(chaptersCu);
+                }
 
                 if (aiResult?.Chapters == null || !aiResult.Chapters.Any())
                     return BadRequest("AI không phân tích được video này.");
