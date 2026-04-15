@@ -7,7 +7,7 @@ export default function SidebarQuanTriVienMoi() {
       <div className="qtv-sidebar-header">
         <div className="header-logo">
           <MdSettings className="header-icon-spin" />
-          <span>QUAN TRI</span>
+          <span>QUẢN TRỊ</span>
         </div>
         <small className="system-label">EduCodeAI System</small>
       </div>
@@ -15,17 +15,17 @@ export default function SidebarQuanTriVienMoi() {
       <nav className="qtv-sidebar-nav">
         <NavLink to="/quan-tri-vien/nguoi-dung" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><MdPeople /></div>
-          <span>Nguoi Dung</span>
+          <span>Người Dùng</span>
         </NavLink>
 
         <NavLink to="/quan-tri-vien/quan-ly-api-key" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><i className="bi bi-key-fill"></i></div>
-          <span>Quan ly API AI</span>
+          <span>Quản lý API AI</span>
         </NavLink>
 
         <NavLink to="/quan-tri-vien/quan-ly-binh-luan-review" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><MdRateReview /></div>
-          <span>Danh gia khoa hoc</span>
+          <span>Đánh giá khóa học</span>
         </NavLink>
       </nav>
     </aside>
