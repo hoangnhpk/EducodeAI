@@ -27,6 +27,8 @@ namespace educodeai_server.Data
         public DbSet<BaiTapThucHanhModel> BaiTapThucHanhs { get; set; }
         public DbSet<TestCaseThucHanhModel> TestCaseThucHanhs { get; set; }
         public DbSet<KetQuaLamBaiModel> KetQuaLamBais { get; set; }
+        public DbSet<KetQuaKiemTraChungChiModel> KetQuaKiemTraChungChis { get; set; }
+        public DbSet<ChungChiKhoaHocModel> ChungChiKhoaHocs { get; set; }
         public DbSet<LoTrinhAIModel> LoTrinhAIs { get; set; }
         public DbSet<GhiChuAIModel> GhiChuAIs { get; set; }
         public DbSet<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; }
@@ -58,6 +60,8 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
             modelBuilder.Entity<NguoiDungModel>().HasIndex(u => u.Email).IsUnique();
             modelBuilder.Entity<TienDoBaiHocModel>().HasIndex(t => new { t.MaNguoiDung, t.MaBaiHoc }).IsUnique();
             modelBuilder.Entity<DanhGiaModel>().HasIndex(d => new { d.MaNguoiDung, d.MaKhoaHoc }).IsUnique();
+            modelBuilder.Entity<ChungChiKhoaHocModel>().HasIndex(c => c.MaChungChi).IsUnique();
+            modelBuilder.Entity<ChungChiKhoaHocModel>().HasIndex(c => new { c.MaNguoiDung, c.MaKhoaHoc }).IsUnique();
 
             // ====== RELATIONSHIPS CONFIGURATION ======
 
@@ -111,6 +115,18 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.KetQuaKiemTraChungChis)
+                .WithOne(kq => kq.NguoiDung)
+                .HasForeignKey(kq => kq.MaNguoiDung)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.ChungChiKhoaHocs)
+                .WithOne(c => c.NguoiDung)
+                .HasForeignKey(c => c.MaNguoiDung)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
                 .HasMany(n => n.LoTrinhAIs)
                 .WithOne(l => l.NguoiDung)
                 .HasForeignKey(l => l.MaNguoiDung)
@@ -133,6 +149,18 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
                 .HasMany(k => k.DanhGias)
                 .WithOne(d => d.KhoaHoc)
                 .HasForeignKey(d => d.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.KetQuaKiemTraChungChis)
+                .WithOne(kq => kq.KhoaHoc)
+                .HasForeignKey(kq => kq.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.ChungChiKhoaHocs)
+                .WithOne(c => c.KhoaHoc)
+                .HasForeignKey(c => c.MaKhoaHoc)
                 .OnDelete(DeleteBehavior.NoAction);
 
             // ChuongHocModel relationships
@@ -198,6 +226,12 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
                 .HasOne(b => b.BinhLuanCha)
                 .WithMany(b => b.BinhLuans)
                 .HasForeignKey(b => b.MaBinhLuanCha)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ChungChiKhoaHocModel>()
+                .HasOne(c => c.KetQuaKiemTraChungChi)
+                .WithMany()
+                .HasForeignKey(c => c.MaKetQuaKiemTraChungChi)
                 .OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<BaiHocModel>()
                 .HasMany(b => b.VideoChapters)

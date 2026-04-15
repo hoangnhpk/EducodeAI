@@ -177,24 +177,23 @@ const QuanLyThietBi: React.FC = () => {
                                     />
                                 </div>
 
-                                <div className="row g-3">
-                                    <div className="col-6">
-                                        <button 
-                                            className="btn btn-light w-100 rounded-pill py-3 fw-bold border" 
-                                            onClick={() => setShowOtpModal(false)}
-                                        >
-                                            Hủy bỏ
-                                        </button>
-                                    </div>
-                                    <div className="col-6">
-                                        <button 
-                                            className="btn btn-primary w-100 rounded-pill py-3 text-white border-0 fw-bold shadow-sm" 
-                                            style={{ backgroundColor: '#fb873f' }} 
-                                            onClick={confirmLogoutRemote}
-                                        >
-                                            Xác nhận
-                                        </button>
-                                    </div>
+                                <div className="d-flex gap-3 mt-4 align-items-center justify-content-center">
+                                    <button 
+                                        type="button"
+                                        className="btn btn-light rounded-pill fw-bold border d-flex align-items-center justify-content-center m-0" 
+                                        style={{ flex: 1, height: '55px' }}
+                                        onClick={() => setShowOtpModal(false)}
+                                    >
+                                        Hủy bỏ
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        className="btn btn-primary rounded-pill text-white fw-bold border d-flex align-items-center justify-content-center m-0 shadow-sm" 
+                                        style={{ backgroundColor: '#fb873f', borderColor: '#fb873f', flex: 1, height: '55px' }} 
+                                        onClick={confirmLogoutRemote}
+                                    >
+                                        Xác nhận
+                                    </button>
                                 </div>
                             </div>
                         </div>
