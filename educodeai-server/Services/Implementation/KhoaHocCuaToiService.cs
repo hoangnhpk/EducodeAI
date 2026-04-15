@@ -12,169 +12,58 @@ namespace educodeai_server.Services.Implement
     {
         private readonly IKhoaHocCuaToiRepository _repository;
         private readonly IGeminiAIService _gemini;
+        private readonly IYouTubeService _youtubeService;
 
-        public KhoaHocCuaToiService(IKhoaHocCuaToiRepository repository, IGeminiAIService gemini)
+        public KhoaHocCuaToiService(IKhoaHocCuaToiRepository repository, IGeminiAIService gemini, IYouTubeService youtubeService)
         {
             _repository = repository;
             _gemini = gemini;
+            _youtubeService = youtubeService;
         }
 
-        // ===== DANH SÁCH =====
+        // ===== COURSE MANAGEMENT =====
         public async Task<List<KhoaHocGiangVienListDTO>> GetDanhSachKhoaHocAsync(int maGiangVien)
         {
             var khoaHocs = await _repository.GetKhoaHocByGiangVienAsync(maGiangVien);
-
-            return khoaHocs.Select(k => new KhoaHocGiangVienListDTO
-            {
-                MaKhoaHoc = k.MaKhoaHoc,
-                TenKhoaHoc = k.TenKhoaHoc,
-                HinhAnh = k.HinhAnh,
-                LinhVuc = k.LinhVuc,
-                TrinhDo = k.TrinhDo,
-                ThoiLuongGio = k.ThoiLuongGio,
-                SoHocVien = k.DangKyKhoaHocs?.Count ?? 0,
-                DiemDanhGiaTB = k.DiemDanhGiaTB,
-                TrangThai = k.TrangThai,
-                CoChungChi = k.CoChungChi,
-                DaCoDeThiChungChi = !string.IsNullOrWhiteSpace(k.DuLieuDeChungChiJSON),
-                NgayTao = k.NgayTao,
-                TienDoTrungBinh = (k.DangKyKhoaHocs != null && k.DangKyKhoaHocs.Count > 0)
-                    ? k.DangKyKhoaHocs.Average(dk => (double)dk.TienDo)
-                    : 0.0,
-
-            }).ToList();
+            return khoaHocs.Select(MapToKhoaHocListDTO).ToList();
         }
 
-        // ===== CHI TIẾT =====
         public async Task<KhoaHocGiangVienDetailDTO?> GetChiTietKhoaHocAsync(int maKhoaHoc, int maGiangVien)
         {
-            var k = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
-            if (k == null) return null;
-
-            return new KhoaHocGiangVienDetailDTO
-            {
-                MaKhoaHoc = k.MaKhoaHoc,
-                TenKhoaHoc = k.TenKhoaHoc,
-                MoTa = k.MoTa,
-                HinhAnh = k.HinhAnh,
-                LinhVuc = k.LinhVuc,
-                TrinhDo = k.TrinhDo,
-                ThoiLuongGio = k.ThoiLuongGio,
-                TrangThai = k.TrangThai,
-                NgayTao = k.NgayTao,
-                CoChungChi = k.CoChungChi,
-                TenChungChi = k.TenChungChi,
-                DiemDatChungChi = k.DiemDatChungChi,
-                SoCauHoiChungChi = k.SoCauHoiChungChi,
-                ThoiGianLamBaiChungChi = k.ThoiGianLamBaiChungChi,
-                DaCoDeThiChungChi = !string.IsNullOrWhiteSpace(k.DuLieuDeChungChiJSON),
-                NguonDeChungChi = k.NguonDeChungChi,
-                NgayTaoDeChungChi = k.NgayTaoDeChungChi,
-                SoHocVien = k.DangKyKhoaHocs?.Count ?? 0,
-                DiemDanhGiaTB = k.DiemDanhGiaTB,
-                KyNangChinh = k.KyNangChinh,
-
-                TiLeHoanThanh = (k.DangKyKhoaHocs != null && k.DangKyKhoaHocs.Count > 0)
-                    ? k.DangKyKhoaHocs.Average(dk => (double)dk.TienDo)
-                    : 0.0,
-
-                DanhSachHocVien = k.DangKyKhoaHocs?.Select(d => new HocVienTrongKhoaHocDTO
-                {
-                    MaNguoiDung = d.MaNguoiDung,
-                    HoTen = d.NguoiDung.HoTen,
-                    Email = d.NguoiDung.Email,
-                    AnhDaiDien = d.NguoiDung.AnhDaiDien,
-                    NgayDangKy = d.NgayDangKy,
-                    TienDo = d.TienDo,
-
-                }).ToList() ?? new(),
-                DanhSachChuong = k.ChuongHocs?.OrderBy(c => c.ThuTu).Select(c => new ChuongHocDetailDTO
-                {
-                    MaChuong = c.MaChuong,
-                    TenChuong = c.TenChuong,
-                    ThuTu = c.ThuTu,
-                    DanhSachBaiHoc = c.BaiHocs?.OrderBy(b => b.ThuTu).Select(b => new BaiHocVideoDetailDTO
-                    {
-                        MaBaiHoc = b.MaBaiHoc,
-                        TieuDe = b.TieuDe,
-                        LinkVideo = b.LinkVideo,
-                        ThoiLuong = b.ThoiLuong ?? 0,
-                        ThuTu = b.ThuTu,
-                    }).ToList() ?? new(),
-                }).ToList() ?? new(),
-            };
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
+            return khoaHoc != null ? MapToKhoaHocDetailDTO(khoaHoc) : null;
         }
 
-        // ===== TẠO KHOÁ HỌC =====
         public async Task<bool> TaoKhoaHocAsync(int maGiangVien, KhoaHocCreateUpdateDTO dto)
         {
-            var khoaHoc = new KhoaHocModel
-            {
-                TenKhoaHoc = dto.TenKhoaHoc,
-                MoTa = dto.MoTa,
-                HinhAnh = dto.HinhAnh,
-                LinhVuc = dto.LinhVuc,
-                TrinhDo = dto.TrinhDo,
-                ThoiLuongGio = dto.ThoiLuongGio,
-                TrangThai = dto.TrangThai,
-                MaGiangVien = maGiangVien,
-                NgayTao = DateTime.Now,
-                KyNangChinh = dto.KyNangChinh ?? string.Empty,
-                CoChungChi = dto.CoChungChi,
-                TenChungChi = dto.CoChungChi
-                    ? (string.IsNullOrWhiteSpace(dto.TenChungChi) ? "Chứng nhận hoàn thành" : dto.TenChungChi.Trim())
-                    : null,
-                DiemDatChungChi = dto.CoChungChi ? dto.DiemDatChungChi : 80,
-                SoCauHoiChungChi = dto.CoChungChi ? dto.SoCauHoiChungChi : 20,
-                ThoiGianLamBaiChungChi = dto.CoChungChi ? dto.ThoiGianLamBaiChungChi : 30
-            };
+            ValidateKhoaHocData(dto);
 
+            var khoaHoc = CreateKhoaHocFromDTO(maGiangVien, dto);
             await _repository.AddKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
             return true;
         }
 
-        // ===== CẬP NHÂT KHOÁ HỌC =====
         public async Task<bool> CapNhatKhoaHocAsync(int maKhoaHoc, int maGiangVien, KhoaHocCreateUpdateDTO dto)
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
             if (khoaHoc == null) return false;
 
-            khoaHoc.TenKhoaHoc = dto.TenKhoaHoc;
-            khoaHoc.MoTa = dto.MoTa;
-            khoaHoc.HinhAnh = dto.HinhAnh;
-            khoaHoc.LinhVuc = dto.LinhVuc;
-            khoaHoc.TrinhDo = dto.TrinhDo;
-            khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;
-            khoaHoc.TrangThai = dto.TrangThai;
-            khoaHoc.KyNangChinh = dto.KyNangChinh ?? string.Empty;
-            khoaHoc.CoChungChi = dto.CoChungChi;
-            khoaHoc.TenChungChi = dto.CoChungChi
-                ? (string.IsNullOrWhiteSpace(dto.TenChungChi) ? "Chứng nhận hoàn thành" : dto.TenChungChi.Trim())
-                : null;
-            khoaHoc.DiemDatChungChi = dto.CoChungChi ? dto.DiemDatChungChi : 80;
-            khoaHoc.SoCauHoiChungChi = dto.CoChungChi ? dto.SoCauHoiChungChi : 20;
-            khoaHoc.ThoiGianLamBaiChungChi = dto.CoChungChi ? dto.ThoiGianLamBaiChungChi : 30;
-
-            if (!dto.CoChungChi)
-            {
-                khoaHoc.DuLieuDeChungChiJSON = null;
-                khoaHoc.NguonDeChungChi = null;
-                khoaHoc.NgayTaoDeChungChi = null;
-            }
-
+            UpdateKhoaHocFromDTO(khoaHoc, dto);
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
             return true;
         }
 
-        // ===== XOÁ KHOÁ HỌC =====
+        // ===== XOÁ KHOÁ HỌC (SOFT DELETE) =====
         public async Task<bool> XoaKhoaHocAsync(int maKhoaHoc, int maGiangVien)
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
             if (khoaHoc == null) return false;
 
-            await _repository.DeleteKhoaHocAsync(khoaHoc);
+            khoaHoc.TrangThai = "Đã xóa";
+            
+            await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
             return true;
         }
@@ -436,6 +325,389 @@ OUTPUT JSON THUẦN
     ""giaiThich"": """"
   }}
 ]";
+        }
+
+        // ===== YOUTUBE PLAYLIST IMPORT =====
+        public async Task<YouTubePlaylistAnalyzeResponseDTO> AnalyzePlaylistAsync(string playlistUrl)
+        {
+            if (!_youtubeService.IsValidPlaylistUrl(playlistUrl))
+            {
+                return new YouTubePlaylistAnalyzeResponseDTO
+                {
+                    Success = false,
+                    Message = "URL playlist không hợp lệ"
+                };
+            }
+
+            var playlistInfo = await _youtubeService.GetPlaylistInfoAsync(playlistUrl);
+            if (playlistInfo == null)
+            {
+                return new YouTubePlaylistAnalyzeResponseDTO
+                {
+                    Success = false,
+                    Message = "Không thể lấy thông tin playlist"
+                };
+            }
+
+            return new YouTubePlaylistAnalyzeResponseDTO
+            {
+                Success = true,
+                Message = "Phân tích playlist thành công",
+                PlaylistInfo = playlistInfo
+            };
+        }
+
+        public async Task<YouTubePlaylistVideosResponseDTO> GetPlaylistVideosAsync(string playlistId)
+        {
+            var videos = await _youtubeService.GetPlaylistVideosAsync(playlistId);
+            
+            return new YouTubePlaylistVideosResponseDTO
+            {
+                Success = true,
+                Message = $"Tìm thấy {videos.Count} video",
+                Videos = videos
+            };
+        }
+
+        public async Task<YouTubePlaylistImportResponseDTO> ImportPlaylistAsync(int maGiangVien, YouTubePlaylistImportRequestDTO request)
+        {
+            var chuong = await _repository.GetChuongWithKhoaHocAsync(request.MaChuong);
+            if (chuong == null || chuong.KhoaHoc.MaGiangVien != maGiangVien)
+            {
+                return new YouTubePlaylistImportResponseDTO
+                {
+                    Success = false,
+                    Message = "Không tìm thấy chương hoặc không có quyền"
+                };
+            }
+
+            var importedLessons = new List<BaiHocVideoDetailDTO>();
+            var currentOrder = chuong.BaiHocs?.Max(b => b.ThuTu) ?? 0;
+
+            foreach (var videoId in request.SelectedVideoIds)
+            {
+                var videoInfo = await _youtubeService.GetVideoInfoAsync(videoId);
+                if (videoInfo == null) continue;
+
+                var baiHoc = new BaiHocModel
+                {
+                    MaChuong = request.MaChuong,
+                    TieuDe = videoInfo.Title,
+                    NoiDung = videoInfo.Description,
+                    LinkVideo = $"https://www.youtube.com/watch?v={videoInfo.VideoId}",
+                    ThoiLuong = videoInfo.Duration / 60, // Convert to minutes
+                    ThuTu = ++currentOrder,
+                    LoaiBaiHoc = "Video"
+                };
+
+                await _repository.AddBaiHocAsync(baiHoc);
+
+                importedLessons.Add(new BaiHocVideoDetailDTO
+                {
+                    MaBaiHoc = baiHoc.MaBaiHoc,
+                    TieuDe = baiHoc.TieuDe,
+                    LinkVideo = baiHoc.LinkVideo,
+                    ThoiLuong = baiHoc.ThoiLuong ?? 0,
+                    ThuTu = baiHoc.ThuTu
+                });
+            }
+
+            await _repository.SaveChangesAsync();
+
+            return new YouTubePlaylistImportResponseDTO
+            {
+                Success = true,
+                Message = $"Đã import thành công {importedLessons.Count} bài học",
+                ImportedCount = importedLessons.Count,
+                ImportedLessons = importedLessons
+            };
+        }
+
+        public async Task<YouTubeVideoInfoResponseDTO> GetVideoInfoAsync(string videoUrl)
+        {
+            var videoId = _youtubeService.ExtractVideoId(videoUrl);
+            if (string.IsNullOrEmpty(videoId))
+            {
+                return new YouTubeVideoInfoResponseDTO
+                {
+                    Success = false,
+                    Message = "URL video không hợp lệ"
+                };
+            }
+
+            var videoInfo = await _youtubeService.GetVideoInfoAsync(videoId);
+            if (videoInfo == null)
+            {
+                return new YouTubeVideoInfoResponseDTO
+                {
+                    Success = false,
+                    Message = "Không thể lấy thông tin video"
+                };
+            }
+
+            return new YouTubeVideoInfoResponseDTO
+            {
+                Success = true,
+                Message = "Lấy thông tin video thành công",
+                VideoInfo = videoInfo
+            };
+        }
+
+        // ===== REORDER FUNCTIONALITY =====
+        public async Task<bool> ReorderChaptersAsync(int maKiangVien, int maKhoaHoc, List<ChapterReorderDTO> chapters)
+        {
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maKiangVien);
+            if (khoaHoc == null) return false;
+
+            foreach (var chapter in chapters)
+            {
+                var chuong = khoaHoc.ChuongHocs?.FirstOrDefault(c => c.MaChuong == chapter.MaChuong);
+                if (chuong != null)
+                {
+                    chuong.ThuTu = chapter.ThuTu;
+                    await _repository.UpdateChuongAsync(chuong);
+                }
+            }
+
+            await _repository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ReorderLessonsAsync(int maGiangVien, int maChuong, List<LessonReorderDTO> lessons)
+        {
+            var chuong = await _repository.GetChuongWithKhoaHocAsync(maChuong);
+            if (chuong == null || chuong.KhoaHoc.MaGiangVien != maGiangVien) return false;
+
+            foreach (var lesson in lessons)
+            {
+                var baiHoc = chuong.BaiHocs?.FirstOrDefault(b => b.MaBaiHoc == lesson.MaBaiHoc);
+                if (baiHoc != null)
+                {
+                    baiHoc.ThuTu = lesson.ThuTu;
+                    await _repository.UpdateBaiHocAsync(baiHoc);
+                }
+            }
+
+            await _repository.SaveChangesAsync();
+            return true;
+        }
+
+        // ===== CERTIFICATE CONFIG =====
+        public async Task<bool> EnableCertificateAsync(int maKhoaHoc, int maGiangVien)
+        {
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
+            if (khoaHoc == null) return false;
+
+            // Validate certificate data before enabling
+            ValidateCertificateData(khoaHoc.DiemDatChungChi, khoaHoc.SoCauHoiChungChi, khoaHoc.ThoiGianLamBaiChungChi, new List<string>());
+
+            khoaHoc.CoChungChi = true;
+            if (string.IsNullOrWhiteSpace(khoaHoc.TenChungChi))
+                khoaHoc.TenChungChi = "Chung nhan hoan thanh";
+
+            await _repository.UpdateKhoaHocAsync(khoaHoc);
+            await _repository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DisableCertificateAsync(int maKhoaHoc, int maGiangVien)
+        {
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
+            if (khoaHoc == null) return false;
+
+            khoaHoc.CoChungChi = false;
+            khoaHoc.DuLieuDeChungChiJSON = null;
+            khoaHoc.NguonDeChungChi = null;
+            khoaHoc.NgayTaoDeChungChi = null;
+
+            await _repository.UpdateKhoaHocAsync(khoaHoc);
+            await _repository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<CertificateConfigDTO?> GetCertificateConfigAsync(int maKhoaHoc, int maGiangVien)
+        {
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
+            if (khoaHoc == null) return null;
+
+            return new CertificateConfigDTO
+            {
+                CoChungChi = khoaHoc.CoChungChi,
+                TenChungChi = khoaHoc.TenChungChi,
+                DiemDatChungChi = khoaHoc.DiemDatChungChi,
+                SoCauHoiChungChi = khoaHoc.SoCauHoiChungChi,
+                ThoiGianLamBaiChungChi = khoaHoc.ThoiGianLamBaiChungChi,
+                DaCoDeThiChungChi = !string.IsNullOrWhiteSpace(khoaHoc.DuLieuDeChungChiJSON),
+                NguonDeChungChi = khoaHoc.NguonDeChungChi,
+                NgayTaoDeChungChi = khoaHoc.NgayTaoDeChungChi
+            };
+        }
+
+        public async Task<bool> UpdateCertificateConfigAsync(int maKhoaHoc, int maGiangVien, CertificateConfigDTO config)
+        {
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
+            if (khoaHoc == null) return false;
+
+            khoaHoc.CoChungChi = config.CoChungChi;
+            khoaHoc.TenChungChi = config.CoChungChi ? config.TenChungChi : null;
+            khoaHoc.DiemDatChungChi = config.CoChungChi ? config.DiemDatChungChi : 80;
+            khoaHoc.SoCauHoiChungChi = config.CoChungChi ? config.SoCauHoiChungChi : 20;
+            khoaHoc.ThoiGianLamBaiChungChi = config.CoChungChi ? config.ThoiGianLamBaiChungChi : 30;
+
+            if (!config.CoChungChi)
+            {
+                khoaHoc.DuLieuDeChungChiJSON = null;
+                khoaHoc.NguonDeChungChi = null;
+                khoaHoc.NgayTaoDeChungChi = null;
+            }
+
+            await _repository.UpdateKhoaHocAsync(khoaHoc);
+            await _repository.SaveChangesAsync();
+            return true;
+        }
+
+        // ===== HELPER METHODS =====
+        private static KhoaHocGiangVienListDTO MapToKhoaHocListDTO(KhoaHocModel k)
+        {
+            return new KhoaHocGiangVienListDTO
+            {
+                MaKhoaHoc = k.MaKhoaHoc,
+                TenKhoaHoc = k.TenKhoaHoc,
+                HinhAnh = k.HinhAnh,
+                LinhVuc = k.LinhVuc,
+                TrinhDo = k.TrinhDo,
+                ThoiLuongGio = k.ThoiLuongGio,
+                SoHocVien = k.DangKyKhoaHocs?.Count ?? 0,
+                DiemDanhGiaTB = k.DiemDanhGiaTB,
+                TrangThai = k.TrangThai,
+                CoChungChi = k.CoChungChi,
+                DaCoDeThiChungChi = !string.IsNullOrWhiteSpace(k.DuLieuDeChungChiJSON),
+                NgayTao = k.NgayTao,
+                TienDoTrungBinh = CalculateAverageProgress(k.DangKyKhoaHocs)
+            };
+        }
+
+        private static KhoaHocGiangVienDetailDTO MapToKhoaHocDetailDTO(KhoaHocModel k)
+        {
+            return new KhoaHocGiangVienDetailDTO
+            {
+                MaKhoaHoc = k.MaKhoaHoc,
+                TenKhoaHoc = k.TenKhoaHoc,
+                MoTa = k.MoTa,
+                HinhAnh = k.HinhAnh,
+                LinhVuc = k.LinhVuc,
+                TrinhDo = k.TrinhDo,
+                ThoiLuongGio = k.ThoiLuongGio,
+                TrangThai = k.TrangThai,
+                NgayTao = k.NgayTao,
+                CoChungChi = k.CoChungChi,
+                TenChungChi = k.TenChungChi,
+                DiemDatChungChi = k.DiemDatChungChi,
+                SoCauHoiChungChi = k.SoCauHoiChungChi,
+                ThoiGianLamBaiChungChi = k.ThoiGianLamBaiChungChi,
+                DaCoDeThiChungChi = !string.IsNullOrWhiteSpace(k.DuLieuDeChungChiJSON),
+                NguonDeChungChi = k.NguonDeChungChi,
+                NgayTaoDeChungChi = k.NgayTaoDeChungChi,
+                SoHocVien = k.DangKyKhoaHocs?.Count ?? 0,
+                DiemDanhGiaTB = k.DiemDanhGiaTB,
+                KyNangChinh = k.KyNangChinh,
+                TiLeHoanThanh = CalculateAverageProgress(k.DangKyKhoaHocs),
+                DanhSachHocVien = MapToHocVienDTOs(k.DangKyKhoaHocs),
+                DanhSachChuong = MapToChuongDTOs(k.ChuongHocs)
+            };
+        }
+
+        private static double CalculateAverageProgress(ICollection<DangKyKhoaHocModel>? dangKyKhoaHocs)
+        {
+            return (dangKyKhoaHocs != null && dangKyKhoaHocs.Count > 0)
+                ? dangKyKhoaHocs.Average(dk => (double)dk.TienDo)
+                : 0.0;
+        }
+
+        private static List<HocVienTrongKhoaHocDTO> MapToHocVienDTOs(ICollection<DangKyKhoaHocModel>? dangKyKhoaHocs)
+        {
+            return dangKyKhoaHocs?.Select(d => new HocVienTrongKhoaHocDTO
+            {
+                MaNguoiDung = d.MaNguoiDung,
+                HoTen = d.NguoiDung.HoTen,
+                Email = d.NguoiDung.Email,
+                AnhDaiDien = d.NguoiDung.AnhDaiDien,
+                NgayDangKy = d.NgayDangKy,
+                TienDo = d.TienDo
+            }).ToList() ?? new();
+        }
+
+        private static List<ChuongHocDetailDTO> MapToChuongDTOs(ICollection<ChuongHocModel>? chuongHocs)
+        {
+            return chuongHocs?.OrderBy(c => c.ThuTu).Select(c => new ChuongHocDetailDTO
+            {
+                MaChuong = c.MaChuong,
+                TenChuong = c.TenChuong,
+                ThuTu = c.ThuTu,
+                DanhSachBaiHoc = MapToBaiHocDTOs(c.BaiHocs)
+            }).ToList() ?? new();
+        }
+
+        private static List<BaiHocVideoDetailDTO> MapToBaiHocDTOs(ICollection<BaiHocModel>? baiHocs)
+        {
+            return baiHocs?.OrderBy(b => b.ThuTu).Select(b => new BaiHocVideoDetailDTO
+            {
+                MaBaiHoc = b.MaBaiHoc,
+                TieuDe = b.TieuDe,
+                LinkVideo = b.LinkVideo,
+                ThoiLuong = b.ThoiLuong ?? 0,
+                ThuTu = b.ThuTu
+            }).ToList() ?? new();
+        }
+
+        private static KhoaHocModel CreateKhoaHocFromDTO(int maGiangVien, KhoaHocCreateUpdateDTO dto)
+        {
+            return new KhoaHocModel
+            {
+                TenKhoaHoc = dto.TenKhoaHoc,
+                MoTa = dto.MoTa,
+                HinhAnh = dto.HinhAnh,
+                LinhVuc = dto.LinhVuc,
+                TrinhDo = dto.TrinhDo,
+                ThoiLuongGio = dto.ThoiLuongGio,
+                TrangThai = dto.TrangThai,
+                MaGiangVien = maGiangVien,
+                NgayTao = DateTime.Now,
+                KyNangChinh = dto.KyNangChinh ?? string.Empty,
+                CoChungChi = dto.CoChungChi,
+                TenChungChi = dto.CoChungChi
+                    ? (string.IsNullOrWhiteSpace(dto.TenChungChi) ? "Chung nhan hoan thanh" : dto.TenChungChi.Trim())
+                    : null,
+                DiemDatChungChi = dto.CoChungChi ? dto.DiemDatChungChi : 80,
+                SoCauHoiChungChi = dto.CoChungChi ? dto.SoCauHoiChungChi : 20,
+                ThoiGianLamBaiChungChi = dto.CoChungChi ? dto.ThoiGianLamBaiChungChi : 30
+            };
+        }
+
+        private static void UpdateKhoaHocFromDTO(KhoaHocModel khoaHoc, KhoaHocCreateUpdateDTO dto)
+        {
+            khoaHoc.TenKhoaHoc = dto.TenKhoaHoc;
+            khoaHoc.MoTa = dto.MoTa;
+            khoaHoc.HinhAnh = dto.HinhAnh;
+            khoaHoc.LinhVuc = dto.LinhVuc;
+            khoaHoc.TrinhDo = dto.TrinhDo;
+            khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;
+            khoaHoc.TrangThai = dto.TrangThai;
+            khoaHoc.KyNangChinh = dto.KyNangChinh ?? string.Empty;
+            khoaHoc.CoChungChi = dto.CoChungChi;
+            khoaHoc.TenChungChi = dto.CoChungChi
+                ? (string.IsNullOrWhiteSpace(dto.TenChungChi) ? "Chung nhan hoan thanh" : dto.TenChungChi.Trim())
+                : null;
+            khoaHoc.DiemDatChungChi = dto.CoChungChi ? dto.DiemDatChungChi : 80;
+            khoaHoc.SoCauHoiChungChi = dto.CoChungChi ? dto.SoCauHoiChungChi : 20;
+            khoaHoc.ThoiGianLamBaiChungChi = dto.CoChungChi ? dto.ThoiGianLamBaiChungChi : 30;
+
+            if (!dto.CoChungChi)
+            {
+                khoaHoc.DuLieuDeChungChiJSON = null;
+                khoaHoc.NguonDeChungChi = null;
+                khoaHoc.NgayTaoDeChungChi = null;
+            }
         }
 
         private sealed class CauHoiChungChiAIItem
