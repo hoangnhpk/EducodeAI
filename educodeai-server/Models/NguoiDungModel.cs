@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -36,7 +36,7 @@ namespace educodeai_server.Models
         public string? TrangThai { get; set; } = "Hoạt động";
 
         public DateTime NgayThamGia { get; set; } = DateTime.UtcNow;
-        // m?i th�m 
+        // mới thêm
         public string? LyDoKhoa { get; set; }
 
 

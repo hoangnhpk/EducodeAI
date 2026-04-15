@@ -1,4 +1,5 @@
-import { MdSettings, MdPeople } from 'react-icons/md';
+
+import { MdSettings, MdPeople, MdDashboard } from 'react-icons/md';
 import { NavLink } from 'react-router-dom'; // Dùng NavLink để tự động active cho xịn
 
 export default function SidebarQuanTriVien() {
@@ -14,6 +15,12 @@ export default function SidebarQuanTriVien() {
 
       <nav className="qtv-sidebar-nav">
 
+
+        <NavLink to="/quan-tri-vien/thong-ke" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><MdDashboard /></div>
+          <span>Thống kê</span>
+        </NavLink>
+        
         <NavLink to="/quan-tri-vien/nguoi-dung" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><MdPeople /></div>
           <span>Người Dùng</span>

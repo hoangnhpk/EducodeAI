@@ -21,6 +21,7 @@ import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinh
 import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
 import ChiTietLoTrinhAI from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/ChiTietLoTrinhAI";
 import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
+import KhongGianHocTap from "@/pages/hoc-vien/khong-gian-hoc-tap/KhongGianHocTap";
 import DoiMatKhau from "../pages/hoc-vien/ho-so-hoc-vien/DoiMatKhau";
 import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
@@ -40,6 +41,7 @@ import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNgu
 import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
 import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
 import CauHinhHeThong from '../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeThong';
+import ThongKeAdmin from "@/pages/quan-tri-vien/thong-ke/ThongKeAdmin";
 
 // Component để điều hướng trang chủ dựa trên Role
 const HomeRedirect = () => {
@@ -83,6 +85,7 @@ export default function AppRouter() {
           }
         >
           <Route path="/yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
+          <Route path="/khong-gian-hoc-tap" element={<KhongGianHocTap />} />
           <Route path="/ho-so" element={<HoSoHocVienPage />} />
           <Route path="/bao-mat" element={<DoiMatKhau />} />
           <Route path="/thiet-bi" element={<QuanLyThietBi />} />
@@ -137,7 +140,8 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<QuanLyNguoiDung />} /> {/* Default load vào Quản lý người dùng */}
+          <Route index element={<ThongKeAdmin />} /> {/* Default load vào Thống kê */}
+          <Route path="thong-ke" element={<ThongKeAdmin />} />
           <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
           <Route path="quan-ly-binh-luan-review" element={<QuanLyReview />} />
           <Route path="quan-ly-hoc-vien" element={<QuanLyHocVien />} />
