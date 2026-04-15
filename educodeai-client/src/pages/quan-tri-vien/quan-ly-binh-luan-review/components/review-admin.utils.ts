@@ -14,14 +14,14 @@ export const getRelativeTime = (dateString: string): string => {
   const time = new Date(dateString).getTime();
   const diffMinutes = Math.floor((now - time) / 60000);
 
-  if (diffMinutes < 1) return 'Vua xong';
-  if (diffMinutes < 60) return `${diffMinutes} phut truoc`;
+  if (diffMinutes < 1) return 'Vừa xong';
+  if (diffMinutes < 60) return `${diffMinutes} phút trước`;
 
   const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours} gio truoc`;
+  if (diffHours < 24) return `${diffHours} giờ trước`;
 
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays} ngay truoc`;
+  if (diffDays < 7) return `${diffDays} ngày trước`;
 
   return formatDate(dateString);
 };
@@ -29,11 +29,11 @@ export const getRelativeTime = (dateString: string): string => {
 export const getTrangThaiLabel = (trangThai: ReviewTrangThai) => {
   switch (trangThai) {
     case 'DaDuyet':
-      return 'Da duyet';
+      return 'Đã duyệt';
     case 'TuChoi':
-      return 'Tu choi';
+      return 'Từ chối';
     default:
-      return 'Cho duyet';
+      return 'Chờ duyệt';
   }
 };
 
