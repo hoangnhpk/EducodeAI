@@ -38,6 +38,7 @@ import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLy
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
 import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
 import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
+import ThongKeAdmin from "@/pages/quan-tri-vien/thong-ke/ThongKeAdmin";
 
 // Component để điều hướng trang chủ dựa trên Role
 const HomeRedirect = () => {
@@ -134,7 +135,8 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<QuanLyNguoiDung />} /> {/* Default load vào Quản lý người dùng */}
+          <Route index element={<ThongKeAdmin />} /> {/* Default load vào Thống kê */}
+          <Route path="thong-ke" element={<ThongKeAdmin />} />
           <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
           <Route path="quan-ly-binh-luan-review" element={<QuanLyReview />} />
           <Route path="quan-ly-hoc-vien" element={<QuanLyHocVien />} />
