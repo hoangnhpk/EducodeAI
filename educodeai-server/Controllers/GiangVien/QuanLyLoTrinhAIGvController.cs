@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
@@ -44,23 +44,26 @@ namespace educodeai_server.Controllers.GiangVien
         }
 
         // 1. LẤY DANH SÁCH LỘ TRÌNH CỦA GIẢNG VIÊN
+        // 1. LẤY TẤT CẢ DANH SÁCH LỘ TRÌNH (GIẢNG VIÊN ĐƯỢC XEM HẾT)
         [HttpGet("danh-sach")]
         public async Task<IActionResult> GetDanhSach()
         {
             try
             {
-                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!int.TryParse(userIdStr, out int maNd)) return Unauthorized();
-
+                // Vẫn check login nhưng không lọc theo UserID nữa để hiện tất cả
                 var danhSach = await _context.LoTrinhAIs
-                    .Where(x => x.MaNguoiDung == maNd)
                     .OrderByDescending(x => x.NgayTao)
                     .Select(x => new {
                         maLoTrinh = x.MaLoTrinh,
                         yeuCau = x.YeuCau,
                         trangThai = x.TrangThai,
                         ngayTao = x.NgayTao,
-                        noiDungJSON = x.NoiDungJSON
+                        noiDungJSON = x.NoiDungJSON,
+                        // Thêm thông tin người tạo để Gv biết lộ trình này của ai
+                        tenNguoiTao = _context.NguoiDungs
+                                        .Where(n => n.MaNguoiDung == x.MaNguoiDung)
+                                        .Select(n => n.HoTen)
+                                        .FirstOrDefault() ?? "Hệ thống AI"
                     })
                     .ToListAsync();
 
@@ -71,7 +74,6 @@ namespace educodeai_server.Controllers.GiangVien
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-
         // 2. THÊM MỚI LỘ TRÌNH (Lưu dạng Bắt buộc / Nâng cao)
         [HttpPost("them-moi")]
         public async Task<IActionResult> ThemMoi([FromBody] JsonElement data)
