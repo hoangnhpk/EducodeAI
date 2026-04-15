@@ -40,6 +40,24 @@ namespace educodeai_server.Models
         [StringLength(500)]
         public string KyNangChinh { get; set; } = null!;  // Ví dụ: ["C#","SQL","REACT"]
 
+        public bool CoChungChi { get; set; } = false;
+
+        [StringLength(200)]
+        public string? TenChungChi { get; set; }
+
+        public double DiemDatChungChi { get; set; } = 80;
+
+        public int SoCauHoiChungChi { get; set; } = 20;
+
+        public int ThoiGianLamBaiChungChi { get; set; } = 30;
+
+        public string? DuLieuDeChungChiJSON { get; set; }
+
+        [StringLength(50)]
+        public string? NguonDeChungChi { get; set; }
+
+        public DateTime? NgayTaoDeChungChi { get; set; }
+
         public DateTime NgayTao { get; set; } = DateTime.UtcNow;
 
         // Navigation

@@ -1,17 +1,22 @@
 ﻿using educodeai_server.DTOs;
+using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace educodeai_server.Services.Implement
 {
     public class KhoaHocCuaToiService : IKhoaHocCuaToiService
     {
         private readonly IKhoaHocCuaToiRepository _repository;
+        private readonly IGeminiAIService _gemini;
 
-        public KhoaHocCuaToiService(IKhoaHocCuaToiRepository repository)
+        public KhoaHocCuaToiService(IKhoaHocCuaToiRepository repository, IGeminiAIService gemini)
         {
             _repository = repository;
+            _gemini = gemini;
         }
 
         // ===== DANH SÁCH =====
@@ -30,6 +35,8 @@ namespace educodeai_server.Services.Implement
                 SoHocVien = k.DangKyKhoaHocs?.Count ?? 0,
                 DiemDanhGiaTB = k.DiemDanhGiaTB,
                 TrangThai = k.TrangThai,
+                CoChungChi = k.CoChungChi,
+                DaCoDeThiChungChi = !string.IsNullOrWhiteSpace(k.DuLieuDeChungChiJSON),
                 NgayTao = k.NgayTao,
                 TienDoTrungBinh = (k.DangKyKhoaHocs != null && k.DangKyKhoaHocs.Count > 0)
                     ? k.DangKyKhoaHocs.Average(dk => (double)dk.TienDo)
@@ -55,8 +62,17 @@ namespace educodeai_server.Services.Implement
                 ThoiLuongGio = k.ThoiLuongGio,
                 TrangThai = k.TrangThai,
                 NgayTao = k.NgayTao,
+                CoChungChi = k.CoChungChi,
+                TenChungChi = k.TenChungChi,
+                DiemDatChungChi = k.DiemDatChungChi,
+                SoCauHoiChungChi = k.SoCauHoiChungChi,
+                ThoiGianLamBaiChungChi = k.ThoiGianLamBaiChungChi,
+                DaCoDeThiChungChi = !string.IsNullOrWhiteSpace(k.DuLieuDeChungChiJSON),
+                NguonDeChungChi = k.NguonDeChungChi,
+                NgayTaoDeChungChi = k.NgayTaoDeChungChi,
                 SoHocVien = k.DangKyKhoaHocs?.Count ?? 0,
                 DiemDanhGiaTB = k.DiemDanhGiaTB,
+                KyNangChinh = k.KyNangChinh,
 
                 TiLeHoanThanh = (k.DangKyKhoaHocs != null && k.DangKyKhoaHocs.Count > 0)
                     ? k.DangKyKhoaHocs.Average(dk => (double)dk.TienDo)
@@ -104,6 +120,13 @@ namespace educodeai_server.Services.Implement
                 MaGiangVien = maGiangVien,
                 NgayTao = DateTime.Now,
                 KyNangChinh = dto.KyNangChinh ?? string.Empty,
+                CoChungChi = dto.CoChungChi,
+                TenChungChi = dto.CoChungChi
+                    ? (string.IsNullOrWhiteSpace(dto.TenChungChi) ? "Chứng nhận hoàn thành" : dto.TenChungChi.Trim())
+                    : null,
+                DiemDatChungChi = dto.CoChungChi ? dto.DiemDatChungChi : 80,
+                SoCauHoiChungChi = dto.CoChungChi ? dto.SoCauHoiChungChi : 20,
+                ThoiGianLamBaiChungChi = dto.CoChungChi ? dto.ThoiGianLamBaiChungChi : 30
             };
 
             await _repository.AddKhoaHocAsync(khoaHoc);
@@ -125,6 +148,20 @@ namespace educodeai_server.Services.Implement
             khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;
             khoaHoc.TrangThai = dto.TrangThai;
             khoaHoc.KyNangChinh = dto.KyNangChinh ?? string.Empty;
+            khoaHoc.CoChungChi = dto.CoChungChi;
+            khoaHoc.TenChungChi = dto.CoChungChi
+                ? (string.IsNullOrWhiteSpace(dto.TenChungChi) ? "Chứng nhận hoàn thành" : dto.TenChungChi.Trim())
+                : null;
+            khoaHoc.DiemDatChungChi = dto.CoChungChi ? dto.DiemDatChungChi : 80;
+            khoaHoc.SoCauHoiChungChi = dto.CoChungChi ? dto.SoCauHoiChungChi : 20;
+            khoaHoc.ThoiGianLamBaiChungChi = dto.CoChungChi ? dto.ThoiGianLamBaiChungChi : 30;
+
+            if (!dto.CoChungChi)
+            {
+                khoaHoc.DuLieuDeChungChiJSON = null;
+                khoaHoc.NguonDeChungChi = null;
+                khoaHoc.NgayTaoDeChungChi = null;
+            }
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
@@ -250,6 +287,80 @@ namespace educodeai_server.Services.Implement
             await _repository.SaveChangesAsync();
             return true;
         }
+
+        public async Task<KetQuaTaoDeChungChiAIDTO> TaoDeChungChiBangAIAsync(int maKhoaHoc, int maGiangVien)
+        {
+            var khoaHoc = await _repository.GetKhoaHocForCertificateAsync(maKhoaHoc, maGiangVien);
+            if (khoaHoc == null)
+            {
+                return new KetQuaTaoDeChungChiAIDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Không tìm thấy khóa học."
+                };
+            }
+
+            if (!khoaHoc.CoChungChi)
+            {
+                return new KetQuaTaoDeChungChiAIDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Khóa học này chưa bật chế độ chứng chỉ."
+                };
+            }
+
+            var noiDungKhoaHoc = TaoNoiDungTongHopChoAI(khoaHoc);
+            if (string.IsNullOrWhiteSpace(noiDungKhoaHoc))
+            {
+                return new KetQuaTaoDeChungChiAIDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Khóa học chưa có đủ nội dung để AI tạo đề chứng chỉ."
+                };
+            }
+
+            var soCauHoi = khoaHoc.SoCauHoiChungChi > 0 ? khoaHoc.SoCauHoiChungChi : 20;
+            var prompt = TaoPromptDeThiChungChi(khoaHoc, noiDungKhoaHoc, soCauHoi);
+            var aiResult = await _gemini.GenerateAsync(prompt);
+            var jsonChuanHoa = ChuanHoaJsonTuAIHelper.ChuanHoa(aiResult);
+
+            var danhSachCauHoi = JsonSerializer.Deserialize<List<CauHoiChungChiAIItem>>(jsonChuanHoa) ?? new List<CauHoiChungChiAIItem>();
+            if (danhSachCauHoi.Count == 0)
+            {
+                return new KetQuaTaoDeChungChiAIDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "AI chưa trả về bộ đề hợp lệ. Vui lòng thử lại."
+                };
+            }
+
+            khoaHoc.DuLieuDeChungChiJSON = JsonSerializer.Serialize(danhSachCauHoi.Select((cauHoi, index) => new
+            {
+                id = index + 1,
+                cauHoi = cauHoi.CauHoi,
+                dapAnA = cauHoi.DapAnA,
+                dapAnB = cauHoi.DapAnB,
+                dapAnC = cauHoi.DapAnC,
+                dapAnD = cauHoi.DapAnD,
+                dapAnDung = cauHoi.DapAnDung,
+                giaiThich = cauHoi.GiaiThich
+            }));
+            khoaHoc.NguonDeChungChi = "AI";
+            khoaHoc.NgayTaoDeChungChi = DateTime.UtcNow;
+
+            await _repository.UpdateKhoaHocAsync(khoaHoc);
+            await _repository.SaveChangesAsync();
+
+            return new KetQuaTaoDeChungChiAIDTO
+            {
+                ThanhCong = true,
+                ThongBao = "Đã tạo đề chứng chỉ bằng AI thành công.",
+                SoCauHoi = danhSachCauHoi.Count,
+                NguonDeChungChi = khoaHoc.NguonDeChungChi,
+                NgayTaoDeChungChi = khoaHoc.NgayTaoDeChungChi
+            };
+        }
+
         private static string? ExtractEmbedUrl(string? url)
         {
             if (string.IsNullOrWhiteSpace(url)) return null;
@@ -270,6 +381,79 @@ namespace educodeai_server.Services.Implement
             }
 
             return url;
+        }
+
+        private static string TaoNoiDungTongHopChoAI(KhoaHocModel khoaHoc)
+        {
+            var phanNoiDung = khoaHoc.ChuongHocs?
+                .OrderBy(chuong => chuong.ThuTu)
+                .SelectMany(chuong => chuong.BaiHocs.OrderBy(baiHoc => baiHoc.ThuTu))
+                .Select((baiHoc, index) =>
+                {
+                    var noiDung = string.IsNullOrWhiteSpace(baiHoc.NoiDung)
+                        ? "Không có mô tả chi tiết."
+                        : baiHoc.NoiDung;
+                    return $"Bài {index + 1}: {baiHoc.TieuDe}\n{noiDung}";
+                })
+                .ToList() ?? new List<string>();
+
+            return string.Join("\n\n", phanNoiDung);
+        }
+
+        private static string TaoPromptDeThiChungChi(KhoaHocModel khoaHoc, string noiDungKhoaHoc, int soCauHoi)
+        {
+            var tenChungChi = khoaHoc.TenChungChi ?? "Chứng nhận hoàn thành";
+            return $@"
+Bạn là chuyên gia giáo dục của hệ thống EduCodeAI.
+Hãy tạo đúng {soCauHoi} câu hỏi trắc nghiệm cho bài kiểm tra nhận chứng chỉ của khóa học.
+
+THÔNG TIN KHÓA HỌC
+- Tên khóa học: {khoaHoc.TenKhoaHoc}
+- Tên chứng chỉ: {tenChungChi}
+- Lĩnh vực: {khoaHoc.LinhVuc}
+- Trình độ: {khoaHoc.TrinhDo}
+- Mô tả: {khoaHoc.MoTa}
+
+NỘI DUNG KHÓA HỌC
+{noiDungKhoaHoc}
+
+YÊU CẦU
+1. Câu hỏi phải bám sát nội dung khóa học.
+2. Mỗi câu có 4 đáp án A, B, C, D và chỉ có 1 đáp án đúng.
+3. Trường dapAnDung chỉ nhận A, B, C hoặc D.
+4. Mỗi câu cần có giải thích ngắn gọn.
+5. Không dùng markdown, không giải thích thêm ngoài JSON.
+
+OUTPUT JSON THUẦN
+[
+  {{
+    ""cauHoi"": """",
+    ""dapAnA"": """",
+    ""dapAnB"": """",
+    ""dapAnC"": """",
+    ""dapAnD"": """",
+    ""dapAnDung"": ""A"",
+    ""giaiThich"": """"
+  }}
+]";
+        }
+
+        private sealed class CauHoiChungChiAIItem
+        {
+            [JsonPropertyName("cauHoi")]
+            public string CauHoi { get; set; } = string.Empty;
+            [JsonPropertyName("dapAnA")]
+            public string DapAnA { get; set; } = string.Empty;
+            [JsonPropertyName("dapAnB")]
+            public string DapAnB { get; set; } = string.Empty;
+            [JsonPropertyName("dapAnC")]
+            public string DapAnC { get; set; } = string.Empty;
+            [JsonPropertyName("dapAnD")]
+            public string DapAnD { get; set; } = string.Empty;
+            [JsonPropertyName("dapAnDung")]
+            public string DapAnDung { get; set; } = "A";
+            [JsonPropertyName("giaiThich")]
+            public string GiaiThich { get; set; } = string.Empty;
         }
     }
 }

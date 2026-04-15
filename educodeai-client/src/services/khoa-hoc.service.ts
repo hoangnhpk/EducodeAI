@@ -34,6 +34,8 @@ export interface LuuKetQuaQuizDTO {
 export interface NopBaiKiemTraChungChiDTO {
   MaKhoaHoc: number;
   MaNguoiDung: number;
+  HoTenHienThi: string;
+  EmailNhan: string;
   ChiTietLamBai: ChiTietCauTraLoiDTO[];
 }
 
