@@ -5,6 +5,7 @@ import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
 import LayoutBlank from "../layouts/hoc-vien/LayoutBlank";
 import LayoutGiangVien from "../layouts/giang-vien/LayoutGiangVien";
 import LayoutQuanTriVien from "../layouts/quan-tri-vien/LayoutQuanTriVien";
+import { SystemConfigProvider } from '../contexts/SystemConfigContext';
 
 // /* ===== AUTH ===== */
 import DangNhap from "../pages/auth/DangNhap";
@@ -38,6 +39,7 @@ import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLy
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
 import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
 import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
+import CauHinhHeThong from '../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeThong';
 
 // Component để điều hướng trang chủ dựa trên Role
 const HomeRedirect = () => {
@@ -54,6 +56,7 @@ const HomeRedirect = () => {
 
 export default function AppRouter() {
   return (
+    <SystemConfigProvider>
     <BrowserRouter>
       <Routes>
         {/* ========================================== */}
@@ -139,6 +142,7 @@ export default function AppRouter() {
           <Route path="quan-ly-binh-luan-review" element={<QuanLyReview />} />
           <Route path="quan-ly-hoc-vien" element={<QuanLyHocVien />} />
           <Route path="quan-ly-api-key" element={<QuanLyApiKey />} />
+          <Route path="cau-hinh-he-thong" element={<CauHinhHeThong />} />
         </Route>
 
         {/* CATCH ALL 404 */}
@@ -146,5 +150,6 @@ export default function AppRouter() {
 
       </Routes>
     </BrowserRouter>
+    </SystemConfigProvider>
   );
 }

@@ -27,6 +27,7 @@ namespace educodeai_server.Data
         public DbSet<BaiTapThucHanhModel> BaiTapThucHanhs { get; set; }
         public DbSet<TestCaseThucHanhModel> TestCaseThucHanhs { get; set; }
         public DbSet<KetQuaLamBaiModel> KetQuaLamBais { get; set; }
+        public DbSet<CauHinhHeThongModel> CauHinhs { get; set; }
         public DbSet<LoTrinhAIModel> LoTrinhAIs { get; set; }
         public DbSet<GhiChuAIModel> GhiChuAIs { get; set; }
         public DbSet<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; }
