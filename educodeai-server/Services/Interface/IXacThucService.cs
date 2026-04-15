@@ -22,7 +22,6 @@ namespace educodeai_server.Services.Interface
         Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest request);
 
         // CÁC HÀM ĐỔI MẬT KHẨU
-        Task<bool> YeuCauOtpDoiMatKhauAsync(int maNguoiDung);
         Task<bool> DoiMatKhauAsync(int maNguoiDung, DoiMatKhauRequest request);
 
         // --- CÁC HÀM QUẢN LÝ THIẾT BỊ ---

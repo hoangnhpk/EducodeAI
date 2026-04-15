@@ -122,10 +122,16 @@ const DangNhap: React.FC = () => {
 
     return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <div className="container-xxl py-5 mt-4" translate="no">
+            <div className="min-vh-100 d-flex align-items-center justify-content-center py-5" 
+                style={{ 
+                    backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/img/carousel-1.jpg")',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundAttachment: 'fixed'
+                }}>
                 <div className="container">
                     <div className="row g-4 justify-content-center">
-                        <div className="col-lg-5 shadow p-4 bg-white rounded-4">
+                        <div className="col-lg-5 shadow-lg p-4 bg-white rounded-4 animate__animated animate__fadeIn">
                             
                             {step === 1 ? (
                                 <form onSubmit={handleLogin} noValidate>
@@ -247,7 +253,7 @@ const DangNhap: React.FC = () => {
                                                                 Swal.fire('Lỗi', 'Kết nối với Facebook thất bại', 'error');
                                                             }}
                                                             render={({ onClick }) => (
-                                                                <button onClick={onClick} className="btn btn-outline-primary w-100 py-2 fw-bold rounded-pill d-flex align-items-center justify-content-center" style={{ height: '40px', borderColor: '#dee2e6', color: '#666' }}>
+                                                                <button onClick={onClick} className="btn btn-outline-primary w-100 py-2 fw-bold rounded-3 d-flex align-items-center justify-content-center" style={{ height: '40px', borderColor: '#dee2e6', color: '#666' }}>
                                                                     <i className="bi bi-facebook me-2" style={{ color: '#1877F2' }}></i> Facebook
                                                                 </button>
                                                             )}

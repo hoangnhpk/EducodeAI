@@ -19,6 +19,9 @@ export default function SidebarGiangVien() {
         <a href="/giang-vien/bai-tap" className="gv-nav-link">
           <MdQuiz /> Quản lý bài tập (Quiz)
         </a>
+        <a href="/giang-vien/lop-hoc" className="gv-nav-link">
+          <MdPeople /> Quản Lý Lớp Học
+        </a>
         <a href="/giang-vien/tao-lo-trinh-AI" className="gv-nav-link">
           <MdEditNote /> Quản Lý Lộ Trình AI
         </a>
