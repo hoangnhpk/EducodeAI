@@ -169,7 +169,7 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
 
             // BaiTapModel relationships
             modelBuilder.Entity<BaiTapModel>()
-                .HasOne(bt => bt.BaiTap_ThucHanh)
+                .HasOne(bt => bt.BaiTapThucHanh)
                 .WithOne(bth => bth.BaiTap)
                 .HasForeignKey<BaiTapThucHanhModel>(bth => bth.MaBaiTap)
                 .OnDelete(DeleteBehavior.NoAction);

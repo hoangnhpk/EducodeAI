@@ -32,6 +32,7 @@ import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 import QuanLyHocVienKhoaHoc from "../pages/giang-vien/quan-ly-hoc-vien/QuanLyHocVienKhoaHoc";
 import TaoLoTrinhAI from '../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI';
+import QuanLyBaiTapThucHanh from '../pages/giang-vien/bai-tap-thuc-hanh/QuanLyBaiTapThucHanh';
 // /* ===== ADMIN ===== */
 import QuanLyReview from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReview";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
@@ -106,6 +107,7 @@ export default function AppRouter() {
           <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
           <Route path="lop-hoc" element={<QuanLyHocVienKhoaHoc />} />
           <Route path="tao-lo-trinh-AI" element={<TaoLoTrinhAI />} />
+          <Route path="bai-tap-thuc-hanh" element={<QuanLyBaiTapThucHanh />} />
         </Route>
 
 
