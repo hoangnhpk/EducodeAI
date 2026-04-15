@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { KhoaHocService, type LuuKetQuaQuizDTO, type NopBaiKiemTraChungChiDTO } from '@/services/khoa-hoc.service';
 import type { KhoaHocData } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO';
@@ -102,16 +102,16 @@ const NoiDungKhoaHoc = () => {
         if (hasShown) return;
 
         void Swal.fire({
-            title: daCapChungChi ? 'Khoa hoc da hoan thanh' : 'Chuc mung ban!',
+            title: daCapChungChi ? 'Khóa học đã hoàn thành' : 'Chúc mừng bạn!',
             html: daCapChungChi
-                ? 'Ban da hoan thanh khoa hoc va co the xem lai chung chi bat cu luc nao.'
-                : 'Ban da hoan thanh toan bo khoa hoc.<br/><br/>Hay lam bai test cuoi khoa de nhan chung chi.',
+                ? 'Bạn đã hoàn thành khóa học và có thể xem lại chứng chỉ bất cứ lúc nào.'
+                : 'Bạn đã hoàn thành toàn bộ khóa học.<br/><br/>Hãy làm bài kiểm tra cuối khóa để nhận chứng chỉ.',
             icon: 'success',
             showCancelButton: true,
             confirmButtonColor: '#f69050',
             cancelButtonColor: '#94a3b8',
-            confirmButtonText: daCapChungChi ? 'Xem chung chi' : 'Lam bai test',
-            cancelButtonText: 'De sau'
+            confirmButtonText: daCapChungChi ? 'Xem chứng chỉ' : 'Làm bài kiểm tra',
+            cancelButtonText: 'Để sau'
         }).then((result) => {
             if (result.isConfirmed) {
                 setTabActive('chungchi');
@@ -148,8 +148,8 @@ const NoiDungKhoaHoc = () => {
             setVideoDaXongLocal((prev) => [...prev, maBaiHocVuaXong]);
 
             void Swal.fire({
-                title: 'Da hoan thanh ly thuyet!',
-                text: 'Hay hoan thanh bai trac nghiem de mo khoa bai hoc tiep theo.',
+                title: 'Đã hoàn thành lý thuyết!',
+                text: 'Hãy hoàn thành bài trắc nghiệm để mở khóa bài học tiếp theo.',
                 icon: 'info',
                 timer: 3000,
                 showConfirmButton: false
@@ -174,8 +174,8 @@ const NoiDungKhoaHoc = () => {
         }
 
         void Swal.fire({
-            title: 'Bai hoc dang bi khoa',
-            text: 'Vui long hoan thanh bai hoc truoc do.',
+            title: 'Bài học đang bị khóa',
+            text: 'Vui lòng hoàn thành bài học trước đó.',
             icon: 'warning'
         });
     };
@@ -210,12 +210,12 @@ const NoiDungKhoaHoc = () => {
             const baiTiepTheo = KhoaHocService.timBaiTiepTheo(flatList, idBaiHoc);
             if (baiTiepTheo) {
                 void Swal.fire({
-                    title: 'Tuyet voi!',
-                    text: 'Ban da vuot qua bai trac nghiem. Hoc bai tiep theo chu?',
+                    title: 'Tuyệt vời!',
+                    text: 'Bạn đã vượt qua bài trắc nghiệm. Học bài tiếp theo chứ?',
                     icon: 'success',
                     showCancelButton: true,
-                    confirmButtonText: 'Hoc bai tiep theo',
-                    cancelButtonText: 'O lai trang nay',
+                    confirmButtonText: 'Học bài tiếp theo',
+                    cancelButtonText: 'Ở lại trang này',
                     confirmButtonColor: '#f69050'
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -267,7 +267,7 @@ const NoiDungKhoaHoc = () => {
             if (ketQua.daDat) {
                 setTimeout(() => {
                     void Swal.fire({
-                        title: 'Chung chi da san sang',
+                        title: 'Chứng chỉ đã sẵn sàng',
                         text: ketQua.thongBao,
                         icon: 'success',
                         confirmButtonColor: '#f69050'
@@ -278,7 +278,7 @@ const NoiDungKhoaHoc = () => {
             const thongBao = error?.response?.data?.thongBao || 'Khong the nop bai kiem tra chung chi.';
             console.error('Loi khi nop bai chung chi:', error);
             void Swal.fire({
-                title: 'Khong the luu ket qua',
+                title: 'Không thể lưu kết quả',
                 text: thongBao,
                 icon: 'error',
                 confirmButtonColor: '#f69050'
@@ -306,59 +306,71 @@ const NoiDungKhoaHoc = () => {
         popup.document.write(`
             <html>
                 <head>
-                    <title>Chung chi khoa hoc</title>
+                    <title>Chứng chỉ hoàn thành khóa học</title>
                     <style>
                         body {
                             margin: 0;
                             padding: 32px;
                             background: #f4f5fb;
-                            font-family: Georgia, serif;
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                         }
                         .certificate {
                             max-width: 980px;
                             margin: 0 auto;
-                            padding: 56px;
+                            padding: 64px;
                             border-radius: 28px;
                             color: #fff;
                             background: linear-gradient(135deg, #181d38 0%, #26315f 54%, #f69050 125%);
                             border: 10px solid rgba(255,255,255,0.08);
                             text-align: center;
                             box-sizing: border-box;
+                            position: relative;
                         }
                         .brand {
                             display: inline-block;
-                            padding: 8px 18px;
+                            padding: 8px 24px;
                             border-radius: 999px;
                             background: rgba(255,255,255,0.12);
                             text-transform: uppercase;
-                            letter-spacing: 0.08em;
-                            font-size: 12px;
+                            letter-spacing: 0.12em;
+                            font-size: 14px;
+                            font-weight: 600;
                         }
                         h1 {
-                            margin: 20px 0 8px;
-                            font-size: 42px;
+                            margin: 24px 0 12px;
+                            font-size: 48px;
+                            color: #f69050;
                         }
                         .subtitle {
-                            color: rgba(255,255,255,0.82);
-                            margin-bottom: 28px;
-                            font-size: 18px;
+                            color: rgba(255,255,255,0.85);
+                            margin-bottom: 32px;
+                            font-size: 20px;
+                            font-style: italic;
                         }
                         .student {
-                            font-size: 36px;
+                            font-size: 42px;
                             font-weight: 700;
-                            margin: 0 0 14px;
+                            margin: 16px 0;
+                            text-decoration: underline;
+                        }
+                        .course-label {
+                            font-size: 18px;
+                            margin-top: 24px;
+                            opacity: 0.9;
                         }
                         .course {
-                            font-size: 24px;
-                            line-height: 1.7;
-                            margin: 0 auto 24px;
+                            font-size: 28px;
+                            font-weight: 600;
+                            margin: 8px auto 32px;
                             max-width: 720px;
                         }
                         .meta {
                             display: flex;
                             justify-content: center;
-                            gap: 28px;
-                            flex-wrap: wrap;
+                            gap: 40px;
+                            margin-top: 40px;
+                            padding-top: 24px;
+                            border-top: 1px solid rgba(255,255,255,0.2);
                             color: rgba(255,255,255,0.82);
                             font-size: 16px;
                         }
@@ -366,14 +378,15 @@ const NoiDungKhoaHoc = () => {
                 </head>
                 <body>
                     <div class="certificate">
-                        <div class="brand">EduCodeAI</div>
-                        <h1>Certificate of Completion</h1>
-                        <p class="subtitle">Chung nhan hoc vien da hoan thanh khoa hoc va dat yeu cau bai test cuoi khoa.</p>
+                        <div class="brand">EduCodeAI Learning Platform</div>
+                        <h1>CHỨNG NHẬN HOÀN THÀNH</h1>
+                        <p class="subtitle">Chứng nhận học viên đã hoàn thành xuất sắc khóa học và đạt yêu cầu kiểm tra cuối khóa.</p>
                         <p class="student">${tenHocVienSafe}</p>
+                        <p class="course-label">Đã hoàn thành khóa học</p>
                         <p class="course">${tenKhoaHocSafe}</p>
                         <div class="meta">
-                            <span>Ma chung chi: ${maChungChiSafe}</span>
-                            <span>Ngay cap: ${ngayCapSafe}</span>
+                            <span>Mã chứng chỉ: ${maChungChiSafe}</span>
+                            <span>Ngày cấp: ${ngayCapSafe}</span>
                         </div>
                     </div>
                 </body>
@@ -385,11 +398,11 @@ const NoiDungKhoaHoc = () => {
     };
 
     if (!maNguoiDung) {
-        return <div>Vui long dang nhap de xem noi dung khoa hoc.</div>;
+        return <div>Vui lòng đăng nhập để xem nội dung khóa học.</div>;
     }
 
     if (!khoaHoc || !baiHocHienTai) {
-        return <div>Dang tai khoa hoc...</div>;
+        return <div>Đang tải khóa học...</div>;
     }
 
     const dangLamQuiz = tabActive === 'quiz' || dangLamKiemTraChungChi || (tabActive === 'hoc' && baiHocHienTai.loaiBaiHoc === 'Quiz');
@@ -445,7 +458,7 @@ const NoiDungKhoaHoc = () => {
                     </div>
                 );
             default:
-                return <div className="p-5 text-center text-muted">Dang tai noi dung...</div>;
+                return <div className="p-5 text-center text-muted">Đang tải nội dung...</div>;
         }
     };
 
@@ -497,7 +510,7 @@ const NoiDungKhoaHoc = () => {
                                     setDangLamKiemTraChungChi(false);
                                 }}
                             >
-                                <i className="fas fa-play-circle" /> Bai hoc
+                                <i className="fas fa-play-circle" /> Bài học
                             </button>
 
                             {baiHocHienTai.loaiBaiHoc === 'Video' && (
@@ -508,7 +521,7 @@ const NoiDungKhoaHoc = () => {
                                         setDangLamKiemTraChungChi(false);
                                     }}
                                 >
-                                    <i className="fas fa-magic" /> Tom tat Video AI
+                                    <i className="fas fa-magic" /> Tóm tắt Video AI
                                 </button>
                             )}
 
@@ -517,7 +530,7 @@ const NoiDungKhoaHoc = () => {
                                     className={`cp-tab ${tabActive === 'chungchi' ? 'cp-tab-active' : ''}`}
                                     onClick={() => setTabActive('chungchi')}
                                 >
-                                    <i className="fas fa-award" /> Chung chi
+                                    <i className="fas fa-award" /> Chứng chỉ
                                 </button>
                             )}
 
@@ -528,7 +541,7 @@ const NoiDungKhoaHoc = () => {
                                     setDangLamKiemTraChungChi(false);
                                 }}
                             >
-                                <i className="fas fa-star" /> Danh gia
+                                <i className="fas fa-star" /> Đánh giá
                             </button>
                         </div>
                     )}

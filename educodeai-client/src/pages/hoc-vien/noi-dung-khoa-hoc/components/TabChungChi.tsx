@@ -169,7 +169,7 @@ export const TabChungChi = ({
                         <>
                             <div className="cp-certificate-card" id="certificate-print-card">
                                 <span className="cp-certificate-brand">EduCodeAI</span>
-                                <h3>Certificate of Completion</h3>
+                                <h3>CHỨNG NHẬN HOÀN THÀNH</h3>
                                 <p className="cp-certificate-card-subtitle">Chứng nhận học viên đã hoàn thành khóa học</p>
                                 <strong>{thongTinChungChi?.tenHocVien || tenHocVien}</strong>
                                 <p className="cp-certificate-course-name">{thongTinChungChi?.tenKhoaHoc || tenKhoaHoc}</p>
