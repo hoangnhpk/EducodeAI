@@ -1735,7 +1735,7 @@ video::-webkit-media-controls-playback-rate-button {
 
 /* �n n�t mobile toggle tr�n desktop */
 .cp-mobile-toggle-sidebar {
-    display: none;
+    display: none !important;
 }
 
 /* ---- Tablet: 768 � 1024px ---- */
