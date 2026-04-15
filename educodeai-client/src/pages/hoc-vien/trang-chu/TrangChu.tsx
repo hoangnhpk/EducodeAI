@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import EduBanner from "./components/EduBanner";
 import { encodeId } from "@/utils/id-helper";
+
 interface IKhoaHoc {
     maKhoaHoc: number;
     tenKhoaHoc: string;
@@ -19,13 +20,11 @@ interface IKhoaHoc {
 const TrangChu: React.FC = () => {
     const [courses, setCourses] = useState<IKhoaHoc[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [searchTerm, setSearchTerm] = useState<string>(''); // Thêm state tìm kiếm
+    const [searchTerm, setSearchTerm] = useState<string>('');
 
-    // 1. Hàm gọi API - Giữ nguyên logic bóc tách dữ liệu đang chạy của bạn
     const loadData = async (search: string = '') => {
         setIsLoading(true);
         try {
-            // Sử dụng params để gửi từ khóa tìm kiếm lên Backend
             const data = await axiosInstance.get<IKhoaHoc[]>('api/KhoaHoc/all', {
                 params: { search: search }
             });
@@ -38,7 +37,6 @@ const TrangChu: React.FC = () => {
         }
     };
 
-    // 2. Tự động tìm kiếm khi searchTerm thay đổi (Debounce 500ms để tránh lag)
     useEffect(() => {
         const delay = setTimeout(() => {
             loadData(searchTerm);
@@ -80,7 +78,7 @@ const TrangChu: React.FC = () => {
                 </div>
             </div>
 
-            {/* CATEGORIES - Cập nhật: Click vào category sẽ tự tìm kiếm */}
+            {/* CATEGORIES */}
             <div className="container-xxl py-5 category">
                 <div className="container">
                     <div className="text-center">
@@ -89,10 +87,10 @@ const TrangChu: React.FC = () => {
                     </div>
                     <div className="row g-2 m-2">
                         {["C#", "AWS", "Python", "Java", "Web Design", "Web Development", "MySQL", "UI/UX Design"].map((cat, index) => (
-                            <div key={index} className="col-lg-3 col-md-6 text-center" style={{ cursor: 'pointer' }} onClick={() => setSearchTerm(cat)}>
+                            <div key={index} className="col-lg-3 col-md-6 text-center category-card-wrapper" style={{ cursor: 'pointer' }} onClick={() => setSearchTerm(cat)}>
                                 <div className="content shadow p-3 mb-2 bg-white rounded transition-hover">
                                     <img src={`img/cat${index + 1}.png`} className="img-fluid" alt={cat} />
-                                    <h5 className="my-2">{cat}</h5>
+                                    <h5 className="my-2 category-title">{cat}</h5>
                                 </div>
                             </div>
                         ))}
@@ -121,7 +119,7 @@ const TrangChu: React.FC = () => {
                         ) : courses.length > 0 ? (
                             courses.map((kh) => (
                                 <div key={kh.maKhoaHoc} className="col-lg-3 col-md-6">
-                                    <div className="course-item shadow-sm border-0 rounded-4 overflow-hidden bg-white h-100 transition-hover">
+                                    <div className="course-item shadow-sm border-0 rounded-4 overflow-hidden bg-white h-100 transition-hover-course">
                                         <div className="position-relative overflow-hidden">
                                             <img className="img-fluid w-100 image-zoom"
                                                 src={`/img/${kh.hinhAnh}`}
@@ -177,10 +175,40 @@ const TrangChu: React.FC = () => {
                     </div>
                 </div>
             </div>
-            {/* <ChatBot /> */}
+
             <style>{`
-                .transition-hover { transition: all 0.3s ease; }
-                .transition-hover:hover { transform: translateY(-10px); box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important; }
+                /* === FIX LỖI NHẤP NHÁY (FLICKER) === */
+                .transition-hover { 
+                    transition: all 0.3s ease; 
+                    position: relative; /* Quan trọng để giữ vùng đệm */
+                }
+                
+                /* Vùng đệm vô hình ở dưới thẻ, giúp chuột không bị rớt ra ngoài khi thẻ nảy lên */
+                .transition-hover::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -10px;
+                    left: 0;
+                    width: 100%;
+                    height: 10px;
+                    background: transparent;
+                }
+
+                .transition-hover:hover { 
+                    transform: translateY(-8px); 
+                    box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important; 
+                }
+
+                /* === FIX LỖI MẤT CHỮ KHI HOVER === */
+                .transition-hover:hover .category-title {
+                    color: #fb873f !important; /* Khi đưa chuột vào, chữ đổi sang màu cam */
+                }
+
+                /* Tách riêng hiệu ứng cho khóa học để tránh ảnh hưởng */
+                .transition-hover-course { transition: all 0.3s ease; }
+                .transition-hover-course:hover { transform: translateY(-8px); box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important; }
+
+                /* CÁC STYLE CŨ CỦA SẾP */
                 .image-zoom { transition: transform 0.5s ease; }
                 .image-zoom:hover { transform: scale(1.1); }
                 .bg-dark-gradient { background: linear-gradient(45deg, #181d38, #2c3e50); color: #fff; }
