@@ -26,6 +26,16 @@ namespace educodeai_server.Models
         [ForeignKey("MaKetQuaKiemTraChungChi")]
         public virtual KetQuaKiemTraChungChiModel? KetQuaKiemTraChungChi { get; set; }
 
+        [StringLength(200)]
+        public string? HoTenHienThi { get; set; }
+
+        [StringLength(200)]
+        public string? EmailNhan { get; set; }
+
+        public bool DaGuiEmail { get; set; }
+
+        public DateTime? NgayGuiEmail { get; set; }
+
         public DateTime NgayCap { get; set; } = DateTime.UtcNow;
     }
 }

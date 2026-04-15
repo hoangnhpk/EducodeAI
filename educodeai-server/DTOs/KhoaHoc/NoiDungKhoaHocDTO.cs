@@ -28,6 +28,8 @@
         public int MaKhoaHoc { get; set; }
         public string TenKhoaHoc { get; set; } = null!;
         public string? Slug { get; set; }
+        public bool CoChungChi { get; set; }
+        public string? TenChungChi { get; set; }
         public List<ChuongHoc_NoiDungKhoaHocDTO> DanhSachChuongHoc { get; set; } = new List<ChuongHoc_NoiDungKhoaHocDTO>();
         public BaiKiemTraChungChiDTO? BaiKiemTraChungChi { get; set; }
         public ThongTinChungChiDTO? ThongTinChungChi { get; set; }
@@ -74,6 +76,8 @@
         public bool DaoCauHoi { get; set; } = true;
         public bool DuDieuKienDuThi { get; set; }
         public string? LyDoChuaDuDieuKien { get; set; }
+        public bool DaCoDeThi { get; set; }
+        public string? NguonDe { get; set; }
         public string DuLieuCauHoiJSON { get; set; } = "[]";
     }
 
@@ -89,6 +93,11 @@
         public int TongSoCauHoi { get; set; }
         public string? TenHocVien { get; set; }
         public string? TenKhoaHoc { get; set; }
+        public string? TenChungChi { get; set; }
+        public string? HoTenHienThi { get; set; }
+        public string? EmailNhan { get; set; }
+        public bool DaGuiEmail { get; set; }
+        public DateTime? NgayGuiEmail { get; set; }
     }
 
     public class ChiTietCauTraLoiDTO
@@ -114,6 +123,8 @@
     {
         public int MaKhoaHoc { get; set; }
         public int MaNguoiDung { get; set; }
+        public string HoTenHienThi { get; set; } = string.Empty;
+        public string EmailNhan { get; set; } = string.Empty;
         public List<ChiTietCauTraLoiDTO> ChiTietLamBai { get; set; } = new();
     }
 

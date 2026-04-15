@@ -1,4 +1,4 @@
-import { BaiTapTracNghiem } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/BaiTapTracNghiem';
+﻿import { BaiTapTracNghiem } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/BaiTapTracNghiem';
 import type { BaiKiemTraChungChiDTO, ThongTinChungChiDTO } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO';
 
 interface TabChungChiProps {
@@ -9,6 +9,10 @@ interface TabChungChiProps {
     daHoanThanhKhoaHoc: boolean;
     dangLamBai: boolean;
     dangNopBai: boolean;
+    hoTenHienThi: string;
+    emailNhan: string;
+    onThayDoiHoTenHienThi: (value: string) => void;
+    onThayDoiEmailNhan: (value: string) => void;
     onBatDauThi: () => void;
     onNopBai: (
         diem: number,
@@ -35,6 +39,10 @@ export const TabChungChi = ({
     daHoanThanhKhoaHoc,
     dangLamBai,
     dangNopBai,
+    hoTenHienThi,
+    emailNhan,
+    onThayDoiHoTenHienThi,
+    onThayDoiEmailNhan,
     onBatDauThi,
     onNopBai,
     onInChungChi
@@ -44,7 +52,7 @@ export const TabChungChi = ({
             <div className="cp-certificate-empty">
                 <i className="fas fa-award" />
                 <h3>Chứng chỉ đang được chuẩn bị</h3>
-                <p>Khóa học này chưa cấu hình bài kiểm tra cuối khóa.</p>
+                <p>Khóa học này chưa được cấu hình bài kiểm tra cuối khóa.</p>
             </div>
         );
     }
@@ -84,19 +92,17 @@ export const TabChungChi = ({
     }
 
     const daCapChungChi = thongTinChungChi?.daCap === true;
+    const tenNguoiNhan = thongTinChungChi?.hoTenHienThi || thongTinChungChi?.tenHocVien || hoTenHienThi || tenHocVien;
 
     return (
         <div className="cp-certificate-tab">
             <section className="cp-certificate-hero">
                 <div>
                     <span className="cp-certificate-kicker">Chứng chỉ hoàn thành</span>
-                    <h3>Nhận chứng chỉ sau khi vượt qua bài test cuối khóa</h3>
+                    <h3>Nhận chứng chỉ sau khi vượt qua bài kiểm tra cuối khóa</h3>
                     <p>
-                        Hoàn thành toàn bộ bài học, làm bài kiểm tra cuối khóa và đạt tối thiểu
-                        {' '}
-                        <strong>{baiKiemTraChungChi.diemCanDat}%</strong>
-                        {' '}
-                        để mở chứng chỉ.
+                        Hoàn thành toàn bộ bài học, làm bài kiểm tra cuối khóa và đạt tối thiểu{' '}
+                        <strong>{baiKiemTraChungChi.diemCanDat}%</strong> để mở chứng chỉ.
                     </p>
                 </div>
 
@@ -126,7 +132,7 @@ export const TabChungChi = ({
                         </li>
                         <li className={daCapChungChi || baiKiemTraChungChi.duDieuKienDuThi ? 'done' : ''}>
                             <i className={`fas ${daCapChungChi || baiKiemTraChungChi.duDieuKienDuThi ? 'fa-check-circle' : 'fa-circle'}`} />
-                            Làm bài test cuối khóa.
+                            Làm bài kiểm tra cuối khóa.
                         </li>
                         <li className={daCapChungChi ? 'done' : ''}>
                             <i className={`fas ${daCapChungChi ? 'fa-check-circle' : 'fa-circle'}`} />
@@ -139,26 +145,49 @@ export const TabChungChi = ({
                             <div>
                                 <strong>Kết quả gần nhất</strong>
                                 <p>
-                                    {thongTinChungChi.soCauDungLanGanNhat ?? 0}/{thongTinChungChi.tongSoCauHoi} câu đúng
-                                    {' '}
-                                    ({Math.round(thongTinChungChi.diemLanGanNhat)}%)
+                                    {thongTinChungChi.soCauDungLanGanNhat ?? 0}/{thongTinChungChi.tongSoCauHoi} câu đúng ({Math.round(thongTinChungChi.diemLanGanNhat)}%)
                                 </p>
                             </div>
                             <span>{thongTinChungChi.datLanGanNhat ? 'Đạt' : 'Chưa đạt'}</span>
                         </div>
                     )}
 
+                    <div className="cp-certificate-form">
+                        <h5>Thông tin phát hành chứng chỉ</h5>
+                        <label className="cp-certificate-field">
+                            <span>Họ và tên hiển thị</span>
+                            <input
+                                type="text"
+                                value={hoTenHienThi}
+                                onChange={(event) => onThayDoiHoTenHienThi(event.target.value)}
+                                placeholder="Nhập họ và tên trên chứng chỉ"
+                            />
+                        </label>
+                        <label className="cp-certificate-field">
+                            <span>Email nhận chứng chỉ</span>
+                            <input
+                                type="email"
+                                value={emailNhan}
+                                onChange={(event) => onThayDoiEmailNhan(event.target.value)}
+                                placeholder="Nhập email nhận file PDF"
+                            />
+                        </label>
+                    </div>
+
                     <button
                         className="cp-certificate-action"
-                        disabled={!baiKiemTraChungChi.duDieuKienDuThi}
+                        disabled={!baiKiemTraChungChi.duDieuKienDuThi || !hoTenHienThi.trim() || !emailNhan.trim()}
                         onClick={onBatDauThi}
                     >
                         <i className="fas fa-file-signature" />
-                        {daCapChungChi ? 'Thi lại để cải thiện' : 'Bắt đầu bài test cuối khóa'}
+                        {daCapChungChi ? 'Thi lại để cập nhật chứng chỉ' : 'Bắt đầu bài test cuối khóa'}
                     </button>
 
                     {!baiKiemTraChungChi.duDieuKienDuThi && baiKiemTraChungChi.lyDoChuaDuDieuKien && (
                         <p className="cp-certificate-hint">{baiKiemTraChungChi.lyDoChuaDuDieuKien}</p>
+                    )}
+                    {baiKiemTraChungChi.duDieuKienDuThi && (!hoTenHienThi.trim() || !emailNhan.trim()) && (
+                        <p className="cp-certificate-hint">Vui lòng nhập đủ họ tên và email trước khi bắt đầu bài kiểm tra.</p>
                     )}
                 </div>
 
@@ -170,14 +199,30 @@ export const TabChungChi = ({
                             <div className="cp-certificate-card" id="certificate-print-card">
                                 <span className="cp-certificate-brand">EduCodeAI</span>
                                 <h3>CHỨNG NHẬN HOÀN THÀNH</h3>
-                                <p className="cp-certificate-card-subtitle">Chứng nhận học viên đã hoàn thành khóa học</p>
-                                <strong>{thongTinChungChi?.tenHocVien || tenHocVien}</strong>
+                                <p className="cp-certificate-card-subtitle">
+                                    {thongTinChungChi?.tenChungChi || 'Chứng nhận học viên đã hoàn thành khóa học'}
+                                </p>
+                                <strong>{tenNguoiNhan}</strong>
                                 <p className="cp-certificate-course-name">{thongTinChungChi?.tenKhoaHoc || tenKhoaHoc}</p>
                                 <div className="cp-certificate-meta">
                                     <span>Mã chứng chỉ: {thongTinChungChi?.maChungChi}</span>
                                     <span>Ngày cấp: {dinhDangNgay(thongTinChungChi?.ngayCap)}</span>
                                 </div>
                             </div>
+
+                            <div className="cp-certificate-email-status">
+                                <div>
+                                    <strong>Email nhận chứng chỉ</strong>
+                                    <p>{thongTinChungChi?.emailNhan || emailNhan || '--'}</p>
+                                </div>
+                                <span className={thongTinChungChi?.daGuiEmail ? 'sent' : 'pending'}>
+                                    {thongTinChungChi?.daGuiEmail ? 'Đã gửi PDF' : 'Chưa gửi được email'}
+                                </span>
+                            </div>
+
+                            {thongTinChungChi?.ngayGuiEmail && (
+                                <p className="cp-certificate-hint">PDF đã được gửi lúc {dinhDangNgay(thongTinChungChi.ngayGuiEmail)}.</p>
+                            )}
 
                             <button className="cp-certificate-action secondary" onClick={onInChungChi}>
                                 <i className="fas fa-print" /> In chứng chỉ
@@ -187,7 +232,7 @@ export const TabChungChi = ({
                         <div className="cp-certificate-placeholder">
                             <i className="fas fa-scroll" />
                             <h5>Chưa có chứng chỉ</h5>
-                            <p>Vượt qua bài test cuối khóa để mở khóa chứng chỉ hoàn thành của bạn.</p>
+                            <p>Vượt qua bài test cuối khóa để hệ thống tạo chứng chỉ và gửi file PDF về email của bạn.</p>
                         </div>
                     )}
                 </div>

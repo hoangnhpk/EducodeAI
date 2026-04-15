@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { KhoaHocService, type LuuKetQuaQuizDTO, type NopBaiKiemTraChungChiDTO } from '@/services/khoa-hoc.service';
 import type { KhoaHocData } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO';
@@ -38,11 +38,14 @@ const NoiDungKhoaHoc = () => {
     const [videoDaXongLocal, setVideoDaXongLocal] = useState<number[]>([]);
     const [dangLamKiemTraChungChi, setDangLamKiemTraChungChi] = useState(false);
     const [dangNopKiemTraChungChi, setDangNopKiemTraChungChi] = useState(false);
+    const [hoTenHienThiChungChi, setHoTenHienThiChungChi] = useState('');
+    const [emailNhanChungChi, setEmailNhanChungChi] = useState('');
     const videoRef = useRef<NoiDungVideoRef>(null);
 
     const maNguoiDung = getUserId() ?? 0;
     const thongTinNguoiDung = getUserInfo();
-    const tenHocVien = thongTinNguoiDung?.hoTen || thongTinNguoiDung?.taiKhoan || 'Hoc vien';
+    const tenHocVien = thongTinNguoiDung?.hoTen || thongTinNguoiDung?.taiKhoan || 'Học viên';
+    const emailNguoiDung = thongTinNguoiDung?.email || '';
 
     const layDuLieuKhoaHoc = useCallback(async () => {
         if (!id) return;
@@ -81,6 +84,12 @@ const NoiDungKhoaHoc = () => {
         }
     }, [idBaiHoc, id]);
 
+    useEffect(() => {
+        if (!khoaHoc) return;
+        setHoTenHienThiChungChi(khoaHoc.thongTinChungChi?.hoTenHienThi || tenHocVien);
+        setEmailNhanChungChi(khoaHoc.thongTinChungChi?.emailNhan || emailNguoiDung);
+    }, [khoaHoc, tenHocVien, emailNguoiDung]);
+
     const flatList = useMemo(
         () => (khoaHoc ? KhoaHocService.lamPhangDanhSachBaiHoc(khoaHoc.danhSachChuongHoc) : []),
         [khoaHoc]
@@ -93,13 +102,13 @@ const NoiDungKhoaHoc = () => {
     const nextId = KhoaHocService.timBaiTiepTheo(flatList, idBaiHoc);
     const prevId = KhoaHocService.timBaiTruoc(flatList, idBaiHoc);
     const daCapChungChi = khoaHoc?.thongTinChungChi?.daCap === true;
+    const hienTabChungChi = khoaHoc?.coChungChi === true;
 
     useEffect(() => {
-        if (!daHoanThanhKhoaHoc || !khoaHoc) return;
+        if (!khoaHoc || !khoaHoc.coChungChi || !daHoanThanhKhoaHoc) return;
 
         const modalKey = `shown_certificate_prompt_${khoaHoc.maKhoaHoc}`;
-        const hasShown = localStorage.getItem(modalKey);
-        if (hasShown) return;
+        if (localStorage.getItem(modalKey)) return;
 
         void Swal.fire({
             title: daCapChungChi ? 'Khóa học đã hoàn thành' : 'Chúc mừng bạn!',
@@ -225,11 +234,21 @@ const NoiDungKhoaHoc = () => {
                 });
             }
         } catch (error) {
-            console.error('Loi khi nop bai quiz:', error);
+            console.error('Lỗi khi nộp bài quiz:', error);
         }
     };
 
     const xuLyBatDauKiemTraChungChi = () => {
+        if (!hoTenHienThiChungChi.trim() || !emailNhanChungChi.trim()) {
+            void Swal.fire({
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng nhập họ tên và email nhận chứng chỉ trước khi bắt đầu bài kiểm tra.',
+                icon: 'warning',
+                confirmButtonColor: '#f69050'
+            });
+            return;
+        }
+
         setTabActive('chungchi');
         setDangLamKiemTraChungChi(true);
     };
@@ -248,6 +267,8 @@ const NoiDungKhoaHoc = () => {
             const payload: NopBaiKiemTraChungChiDTO = {
                 MaKhoaHoc: khoaHoc.maKhoaHoc,
                 MaNguoiDung: maNguoiDung,
+                HoTenHienThi: hoTenHienThiChungChi.trim(),
+                EmailNhan: emailNhanChungChi.trim(),
                 ChiTietLamBai: chiTietTraLoi
             };
 
@@ -255,7 +276,6 @@ const NoiDungKhoaHoc = () => {
 
             setKhoaHoc((prevData) => {
                 if (!prevData) return prevData;
-
                 return {
                     ...prevData,
                     thongTinChungChi: ketQua.thongTinChungChi ?? prevData.thongTinChungChi
@@ -264,19 +284,15 @@ const NoiDungKhoaHoc = () => {
 
             setDangLamKiemTraChungChi(false);
 
-            if (ketQua.daDat) {
-                setTimeout(() => {
-                    void Swal.fire({
-                        title: 'Chứng chỉ đã sẵn sàng',
-                        text: ketQua.thongBao,
-                        icon: 'success',
-                        confirmButtonColor: '#f69050'
-                    });
-                }, 250);
-            }
+            void Swal.fire({
+                title: ketQua.daDat ? 'Đã xử lý chứng chỉ' : 'Kết quả bài kiểm tra',
+                text: ketQua.thongBao,
+                icon: ketQua.daDat ? 'success' : 'info',
+                confirmButtonColor: '#f69050'
+            });
         } catch (error: any) {
-            const thongBao = error?.response?.data?.thongBao || 'Khong the nop bai kiem tra chung chi.';
-            console.error('Loi khi nop bai chung chi:', error);
+            const thongBao = error?.response?.data?.thongBao || 'Không thể nộp bài kiểm tra chứng chỉ.';
+            console.error('Lỗi khi nộp bài chứng chỉ:', error);
             void Swal.fire({
                 title: 'Không thể lưu kết quả',
                 text: thongBao,
@@ -294,7 +310,7 @@ const NoiDungKhoaHoc = () => {
         const popup = window.open('', '_blank', 'width=1100,height=800');
         if (!popup) return;
 
-        const tenHocVienSafe = escapeHtml(khoaHoc.thongTinChungChi.tenHocVien || tenHocVien);
+        const tenHocVienSafe = escapeHtml(khoaHoc.thongTinChungChi.hoTenHienThi || khoaHoc.thongTinChungChi.tenHocVien || tenHocVien);
         const tenKhoaHocSafe = escapeHtml(khoaHoc.thongTinChungChi.tenKhoaHoc || khoaHoc.tenKhoaHoc);
         const maChungChiSafe = escapeHtml(khoaHoc.thongTinChungChi.maChungChi || '');
         const ngayCapSafe = escapeHtml(
@@ -302,11 +318,12 @@ const NoiDungKhoaHoc = () => {
                 ? new Date(khoaHoc.thongTinChungChi.ngayCap).toLocaleDateString('vi-VN')
                 : '--'
         );
+        const tenChungChiSafe = escapeHtml(khoaHoc.thongTinChungChi.tenChungChi || 'Chứng nhận hoàn thành');
 
         popup.document.write(`
             <html>
                 <head>
-                    <title>Chứng chỉ hoàn thành khóa học</title>
+                    <title>${tenChungChiSafe}</title>
                     <style>
                         body {
                             margin: 0;
@@ -379,7 +396,7 @@ const NoiDungKhoaHoc = () => {
                 <body>
                     <div class="certificate">
                         <div class="brand">EduCodeAI Learning Platform</div>
-                        <h1>CHỨNG NHẬN HOÀN THÀNH</h1>
+                        <h1>${tenChungChiSafe.toUpperCase()}</h1>
                         <p class="subtitle">Chứng nhận học viên đã hoàn thành xuất sắc khóa học và đạt yêu cầu kiểm tra cuối khóa.</p>
                         <p class="student">${tenHocVienSafe}</p>
                         <p class="course-label">Đã hoàn thành khóa học</p>
@@ -427,10 +444,10 @@ const NoiDungKhoaHoc = () => {
                 return (
                     <BaiTapIDE
                         duLieu={{
-                            tieuDe: baiHocHienTai.tieuDe || 'Bai tap thuc hanh',
+                            tieuDe: baiHocHienTai.tieuDe || 'Bài tập thực hành',
                             moTa: baiHocHienTai.noiDung || '',
                             ngonNgu: 'python',
-                            templateCode: '# Viet code cua ban tai day\n',
+                            templateCode: '# Viết code của bạn tại đây\n',
                             testCases: []
                         }}
                         khiHoanThanh={(_phanTram: number, daDat: boolean) => {
@@ -525,7 +542,7 @@ const NoiDungKhoaHoc = () => {
                                 </button>
                             )}
 
-                            {(daHoanThanhKhoaHoc || daCapChungChi) && (
+                            {hienTabChungChi && (
                                 <button
                                     className={`cp-tab ${tabActive === 'chungchi' ? 'cp-tab-active' : ''}`}
                                     onClick={() => setTabActive('chungchi')}
@@ -578,18 +595,24 @@ const NoiDungKhoaHoc = () => {
                                 </div>
 
                                 <div style={{ display: tabActive === 'chungchi' ? 'block' : 'none', height: '100%', overflowY: 'auto' }}>
-                                    <TabChungChi
-                                        tenKhoaHoc={khoaHoc.tenKhoaHoc}
-                                        tenHocVien={tenHocVien}
-                                        baiKiemTraChungChi={khoaHoc.baiKiemTraChungChi}
-                                        thongTinChungChi={khoaHoc.thongTinChungChi}
-                                        daHoanThanhKhoaHoc={daHoanThanhKhoaHoc}
-                                        dangLamBai={dangLamKiemTraChungChi}
-                                        dangNopBai={dangNopKiemTraChungChi}
-                                        onBatDauThi={xuLyBatDauKiemTraChungChi}
-                                        onNopBai={xuLyNopBaiChungChi}
-                                        onInChungChi={xuLyInChungChi}
-                                    />
+                                    {hienTabChungChi && (
+                                        <TabChungChi
+                                            tenKhoaHoc={khoaHoc.tenKhoaHoc}
+                                            tenHocVien={tenHocVien}
+                                            baiKiemTraChungChi={khoaHoc.baiKiemTraChungChi}
+                                            thongTinChungChi={khoaHoc.thongTinChungChi}
+                                            daHoanThanhKhoaHoc={daHoanThanhKhoaHoc}
+                                            dangLamBai={dangLamKiemTraChungChi}
+                                            dangNopBai={dangNopKiemTraChungChi}
+                                            hoTenHienThi={hoTenHienThiChungChi}
+                                            emailNhan={emailNhanChungChi}
+                                            onThayDoiHoTenHienThi={setHoTenHienThiChungChi}
+                                            onThayDoiEmailNhan={setEmailNhanChungChi}
+                                            onBatDauThi={xuLyBatDauKiemTraChungChi}
+                                            onNopBai={xuLyNopBaiChungChi}
+                                            onInChungChi={xuLyInChungChi}
+                                        />
+                                    )}
                                 </div>
 
                                 <div style={{ display: tabActive === 'danhgia' ? 'block' : 'none', height: '100%', overflowY: 'auto', padding: '20px' }}>
