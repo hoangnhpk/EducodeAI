@@ -11,12 +11,13 @@ namespace educodeai_server.Services.Interface
         Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto);
         Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung);
         Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto);
+        Task<KetQuaNopBaiKiemTraChungChiDTO> NopBaiKiemTraChungChiAsync(NopBaiKiemTraChungChiDTO dto);
         Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung);
         Task<List<GhiChuAIModel>> LayGhiChuAI(int maNguoiDung);
         Task<bool> LuuGhiChuAI(LuuGhiChuAIRequest yeuCau, int maNguoiDung);
         Task<bool> UpdateGhiChuAI(UpdateGhiChuAIDTO dto);
         Task<bool> DeleteGhiChuAI(int id);
-        Task<object> LayThongKeVaDanhSachAsync(int maKhoaHoc);
+        Task<object> LayThongKeVaDanhSachAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> TaoDanhGiaMoiAsync(DanhGiaDTO yeuCau);
     }
 }

@@ -2321,6 +2321,11 @@ namespace educodeai_server.Migrations
                     b.Property<int>("SoSao")
                         .HasColumnType("integer");
 
+                    b.Property<string>("TrangThai")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.HasKey("MaDanhGia");
 
                     b.HasIndex("MaKhoaHoc");
