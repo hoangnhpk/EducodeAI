@@ -25,6 +25,10 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
         label: "NGUY CƠ BỎ HỌC",
         className: "status-badge status-risk",
       },
+      "Chưa học": {
+        label: "CHƯA HỌC",
+        className: "status-badge status-not-started",
+      },
       "Chưa bắt đầu": {
         label: "CHƯA BẮT ĐẦU",
         className: "status-badge status-not-started",
@@ -39,9 +43,9 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
   };
 
   /* ===== PROGRESS COLOR ===== */
-  const getProgressClass = (tyLeHoanThanh: number) => {
-    if (tyLeHoanThanh >= 80) return "progress-green";
-    if (tyLeHoanThanh >= 50) return "progress-yellow";
+  const getProgressClass = (tienDo: number) => {
+    if (tienDo >= 80) return "progress-green";
+    if (tienDo >= 50) return "progress-yellow";
     return "progress-red";
   };
 
@@ -51,14 +55,14 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
       return (
         <img 
           src={hocVien.anhDaiDien} 
-          alt={hocVien.tenHocVien}
+          alt={hocVien.hoTen}
           className="student-avatar-img"
         />
       );
     }
     return (
       <div className="student-avatar">
-        {hocVien.tenHocVien.charAt(0).toUpperCase()}
+        {hocVien.hoTen?.charAt(0).toUpperCase() || "U"}
       </div>
     );
   };
@@ -70,10 +74,9 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
           <tr>
             <th>Họ tên</th>
             <th>Email</th>
-            <th>Khóa học</th>
             <th>% Hoàn thành</th>
             <th>Số bài đã nộp</th>
-            <th>Điểm TB</th>
+            <th>Tổng giờ học</th>
             <th>Trạng thái</th>
             <th>Hành động</th>
           </tr>
@@ -81,24 +84,17 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
 
         <tbody>
           {students.map((hocVien) => (
-            <tr key={hocVien.maHocVien}>
+            <tr key={hocVien.maNguoiDung}>
               {/* ===== NAME ===== */}
               <td>
                 <div className="student-info">
                   {getAvatar(hocVien)}
-                  <strong>{hocVien.tenHocVien}</strong>
+                  <strong>{hocVien.hoTen}</strong>
                 </div>
               </td>
 
               {/* ===== EMAIL ===== */}
               <td>{hocVien.email}</td>
-
-              {/* ===== COURSES ===== */}
-              <td>
-                <span className="course-badge">
-                  {hocVien.soKhoaHocThamGia} khóa
-                </span>
-              </td>
 
               {/* ===== PROGRESS ===== */}
               <td>
@@ -106,25 +102,25 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
                   <div className="progress-bar">
                     <div
                       className={`progress-fill ${getProgressClass(
-                        hocVien.tyLeHoanThanh
+                        hocVien.tienDo
                       )}`}
-                      style={{ width: `${hocVien.tyLeHoanThanh}%` }}
+                      style={{ width: `${hocVien.tienDo}%` }}
                     />
                   </div>
-                  <strong>{hocVien.tyLeHoanThanh.toFixed(1)}%</strong>
+                  <strong>{hocVien.tienDo?.toFixed(1) || 0}%</strong>
                 </div>
               </td>
 
               {/* ===== ASSIGNMENTS ===== */}
               <td>
                 <span className="assignment-badge">
-                  {hocVien.soBaiTapHoanThanh}/{hocVien.tongBaiTap}
+                  {hocVien.soBaiDaNop} bài
                 </span>
               </td>
 
-              {/* ===== AVG SCORE ===== */}
+              {/* ===== STUDY TIME ===== */}
               <td className="avg-score">
-                {hocVien.diemTrungBinh.toFixed(1)}
+                {hocVien.gioHoc?.toFixed(1) || 0}h
               </td>
 
               {/* ===== STATUS ===== */}

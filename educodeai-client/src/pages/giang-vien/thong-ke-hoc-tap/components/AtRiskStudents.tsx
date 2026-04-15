@@ -12,14 +12,14 @@ const AtRiskStudents = ({ students }: Props) => {
     .filter(
       (hv) => 
         hv.trangThai === "Nguy cơ bỏ học" || 
-        hv.tyLeHoanThanh < 50
+        hv.tienDo < 50
     )
-    .sort((a, b) => a.tyLeHoanThanh - b.tyLeHoanThanh) // Sắp xếp theo tỷ lệ tăng dần (thấp nhất trước)
+    .sort((a, b) => a.tienDo - b.tienDo) // Sắp xếp theo tỷ lệ tăng dần (thấp nhất trước)
     .slice(0, 5);
 
   const handleContact = (hocVien: HocVien) => {
     // TODO: Implement send email functionality
-    window.location.href = `mailto:${hocVien.email}?subject=Hỗ trợ học tập&body=Xin chào ${hocVien.tenHocVien}`;
+    window.location.href = `mailto:${hocVien.email}?subject=Hỗ trợ học tập&body=Xin chào ${hocVien.hoTen}`;
   };
 
   return (
@@ -38,17 +38,17 @@ const AtRiskStudents = ({ students }: Props) => {
           </p>
         ) : (
           atRiskStudents.map((hocVien) => (
-            <div key={hocVien.maHocVien} className="at-risk-item">
+            <div key={hocVien.maNguoiDung} className="at-risk-item">
               <div className="at-risk-icon">
                 <AlertTriangle size={18} />
               </div>
 
               <div className="at-risk-info">
-                <strong>{hocVien.tenHocVien}</strong>
+                <strong>{hocVien.hoTen}</strong>
                 <span>{hocVien.email}</span>
                 <small>
-                  Hoàn thành: {hocVien.tyLeHoanThanh.toFixed(1)}% • 
-                  Điểm TB: {hocVien.diemTrungBinh.toFixed(1)}
+                  Hoàn thành: {hocVien.tienDo?.toFixed(1) || 0}% • 
+                  Số bài đã nộp: {hocVien.soBaiDaNop}
                 </small>
               </div>
 

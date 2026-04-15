@@ -76,24 +76,46 @@ namespace educodeai_server.Services.Implementation
         public async Task<object> DangNhapAsync(DangNhapRequest request, string ipAddress)
         {
             KiemTraChanSpam(request.TaiKhoan, ipAddress);
-            var user = await LayNguoiDungKemThietBiAsync(request.TaiKhoan);
-            if (user == null || user.TrangThai != "Hoạt động") throw new Exception("Tài khoản không tồn tại hoặc bị khóa.");
-
-            int failCount = LaySoLanSaiMatKhau(request.TaiKhoan);
             
-            if (failCount >= 3 && (string.IsNullOrEmpty(request.CaptchaToken) || request.CaptchaToken == "SKIP_CAPTCHA"))
-                return new { requiresCaptcha = true, message = "Vui lòng xác minh người máy." };
+            // Lấy số lần sai hiện tại
+            int ipFailCount = LaySoLanSaiMatKhau("IP_" + ipAddress);
+            int accFailCount = LaySoLanSaiMatKhau("Acc_" + request.TaiKhoan);
+            int currentMaxFail = Math.Max(ipFailCount, accFailCount);
 
-            if (!BCrypt.Net.BCrypt.Verify(request.MatKhau, user.MatKhau))
+            // 1. Nếu đã đạt ngưỡng sai >= 3, bắt buộc phải có Captcha hợp lệ mới cho đi tiếp
+            if (currentMaxFail >= 3)
             {
-                TangSoLanSaiMatKhau(request.TaiKhoan);
+                if (string.IsNullOrEmpty(request.CaptchaToken) || request.CaptchaToken == "SKIP_CAPTCHA")
+                {
+                    return new { requiresCaptcha = true, message = "Bạn đã nhập sai quá nhiều lần. Vui lòng xác minh người máy." };
+                }
+                await ValidateCaptchaAsync(request.CaptchaToken);
+            }
+
+            // 2. Thực hiện kiểm tra thông tin đăng nhập
+            var user = await LayNguoiDungKemThietBiAsync(request.TaiKhoan);
+            bool isPasswordValid = user != null && user.TrangThai == "Hoạt động" && BCrypt.Net.BCrypt.Verify(request.MatKhau, user.MatKhau);
+
+            if (!isPasswordValid)
+            {
+                // Tăng số lần sai
+                TangSoLanSaiMatKhau("IP_" + ipAddress);
+                int newAccFailCount = TangSoLanSaiMatKhau("Acc_" + request.TaiKhoan);
+                int newMaxFail = Math.Max(LaySoLanSaiMatKhau("IP_" + ipAddress), newAccFailCount);
+
+                // Nếu sau khi tăng mà đạt >= 3, trả về yêu cầu Captcha ngay lập tức (thay vì bắn Exception 400)
+                if (newMaxFail >= 3)
+                {
+                    return new { requiresCaptcha = true, message = "Tài khoản hoặc mật khẩu không chính xác. Vui lòng xác minh người máy." };
+                }
+
                 throw new Exception("Tài khoản hoặc mật khẩu không chính xác.");
             }
 
-            if (failCount >= 3) await ValidateCaptchaAsync(request.CaptchaToken);
-
-            ResetSoLanSaiMatKhau(request.TaiKhoan);
-            KiemTraGioiHanThietBi(user, request.MaThietBi);
+            // 3. Đăng nhập thành công -> Reset lỗi
+            ResetSoLanSaiMatKhau("IP_" + ipAddress);
+            ResetSoLanSaiMatKhau("Acc_" + request.TaiKhoan);
+            KiemTraGioiHanThietBi(user!, request.MaThietBi);
 
             if (LaThietBiMoiHoacQuaHan(user, request.MaThietBi, 3))
             {
@@ -342,9 +364,10 @@ namespace educodeai_server.Services.Implementation
 
         // VÔ HIỆU HÓA HOÀN TOÀN VIỆC CHẶN
         private void KiemTraChanSpam(string i, string ip) { return; }
-        private void TangSoLanSaiMatKhau(string i) { 
+        private int TangSoLanSaiMatKhau(string i) { 
             int c = LaySoLanSaiMatKhau(i) + 1; 
             _memoryCache.Set("FailPass_" + i, c, TimeSpan.FromHours(1)); 
+            return c;
         }
         private void ResetSoLanSaiMatKhau(string i) { 
             _memoryCache.Remove("FailPass_" + i); 

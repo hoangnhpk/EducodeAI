@@ -73,10 +73,13 @@ export const authService = {
   logout: async () => {
     const { maThietBi } = getDeviceInfo();
     try {
-      await api.post('/api/XacThuc/dang-xuat', { maThietBi });
+      await api.post('/api/XacThuc/dang-xuat', `"${maThietBi}"`, {
+        headers: { 'Content-Type': 'application/json' }
+      });
     } finally {
       localStorage.removeItem('user_token');
       localStorage.removeItem('user_info');
+      localStorage.removeItem('refresh_token'); // Clear refresh token as well
     }
   },
   // 8. QUÊN MẬT KHẨU - YÊU CẦU GỬI OTP
