@@ -139,6 +139,9 @@ builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =
 
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
 
+// YouTube Service
+builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();
+
 // ==========================================
 // 6. CẤU HÌNH CORS & SWAGGER
 // ==========================================
