@@ -7,6 +7,7 @@ import type {
     ThemChuongResponseDTO,
     BaiHocVideoCreateUpdateDTO,
     ThemVideoResponseDTO,
+    KetQuaTaoDeChungChiAIDTO,
 } from '@/pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToiDTO';
 
 const BASE = '/api/giang-vien/khoa-hoc';
@@ -36,6 +37,10 @@ export const khoaHocCuaToiService = {
     // DELETE /api/giang-vien/khoa-hoc/{maGiangVien}/{maKhoaHoc}
     async xoaKhoaHoc(maGiangVien: number, maKhoaHoc: number): Promise<boolean> {
         return await axiosClient.delete<boolean>(`${BASE}/${maGiangVien}/${maKhoaHoc}`);
+    },
+
+    async taoDeChungChiBangAI(maGiangVien: number, maKhoaHoc: number): Promise<KetQuaTaoDeChungChiAIDTO> {
+        return await axiosClient.post<KetQuaTaoDeChungChiAIDTO>(`${BASE}/${maGiangVien}/${maKhoaHoc}/chung-chi/tao-de-ai`);
     },
 
     // POST /api/giang-vien/khoa-hoc/{maGiangVien}/chuong/{maKhoaHoc}

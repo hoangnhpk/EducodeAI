@@ -22,10 +22,10 @@ export default function ReviewAdminDetailDrawer({ review, onClose, onApprove, on
               <div>
                 <span className="qtrv-type-badge is-rating">
                   <Star size={14} />
-                  Danh gia khoa hoc
+                  Đánh giá khóa học
                 </span>
                 <h3>{review.khoaHoc.tenKhoaHoc}</h3>
-                <p>{review.khoaHoc.giangVien || 'Noi dung danh gia tu hoc vien'}</p>
+                <p>{review.khoaHoc.giangVien || 'Nội dung đánh giá từ học viên'}</p>
               </div>
               <button type="button" className="qtrv-close-btn" onClick={onClose}>
                 <X size={18} />
@@ -34,7 +34,7 @@ export default function ReviewAdminDetailDrawer({ review, onClose, onApprove, on
 
             <div className="qtrv-drawer__body">
               <section className="qtrv-detail-card">
-                <label>Nguoi gui</label>
+                <label>Người gửi</label>
                 <div className="qtrv-user-cell large">
                   <img
                     src={review.nguoiDung.avatar || 'https://ui-avatars.com/api/?name=EduCodeAI'}
@@ -42,36 +42,36 @@ export default function ReviewAdminDetailDrawer({ review, onClose, onApprove, on
                   />
                   <div>
                     <strong>{review.nguoiDung.ten}</strong>
-                    <span>{review.nguoiDung.email || 'Khong co email'}</span>
+                    <span>{review.nguoiDung.email || 'Không có email'}</span>
                   </div>
                 </div>
               </section>
 
               <section className="qtrv-detail-grid">
                 <div className="qtrv-detail-card">
-                  <label>Trang thai</label>
+                  <label>Trạng thái</label>
                   <span className={`qtrv-status-badge ${getTrangThaiClass(review.trangThai)}`}>
                     {getTrangThaiLabel(review.trangThai)}
                   </span>
                 </div>
                 <div className="qtrv-detail-card">
-                  <label>Thoi gian</label>
+                  <label>Thời gian</label>
                   <strong>{formatDate(review.ngayTao)}</strong>
                   <small>{getRelativeTime(review.ngayTao)}</small>
                 </div>
                 <div className="qtrv-detail-card">
-                  <label>Doi tuong</label>
+                  <label>Đối tượng</label>
                   <strong>{review.khoaHoc.tenKhoaHoc}</strong>
-                  <small>Khoa hoc</small>
+                  <small>Khóa học</small>
                 </div>
                 <div className="qtrv-detail-card">
-                  <label>Muc sao</label>
+                  <label>Mức sao</label>
                   <strong>{review.soSao}/5 sao</strong>
                 </div>
               </section>
 
               <section className="qtrv-detail-card">
-                <label>Noi dung goc</label>
+                <label>Nội dung gốc</label>
                 <div className="qtrv-detail-content">{review.noiDung}</div>
               </section>
             </div>
@@ -79,12 +79,12 @@ export default function ReviewAdminDetailDrawer({ review, onClose, onApprove, on
             <div className="qtrv-drawer__footer">
               {review.trangThai !== 'DaDuyet' && (
                 <button type="button" className="qtrv-primary-btn" onClick={() => onApprove(review.id)}>
-                  Duyet noi dung
+                  Duyệt nội dung
                 </button>
               )}
               {review.trangThai !== 'TuChoi' && (
                 <button type="button" className="qtrv-secondary-btn" onClick={() => onReject(review.id)}>
-                  Tu choi
+                  Từ chối
                 </button>
               )}
             </div>
