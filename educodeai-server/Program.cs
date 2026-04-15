@@ -96,6 +96,7 @@ builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
 builder.Services.AddScoped<IHocVienService, HocVienService>();
 builder.Services.AddScoped<IKhongGianHocTapService, KhongGianHocTapService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
+builder.Services.AddScoped<IThongKeAdminService, ThongKeAdminService>();
 
 // AI & Lộ trình
 builder.Services.AddScoped<IKhoaHocCuaToiRepository, KhoaHocCuaToiRepository>();
