@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { khoaHocCuaToiService } from '@/services/khoa-hoc-cua-toi.service';
 import type { KhoaHocGiangVienDetailDTO, HocVienTrongKhoaHocDTO } from '../KhoaHocCuaToiDTO';
 import BangHocVien from './BangHocVien';
@@ -6,11 +6,10 @@ import ChiTietHocVien from './ChiTietHocVien';
 import ModalKhoaHoc from './ModalKhoaHoc';
 import PanelChuong from './PanelChuong';
 import Swal from 'sweetalert2';
-import { FaArrowLeft, FaEdit, FaUsers, FaBookOpen} from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaUsers, FaBookOpen, FaAward, FaRobot } from 'react-icons/fa';
 
 type Tab = 'hoc-vien' | 'chuong-hoc';
 
-// Cùng hàm với DanhSachKhoaHoc
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 const getImageUrl = (url?: string): string => {
     if (!url) return 'https://placehold.co/280x160/fb873f/white?text=No+Image';
@@ -20,16 +19,17 @@ const getImageUrl = (url?: string): string => {
 
 interface Props {
     maGiangVien: number;
-    maKhoaHoc:   number;
-    onQuayLai:   () => void;
+    maKhoaHoc: number;
+    onQuayLai: () => void;
 }
 
 const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) => {
-    const [detail, setDetail]                   = useState<KhoaHocGiangVienDetailDTO | null>(null);
-    const [loadingDetail, setLoadingDetail]     = useState(true);
-    const [tab, setTab]                         = useState<Tab>('hoc-vien');
+    const [detail, setDetail] = useState<KhoaHocGiangVienDetailDTO | null>(null);
+    const [loadingDetail, setLoadingDetail] = useState(true);
+    const [tab, setTab] = useState<Tab>('hoc-vien');
     const [selectedHocVien, setSelectedHocVien] = useState<HocVienTrongKhoaHocDTO | null>(null);
-    const [showModalSua, setShowModalSua]       = useState(false);
+    const [showModalSua, setShowModalSua] = useState(false);
+    const [dangTaoDeAI, setDangTaoDeAI] = useState(false);
 
     const loadDetail = useCallback(async () => {
         try {
@@ -43,12 +43,29 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
         }
     }, [maGiangVien, maKhoaHoc]);
 
-    useEffect(() => { loadDetail(); }, [loadDetail]);
+    useEffect(() => {
+        void loadDetail();
+    }, [loadDetail]);
 
     const handleSuaSuccess = () => {
         setShowModalSua(false);
-        loadDetail();
-        Swal.fire({ title: 'Đã cập nhật!', icon: 'success', timer: 1500, showConfirmButton: false });
+        void loadDetail();
+        void Swal.fire({ title: 'Đã cập nhật!', icon: 'success', timer: 1500, showConfirmButton: false });
+    };
+
+    const handleTaoDeAI = async () => {
+        if (!detail) return;
+
+        try {
+            setDangTaoDeAI(true);
+            const result = await khoaHocCuaToiService.taoDeChungChiBangAI(maGiangVien, detail.maKhoaHoc);
+            await loadDetail();
+            await Swal.fire('Thành công', result.thongBao, 'success');
+        } catch (error: any) {
+            await Swal.fire('Lỗi', error?.response?.data?.thongBao || error?.response?.data?.message || 'Không thể tạo đề chứng chỉ bằng AI.', 'error');
+        } finally {
+            setDangTaoDeAI(false);
+        }
     };
 
     if (loadingDetail) {
@@ -68,14 +85,9 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
                 <FaArrowLeft className="me-2" />Quay lại danh sách
             </button>
 
-            {/* Header */}
             <div className="khct-detail-header">
                 <div className="khct-detail-img-wrap">
-                    <img
-                        src={getImageUrl(detail.hinhAnh)}
-                        alt={detail.tenKhoaHoc}
-                        className="khct-detail-img"
-                    />
+                    <img src={getImageUrl(detail.hinhAnh)} alt={detail.tenKhoaHoc} className="khct-detail-img" />
                 </div>
                 <div className="khct-detail-info">
                     <div className="d-flex align-items-start justify-content-between gap-2 flex-wrap">
@@ -111,19 +123,47 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
                 </div>
             </div>
 
-            {/* Tabs */}
+            <div className="card border-0 shadow-sm mb-4">
+                <div className="card-body d-flex flex-column flex-lg-row align-items-start justify-content-between gap-3">
+                    <div>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                            <FaAward className="text-warning" />
+                            <h5 className="mb-0">Cấu hình chứng chỉ</h5>
+                        </div>
+                        <p className="text-muted mb-2">
+                            {detail.coChungChi
+                                ? `Khóa học này có cấp chứng chỉ. Điểm đạt ${detail.diemDatChungChi}%, ${detail.soCauHoiChungChi} câu, ${detail.thoiGianLamBaiChungChi} phút.`
+                                : 'Khóa học này hiện chưa bật chứng chỉ.'}
+                        </p>
+                        {detail.coChungChi && (
+                            <div className="d-flex flex-wrap gap-2">
+                                <span className={`badge ${detail.daCoDeThiChungChi ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'}`}>
+                                    {detail.daCoDeThiChungChi ? 'Đã có đề chứng chỉ' : 'Chưa có đề chứng chỉ'}
+                                </span>
+                                {detail.nguonDeChungChi && <span className="badge bg-info-subtle text-info">Nguồn đề: {detail.nguonDeChungChi}</span>}
+                                {detail.tenChungChi && <span className="badge bg-light text-dark">{detail.tenChungChi}</span>}
+                            </div>
+                        )}
+                    </div>
+
+                    {detail.coChungChi && (
+                        <button className="btn-orange" onClick={handleTaoDeAI} disabled={dangTaoDeAI}>
+                            {dangTaoDeAI ? (
+                                <><span className="spinner-border spinner-border-sm me-2" />Đang tạo đề...</>
+                            ) : (
+                                <><FaRobot className="me-2" />Tạo đề chứng chỉ bằng AI</>
+                            )}
+                        </button>
+                    )}
+                </div>
+            </div>
+
             <div className="khct-tabs">
-                <button
-                    className={`khct-tab ${tab === 'hoc-vien' ? 'active' : ''}`}
-                    onClick={() => setTab('hoc-vien')}
-                >
+                <button className={`khct-tab ${tab === 'hoc-vien' ? 'active' : ''}`} onClick={() => setTab('hoc-vien')}>
                     <FaUsers className="me-2" />Danh sách học viên
                     <span className="tab-badge">{detail.soHocVien}</span>
                 </button>
-                <button
-                    className={`khct-tab ${tab === 'chuong-hoc' ? 'active' : ''}`}
-                    onClick={() => setTab('chuong-hoc')}
-                >
+                <button className={`khct-tab ${tab === 'chuong-hoc' ? 'active' : ''}`} onClick={() => setTab('chuong-hoc')}>
                     <FaBookOpen className="me-2" />Chương &amp; Bài học
                     <span className="tab-badge">{detail.danhSachChuong.length}</span>
                 </button>
@@ -137,19 +177,12 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
                             <p>Chưa có học viên đăng ký khóa học này.</p>
                         </div>
                     ) : (
-                        <BangHocVien
-                            danhSach={detail.danhSachHocVien}
-                            onXemChiTiet={setSelectedHocVien}
-                        />
+                        <BangHocVien danhSach={detail.danhSachHocVien} onXemChiTiet={setSelectedHocVien} />
                     )
                 )}
 
                 {tab === 'chuong-hoc' && (
-                    <PanelChuong
-                        maGiangVien={maGiangVien}
-                        maKhoaHoc={maKhoaHoc}
-                        initialChuongs={detail.danhSachChuong}
-                    />
+                    <PanelChuong maGiangVien={maGiangVien} maKhoaHoc={maKhoaHoc} initialChuongs={detail.danhSachChuong} />
                 )}
             </div>
 
@@ -161,14 +194,19 @@ const ChiTietKhoaHoc: React.FC<Props> = ({ maGiangVien, maKhoaHoc, onQuayLai }) 
                     maGiangVien={maGiangVien}
                     maKhoaHoc={maKhoaHoc}
                     duLieuCu={{
-                        tenKhoaHoc:   detail.tenKhoaHoc,
-                        moTa:         detail.moTa,
-                        hinhAnh:      detail.hinhAnh,
-                        linhVuc:      detail.linhVuc,
-                        trinhDo:      detail.trinhDo,
+                        tenKhoaHoc: detail.tenKhoaHoc,
+                        moTa: detail.moTa,
+                        hinhAnh: detail.hinhAnh,
+                        linhVuc: detail.linhVuc,
+                        trinhDo: detail.trinhDo,
                         thoiLuongGio: detail.thoiLuongGio,
-                        trangThai:    detail.trangThai,
-                        kyNangChinh:  detail.kyNangChinh,
+                        trangThai: detail.trangThai,
+                        kyNangChinh: detail.kyNangChinh,
+                        coChungChi: detail.coChungChi,
+                        tenChungChi: detail.tenChungChi,
+                        diemDatChungChi: detail.diemDatChungChi,
+                        soCauHoiChungChi: detail.soCauHoiChungChi,
+                        thoiGianLamBaiChungChi: detail.thoiGianLamBaiChungChi,
                     }}
                     onClose={() => setShowModalSua(false)}
                     onSuccess={handleSuaSuccess}

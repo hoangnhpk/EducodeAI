@@ -24,6 +24,40 @@ export interface BaiTapQuizDTO {
     duLieuCauHoiJSON: string; 
 }
 
+export interface BaiKiemTraChungChiDTO {
+    maBaiKiemTra: number;
+    tieuDe: string;
+    moTa: string;
+    soCauHoi: number;
+    thoiGianLamBai?: number | null;
+    diemCanDat: number;
+    choPhepLamLai: boolean;
+    daoCauHoi: boolean;
+    duDieuKienDuThi: boolean;
+    lyDoChuaDuDieuKien?: string | null;
+    daCoDeThi: boolean;
+    nguonDe?: string | null;
+    duLieuCauHoiJSON: string;
+}
+
+export interface ThongTinChungChiDTO {
+    daCap: boolean;
+    maChungChi?: string | null;
+    ngayCap?: string | null;
+    soLanThi: number;
+    diemLanGanNhat?: number | null;
+    datLanGanNhat?: boolean | null;
+    soCauDungLanGanNhat?: number | null;
+    tongSoCauHoi: number;
+    tenHocVien?: string | null;
+    tenKhoaHoc?: string | null;
+    tenChungChi?: string | null;
+    hoTenHienThi?: string | null;
+    emailNhan?: string | null;
+    daGuiEmail: boolean;
+    ngayGuiEmail?: string | null;
+}
+
 
 export interface BaiHoc {
     id: number;
@@ -50,7 +84,11 @@ export interface KhoaHocData {
     maKhoaHoc: number;
     tenKhoaHoc: string; 
     slug: string;
+    coChungChi: boolean;
+    tenChungChi?: string | null;
     danhSachChuongHoc: ChuongHoc[];
+    baiKiemTraChungChi?: BaiKiemTraChungChiDTO | null;
+    thongTinChungChi?: ThongTinChungChiDTO | null;
 }
 
 export interface GhiChuItem {
