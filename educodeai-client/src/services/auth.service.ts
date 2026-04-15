@@ -115,11 +115,6 @@ export const authService = {
 
   // --- ĐỔI MẬT KHẨU BÊN TRONG HỆ THỐNG ---
 
-  // 12. Yêu cầu gửi mã OTP để đổi mật khẩu
-  requestOtpDoiMatKhau: async () => {
-    return await api.post('/api/XacThuc/yeu-cau-otp-doi-mat-khau');
-  },
-
   // 13. Submit Đổi mật khẩu
   doiMatKhau: async (payload: { MatKhauCu: string, MatKhauMoi: string, OtpCode: string }) => {
     return await api.post('/api/XacThuc/doi-mat-khau', payload);

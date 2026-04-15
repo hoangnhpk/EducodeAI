@@ -1733,12 +1733,12 @@ video::-webkit-media-controls-playback-rate-button {
    RESPONSIVE - TABLET & MOBILE
 ======================================================== */
 
-/* �n n�t mobile toggle tr�n desktop */
+/* Ẩn nút mobile toggle trên desktop */
 .cp-mobile-toggle-sidebar {
     display: none;
 }
 
-/* ---- Tablet: 768 � 1024px ---- */
+/* ---- Tablet: 768 – 1024px ---- */
 @media (max-width: 1024px) {
     .cp-header {
         padding: 0.6rem 1rem;
@@ -1808,7 +1808,7 @@ video::-webkit-media-controls-playback-rate-button {
         text-overflow: ellipsis;
     }
 
-    /* Layout 1 c?t */
+    /* Layout 1 cột */
     .cp-shell {
         height: auto;
         min-height: calc(100vh - 56px);
@@ -1824,7 +1824,7 @@ video::-webkit-media-controls-playback-rate-button {
         border-radius: 10px;
     }
 
-    /* Danh s�ch b�i: drawer t? ph?i */
+    /* Danh sách bài: drawer từ phải */
     .cp-right {
         display: none;
         position: fixed;
@@ -1871,12 +1871,12 @@ video::-webkit-media-controls-playback-rate-button {
         display: block;
     }
 
-    /* N�t toggle sidebar ch? hi?n tr�n mobile */
+    /* Nút toggle sidebar chỉ hiện trên mobile */
     .cp-mobile-toggle-sidebar {
         display: flex !important;
     }
 
-    /* Tabs cu?n ngang */
+    /* Tabs cuộn ngang */
     .cp-tabs {
         overflow-x: auto;
         flex-wrap: nowrap;
