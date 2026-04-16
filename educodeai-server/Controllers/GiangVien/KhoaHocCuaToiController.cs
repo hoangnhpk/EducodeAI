@@ -36,13 +36,21 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpGet("chi-tiet/{maKhoaHoc}")]
         public async Task<IActionResult> GetChiTiet(int maKhoaHoc)
         {
-            var maGiangVien = GetMaGiangVien();
-            if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.GetChiTietKhoaHocAsync(maKhoaHoc, maGiangVien);
-            if (result == null)
-                return NotFound(new { success = false, message = "Không tìm thấy khóa học" });
-            return Ok(new { success = true, data = result });
+            try
+            {
+                var maGiangVien = GetMaGiangVien();
+                if (maGiangVien == 0) return Unauthorized();
+                
+                var result = await _service.GetChiTietKhoaHocAsync(maKhoaHoc, maGiangVien);
+                if (result == null)
+                    return NotFound(new { success = false, message = "Không tìm thấy khóa học" });
+                return Ok(new { success = true, data = result });
+            }
+            catch (Exception ex)
+            {
+                System.IO.File.WriteAllText("error_500.txt", ex.ToString());
+                throw;
+            }
         }
 
         [HttpPost("tao-moi")]
@@ -52,9 +60,9 @@ namespace educodeai_server.Controllers.GiangVien
             if (maGiangVien == 0) return Unauthorized();
             
             var result = await _service.TaoKhoaHocAsync(maGiangVien, dto);
-            if (!result)
+            if (result <= 0)
                 return BadRequest(new { success = false, message = "Tạo khóa học thất bại" });
-            return Ok(new { success = true, message = "Tạo khóa học thành công" });
+            return Ok(new { success = true, maKhoaHoc = result, message = "Tạo khóa học thành công" });
         }
 
         [HttpPut("cap-nhat/{maKhoaHoc}")]
@@ -206,13 +214,16 @@ namespace educodeai_server.Controllers.GiangVien
             return Ok(result);
         }
 
-        [HttpPost("youtube/playlist/import")]
-        public async Task<IActionResult> ImportPlaylist([FromBody] YouTubePlaylistImportRequestDTO request)
+        [HttpPost("courses/{maKhoaHoc}/youtube/playlist/import")]
+        public async Task<IActionResult> ImportPlaylist(int maKhoaHoc, [FromBody] YouTubePlaylistImportRequestDTO request)
         {
+            Console.WriteLine($"[DEBUG] YOUTUBE IMPORT RAW JSON REQUEST: {System.Text.Json.JsonSerializer.Serialize(request)}");
+            Console.WriteLine($"[DEBUG] YOUTUBE IMPORT => MaKhoaHoc: {maKhoaHoc}, Playlist: {request.PlaylistId}, Videos: {request.Videos?.Count}, TargetChapter: {request.TargetChapterId}, NewChapterName: {request.NewChapterName}");
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
             
-            var result = await _service.ImportPlaylistAsync(maGiangVien, request);
+            var result = await _service.ImportPlaylistAsync(maKhoaHoc, maGiangVien, request);
+            Console.WriteLine($"[DEBUG] YOUTUBE IMPORT RAW JSON RESPONSE: {System.Text.Json.JsonSerializer.Serialize(result)}");
             return Ok(result);
         }
 

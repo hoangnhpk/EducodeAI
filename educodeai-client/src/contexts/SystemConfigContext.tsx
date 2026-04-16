@@ -20,7 +20,8 @@ export const SystemConfigProvider = ({ children }: { children: React.ReactNode }
     const fetchConfigs = async () => {
         try {
             // Thêm timestamp để tránh cache trình duyệt
-            const res = await fetch(`https://localhost:7284/api/quan-tri/cau-hinh/lay-cau-hinh?t=${Date.now()}`);
+            const baseUrl = import.meta.env.VITE_API_URL || 'https://localhost:7284';
+            const res = await fetch(`${baseUrl}/api/quan-tri/cau-hinh/lay-cau-hinh?t=${Date.now()}`);
             const result = await res.json();
             if (result.success && result.data) {
                 setConfigs(prev => ({ ...prev, ...result.data }));
@@ -34,8 +35,9 @@ export const SystemConfigProvider = ({ children }: { children: React.ReactNode }
         fetchConfigs();
 
         // 2. THIẾT LẬP KẾT NỐI SIGNALR
+        const baseUrl = import.meta.env.VITE_API_URL || 'https://localhost:7284';
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://localhost:7284/systemConfigHub") // Khớp với MapHub bên Backend
+            .withUrl(`${baseUrl}/systemConfigHub`) // Khớp với MapHub bên Backend
             .withAutomaticReconnect() // Tự động kết nối lại nếu rớt mạng
             .build();
 

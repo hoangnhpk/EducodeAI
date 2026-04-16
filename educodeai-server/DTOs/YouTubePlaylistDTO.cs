@@ -46,9 +46,11 @@ namespace educodeai_server.DTOs
 
     public class YouTubePlaylistImportRequestDTO
     {
+        public int MaKhoaHoc { get; set; }
         public string PlaylistId { get; set; } = "";
-        public int MaChuong { get; set; }
-        public List<string> SelectedVideoIds { get; set; } = new();
+        public List<YouTubeVideoDTO> Videos { get; set; } = new();
+        public int? TargetChapterId { get; set; }
+        public string? NewChapterName { get; set; }
     }
 
     public class YouTubePlaylistImportResponseDTO

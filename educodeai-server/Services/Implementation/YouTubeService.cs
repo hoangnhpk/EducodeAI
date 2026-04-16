@@ -29,7 +29,7 @@ namespace educodeai_server.Services.Implementation
             if (string.IsNullOrEmpty(playlistId))
                 return null;
 
-            var url = $"https://www.googleapis.com/youtube/v3/playlists?part=snippet&id={playlistId}&key={_apiKey}";
+            var url = $"https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id={playlistId}&key={_apiKey}";
             
             try
             {
@@ -76,6 +76,12 @@ namespace educodeai_server.Services.Implementation
                 }
 
                 var thumbnailUrl = GetBestThumbnail(snippet.GetProperty("thumbnails"));
+                
+                int videoCount = 0;
+                if (item.TryGetProperty("contentDetails", out var contentDetails))
+                {
+                    videoCount = contentDetails.GetProperty("itemCount").GetInt32();
+                }
 
                 return new YouTubePlaylistInfoDTO
                 {
@@ -84,7 +90,8 @@ namespace educodeai_server.Services.Implementation
                     Description = description,
                     ChannelTitle = channelTitle,
                     PublishedAt = publishedAt,
-                    ThumbnailUrl = thumbnailUrl
+                    ThumbnailUrl = thumbnailUrl,
+                    VideoCount = videoCount
                 };
             }
             catch (System.Text.Json.JsonException ex)
@@ -131,21 +138,41 @@ namespace educodeai_server.Services.Implementation
                     {
                         foreach (var item in items.EnumerateArray())
                         {
-                            var snippet = item.GetProperty("snippet");
-                            var contentDetails = item.GetProperty("contentDetails");
-                            
-                            var video = new YouTubeVideoDTO
-                            {
-                                VideoId = snippet.GetProperty("resourceId").GetProperty("videoId").GetString() ?? "",
-                                Title = snippet.GetProperty("title").GetString() ?? "",
-                                Description = snippet.GetProperty("description").GetString() ?? "",
-                                PublishedAt = DateTime.Parse(snippet.GetProperty("publishedAt").GetString() ?? ""),
-                                ThumbnailUrl = GetBestThumbnail(snippet.GetProperty("thumbnails")),
-                                Position = (int)snippet.GetProperty("position").GetInt64(),
-                                Duration = ParseDuration(contentDetails.GetProperty("duration").GetString() ?? "")
-                            };
+                            try {
+                                var snippet = item.GetProperty("snippet");
+                                
+                                // YouTube playlistItems returns title as "Deleted video" or "Private video" and omits thumbnails if unavailable
+                                var title = snippet.TryGetProperty("title", out var titleProp) ? titleProp.GetString() ?? "" : "";
+                                if (title == "Private video" || title == "Deleted video") continue;
 
-                            videos.Add(video);
+                                var description = snippet.TryGetProperty("description", out var descProp) ? descProp.GetString() ?? "" : "";
+                                var videoId = snippet.GetProperty("resourceId").TryGetProperty("videoId", out var vidProp) ? vidProp.GetString() ?? "" : "";
+                                
+                                var publishedAtStr = snippet.TryGetProperty("publishedAt", out var pubProp) ? pubProp.GetString() ?? "" : "";
+                                var publishedAt = DateTime.TryParse(publishedAtStr, out var d) ? d : DateTime.UtcNow;
+
+                                var thumbnailUrl = snippet.TryGetProperty("thumbnails", out var thumbProp) ? GetBestThumbnail(thumbProp) : "";
+                                var position = snippet.TryGetProperty("position", out var posProp) ? (int)posProp.GetInt64() : 0;
+
+                                var video = new YouTubeVideoDTO
+                                {
+                                    VideoId = videoId,
+                                    Title = title,
+                                    Description = description,
+                                    PublishedAt = publishedAt,
+                                    ThumbnailUrl = thumbnailUrl,
+                                    Position = position,
+                                    Duration = 0 // duration is not available in playlistItems
+                                };
+
+                                if (!string.IsNullOrEmpty(video.VideoId)) {
+                                    videos.Add(video);
+                                }
+                            }
+                            catch {
+                                // Skip this malformed or deleted video without crashing the entire page
+                                continue;
+                            }
                         }
                     }
 
@@ -190,14 +217,25 @@ namespace educodeai_server.Services.Implementation
                 var snippet = item.GetProperty("snippet");
                 var contentDetails = item.GetProperty("contentDetails");
 
+                var title = snippet.TryGetProperty("title", out var titleProp) ? titleProp.GetString() ?? "" : "";
+                var description = snippet.TryGetProperty("description", out var descProp) ? descProp.GetString() ?? "" : "";
+                
+                var publishedAtStr = snippet.TryGetProperty("publishedAt", out var pubProp) ? pubProp.GetString() ?? "" : "";
+                var publishedAt = DateTime.TryParse(publishedAtStr, out var d) ? d : DateTime.UtcNow;
+
+                var thumbnailUrl = snippet.TryGetProperty("thumbnails", out var thumbProp) ? GetBestThumbnail(thumbProp) : "";
+                
+                var durationStr = contentDetails.TryGetProperty("duration", out var durProp) ? durProp.GetString() ?? "" : "";
+                var duration = ParseDuration(durationStr);
+
                 return new YouTubeVideoDTO
                 {
                     VideoId = videoId,
-                    Title = snippet.GetProperty("title").GetString() ?? "",
-                    Description = snippet.GetProperty("description").GetString() ?? "",
-                    PublishedAt = DateTime.Parse(snippet.GetProperty("publishedAt").GetString() ?? ""),
-                    ThumbnailUrl = GetBestThumbnail(snippet.GetProperty("thumbnails")),
-                    Duration = ParseDuration(contentDetails.GetProperty("duration").GetString() ?? "")
+                    Title = title,
+                    Description = description,
+                    PublishedAt = publishedAt,
+                    ThumbnailUrl = thumbnailUrl,
+                    Duration = duration
                 };
             }
             catch
