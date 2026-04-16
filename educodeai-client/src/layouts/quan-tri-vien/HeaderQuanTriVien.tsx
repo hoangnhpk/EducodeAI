@@ -1,4 +1,4 @@
-import { MdAccountCircle, MdLogout } from 'react-icons/md';
+import { MdLogout } from 'react-icons/md';
 import { authService } from '@/services/auth.service';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';

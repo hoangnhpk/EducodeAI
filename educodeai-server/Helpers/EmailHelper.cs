@@ -1,8 +1,16 @@
 ﻿using System.Net;
 using System.Net.Mail;
+using System.Linq;
 
 namespace educodeai_server.Helpers
 {
+    public class EmailAttachmentData
+    {
+        public string FileName { get; set; } = string.Empty;
+        public byte[] Content { get; set; } = Array.Empty<byte>();
+        public string MediaType { get; set; } = "application/octet-stream";
+    }
+
     public static class EmailHelper
     {
         private static IConfiguration? _config;
@@ -19,6 +27,15 @@ namespace educodeai_server.Helpers
         /// Gửi email sử dụng cấu hình từ appsettings.json
         /// </summary>
         public static async Task<bool> SendEmailAsync(string toEmail, string subject, string body)
+        {
+            return await SendEmailAsync(toEmail, subject, body, null);
+        }
+
+        public static async Task<bool> SendEmailAsync(
+            string toEmail,
+            string subject,
+            string body,
+            IEnumerable<EmailAttachmentData>? attachments)
         {
             try
             {
@@ -43,6 +60,15 @@ namespace educodeai_server.Helpers
                 message.Subject = subject;
                 message.Body = body;
                 message.IsBodyHtml = true;
+
+                if (attachments != null)
+                {
+                    foreach (var attachment in attachments.Where(x => x.Content.Length > 0))
+                    {
+                        var stream = new MemoryStream(attachment.Content);
+                        message.Attachments.Add(new Attachment(stream, attachment.FileName, attachment.MediaType));
+                    }
+                }
 
                 await smtp.SendMailAsync(message);
                 return true;
