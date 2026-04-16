@@ -123,7 +123,7 @@ const QuanLyLoTrinh = () => {
                 const loTrinhGoc = result.data.filter((item: LoTrinhAI) => item.trangThai !== 'Đã lưu');
                 setDanhSach(loTrinhGoc); 
             }
-        } catch (error) { console.error(error); } 
+        } catch (error) { console.error(error); }
         finally { setTimeout(() => setIsLoading(false), 300); }
     };
 
@@ -183,13 +183,13 @@ const QuanLyLoTrinh = () => {
         try {
             const token = localStorage.getItem('user_token');
             const method = isEditMode ? 'PUT' : 'POST';
-            const url = isEditMode 
+            const url = isEditMode
                 ? `https://localhost:7284/api/giangvien/quan-ly-lo-trinh/cap-nhat/${editingItem.maLoTrinh}`
                 : `https://localhost:7284/api/giangvien/quan-ly-lo-trinh/them-moi`;
 
             const response = await fetch(url, {
                 method: method,
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
@@ -211,14 +211,14 @@ const QuanLyLoTrinh = () => {
     const addCourse = () => {
         if (khoaHocCoSan.length === 0) return;
         const firstKH = khoaHocCoSan[0];
-        setTempCourses([...tempCourses, { 
-            maKhoaHoc: firstKH.maKhoaHoc, ten: firstKH.tenKhoaHoc, hinhAnh: firstKH.hinhAnh, trangThai: 'Bắt buộc' 
+        setTempCourses([...tempCourses, {
+            maKhoaHoc: firstKH.maKhoaHoc, ten: firstKH.tenKhoaHoc, hinhAnh: firstKH.hinhAnh, trangThai: 'Bắt buộc'
         }]);
     };
 
     const handleCourseSelect = (idx: number, maKH: number) => {
         const skh = khoaHocCoSan.find(k => k.maKhoaHoc === maKH);
-        if(skh) setTempCourses(prev => prev.map((c, i) => i === idx ? { ...c, maKhoaHoc: skh.maKhoaHoc, ten: skh.tenKhoaHoc, hinhAnh: skh.hinhAnh } : c));
+        if (skh) setTempCourses(prev => prev.map((c, i) => i === idx ? { ...c, maKhoaHoc: skh.maKhoaHoc, ten: skh.tenKhoaHoc, hinhAnh: skh.hinhAnh } : c));
     };
 
     return (
@@ -228,8 +228,8 @@ const QuanLyLoTrinh = () => {
                     <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b' }}>Quản lý Tổng hợp Lộ trình</h1>
                     <p style={{ color: '#64748b' }}>Theo dõi và tinh chỉnh tất cả kế hoạch học tập trên hệ thống</p>
                 </div>
-                <button onClick={() => { setIsEditMode(false); setEditingItem({ yeuCau: '', trangThai: 'Hoạt động' }); setTempCourses([]); setIsModalOpen(true); }} 
-                        className="btn-add-main">+ THÊM LỘ TRÌNH</button>
+                <button onClick={() => { setIsEditMode(false); setEditingItem({ yeuCau: '', trangThai: 'Hoạt động' }); setTempCourses([]); setIsModalOpen(true); }}
+                    className="btn-add-main">+ THÊM LỘ TRÌNH</button>
             </div>
 
             <div className="lo-trinh-grid">

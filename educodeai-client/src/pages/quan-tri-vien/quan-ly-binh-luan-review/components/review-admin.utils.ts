@@ -33,7 +33,7 @@ export const getTrangThaiLabel = (trangThai: ReviewTrangThai) => {
     case 'TuChoi':
       return 'Từ chối';
     default:
-      return 'Chờ duyệt';
+      return 'Khác';
   }
 };
 
