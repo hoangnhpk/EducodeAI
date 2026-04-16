@@ -1,83 +1,151 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import axiosClient from '@/configs/axios'
+import Swal from 'sweetalert2';
 
 // Interfaces
-interface TestCase {
-    input: string;
-    expected: string;
+interface TestCaseHienThiDTO {
+    maTestCase: number;
+    inputDuLieu: string;
+    outputMongDoi: string;
+    laTestAn: boolean;
 }
 
-interface DuLieuIDE {
+interface BaiTapThucHanhHocVienRenderDTO {
+    maBaiTap: number;
     tieuDe: string;
-    moTa: string;
-    ngonNgu: string; // csharp, python, cpp...
-    templateCode: string;
-    testCases: TestCase[];
+    moTaDeBai: string;
+    ngonNgu: string;
+    mucDo: string;
+    goiY: string | null;
+    testCases: TestCaseHienThiDTO[];
+}
+
+interface TestCaseResultDTO {
+    maTestCase: number;
+    isPassed: boolean;
+    actualOutput: string;
+    expectedOutput: string;
+    input: string;
+    laTestAn: boolean;
+    diem: number;
+    errorMessage: string;
+}
+
+interface KetQuaSubmitDTO {
+    thanhCong: boolean;
+    passedAll: boolean;
+    tongDiem: number;
+    results: TestCaseResultDTO[];
 }
 
 interface BaiTapIDEProps {
-    duLieu: DuLieuIDE;
+    maBaiTap: number;
     khiHoanThanh?: (phanTram: number, daDat: boolean) => void;
 }
 
-export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ duLieu, khiHoanThanh }) => {
+export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) => {
     // States
-    const [code, setCode] = useState<string>(duLieu.templateCode);
+    const [duLieu, setDuLieu] = useState<BaiTapThucHanhHocVienRenderDTO | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const [code, setCode] = useState<string>('');
     const [activeTab, setActiveTab] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-    
+
     // Lưu kết quả test: mảng các object chứa status và actual output
-    const [testResults, setTestResults] = useState<{status: 'idle' | 'running' | 'pass' | 'fail', output: string}[]>(
-        duLieu.testCases.map(() => ({ status: 'idle', output: '' }))
-    );
+    const [testResults, setTestResults] = useState<{ status: 'idle' | 'running' | 'pass' | 'fail', output: string, error?: string }[]>([]);
+
+    useEffect(() => {
+        const fetchDuLieu = async () => {
+            if (maBaiTap <= 0) {
+                setError('Chưa có bài tập thực hành.');
+                setLoading(false);
+                return;
+            }
+            try {
+                const response = await axiosClient.get(`/api/BaiTap/thuc-hanh/${maBaiTap}`);
+                const data = response as BaiTapThucHanhHocVienRenderDTO;
+                setDuLieu(data);
+
+                let defaultCode = '';
+                if (data.ngonNgu.toLowerCase() === 'python') defaultCode = '# Viết code PYTHON của bạn tại đây\n\n';
+                else if (data.ngonNgu.toLowerCase().startsWith('c')) defaultCode = '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Viết code C/C++ của bạn tại đây\n    \n    return 0;\n}';
+                else if (data.ngonNgu.toLowerCase() === 'java') defaultCode = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Viết code Java của bạn tại đây\n        \n    }\n}';
+                else defaultCode = '// Viết mã của bạn tại đây\n';
+
+                setCode(defaultCode);
+                setTestResults(data.testCases.map(() => ({ status: 'idle', output: '' })));
+            } catch (err: unknown) {
+                const error = err as any;
+                setError(error.response?.data?.message || 'Lỗi khi tải bài tập.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void fetchDuLieu();
+    }, [maBaiTap]);
 
     // Hàm gọi API chạy code
     const handleRunCode = async () => {
-        setIsSubmitting(true);
-        
-        // Reset trạng thái các tab thành running
-        setTestResults(duLieu.testCases.map(() => ({ status: 'running', output: 'Đang chờ máy chủ biên dịch...' })));
-
-        let passCount = 0;
-        const newResults = [...testResults];
-
-        // Lặp qua từng test case để gọi Backend
-        for (let i = 0; i < duLieu.testCases.length; i++) {
-            try {
-                // Gọi endpoint /api/BaiTap/chay-code
-                const response: any = await axiosClient.post('/api/BaiTap/chay-code', {
-                    NgonNgu: duLieu.ngonNgu,
-                    Code: code,
-                    Input: duLieu.testCases[i].input
-                });
-
-                const data = response.data as any;
-                const actualOutput = data.ketQuaInRa ? data.ketQuaInRa.trim() : (data.loi || "Không có dữ liệu trả về").trim();
-                const expectedOutput = duLieu.testCases[i].expected.trim();
-
-                if (data.thanhCong && actualOutput === expectedOutput) {
-                    newResults[i] = { status: 'pass', output: actualOutput };
-                    passCount++;
-                } else {
-                    newResults[i] = { status: 'fail', output: actualOutput };
-                }
-            } catch (error) {
-                newResults[i] = { status: 'fail', output: 'Lỗi kết nối máy chủ' };
-            }
-            
-            // Cập nhật giao diện ngay lập tức sau mỗi test case
-            setTestResults([...newResults]);
+        if (!duLieu) return;
+        if (!code.trim()) {
+            Swal.fire('Lỗi', 'Vui lòng viết code trước khi kiểm tra.', 'warning');
+            return;
         }
 
-        setIsSubmitting(false);
+        setIsSubmitting(true);
 
-        // Lưu kết quả (Nếu đúng hết thì đạt 100%)
-        if (khiHoanThanh) {
-            const phanTram = (passCount / duLieu.testCases.length) * 100;
-            khiHoanThanh(phanTram, passCount === duLieu.testCases.length);
+        // Cập nhật giao diện: Tất cả tab chuyển sang running
+        setTestResults(duLieu.testCases.map(() => ({ status: 'running', output: 'Đang gửi code lên máy chủ...' })));
+
+        try {
+            // Nộp toàn bộ code lên Backend. Backend tự lặp qua các testcases
+            const response = await axiosClient.post(`/api/BaiTap/thuc-hanh/${maBaiTap}/submit`, {
+                Code: code,
+                NgonNgu: duLieu.ngonNgu
+            });
+
+            const data = response as KetQuaSubmitDTO;
+
+            if (data.thanhCong) {
+                // Map kết quả về hiển thị
+                const newResults = data.results.map(r => ({
+                    status: r.isPassed ? 'pass' as const : 'fail' as const,
+                    output: r.actualOutput || 'Trống',
+                    error: r.errorMessage
+                }));
+                setTestResults(newResults);
+
+                const passCount = data.results.filter(r => r.isPassed).length;
+                if (khiHoanThanh) {
+                    const phanTram = (passCount / duLieu.testCases.length) * 100;
+                    khiHoanThanh(phanTram, data.passedAll);
+                }
+
+                if (data.passedAll) {
+                    Swal.fire({ title: 'Thành công!', text: 'Hoàn thành bài tập.', icon: 'success', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+                } else {
+                    Swal.fire({ title: 'Sai kết quả!', text: 'Kiểm tra lại code của bạn.', icon: 'error', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+                }
+            } else {
+                Swal.fire({ title: 'Lỗi', text: 'Lỗi biên dịch máy chủ', icon: 'error', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+                setTestResults(duLieu.testCases.map(() => ({ status: 'fail', output: 'Lỗi chấm điểm', error: 'Lỗi Call IDE' })));
+            }
+
+        } catch (err: unknown) {
+            const error = err as any;
+            Swal.fire({ title: 'Lỗi API', text: error.response?.data?.message || 'Gặp sự cố khi chấm điểm.', icon: 'error', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+            setTestResults(duLieu.testCases.map(() => ({ status: 'fail', output: 'Lỗi mạng khi gọi API submit.' })));
+        } finally {
+            setIsSubmitting(false);
         }
     };
+
+    if (loading) return <div className="p-4">Đang tải bài tập thực hành...</div>;
+    if (error || !duLieu) return <div className="p-4 text-red-500">{error || 'Bài tập không tồn tại.'}</div>;
 
     return (
         <div className="cp-ide-wrapper">
@@ -85,23 +153,31 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ duLieu, khiHoanThanh }) =>
             <div className="cp-ide-problem-col">
                 <div className="cp-ide-problem-header">
                     <i className="fas fa-book-open" style={{ color: '#f69050', marginRight: '8px' }}></i>
-                    Yêu cầu bài tập
+                    Yêu cầu bài tập (IDE)
                 </div>
                 <div className="cp-ide-problem-content">
                     <h3>{duLieu.tieuDe}</h3>
                     <div style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
-                        <i className="far fa-clock"></i> Thực hành lập trình
+                        <i className="far fa-clock"></i> Mức độ: <span style={{ fontWeight: 'bold' }}>{duLieu.mucDo || 'Chưa phân loại'}</span>
+                        <span style={{ marginLeft: 16 }}><i className="fas fa-code"></i> Ngôn ngữ: <span style={{ fontWeight: 'bold' }}>{duLieu.ngonNgu}</span></span>
                     </div>
-                    
-                    <div dangerouslySetInnerHTML={{ __html: duLieu.moTa }} />
-                    
+
+                    <div dangerouslySetInnerHTML={{ __html: duLieu.moTaDeBai }} />
+
                     {duLieu.testCases.length > 0 && (
                         <>
                             <p><strong>Ví dụ khi nhập:</strong></p>
-                            <div className="cp-example-box">{duLieu.testCases[0].input}</div>
-                            <p><strong>Kết quả đầu ra sẽ là:</strong></p>
-                            <div className="cp-example-box">{duLieu.testCases[0].expected}</div>
+                            <div className="cp-example-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{duLieu.testCases[0].inputDuLieu}</div>
+                            <p><strong>Kết quả đầu ra mong đợi:</strong></p>
+                            <div className="cp-example-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{duLieu.testCases[0].outputMongDoi}</div>
                         </>
+                    )}
+
+                    {duLieu.goiY && (
+                        <div style={{ marginTop: '1.5rem', padding: '1rem', borderLeft: '4px solid #fcebb6', background: '#fffbeb', borderRadius: 4 }}>
+                            <h4 style={{ margin: '0 0 0.5rem 0', color: '#b45309', fontSize: '0.95rem' }}><i className="fas fa-lightbulb"></i> Gợi ý</h4>
+                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#78350f' }}>{duLieu.goiY}</p>
+                        </div>
                     )}
                 </div>
             </div>
@@ -111,19 +187,19 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ duLieu, khiHoanThanh }) =>
                 <div className="cp-ide-editor-area">
                     <div className="cp-ide-editor-header">
                         <span><i className="fas fa-code"></i> Code Editor ({duLieu.ngonNgu})</span>
-                        <div 
-                            style={{ fontSize: '0.8rem', opacity: 0.7, cursor: 'pointer' }} 
-                            onClick={() => setCode(duLieu.templateCode)}
+                        <div
+                            style={{ fontSize: '0.8rem', opacity: 0.7, cursor: 'pointer' }}
+                            onClick={() => setCode('')}
                         >
                             <i className="fas fa-undo"></i> Reset
                         </div>
                     </div>
-                    
-                    {/* Monaco Editor siêu đẹp */}
+
+                    {/* Monaco Editor */}
                     <div style={{ flex: 1 }}>
                         <Editor
                             height="100%"
-                            language={duLieu.ngonNgu === 'c++' ? 'cpp' : duLieu.ngonNgu}
+                            language={duLieu.ngonNgu === 'c++' || duLieu.ngonNgu === 'c' ? 'cpp' : (duLieu.ngonNgu === 'c#' ? 'csharp' : duLieu.ngonNgu)}
                             theme="vs-dark"
                             value={code}
                             onChange={(value: string | undefined) => setCode(value || '')}
@@ -141,55 +217,85 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ duLieu, khiHoanThanh }) =>
                     <div className="cp-test-tabs-header">
                         <div className="cp-test-tab-list">
                             {duLieu.testCases.map((_, idx) => (
-                                <button 
+                                <button
                                     key={idx}
                                     className={`cp-test-tab-btn ${activeTab === idx ? 'active' : ''}`}
                                     onClick={() => setActiveTab(idx)}
                                 >
                                     {/* Icon trạng thái trên Tab */}
-                                    {testResults[idx].status === 'pass' && <i className="fas fa-check" style={{ color: '#16a34a', marginRight: 4 }}></i>}
-                                    {testResults[idx].status === 'fail' && <i className="fas fa-times" style={{ color: '#dc2626', marginRight: 4 }}></i>}
-                                    {testResults[idx].status === 'running' && <i className="fas fa-circle-notch fa-spin" style={{ color: '#f69050', marginRight: 4 }}></i>}
+                                    {testResults[idx]?.status === 'pass' && <i className="fas fa-check" style={{ color: '#16a34a', marginRight: 4 }}></i>}
+                                    {testResults[idx]?.status === 'fail' && <i className="fas fa-times" style={{ color: '#dc2626', marginRight: 4 }}></i>}
+                                    {testResults[idx]?.status === 'running' && <i className="fas fa-circle-notch fa-spin" style={{ color: '#f69050', marginRight: 4 }}></i>}
                                     Bài kiểm tra {idx + 1}
                                 </button>
                             ))}
                         </div>
-                        <button 
-                            className="cp-run-float-btn" 
-                            onClick={handleRunCode}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? <><i className="fas fa-circle-notch fa-spin"></i> ĐANG CHẠY</> : 'KIỂM TRA'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                className="cp-run-float-btn"
+                                style={{ background: '#64748b' }}
+                                onClick={() => {
+                                    setTestResults(duLieu.testCases.map(() => ({ status: 'idle', output: '' })));
+                                    setActiveTab(0);
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                <i className="fas fa-redo"></i> LÀM LẠI
+                            </button>
+                            <button
+                                className="cp-run-float-btn"
+                                onClick={handleRunCode}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? <><i className="fas fa-circle-notch fa-spin"></i> ĐANG CHẤM</> : 'NỘP BÀI'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="cp-test-content-wrap">
                         {duLieu.testCases.map((tc, idx) => (
                             <div key={idx} className={`cp-test-pane ${activeTab === idx ? 'active' : ''}`}>
-                                <div className="cp-io-label">Đầu vào:</div>
-                                <div className="cp-io-box">{tc.input || "Không có đầu vào"}</div>
-                                
-                                <div className="cp-io-label">Đầu ra mong muốn:</div>
-                                <div className="cp-io-box">{tc.expected}</div>
-                                
+                                {tc.laTestAn ? (
+                                    <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+                                        <i className="fas fa-lock" style={{ fontSize: '2rem', marginBottom: '1rem', color: '#94a3b8' }}></i>
+                                        <h4>Test case ẩn</h4>
+                                        <p>Thông số đầu vào và đầu ra đã được giấu để đảm bảo bạn không in cứng kết quả.</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="cp-io-label">Đầu vào:</div>
+                                        <div className="cp-io-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{tc.inputDuLieu || "Không có đầu vào"}</div>
+
+                                        <div className="cp-io-label">Đầu ra mong đợi:</div>
+                                        <div className="cp-io-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{tc.outputMongDoi}</div>
+                                    </>
+                                )}
+
                                 {/* Hiện kết quả sau khi bấm chạy */}
-                                {testResults[idx].status !== 'idle' && (
+                                {testResults[idx]?.status !== 'idle' && (
                                     <div style={{ marginTop: 10 }}>
-                                        <div className="cp-io-label">Kết quả thực tế:</div>
-                                        <div 
-                                            className="cp-io-box" 
-                                            style={{ 
-                                                borderLeft: testResults[idx].status === 'pass' ? '4px solid #16a34a' 
-                                                          : testResults[idx].status === 'fail' ? '4px solid #dc2626' : 'none' 
+                                        <div className="cp-io-label">Kết quả thực tế (Máy chủ trả về):</div>
+                                        <div
+                                            className="cp-io-box"
+                                            style={{
+                                                borderLeft: testResults[idx].status === 'pass' ? '4px solid #16a34a'
+                                                    : testResults[idx].status === 'fail' ? '4px solid #dc2626' : 'none',
+                                                whiteSpace: 'pre-wrap', fontFamily: 'monospace'
                                             }}
                                         >
                                             {testResults[idx].output}
                                         </div>
-                                        
+
+                                        {testResults[idx].error && (
+                                            <div style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: 4 }}>
+                                                <strong>Lỗi biên dịch: </strong> {testResults[idx].error}
+                                            </div>
+                                        )}
+
                                         {/* Status Text */}
-                                        <div style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
-                                            {testResults[idx].status === 'pass' && <span style={{ color: '#16a34a' }}><i className="fas fa-check"></i> Chính xác</span>}
-                                            {testResults[idx].status === 'fail' && <span style={{ color: '#dc2626' }}><i className="fas fa-times"></i> Sai kết quả / Lỗi</span>}
+                                        <div style={{ fontWeight: 'bold', fontSize: '0.85rem', marginTop: 8 }}>
+                                            {testResults[idx].status === 'pass' && <span style={{ color: '#16a34a' }}><i className="fas fa-check"></i> Chúc mừng! Kết quả trùng khớp hoàn toàn.</span>}
+                                            {testResults[idx].status === 'fail' && <span style={{ color: '#dc2626' }}><i className="fas fa-times"></i> Rất tiếc, kết quả không khớp hoặc code bị lỗi.</span>}
                                         </div>
                                     </div>
                                 )}

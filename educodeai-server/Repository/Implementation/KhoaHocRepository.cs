@@ -151,7 +151,11 @@ namespace educodeai_server.Repository.Implementation
                                             ChoPhepLamLai = bt.BaiTap_Quiz.ChoPhepLamLai,
                                             DaoCauHoi = bt.BaiTap_Quiz.DaoCauHoi,
                                             DuLieuCauHoiJSON = bt.BaiTap_Quiz.DuLieuCauHoi
-                                        }).FirstOrDefault()
+                                        }).FirstOrDefault(),
+                                    MaBaiTapThucHanh = bh.BaiTaps
+                                        .Where(bt => bt.BaiTapThucHanh != null)
+                                        .Select(bt => (int?)bt.MaBaiTap)
+                                        .FirstOrDefault()
                                 }).ToList()
                         }).ToList()
                 }).FirstOrDefaultAsync();

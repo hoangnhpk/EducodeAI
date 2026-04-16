@@ -261,7 +261,7 @@ export default function ThongKeAdmin() {
       <div className="adm-stats-header">
         <div>
           <h1 className="adm-stats-title">THỐNG KÊ HỆ THỐNG</h1>
-          
+
         </div>
       </div>
 
@@ -735,8 +735,8 @@ export default function ThongKeAdmin() {
                     <div className="adm-modal__meta adm-modal__meta--footer">
                       {detailData
                         ? `Trang ${detailData.page}/${detailData.totalPages} • Tổng ${detailData.totalItems.toLocaleString(
-                            'vi-VN'
-                          )}`
+                          'vi-VN'
+                        )}`
                         : ''}
                     </div>
                     <div className="adm-modal__pager">

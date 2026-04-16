@@ -28,7 +28,7 @@ const QuanLyLoTrinh = () => {
     const [khoaHocCoSan, setKhoaHocCoSan] = useState<IKhoaHocGoc[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
+
     const [isEditMode, setIsEditMode] = useState(false);
     const [editingItem, setEditingItem] = useState<Partial<LoTrinhAI> | null>(null);
     const [tempCourses, setTempCourses] = useState<KhoaHocCon[]>([]);
@@ -44,7 +44,7 @@ const QuanLyLoTrinh = () => {
             if (result.success) {
                 setDanhSach(result.data.sort((a: any, b: any) => a.maLoTrinh - b.maLoTrinh));
             }
-        } catch (error) { console.error(error); } 
+        } catch (error) { console.error(error); }
         finally { setTimeout(() => setIsLoading(false), 300); }
     };
 
@@ -103,17 +103,17 @@ const QuanLyLoTrinh = () => {
 
     const handleSave = async () => {
         if (!editingItem?.yeuCau) return notify("Vui lòng nhập tên lộ trình!", "warning");
-        
+
         try {
             const token = localStorage.getItem('user_token');
             const method = isEditMode ? 'PUT' : 'POST';
-            const url = isEditMode 
+            const url = isEditMode
                 ? `https://localhost:7284/api/giangvien/quan-ly-lo-trinh/cap-nhat/${editingItem.maLoTrinh}`
                 : `https://localhost:7284/api/giangvien/quan-ly-lo-trinh/them-moi`;
 
             const response = await fetch(url, {
                 method: method,
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
@@ -135,14 +135,14 @@ const QuanLyLoTrinh = () => {
     const addCourse = () => {
         if (khoaHocCoSan.length === 0) return;
         const firstKH = khoaHocCoSan[0];
-        setTempCourses([...tempCourses, { 
-            maKhoaHoc: firstKH.maKhoaHoc, ten: firstKH.tenKhoaHoc, hinhAnh: firstKH.hinhAnh, trangThai: 'Bắt buộc' 
+        setTempCourses([...tempCourses, {
+            maKhoaHoc: firstKH.maKhoaHoc, ten: firstKH.tenKhoaHoc, hinhAnh: firstKH.hinhAnh, trangThai: 'Bắt buộc'
         }]);
     };
 
     const handleCourseSelect = (idx: number, maKH: number) => {
         const skh = khoaHocCoSan.find(k => k.maKhoaHoc === maKH);
-        if(skh) setTempCourses(prev => prev.map((c, i) => i === idx ? { ...c, maKhoaHoc: skh.maKhoaHoc, ten: skh.tenKhoaHoc, hinhAnh: skh.hinhAnh } : c));
+        if (skh) setTempCourses(prev => prev.map((c, i) => i === idx ? { ...c, maKhoaHoc: skh.maKhoaHoc, ten: skh.tenKhoaHoc, hinhAnh: skh.hinhAnh } : c));
     };
 
     return (
@@ -152,8 +152,8 @@ const QuanLyLoTrinh = () => {
                     <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b' }}>Lộ trình AI của tôi</h1>
                     <p style={{ color: '#64748b' }}>Thiết kế trải nghiệm học tập đỉnh cao cho học viên</p>
                 </div>
-                <button onClick={() => { setIsEditMode(false); setEditingItem({ yeuCau: '', trangThai: 'Hoạt động' }); setTempCourses([]); setIsModalOpen(true); }} 
-                        className="btn-add-main">+ THÊM LỘ TRÌNH</button>
+                <button onClick={() => { setIsEditMode(false); setEditingItem({ yeuCau: '', trangThai: 'Hoạt động' }); setTempCourses([]); setIsModalOpen(true); }}
+                    className="btn-add-main">+ THÊM LỘ TRÌNH</button>
             </div>
 
             <div className="lo-trinh-grid">
@@ -185,10 +185,10 @@ const QuanLyLoTrinh = () => {
                         <div className="modal-body-pro">
                             <div className="form-group-pro" style={{ marginBottom: '20px' }}>
                                 <label style={{ fontWeight: 700, color: '#475569', fontSize: '0.9rem' }}>Tên lộ trình tổng quát</label>
-                                <input 
+                                <input
                                     type="text" className="input-pro"
-                                    value={editingItem.yeuCau} 
-                                    onChange={(e) => setEditingItem({...editingItem, yeuCau: e.target.value})} 
+                                    value={editingItem.yeuCau}
+                                    onChange={(e) => setEditingItem({ ...editingItem, yeuCau: e.target.value })}
                                     placeholder="Ví dụ: Lộ trình Back-end chuyên nghiệp..."
                                 />
                             </div>
@@ -210,17 +210,17 @@ const QuanLyLoTrinh = () => {
                                         tempCourses.map((course, idx) => (
                                             <div key={idx} className="course-item-card">
                                                 <div className="course-rank">{idx + 1}</div>
-                                                
-                                                <img 
-                                                    src={`/img/${course.hinhAnh}`} 
-                                                    className="course-img-small" 
-                                                    onError={(e) => (e.currentTarget.src = 'https://careplusvn.com/Uploads/t/de/default-image_730.jpg')} 
+
+                                                <img
+                                                    src={`/img/${course.hinhAnh}`}
+                                                    className="course-img-small"
+                                                    onError={(e) => (e.currentTarget.src = 'https://careplusvn.com/Uploads/t/de/default-image_730.jpg')}
                                                 />
-                                                
+
                                                 {/* Fix mất tên: Dùng div flex-grow để đẩy ô chọn ra xa */}
                                                 <div style={{ flex: 2, minWidth: '200px' }}>
                                                     <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8' }}>KHÓA HỌC:</label>
-                                                    <select 
+                                                    <select
                                                         className="select-pro"
                                                         value={course.maKhoaHoc}
                                                         onChange={(e) => handleCourseSelect(idx, parseInt(e.target.value))}
@@ -231,7 +231,7 @@ const QuanLyLoTrinh = () => {
 
                                                 <div style={{ flex: 1, maxWidth: '150px' }}>
                                                     <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8' }}>LOẠI:</label>
-                                                    <select 
+                                                    <select
                                                         className={`status-select ${course.trangThai === 'Bắt buộc' ? 'st-req' : 'st-opt'}`}
                                                         style={{ width: '100%' }}
                                                         value={course.trangThai}
