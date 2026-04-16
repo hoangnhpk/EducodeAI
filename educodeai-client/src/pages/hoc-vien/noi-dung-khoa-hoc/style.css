@@ -819,6 +819,7 @@ a.cp-back:hover {
     flex-direction: column;
     border-top: 1px solid #333;
     background: #fff;
+    min-height: 0;
 }
 
 .cp-test-tabs-header {
@@ -829,11 +830,21 @@ a.cp-back:hover {
     border-bottom: 1px solid var(--cp-border);
     padding-right: 10px;
     height: 42px;
+    flex-shrink: 0;
 }
 
 .cp-test-tab-list {
     display: flex;
     height: 100%;
+    overflow-x: auto;
+}
+
+.cp-test-tab-list::-webkit-scrollbar {
+    height: 4px;
+}
+.cp-test-tab-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
 }
 
 .cp-test-tab-btn {
@@ -846,6 +857,7 @@ a.cp-back:hover {
     border: none;
     border-bottom: 2px solid transparent;
     transition: all 0.2s;
+    white-space: nowrap;
 }
 
 .cp-test-tab-btn:hover {
