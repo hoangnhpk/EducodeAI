@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs;
+using educodeai_server.DTOs;
 
 namespace educodeai_server.Services.Interface
 {
@@ -7,7 +7,7 @@ namespace educodeai_server.Services.Interface
         Task<List<KhoaHocGiangVienListDTO>> GetDanhSachKhoaHocAsync(int maGiangVien);
         Task<KhoaHocGiangVienDetailDTO?> GetChiTietKhoaHocAsync(int maKhoaHoc, int maGiangVien);
 
-        Task<bool> TaoKhoaHocAsync(int maGiangVien, KhoaHocCreateUpdateDTO dto);
+        Task<int> TaoKhoaHocAsync(int maGiangVien, KhoaHocCreateUpdateDTO dto);
         Task<bool> CapNhatKhoaHocAsync(int maKhoaHoc, int maGiangVien, KhoaHocCreateUpdateDTO dto);
         Task<bool> XoaKhoaHocAsync(int maKhoaHoc, int maGiangVien);
         Task<ThemChuongResponseDTO> ThemChuongAsync(int maKhoaHoc, ChuongHocCreateUpdateDTO dto);
@@ -21,7 +21,7 @@ namespace educodeai_server.Services.Interface
         // YouTube Playlist Import
         Task<YouTubePlaylistAnalyzeResponseDTO> AnalyzePlaylistAsync(string playlistUrl);
         Task<YouTubePlaylistVideosResponseDTO> GetPlaylistVideosAsync(string playlistId);
-        Task<YouTubePlaylistImportResponseDTO> ImportPlaylistAsync(int maGiangVien, YouTubePlaylistImportRequestDTO request);
+        Task<YouTubePlaylistImportResponseDTO> ImportPlaylistAsync(int maKhoaHoc, int maGiangVien, YouTubePlaylistImportRequestDTO request);
         Task<YouTubeVideoInfoResponseDTO> GetVideoInfoAsync(string videoUrl);
 
         // Reorder Functionality
