@@ -38,31 +38,6 @@ namespace educodeai_server.Controllers.GiangVien
             return Ok(duLieu);
         }
 
-        [HttpPost("kiem-tra-tai-khoan")]
-        public async Task<IActionResult> KiemTraTaiKhoan([FromBody] KiemTraTaiKhoanDTO yeuCau)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { thongBao = "Dữ liệu không hợp lệ." });
-            }
-
-            int maGiangVien = LayNguoiDungID.LayID(User);
-            if (maGiangVien == 0)
-            {
-                return Unauthorized(new { thongBao = "Bạn cần đăng nhập để dùng chức năng này." });
-            }
-
-            try
-            {
-                var duLieu = await _rutTienGiangVienService.KiemTraTaiKhoanNganHangAsync(maGiangVien, yeuCau);
-                return Ok(duLieu);
-            }
-            catch (ApplicationException ex)
-            {
-                return BadRequest(new { thongBao = ex.Message });
-            }
-        }
-
         [HttpPost("tai-khoan-nhan-tien")]
         public async Task<IActionResult> ThemTaiKhoanNhanTien([FromBody] CapNhatTaiKhoanRutTienDTO yeuCau)
         {

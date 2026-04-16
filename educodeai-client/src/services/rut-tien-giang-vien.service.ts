@@ -4,8 +4,6 @@ export interface NganHangItemDTO {
   ma: string;
   tenHienThi: string;
   maVietQr: string;
-  /** Mã BIN 6 số (VietQR.io lookup) */
-  maBin?: string | null;
 }
 
 export interface ThongTinViGiangVienDTO {
@@ -19,15 +17,6 @@ export interface ThongTinViGiangVienDTO {
   maNganHangChon?: string;
   soTaiKhoanNhanTien?: string;
   tenTaiKhoanNhanTien?: string;
-}
-
-export interface KetQuaKiemTraTaiKhoanDTO {
-  timThayTaiKhoan: boolean;
-  tenKhop: boolean;
-  tenChuTaiKhoanTuVietQr?: string;
-  thongBao: string;
-  /** true khi server chưa cấu hình VietQrLookup */
-  thieuCauHinhVietQrLookup?: boolean;
 }
 
 export interface YeuCauRutTienChiTietDTO {
@@ -58,14 +47,6 @@ export const RutTienGiangVienService = {
 
   layThongTinVi: async (): Promise<ThongTinViGiangVienDTO> => {
     return await axiosClient.get<ThongTinViGiangVienDTO>("/api/giang-vien/rut-tien/vi");
-  },
-
-  kiemTraTaiKhoan: async (duLieu: {
-    maNganHang: string;
-    soTaiKhoan: string;
-    tenChuTaiKhoan: string;
-  }): Promise<KetQuaKiemTraTaiKhoanDTO> => {
-    return await axiosClient.post<KetQuaKiemTraTaiKhoanDTO>("/api/giang-vien/rut-tien/kiem-tra-tai-khoan", duLieu);
   },
 
   themTaiKhoanNhanTien: async (duLieu: {
@@ -103,5 +84,19 @@ export const RutTienGiangVienService = {
     return await axiosClient.post<YeuCauRutTienChiTietDTO>(`/api/quan-tri-vien/rut-tien-giang-vien/${maYeuCauRutTien}/tu-choi`, {
       lyDoTuChoi
     });
+  },
+
+  /** Dùng pattern `chi-tiet/{id}` (tránh một số bản build cũ không khớp route `id/chi-tiet`). */
+  layChiTietAdmin: async (maYeuCauRutTien: number): Promise<YeuCauRutTienChiTietDTO> => {
+    return await axiosClient.get<YeuCauRutTienChiTietDTO>(
+      `/api/quan-tri-vien/rut-tien-giang-vien/chi-tiet/${maYeuCauRutTien}`
+    );
+  },
+
+  xacNhanDaChuyenKhoan: async (maYeuCauRutTien: number): Promise<YeuCauRutTienChiTietDTO> => {
+    return await axiosClient.post<YeuCauRutTienChiTietDTO>(
+      `/api/quan-tri-vien/rut-tien-giang-vien/${maYeuCauRutTien}/xac-nhan-da-chuyen-khoan`,
+      {}
+    );
   }
 };

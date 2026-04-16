@@ -5,23 +5,23 @@ using educodeai_server.DTOs.RutTienGiangVien;
 namespace educodeai_server.Common
 {
     /// <summary>
-    /// Danh mục ngân hàng (mã VietQR cho QR chuyển khoản + BIN cho tra cứu STK VietQR.io).
+    /// Danh mục ngân hàng (mã VietQR cho QR chuyển khoản rút tiền).
     /// </summary>
     public static class DanhMucNganHangLienKet
     {
         private static readonly IReadOnlyList<NganHangItemDTO> _danhSach = new List<NganHangItemDTO>
         {
-            new() { Ma = "NAPAS", TenHienThi = "NAPAS", MaVietQr = "NAPAS", MaBin = null },
-            new() { Ma = "STB", TenHienThi = "Sacombank", MaVietQr = "STB", MaBin = "970403" },
-            new() { Ma = "VPB", TenHienThi = "VPBank", MaVietQr = "VPB", MaBin = "970432" },
-            new() { Ma = "TPB", TenHienThi = "TPBank", MaVietQr = "TPB", MaBin = "970423" },
-            new() { Ma = "MB", TenHienThi = "MB", MaVietQr = "MB", MaBin = "970422" },
-            new() { Ma = "ICT", TenHienThi = "VietinBank", MaVietQr = "ICT", MaBin = "970415" },
-            new() { Ma = "BIDV", TenHienThi = "BIDV", MaVietQr = "BIDV", MaBin = "970418" },
-            new() { Ma = "ACB", TenHienThi = "ACB", MaVietQr = "ACB", MaBin = "970416" },
-            new() { Ma = "OCB", TenHienThi = "OCB", MaVietQr = "OCB", MaBin = "970448" },
-            new() { Ma = "KLB", TenHienThi = "KienlongBank", MaVietQr = "KLB", MaBin = "970452" },
-            new() { Ma = "MSB", TenHienThi = "MSB", MaVietQr = "MSB", MaBin = "970426" }
+            new() { Ma = "NAPAS", TenHienThi = "NAPAS", MaVietQr = "NAPAS" },
+            new() { Ma = "STB", TenHienThi = "Sacombank", MaVietQr = "STB" },
+            new() { Ma = "VPB", TenHienThi = "VPBank", MaVietQr = "VPB" },
+            new() { Ma = "TPB", TenHienThi = "TPBank", MaVietQr = "TPB" },
+            new() { Ma = "MB", TenHienThi = "MB", MaVietQr = "MB" },
+            new() { Ma = "ICT", TenHienThi = "VietinBank", MaVietQr = "ICT" },
+            new() { Ma = "BIDV", TenHienThi = "BIDV", MaVietQr = "BIDV" },
+            new() { Ma = "ACB", TenHienThi = "ACB", MaVietQr = "ACB" },
+            new() { Ma = "OCB", TenHienThi = "OCB", MaVietQr = "OCB" },
+            new() { Ma = "KLB", TenHienThi = "KienlongBank", MaVietQr = "KLB" },
+            new() { Ma = "MSB", TenHienThi = "MSB", MaVietQr = "MSB" }
         };
 
         public static IReadOnlyList<NganHangItemDTO> LayDanhSach() => _danhSach;

@@ -25,6 +25,21 @@ namespace educodeai_server.Controllers.QuanTriVien
             return Ok(duLieu);
         }
 
+        [HttpGet("{maYeuCauRutTien:int}/chi-tiet")]
+        [HttpGet("chi-tiet/{maYeuCauRutTien:int}")]
+        public async Task<IActionResult> LayChiTiet(int maYeuCauRutTien)
+        {
+            try
+            {
+                var duLieu = await _rutTienGiangVienService.LayChiTietChoQuanTriAsync(maYeuCauRutTien);
+                return Ok(duLieu);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
+
         [HttpPost("{maYeuCauRutTien:int}/duyet")]
         public async Task<IActionResult> DuyetYeuCau(int maYeuCauRutTien, [FromBody] DuyetYeuCauRutTienDTO? yeuCau)
         {
@@ -37,6 +52,29 @@ namespace educodeai_server.Controllers.QuanTriVien
             try
             {
                 var duLieu = await _rutTienGiangVienService.DuyetYeuCauVaTaoQrAsync(maYeuCauRutTien, maQuanTriVien, yeuCau);
+                return Ok(duLieu);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Admin xác nhận đã chuyển khoản thủ công (không phụ thuộc webhook SePay).
+        /// </summary>
+        [HttpPost("{maYeuCauRutTien:int}/xac-nhan-da-chuyen-khoan")]
+        public async Task<IActionResult> XacNhanDaChuyenKhoan(int maYeuCauRutTien)
+        {
+            int maQuanTriVien = LayNguoiDungID.LayID(User);
+            if (maQuanTriVien == 0)
+            {
+                return Unauthorized(new { thongBao = "Bạn cần đăng nhập tài khoản quản trị." });
+            }
+
+            try
+            {
+                var duLieu = await _rutTienGiangVienService.XacNhanDaChuyenKhoanThuCongAsync(maYeuCauRutTien, maQuanTriVien);
                 return Ok(duLieu);
             }
             catch (ApplicationException ex)

@@ -1,33 +1,22 @@
 using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
 using System.Text.RegularExpressions;
 using educodeai_server.Common;
 using educodeai_server.Data;
 using educodeai_server.DTOs.RutTienGiangVien;
 using educodeai_server.DTOs.ThanhToan;
 using educodeai_server.Models;
-using educodeai_server.Config;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace educodeai_server.Services.Implementation
 {
     public class RutTienGiangVienService : IRutTienGiangVienService
     {
         private readonly EduCodeAIDbContext _dbContext;
-        private readonly IVietQrLookupApiService _vietQrLookup;
-        private readonly VietQrLookupOptions _vietQrLookupOptions;
 
-        public RutTienGiangVienService(
-            EduCodeAIDbContext dbContext,
-            IVietQrLookupApiService vietQrLookup,
-            IOptions<VietQrLookupOptions> vietQrLookupOptions)
+        public RutTienGiangVienService(EduCodeAIDbContext dbContext)
         {
             _dbContext = dbContext;
-            _vietQrLookup = vietQrLookup;
-            _vietQrLookupOptions = vietQrLookupOptions.Value;
         }
 
         public Task<IReadOnlyList<NganHangItemDTO>> LayDanhMucNganHangAsync()
@@ -95,98 +84,6 @@ namespace educodeai_server.Services.Implementation
 
             await _dbContext.SaveChangesAsync();
             return await LayThongTinViAsync(maGiangVien);
-        }
-
-        public async Task<KetQuaKiemTraTaiKhoanDTO> KiemTraTaiKhoanNganHangAsync(int maGiangVien, KiemTraTaiKhoanDTO yeuCau)
-        {
-            var giangVien = await _dbContext.NguoiDungs
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.MaNguoiDung == maGiangVien && x.VaiTro == 1);
-
-            if (giangVien == null)
-            {
-                throw new ApplicationException("Không tìm thấy tài khoản giảng viên.");
-            }
-
-            NganHangItemDTO? nganHang = DanhMucNganHangLienKet.TimTheoMa(yeuCau.MaNganHang);
-            if (nganHang == null)
-            {
-                return new KetQuaKiemTraTaiKhoanDTO
-                {
-                    ThongBao = "Ngân hàng không nằm trong danh mục được phép."
-                };
-            }
-
-            if (string.IsNullOrWhiteSpace(nganHang.MaBin) ||
-                !int.TryParse(nganHang.MaBin, NumberStyles.Integer, CultureInfo.InvariantCulture, out int maBin))
-            {
-                return new KetQuaKiemTraTaiKhoanDTO
-                {
-                    ThongBao =
-                        "Ngân hàng NAPAS không có mã BIN cố định — vui lòng chọn một ngân hàng cụ thể để tra cứu qua VietQR.io."
-                };
-            }
-
-            if (string.IsNullOrWhiteSpace(_vietQrLookupOptions.ClientId) ||
-                string.IsNullOrWhiteSpace(_vietQrLookupOptions.ApiKey))
-            {
-                return new KetQuaKiemTraTaiKhoanDTO
-                {
-                    ThieuCauHinhVietQrLookup = true,
-                    ThongBao =
-                        "Chưa cấu hình VietQR.io tra cứu STK trên server (VietQrLookup:ClientId, VietQrLookup:ApiKey). " +
-                        "Đăng ký tại https://my.vietqr.io/ và thêm User Secrets, ví dụ: " +
-                        "dotnet user-secrets set \"VietQrLookup:ClientId\" \"...\" ; " +
-                        "dotnet user-secrets set \"VietQrLookup:ApiKey\" \"...\" . " +
-                        "Base URL mặc định: https://api.vietqr.io/v2"
-                };
-            }
-
-            VietQrTraCuuKetQua kq;
-            try
-            {
-                kq = await _vietQrLookup.TraCuuTaiKhoanAsync(maBin, yeuCau.SoTaiKhoan);
-            }
-            catch (Exception ex)
-            {
-                return new KetQuaKiemTraTaiKhoanDTO
-                {
-                    ThongBao = "Không gọi được VietQR.io: " + ex.Message
-                };
-            }
-
-            if (!kq.ThanhCong)
-            {
-                return new KetQuaKiemTraTaiKhoanDTO
-                {
-                    TimThayTaiKhoan = false,
-                    ThongBao = kq.MoTa ?? "VietQR.io không tra cứu được tài khoản."
-                };
-            }
-
-            string? tenTuVietQr = kq.AccountName;
-            if (string.IsNullOrWhiteSpace(tenTuVietQr))
-            {
-                return new KetQuaKiemTraTaiKhoanDTO
-                {
-                    TimThayTaiKhoan = true,
-                    TenKhop = false,
-                    ThongBao =
-                        "Tra cứu thành công nhưng phản hồi không kèm tên chủ tài khoản. Hãy tự đối chiếu với giấy tờ."
-                };
-            }
-
-            bool tenKhop = SoSanhTenGanDung(tenTuVietQr, yeuCau.TenChuTaiKhoan);
-
-            return new KetQuaKiemTraTaiKhoanDTO
-            {
-                TimThayTaiKhoan = true,
-                TenKhop = tenKhop,
-                TenChuTaiKhoanTuVietQr = tenTuVietQr,
-                ThongBao = tenKhop
-                    ? "Tên chủ tài khoản khớp với dữ liệu VietQR.io."
-                    : "Tên chủ tài khoản không khớp với dữ liệu VietQR.io. Vui lòng kiểm tra lại số tài khoản hoặc tên chủ tài khoản."
-            };
         }
 
         public async Task<ThongTinViGiangVienDTO> XoaTaiKhoanNhanTienAsync(int maGiangVien)
@@ -278,6 +175,69 @@ namespace educodeai_server.Services.Implementation
                 .ToListAsync();
         }
 
+        public async Task<YeuCauRutTienChiTietDTO> LayChiTietChoQuanTriAsync(int maYeuCauRutTien)
+        {
+            var dto = await MapChiTietYeuCauAsync(maYeuCauRutTien);
+            BoSungQrXemTruocNeuCan(dto);
+            return dto;
+        }
+
+        public async Task<YeuCauRutTienChiTietDTO> XacNhanDaChuyenKhoanThuCongAsync(int maYeuCauRutTien, int maQuanTriVien)
+        {
+            var banGhi = await _dbContext.YeuCauRutTienGiangViens
+                .Include(x => x.GiangVien)
+                .FirstOrDefaultAsync(x => x.MaYeuCauRutTien == maYeuCauRutTien);
+
+            if (banGhi == null)
+            {
+                throw new ApplicationException("Không tìm thấy yêu cầu rút tiền.");
+            }
+
+            if (string.Equals(banGhi.TrangThaiYeuCau, "DA_CHUYEN_KHOAN", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ApplicationException("Yêu cầu đã được ghi nhận chuyển khoản thành công.");
+            }
+
+            if (string.Equals(banGhi.TrangThaiYeuCau, "TU_CHOI", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ApplicationException("Yêu cầu đã bị từ chối trước đó.");
+            }
+
+            if (!string.Equals(banGhi.TrangThaiYeuCau, "CHO_DUYET", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(banGhi.TrangThaiYeuCau, "CHO_CHUYEN_KHOAN", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ApplicationException("Chỉ có thể xác nhận khi yêu cầu đang chờ xử lý hoặc đang chuyển khoản.");
+            }
+
+            if (string.IsNullOrWhiteSpace(banGhi.NoiDungChuyenKhoan))
+            {
+                banGhi.NoiDungChuyenKhoan = TaoNoiDungRutTien(banGhi.MaYeuCauRutTien);
+            }
+
+            if (string.IsNullOrWhiteSpace(banGhi.DuongDanAnhQr))
+            {
+                banGhi.DuongDanAnhQr = TaoDuongDanQrRutTien(
+                    banGhi.MaNganHangNhan,
+                    banGhi.SoTaiKhoanNhan,
+                    banGhi.TenTaiKhoanNhan,
+                    banGhi.SoTienYeuCau,
+                    banGhi.NoiDungChuyenKhoan);
+            }
+
+            banGhi.TrangThaiYeuCau = "DA_CHUYEN_KHOAN";
+            banGhi.SoTienDaChuyen = banGhi.SoTienYeuCau;
+            banGhi.ChuyenKhoanThanhCongLuc = DateTime.UtcNow;
+
+            if (banGhi.DuyetLuc == null)
+            {
+                banGhi.DuyetLuc = DateTime.UtcNow;
+                banGhi.MaQuanTriVienDuyet = maQuanTriVien;
+            }
+
+            await _dbContext.SaveChangesAsync();
+            return await MapChiTietYeuCauAsync(maYeuCauRutTien);
+        }
+
         public async Task<YeuCauRutTienChiTietDTO> DuyetYeuCauVaTaoQrAsync(int maYeuCauRutTien, int maQuanTriVien, DuyetYeuCauRutTienDTO? yeuCau)
         {
             var banGhi = await _dbContext.YeuCauRutTienGiangViens
@@ -321,9 +281,10 @@ namespace educodeai_server.Services.Implementation
                 throw new ApplicationException("Không tìm thấy yêu cầu rút tiền.");
             }
 
-            if (!string.Equals(banGhi.TrangThaiYeuCau, "CHO_DUYET", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(banGhi.TrangThaiYeuCau, "CHO_DUYET", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(banGhi.TrangThaiYeuCau, "CHO_CHUYEN_KHOAN", StringComparison.OrdinalIgnoreCase))
             {
-                throw new ApplicationException("Yêu cầu này không còn ở trạng thái chờ duyệt.");
+                throw new ApplicationException("Yêu cầu này không thể từ chối ở trạng thái hiện tại.");
             }
 
             banGhi.TrangThaiYeuCau = "TU_CHOI";
@@ -407,6 +368,41 @@ namespace educodeai_server.Services.Implementation
             return $"RUT{maYeuCauRutTien}";
         }
 
+        private static void BoSungQrXemTruocNeuCan(YeuCauRutTienChiTietDTO dto)
+        {
+            if (!string.IsNullOrWhiteSpace(dto.DuongDanAnhQr))
+            {
+                return;
+            }
+
+            if (!LaTrangThaiCoTheHienQr(dto.TrangThaiYeuCau))
+            {
+                return;
+            }
+
+            string nd = string.IsNullOrWhiteSpace(dto.NoiDungChuyenKhoan)
+                ? TaoNoiDungRutTien(dto.MaYeuCauRutTien)
+                : dto.NoiDungChuyenKhoan!;
+
+            dto.DuongDanAnhQr = TaoDuongDanQrRutTien(
+                dto.MaNganHangNhan,
+                dto.SoTaiKhoanNhan,
+                dto.TenTaiKhoanNhan,
+                dto.SoTienYeuCau,
+                nd);
+
+            if (string.IsNullOrWhiteSpace(dto.NoiDungChuyenKhoan))
+            {
+                dto.NoiDungChuyenKhoan = nd;
+            }
+        }
+
+        private static bool LaTrangThaiCoTheHienQr(string? trangThai)
+        {
+            return string.Equals(trangThai, "CHO_DUYET", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(trangThai, "CHO_CHUYEN_KHOAN", StringComparison.OrdinalIgnoreCase);
+        }
+
         private static string TaoDuongDanQrRutTien(
             string maNganHangNhan,
             string soTaiKhoanNhan,
@@ -480,41 +476,6 @@ namespace educodeai_server.Services.Implementation
                 DuyetLuc = x.DuyetLuc,
                 ChuyenKhoanThanhCongLuc = x.ChuyenKhoanThanhCongLuc
             };
-        }
-
-        private static bool SoSanhTenGanDung(string? tenTuApi, string? tenNguoiNhap)
-        {
-            string a = ChuanHoaTenKhongDau(tenTuApi);
-            string b = ChuanHoaTenKhongDau(tenNguoiNhap);
-            if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
-            {
-                return false;
-            }
-
-            return string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string ChuanHoaTenKhongDau(string? input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                return string.Empty;
-            }
-
-            string normalized = input.Trim().Normalize(NormalizationForm.FormD);
-            var sb = new StringBuilder();
-            foreach (char c in normalized)
-            {
-                UnicodeCategory cat = CharUnicodeInfo.GetUnicodeCategory(c);
-                if (cat != UnicodeCategory.NonSpacingMark)
-                {
-                    sb.Append(c);
-                }
-            }
-
-            string ketQua = sb.ToString().Normalize(NormalizationForm.FormC);
-            return string.Join(' ', ketQua.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                .ToUpperInvariant();
         }
     }
 }

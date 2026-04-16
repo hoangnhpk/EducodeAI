@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { hienThiTrangThaiYeuCauRutTien } from "@/utils/rut-tien-trang-thai";
 import Swal from "sweetalert2";
 import { DANH_MUC_NGAN_HANG_MAC_DINH } from "@/constants/danh-muc-ngan-hang-mac-dinh";
 import { RutTienGiangVienService } from "@/services/rut-tien-giang-vien.service";
@@ -88,42 +89,6 @@ export default function RutTienGiangVien() {
     taiDuLieu();
   }, []);
 
-  const kiemTraVoiVietQr = async () => {
-    if (!maNganHang || !soTaiKhoanNhanTien.trim() || !tenTaiKhoanNhanTien.trim()) {
-      Swal.fire("Thông báo", "Vui lòng chọn ngân hàng, nhập số tài khoản và tên chủ tài khoản.", "warning");
-      return;
-    }
-
-    try {
-      const kq = await RutTienGiangVienService.kiemTraTaiKhoan({
-        maNganHang,
-        soTaiKhoan: soTaiKhoanNhanTien.trim(),
-        tenChuTaiKhoan: tenTaiKhoanNhanTien.trim()
-      });
-      const icon =
-        kq.thieuCauHinhVietQrLookup
-          ? "warning"
-          : kq.timThayTaiKhoan && kq.tenKhop
-            ? "success"
-            : kq.timThayTaiKhoan
-              ? "warning"
-              : "info";
-      const thongBaoHtml = kq.thongBao.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      Swal.fire({
-        title: "Kết quả tra cứu VietQR.io",
-        html: `<p style="text-align:left">${thongBaoHtml}</p>${
-          kq.tenChuTaiKhoanTuVietQr
-            ? `<p><b>Tên từ VietQR.io:</b> ${String(kq.tenChuTaiKhoanTuVietQr).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`
-            : ""
-        }`,
-        icon,
-        width: kq.thieuCauHinhVietQrLookup ? "32em" : undefined
-      });
-    } catch (error: any) {
-      Swal.fire("Lỗi", error?.response?.data?.thongBao ?? "Không gọi được kiểm tra tài khoản.", "error");
-    }
-  };
-
   const themTaiKhoanNhanTien = async () => {
     try {
       await RutTienGiangVienService.themTaiKhoanNhanTien({
@@ -212,12 +177,8 @@ export default function RutTienGiangVien() {
       <div className="dashboard-card" style={{ marginBottom: 16, padding: 16 }}>
         <h3>Tài khoản nhận tiền (mỗi giảng viên chỉ 1 tài khoản)</h3>
         <p style={{ fontSize: 13, color: "#555" }}>
-          Tra cứu số tài khoản qua API VietQR.io (POST /v2/lookup). Cấu hình{" "}
-          <code>VietQrLookup:ClientId</code> và <code>VietQrLookup:ApiKey</code> trên server (lấy tại{" "}
-          <a href="https://my.vietqr.io/" target="_blank" rel="noreferrer">
-            my.vietqr.io
-          </a>
-          ). Khác hoàn toàn với cấu hình SePay thanh toán khóa học.
+          Vui lòng nhập đúng ngân hàng, số tài khoản và tên chủ tài khoản để admin chuyển khoản. Hệ thống không tra cứu
+          STK qua bên thứ ba.
         </p>
         <div style={{ display: "grid", gap: 8, maxWidth: 420 }}>
           <select
@@ -234,11 +195,6 @@ export default function RutTienGiangVien() {
           </select>
           <input disabled={daCoTaiKhoanNhanTien} value={soTaiKhoanNhanTien} onChange={(e) => setSoTaiKhoanNhanTien(e.target.value)} placeholder="Số tài khoản nhận" />
           <input disabled={daCoTaiKhoanNhanTien} value={tenTaiKhoanNhanTien} onChange={(e) => setTenTaiKhoanNhanTien(e.target.value)} placeholder="Tên chủ tài khoản (không dấu hoặc có dấu đều được)" />
-          {!daCoTaiKhoanNhanTien && (
-            <button type="button" className="btn btn-outline-secondary" onClick={kiemTraVoiVietQr}>
-              Kiểm tra với VietQR.io
-            </button>
-          )}
           {!daCoTaiKhoanNhanTien ? (
             <button className="btn btn-primary" onClick={themTaiKhoanNhanTien}>Thêm tài khoản nhận tiền</button>
           ) : (
@@ -287,7 +243,7 @@ export default function RutTienGiangVien() {
                 <tr key={item.maYeuCauRutTien}>
                   <td>{item.maYeuCauRutTien}</td>
                   <td>{item.soTienYeuCau.toLocaleString("vi-VN")} VND</td>
-                  <td>{item.trangThaiYeuCau}</td>
+                  <td>{hienThiTrangThaiYeuCauRutTien(item.trangThaiYeuCau)}</td>
                   <td>{item.noiDungChuyenKhoan ?? "-"}</td>
                   <td>{item.ghiChuAdmin ?? "-"}</td>
                 </tr>

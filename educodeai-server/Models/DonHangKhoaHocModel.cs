@@ -31,5 +31,6 @@ namespace educodeai_server.Models
 
         public virtual ICollection<ChiTietDonHangModel> ChiTietDonHangs { get; set; } = new List<ChiTietDonHangModel>();
         public virtual ICollection<GiaoDichThanhToanModel> GiaoDichThanhToans { get; set; } = new List<GiaoDichThanhToanModel>();
+        public virtual ICollection<ThongBaoEmailThanhToanModel> ThongBaoEmailThanhToans { get; set; } = new List<ThongBaoEmailThanhToanModel>();
     }
 }
