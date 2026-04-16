@@ -43,11 +43,17 @@ export interface ThongKeReview {
   };
 }
 
+export interface KhoaHoc {
+  id: number;
+  tenKhoaHoc: string;
+}
+
 // ==================== FILTER PARAMS ====================
 export interface ReviewFilterParams {
   loai?: 'BinhLuan' | 'DanhGia' | 'TatCa';
   trangThai?: 'ChoDuyet' | 'DaDuyet' | 'TuChoi' | 'TatCa';
   soSao?: number | 'TatCa';
+  maKhoaHoc?: number | 'TatCa';
   search?: string;
   tuNgay?: string;
   denNgay?: string;

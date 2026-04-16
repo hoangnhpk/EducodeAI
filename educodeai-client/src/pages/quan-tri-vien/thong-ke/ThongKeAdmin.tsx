@@ -221,7 +221,6 @@ export default function ThongKeAdmin() {
   );
 
   const fmtPercent01 = (v: number) => `${Math.round((v || 0) * 100)}%`;
-  const fmt1 = (v: number) => (Number.isFinite(v) ? (v as number).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) : '0');
   const fmt2 = (v: number) =>
     Number.isFinite(v) ? (v as number).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00';
 
@@ -261,7 +260,7 @@ export default function ThongKeAdmin() {
       <div className="adm-stats-header">
         <div>
           <h1 className="adm-stats-title">THỐNG KÊ HỆ THỐNG</h1>
-          
+
         </div>
       </div>
 
@@ -735,8 +734,8 @@ export default function ThongKeAdmin() {
                     <div className="adm-modal__meta adm-modal__meta--footer">
                       {detailData
                         ? `Trang ${detailData.page}/${detailData.totalPages} • Tổng ${detailData.totalItems.toLocaleString(
-                            'vi-VN'
-                          )}`
+                          'vi-VN'
+                        )}`
                         : ''}
                     </div>
                     <div className="adm-modal__pager">

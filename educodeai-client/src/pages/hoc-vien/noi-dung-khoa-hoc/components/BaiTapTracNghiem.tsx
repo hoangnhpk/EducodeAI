@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 
 // 1. Interface mô tả chính xác file JSON bạn truyền vào
 interface RawCauHoi {
+    id?: number;
     cauHoi: string;
     dapAnA: string;
     dapAnB: string;
@@ -62,7 +63,7 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
                 const bangChuCai: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
 
                 let cauHoiParsed: CauHoiDTO[] = rawData.map((item, index) => ({
-                    Id: index + 1, 
+                    Id: typeof item.id === 'number' ? item.id : index + 1,
                     NoiDung: item.cauHoi,
                     LuaChon: [item.dapAnA, item.dapAnB, item.dapAnC, item.dapAnD],
                     DapAnDung: bangChuCai[item.dapAnDung?.toUpperCase()] ?? 0,

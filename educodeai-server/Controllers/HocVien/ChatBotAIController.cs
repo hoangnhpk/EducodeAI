@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs.AI;
+using educodeai_server.DTOs.AI;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

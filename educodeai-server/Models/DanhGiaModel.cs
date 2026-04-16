@@ -22,5 +22,8 @@ namespace educodeai_server.Models
         public string? NhanXet { get; set; }
 
         public DateTime NgayDanhGia { get; set; } = DateTime.Now;
+
+        [StringLength(20)]
+        public string TrangThai { get; set; } = "ChoDuyet";
     }
 }

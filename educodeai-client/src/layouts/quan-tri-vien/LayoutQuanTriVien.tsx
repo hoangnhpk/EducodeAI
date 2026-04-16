@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import HeaderQuanTriVien from './HeaderQuanTriVien';
-import SidebarQuanTriVien from './SidebarQuanTriVien';
+import SidebarQuanTriVien from './SidebarQuanTriVienMoi';
 import '../../assets/styles/variables.css';
 import '../../assets/styles/UI_GiangVien_QuanTriVien_Kit.css';
 import '../../assets/styles/LayoutDashboard.css';
