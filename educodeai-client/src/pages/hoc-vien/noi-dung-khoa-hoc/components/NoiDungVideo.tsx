@@ -276,10 +276,14 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
       }
 
       // KIỂM TRA MỐC THỜI GIAN ĐỂ HIỆN QUIZ
-      // Dùng chaptersRef.current thay vì chapters để tránh stale closure
+      // Chỉ hiện Quiz cho những Chapter có câu hỏi (videoQuizs.length > 0)
       const currentChapters = chaptersRef.current;
       if (currentChapters.length > 0) {
-        const chuaKiemTra = currentChapters.find(c => !c.daKiemTra && currentVideoTime >= c.thoiGianKetThuc);
+        const chuaKiemTra = currentChapters.find(c => 
+          !c.daKiemTra && 
+          c.videoQuizs && c.videoQuizs.length > 0 && 
+          currentVideoTime >= c.thoiGianKetThuc
+        );
         if (chuaKiemTra) {
           setQuizChapter(prev => {
             if (prev?.maChapter === chuaKiemTra.maChapter) return prev; // Đang hiện rồi, không làm gì
@@ -347,22 +351,26 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
               {Math.floor(thoiLuongVideo / 60)}:{Math.floor(thoiLuongVideo % 60).toString().padStart(2, '0')}
             </div>
 
-            {/* Badge hiển thị số mốc Quiz trong bài */}
-            {chapters.length > 0 && (
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: '#fff', borderRadius: 20, padding: '3px 10px',
-                fontSize: '0.78rem', fontWeight: 700,
-                boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
-              }}>
-                🧠 {chapters.length} mốc Quiz
-              </div>
-            )}
-
-            {/* Hiển thị mốc Quiz tiếp theo sắp đến */}
+            {/* Badge hiển thị số mốc Quiz thực sự (có câu hỏi) */}
             {(() => {
-              const tiep = chapters.find(c => !c.daKiemTra && c.thoiGianKetThuc > thoiGianHienTai);
+              const soMocQuizThucSu = chapters.filter(c => c.videoQuizs && c.videoQuizs.length > 0).length;
+              if (soMocQuizThucSu === 0) return null;
+              return (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', borderRadius: 20, padding: '3px 10px',
+                  fontSize: '0.78rem', fontWeight: 700,
+                  boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+                }}>
+                  🧠 {soMocQuizThucSu} mốc Quiz
+                </div>
+              );
+            })()}
+
+            {/* Hiển thị mốc Quiz tiếp theo sắp đến (chỉ tính chapter có quiz) */}
+            {(() => {
+              const tiep = chapters.find(c => !c.daKiemTra && c.videoQuizs && c.videoQuizs.length > 0 && c.thoiGianKetThuc > thoiGianHienTai);
               if (!tiep) return null;
               const conLai = Math.max(0, Math.ceil(tiep.thoiGianKetThuc - thoiGianHienTai));
               if (conLai > 30) return null; // Chỉ hiện khi còn ≤30 giây
