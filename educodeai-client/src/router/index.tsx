@@ -118,7 +118,7 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<ThongKeHocTap />} /> {/* Default load vào thống kê */}
+          <Route index element={<KhoaHocCuaToi />} /> {/* Default load vào thống kê */}
           <Route path="thong-ke" element={<ThongKeHocTap />} />
           <Route path="bai-tap" element={<TaoBaiTap />} />
           <Route path="quiz" element={<TaoQuiz />} />

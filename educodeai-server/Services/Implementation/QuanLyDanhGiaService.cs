@@ -14,11 +14,17 @@ namespace educodeai_server.Services.Implementation
             _context = context;
         }
 
-        public async Task<ThongKeDanhGiaAdminDTO> LayThongKeAsync()
+        public async Task<ThongKeDanhGiaAdminDTO> LayThongKeAsync(int? maKhoaHoc = null)
         {
-            var danhSach = await _context.DanhGias
-                .AsNoTracking()
-                .Select(x => new { x.SoSao, TrangThai = x.TrangThai ?? "ChoDuyet" })
+            var query = _context.DanhGias.AsNoTracking().AsQueryable();
+
+            if (maKhoaHoc.HasValue && maKhoaHoc.Value > 0)
+            {
+                query = query.Where(x => x.MaKhoaHoc == maKhoaHoc.Value);
+            }
+
+            var danhSach = await query
+                .Select(x => new { x.SoSao, TrangThai = x.TrangThai ?? "DaDuyet" })
                 .ToListAsync();
 
             var tongDanhGia = danhSach.Count;
@@ -26,7 +32,6 @@ namespace educodeai_server.Services.Implementation
             return new ThongKeDanhGiaAdminDTO
             {
                 TongDanhGia = tongDanhGia,
-                ChoDuyet = danhSach.Count(x => x.TrangThai == "ChoDuyet"),
                 DaDuyet = danhSach.Count(x => x.TrangThai == "DaDuyet"),
                 TuChoi = danhSach.Count(x => x.TrangThai == "TuChoi"),
                 DanhGiaTrungBinh = tongDanhGia > 0 ? Math.Round(danhSach.Average(x => x.SoSao), 1) : 0,
@@ -55,12 +60,17 @@ namespace educodeai_server.Services.Implementation
 
             if (!string.IsNullOrWhiteSpace(filter.TrangThai) && filter.TrangThai != "TatCa")
             {
-                query = query.Where(x => (x.TrangThai ?? "ChoDuyet") == filter.TrangThai);
+                query = query.Where(x => (x.TrangThai ?? "DaDuyet") == filter.TrangThai);
             }
 
             if (filter.SoSao.HasValue && filter.SoSao.Value >= 1 && filter.SoSao.Value <= 5)
             {
                 query = query.Where(x => x.SoSao == filter.SoSao.Value);
+            }
+
+            if (filter.MaKhoaHoc.HasValue && filter.MaKhoaHoc.Value > 0)
+            {
+                query = query.Where(x => x.MaKhoaHoc == filter.MaKhoaHoc.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(filter.Search))
@@ -100,7 +110,7 @@ namespace educodeai_server.Services.Implementation
                     SoSao = x.SoSao,
                     NoiDung = x.NhanXet ?? string.Empty,
                     NgayTao = x.NgayDanhGia,
-                    TrangThai = x.TrangThai ?? "ChoDuyet"
+                    TrangThai = x.TrangThai ?? "DaDuyet"
                 })
                 .ToListAsync();
 
@@ -136,6 +146,20 @@ namespace educodeai_server.Services.Implementation
 
             _context.DanhGias.Remove(danhGia);
             return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<List<DanhGiaAdminKhoaHocDTO>> LayDanhSachKhoaHocFilterAsync()
+        {
+            return await _context.KhoaHocs
+                .AsNoTracking()
+                .OrderBy(x => x.TenKhoaHoc)
+                .Select(x => new DanhGiaAdminKhoaHocDTO
+                {
+                    Id = x.MaKhoaHoc,
+                    TenKhoaHoc = x.TenKhoaHoc,
+                    GiangVien = x.GiangVien.HoTen
+                })
+                .ToListAsync();
         }
     }
 }
