@@ -21,7 +21,7 @@ interface LoTrinhAI {
     trangThai: string;
     ngayTao: string;
     noiDungJSON: string;
-    tenNguoiTao?: string; // Mới: Để biết lộ trình của ai
+    tenNguoiTao?: string; 
 }
 
 const QuanLyLoTrinh = () => {
@@ -40,7 +40,7 @@ const QuanLyLoTrinh = () => {
     const [viewData, setViewData] = useState<{title: string, steps: any[], author: string} | null>(null);
 
     // ==========================================
-    // BỘ LỌC XỬ LÝ DỮ LIỆU AI (GIỮ NGUYÊN LOGIC 100 ĐIỂM)
+    // BỘ LỌC XỬ LÝ DỮ LIỆU AI 
     // ==========================================
     const getCleanContent = (text: string) => {
         const fallback = { title: "Lộ trình học tập", steps: [] };
@@ -119,7 +119,9 @@ const QuanLyLoTrinh = () => {
             });
             const result = await response.json();
             if (result.success) {
-                setDanhSach(result.data); // Backend đã trả về list tổng
+                // 👉 ĐIỂM SỬA CHỮA Ở ĐÂY: Lọc bỏ những lộ trình có trạng thái "Đã lưu"
+                const loTrinhGoc = result.data.filter((item: LoTrinhAI) => item.trangThai !== 'Đã lưu');
+                setDanhSach(loTrinhGoc); 
             }
         } catch (error) { console.error(error); } 
         finally { setTimeout(() => setIsLoading(false), 300); }
@@ -309,7 +311,7 @@ const QuanLyLoTrinh = () => {
                 </div>
             )}
 
-            {/* MODAL XEM CHI TIẾT (PREVIEW) - GIỐNG TRANG KHÁM PHÁ */}
+            {/* MODAL XEM CHI TIẾT (PREVIEW) */}
             {isPreviewOpen && viewData && (
                 <div className="modal-overlay" onClick={() => setIsPreviewOpen(false)}>
                     <div className="pro-modal-v2" onClick={e => e.stopPropagation()} style={{ width: '650px' }}>
