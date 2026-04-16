@@ -2485,7 +2485,7 @@ video::-webkit-media-controls-playback-rate-button {
 .cp-cert-bottom {
     width: 100%;
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: flex-end;
     gap: 16px;
     margin-top: 14px;

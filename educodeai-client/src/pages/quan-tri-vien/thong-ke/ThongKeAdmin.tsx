@@ -221,7 +221,6 @@ export default function ThongKeAdmin() {
   );
 
   const fmtPercent01 = (v: number) => `${Math.round((v || 0) * 100)}%`;
-  const fmt1 = (v: number) => (Number.isFinite(v) ? (v as number).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) : '0');
   const fmt2 = (v: number) =>
     Number.isFinite(v) ? (v as number).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00';
 
