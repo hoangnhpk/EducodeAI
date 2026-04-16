@@ -29,7 +29,7 @@ const KhamPhaLoTrinh = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedTerm, setDebouncedTerm] = useState('');
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const [, setTotalPages] = useState(1);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
