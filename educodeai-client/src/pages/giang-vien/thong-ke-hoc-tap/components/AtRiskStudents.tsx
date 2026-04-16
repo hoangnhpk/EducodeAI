@@ -9,17 +9,18 @@ interface Props {
 const AtRiskStudents = ({ students }: Props) => {
   // Lọc học viên có nguy cơ bỏ học hoặc tỷ lệ hoàn thành < 50%
   const atRiskStudents = students
-    .filter(
-      (hv) => 
-        hv.trangThai === "Nguy cơ bỏ học" || 
-        hv.tyLeHoanThanh < 50
-    )
-    .sort((a, b) => a.tyLeHoanThanh - b.tyLeHoanThanh) // Sắp xếp theo tỷ lệ tăng dần (thấp nhất trước)
+    .filter((hv) => {
+      const tyLe = Number(hv.tyLeHoanThanh ?? 0);
+      return hv.trangThai === "Nguy cơ bỏ học" || tyLe < 50;
+    })
+    .sort((a, b) => Number(a.tyLeHoanThanh ?? 0) - Number(b.tyLeHoanThanh ?? 0))
     .slice(0, 5);
 
   const handleContact = (hocVien: HocVien) => {
-    // TODO: Implement send email functionality
-    window.location.href = `mailto:${hocVien.email}?subject=Hỗ trợ học tập&body=Xin chào ${hocVien.tenHocVien}`;
+    const email = hocVien.email?.trim() || "";
+    const ten = hocVien.tenHocVien?.trim() || "bạn";
+    if (!email) return;
+    window.location.href = `mailto:${email}?subject=Hỗ trợ học tập&body=Xin chào ${encodeURIComponent(ten)}`;
   };
 
   return (
@@ -37,24 +38,26 @@ const AtRiskStudents = ({ students }: Props) => {
             Không có học viên có nguy cơ bỏ học
           </p>
         ) : (
-          atRiskStudents.map((hocVien) => (
-            <div key={hocVien.maHocVien} className="at-risk-item">
+          atRiskStudents.map((hocVien, idx) => (
+            <div key={hocVien.maHocVien ?? `risk-${idx}`} className="at-risk-item">
               <div className="at-risk-icon">
                 <AlertTriangle size={18} />
               </div>
 
               <div className="at-risk-info">
-                <strong>{hocVien.tenHocVien}</strong>
-                <span>{hocVien.email}</span>
+                <strong>{hocVien.tenHocVien?.trim() || "—"}</strong>
+                <span>{hocVien.email?.trim() || "—"}</span>
                 <small>
-                  Hoàn thành: {hocVien.tyLeHoanThanh.toFixed(1)}% • 
-                  Điểm TB: {hocVien.diemTrungBinh.toFixed(1)}
+                  Hoàn thành: {Number(hocVien.tyLeHoanThanh ?? 0).toFixed(1)}% •
+                  Điểm TB: {Number(hocVien.diemTrungBinh ?? 0).toFixed(1)}
                 </small>
               </div>
 
-              <button 
+              <button
+                type="button"
                 className="at-risk-btn"
                 onClick={() => handleContact(hocVien)}
+                disabled={!hocVien.email?.trim()}
                 title="Gửi email liên hệ"
               >
                 <Mail size={16} />

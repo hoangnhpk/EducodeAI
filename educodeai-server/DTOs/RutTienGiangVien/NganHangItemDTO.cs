@@ -10,8 +10,5 @@ namespace educodeai_server.DTOs.RutTienGiangVien
 
         /// <summary>Mã dùng cho VietQR (img.vietqr.io).</summary>
         public string MaVietQr { get; set; } = string.Empty;
-
-        /// <summary>Mã BIN 6 số (API tra cứu STK VietQR.io).</summary>
-        public string? MaBin { get; set; }
     }
 }

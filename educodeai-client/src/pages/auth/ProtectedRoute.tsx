@@ -19,12 +19,16 @@ const ProtectedRoute: React.FC<Props> = ({ children, allowRoles }) => {
     } catch {
         localStorage.removeItem("user_info");
         localStorage.removeItem("user_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("token");
         return <Navigate to="/dang-nhap" replace />;
     }
 
     if (!user || typeof user !== "object") {
         localStorage.removeItem("user_info");
         localStorage.removeItem("user_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("token");
         return <Navigate to="/dang-nhap" replace />;
     }
 

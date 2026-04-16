@@ -12,11 +12,19 @@ namespace educodeai_server.Services.Implementation
     {
         private readonly EduCodeAIDbContext _dbContext;
         private readonly IConfiguration _cauHinh;
+        private readonly IThanhToanEmailService _thanhToanEmailService;
+        private readonly ILogger<ThanhToanKhoaHocService> _logger;
 
-        public ThanhToanKhoaHocService(EduCodeAIDbContext dbContext, IConfiguration cauHinh)
+        public ThanhToanKhoaHocService(
+            EduCodeAIDbContext dbContext,
+            IConfiguration cauHinh,
+            IThanhToanEmailService thanhToanEmailService,
+            ILogger<ThanhToanKhoaHocService> logger)
         {
             _dbContext = dbContext;
             _cauHinh = cauHinh;
+            _thanhToanEmailService = thanhToanEmailService;
+            _logger = logger;
         }
 
         public async Task<ThongTinMuaKhoaHocDTO?> LayThongTinMuaKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
@@ -419,6 +427,17 @@ namespace educodeai_server.Services.Implementation
 
                 await _dbContext.SaveChangesAsync();
                 await giaoDich.CommitAsync();
+
+                try
+                {
+                    await _thanhToanEmailService.GuiThongBaoThanhToanThanhCongHocVienAsync(donHang.MaDonHang);
+                }
+                catch (Exception ex)
+                {
+                    // Không ảnh hưởng flow thanh toán thành công nếu gửi mail lỗi.
+                    _logger.LogWarning(ex, "Không gửi được email thanh toán cho đơn {MaDonHang}", donHang.MaDonHang);
+                }
+
                 return true;
             }
             catch

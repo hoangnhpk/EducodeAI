@@ -37,6 +37,7 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
         public DbSet<DonHangKhoaHocModel> DonHangKhoaHocs { get; set; }
         public DbSet<ChiTietDonHangModel> ChiTietDonHangs { get; set; }
         public DbSet<GiaoDichThanhToanModel> GiaoDichThanhToans { get; set; }
+        public DbSet<ThongBaoEmailThanhToanModel> ThongBaoEmailThanhToans { get; set; }
         public DbSet<MaGiamGiaModel> MaGiamGias { get; set; }
         public DbSet<DoanhThuGiangVienModel> DoanhThuGiangViens { get; set; }
         public DbSet<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; }
@@ -66,6 +67,8 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
             modelBuilder.Entity<DanhGiaModel>().HasIndex(d => new { d.MaNguoiDung, d.MaKhoaHoc }).IsUnique();
             modelBuilder.Entity<DonHangKhoaHocModel>().HasIndex(d => d.IdempotencyKey).IsUnique();
             modelBuilder.Entity<GiaoDichThanhToanModel>().HasIndex(g => g.MaThamChieuNgoai).IsUnique();
+            modelBuilder.Entity<ThongBaoEmailThanhToanModel>()
+                .HasIndex(x => new { x.MaDonHang, x.LoaiThongBao, x.EmailNhan }).IsUnique();
             modelBuilder.Entity<MaGiamGiaModel>().HasIndex(v => v.Code).IsUnique();
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.NoiDungChuyenKhoan).IsUnique();
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.MaGiaoDichSePay).IsUnique();
@@ -265,6 +268,12 @@ public DbSet<VideoQuizModel> VideoQuizs { get; set; }
                 .HasMany(d => d.GiaoDichThanhToans)
                 .WithOne(g => g.DonHang)
                 .HasForeignKey(g => g.MaDonHang)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DonHangKhoaHocModel>()
+                .HasMany(d => d.ThongBaoEmailThanhToans)
+                .WithOne(t => t.DonHang)
+                .HasForeignKey(t => t.MaDonHang)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>()

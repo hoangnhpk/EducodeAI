@@ -21,6 +21,8 @@ import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinh
 import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
 import ChiTietLoTrinhAI from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/ChiTietLoTrinhAI";
 import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
+import ProfilePage from "../pages/hoc-vien/ho-so-hoc-vien/ProfilePage";
+import KhoaHocCuaToiHocVien from "@/pages/hoc-vien/khoa-hoc-cua-toi/KhoaHocCuaToiHocVien";
 import DoiMatKhau from "../pages/hoc-vien/ho-so-hoc-vien/DoiMatKhau";
 import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 
@@ -72,6 +74,8 @@ export default function AppRouter() {
           <Route path="/yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
           <Route path="/mua-khoa-hoc/:id" element={<MuaKhoaHoc />} />
           <Route path="/ho-so" element={<HoSoHocVienPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/hoc-vien/khoa-hoc-cua-toi" element={<KhoaHocCuaToiHocVien />} />
           <Route path="/bao-mat" element={<DoiMatKhau />} />
           <Route path="/thiet-bi" element={<QuanLyThietBi />} />
           <Route path="/khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
