@@ -13,7 +13,13 @@ export default function SidebarQuanTriVienMoi() {
       </div>
 
       <nav className="qtv-sidebar-nav">
-        
+
+
+        <NavLink to="/quan-tri-vien/thong-ke" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><MdDashboard /></div>
+          <span>Thống kê</span>
+        </NavLink>
+
         <NavLink to="/quan-tri-vien/nguoi-dung" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><MdPeople /></div>
           <span>Người Dùng</span>

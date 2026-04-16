@@ -23,10 +23,16 @@ export const getUserId = (): number | null => {
 
         const userInfo: UserInfo = JSON.parse(userInfoStr);
 
-        // Lấy trường maNguoiDung theo đúng dữ liệu của bạn
-        if (userInfo && userInfo.maNguoiDung) {
-            return Number(userInfo.maNguoiDung); 
-        }
+        const raw =
+            userInfo?.maNguoiDung ??
+            userInfo?.MaNguoiDung ??
+            userInfo?.id ??
+            userInfo?.Id ??
+            userInfo?.userId ??
+            userInfo?.UserId;
+
+        const n = Number(raw);
+        if (Number.isFinite(n) && n > 0) return n;
 
         return null;
     } catch (error) {

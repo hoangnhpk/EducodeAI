@@ -27,7 +27,7 @@ interface LoTrinhAI {
 const QuanLyLoTrinh = () => {
     const [danhSach, setDanhSach] = useState<LoTrinhAI[]>([]);
     const [khoaHocCoSan, setKhoaHocCoSan] = useState<IKhoaHocGoc[]>([]);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [, setIsLoading] = useState<boolean>(true);
     
     // Modal Thêm/Sửa
     const [isModalOpen, setIsModalOpen] = useState(false);
