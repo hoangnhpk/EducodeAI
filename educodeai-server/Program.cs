@@ -61,21 +61,29 @@ try
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
     if (!string.IsNullOrEmpty(redisConnectionString))
     {
-        var redis = ConnectionMultiplexer.Connect(redisConnectionString);
+        var configOptions = ConfigurationOptions.Parse(redisConnectionString);
+        configOptions.AbortOnConnectFail = false;   // Never throw at startup when Redis is down
+        configOptions.ConnectTimeout = 2000;        // 2 s connect attempt
+        configOptions.SyncTimeout = 2000;           // 2 s per command timeout
+        configOptions.ReconnectRetryPolicy = new ExponentialRetry(500);
+
+        var redis = ConnectionMultiplexer.Connect(configOptions);
         builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
         builder.Services.AddScoped<IRedisService, RedisService>();
-        Console.WriteLine("Redis connected successfully");
+        Console.WriteLine("Redis multiplexer registered (abortConnect=false – will reconnect when available)");
     }
     else
     {
-        throw new Exception("Redis connection string is empty");
+        Console.WriteLine("Redis connection string is empty – using MemoryCache fallback");
+        builder.Services.AddScoped<IRedisService, FallbackRedisService>();
     }
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Redis connection failed, using MemoryCache fallback: {ex.Message}");
+    Console.WriteLine($"Redis setup failed, using MemoryCache fallback: {ex.Message}");
     builder.Services.AddScoped<IRedisService, FallbackRedisService>();
 }
+
 
 // ==========================================
 // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
