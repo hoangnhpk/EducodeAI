@@ -616,27 +616,9 @@ OUTPUT JSON THUẦN
         }
 
         // ===== HELPER METHODS =====
-        private static void ValidateKhoaHocData(KhoaHocCreateUpdateDTO dto)
-        {
-            if (string.IsNullOrWhiteSpace(dto.TenKhoaHoc)) throw new ArgumentException("Tên khóa học không được trống.");
-            if (string.IsNullOrWhiteSpace(dto.LinhVuc)) throw new ArgumentException("Lĩnh vực không được trống.");
-            if (string.IsNullOrWhiteSpace(dto.TrinhDo)) throw new ArgumentException("Trình độ không được trống.");
-            if (dto.ThoiLuongGio < 0) throw new ArgumentException("Thời lượng không hợp lệ.");
-            
-            if (dto.CoChungChi)
-            {
-                var errors = new List<string>();
-                ValidateCertificateData(dto.DiemDatChungChi, dto.SoCauHoiChungChi, dto.ThoiGianLamBaiChungChi, errors);
-                if (errors.Any()) throw new ArgumentException(string.Join(" ", errors));
-            }
-        }
 
-        private static void ValidateCertificateData(double diemDat, int soCauHoi, int thoiGian, List<string> errors)
-        {
-            if (diemDat < 0 || diemDat > 100) errors.Add("Điểm đạt chứng chỉ phải từ 0 đến 100.");
-            if (soCauHoi < 1) errors.Add("Số câu hỏi chứng chỉ phải lớn hơn 0.");
-            if (thoiGian < 1) errors.Add("Thời gian làm bài chứng chỉ phải lớn hơn 0.");
-        }
+
+
 
         private static KhoaHocGiangVienListDTO MapToKhoaHocListDTO(KhoaHocModel k)
         {

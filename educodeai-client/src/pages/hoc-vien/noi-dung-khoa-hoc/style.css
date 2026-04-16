@@ -908,6 +908,27 @@ a.cp-back:hover {
     min-height: 2.5rem;
 }
 
+.cp-input-line {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2px 0;
+}
+
+.cp-input-line:last-child {
+    border-bottom: none;
+}
+
+.cp-input-var-name {
+    color: #94a3b8;
+    user-select: none;
+}
+
+.cp-input-value {
+    color: #38bdf8;
+    font-weight: 500;
+}
+
 /* Nút Chạy code */
 .cp-run-float-btn {
     background: #0099ff;
