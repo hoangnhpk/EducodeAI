@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs;
+using educodeai_server.DTOs;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Repository.Interface;
@@ -34,14 +34,14 @@ namespace educodeai_server.Services.Implement
             return khoaHoc != null ? MapToKhoaHocDetailDTO(khoaHoc) : null;
         }
 
-        public async Task<bool> TaoKhoaHocAsync(int maGiangVien, KhoaHocCreateUpdateDTO dto)
+        public async Task<int> TaoKhoaHocAsync(int maGiangVien, KhoaHocCreateUpdateDTO dto)
         {
             ValidateKhoaHocData(dto);
 
             var khoaHoc = CreateKhoaHocFromDTO(maGiangVien, dto);
             await _repository.AddKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
-            return true;
+            return khoaHoc.MaKhoaHoc;
         }
 
         public async Task<bool> CapNhatKhoaHocAsync(int maKhoaHoc, int maGiangVien, KhoaHocCreateUpdateDTO dto)
@@ -369,33 +369,70 @@ OUTPUT JSON THUẦN
             };
         }
 
-        public async Task<YouTubePlaylistImportResponseDTO> ImportPlaylistAsync(int maGiangVien, YouTubePlaylistImportRequestDTO request)
+        public async Task<YouTubePlaylistImportResponseDTO> ImportPlaylistAsync(int maKhoaHocId, int maGiangVien, YouTubePlaylistImportRequestDTO request)
         {
-            var chuong = await _repository.GetChuongWithKhoaHocAsync(request.MaChuong);
-            if (chuong == null || chuong.KhoaHoc.MaGiangVien != maGiangVien)
+            var khoaHoc = await _repository.GetKhoaHocForCertificateAsync(maKhoaHocId, maGiangVien);
+            if (khoaHoc == null)
             {
                 return new YouTubePlaylistImportResponseDTO
                 {
                     Success = false,
-                    Message = "Không tìm thấy chương hoặc không có quyền"
+                    Message = "Không tìm thấy khóa học hoặc không có quyền"
+                };
+            }
+
+            ChuongHocModel? chuong = null;
+
+            if (request.TargetChapterId.HasValue && request.TargetChapterId.Value > 0)
+            {
+                chuong = khoaHoc.ChuongHocs?.FirstOrDefault(c => c.MaChuong == request.TargetChapterId.Value);
+                if (chuong == null)
+                {
+                    return new YouTubePlaylistImportResponseDTO
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy chương hoặc không có quyền"
+                    };
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(request.NewChapterName))
+            {
+                chuong = new ChuongHocModel
+                {
+                    MaKhoaHoc = maKhoaHocId,
+                    TenChuong = request.NewChapterName,
+                    ThuTu = (khoaHoc.ChuongHocs?.Max(c => (int?)c.ThuTu) ?? 0) + 1
+                };
+                await _repository.AddChuongAsync(chuong);
+                await _repository.SaveChangesAsync(); // save to generate MaChuong
+                
+                // Initialize BaiHocs collection for newly created chapter
+                chuong.BaiHocs = new List<BaiHocModel>();
+            }
+            else
+            {
+                return new YouTubePlaylistImportResponseDTO
+                {
+                    Success = false,
+                    Message = "Phải cung cấp tên chương mới hoặc chọn chương có sẵn"
                 };
             }
 
             var importedLessons = new List<BaiHocVideoDetailDTO>();
-            var currentOrder = chuong.BaiHocs?.Max(b => b.ThuTu) ?? 0;
+            var currentOrder = chuong.BaiHocs?.Max(b => (int?)b.ThuTu) ?? 0;
 
-            foreach (var videoId in request.SelectedVideoIds)
+            foreach (var video in request.Videos)
             {
-                var videoInfo = await _youtubeService.GetVideoInfoAsync(videoId);
-                if (videoInfo == null) continue;
+                var title = string.IsNullOrWhiteSpace(video.Title) ? "Video chưa có tên" : video.Title;
+                if (title.Length > 200) title = title.Substring(0, 197) + "..."; // prevent DbUpdateException
 
                 var baiHoc = new BaiHocModel
                 {
-                    MaChuong = request.MaChuong,
-                    TieuDe = videoInfo.Title,
-                    NoiDung = videoInfo.Description,
-                    LinkVideo = $"https://www.youtube.com/watch?v={videoInfo.VideoId}",
-                    ThoiLuong = videoInfo.Duration / 60, // Convert to minutes
+                    MaChuong = chuong.MaChuong,
+                    TieuDe = title,
+                    NoiDung = video.Description,
+                    LinkVideo = $"https://www.youtube.com/watch?v={video.VideoId}",
+                    ThoiLuong = video.Duration > 0 ? (video.Duration / 60) : 0, // Convert to minutes or 0
                     ThuTu = ++currentOrder,
                     LoaiBaiHoc = "Video"
                 };
@@ -567,6 +604,28 @@ OUTPUT JSON THUẦN
         }
 
         // ===== HELPER METHODS =====
+        private static void ValidateKhoaHocData(KhoaHocCreateUpdateDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.TenKhoaHoc)) throw new ArgumentException("Tên khóa học không được trống.");
+            if (string.IsNullOrWhiteSpace(dto.LinhVuc)) throw new ArgumentException("Lĩnh vực không được trống.");
+            if (string.IsNullOrWhiteSpace(dto.TrinhDo)) throw new ArgumentException("Trình độ không được trống.");
+            if (dto.ThoiLuongGio < 0) throw new ArgumentException("Thời lượng không hợp lệ.");
+            
+            if (dto.CoChungChi)
+            {
+                var errors = new List<string>();
+                ValidateCertificateData(dto.DiemDatChungChi, dto.SoCauHoiChungChi, dto.ThoiGianLamBaiChungChi, errors);
+                if (errors.Any()) throw new ArgumentException(string.Join(" ", errors));
+            }
+        }
+
+        private static void ValidateCertificateData(double diemDat, int soCauHoi, int thoiGian, List<string> errors)
+        {
+            if (diemDat < 0 || diemDat > 100) errors.Add("Điểm đạt chứng chỉ phải từ 0 đến 100.");
+            if (soCauHoi < 1) errors.Add("Số câu hỏi chứng chỉ phải lớn hơn 0.");
+            if (thoiGian < 1) errors.Add("Thời gian làm bài chứng chỉ phải lớn hơn 0.");
+        }
+
         private static KhoaHocGiangVienListDTO MapToKhoaHocListDTO(KhoaHocModel k)
         {
             return new KhoaHocGiangVienListDTO
@@ -629,9 +688,9 @@ OUTPUT JSON THUẦN
             return dangKyKhoaHocs?.Select(d => new HocVienTrongKhoaHocDTO
             {
                 MaNguoiDung = d.MaNguoiDung,
-                HoTen = d.NguoiDung.HoTen,
-                Email = d.NguoiDung.Email,
-                AnhDaiDien = d.NguoiDung.AnhDaiDien,
+                HoTen = d.NguoiDung?.HoTen ?? "Khách",
+                Email = d.NguoiDung?.Email ?? "No Email",
+                AnhDaiDien = d.NguoiDung?.AnhDaiDien,
                 NgayDangKy = d.NgayDangKy,
                 TienDo = d.TienDo
             }).ToList() ?? new();
