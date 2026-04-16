@@ -188,10 +188,7 @@ const buildMockReviews = async (
   };
 };
 
-const buildMockThongKe = async (): Promise<ReviewServiceResult<ThongKeReview>> => {
-  await sleep(120);
-  return { source: 'mock', data: calculateThongKe(mockStore) };
-};
+
 
 const buildMockKhoaHocFilters = async (): Promise<ReviewServiceResult<ReviewCourseInfo[]>> => {
   await sleep(120);

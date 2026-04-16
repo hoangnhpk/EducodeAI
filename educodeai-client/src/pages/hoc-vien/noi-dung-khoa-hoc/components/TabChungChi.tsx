@@ -285,9 +285,9 @@ export const TabChungChi = ({
                                 <p className="cp-certificate-hint">PDF đã được gửi lúc {dinhDangNgay(thongTinChungChi.ngayGuiEmail)}.</p>
                             )}
 
-                            <button className="cp-certificate-action secondary" onClick={onInChungChi}>
+                            {/* <button className="cp-certificate-action secondary" onClick={onInChungChi}>
                                 <i className="fas fa-download" /> Tải / In chứng chỉ
-                            </button>
+                            </button> */}
                         </>
                     ) : (
                         <div className="cp-certificate-placeholder">

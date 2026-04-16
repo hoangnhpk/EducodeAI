@@ -70,10 +70,42 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                 setDuLieu(data);
 
                 let defaultCode = '';
-                if (data.ngonNgu.toLowerCase() === 'python') defaultCode = '# Viết code PYTHON của bạn tại đây\n\n';
-                else if (data.ngonNgu.toLowerCase().startsWith('c')) defaultCode = '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Viết code C/C++ của bạn tại đây\n    \n    return 0;\n}';
-                else if (data.ngonNgu.toLowerCase() === 'java') defaultCode = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Viết code Java của bạn tại đây\n        \n    }\n}';
-                else defaultCode = '// Viết mã của bạn tại đây\n';
+                const _lang = data.ngonNgu.toLowerCase();
+                if (_lang === 'python' || _lang === 'python3') {
+                    defaultCode = '# 💡 ĐỌC DỮ LIỆU:\n# - 1 số: n = int(input())\n# - Nhiều số cùng dòng: a, b = map(int, input().split())\n# - Chuỗi: s = input()\n\n';
+                } else if (_lang === 'c++' || _lang === 'cpp') {
+                    defaultCode = '#include <iostream>\nusing namespace std;\n\nint main() {\n    // cin >> x; để đọc đầu vào\n    \n    return 0;\n}';
+                } else if (_lang === 'c') {
+                    defaultCode = '#include <stdio.h>\n\nint main() {\n    // scanf("%d", &x); để đọc đầu vào\n    \n    return 0;\n}';
+                } else if (_lang === 'c#' || _lang === 'csharp') {
+                    defaultCode = 'using System;\n\nclass Program {\n    static void Main() {\n        // Console.ReadLine() để đọc đầu vào\n        \n    }\n}';
+                } else if (_lang === 'java') {
+                    defaultCode = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // sc.nextInt(), sc.nextLine() để đọc dữ liệu\n        \n    }\n}';
+                } else if (_lang === 'javascript' || _lang === 'js' || _lang === 'nodejs') {
+                    defaultCode = '// 💡 Đọc dữ liệu đầu vào (stdin) trong Node.js:\nconst readline = require(\'readline\');\nconst rl = readline.createInterface({ input: process.stdin });\nconst lines = [];\nrl.on(\'line\', line => lines.push(line.trim()));\nrl.on(\'close\', () => {\n    // Xử lý dữ liệu ở đây\n    const n = parseInt(lines[0]);\n    console.log(n);\n});\n';
+                } else if (_lang === 'typescript' || _lang === 'ts') {
+                    defaultCode = 'import * as readline from \'readline\';\nconst rl = readline.createInterface({ input: process.stdin });\nconst lines: string[] = [];\nrl.on(\'line\', (line: string) => lines.push(line.trim()));\nrl.on(\'close\', () => {\n    const n = parseInt(lines[0]);\n    console.log(n);\n});\n';
+                } else if (_lang === 'go' || _lang === 'golang') {
+                    defaultCode = 'package main\n\nimport (\n\t"bufio"\n\t"fmt"\n\t"os"\n)\n\nfunc main() {\n\treader := bufio.NewReader(os.Stdin)\n\tvar n int\n\tfmt.Fscan(reader, &n)\n\tfmt.Println(n)\n}';
+                } else if (_lang === 'rust') {
+                    defaultCode = 'use std::io::{self, BufRead};\n\nfn main() {\n    let stdin = io::stdin();\n    let mut lines = stdin.lock().lines();\n    let line = lines.next().unwrap().unwrap();\n    println!("{}", line);\n}';
+                } else if (_lang === 'ruby') {
+                    defaultCode = '# gets.chomp để đọc 1 dòng, gets.split.map(&:to_i) để đọc nhiều số\nn = gets.chomp.to_i\nputs n\n';
+                } else if (_lang === 'php') {
+                    defaultCode = '<?php\n$n = trim(fgets(STDIN));\necho $n . "\\n";\n';
+                } else if (_lang === 'kotlin') {
+                    defaultCode = 'fun main() {\n    val n = readLine()!!.trim().toInt()\n    println(n)\n}';
+                } else if (_lang === 'swift') {
+                    defaultCode = 'import Foundation\nlet n = Int(readLine()!)!\nprint(n)\n';
+                } else if (_lang === 'dart') {
+                    defaultCode = 'import \'dart:io\';\n\nvoid main() {\n    final n = int.parse(stdin.readLineSync()!);\n    print(n);\n}';
+                } else if (_lang === 'r') {
+                    defaultCode = 'n <- as.integer(readLines("stdin", n=1))\ncat(n, "\\n")\n';
+                } else if (_lang === 'scala') {
+                    defaultCode = 'import scala.io.StdIn._\n\nobject Main extends App {\n    val n = readInt()\n    println(n)\n}';
+                } else {
+                    defaultCode = '// Viết mã của bạn tại đây\n';
+                }
 
                 setCode(defaultCode);
                 setTestResults(data.testCases.map(() => ({ status: 'idle', output: '' })));
@@ -120,12 +152,12 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                 setTestResults(newResults);
 
                 const passCount = data.results.filter(r => r.isPassed).length;
-                if (khiHoanThanh) {
-                    const phanTram = (passCount / duLieu.testCases.length) * 100;
-                    khiHoanThanh(phanTram, data.passedAll);
-                }
 
                 if (data.passedAll) {
+                    if (khiHoanThanh) {
+                        const phanTram = (passCount / duLieu.testCases.length) * 100;
+                        khiHoanThanh(phanTram, true);
+                    }
                     Swal.fire({ title: 'Thành công!', text: 'Hoàn thành bài tập.', icon: 'success', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
                 } else {
                     Swal.fire({ title: 'Sai kết quả!', text: 'Kiểm tra lại code của bạn.', icon: 'error', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
