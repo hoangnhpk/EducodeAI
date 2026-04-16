@@ -1,4 +1,4 @@
-﻿using educodeai_server.Services.Implementation;
+using educodeai_server.Services.Implementation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +9,12 @@ namespace educodeai_server.Controllers.HocVien
     public class BaiTapController : ControllerBase
     {
         private readonly BaiTapService _ideService;
+        private readonly BaiTapThucHanhHocVienService _thucHanhService;
 
-        public BaiTapController(BaiTapService ideService)
+        public BaiTapController(BaiTapService ideService, BaiTapThucHanhHocVienService thucHanhService)
         {
             _ideService = ideService;
+            _thucHanhService = thucHanhService;
         }
 
         public class RunCodeClientRequest
@@ -45,6 +47,37 @@ namespace educodeai_server.Controllers.HocVien
                 loi = ketQua.error, // Lỗi hệ thống của JDoodle (nếu có)
                 tongHop = ketQua.output
             });
+        }
+        [HttpGet("thuc-hanh/{maBaiTap}")]
+        public async Task<IActionResult> GetThongTinThucHanh(int maBaiTap)
+        {
+            try
+            {
+                var data = await _thucHanhService.GetThongTinBaiTapAsync(maBaiTap);
+                if (data == null) return NotFound(new { message = "Không tìm thấy bài tập thực hành." });
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống", error = ex.Message });
+            }
+        }
+
+        [HttpPost("thuc-hanh/{maBaiTap}/submit")]
+        public async Task<IActionResult> SubmitBaiTapThucHanh(int maBaiTap, [FromBody] educodeai_server.DTOs.BaiTap.SubmitCodeRequestDTO request)
+        {
+            try
+            {
+                int maNguoiDung = educodeai_server.Helpers.LayNguoiDungID.LayID(User);
+                if (maNguoiDung <= 0) maNguoiDung = 1; // Temporary mock for dev if needed
+                
+                var data = await _thucHanhService.SubmitCodeAsync(maNguoiDung, maBaiTap, request);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống biên dịch hoặc CSDL", error = ex.Message });
+            }
         }
     }
 }
