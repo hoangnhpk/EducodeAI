@@ -49,6 +49,7 @@ namespace educodeai_server.Services.Implement
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
             if (khoaHoc == null) return false;
 
+            ValidateKhoaHocData(dto);
             UpdateKhoaHocFromDTO(khoaHoc, dto);
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
@@ -536,7 +537,10 @@ OUTPUT JSON THUẦN
             if (khoaHoc == null) return false;
 
             // Validate certificate data before enabling
-            ValidateCertificateData(khoaHoc.DiemDatChungChi, khoaHoc.SoCauHoiChungChi, khoaHoc.ThoiGianLamBaiChungChi, new List<string>());
+            var errors = new List<string>();
+            ValidateCertificateData(khoaHoc.DiemDatChungChi, khoaHoc.SoCauHoiChungChi, khoaHoc.ThoiGianLamBaiChungChi, errors);
+            if (errors.Any())
+                throw new ArgumentException(string.Join(" ", errors));
 
             khoaHoc.CoChungChi = true;
             if (string.IsNullOrWhiteSpace(khoaHoc.TenChungChi))
@@ -584,6 +588,14 @@ OUTPUT JSON THUẦN
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
             if (khoaHoc == null) return false;
+
+            if (config.CoChungChi)
+            {
+                var errors = new List<string>();
+                ValidateCertificateData(config.DiemDatChungChi, config.SoCauHoiChungChi, config.ThoiGianLamBaiChungChi, errors);
+                if (errors.Any())
+                    throw new ArgumentException(string.Join(" ", errors));
+            }
 
             khoaHoc.CoChungChi = config.CoChungChi;
             khoaHoc.TenChungChi = config.CoChungChi ? config.TenChungChi : null;
@@ -785,6 +797,42 @@ OUTPUT JSON THUẦN
             public string DapAnDung { get; set; } = "A";
             [JsonPropertyName("giaiThich")]
             public string GiaiThich { get; set; } = string.Empty;
+        }
+        private static void ValidateKhoaHocData(KhoaHocCreateUpdateDTO dto)
+        {
+            var errors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(dto.TenKhoaHoc))
+                errors.Add("Tên khóa học không được để trống.");
+
+            if (string.IsNullOrWhiteSpace(dto.LinhVuc))
+                errors.Add("Lĩnh vực không được để trống.");
+
+            if (string.IsNullOrWhiteSpace(dto.TrinhDo))
+                errors.Add("Trình độ không được để trống.");
+
+            if (dto.ThoiLuongGio <= 0)
+                errors.Add("Thời lượng khóa học phải lớn hơn 0.");
+
+            if (dto.CoChungChi)
+            {
+                ValidateCertificateData(dto.DiemDatChungChi, dto.SoCauHoiChungChi, dto.ThoiGianLamBaiChungChi, errors);
+            }
+
+            if (errors.Any())
+                throw new ArgumentException(string.Join(" ", errors));
+        }
+
+        private static void ValidateCertificateData(double diemDat, int soCauHoi, int thoiGian, List<string> errors)
+        {
+            if (diemDat < 0 || diemDat > 100)
+                errors.Add("Điểm đạt chứng chỉ phải từ 0 đến 100.");
+
+            if (soCauHoi <= 0)
+                errors.Add("Số câu hỏi chứng chỉ phải lớn hơn 0.");
+
+            if (thoiGian <= 0)
+                errors.Add("Thời gian làm bài chứng chỉ phải lớn hơn 0.");
         }
     }
 }

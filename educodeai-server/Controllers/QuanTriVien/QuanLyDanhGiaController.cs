@@ -16,9 +16,16 @@ namespace educodeai_server.Controllers.QuanTriVien
         }
 
         [HttpGet("thong-ke")]
-        public async Task<IActionResult> LayThongKe()
+        public async Task<IActionResult> LayThongKe([FromQuery] int? maKhoaHoc)
         {
-            var result = await _service.LayThongKeAsync();
+            var result = await _service.LayThongKeAsync(maKhoaHoc);
+            return Ok(result);
+        }
+
+        [HttpGet("khoa-hoc")]
+        public async Task<IActionResult> LayDanhSachKhoaHocFilter()
+        {
+            var result = await _service.LayDanhSachKhoaHocFilterAsync();
             return Ok(result);
         }
 
