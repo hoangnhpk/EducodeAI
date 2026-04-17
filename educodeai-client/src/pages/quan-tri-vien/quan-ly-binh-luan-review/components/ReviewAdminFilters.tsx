@@ -1,10 +1,11 @@
 import { Filter, RefreshCw, Search } from 'lucide-react';
-import type { ReviewFilterParams, ReviewSource } from './ReviewAdmin.types';
+import type { ReviewCourseInfo, ReviewFilterParams, ReviewSource } from './ReviewAdmin.types';
 
 interface Props {
   filters: ReviewFilterParams;
   source: ReviewSource;
   loading: boolean;
+  courses: ReviewCourseInfo[];
   onFilterChange: (filters: ReviewFilterParams) => void;
   onRefresh: () => void;
 }
@@ -13,6 +14,7 @@ export default function ReviewAdminFilters({
   filters,
   source,
   loading,
+  courses,
   onFilterChange,
   onRefresh,
 }: Props) {
@@ -59,7 +61,6 @@ export default function ReviewAdminFilters({
             onChange={(e) => handleChange('trangThai', e.target.value as ReviewFilterParams['trangThai'])}
           >
             <option value="TatCa">Tất cả trạng thái</option>
-            <option value="ChoDuyet">Chờ duyệt</option>
             <option value="DaDuyet">Đã duyệt</option>
             <option value="TuChoi">Từ chối</option>
           </select>
@@ -81,6 +82,23 @@ export default function ReviewAdminFilters({
             <option value="1">1 sao</option>
           </select>
 
+          <select
+            value={filters.maKhoaHoc || 'TatCa'}
+            onChange={(e) =>
+              handleChange(
+                'maKhoaHoc',
+                e.target.value === 'TatCa' ? 'TatCa' : Number(e.target.value) as ReviewFilterParams['maKhoaHoc']
+              )
+            }
+          >
+            <option value="TatCa">Tất cả khóa học</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.tenKhoaHoc}
+              </option>
+            ))}
+          </select>
+
           <button
             type="button"
             className="qtrv-reset-btn"
@@ -88,6 +106,7 @@ export default function ReviewAdminFilters({
               onFilterChange({
                 trangThai: 'TatCa',
                 soSao: 'TatCa',
+                maKhoaHoc: 'TatCa',
                 search: '',
                 page: 1,
                 pageSize: filters.pageSize || 10,

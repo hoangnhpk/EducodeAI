@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { KhoaHocService, type LuuKetQuaQuizDTO, type NopBaiKiemTraChungChiDTO } from '@/services/khoa-hoc.service';
 import type { KhoaHocData } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO';
@@ -32,7 +32,7 @@ const NoiDungKhoaHoc = () => {
     const [khoaHoc, setKhoaHoc] = useState<KhoaHocData | null>(null);
     const [idBaiHoc, setIdBaiHoc] = useState(0);
     const [hienSidebar, setHienSidebar] = useState(false);
-    const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia' | 'quiz' | 'chungchi'>('hoc');
+    const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia' | 'quiz' | 'chungchi' | 'ide'>('hoc');
     const [hienGhiChuAI, setHienGhiChuAI] = useState(false);
     const [hienSidebarMobile, setHienSidebarMobile] = useState(false);
     const [videoDaXongLocal, setVideoDaXongLocal] = useState<number[]>([]);
@@ -168,10 +168,25 @@ const NoiDungKhoaHoc = () => {
             return;
         }
 
+        if (baiHocVuaXong?.maBaiTapThucHanh) {
+            setVideoDaXongLocal((prev) => [...prev, maBaiHocVuaXong]);
+
+            void Swal.fire({
+                title: 'Đã hoàn thành lý thuyết!',
+                text: 'Hãy hoàn thành bài tập thực hành IDE để mở khóa bài học tiếp theo.',
+                icon: 'info',
+                timer: 3000,
+                showConfirmButton: false
+            }).then(() => {
+                setTabActive('ide');
+            });
+            return;
+        }
+
         danhDauHoanThanhBai(maBaiHocVuaXong);
     }, [flatList]);
 
-    const handleChonBaiHoc = (maBaiHoc: number, tabDeMo: 'hoc' | 'quiz' = 'hoc') => {
+    const handleChonBaiHoc = (maBaiHoc: number, tabDeMo: 'hoc' | 'quiz' | 'ide' = 'hoc') => {
         const index = flatList.findIndex((bai) => bai.id === maBaiHoc);
         if (index < 0) return;
 
@@ -443,13 +458,7 @@ const NoiDungKhoaHoc = () => {
             case 'Ide':
                 return (
                     <BaiTapIDE
-                        duLieu={{
-                            tieuDe: baiHocHienTai.tieuDe || 'Bài tập thực hành',
-                            moTa: baiHocHienTai.noiDung || '',
-                            ngonNgu: 'python',
-                            templateCode: '# Viết code của bạn tại đây\n',
-                            testCases: []
-                        }}
+                        maBaiTap={baiHocHienTai.maBaiTapThucHanh || 0}
                         khiHoanThanh={(_phanTram: number, daDat: boolean) => {
                             if (daDat) {
                                 handleVideoCompleted(idBaiHoc);
@@ -576,6 +585,17 @@ const NoiDungKhoaHoc = () => {
                                         khiHoanThanh={(diem, daDat, soCauDung, tongSoCau, chiTietTraLoi) =>
                                             xuLyNopBaiTap(diem, daDat, soCauDung, tongSoCau, chiTietTraLoi)
                                         }
+                                    />
+                                )}
+                            </div>
+                        ) : tabActive === 'ide' ? (
+                            <div style={{ height: '100%', overflowY: 'auto', backgroundColor: '#fff' }}>
+                                {baiHocHienTai.maBaiTapThucHanh && (
+                                    <BaiTapIDE
+                                        maBaiTap={baiHocHienTai.maBaiTapThucHanh}
+                                        khiHoanThanh={(_phanTram, daDat) => {
+                                            if (daDat) handleVideoCompleted(idBaiHoc);
+                                        }}
                                     />
                                 )}
                             </div>
