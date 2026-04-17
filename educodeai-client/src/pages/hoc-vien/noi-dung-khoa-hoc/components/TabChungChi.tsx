@@ -1,4 +1,4 @@
-﻿import { BaiTapTracNghiem } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/BaiTapTracNghiem';
+import { BaiTapTracNghiem } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/BaiTapTracNghiem';
 import type { BaiKiemTraChungChiDTO, ThongTinChungChiDTO } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO';
 
 interface TabChungChiProps {
@@ -196,17 +196,78 @@ export const TabChungChi = ({
 
                     {daCapChungChi ? (
                         <>
-                            <div className="cp-certificate-card" id="certificate-print-card">
-                                <span className="cp-certificate-brand">EduCodeAI</span>
-                                <h3>CHỨNG NHẬN HOÀN THÀNH</h3>
-                                <p className="cp-certificate-card-subtitle">
-                                    {thongTinChungChi?.tenChungChi || 'Chứng nhận học viên đã hoàn thành khóa học'}
-                                </p>
-                                <strong>{tenNguoiNhan}</strong>
-                                <p className="cp-certificate-course-name">{thongTinChungChi?.tenKhoaHoc || tenKhoaHoc}</p>
-                                <div className="cp-certificate-meta">
-                                    <span>Mã chứng chỉ: {thongTinChungChi?.maChungChi}</span>
-                                    <span>Ngày cấp: {dinhDangNgay(thongTinChungChi?.ngayCap)}</span>
+                            {/* ── Google-Cloud-style certificate card ── */}
+                            <div className="cp-cert-frame" id="certificate-print-card">
+                                {/* outer navy border → inner accent border handled by CSS */}
+                                <div className="cp-cert-inner">
+
+                                    {/* Brand */}
+                                    <div className="cp-cert-brand-row">
+                                        <span className="cp-cert-brand">
+                                            <span style={{ color: '#1A2B4A' }}>Edu</span>
+                                            <span style={{ color: '#4A90D9' }}>Code</span>
+                                            <span style={{ color: '#F5A623' }}>AI</span>
+                                        </span>
+                                        <span className="cp-cert-label">CERTIFICATE OF COMPLETION</span>
+                                    </div>
+
+                                    <div className="cp-cert-divider gold" />
+
+                                    {/* Certify phrase */}
+                                    <p className="cp-cert-phrase">This is to certify that</p>
+
+                                    {/* Learner name */}
+                                    <h2 className="cp-cert-name">{tenNguoiNhan}</h2>
+                                    <div className="cp-cert-name-underline" />
+
+                                    <p className="cp-cert-phrase" style={{ marginTop: '14px' }}>
+                                        has successfully completed the course
+                                    </p>
+
+                                    {/* Course name */}
+                                    <h3 className="cp-cert-course">
+                                        {thongTinChungChi?.tenKhoaHoc || tenKhoaHoc}
+                                    </h3>
+
+                                    <div className="cp-cert-divider gold" style={{ marginTop: '18px' }} />
+
+                                    {/* Bottom row */}
+                                    <div className="cp-cert-bottom">
+                                        {/* Meta info */}
+                                        <div className="cp-cert-meta">
+                                            <div className="cp-cert-meta-row">
+                                                <span className="cp-cert-meta-key">Certificate ID</span>
+                                                <span className="cp-cert-meta-val">{thongTinChungChi?.maChungChi}</span>
+                                            </div>
+                                            <div className="cp-cert-meta-row">
+                                                <span className="cp-cert-meta-key">Issue Date</span>
+                                                <span className="cp-cert-meta-val">{dinhDangNgay(thongTinChungChi?.ngayCap)}</span>
+                                            </div>
+                                            <div className="cp-cert-meta-row">
+                                                <span className="cp-cert-meta-key">Certified As</span>
+                                                <span className="cp-cert-meta-val">{tenNguoiNhan}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Score badge */}
+                                        <div className="cp-cert-badge">
+                                            <span className="cp-cert-badge-label">SCORE</span>
+                                            <span className="cp-cert-badge-score">
+                                                {thongTinChungChi?.diemLanGanNhat != null
+                                                    ? `${Math.round(thongTinChungChi.diemLanGanNhat)}%`
+                                                    : '--'}
+                                            </span>
+                                            <div className="cp-cert-badge-divider" />
+                                            <span className="cp-cert-badge-sub">FINAL EXAM</span>
+                                        </div>
+
+                                        {/* Signature */}
+                                        <div className="cp-cert-sig">
+                                            <div className="cp-cert-sig-line" />
+                                            <span className="cp-cert-sig-name">EduCodeAI Board</span>
+                                            <span className="cp-cert-sig-role">Authorized Signature</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -224,9 +285,9 @@ export const TabChungChi = ({
                                 <p className="cp-certificate-hint">PDF đã được gửi lúc {dinhDangNgay(thongTinChungChi.ngayGuiEmail)}.</p>
                             )}
 
-                            <button className="cp-certificate-action secondary" onClick={onInChungChi}>
-                                <i className="fas fa-print" /> In chứng chỉ
-                            </button>
+                            {/* <button className="cp-certificate-action secondary" onClick={onInChungChi}>
+                                <i className="fas fa-download" /> Tải / In chứng chỉ
+                            </button> */}
                         </>
                     ) : (
                         <div className="cp-certificate-placeholder">

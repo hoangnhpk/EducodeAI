@@ -6,7 +6,7 @@ import ReviewAdminDetailDrawer from './components/ReviewAdminDetailDrawer';
 import ReviewAdminFilters from './components/ReviewAdminFilters';
 import ReviewAdminStats from './components/ReviewAdminStats';
 import ReviewAdminTable from './components/ReviewAdminTable';
-import type { ReviewFilterParams, ReviewItem, ReviewSource, ThongKeReview } from './components/ReviewAdmin.types';
+import type { ReviewFilterParams, ReviewItem, ReviewSource, ThongKeReview, ReviewCourseInfo } from './components/ReviewAdmin.types';
 import './ReviewAdmin.css';
 
 const DEFAULT_FILTERS: ReviewFilterParams = {
@@ -22,14 +22,16 @@ export default function QuanLyReviewMoi() {
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
   const [filters, setFilters] = useState<ReviewFilterParams>(DEFAULT_FILTERS);
+  const [courses, setCourses] = useState<ReviewCourseInfo[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<ReviewSource>('api');
   const [error, setError] = useState<string | null>(null);
 
-  const fetchThongKe = async () => {
-    const result = await reviewAdminService.getThongKe();
+  const fetchThongKe = async (nextFilters = filters) => {
+    const maKhoaHoc = nextFilters.maKhoaHoc === 'TatCa' ? undefined : Number(nextFilters.maKhoaHoc);
+    const result = await reviewAdminService.getThongKe(maKhoaHoc || undefined);
     setThongKe(result.data);
     setSource(result.source);
   };
@@ -52,8 +54,17 @@ export default function QuanLyReviewMoi() {
     }
   };
 
+  const fetchCourses = async () => {
+    try {
+      const result = await reviewAdminService.getKhoaHocFilters();
+      setCourses(result.data);
+    } catch (err) {
+      console.error('Error fetching course filters:', err);
+    }
+  };
+
   const reloadAll = async (nextFilters = filters) => {
-    await Promise.all([fetchThongKe(), fetchReviews(nextFilters)]);
+    await Promise.all([fetchThongKe(nextFilters), fetchCourses(), fetchReviews(nextFilters)]);
   };
 
   useEffect(() => {
@@ -61,6 +72,7 @@ export default function QuanLyReviewMoi() {
   }, []);
 
   useEffect(() => {
+    fetchThongKe(filters);
     fetchReviews(filters);
   }, [filters]);
 
@@ -139,6 +151,7 @@ export default function QuanLyReviewMoi() {
         filters={filters}
         source={source}
         loading={loading}
+        courses={courses}
         onFilterChange={setFilters}
         onRefresh={() => reloadAll(filters)}
       />
