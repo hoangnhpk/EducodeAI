@@ -1,4 +1,4 @@
-import { MdPeople, MdRateReview, MdSettings } from 'react-icons/md';
+import { MdPeople, MdRateReview, MdSettings,MdDashboard } from 'react-icons/md';
 import { NavLink } from 'react-router-dom';
 
 export default function SidebarQuanTriVienMoi() {
@@ -13,6 +13,11 @@ export default function SidebarQuanTriVienMoi() {
       </div>
 
       <nav className="qtv-sidebar-nav">
+
+         <NavLink to="/quan-tri-vien/thong-ke" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><MdDashboard /></div>
+          <span>Thống kê</span>
+        </NavLink>
         <NavLink to="/quan-tri-vien/nguoi-dung" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><MdPeople /></div>
           <span>Người Dùng</span>
