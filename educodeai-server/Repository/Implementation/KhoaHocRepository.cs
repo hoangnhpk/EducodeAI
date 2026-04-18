@@ -40,6 +40,8 @@ namespace educodeai_server.Repository.Implementation
                         ThoiLuongGio = x.ThoiLuongGio,
                         TrinhDo = x.TrinhDo,
                         KyNangChinh = x.KyNangChinh,
+                        GiaKhoaHoc = x.GiaKhoaHoc,
+                        DonViTienTe = x.DonViTienTe,
                         KhoaHocDaDangKy = maNguoiDung > 0
                               ? _context.DangKyKhoaHocs.Any(dk => dk.MaKhoaHoc == x.MaKhoaHoc && dk.MaNguoiDung == maNguoiDung)
                               : false

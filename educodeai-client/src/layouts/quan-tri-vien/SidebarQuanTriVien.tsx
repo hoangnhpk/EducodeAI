@@ -38,6 +38,11 @@ export default function SidebarQuanTriVien() {
           <span>Cấu hình hệ thống</span>
         </NavLink>
 
+        <NavLink to="/quan-tri-vien/rut-tien-giang-vien" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><i className="bi bi-wallet2"></i></div>
+          <span>Rút tiền giảng viên</span>
+        </NavLink>
+
         {/* <div className="nav-group-label">Mở rộng</div>
         <a href="#" className="qtv-nav-link disabled-link">
           <div className="link-icon"><MdRateReview /></div>
