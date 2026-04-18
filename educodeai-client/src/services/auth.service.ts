@@ -76,6 +76,8 @@ export const authService = {
       await api.post('/api/XacThuc/dang-xuat', { maThietBi });
     } finally {
       localStorage.removeItem('user_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user_info');
     }
   },

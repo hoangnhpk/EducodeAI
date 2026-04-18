@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom"; // THÊM useNavigate
 import axios, { AxiosError } from "axios";
-import Swal from "sweetalert2"; // THÊM Swal để hiện thông báo
 import "../../../layouts/hoc-vien/ChiTietKhoaHoc.css";
 import { encodeId } from '@/utils/id-helper';
 type BaiHoc = {
@@ -24,6 +23,8 @@ type KhoaHoc = {
   maKhoaHoc: number;
   tenKhoaHoc: string;
   moTa?: string;
+  giaKhoaHoc?: number;
+  donViTienTe?: string;
   chuongs?: Chuong[];
   khoaHocDaDangKy?: boolean;
   slug?: string; 
@@ -37,10 +38,6 @@ const ChiTietKhoaHoc = () => {
   const [openChapter, setOpenChapter] = useState<number | null>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // State xử lý lúc đang bấm nút Đăng ký (để hiện loading trên nút)
-  const [isEnrolling, setIsEnrolling] = useState(false); 
-
   useEffect(() => {
     if (!id) return;
 
@@ -80,8 +77,17 @@ const ChiTietKhoaHoc = () => {
     setOpenChapter(openChapter === index ? null : index);
   };
 
+  const dinhDangTien = (soTien?: number, donViTienTe?: string) => {
+    if (!soTien) return "0 VND";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: donViTienTe || "VND",
+      maximumFractionDigits: 0
+    }).format(soTien);
+  };
+
   // ==========================================
-  // HÀM XỬ LÝ ĐĂNG KÝ KHÓA HỌC
+  // HÀM XỬ LÝ CHUYỂN HƯỚNG ĐẾN MUA KHÓA HỌC
   // ==========================================
   const handleDangKy = async () => {
     if (!course) return;
@@ -91,55 +97,7 @@ const ChiTietKhoaHoc = () => {
       navigate(`/khoa-hoc/${course.slug}/${encodeId(course.maKhoaHoc)}`); // Sửa lại đường dẫn cho khớp với Router của bạn
       return;
     }
-
-    const token = localStorage.getItem("user_token"); // Lấy token từ nơi bạn lưu trữ
-    if (!token) {
-      Swal.fire("Cảnh báo", "Bạn cần đăng nhập để đăng ký khóa học này!", "warning").then(() => {
-          // navigate("/login"); // Mở comment dòng này nếu muốn đẩy user ra trang đăng nhập
-      });
-      return;
-    }
-
-    try {
-      setIsEnrolling(true);
-
-      // Gọi API Đăng ký bạn vừa viết ở Backend
-      await axios.post(
-        `https://localhost:7284/api/hocvien/chitietkhoahoc/dang-ky`, // <-- SỬA ĐÚNG ĐƯỜNG DẪN API ĐĂNG KÝ CỦA BẠN
-        { maKhoaHoc: course.maKhoaHoc },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Bắt buộc phải có token
-          },
-        }
-      );
-
-      // Bắn pháo hoa thành công
-      Swal.fire({
-        title: 'Đăng ký thành công!',
-        text: 'Chào mừng bạn đến với khóa học.',
-        icon: 'success',
-        confirmButtonText: 'Vào học ngay',
-        confirmButtonColor: '#f69050'
-      }).then(() => {
-        // Chuyển hướng user sang màn hình học Video
-        navigate(`/khoa-hoc/${course.slug}/${encodeId(course.maKhoaHoc)}`); 
-      });
-
-    } catch (err: any) {
-      // Xử lý lỗi (Ví dụ: Backend báo lỗi 400 "Đã đăng ký rồi")
-      const errorMessage = err.response?.data?.message || "Đã xảy ra lỗi khi đăng ký khóa học.";
-      
-      if (err.response?.status === 400 && errorMessage.includes("đã đăng ký")) {
-        Swal.fire("Thông báo", "Bạn đã đăng ký khóa học này rồi!", "info").then(() => {
-            navigate(`/noi-dung-khoa-hoc/${course.maKhoaHoc}`);
-        });
-      } else {
-        Swal.fire("Thất bại", errorMessage, "error");
-      }
-    } finally {
-      setIsEnrolling(false);
-    }
+    navigate(`/mua-khoa-hoc/${course.maKhoaHoc}`);
   };
 
   if (loading) return <h3 style={{ padding: 40 }}>Đang tải dữ liệu...</h3>;
@@ -222,26 +180,23 @@ const ChiTietKhoaHoc = () => {
           <div className="course-sidebar">
             <div className="sidebar-card">
               <div className="course-price">
-                Miễn phí <span className="free-badge">FREE</span>
+                {dinhDangTien(course.giaKhoaHoc, course.donViTienTe)} <span className="free-badge">VND</span>
               </div>
 
               {/* ===== NÚT BẤM ĐÃ ĐƯỢC NÂNG CẤP ===== */}
               <button 
                 className="enroll-btn" 
                 onClick={handleDangKy}
-                disabled={isEnrolling}
                 style={{ 
                     backgroundColor: course.khoaHocDaDangKy ? '#28a745' : undefined,
-                    opacity: isEnrolling ? 0.7 : 1,
-                    cursor: isEnrolling ? 'not-allowed' : 'pointer'
+                    opacity: 1,
+                    cursor: 'pointer'
                 }}
               >
-                {isEnrolling ? (
-                  <><i className="fas fa-spinner fa-spin me-2"></i> Đang xử lý...</>
-                ) : course.khoaHocDaDangKy ? (
+                {course.khoaHocDaDangKy ? (
                   "Tiếp tục học"
                 ) : (
-                  "Đăng ký ngay"
+                  "Mua khóa học"
                 )}
               </button>
 

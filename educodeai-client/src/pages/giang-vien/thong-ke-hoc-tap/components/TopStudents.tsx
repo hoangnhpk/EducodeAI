@@ -9,7 +9,7 @@ interface Props {
 const TopStudents = ({ students }: Props) => {
   // Sắp xếp theo điểm TB giảm dần và lấy top 5
   const topStudents = [...students]
-    .sort((a, b) => b.diemTrungBinh - a.diemTrungBinh)
+    .sort((a, b) => Number(b.diemTrungBinh ?? 0) - Number(a.diemTrungBinh ?? 0))
     .slice(0, 5);
 
   return (
@@ -23,19 +23,19 @@ const TopStudents = ({ students }: Props) => {
       {/* ===== LIST ===== */}
       <div className="top-students-list">
         {topStudents.map((hocVien, index) => (
-          <div key={hocVien.maHocVien} className="top-student-item">
+          <div key={hocVien.maHocVien ?? `top-${index}`} className="top-student-item">
             <div className="top-rank">{index + 1}</div>
 
             <div className="top-info">
-              <strong>{hocVien.tenHocVien}</strong>
-              <span>{hocVien.email}</span>
+              <strong>{hocVien.tenHocVien?.trim() || "—"}</strong>
+              <span>{hocVien.email?.trim() || "—"}</span>
               <small style={{ color: '#10b981', fontSize: '12px' }}>
-                Hoàn thành: {hocVien.tyLeHoanThanh.toFixed(1)}%
+                Hoàn thành: {Number(hocVien.tyLeHoanThanh ?? 0).toFixed(1)}%
               </small>
             </div>
 
             <div className="top-score">
-              {hocVien.diemTrungBinh.toFixed(1)}/10
+              {Number(hocVien.diemTrungBinh ?? 0).toFixed(1)}/10
             </div>
           </div>
         ))}

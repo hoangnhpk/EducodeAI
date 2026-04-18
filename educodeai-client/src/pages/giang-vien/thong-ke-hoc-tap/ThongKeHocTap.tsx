@@ -141,7 +141,7 @@ export default function ThongKeHocTap() {
       <div className="stat-grid">
         <StatCard
           title="GIỜ HỌC TB / HỌC VIÊN"
-          value={`${overview?.gioHocTrungBinh.toFixed(1) || 0}h`}
+          value={`${Number(overview?.gioHocTrungBinh ?? 0).toFixed(1)}h`}
           subtitle="Trung bình mỗi học viên"
           icon={Clock}
           gradient="icon-purple"
@@ -165,12 +165,12 @@ export default function ThongKeHocTap() {
 
         <StatCard
           title="TỶ LỆ HOÀN THÀNH"
-          value={`${overview?.tyLeHoanThanhTB.toFixed(1) || 0}%`}
+          value={`${Number(overview?.tyLeHoanThanhTB ?? 0).toFixed(1)}%`}
           subtitle={
-            (overview?.tyLeHoanThanhTB || 0) >= 70 
-              ? "✓ Tốt" 
-              : (overview?.tyLeHoanThanhTB || 0) >= 50 
-              ? "⚠ Trung bình" 
+            Number(overview?.tyLeHoanThanhTB ?? 0) >= 70
+              ? "✓ Tốt"
+              : Number(overview?.tyLeHoanThanhTB ?? 0) >= 50
+              ? "⚠ Trung bình"
               : "✗ Cần cải thiện"
           }
           icon={CheckCircle}

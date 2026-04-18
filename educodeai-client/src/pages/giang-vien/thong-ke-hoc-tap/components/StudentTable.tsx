@@ -47,20 +47,19 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
 
   /* ===== AVATAR ===== */
   const getAvatar = (hocVien: HocVien) => {
+    const ten = (hocVien.tenHocVien ?? "").trim();
+    const chuCaiDau = ten ? ten.charAt(0).toUpperCase() : "?";
+
     if (hocVien.anhDaiDien) {
       return (
-        <img 
-          src={hocVien.anhDaiDien} 
-          alt={hocVien.tenHocVien}
+        <img
+          src={hocVien.anhDaiDien}
+          alt={ten || "Học viên"}
           className="student-avatar-img"
         />
       );
     }
-    return (
-      <div className="student-avatar">
-        {hocVien.tenHocVien.charAt(0).toUpperCase()}
-      </div>
-    );
+    return <div className="student-avatar">{chuCaiDau}</div>;
   };
 
   return (
@@ -80,23 +79,23 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
         </thead>
 
         <tbody>
-          {students.map((hocVien) => (
-            <tr key={hocVien.maHocVien}>
+          {students.map((hocVien, rowIndex) => (
+            <tr key={hocVien.maHocVien ?? `student-${rowIndex}`}>
               {/* ===== NAME ===== */}
               <td>
                 <div className="student-info">
                   {getAvatar(hocVien)}
-                  <strong>{hocVien.tenHocVien}</strong>
+                  <strong>{hocVien.tenHocVien?.trim() || "—"}</strong>
                 </div>
               </td>
 
               {/* ===== EMAIL ===== */}
-              <td>{hocVien.email}</td>
+              <td>{hocVien.email?.trim() || "—"}</td>
 
               {/* ===== COURSES ===== */}
               <td>
                 <span className="course-badge">
-                  {hocVien.soKhoaHocThamGia} khóa
+                  {Number(hocVien.soKhoaHocThamGia ?? 0)} khóa
                 </span>
               </td>
 
@@ -106,29 +105,29 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
                   <div className="progress-bar">
                     <div
                       className={`progress-fill ${getProgressClass(
-                        hocVien.tyLeHoanThanh
+                        Number(hocVien.tyLeHoanThanh ?? 0)
                       )}`}
-                      style={{ width: `${hocVien.tyLeHoanThanh}%` }}
+                      style={{ width: `${Number(hocVien.tyLeHoanThanh ?? 0)}%` }}
                     />
                   </div>
-                  <strong>{hocVien.tyLeHoanThanh.toFixed(1)}%</strong>
+                  <strong>{Number(hocVien.tyLeHoanThanh ?? 0).toFixed(1)}%</strong>
                 </div>
               </td>
 
               {/* ===== ASSIGNMENTS ===== */}
               <td>
                 <span className="assignment-badge">
-                  {hocVien.soBaiTapHoanThanh}/{hocVien.tongBaiTap}
+                  {Number(hocVien.soBaiTapHoanThanh ?? 0)}/{Number(hocVien.tongBaiTap ?? 0)}
                 </span>
               </td>
 
               {/* ===== AVG SCORE ===== */}
               <td className="avg-score">
-                {hocVien.diemTrungBinh.toFixed(1)}
+                {Number(hocVien.diemTrungBinh ?? 0).toFixed(1)}
               </td>
 
               {/* ===== STATUS ===== */}
-              <td>{getStatusBadge(hocVien.trangThai)}</td>
+              <td>{getStatusBadge(hocVien.trangThai ?? "")}</td>
 
               {/* ===== ACTION ===== */}
               <td>

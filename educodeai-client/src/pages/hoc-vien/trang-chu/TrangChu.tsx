@@ -15,6 +15,8 @@ interface IKhoaHoc {
     trinhDo: string;
     kyNangChinh: string;
     khoaHocDaDangKy: boolean;
+    giaKhoaHoc: number;
+    donViTienTe: string;
 }
 
 const TrangChu: React.FC = () => {
@@ -155,10 +157,10 @@ const TrangChu: React.FC = () => {
                                                     </Link>
                                                 ) : (
                                                     <Link
-                                                        to={`/khoa-hoc/${kh.maKhoaHoc}`}
+                                                        to={`/mua-khoa-hoc/${kh.maKhoaHoc}`}
                                                         className="btn btn-sm btn-primary px-3 rounded-pill"
                                                     >
-                                                        Chi tiết
+                                                        Mua khóa học
                                                     </Link>
                                                 )}
                                             </div>

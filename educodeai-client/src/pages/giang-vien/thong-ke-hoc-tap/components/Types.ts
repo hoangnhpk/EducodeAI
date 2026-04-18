@@ -8,10 +8,10 @@ export interface PagedResult<T> {
 // ================== OVERVIEW ==================
 
 export interface ThongKeOverview {
-  gioHocTrungBinh: number;
-  soKhoaHocDangDay: number;
-  tongBaiTap: number;
-  tyLeHoanThanhTB: number;
+  gioHocTrungBinh?: number | null;
+  soKhoaHocDangDay?: number | null;
+  tongBaiTap?: number | null;
+  tyLeHoanThanhTB?: number | null;
 }
 
 // ================== TRẠNG THÁI HỌC VIÊN ==================
@@ -32,14 +32,15 @@ export interface TienDoTheoThoiGian {
 
 export interface HocVien {
   maHocVien: number;
-  tenHocVien: string;
-  email: string;
+  /** API có thể trả null nếu hồ sơ chưa đủ */
+  tenHocVien?: string | null;
+  email?: string | null;
   anhDaiDien?: string;
-  soKhoaHocThamGia: number;
-  soBaiTapHoanThanh: number;
-  tongBaiTap: number;
-  tyLeHoanThanh: number;
-  diemTrungBinh: number;
+  soKhoaHocThamGia?: number | null;
+  soBaiTapHoanThanh?: number | null;
+  tongBaiTap?: number | null;
+  tyLeHoanThanh?: number | null;
+  diemTrungBinh?: number | null;
   trangThai: string; // "Hoàn thành" | "Đang học" | "Nguy cơ bỏ học"
 }
 

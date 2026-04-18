@@ -29,6 +29,7 @@ useEffect(() => {
             // 2. QUÉT SẠCH SÀNH SANH MỌI DẤU VẾT TRONG LOCAL STORAGE CỦA SẾP
             localStorage.removeItem('token');
             localStorage.removeItem('user_token');
+            localStorage.removeItem('refresh_token');
             localStorage.removeItem('user');
             localStorage.removeItem('user_info');
             localStorage.removeItem('login_success');

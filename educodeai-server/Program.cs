@@ -11,6 +11,7 @@ using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
@@ -90,6 +91,9 @@ builder.Services.AddScoped<IXacThucService, XacThucService>();
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
+builder.Services.AddScoped<IThanhToanKhoaHocService, ThanhToanKhoaHocService>();
+builder.Services.AddScoped<IThanhToanEmailService, ThanhToanEmailService>();
+builder.Services.AddScoped<IRutTienGiangVienService, RutTienGiangVienService>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
@@ -138,6 +142,7 @@ builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =
 });
 
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
+builder.Services.Configure<PaymentMailOptions>(builder.Configuration.GetSection("PaymentMail"));
 
 // ==========================================
 // 6. CẤU HÌNH CORS & SWAGGER

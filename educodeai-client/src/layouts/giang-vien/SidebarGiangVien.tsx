@@ -25,6 +25,9 @@ export default function SidebarGiangVien() {
         <a href="/giang-vien/tao-lo-trinh-AI" className="gv-nav-link">
           <MdEditNote /> Quản Lý Lộ Trình AI
         </a>
+        <a href="/giang-vien/rut-tien" className="gv-nav-link">
+          <MdEditNote /> Rút Tiền
+        </a>
         {/* <a href="/giang-vien/thong-ke" className="gv-nav-link">
           <MdInsertChart /> Thống Kê
         </a> */}
