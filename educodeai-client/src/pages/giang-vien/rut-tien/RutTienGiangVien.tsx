@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { hienThiTrangThaiYeuCauRutTien } from "@/utils/rut-tien-trang-thai";
 import Swal from "sweetalert2";
 import { DANH_MUC_NGAN_HANG_MAC_DINH } from "@/constants/danh-muc-ngan-hang-mac-dinh";
 import { RutTienGiangVienService } from "@/services/rut-tien-giang-vien.service";
 import type { NganHangItemDTO, ThongTinViGiangVienDTO, YeuCauRutTienChiTietDTO } from "@/services/rut-tien-giang-vien.service";
+import { buildVietQrKiemTraTaiKhoanUrl } from "@/utils/vietqr-rut-tien";
 
 function formatVndHienThi(n: number | undefined | null): string {
   if (n === undefined || n === null) return "—";
@@ -66,6 +67,31 @@ export default function RutTienGiangVien() {
   const daCoTaiKhoanNhanTien = Boolean(
     thongTinVi?.maNganHangNhanTien && thongTinVi?.soTaiKhoanNhanTien && thongTinVi?.tenTaiKhoanNhanTien
   );
+
+  /** QR VietQR từ TK đã lưu hoặc từ form nháp — để quét bằng app NH kiểm tra STK. */
+  const duongDanQrKiemTraTaiKhoan = useMemo(() => {
+    if (daCoTaiKhoanNhanTien && thongTinVi?.maNganHangNhanTien && thongTinVi.soTaiKhoanNhanTien && thongTinVi.tenTaiKhoanNhanTien) {
+      return buildVietQrKiemTraTaiKhoanUrl(
+        thongTinVi.maNganHangNhanTien,
+        thongTinVi.soTaiKhoanNhanTien,
+        thongTinVi.tenTaiKhoanNhanTien
+      );
+    }
+    const maVqr = danhMucNganHang.find((x) => x.ma === maNganHang)?.maVietQr;
+    if (!maVqr) {
+      return null;
+    }
+    return buildVietQrKiemTraTaiKhoanUrl(maVqr, soTaiKhoanNhanTien, tenTaiKhoanNhanTien);
+  }, [
+    daCoTaiKhoanNhanTien,
+    thongTinVi?.maNganHangNhanTien,
+    thongTinVi?.soTaiKhoanNhanTien,
+    thongTinVi?.tenTaiKhoanNhanTien,
+    danhMucNganHang,
+    maNganHang,
+    soTaiKhoanNhanTien,
+    tenTaiKhoanNhanTien
+  ]);
 
   const taiDuLieu = async () => {
     setDangTai(true);
@@ -288,6 +314,48 @@ export default function RutTienGiangVien() {
             <button className="btn btn-danger" onClick={xoaTaiKhoanNhanTien}>Xóa tài khoản hiện tại</button>
           )}
         </div>
+
+        {duongDanQrKiemTraTaiKhoan ? (
+          <div className="mt-4 pt-3 border-top">
+            <h4 className="h6 fw-semibold mb-2 d-flex align-items-center gap-2">
+              <i className="bi bi-qr-code-scan text-primary" aria-hidden />
+              Kiểm tra bằng app ngân hàng
+            </h4>
+            <p className="small text-muted mb-3">
+              Dùng điện thoại mở app ngân hàng, chọn quét QR và đối chiếu <strong>số tài khoản</strong> và{" "}
+              <strong>ngân hàng</strong> hiển thị với thông tin bạn đã nhập. Số tiền trên mã kiểm tra là 0 — chỉ để xác
+              nhận thông tin, không phải lệnh chuyển tiền từ EduCodeAI.
+            </p>
+            <div className="d-flex flex-column flex-md-row align-items-start gap-3">
+              <div className="flex-shrink-0">
+                <img
+                  src={duongDanQrKiemTraTaiKhoan}
+                  alt="Mã QR VietQR kiểm tra tài khoản nhận tiền"
+                  className="border rounded bg-white shadow-sm"
+                  style={{ maxWidth: 240, height: "auto" }}
+                />
+                <div className="mt-2">
+                  <a href={duongDanQrKiemTraTaiKhoan} target="_blank" rel="noreferrer" className="small">
+                    Mở ảnh QR trong tab mới
+                  </a>
+                </div>
+              </div>
+              <ul className="small text-secondary mb-0 ps-3" style={{ maxWidth: 420 }}>
+                <li>Nếu app hiển thị khác STK hoặc ngân hàng bạn định nhập — sửa form rồi quét lại.</li>
+                <li>Tên hiển thị trên app có thể do ngân hàng cung cấp; hãy đảm bảo STK và mã ngân hàng khớp.</li>
+                <li className="mb-0">Chỉ bấm &quot;Thêm tài khoản nhận tiền&quot; sau khi đã kiểm tra đúng.</li>
+              </ul>
+            </div>
+          </div>
+        ) : (
+          !daCoTaiKhoanNhanTien && (
+            <p className="small text-muted mt-3 mb-0">
+              <i className="bi bi-info-circle me-1" aria-hidden />
+              Chọn ngân hàng, nhập đủ số tài khoản và tên chủ TK để hiện <strong>mã QR kiểm tra</strong> tại đây.
+            </p>
+          )
+        )}
+
         {daCoTaiKhoanNhanTien && (
           <p style={{ marginTop: 8, color: "#b45309" }}>
             Bạn đã có tài khoản nhận tiền. Muốn đổi tài khoản, vui lòng xóa tài khoản hiện tại trước.

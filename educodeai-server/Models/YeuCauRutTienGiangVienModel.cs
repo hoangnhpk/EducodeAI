@@ -53,6 +53,9 @@ namespace educodeai_server.Models
 
         public DateTime? ChuyenKhoanThanhCongLuc { get; set; }
 
+        /// <summary>Thời điểm đã gửi email thông báo rút tiền thành công (UTC). Dùng để tránh gửi trùng khi webhook/luồng khác lặp lại.</summary>
+        public DateTime? GuiEmailRutTienThanhCongLuc { get; set; }
+
         [StringLength(500)]
         public string? GhiChuAdmin { get; set; }
     }

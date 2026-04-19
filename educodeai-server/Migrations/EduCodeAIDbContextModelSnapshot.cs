@@ -3498,6 +3498,9 @@ namespace educodeai_server.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<DateTime?>("GuiEmailRutTienThanhCongLuc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("LoaiTien")
                         .IsRequired()
                         .HasMaxLength(30)
