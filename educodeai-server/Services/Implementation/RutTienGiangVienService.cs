@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using educodeai_server.Common;
 using educodeai_server.Data;
@@ -144,6 +145,15 @@ namespace educodeai_server.Services.Implementation
             _dbContext.YeuCauRutTienGiangViens.Add(banGhi);
             await _dbContext.SaveChangesAsync();
 
+            banGhi.NoiDungChuyenKhoan = await TaoMaNoiDungChuyenKhoanDocNhatAsync();
+            banGhi.DuongDanAnhQr = TaoDuongDanQrRutTien(
+                banGhi.MaNganHangNhan,
+                banGhi.SoTaiKhoanNhan,
+                banGhi.TenTaiKhoanNhan,
+                banGhi.SoTienYeuCau,
+                banGhi.NoiDungChuyenKhoan);
+            await _dbContext.SaveChangesAsync();
+
             return await MapChiTietYeuCauAsync(banGhi.MaYeuCauRutTien);
         }
 
@@ -177,6 +187,7 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<YeuCauRutTienChiTietDTO> LayChiTietChoQuanTriAsync(int maYeuCauRutTien)
         {
+            await DamBaoNoiDungVaQrNeuThieuAsync(maYeuCauRutTien);
             var dto = await MapChiTietYeuCauAsync(maYeuCauRutTien);
             BoSungQrXemTruocNeuCan(dto);
             return dto;
@@ -211,7 +222,7 @@ namespace educodeai_server.Services.Implementation
 
             if (string.IsNullOrWhiteSpace(banGhi.NoiDungChuyenKhoan))
             {
-                banGhi.NoiDungChuyenKhoan = TaoNoiDungRutTien(banGhi.MaYeuCauRutTien);
+                banGhi.NoiDungChuyenKhoan = await TaoMaNoiDungChuyenKhoanDocNhatAsync();
             }
 
             if (string.IsNullOrWhiteSpace(banGhi.DuongDanAnhQr))
@@ -258,7 +269,11 @@ namespace educodeai_server.Services.Implementation
             banGhi.DuyetLuc = DateTime.UtcNow;
             banGhi.MaQuanTriVienDuyet = maQuanTriVien;
             banGhi.GhiChuAdmin = string.IsNullOrWhiteSpace(yeuCau?.GhiChuAdmin) ? null : yeuCau!.GhiChuAdmin!.Trim();
-            banGhi.NoiDungChuyenKhoan = TaoNoiDungRutTien(banGhi.MaYeuCauRutTien);
+            if (string.IsNullOrWhiteSpace(banGhi.NoiDungChuyenKhoan))
+            {
+                banGhi.NoiDungChuyenKhoan = await TaoMaNoiDungChuyenKhoanDocNhatAsync();
+            }
+
             banGhi.DuongDanAnhQr = TaoDuongDanQrRutTien(
                 banGhi.MaNganHangNhan,
                 banGhi.SoTaiKhoanNhan,
@@ -303,15 +318,7 @@ namespace educodeai_server.Services.Implementation
                 return false;
             }
 
-            var ketQuaTimMa = Regex.Match(duLieuWebhook.content?.ToUpperInvariant() ?? string.Empty, @"RUT(\d+)");
-            if (!ketQuaTimMa.Success || !int.TryParse(ketQuaTimMa.Groups[1].Value, out var maYeuCauRutTien))
-            {
-                return false;
-            }
-
-            var banGhi = await _dbContext.YeuCauRutTienGiangViens
-                .FirstOrDefaultAsync(x => x.MaYeuCauRutTien == maYeuCauRutTien);
-
+            var banGhi = await TimYeuCauRutTienTuNoiDungWebhookAsync(duLieuWebhook.content);
             if (banGhi == null)
             {
                 return false;
@@ -322,7 +329,11 @@ namespace educodeai_server.Services.Implementation
                 return true;
             }
 
-            if (!string.Equals(banGhi.TrangThaiYeuCau, "CHO_CHUYEN_KHOAN", StringComparison.OrdinalIgnoreCase))
+            bool dangChoXuLyHoacChoCk =
+                string.Equals(banGhi.TrangThaiYeuCau, "CHO_CHUYEN_KHOAN", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(banGhi.TrangThaiYeuCau, "CHO_DUYET", StringComparison.OrdinalIgnoreCase);
+
+            if (!dangChoXuLyHoacChoCk)
             {
                 return false;
             }
@@ -332,10 +343,21 @@ namespace educodeai_server.Services.Implementation
                 return false;
             }
 
+            var luc = DateTime.UtcNow;
+
+            if (string.Equals(banGhi.TrangThaiYeuCau, "CHO_DUYET", StringComparison.OrdinalIgnoreCase))
+            {
+                banGhi.DuyetLuc = luc;
+                if (string.IsNullOrWhiteSpace(banGhi.NoiDungChuyenKhoan))
+                {
+                    banGhi.NoiDungChuyenKhoan = await TaoMaNoiDungChuyenKhoanDocNhatAsync();
+                }
+            }
+
             banGhi.TrangThaiYeuCau = "DA_CHUYEN_KHOAN";
             banGhi.SoTienDaChuyen = duLieuWebhook.transferAmount;
             banGhi.MaGiaoDichSePay = duLieuWebhook.id;
-            banGhi.ChuyenKhoanThanhCongLuc = DateTime.UtcNow;
+            banGhi.ChuyenKhoanThanhCongLuc = luc;
             await _dbContext.SaveChangesAsync();
             return true;
         }
@@ -363,9 +385,117 @@ namespace educodeai_server.Services.Implementation
             return (tongDoanhThuDaGhiNhan, tongDangChoXuLyRut, tongDaChuyenKhoan);
         }
 
-        private static string TaoNoiDungRutTien(int maYeuCauRutTien)
+        /// <summary>Bản ghi tạo trước khi có mã ngẫu nhiên (hoặc lỗi lưu) — bổ sung khi admin mở chi tiết.</summary>
+        private async Task DamBaoNoiDungVaQrNeuThieuAsync(int maYeuCauRutTien)
         {
-            return $"RUT{maYeuCauRutTien}";
+            var e = await _dbContext.YeuCauRutTienGiangViens
+                .FirstOrDefaultAsync(x => x.MaYeuCauRutTien == maYeuCauRutTien);
+            if (e == null)
+            {
+                return;
+            }
+
+            bool trangThaiChoPhepMa =
+                string.Equals(e.TrangThaiYeuCau, "CHO_DUYET", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(e.TrangThaiYeuCau, "CHO_CHUYEN_KHOAN", StringComparison.OrdinalIgnoreCase);
+
+            if (!trangThaiChoPhepMa)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(e.MaNganHangNhan) ||
+                string.IsNullOrWhiteSpace(e.SoTaiKhoanNhan) ||
+                string.IsNullOrWhiteSpace(e.TenTaiKhoanNhan))
+            {
+                return;
+            }
+
+            bool doi = false;
+            if (string.IsNullOrWhiteSpace(e.NoiDungChuyenKhoan))
+            {
+                e.NoiDungChuyenKhoan = await TaoMaNoiDungChuyenKhoanDocNhatAsync();
+                doi = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(e.DuongDanAnhQr) && !string.IsNullOrWhiteSpace(e.NoiDungChuyenKhoan))
+            {
+                e.DuongDanAnhQr = TaoDuongDanQrRutTien(
+                    e.MaNganHangNhan,
+                    e.SoTaiKhoanNhan,
+                    e.TenTaiKhoanNhan,
+                    e.SoTienYeuCau,
+                    e.NoiDungChuyenKhoan);
+                doi = true;
+            }
+
+            if (doi)
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>Mã nội dung CK không đoán trước được (đủ dài, duy nhất trong DB). Prefix EDUR phân biệt với mã thanh toán khóa học EDU…</summary>
+        private async Task<string> TaoMaNoiDungChuyenKhoanDocNhatAsync()
+        {
+            const int soByteNgauNhien = 12;
+            for (int lan = 0; lan < 10; lan++)
+            {
+                var bytes = new byte[soByteNgauNhien];
+                RandomNumberGenerator.Fill(bytes);
+                string token = "EDUR" + Convert.ToHexString(bytes);
+
+                bool trung = await _dbContext.YeuCauRutTienGiangViens
+                    .AnyAsync(x => x.NoiDungChuyenKhoan == token);
+                if (!trung)
+                {
+                    return token;
+                }
+            }
+
+            throw new ApplicationException("Không tạo được mã nội dung chuyển khoản duy nhất.");
+        }
+
+        /// <summary>Nhận diện yêu cầu từ nội dung SePay: mã ngẫu nhiên (khớp chính xác hoặc chuỗi con), hoặc định dạng cũ RUT{ma}.</summary>
+        private async Task<YeuCauRutTienGiangVienModel?> TimYeuCauRutTienTuNoiDungWebhookAsync(string? content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return null;
+            }
+
+            string raw = content.Trim();
+            string rawUpper = raw.ToUpperInvariant();
+
+            var legacy = Regex.Match(rawUpper, @"RUT(\d+)");
+            if (legacy.Success && int.TryParse(legacy.Groups[1].Value, out int maCu))
+            {
+                return await _dbContext.YeuCauRutTienGiangViens
+                    .FirstOrDefaultAsync(x => x.MaYeuCauRutTien == maCu);
+            }
+
+            var choXuLy = await _dbContext.YeuCauRutTienGiangViens
+                .Where(x => x.NoiDungChuyenKhoan != null &&
+                            (x.TrangThaiYeuCau == "CHO_DUYET" || x.TrangThaiYeuCau == "CHO_CHUYEN_KHOAN"))
+                .ToListAsync();
+
+            var khopChinhXac = choXuLy.FirstOrDefault(x =>
+                string.Equals(x.NoiDungChuyenKhoan!.Trim(), raw, StringComparison.OrdinalIgnoreCase));
+            if (khopChinhXac != null)
+            {
+                return khopChinhXac;
+            }
+
+            foreach (var hang in choXuLy.OrderByDescending(h => h.NoiDungChuyenKhoan!.Length))
+            {
+                string nd = hang.NoiDungChuyenKhoan!.Trim();
+                if (nd.Length >= 8 && rawUpper.Contains(nd.ToUpperInvariant(), StringComparison.Ordinal))
+                {
+                    return hang;
+                }
+            }
+
+            return null;
         }
 
         private static void BoSungQrXemTruocNeuCan(YeuCauRutTienChiTietDTO dto)
@@ -380,9 +510,12 @@ namespace educodeai_server.Services.Implementation
                 return;
             }
 
-            string nd = string.IsNullOrWhiteSpace(dto.NoiDungChuyenKhoan)
-                ? TaoNoiDungRutTien(dto.MaYeuCauRutTien)
-                : dto.NoiDungChuyenKhoan!;
+            if (string.IsNullOrWhiteSpace(dto.NoiDungChuyenKhoan))
+            {
+                return;
+            }
+
+            string nd = dto.NoiDungChuyenKhoan.Trim();
 
             dto.DuongDanAnhQr = TaoDuongDanQrRutTien(
                 dto.MaNganHangNhan,
@@ -390,11 +523,6 @@ namespace educodeai_server.Services.Implementation
                 dto.TenTaiKhoanNhan,
                 dto.SoTienYeuCau,
                 nd);
-
-            if (string.IsNullOrWhiteSpace(dto.NoiDungChuyenKhoan))
-            {
-                dto.NoiDungChuyenKhoan = nd;
-            }
         }
 
         private static bool LaTrangThaiCoTheHienQr(string? trangThai)
@@ -410,7 +538,7 @@ namespace educodeai_server.Services.Implementation
             decimal soTien,
             string noiDungChuyenKhoan)
         {
-            return $"https://img.vietqr.io/image/{maNganHangNhan}-{soTaiKhoanNhan}-compact2.png?amount={soTien:0}&addInfo={noiDungChuyenKhoan}&accountName={Uri.EscapeDataString(tenTaiKhoanNhan)}";
+            return $"https://img.vietqr.io/image/{maNganHangNhan}-{soTaiKhoanNhan}-compact2.png?amount={soTien:0}&addInfo={Uri.EscapeDataString(noiDungChuyenKhoan)}&accountName={Uri.EscapeDataString(tenTaiKhoanNhan)}";
         }
 
         private async Task<YeuCauRutTienChiTietDTO> MapChiTietYeuCauAsync(int maYeuCauRutTien)

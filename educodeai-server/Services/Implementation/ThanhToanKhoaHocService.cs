@@ -454,9 +454,9 @@ namespace educodeai_server.Services.Implementation
 
         private string TaoDuongDanAnhQr(decimal soTien, string noiDungChuyenKhoan)
         {
-            string maNganHang = _cauHinh["ThanhToanSePay:MaNganHang"] ?? "BIDV";
-            string soTaiKhoan = _cauHinh["ThanhToanSePay:SoTaiKhoan"] ?? "962470Y7UF";
-            string tenTaiKhoan = _cauHinh["ThanhToanSePay:TenTaiKhoan"] ?? "NGUYEN HUY HOANG";
+            string maNganHang = _cauHinh["ThanhToanSePay:MaNganHang"] ?? "MB";
+            string soTaiKhoan = _cauHinh["ThanhToanSePay:SoTaiKhoan"] ?? "68836102061995";
+            string tenTaiKhoan = _cauHinh["ThanhToanSePay:TenTaiKhoan"] ?? "HOANG";
 
             return $"https://img.vietqr.io/image/{maNganHang}-{soTaiKhoan}-compact2.png?amount={soTien:0}&addInfo={noiDungChuyenKhoan}&accountName={Uri.EscapeDataString(tenTaiKhoan)}";
         }

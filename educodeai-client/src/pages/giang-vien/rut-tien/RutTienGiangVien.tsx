@@ -5,6 +5,39 @@ import { DANH_MUC_NGAN_HANG_MAC_DINH } from "@/constants/danh-muc-ngan-hang-mac-
 import { RutTienGiangVienService } from "@/services/rut-tien-giang-vien.service";
 import type { NganHangItemDTO, ThongTinViGiangVienDTO, YeuCauRutTienChiTietDTO } from "@/services/rut-tien-giang-vien.service";
 
+function formatVndHienThi(n: number | undefined | null): string {
+  if (n === undefined || n === null) return "—";
+  return `${Number(n).toLocaleString("vi-VN")} VND`;
+}
+
+function TheViThongKeCard({
+  label,
+  value,
+  iconClassBi,
+  accentClass
+}: {
+  label: string;
+  value: string;
+  iconClassBi: string;
+  accentClass: string;
+}) {
+  return (
+    <div className="card h-100 border-0 shadow-sm">
+      <div className="card-body p-3 p-md-4 d-flex flex-column">
+        <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
+          <span className="text-muted small fw-medium" style={{ maxWidth: "72%" }}>
+            {label}
+          </span>
+          <span className={`rounded-3 p-2 d-inline-flex align-items-center justify-content-center flex-shrink-0 ${accentClass}`}>
+            <i className={`bi ${iconClassBi} fs-5`} aria-hidden />
+          </span>
+        </div>
+        <div className="fs-5 fw-bold text-dark lh-sm mt-auto text-break">{value}</div>
+      </div>
+    </div>
+  );
+}
+
 function laLoiKhongKetNoiApi(error: unknown): boolean {
   if (error && typeof error === "object" && "response" in error) {
     return (error as { response?: unknown }).response === undefined;
@@ -147,14 +180,22 @@ export default function RutTienGiangVien() {
   };
 
   if (dangTai) {
-    return <div>Đang tải dữ liệu ví giảng viên...</div>;
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center py-5 gap-3 text-muted">
+        <div className="spinner-border text-primary" role="status" aria-label="Đang tải" />
+        <span>Đang tải dữ liệu ví giảng viên…</span>
+      </div>
+    );
   }
 
   const apiBase = import.meta.env.VITE_API_URL ?? "";
 
   return (
-    <div>
-      <h2>Ví giảng viên</h2>
+    <div className="gv-rut-tien-page">
+      <div className="mb-4">
+        <h2 className="h3 fw-bold text-dark mb-1">Ví giảng viên</h2>
+        <p className="text-muted small mb-0">Tổng quan doanh thu và các khoản rút — số dư khả dụng là phần bạn có thể yêu cầu rút.</p>
+      </div>
 
       {canhBaoKhongKetNoiApi && (
         <div className="alert alert-danger" role="alert" style={{ marginBottom: 16 }}>
@@ -167,15 +208,61 @@ export default function RutTienGiangVien() {
         </div>
       )}
 
-      <div className="dashboard-card" style={{ marginBottom: 16, padding: 16 }}>
-        <p><b>Tổng doanh thu ghi nhận:</b> {thongTinVi?.tongDoanhThuDaGhiNhan?.toLocaleString("vi-VN")} VND</p>
-        <p><b>Tổng đang chờ xử lý rút:</b> {thongTinVi?.tongDangChoXuLyRut?.toLocaleString("vi-VN")} VND</p>
-        <p><b>Tổng đã chuyển khoản:</b> {thongTinVi?.tongDaChuyenKhoan?.toLocaleString("vi-VN")} VND</p>
-        <p><b>Số dư khả dụng:</b> {thongTinVi?.soDuKhaDung?.toLocaleString("vi-VN")} VND</p>
-      </div>
+      <section className="mb-4" aria-label="Tổng quan ví">
+        <div className="row g-3 g-lg-4">
+          <div className="col-12 col-md-6 col-xl-3">
+            <TheViThongKeCard
+              label="Tổng doanh thu ghi nhận"
+              value={formatVndHienThi(thongTinVi?.tongDoanhThuDaGhiNhan)}
+              iconClassBi="bi-graph-up-arrow"
+              accentClass="bg-primary-subtle text-primary"
+            />
+          </div>
+          <div className="col-12 col-md-6 col-xl-3">
+            <TheViThongKeCard
+              label="Đang chờ xử lý rút"
+              value={formatVndHienThi(thongTinVi?.tongDangChoXuLyRut)}
+              iconClassBi="bi-hourglass-split"
+              accentClass="bg-warning-subtle text-warning"
+            />
+          </div>
+          <div className="col-12 col-md-6 col-xl-3">
+            <TheViThongKeCard
+              label="Đã chuyển khoản"
+              value={formatVndHienThi(thongTinVi?.tongDaChuyenKhoan)}
+              iconClassBi="bi-check2-circle"
+              accentClass="bg-success-subtle text-success"
+            />
+          </div>
+          <div className="col-12 col-md-6 col-xl-3">
+            <div
+              className="card h-100 border-primary border-2 shadow-sm overflow-hidden"
+              style={{
+                background: "linear-gradient(145deg, #f8fafc 0%, #eff6ff 48%, #e0f2fe 100%)"
+              }}
+            >
+              <div className="card-body p-3 p-md-4 d-flex flex-column">
+                <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
+                  <span className="text-primary fw-semibold small" style={{ maxWidth: "72%" }}>
+                    Số dư khả dụng
+                  </span>
+                  <span className="rounded-3 p-2 d-inline-flex bg-primary text-white flex-shrink-0">
+                    <i className="bi bi-wallet2 fs-5" aria-hidden />
+                  </span>
+                </div>
+                <div className="fs-4 fw-bold text-primary lh-sm text-break">
+                  {formatVndHienThi(thongTinVi?.soDuKhaDung)}
+                </div>
+                <p className="small text-muted mb-0 mt-2">Có thể dùng để gửi yêu cầu rút bên dưới.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <div className="dashboard-card" style={{ marginBottom: 16, padding: 16 }}>
-        <h3>Tài khoản nhận tiền (mỗi giảng viên chỉ 1 tài khoản)</h3>
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-body p-3 p-md-4">
+        <h3 className="h5 fw-bold mb-2">Tài khoản nhận tiền (mỗi giảng viên chỉ 1 tài khoản)</h3>
         <p style={{ fontSize: 13, color: "#555" }}>
           Vui lòng nhập đúng ngân hàng, số tài khoản và tên chủ tài khoản để admin chuyển khoản. Hệ thống không tra cứu
           STK qua bên thứ ba.
@@ -206,10 +293,12 @@ export default function RutTienGiangVien() {
             Bạn đã có tài khoản nhận tiền. Muốn đổi tài khoản, vui lòng xóa tài khoản hiện tại trước.
           </p>
         )}
+        </div>
       </div>
 
-      <div className="dashboard-card" style={{ marginBottom: 16, padding: 16 }}>
-        <h3>Tạo yêu cầu rút tiền</h3>
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-body p-3 p-md-4">
+        <h3 className="h5 fw-bold mb-3">Tạo yêu cầu rút tiền</h3>
         <div style={{ display: "flex", gap: 8, maxWidth: 420 }}>
           <input
             value={soTienYeuCau}
@@ -221,15 +310,18 @@ export default function RutTienGiangVien() {
           />
           <button className="btn btn-success" onClick={guiYeuCauRutTien}>Gửi yêu cầu</button>
         </div>
+        </div>
       </div>
 
-      <div className="dashboard-card" style={{ padding: 16 }}>
-        <h3>Lịch sử yêu cầu rút</h3>
+      <div className="card border-0 shadow-sm">
+        <div className="card-body p-3 p-md-4">
+        <h3 className="h5 fw-bold mb-3">Lịch sử yêu cầu rút</h3>
         {lichSuRutTien.length === 0 ? (
           <p>Chưa có yêu cầu rút tiền nào.</p>
         ) : (
-          <table className="table table-striped">
-            <thead>
+          <div className="table-responsive">
+          <table className="table table-striped table-hover align-middle mb-0">
+            <thead className="table-light">
               <tr>
                 <th>Mã YC</th>
                 <th>Số tiền</th>
@@ -250,7 +342,9 @@ export default function RutTienGiangVien() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
+        </div>
       </div>
     </div>
   );

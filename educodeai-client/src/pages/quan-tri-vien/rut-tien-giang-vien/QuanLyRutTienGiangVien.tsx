@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { RutTienGiangVienService } from "@/services/rut-tien-giang-vien.service";
 import type { YeuCauRutTienChiTietDTO } from "@/services/rut-tien-giang-vien.service";
@@ -12,26 +12,118 @@ export default function QuanLyRutTienGiangVien() {
 
   const [moChiTiet, setMoChiTiet] = useState(false);
   const [chiTiet, setChiTiet] = useState<YeuCauRutTienChiTietDTO | null>(null);
+  const boDemModalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const boDemBangRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const taiDanhSach = async (trangThai?: string) => {
+  const taiDanhSach = async (trangThai?: string, imLang = false) => {
     try {
-      setDangTai(true);
+      if (!imLang) setDangTai(true);
       const duLieu = await RutTienGiangVienService.layDanhSachAdmin(trangThai || undefined);
       setDanhSach(duLieu);
     } catch (error: unknown) {
-      const msg =
-        error && typeof error === "object" && "response" in error
-          ? (error as { response?: { data?: { thongBao?: string } } }).response?.data?.thongBao
-          : undefined;
-      Swal.fire("Lỗi", msg ?? "Không tải được danh sách rút tiền.", "error");
+      if (!imLang) {
+        const msg =
+          error && typeof error === "object" && "response" in error
+            ? (error as { response?: { data?: { thongBao?: string } } }).response?.data?.thongBao
+            : undefined;
+        Swal.fire("Lỗi", msg ?? "Không tải được danh sách rút tiền.", "error");
+      }
     } finally {
-      setDangTai(false);
+      if (!imLang) setDangTai(false);
     }
   };
 
   useEffect(() => {
-    taiDanhSach();
+    void taiDanhSach();
   }, []);
+
+  /** Khi còn yêu cầu chờ xử lý: làm mới bảng định kỳ (admin không cần F5 sau webhook SePay). */
+  const coYeuCauDangCho = danhSach.some(
+    (x) => x.trangThaiYeuCau === "CHO_DUYET" || x.trangThaiYeuCau === "CHO_CHUYEN_KHOAN"
+  );
+  useEffect(() => {
+    if (!coYeuCauDangCho) {
+      if (boDemBangRef.current) {
+        clearInterval(boDemBangRef.current);
+        boDemBangRef.current = null;
+      }
+      return;
+    }
+    boDemBangRef.current = setInterval(() => {
+      void taiDanhSach(trangThaiLoc, true);
+    }, 5000);
+    return () => {
+      if (boDemBangRef.current) {
+        clearInterval(boDemBangRef.current);
+        boDemBangRef.current = null;
+      }
+    };
+  }, [coYeuCauDangCho, trangThaiLoc]);
+
+  /**
+   * Giống trang mua khóa học: khi modal chi tiết mở, poll API để bắt SePay webhook đã cập nhật DB → Swal + đồng bộ UI.
+   */
+  useEffect(() => {
+    if (boDemModalRef.current) {
+      clearInterval(boDemModalRef.current);
+      boDemModalRef.current = null;
+    }
+    if (!moChiTiet || !chiTiet) return;
+    if (chiTiet.trangThaiYeuCau === "DA_CHUYEN_KHOAN" || chiTiet.trangThaiYeuCau === "TU_CHOI") {
+      return;
+    }
+
+    const ma = chiTiet.maYeuCauRutTien;
+    let trangThaiTruoc = chiTiet.trangThaiYeuCau;
+
+    boDemModalRef.current = setInterval(async () => {
+      try {
+        const moi = await RutTienGiangVienService.layChiTietAdmin(ma);
+        const enriched = enrichYeuCauRutTienVoiQrPreview(moi);
+        setChiTiet(enriched);
+
+        const daChuyen =
+          (trangThaiTruoc === "CHO_DUYET" || trangThaiTruoc === "CHO_CHUYEN_KHOAN") &&
+          moi.trangThaiYeuCau === "DA_CHUYEN_KHOAN";
+        if (daChuyen) {
+          trangThaiTruoc = "DA_CHUYEN_KHOAN";
+          if (boDemModalRef.current) {
+            clearInterval(boDemModalRef.current);
+            boDemModalRef.current = null;
+          }
+          await Swal.fire(
+            "Thành công",
+            "Hệ thống đã nhận xác nhận từ SePay (chuyển khoản tiền ra). Yêu cầu đã hoàn tất.",
+            "success"
+          );
+          void taiDanhSach(trangThaiLoc, true);
+          return;
+        }
+
+        if (trangThaiTruoc !== "TU_CHOI" && moi.trangThaiYeuCau === "TU_CHOI") {
+          trangThaiTruoc = "TU_CHOI";
+          if (boDemModalRef.current) {
+            clearInterval(boDemModalRef.current);
+            boDemModalRef.current = null;
+          }
+          await Swal.fire("Thông báo", "Yêu cầu đã được cập nhật trạng thái từ chối.", "info");
+          void taiDanhSach(trangThaiLoc, true);
+          return;
+        }
+
+        trangThaiTruoc = moi.trangThaiYeuCau;
+      } catch {
+        // im lặng khi poll
+      }
+    }, 3000);
+
+    return () => {
+      if (boDemModalRef.current) {
+        clearInterval(boDemModalRef.current);
+        boDemModalRef.current = null;
+      }
+    };
+  }, [moChiTiet, chiTiet?.maYeuCauRutTien, chiTiet?.trangThaiYeuCau, trangThaiLoc]);
 
   const moModalChiTiet = (maYeuCauRutTien: number) => {
     const row = danhSach.find((x) => x.maYeuCauRutTien === maYeuCauRutTien);
@@ -112,10 +204,7 @@ export default function QuanLyRutTienGiangVien() {
   return (
     <div>
       <h2>Quản lý rút tiền giảng viên</h2>
-      <p style={{ color: "#64748b", marginBottom: 16 }}>
-        Yêu cầu mới từ giảng viên hiển thị ở đây. Mở chi tiết để xem QR VietQR (theo STK giảng viên cung cấp), sau đó chọn{" "}
-        <strong>Đã thanh toán</strong> hoặc <strong>Từ chối thanh toán</strong>.
-      </p>
+
 
       <div style={{ marginBottom: 12, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <select
@@ -216,7 +305,10 @@ export default function QuanLyRutTienGiangVien() {
                           <strong>Tên chủ TK:</strong> {chiTiet.tenTaiKhoanNhan}
                         </p>
                         <p>
-                          <strong>Nội dung CK gợi ý:</strong> {chiTiet.noiDungChuyenKhoan ?? "—"}
+                          <strong>Nội dung CK (bắt buộc khớp SePay):</strong> {chiTiet.noiDungChuyenKhoan ?? "—"}
+                        </p>
+                        <p className="small text-muted mb-0">
+                          Ghi đúng mã nội dung này khi chuyển từ TK MB trên SePay (mã ngẫu nhiên gắn với yêu cầu, không đoán trước được).
                         </p>
                       </div>
                     </div>
@@ -236,7 +328,11 @@ export default function QuanLyRutTienGiangVien() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-muted">Không tạo được URL QR (thiếu dữ liệu ngân hàng).</p>
+                      <p className="text-muted">
+                        {!chiTiet.maNganHangNhan?.trim() || !chiTiet.soTaiKhoanNhan?.trim()
+                          ? "Không tạo được URL QR: thiếu mã VietQR hoặc số tài khoản nhận trên yêu cầu."
+                          : "Không tạo được ảnh QR. Hãy đóng và mở lại chi tiết, hoặc tải lại trang."}
+                      </p>
                     )}
 
                     {chiTiet.ghiChuAdmin && (
