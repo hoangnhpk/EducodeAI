@@ -14,10 +14,17 @@ namespace educodeai_server.Services.Implementation
     public class RutTienGiangVienService : IRutTienGiangVienService
     {
         private readonly EduCodeAIDbContext _dbContext;
+        private readonly IRutTienGiangVienEmailService _rutTienEmail;
+        private readonly ILogger<RutTienGiangVienService> _logger;
 
-        public RutTienGiangVienService(EduCodeAIDbContext dbContext)
+        public RutTienGiangVienService(
+            EduCodeAIDbContext dbContext,
+            IRutTienGiangVienEmailService rutTienEmail,
+            ILogger<RutTienGiangVienService> logger)
         {
             _dbContext = dbContext;
+            _rutTienEmail = rutTienEmail;
+            _logger = logger;
         }
 
         public Task<IReadOnlyList<NganHangItemDTO>> LayDanhMucNganHangAsync()
@@ -246,6 +253,16 @@ namespace educodeai_server.Services.Implementation
             }
 
             await _dbContext.SaveChangesAsync();
+
+            try
+            {
+                await _rutTienEmail.GuiEmailKhiRutTienDaChuyenKhoanAsync(maYeuCauRutTien);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Không gửi được email rút tiền thành công cho yêu cầu {MaYeuCauRutTien}", maYeuCauRutTien);
+            }
+
             return await MapChiTietYeuCauAsync(maYeuCauRutTien);
         }
 
@@ -359,6 +376,16 @@ namespace educodeai_server.Services.Implementation
             banGhi.MaGiaoDichSePay = duLieuWebhook.id;
             banGhi.ChuyenKhoanThanhCongLuc = luc;
             await _dbContext.SaveChangesAsync();
+
+            try
+            {
+                await _rutTienEmail.GuiEmailKhiRutTienDaChuyenKhoanAsync(banGhi.MaYeuCauRutTien);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Không gửi được email rút tiền thành công cho yêu cầu {MaYeuCauRutTien}", banGhi.MaYeuCauRutTien);
+            }
+
             return true;
         }
 
