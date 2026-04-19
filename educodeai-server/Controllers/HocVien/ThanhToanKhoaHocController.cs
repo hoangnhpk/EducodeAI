@@ -13,14 +13,10 @@ namespace educodeai_server.Controllers.HocVien
     public class ThanhToanKhoaHocController : ControllerBase
     {
         private readonly IThanhToanKhoaHocService _thanhToanKhoaHocService;
-        private readonly IRutTienGiangVienService _rutTienGiangVienService;
 
-        public ThanhToanKhoaHocController(
-            IThanhToanKhoaHocService thanhToanKhoaHocService,
-            IRutTienGiangVienService rutTienGiangVienService)
+        public ThanhToanKhoaHocController(IThanhToanKhoaHocService thanhToanKhoaHocService)
         {
             _thanhToanKhoaHocService = thanhToanKhoaHocService;
-            _rutTienGiangVienService = rutTienGiangVienService;
         }
 
         [HttpGet("{maKhoaHoc:int}")]
@@ -111,6 +107,7 @@ namespace educodeai_server.Controllers.HocVien
             }
         }
 
+        /// <summary>Chỉ xử lý <b>tiền vào</b> (mua khóa học). Webhook <b>tiền ra</b> dùng <c>POST /api/sepay/webhook/rut-tien-giang-vien</c>.</summary>
         [AllowAnonymous]
         [HttpPost("sepay/webhook")]
         public async Task<IActionResult> NhanThongBaoSePay([FromBody] ThongBaoWebhookSePayDTO duLieuWebhook)
@@ -118,8 +115,7 @@ namespace educodeai_server.Controllers.HocVien
             try
             {
                 bool ketQuaThanhToanKhoaHoc = await _thanhToanKhoaHocService.XuLyThongBaoSePayAsync(duLieuWebhook);
-                bool ketQuaRutTien = await _rutTienGiangVienService.XuLyWebhookRutTienAsync(duLieuWebhook);
-                return Ok(new { thanhCong = ketQuaThanhToanKhoaHoc || ketQuaRutTien });
+                return Ok(new { thanhCong = ketQuaThanhToanKhoaHoc });
             }
             catch (Exception ex)
             {
