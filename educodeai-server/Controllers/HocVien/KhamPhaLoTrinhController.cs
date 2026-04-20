@@ -120,6 +120,24 @@ namespace educodeai_server.Controllers.HocVien
             {
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
+
+        }
+        [HttpDelete("xoa-da-luu/{id}")]
+        public async Task<IActionResult> XoaLoTrinhDaLuu(int id)
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdStr, out int maNguoiDung)) return Unauthorized();
+
+            // Tìm lộ trình đã lưu của người dùng này
+            var loTrinh = await _context.LoTrinhAIs
+                .FirstOrDefaultAsync(x => x.MaLoTrinh == id && x.MaNguoiDung == maNguoiDung && x.TrangThai == "Đã lưu");
+
+            if (loTrinh == null) return NotFound(new { success = false, message = "Không tìm thấy lộ trình." });
+
+            _context.LoTrinhAIs.Remove(loTrinh);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true });
         }
     }
 }

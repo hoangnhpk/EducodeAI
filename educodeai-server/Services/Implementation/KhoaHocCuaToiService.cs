@@ -63,7 +63,7 @@ namespace educodeai_server.Services.Implement
             if (khoaHoc == null) return false;
 
             khoaHoc.TrangThai = "Đã xóa";
-            
+
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
             return true;
@@ -122,7 +122,7 @@ namespace educodeai_server.Services.Implement
         {
             var chuong = await _repository.GetChuongWithKhoaHocAsync(maChuong);
             if (chuong == null || chuong.KhoaHoc.MaGiangVien != maGiangVien)
-                throw new UnauthorizedAccessException("KhÃ´ng cÃ³ quyá»n thÃªm video vÃ o chÆ°Æ¡ng nÃ y.");
+                throw new UnauthorizedAccessException("KhÃ´ng cÃ³ quyá»n thÃªm video vÃ o chÆ°Æ¡ng nÃ y.");
 
             var baiHoc = new BaiHocModel
             {
@@ -152,7 +152,6 @@ namespace educodeai_server.Services.Implement
         {
             var baiHoc = await _repository.GetBaiHocWithChuongAsync(maBaiHoc);
             if (baiHoc == null) return false;
-
             if (baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien) return false;
 
             baiHoc.TieuDe = dto.TieuDe;
@@ -361,7 +360,7 @@ OUTPUT JSON THUẦN
         public async Task<YouTubePlaylistVideosResponseDTO> GetPlaylistVideosAsync(string playlistId)
         {
             var videos = await _youtubeService.GetPlaylistVideosAsync(playlistId);
-            
+
             return new YouTubePlaylistVideosResponseDTO
             {
                 Success = true,
@@ -406,7 +405,7 @@ OUTPUT JSON THUẦN
                 };
                 await _repository.AddChuongAsync(chuong);
                 await _repository.SaveChangesAsync(); // save to generate MaChuong
-                
+
                 // Initialize BaiHocs collection for newly created chapter
                 chuong.BaiHocs = new List<BaiHocModel>();
             }
@@ -616,27 +615,9 @@ OUTPUT JSON THUẦN
         }
 
         // ===== HELPER METHODS =====
-        private static void ValidateKhoaHocData(KhoaHocCreateUpdateDTO dto)
-        {
-            if (string.IsNullOrWhiteSpace(dto.TenKhoaHoc)) throw new ArgumentException("Tên khóa học không được trống.");
-            if (string.IsNullOrWhiteSpace(dto.LinhVuc)) throw new ArgumentException("Lĩnh vực không được trống.");
-            if (string.IsNullOrWhiteSpace(dto.TrinhDo)) throw new ArgumentException("Trình độ không được trống.");
-            if (dto.ThoiLuongGio < 0) throw new ArgumentException("Thời lượng không hợp lệ.");
-            
-            if (dto.CoChungChi)
-            {
-                var errors = new List<string>();
-                ValidateCertificateData(dto.DiemDatChungChi, dto.SoCauHoiChungChi, dto.ThoiGianLamBaiChungChi, errors);
-                if (errors.Any()) throw new ArgumentException(string.Join(" ", errors));
-            }
-        }
 
-        private static void ValidateCertificateData(double diemDat, int soCauHoi, int thoiGian, List<string> errors)
-        {
-            if (diemDat < 0 || diemDat > 100) errors.Add("Điểm đạt chứng chỉ phải từ 0 đến 100.");
-            if (soCauHoi < 1) errors.Add("Số câu hỏi chứng chỉ phải lớn hơn 0.");
-            if (thoiGian < 1) errors.Add("Thời gian làm bài chứng chỉ phải lớn hơn 0.");
-        }
+
+
 
         private static KhoaHocGiangVienListDTO MapToKhoaHocListDTO(KhoaHocModel k)
         {
