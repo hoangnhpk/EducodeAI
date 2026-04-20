@@ -9,6 +9,7 @@ namespace educodeai_server.Services.Interface
         // --- CÁC HÀM ĐĂNG NHẬP ---
         Task<object> DangNhapAsync(DangNhapRequest request, string ipAddress);
         Task<object> XacNhanOtpVaDangNhapAsync(XacNhanOtpRequest request);
+        Task<object> XacNhanThayTheThietBiAsync(XacNhanOtpRequest request);
         Task<object> DangNhapGoogleAsync(GoogleLoginRequest request, string maThietBi, string tenThietBi);
         Task<object> DangNhapFacebookAsync(FacebookDTO request, string maThietBi, string tenThietBi);
         Task<object> LamMoiTokenAsync(string refreshToken, string maThietBi);
