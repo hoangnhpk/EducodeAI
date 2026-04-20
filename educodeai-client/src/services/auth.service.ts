@@ -56,6 +56,16 @@ export const authService = {
     });
   },
 
+  // 5.5. XÁC NHẬN THAY THẾ THIẾT BỊ (Khi đầy 3 phiên)
+  confirmReplaceDevice: async (payload: { taiKhoan: string, otpCode: string }) => {
+    const { maThietBi, tenThietBi } = getDeviceInfo();
+    return await api.post('/api/XacThuc/xac-nhan-thay-the-thiet-bi', {
+      ...payload,
+      maThietBi,
+      tenThietBi
+    });
+  },
+
   // 6. ĐĂNG NHẬP BẰNG GOOGLE / FACEBOOK
   googleLogin: async (payload: { email: string, name: string, picture: string }, maThietBi: string, tenThietBi: string) => {
     return await api.post(`/api/XacThuc/google-login?maThietBi=${maThietBi}&tenThietBi=${tenThietBi}`, payload);
