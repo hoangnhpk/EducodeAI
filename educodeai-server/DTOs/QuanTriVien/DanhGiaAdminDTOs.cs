@@ -4,6 +4,7 @@ namespace educodeai_server.DTOs.QuanTriVien
     {
         public string? TrangThai { get; set; }
         public int? SoSao { get; set; }
+        public int? MaKhoaHoc { get; set; }
         public string? Search { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;
@@ -34,13 +35,12 @@ namespace educodeai_server.DTOs.QuanTriVien
         public int SoSao { get; set; }
         public string NoiDung { get; set; } = string.Empty;
         public DateTime NgayTao { get; set; }
-        public string TrangThai { get; set; } = "ChoDuyet";
+        public string TrangThai { get; set; } = "DaDuyet";
     }
 
     public class ThongKeDanhGiaAdminDTO
     {
         public int TongDanhGia { get; set; }
-        public int ChoDuyet { get; set; }
         public int DaDuyet { get; set; }
         public int TuChoi { get; set; }
         public double DanhGiaTrungBinh { get; set; }

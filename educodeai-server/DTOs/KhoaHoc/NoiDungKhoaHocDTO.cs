@@ -1,4 +1,4 @@
-﻿namespace educodeai_server.DTOs.KhoaHoc
+namespace educodeai_server.DTOs.KhoaHoc
 {
     public class BaiHoc_NoiDungKhoaHocDTO
     {
@@ -12,6 +12,7 @@
         public bool DaXem { get; set; } = false;
 
         public BaiTapQuizDTO? ThongTinQuiz { get; set; }
+        public int? MaBaiTapThucHanh { get; set; }
 
     }
 

@@ -94,6 +94,7 @@ builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
+builder.Services.AddScoped<BaiTapThucHanhHocVienService>();
 builder.Services.AddHttpClient<BaiTapService>();
 
 // Người dùng & Thống kê
@@ -139,6 +140,9 @@ builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =
 
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
 
+// YouTube Service
+builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();
+
 // ==========================================
 // 6. CẤU HÌNH CORS & SWAGGER
 // ==========================================
@@ -146,7 +150,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://educodeai-client.vercel.app", "http://localhost:5173", "http://localhost:5210", "http://localhost:3000")
+        policy.WithOrigins("https://educodeai-client.vercel.app", "http://localhost:3000")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

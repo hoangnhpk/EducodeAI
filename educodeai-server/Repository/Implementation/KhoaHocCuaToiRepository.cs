@@ -19,7 +19,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocModel>> GetKhoaHocByGiangVienAsync(int maGiangVien)
         {
             return await _context.KhoaHocs
-                .Where(k => k.MaGiangVien == maGiangVien)
+                .Where(k => k.MaGiangVien == maGiangVien && k.TrangThai != "Đã xóa")
                 .Include(k => k.DangKyKhoaHocs)
                 .ToListAsync();
         }
@@ -27,7 +27,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<KhoaHocModel?> GetKhoaHocDetailAsync(int maKhoaHoc, int maGiangVien)
         {
             return await _context.KhoaHocs
-                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien)
+                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien && k.TrangThai != "Đã xóa")
                 .Include(k => k.DangKyKhoaHocs)
                     .ThenInclude(dk => dk.NguoiDung)
                 .Include(k => k.ChuongHocs)
@@ -38,7 +38,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<KhoaHocModel?> GetKhoaHocForCertificateAsync(int maKhoaHoc, int maGiangVien)
         {
             return await _context.KhoaHocs
-                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien)
+                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien && k.TrangThai != "Đã xóa")
                 .Include(k => k.ChuongHocs)
                     .ThenInclude(ch => ch.BaiHocs)
                 .FirstOrDefaultAsync();

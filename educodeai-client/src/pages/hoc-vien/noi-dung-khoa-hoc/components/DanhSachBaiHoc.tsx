@@ -7,7 +7,7 @@ interface Props {
   idBaiHocHienTai: number;
   tabActive: string; // Nhận biến tabActive để biết đang mở Video hay Quiz
   videoDaXongLocal: number[]; // Nhận danh sách video đã xem xong trong phiên học
-  onChonBaiHoc: (id: number, tabDeMo?: 'hoc' | 'quiz') => void;
+  onChonBaiHoc: (id: number, tabDeMo?: 'hoc' | 'quiz' | 'ide') => void;
   className?: string; // Class bổ sung (ví dụ: 'mobile-open' khi mở drawer)
 }
 
@@ -175,6 +175,49 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                                 <i className="fas fa-lock"></i>
                               ) : (
                                 daHoanThanh ? <i className="fas fa-check-circle text-success" style={{ fontSize: '0.8rem' }}></i> : (dangHocQuiz && <i className="far fa-dot-circle"></i>)
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {/* 3. MỤC THỰC HÀNH IDE (ĐÍNH KÈM) */}
+                        {bai.maBaiTapThucHanh && (
+                          <div
+                            className={`cp-lesson-item cp-lesson-quiz-sub ${tabActive === 'ide' && bai.id === idBaiHocHienTai ? "cp-lesson-active" : ""} ${quizBiKhoa ? "cp-lesson-locked" : ""}`}
+                            onClick={() => {
+                              if (!quizBiKhoa) {
+                                onChonBaiHoc(bai.id, 'ide');
+                              } else {
+                                Swal.fire({
+                                  title: 'Chưa mở khóa',
+                                  text: 'Bạn cần xem xong bài học video ở trên để mở khóa phần bài tập này!',
+                                  icon: 'warning',
+                                  confirmButtonColor: '#f69050',
+                                  timer: 2000
+                                });
+                              }
+                            }}
+                            style={{
+                              paddingLeft: '3.5rem',
+                              backgroundColor: tabActive === 'ide' && bai.id === idBaiHocHienTai ? 'var(--cp-bg-active, #fff5eb)' : '#fcfcfc',
+                              borderTop: '1px dashed #eee',
+                              opacity: quizBiKhoa ? 0.6 : 1
+                            }}
+                          >
+                            <div className="cp-lesson-icon ide" style={{ background: 'transparent' }}>
+                              <i className="fas fa-keyboard" style={{ color: quizBiKhoa ? '#9ca3af' : '#2563eb' }}></i>
+                            </div>
+
+                            <div className="cp-lesson-main">
+                              <div className="cp-lesson-title" style={{ fontSize: '0.85rem' }}>
+                                Bài tập thực hành IDE
+                              </div>
+                            </div>
+
+                            <div className="cp-lesson-status">
+                              {quizBiKhoa ? (
+                                <i className="fas fa-lock"></i>
+                              ) : (
+                                daHoanThanh ? <i className="fas fa-check-circle text-success" style={{ fontSize: '0.8rem' }}></i> : (tabActive === 'ide' && bai.id === idBaiHocHienTai && <i className="far fa-dot-circle"></i>)
                               )}
                             </div>
                           </div>
