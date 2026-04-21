@@ -1,6 +1,6 @@
 
 import axiosClient from '@/configs/axios'
-import type { KhoaHocData, BaiHoc, ChuongHoc, GhiChuItem } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO'
+import type { KhoaHocData, BaiHoc, ChuongHoc, GhiChuItem, ThongTinChungChiDTO } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO'
 export interface LuuGhiChuDTO {
   MaBaiHoc: number;
   MaNguoiDung: number;
@@ -29,6 +29,24 @@ export interface LuuKetQuaQuizDTO {
   TongSoCau: number;
   DaDat: boolean;
   ChiTietLamBai: ChiTietCauTraLoiDTO[];
+}
+
+export interface NopBaiKiemTraChungChiDTO {
+  MaKhoaHoc: number;
+  MaNguoiDung: number;
+  HoTenHienThi: string;
+  EmailNhan: string;
+  ChiTietLamBai: ChiTietCauTraLoiDTO[];
+}
+
+export interface KetQuaNopBaiKiemTraChungChiDTO {
+  thanhCong: boolean;
+  daDat: boolean;
+  diemSo: number;
+  soCauDung: number;
+  tongSoCau: number;
+  thongBao: string;
+  thongTinChungChi?: ThongTinChungChiDTO | null;
 }
 
 export const KhoaHocService = {
@@ -79,6 +97,10 @@ export const KhoaHocService = {
       console.error("❌ Lỗi lưu kết quả Quiz:", error);
       return false;
     }
+  },
+
+  async nopBaiKiemTraChungChi(payload: NopBaiKiemTraChungChiDTO): Promise<KetQuaNopBaiKiemTraChungChiDTO> {
+    return await axiosClient.post<KetQuaNopBaiKiemTraChungChiDTO>('/api/NoiDungKhoaHoc/chung-chi/nop-bai', payload);
   },
 
   lamPhangDanhSachBaiHoc(cacChuong: ChuongHoc[]): BaiHoc[] {

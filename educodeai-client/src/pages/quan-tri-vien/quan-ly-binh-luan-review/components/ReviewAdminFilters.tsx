@@ -1,10 +1,11 @@
 import { Filter, RefreshCw, Search } from 'lucide-react';
-import type { ReviewFilterParams, ReviewSource } from './ReviewAdmin.types';
+import type { ReviewCourseInfo, ReviewFilterParams, ReviewSource } from './ReviewAdmin.types';
 
 interface Props {
   filters: ReviewFilterParams;
   source: ReviewSource;
   loading: boolean;
+  courses: ReviewCourseInfo[];
   onFilterChange: (filters: ReviewFilterParams) => void;
   onRefresh: () => void;
 }
@@ -13,6 +14,7 @@ export default function ReviewAdminFilters({
   filters,
   source,
   loading,
+  courses,
   onFilterChange,
   onRefresh,
 }: Props) {
@@ -26,18 +28,18 @@ export default function ReviewAdminFilters({
         <div className="qtrv-filters-card__title">
           <Filter size={18} />
           <div>
-            <h3>Bo loc va xu ly</h3>
-            <p>Tim nhanh danh gia can xu ly theo trang thai, so sao va noi dung.</p>
+            <h3>Bộ lọc và xử lý</h3>
+            <p>Tìm nhanh đánh giá cần xử lý theo trạng thái, số sao và nội dung.</p>
           </div>
         </div>
 
         <div className="qtrv-filters-card__actions">
           <span className={`qtrv-source-badge ${source === 'mock' ? 'is-mock' : 'is-api'}`}>
-            {source === 'mock' ? 'Du lieu demo' : 'Du lieu API'}
+            {source === 'mock' ? 'Dữ liệu demo' : 'Dữ liệu API'}
           </span>
           <button type="button" className="qtrv-refresh-btn" onClick={onRefresh} disabled={loading}>
             <RefreshCw size={16} className={loading ? 'spin' : ''} />
-            Lam moi
+            Làm mới
           </button>
         </div>
       </div>
@@ -47,7 +49,7 @@ export default function ReviewAdminFilters({
           <Search size={18} />
           <input
             type="text"
-            placeholder="Tim theo hoc vien, khoa hoc, noi dung danh gia..."
+            placeholder="Tìm theo học viên, khóa học, nội dung đánh giá..."
             value={filters.search || ''}
             onChange={(e) => handleChange('search', e.target.value)}
           />
@@ -58,10 +60,9 @@ export default function ReviewAdminFilters({
             value={filters.trangThai || 'TatCa'}
             onChange={(e) => handleChange('trangThai', e.target.value as ReviewFilterParams['trangThai'])}
           >
-            <option value="TatCa">Tat ca trang thai</option>
-            <option value="ChoDuyet">Cho duyet</option>
-            <option value="DaDuyet">Da duyet</option>
-            <option value="TuChoi">Tu choi</option>
+            <option value="TatCa">Tất cả trạng thái</option>
+            <option value="DaDuyet">Đã duyệt</option>
+            <option value="TuChoi">Từ chối</option>
           </select>
 
           <select
@@ -73,12 +74,29 @@ export default function ReviewAdminFilters({
               )
             }
           >
-            <option value="TatCa">Tat ca muc sao</option>
+            <option value="TatCa">Tất cả mức sao</option>
             <option value="5">5 sao</option>
             <option value="4">4 sao</option>
             <option value="3">3 sao</option>
             <option value="2">2 sao</option>
             <option value="1">1 sao</option>
+          </select>
+
+          <select
+            value={filters.maKhoaHoc || 'TatCa'}
+            onChange={(e) =>
+              handleChange(
+                'maKhoaHoc',
+                e.target.value === 'TatCa' ? 'TatCa' : Number(e.target.value) as ReviewFilterParams['maKhoaHoc']
+              )
+            }
+          >
+            <option value="TatCa">Tất cả khóa học</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.tenKhoaHoc}
+              </option>
+            ))}
           </select>
 
           <button
@@ -88,13 +106,14 @@ export default function ReviewAdminFilters({
               onFilterChange({
                 trangThai: 'TatCa',
                 soSao: 'TatCa',
+                maKhoaHoc: 'TatCa',
                 search: '',
                 page: 1,
                 pageSize: filters.pageSize || 10,
               })
             }
           >
-            Dat lai
+            Đặt lại
           </button>
         </div>
       </div>

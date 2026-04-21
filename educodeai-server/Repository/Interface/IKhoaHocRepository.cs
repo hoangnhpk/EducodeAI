@@ -1,4 +1,4 @@
-﻿using educodeai_server.Models;
+using educodeai_server.Models;
 using educodeai_server.DTOs.AI;
 using educodeai_server.DTOs.KhoaHoc;
 
@@ -23,6 +23,8 @@ namespace educodeai_server.Repository.Interface
         Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto);
         Task<List<GhiChuBaiHocDTO>> GetGhiChuBaiHocAsync(int maBaiHoc, int maNguoiDung);
         Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto);
+        Task<KetQuaNopBaiKiemTraChungChiDTO> NopBaiKiemTraChungChiAsync(NopBaiKiemTraChungChiDTO dto);
+        Task CapNhatTrangThaiGuiEmailChungChiAsync(int maKhoaHoc, int maNguoiDung, bool trangThai);
 
         Task<List<int>> GetMaKhoaHocDaDangKyAsync(int maNguoiDung,List<int> danhSachMaKhoaHoc);
 

@@ -13,7 +13,7 @@ namespace educodeai_server.Models
         public virtual BaiHocModel BaiHoc { get; set; } = null!;
 
         public virtual ICollection<KetQuaLamBaiModel> KetQuaBaiTaps { get; set; } = null!;
-        public virtual BaiTapThucHanhModel BaiTap_ThucHanh { get; set; } = null!;
+        public virtual BaiTapThucHanhModel BaiTapThucHanh { get; set; } = null!;
         public virtual BaiTap_QuizModel BaiTap_Quiz { get; set; } = null!;
     }
 }
