@@ -33,6 +33,13 @@ axiosClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token.trim()}`;
     }
 
+    // 👉 ĐÃ THÊM: Gắn "kim bài miễn tử" cho Admin/Giảng viên
+    // Báo cho Cửa cuốn Middleware biết "Ta là Admin, cho ta qua!"
+    const currentPath = window.location.pathname.toLowerCase();
+    if (currentPath.includes('/quan-tri-vien')) {
+      config.headers["X-Bypass-Maintenance"] = "true";
+    }
+
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     } else {
@@ -149,6 +156,11 @@ axiosClient.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+
+    // 👉 ĐÃ THÊM: Cảm biến bắt lỗi bảo trì
+    if (error.response?.status === 503) {
+      window.dispatchEvent(new Event('BaoTriKhanCap'));
     }
 
     console.error("❌ Lỗi API:", error.response?.status);
