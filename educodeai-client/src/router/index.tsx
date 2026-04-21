@@ -76,11 +76,11 @@ export default function AppRouter() {
 
 
         {/* ========================================== */}
-        {/* HỌC VIÊN (Yêu cầu đăng nhập, Role 0, 1, 2)   */}
+        {/* HỌC VIÊN (Yêu cầu đăng nhập, Role 2)   */}
         {/* ========================================== */}
         <Route
           element={
-            <ProtectedRoute allowRoles={[0, 1, 2]}>
+            <ProtectedRoute allowRoles={[2]}>
               <LayoutHocVien />
             </ProtectedRoute>
           }
@@ -95,10 +95,10 @@ export default function AppRouter() {
           <Route path="/kham-pha-lo-trinh" element={<KhamPhaLoTrinh />} />
         </Route>
 
-        {/* NỘI DUNG KHÓA HỌC (Layout trống, Role 0, 1, 2) */}
+        {/* NỘI DUNG KHÓA HỌC (Layout trống, Role 2) */}
         <Route
           element={
-            <ProtectedRoute allowRoles={[0, 1, 2]}>
+            <ProtectedRoute allowRoles={[2]}>
               <LayoutBlank />
             </ProtectedRoute>
           }
@@ -108,12 +108,12 @@ export default function AppRouter() {
 
 
         {/* ========================================== */}
-        {/* GIẢNG VIÊN (Chỉ Role 1 - GV, và Role 0 - AD) */}
+        {/* GIẢNG VIÊN (Chỉ Role 1 - GV) */}
         {/* ========================================== */}
         <Route
           path="/giang-vien"
           element={
-            <ProtectedRoute allowRoles={[0, 1]}>
+            <ProtectedRoute allowRoles={[1]}>
               <LayoutGiangVien />
             </ProtectedRoute>
           }

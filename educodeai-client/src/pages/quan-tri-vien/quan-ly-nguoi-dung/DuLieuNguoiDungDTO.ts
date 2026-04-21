@@ -4,6 +4,9 @@ export interface NguoiDung {
     email?: string;
     anhDaiDien?: string;
     vaiTro: string;       // "Admin" | "Giảng viên" | "Học viên"
-    trangThai: boolean;   // true = Hoạt động
+    trangThai: string;    // "Hoạt động" | "Bị khóa" | "Khóa vĩnh viễn"
     ngayTao?: string;
+    lyDoKhoa?: string;
+    thoiGianMoKhoa?: string;
+    statusText?: string;
 }

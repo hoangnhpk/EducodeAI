@@ -20,7 +20,7 @@ function App() {
           console.log("Phiên đã bị vô hiệu hóa.");
         }
       }
-    }, 5000); // 5 giây là mức tối ưu cho "lập tức" mà không gây tải server
+    }, 10000); // 10 giây là mức tối ưu cho "lập tức" mà không gây tải server
 
     return () => clearInterval(checkSessionInterval);
   }, []);

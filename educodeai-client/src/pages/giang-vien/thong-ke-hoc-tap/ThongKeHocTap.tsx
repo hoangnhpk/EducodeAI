@@ -44,13 +44,13 @@ export default function ThongKeHocTap() {
       setError(null);
 
       // Fetch tất cả data song song
-      const [overviewData, trangThaiData] = await Promise.all([
+      const [overviewData, trangThaiRes] = await Promise.all([
         thongKeHocTapService.getOverview(),
         thongKeHocTapService.getTrangThaiHocVien(),
       ]);
 
       setOverview(overviewData);
-      setTrangThaiData(trangThaiData);
+      setTrangThaiData(trangThaiRes);
     } catch (err: any) {
       console.error("Error fetching data:", err);
       setError(err.response?.data?.message || "Không thể tải dữ liệu");
@@ -141,7 +141,7 @@ export default function ThongKeHocTap() {
       <div className="stat-grid">
         <StatCard
           title="GIỜ HỌC TB / HỌC VIÊN"
-          value={`${overview?.gioHocTrungBinh.toFixed(1) || 0}h`}
+          value={`${overview?.gioHocTrungBinh?.toFixed(1) || 0}h`}
           subtitle="Trung bình mỗi học viên"
           icon={Clock}
           gradient="icon-purple"
@@ -165,7 +165,7 @@ export default function ThongKeHocTap() {
 
         <StatCard
           title="TỶ LỆ HOÀN THÀNH"
-          value={`${overview?.tyLeHoanThanhTB.toFixed(1) || 0}%`}
+          value={`${overview?.tyLeHoanThanhTB?.toFixed(1) || 0}%`}
           subtitle={
             (overview?.tyLeHoanThanhTB || 0) >= 70 
               ? "✓ Tốt" 
