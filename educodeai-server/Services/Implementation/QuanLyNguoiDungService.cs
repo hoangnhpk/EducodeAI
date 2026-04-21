@@ -21,21 +21,27 @@ public class QuanLyNguoiDungService : IQuanLyNguoiDungService
     public async Task<IEnumerable<QuanLyNguoiDungDTO>> LayDanhSachNguoiDungAsync()
     {
         var danhSach = await _repo.LayTatCaAsync();
+        var now = DateTime.UtcNow;
 
         // Chỉ hiển thị Giảng viên (1) và Học viên (2)
         return danhSach
             .Where(nd => nd.VaiTro == 1 || nd.VaiTro == 2)
-            .Select(nd => new QuanLyNguoiDungDTO
+            .Select(nd => 
             {
-                MaNguoiDung = nd.MaNguoiDung.ToString(),
-                AnhDaiDien = nd.AnhDaiDien,
-                HoTen = nd.HoTen,
-                Email = nd.Email,
-                TrangThai = nd.TrangThai,
-                LyDoKhoa = nd.LyDoKhoa,
-                ThoiGianMoKhoa = nd.ThoiGianMoKhoa,
-                NgayTao = nd.NgayThamGia,
-                VaiTro = VaiTro(nd.VaiTro) 
+                var isExpiredLock = nd.TrangThai == "Bị khóa" && nd.ThoiGianMoKhoa.HasValue && nd.ThoiGianMoKhoa.Value <= now;
+                
+                return new QuanLyNguoiDungDTO
+                {
+                    MaNguoiDung = nd.MaNguoiDung.ToString(),
+                    AnhDaiDien = nd.AnhDaiDien,
+                    HoTen = nd.HoTen,
+                    Email = nd.Email,
+                    TrangThai = isExpiredLock ? "Hoạt động" : nd.TrangThai,
+                    LyDoKhoa = isExpiredLock ? null : nd.LyDoKhoa,
+                    ThoiGianMoKhoa = isExpiredLock ? null : nd.ThoiGianMoKhoa,
+                    NgayTao = nd.NgayThamGia,
+                    VaiTro = VaiTro(nd.VaiTro) 
+                };
             });
     }
     private string VaiTro(int vaiTro)
