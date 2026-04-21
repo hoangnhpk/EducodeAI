@@ -1,7 +1,8 @@
-﻿using educodeai_server.DTOs.AI;
+using educodeai_server.DTOs.AI;
 using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -60,6 +61,7 @@ namespace EduCodeAI.Controllers.HocVien
             var result = await _service.GetLoTrinhCuaToiAsync(userId);
             return Ok(result);
         }
+        
 
         [HttpGet("chi-tiet/{maLoTrinh}")]
         public async Task<IActionResult> GetChiTietLoTrinh(int maLoTrinh)
@@ -74,5 +76,6 @@ namespace EduCodeAI.Controllers.HocVien
 
             return Ok(result);
         }
+
     }
 }

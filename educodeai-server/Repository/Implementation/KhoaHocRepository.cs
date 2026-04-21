@@ -1,16 +1,22 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Data;
 using educodeai_server.Models;
 using educodeai_server.DTOs.AI;
 using educodeai_server.DTOs.KhoaHoc;
+using educodeai_server.Helpers;
+using System.ComponentModel.DataAnnotations;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace educodeai_server.Repository.Implementation
 {
     public class KhoaHocRepository : IKhoaHocRepository
     {
         private readonly EduCodeAIDbContext _context;
+        private const int HeSoSinhIdCauHoi = 100000;
 
         public KhoaHocRepository(EduCodeAIDbContext context)
         {
@@ -105,7 +111,7 @@ namespace educodeai_server.Repository.Implementation
 
         public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc, int maNguoiDung)
         {
-            return await _context.KhoaHocs
+            var duLieuKhoaHoc = await _context.KhoaHocs
                 .AsNoTracking()
                 .Where(kh => kh.MaKhoaHoc == maKhoaHoc)
                 .Select(kh => new KhoaHoc_NoiDungKhoaHocDTO
@@ -113,6 +119,8 @@ namespace educodeai_server.Repository.Implementation
                     MaKhoaHoc = kh.MaKhoaHoc,
                     TenKhoaHoc = kh.TenKhoaHoc,
                     Slug = SlugHelper.Generate(kh.TenKhoaHoc),
+                    CoChungChi = kh.CoChungChi,
+                    TenChungChi = kh.TenChungChi,
                     DanhSachChuongHoc = kh.ChuongHocs
                         .OrderBy(ch => ch.ThuTu)
                         .Select(ch => new ChuongHoc_NoiDungKhoaHocDTO
@@ -143,10 +151,46 @@ namespace educodeai_server.Repository.Implementation
                                             ChoPhepLamLai = bt.BaiTap_Quiz.ChoPhepLamLai,
                                             DaoCauHoi = bt.BaiTap_Quiz.DaoCauHoi,
                                             DuLieuCauHoiJSON = bt.BaiTap_Quiz.DuLieuCauHoi
-                                        }).FirstOrDefault()
+                                        }).FirstOrDefault(),
+                                    MaBaiTapThucHanh = bh.BaiTaps
+                                        .Where(bt => bt.BaiTapThucHanh != null)
+                                        .Select(bt => (int?)bt.MaBaiTap)
+                                        .FirstOrDefault()
                                 }).ToList()
                         }).ToList()
                 }).FirstOrDefaultAsync();
+
+            if (duLieuKhoaHoc == null)
+            {
+                return null;
+            }
+
+            var daHoanThanhKhoaHoc = maNguoiDung > 0 && await KiemTraHoanThanhKhoaHocAsync(maKhoaHoc, maNguoiDung);
+            var khoaHoc = await _context.KhoaHocs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.MaKhoaHoc == maKhoaHoc);
+
+            if (khoaHoc == null)
+            {
+                return duLieuKhoaHoc;
+            }
+
+            var nganHangCauHoi = await LayNganHangCauHoiChungChiAsync(khoaHoc);
+
+            duLieuKhoaHoc.BaiKiemTraChungChi = khoaHoc.CoChungChi
+                ? TaoBaiKiemTraChungChi(duLieuKhoaHoc, khoaHoc, nganHangCauHoi, daHoanThanhKhoaHoc)
+                : null;
+            duLieuKhoaHoc.ThongTinChungChi = khoaHoc.CoChungChi && maNguoiDung > 0
+                ? await LayThongTinChungChiAsync(khoaHoc, maNguoiDung, nganHangCauHoi.Count)
+                : new ThongTinChungChiDTO
+                {
+                    DaCap = false,
+                    TongSoCauHoi = nganHangCauHoi.Count,
+                    TenKhoaHoc = duLieuKhoaHoc.TenKhoaHoc,
+                    TenChungChi = khoaHoc.TenChungChi
+                };
+
+            return duLieuKhoaHoc;
         }
 
         // 5. Các hàm hỗ trợ AI
@@ -453,6 +497,196 @@ namespace educodeai_server.Repository.Implementation
                 .ToListAsync();
         }
 
+        public async Task<KetQuaNopBaiKiemTraChungChiDTO> NopBaiKiemTraChungChiAsync(NopBaiKiemTraChungChiDTO dto)
+        {
+            if (dto == null)
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Dữ liệu bài kiểm tra không hợp lệ."
+                };
+            }
+
+            dto.HoTenHienThi = dto.HoTenHienThi?.Trim() ?? string.Empty;
+            dto.EmailNhan = dto.EmailNhan?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(dto.HoTenHienThi))
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Vui lòng nhập họ và tên hiển thị trên chứng chỉ."
+                };
+            }
+
+            if (!new EmailAddressAttribute().IsValid(dto.EmailNhan))
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Email nhận chứng chỉ không hợp lệ."
+                };
+            }
+
+            var daHoanThanhKhoaHoc = await KiemTraHoanThanhKhoaHocAsync(dto.MaKhoaHoc, dto.MaNguoiDung);
+            if (!daHoanThanhKhoaHoc)
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Bạn cần hoàn thành toàn bộ khóa học trước khi thi nhận chứng chỉ."
+                };
+            }
+
+            var khoaHoc = await _context.KhoaHocs
+                .FirstOrDefaultAsync(x => x.MaKhoaHoc == dto.MaKhoaHoc);
+
+            if (khoaHoc == null)
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Không tìm thấy khóa học."
+                };
+            }
+
+            if (!khoaHoc.CoChungChi)
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Khóa học này không áp dụng chứng chỉ."
+                };
+            }
+
+            var nganHangCauHoi = await LayNganHangCauHoiChungChiAsync(khoaHoc);
+            if (nganHangCauHoi.Count == 0)
+            {
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Khóa học này chưa có đề kiểm tra chứng chỉ sẵn sàng."
+                };
+            }
+
+            var bangTraLoi = dto.ChiTietLamBai
+                .GroupBy(x => x.IdCauHoi)
+                .ToDictionary(g => g.Key, g => g.Last().IndexLuaChon);
+
+            var tongSoCau = nganHangCauHoi.Count;
+            var soCauDung = nganHangCauHoi.Count(cauHoi =>
+                bangTraLoi.TryGetValue(cauHoi.Id, out var luaChon)
+                && luaChon == ChuyenDapAnDungSangIndex(cauHoi.DapAnDung));
+
+            var diemSo = tongSoCau > 0
+                ? Math.Round((double)soCauDung / tongSoCau * 100, 2)
+                : 0;
+            var daDat = diemSo >= khoaHoc.DiemDatChungChi;
+            var thongBao = daDat
+                ? "Bạn đã đạt yêu cầu và chứng chỉ đã được phát hành."
+                : "Bạn chưa đạt ngưỡng nhận chứng chỉ. Hãy ôn tập và thử lại.";
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var ketQuaThi = new KetQuaKiemTraChungChiModel
+                {
+                    MaKhoaHoc = dto.MaKhoaHoc,
+                    MaNguoiDung = dto.MaNguoiDung,
+                    DiemSo = diemSo,
+                    SoCauDung = soCauDung,
+                    TongSoCau = tongSoCau,
+                    DaDat = daDat,
+                    ChiTietLamBaiJSON = JsonSerializer.Serialize(new
+                    {
+                        dto.ChiTietLamBai,
+                        TongSoCau = tongSoCau,
+                        SoCauDung = soCauDung,
+                        DiemSo = diemSo,
+                        NgayThi = DateTime.UtcNow
+                    }),
+                    NgayThi = DateTime.UtcNow
+                };
+
+                _context.KetQuaKiemTraChungChis.Add(ketQuaThi);
+                await _context.SaveChangesAsync();
+
+                if (daDat)
+                {
+                    var chungChi = await _context.ChungChiKhoaHocs
+                        .FirstOrDefaultAsync(x => x.MaKhoaHoc == dto.MaKhoaHoc && x.MaNguoiDung == dto.MaNguoiDung);
+                    var ngayCap = DateTime.UtcNow;
+
+                    if (chungChi == null)
+                    {
+                        chungChi = new ChungChiKhoaHocModel
+                        {
+                            MaKhoaHoc = dto.MaKhoaHoc,
+                            MaNguoiDung = dto.MaNguoiDung,
+                            MaChungChi = TaoMaChungChi(dto.MaKhoaHoc, dto.MaNguoiDung),
+                            MaKetQuaKiemTraChungChi = ketQuaThi.MaKetQuaKiemTraChungChi,
+                            HoTenHienThi = dto.HoTenHienThi,
+                            EmailNhan = dto.EmailNhan,
+                            NgayCap = ngayCap
+                        };
+                        _context.ChungChiKhoaHocs.Add(chungChi);
+                    }
+                    else
+                    {
+                        chungChi.MaKetQuaKiemTraChungChi = ketQuaThi.MaKetQuaKiemTraChungChi;
+                        chungChi.HoTenHienThi = dto.HoTenHienThi;
+                        chungChi.EmailNhan = dto.EmailNhan;
+                        chungChi.NgayCap = ngayCap;
+                        _context.ChungChiKhoaHocs.Update(chungChi);
+                    }
+                    await _context.SaveChangesAsync();
+
+                    thongBao = "Bạn đã đạt yêu cầu. Chứng chỉ đang được tạo và gửi bản PDF về email của bạn trong ít phút.";
+                }
+
+                await transaction.CommitAsync();
+
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = true,
+                    DaDat = daDat,
+                    DiemSo = diemSo,
+                    SoCauDung = soCauDung,
+                    TongSoCau = tongSoCau,
+                    ThongBao = thongBao,
+                    ThongTinChungChi = await LayThongTinChungChiAsync(khoaHoc, dto.MaNguoiDung, tongSoCau)
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+
+                return new KetQuaNopBaiKiemTraChungChiDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = $"Không thể lưu kết quả bài kiểm tra chứng chỉ: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task CapNhatTrangThaiGuiEmailChungChiAsync(int maKhoaHoc, int maNguoiDung, bool trangThai)
+        {
+            var chungChi = await _context.ChungChiKhoaHocs
+                .FirstOrDefaultAsync(x => x.MaKhoaHoc == maKhoaHoc && x.MaNguoiDung == maNguoiDung);
+
+            if (chungChi != null)
+            {
+                chungChi.DaGuiEmail = trangThai;
+                if (trangThai)
+                {
+                    chungChi.NgayGuiEmail = DateTime.UtcNow;
+                }
+                await _context.SaveChangesAsync();
+            }
+        }
+
         public async Task<bool> KiemTraDaDanhGiaAsync(int maKhoaHoc, int maNguoiDung)
         {
             return await _context.DanhGias
@@ -480,6 +714,225 @@ namespace educodeai_server.Repository.Implementation
                 .CountAsync();
 
             return soBaiDaHoc == tongSoBaiHoc;
+        }
+
+        private BaiKiemTraChungChiDTO TaoBaiKiemTraChungChi(
+            KhoaHoc_NoiDungKhoaHocDTO duLieuKhoaHoc,
+            KhoaHocModel khoaHoc,
+            List<CauHoiChungChiItem> nganHangCauHoi,
+            bool daHoanThanhKhoaHoc)
+        {
+            return new BaiKiemTraChungChiDTO
+            {
+                MaBaiKiemTra = duLieuKhoaHoc.MaKhoaHoc * -1,
+                TieuDe = khoaHoc.TenChungChi ?? $"Bài kiểm tra cuối khóa: {duLieuKhoaHoc.TenKhoaHoc}",
+                MoTa = "Hoàn thành bài kiểm tra cuối khóa để mở khóa chứng chỉ. Bạn có thể thi lại nếu chưa đạt.",
+                SoCauHoi = nganHangCauHoi.Count,
+                ThoiGianLamBai = khoaHoc.ThoiGianLamBaiChungChi,
+                DiemCanDat = khoaHoc.DiemDatChungChi,
+                ChoPhepLamLai = true,
+                DaoCauHoi = true,
+                DaCoDeThi = nganHangCauHoi.Count > 0,
+                NguonDe = khoaHoc.NguonDeChungChi,
+                DuDieuKienDuThi = daHoanThanhKhoaHoc && nganHangCauHoi.Count > 0,
+                LyDoChuaDuDieuKien = nganHangCauHoi.Count == 0
+                    ? "Khóa học chưa có đề kiểm tra chứng chỉ. Vui lòng chờ giảng viên cấu hình."
+                    : daHoanThanhKhoaHoc
+                        ? null
+                        : "Bạn cần hoàn thành 100% bài học trước khi bắt đầu bài kiểm tra.",
+                DuLieuCauHoiJSON = JsonSerializer.Serialize(nganHangCauHoi)
+            };
+        }
+
+        private async Task<ThongTinChungChiDTO> LayThongTinChungChiAsync(
+            KhoaHocModel khoaHoc,
+            int maNguoiDung,
+            int tongSoCauHoi)
+        {
+            var thongTinHocVien = await _context.NguoiDungs
+                .AsNoTracking()
+                .Where(x => x.MaNguoiDung == maNguoiDung)
+                .Select(x => new
+                {
+                    Ten = x.HoTen ?? x.TaiKhoan,
+                    x.Email
+                })
+                .FirstOrDefaultAsync();
+
+            var soLanThi = await _context.KetQuaKiemTraChungChis
+                .AsNoTracking()
+                .CountAsync(x => x.MaKhoaHoc == khoaHoc.MaKhoaHoc && x.MaNguoiDung == maNguoiDung);
+
+            var lanThiGanNhat = await _context.KetQuaKiemTraChungChis
+                .AsNoTracking()
+                .Where(x => x.MaKhoaHoc == khoaHoc.MaKhoaHoc && x.MaNguoiDung == maNguoiDung)
+                .OrderByDescending(x => x.NgayThi)
+                .FirstOrDefaultAsync();
+
+            var chungChi = await _context.ChungChiKhoaHocs
+                .AsNoTracking()
+                .Where(x => x.MaKhoaHoc == khoaHoc.MaKhoaHoc && x.MaNguoiDung == maNguoiDung)
+                .OrderByDescending(x => x.NgayCap)
+                .FirstOrDefaultAsync();
+
+            return new ThongTinChungChiDTO
+            {
+                DaCap = chungChi != null,
+                MaChungChi = chungChi?.MaChungChi,
+                NgayCap = chungChi?.NgayCap,
+                SoLanThi = soLanThi,
+                DiemLanGanNhat = lanThiGanNhat?.DiemSo,
+                DatLanGanNhat = lanThiGanNhat?.DaDat,
+                SoCauDungLanGanNhat = lanThiGanNhat?.SoCauDung,
+                TongSoCauHoi = tongSoCauHoi,
+                TenHocVien = thongTinHocVien?.Ten,
+                TenKhoaHoc = khoaHoc.TenKhoaHoc,
+                TenChungChi = khoaHoc.TenChungChi,
+                HoTenHienThi = chungChi?.HoTenHienThi ?? thongTinHocVien?.Ten,
+                EmailNhan = chungChi?.EmailNhan ?? thongTinHocVien?.Email,
+                DaGuiEmail = chungChi?.DaGuiEmail ?? false,
+                NgayGuiEmail = chungChi?.NgayGuiEmail
+            };
+        }
+
+        private async Task<List<CauHoiChungChiItem>> LayNganHangCauHoiChungChiAsync(KhoaHocModel khoaHoc)
+        {
+            if (!string.IsNullOrWhiteSpace(khoaHoc.DuLieuDeChungChiJSON))
+            {
+                var tuDeChungChi = ParseCauHoiChungChi(khoaHoc.DuLieuDeChungChiJSON, khoaHoc.MaKhoaHoc * HeSoSinhIdCauHoi);
+                if (tuDeChungChi.Count > 0)
+                {
+                    return tuDeChungChi;
+                }
+            }
+
+            var quizCuaKhoaHoc = await _context.BaiTap_Quizs
+                .AsNoTracking()
+                .Where(x => x.BaiTap.BaiHoc.ChuongHoc.MaKhoaHoc == khoaHoc.MaKhoaHoc && !string.IsNullOrEmpty(x.DuLieuCauHoi))
+                .Select(x => new
+                {
+                    x.MaBaiTap,
+                    x.DuLieuCauHoi
+                })
+                .ToListAsync();
+
+            var ketQua = new List<CauHoiChungChiItem>();
+
+            foreach (var quiz in quizCuaKhoaHoc)
+            {
+                ketQua.AddRange(ParseCauHoiChungChi(quiz.DuLieuCauHoi, quiz.MaBaiTap * HeSoSinhIdCauHoi));
+            }
+
+            return ketQua
+                .Select((cauHoi, index) =>
+                {
+                    cauHoi.Id = index + 1;
+                    return cauHoi;
+                })
+                .ToList();
+        }
+
+        private static List<CauHoiChungChiItem> ParseCauHoiChungChi(string? json, int baseId)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return new List<CauHoiChungChiItem>();
+            }
+
+            try
+            {
+                var danhSachCauHoi = JsonSerializer.Deserialize<List<CauHoiQuizRaw>>(json)
+                    ?? new List<CauHoiQuizRaw>();
+
+                return danhSachCauHoi
+                    .Where(cauHoi => !string.IsNullOrWhiteSpace(cauHoi.CauHoi))
+                    .Select((cauHoi, index) => new CauHoiChungChiItem
+                    {
+                        Id = baseId + index + 1,
+                        CauHoi = cauHoi.CauHoi,
+                        DapAnA = cauHoi.DapAnA,
+                        DapAnB = cauHoi.DapAnB,
+                        DapAnC = cauHoi.DapAnC,
+                        DapAnD = cauHoi.DapAnD,
+                        DapAnDung = cauHoi.DapAnDung,
+                        GiaiThich = cauHoi.GiaiThich ?? string.Empty
+                    })
+                    .ToList();
+            }
+            catch
+            {
+                return new List<CauHoiChungChiItem>();
+            }
+        }
+
+        private static int ChuyenDapAnDungSangIndex(string? dapAnDung)
+        {
+            return dapAnDung?.Trim().ToUpperInvariant() switch
+            {
+                "A" => 0,
+                "B" => 1,
+                "C" => 2,
+                "D" => 3,
+                _ => 0
+            };
+        }
+
+        private static string TaoMaChungChi(int maKhoaHoc, int maNguoiDung)
+        {
+            return $"CC-{maKhoaHoc}-{maNguoiDung}-{DateTime.UtcNow:yyyyMMddHHmmss}";
+        }
+
+
+
+        private sealed class CauHoiQuizRaw
+        {
+            [JsonPropertyName("cauHoi")]
+            public string CauHoi { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnA")]
+            public string DapAnA { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnB")]
+            public string DapAnB { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnC")]
+            public string DapAnC { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnD")]
+            public string DapAnD { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnDung")]
+            public string DapAnDung { get; set; } = string.Empty;
+
+            [JsonPropertyName("giaiThich")]
+            public string? GiaiThich { get; set; }
+        }
+
+        private sealed class CauHoiChungChiItem
+        {
+            [JsonPropertyName("id")]
+            public int Id { get; set; }
+
+            [JsonPropertyName("cauHoi")]
+            public string CauHoi { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnA")]
+            public string DapAnA { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnB")]
+            public string DapAnB { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnC")]
+            public string DapAnC { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnD")]
+            public string DapAnD { get; set; } = string.Empty;
+
+            [JsonPropertyName("dapAnDung")]
+            public string DapAnDung { get; set; } = string.Empty;
+
+            [JsonPropertyName("giaiThich")]
+            public string GiaiThich { get; set; } = string.Empty;
         }
     }
 }

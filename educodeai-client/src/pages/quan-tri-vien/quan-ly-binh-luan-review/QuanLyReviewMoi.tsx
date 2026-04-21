@@ -6,7 +6,7 @@ import ReviewAdminDetailDrawer from './components/ReviewAdminDetailDrawer';
 import ReviewAdminFilters from './components/ReviewAdminFilters';
 import ReviewAdminStats from './components/ReviewAdminStats';
 import ReviewAdminTable from './components/ReviewAdminTable';
-import type { ReviewFilterParams, ReviewItem, ReviewSource, ThongKeReview } from './components/ReviewAdmin.types';
+import type { ReviewFilterParams, ReviewItem, ReviewSource, ThongKeReview, ReviewCourseInfo } from './components/ReviewAdmin.types';
 import './ReviewAdmin.css';
 
 const DEFAULT_FILTERS: ReviewFilterParams = {
@@ -22,14 +22,16 @@ export default function QuanLyReviewMoi() {
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
   const [filters, setFilters] = useState<ReviewFilterParams>(DEFAULT_FILTERS);
+  const [courses, setCourses] = useState<ReviewCourseInfo[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<ReviewSource>('api');
   const [error, setError] = useState<string | null>(null);
 
-  const fetchThongKe = async () => {
-    const result = await reviewAdminService.getThongKe();
+  const fetchThongKe = async (nextFilters = filters) => {
+    const maKhoaHoc = nextFilters.maKhoaHoc === 'TatCa' ? undefined : Number(nextFilters.maKhoaHoc);
+    const result = await reviewAdminService.getThongKe(maKhoaHoc || undefined);
     setThongKe(result.data);
     setSource(result.source);
   };
@@ -46,14 +48,23 @@ export default function QuanLyReviewMoi() {
       setSource(result.source);
     } catch (err: any) {
       console.error('Error fetching reviews:', err);
-      setError(err.response?.data?.message || 'Khong the tai module quan ly danh gia khoa hoc.');
+      setError(err.response?.data?.message || 'Không thể tải module quản lý đánh giá khóa học.');
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchCourses = async () => {
+    try {
+      const result = await reviewAdminService.getKhoaHocFilters();
+      setCourses(result.data);
+    } catch (err) {
+      console.error('Error fetching course filters:', err);
+    }
+  };
+
   const reloadAll = async (nextFilters = filters) => {
-    await Promise.all([fetchThongKe(), fetchReviews(nextFilters)]);
+    await Promise.all([fetchThongKe(nextFilters), fetchCourses(), fetchReviews(nextFilters)]);
   };
 
   useEffect(() => {
@@ -61,6 +72,7 @@ export default function QuanLyReviewMoi() {
   }, []);
 
   useEffect(() => {
+    fetchThongKe(filters);
     fetchReviews(filters);
   }, [filters]);
 
@@ -80,27 +92,27 @@ export default function QuanLyReviewMoi() {
     } catch (err: any) {
       Swal.fire({
         icon: 'error',
-        text: err.response?.data?.message || 'Khong the cap nhat du lieu.',
+        text: err.response?.data?.message || 'Không thể cập nhật dữ liệu.',
       });
     }
   };
 
   const handleApprove = async (id: number) => {
-    await handleMutation(() => reviewAdminService.approveReview(id), 'Da duyet noi dung thanh cong.');
+    await handleMutation(() => reviewAdminService.approveReview(id), 'Đã duyệt nội dung thành công.');
     if (selectedReview?.id === id) {
       setSelectedReview((prev) => (prev ? { ...prev, trangThai: 'DaDuyet' } : prev));
     }
   };
 
   const handleReject = async (id: number) => {
-    await handleMutation(() => reviewAdminService.rejectReview(id), 'Da tu choi noi dung.');
+    await handleMutation(() => reviewAdminService.rejectReview(id), 'Đã từ chối nội dung.');
     if (selectedReview?.id === id) {
       setSelectedReview((prev) => (prev ? { ...prev, trangThai: 'TuChoi' } : prev));
     }
   };
 
   const handleDelete = async (id: number) => {
-    await handleMutation(() => reviewAdminService.deleteReview(id), 'Da xoa noi dung khoi danh sach.');
+    await handleMutation(() => reviewAdminService.deleteReview(id), 'Đã xóa nội dung khỏi danh sách.');
     if (selectedReview?.id === id) {
       setSelectedReview(null);
     }
@@ -114,10 +126,10 @@ export default function QuanLyReviewMoi() {
             <ShieldCheck size={24} />
           </div>
           <div>
-            <h1>Quan ly danh gia khoa hoc</h1>
+            <h1>Quản lý đánh giá khóa học</h1>
             <p>
-              Theo doi chat luong khoa hoc, kiem duyet nhan xet hoc vien va xu ly cac danh gia
-              khong phu hop trong giao dien quan tri hien co.
+              Theo dõi chất lượng khóa học, kiểm duyệt nhận xét học viên và xử lý các đánh giá
+              không phù hợp trong giao diện quản trị hiện có.
             </p>
           </div>
         </div>
@@ -127,7 +139,7 @@ export default function QuanLyReviewMoi() {
             <Star size={18} />
             <div>
               <strong>{thongKe?.danhGiaTrungBinh.toFixed(1) || '0.0'}</strong>
-              <span>Diem danh gia trung binh</span>
+              <span>Điểm đánh giá trung bình</span>
             </div>
           </div>
         </div>
@@ -139,16 +151,17 @@ export default function QuanLyReviewMoi() {
         filters={filters}
         source={source}
         loading={loading}
+        courses={courses}
         onFilterChange={setFilters}
         onRefresh={() => reloadAll(filters)}
       />
 
       {error ? (
         <div className="qtrv-error-card">
-          <h3>Loi tai du lieu</h3>
+          <h3>Lỗi tải dữ liệu</h3>
           <p>{error}</p>
           <button type="button" onClick={() => reloadAll(filters)}>
-            Thu lai
+            Thử lại
           </button>
         </div>
       ) : (

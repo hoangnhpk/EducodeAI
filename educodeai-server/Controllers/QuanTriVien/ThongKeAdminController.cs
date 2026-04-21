@@ -1,0 +1,287 @@
+using educodeai_server.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace educodeai_server.Controllers.QuanTriVien
+{
+    [Route("api/admin/thong-ke")]
+    [ApiController]
+    [Authorize(Roles = "Admin")]
+    public class ThongKeAdminController : ControllerBase
+    {
+        private readonly IThongKeAdminService _service;
+
+        public ThongKeAdminController(IThongKeAdminService service)
+        {
+            _service = service;
+        }
+
+        [HttpGet("tong-quan")]
+        public async Task<IActionResult> LayTongQuan()
+        {
+            try
+            {
+                var data = await _service.LayTongQuanAsync();
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayTongQuan ERROR: {ex}");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Lỗi server khi lấy thống kê tổng quan.",
+                    details = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("dang-ky-12-thang")]
+        public async Task<IActionResult> LayDangKy12Thang()
+        {
+            try
+            {
+                var data = await _service.LayDangKyTheo12ThangAsync();
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayDangKy12Thang ERROR: {ex}");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Lỗi server khi lấy dữ liệu biểu đồ đăng ký.",
+                    details = ex.Message
+                });
+            }
+        }
+
+        // from/to format: yyyy-MM (ví dụ: 2026-01). "to" là tháng cuối cùng được tính (inclusive).
+        [HttpGet("dang-ky-theo-thang")]
+        public async Task<IActionResult> LayDangKyTheoThang([FromQuery] string? from = null, [FromQuery] string? to = null)
+        {
+            try
+            {
+                DateTime ParseMonthOrDefault(string? v, DateTime fallback)
+                {
+                    if (string.IsNullOrWhiteSpace(v)) return fallback;
+                    if (DateTime.TryParseExact(v.Trim(), "yyyy-MM", null, System.Globalization.DateTimeStyles.AssumeUniversal, out var dt))
+                    {
+                        return new DateTime(dt.Year, dt.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                    }
+                    return fallback;
+                }
+
+                var now = DateTime.UtcNow;
+                var defaultFrom = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-11);
+                var defaultTo = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                var fromMonth = ParseMonthOrDefault(from, defaultFrom);
+                var toMonth = ParseMonthOrDefault(to, defaultTo);
+
+                // endExclusive = first day of (toMonth + 1)
+                var toExclusive = new DateTime(toMonth.Year, toMonth.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
+
+                var data = await _service.LayDangKyTheoKhoangThangAsync(fromMonth, toExclusive);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayDangKyTheoThang ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy dữ liệu biểu đồ đăng ký.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("top-khoa-hoc")]
+        public async Task<IActionResult> LayTopKhoaHoc([FromQuery] string? from = null, [FromQuery] string? to = null, [FromQuery] int top = 5)
+        {
+            try
+            {
+                DateTime ParseMonthOrDefault(string? v, DateTime fallback)
+                {
+                    if (string.IsNullOrWhiteSpace(v)) return fallback;
+                    if (DateTime.TryParseExact(v.Trim(), "yyyy-MM", null, System.Globalization.DateTimeStyles.AssumeUniversal, out var dt))
+                    {
+                        return new DateTime(dt.Year, dt.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                    }
+                    return fallback;
+                }
+
+                var now = DateTime.UtcNow;
+                var defaultFrom = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-11);
+                var defaultTo = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                var fromMonth = ParseMonthOrDefault(from, defaultFrom);
+                var toMonth = ParseMonthOrDefault(to, defaultTo);
+                var toExclusive = new DateTime(toMonth.Year, toMonth.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
+
+                var data = await _service.LayTopKhoaHocDangKyAsync(fromMonth, toExclusive, top);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayTopKhoaHoc ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy top khóa học.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("top-giang-vien")]
+        public async Task<IActionResult> LayTopGiangVien([FromQuery] string? from = null, [FromQuery] string? to = null, [FromQuery] int top = 5)
+        {
+            try
+            {
+                DateTime ParseMonthOrDefault(string? v, DateTime fallback)
+                {
+                    if (string.IsNullOrWhiteSpace(v)) return fallback;
+                    if (DateTime.TryParseExact(v.Trim(), "yyyy-MM", null, System.Globalization.DateTimeStyles.AssumeUniversal, out var dt))
+                    {
+                        return new DateTime(dt.Year, dt.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                    }
+                    return fallback;
+                }
+
+                var now = DateTime.UtcNow;
+                var defaultFrom = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-11);
+                var defaultTo = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                var fromMonth = ParseMonthOrDefault(from, defaultFrom);
+                var toMonth = ParseMonthOrDefault(to, defaultTo);
+                var toExclusive = new DateTime(toMonth.Year, toMonth.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
+
+                var data = await _service.LayTopGiangVienDangKyAsync(fromMonth, toExclusive, top);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayTopGiangVien ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy top giảng viên.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("hoat-dong")]
+        public async Task<IActionResult> LayHoatDong([FromQuery] string? from = null, [FromQuery] string? to = null)
+        {
+            try
+            {
+                DateTime ParseMonthOrDefault(string? v, DateTime fallback)
+                {
+                    if (string.IsNullOrWhiteSpace(v)) return fallback;
+                    if (DateTime.TryParseExact(v.Trim(), "yyyy-MM", null, System.Globalization.DateTimeStyles.AssumeUniversal, out var dt))
+                    {
+                        return new DateTime(dt.Year, dt.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                    }
+                    return fallback;
+                }
+
+                var now = DateTime.UtcNow;
+                var defaultFrom = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-11);
+                var defaultTo = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                var fromMonth = ParseMonthOrDefault(from, defaultFrom);
+                var toMonth = ParseMonthOrDefault(to, defaultTo);
+                var toExclusive = new DateTime(toMonth.Year, toMonth.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
+
+                var data = await _service.LayHoatDongHeThongAsync(fromMonth, toExclusive);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayHoatDong ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy thống kê hoạt động.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("chat-luong-khoa-hoc")]
+        public async Task<IActionResult> LayChatLuongKhoaHoc([FromQuery] string? from = null, [FromQuery] string? to = null, [FromQuery] int top = 10)
+        {
+            try
+            {
+                DateTime ParseMonthOrDefault(string? v, DateTime fallback)
+                {
+                    if (string.IsNullOrWhiteSpace(v)) return fallback;
+                    if (DateTime.TryParseExact(v.Trim(), "yyyy-MM", null, System.Globalization.DateTimeStyles.AssumeUniversal, out var dt))
+                    {
+                        return new DateTime(dt.Year, dt.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                    }
+                    return fallback;
+                }
+
+                var now = DateTime.UtcNow;
+                var defaultFrom = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-11);
+                var defaultTo = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                var fromMonth = ParseMonthOrDefault(from, defaultFrom);
+                var toMonth = ParseMonthOrDefault(to, defaultTo);
+                var toExclusive = new DateTime(toMonth.Year, toMonth.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
+
+                var data = await _service.LayChatLuongKhoaHocAsync(fromMonth, toExclusive, top);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayChatLuongKhoaHoc ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy thống kê chất lượng khóa học.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("chi-tiet/hoc-vien")]
+        public async Task<IActionResult> LayChiTietHocVien([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        {
+            try
+            {
+                var data = await _service.LayDanhSachHocVienAsync(page, pageSize, search);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayChiTietHocVien ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết học viên.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("chi-tiet/giang-vien")]
+        public async Task<IActionResult> LayChiTietGiangVien([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        {
+            try
+            {
+                var data = await _service.LayDanhSachGiangVienAsync(page, pageSize, search);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayChiTietGiangVien ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết giảng viên.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("chi-tiet/khoa-hoc")]
+        public async Task<IActionResult> LayChiTietKhoaHoc([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        {
+            try
+            {
+                var data = await _service.LayDanhSachKhoaHocAsync(page, pageSize, search);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayChiTietKhoaHoc ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết khóa học.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("chi-tiet/dang-ky")]
+        public async Task<IActionResult> LayChiTietDangKy([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
+        {
+            try
+            {
+                var data = await _service.LayDanhSachDangKyAsync(page, pageSize, search);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayChiTietDangKy ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết lượt đăng ký.", details = ex.Message });
+            }
+        }
+    }
+}

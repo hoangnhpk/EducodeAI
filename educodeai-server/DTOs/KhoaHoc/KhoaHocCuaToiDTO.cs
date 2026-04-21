@@ -13,6 +13,8 @@
 
     public double DiemDanhGiaTB { get; set; }
     public string? TrangThai { get; set; }
+    public bool CoChungChi { get; set; }
+    public bool DaCoDeThiChungChi { get; set; }
     public DateTime NgayTao { get; set; }
 }
 
@@ -30,10 +32,19 @@ public class KhoaHocGiangVienDetailDTO
 
     public string? TrangThai { get; set; }
     public DateTime NgayTao { get; set; }
+    public bool CoChungChi { get; set; }
+    public string? TenChungChi { get; set; }
+    public double DiemDatChungChi { get; set; }
+    public int SoCauHoiChungChi { get; set; }
+    public int ThoiGianLamBaiChungChi { get; set; }
+    public bool DaCoDeThiChungChi { get; set; }
+    public string? NguonDeChungChi { get; set; }
+    public DateTime? NgayTaoDeChungChi { get; set; }
 
     public int SoHocVien { get; set; }
     public double TiLeHoanThanh { get; set; }
     public double DiemDanhGiaTB { get; set; }
+    public string? KyNangChinh { get; set; }
 
     public List<HocVienTrongKhoaHocDTO> DanhSachHocVien { get; set; } = new();
     public List<ChuongHocDetailDTO> DanhSachChuong { get; set; } = new();
@@ -63,6 +74,20 @@ public class KhoaHocCreateUpdateDTO
 
     public string? TrangThai { get; set; }
     public string? KyNangChinh { get; set; }
+    public bool CoChungChi { get; set; }
+    public string? TenChungChi { get; set; }
+    public double DiemDatChungChi { get; set; } = 80;
+    public int SoCauHoiChungChi { get; set; } = 20;
+    public int ThoiGianLamBaiChungChi { get; set; } = 30;
+}
+
+public class KetQuaTaoDeChungChiAIDTO
+{
+    public bool ThanhCong { get; set; }
+    public string ThongBao { get; set; } = string.Empty;
+    public int SoCauHoi { get; set; }
+    public string? NguonDeChungChi { get; set; }
+    public DateTime? NgayTaoDeChungChi { get; set; }
 }
 
 public class ChuongHocDTO
@@ -130,4 +155,30 @@ public class ThemVideoResponseDTO
     public string? LinkVideo { get; set; }
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
+}
+
+// ─── REORDER DTOs ───
+public class ChapterReorderDTO
+{
+    public int MaChuong { get; set; }
+    public int ThuTu { get; set; }
+}
+
+public class LessonReorderDTO
+{
+    public int MaBaiHoc { get; set; }
+    public int ThuTu { get; set; }
+}
+
+// ─── CERTIFICATE CONFIG DTOs ───
+public class CertificateConfigDTO
+{
+    public bool CoChungChi { get; set; }
+    public string? TenChungChi { get; set; }
+    public double DiemDatChungChi { get; set; } = 80;
+    public int SoCauHoiChungChi { get; set; } = 20;
+    public int ThoiGianLamBaiChungChi { get; set; } = 30;
+    public bool DaCoDeThiChungChi { get; set; }
+    public string? NguonDeChungChi { get; set; }
+    public DateTime? NgayTaoDeChungChi { get; set; }
 }
