@@ -205,6 +205,7 @@ app.UseHttpsRedirection();
 // Kích hoạt CORS (Phải đặt trước UseAuthorization)
 app.UseCors("AllowReactApp");
 app.UseStaticFiles();
+app.UseMiddleware<MaintenanceMiddleware>();
 
 app.UseAuthentication();
 app.UseSessionCheck();

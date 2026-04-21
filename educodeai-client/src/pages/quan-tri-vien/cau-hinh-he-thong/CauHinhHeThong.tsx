@@ -72,6 +72,7 @@ const CauHinhHeThong = () => {
         }
     };
 
+    // 👉 ĐÃ SỬA: Hàm handleSave gọi thêm API Toggle Bảo Trì
     const handleSave = async () => {
         Swal.fire({ title: 'Đang lưu cấu hình...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         
@@ -82,6 +83,7 @@ const CauHinhHeThong = () => {
                 GiaTri: configs[key]
             }));
 
+            // 1. Lưu cấu hình vào Database
             const res = await fetch('https://localhost:7284/api/quan-tri/cau-hinh/cap-nhat', {
                 method: 'POST',
                 headers: { 
@@ -93,6 +95,16 @@ const CauHinhHeThong = () => {
             
             const result = await res.json();
             if (result.success) {
+                // 2. KÍCH HOẠT LỚP BẢO VỆ MIDDLEWARE BÊN BACKEND
+                const isBaoTri = configs.CheDoBaoTri === 'true';
+                try {
+                    await fetch('https://localhost:7284/api/quan-tri/cau-hinh/toggle-bao-tri', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(isBaoTri)
+                    });
+                } catch (e) { console.error("Không gọi được API Toggle Bảo Trì"); }
+
                 await refreshConfigs(); 
                 localStorage.setItem('trigger_update_config', Date.now().toString());
                 Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đã cập nhật hệ thống!', timer: 2000, showConfirmButton: false });
@@ -213,9 +225,17 @@ const CauHinhHeThong = () => {
                                             <span className="slider round"></span>
                                         </label>
                                     </div>
-                                    <div className="form-group" style={{marginTop: '25px'}}>
-                                        <label>Giới hạn dung lượng tải lên (MB):</label>
-                                        <input type="number" className="input-config" style={{width: '200px'}} value={configs.GioiHanDungLuong} onChange={e => handleChange('GioiHanDungLuong', e.target.value)} />
+                                    
+                                    {/* 👉 ĐÃ SỬA: Khóa cứng ô Giới hạn dung lượng */}
+                                    <div className="form-group" style={{marginTop: '25px', opacity: 0.7}}>
+                                        <label>Giới hạn dung lượng tải lên (MB) - <span style={{color: '#ef4444'}}>Đã khóa</span>:</label>
+                                        <input 
+                                            type="number" 
+                                            className="input-config" 
+                                            style={{width: '200px', cursor: 'not-allowed', backgroundColor: '#f1f5f9'}} 
+                                            value={configs.GioiHanDungLuong} 
+                                            disabled 
+                                        />
                                     </div>
                                 </div>
                             )}
