@@ -6,8 +6,9 @@ const MaintenanceGuard = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const checkStatus = async () => {
             try {
+                const apiUrl = import.meta.env.VITE_API_URL;
                 // Kiểm tra trạng thái bảo trì định kỳ
-                const res = await fetch('https://localhost:7284/api/quan-tri/cau-hinh/check-bao-tri');
+                const res = await fetch(`${apiUrl}/api/quan-tri/cau-hinh/check-bao-tri`);
                 const data = await res.json();
                 setIsMaintenance(data.isMaintenance);
             } catch (error) {
