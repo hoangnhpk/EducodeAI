@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import Router from "./router/index";
 import { authService } from "./services/auth.service";
 import { getDeviceInfo } from "./utils/deviceHelper";
+import MaintenanceGuard from "./pages/quan-tri-vien/cau-hinh-he-thong/MaintenanceGuard";
 
 function App() {
   useEffect(() => {
@@ -25,7 +26,9 @@ function App() {
   }, []);
 
   return (
+    <MaintenanceGuard>
       <Router />
+      </MaintenanceGuard>
   );
 }
 

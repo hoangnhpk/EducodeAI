@@ -45,7 +45,7 @@ export default function ReviewAdminTable({
     return (
       <div className="qtrv-table-state">
         <div className="qtrv-spinner" />
-        <p>Dang tai danh sach danh gia...</p>
+        <p>Đang tải danh sách đánh giá...</p>
       </div>
     );
   }
@@ -54,7 +54,7 @@ export default function ReviewAdminTable({
     return (
       <div className="qtrv-table-state">
         <MessageSquareText size={42} />
-        <p>Khong co danh gia nao phu hop bo loc hien tai.</p>
+        <p>Không có đánh giá nào phù hợp bộ lọc hiện tại.</p>
       </div>
     );
   }
@@ -63,9 +63,9 @@ export default function ReviewAdminTable({
     <section className="qtrv-table-card">
       <div className="qtrv-table-card__header">
         <div>
-          <h3>Danh sach kiem duyet</h3>
+          <h3>Danh sách kiểm duyệt</h3>
           <p>
-            Tong cong {totalItems} muc. Trang {currentPage}/{totalPages}.
+            Tổng cộng {totalItems} mục. Trang {currentPage}/{totalPages}.
           </p>
         </div>
       </div>
@@ -74,13 +74,13 @@ export default function ReviewAdminTable({
         <table className="qtrv-table">
           <thead>
             <tr>
-              <th>Nguoi dung</th>
-              <th>Khoa hoc</th>
-              <th>Noi dung danh gia</th>
+              <th>Người dùng</th>
+              <th>Khóa học</th>
+              <th>Nội dung đánh giá</th>
               <th>Sao</th>
-              <th>Thoi gian</th>
-              <th>Trang thai</th>
-              <th>Thao tac</th>
+              <th>Thời gian</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
@@ -94,14 +94,14 @@ export default function ReviewAdminTable({
                     />
                     <div>
                       <strong>{review.nguoiDung.ten}</strong>
-                      <span>{review.nguoiDung.email || 'Khong co email'}</span>
+                      <span>{review.nguoiDung.email || 'Không có email'}</span>
                     </div>
                   </div>
                 </td>
                 <td>
                   <div className="qtrv-linked-cell">
                     <strong>{review.khoaHoc.tenKhoaHoc}</strong>
-                    <span>{review.khoaHoc.giangVien || 'Khoa hoc trong he thong'}</span>
+                    <span>{review.khoaHoc.giangVien || 'Khóa học trong hệ thống'}</span>
                   </div>
                 </td>
                 <td>
@@ -120,7 +120,7 @@ export default function ReviewAdminTable({
                 </td>
                 <td>
                   <div className="qtrv-action-row">
-                    <button type="button" className="qtrv-icon-btn" onClick={() => onPreview(review)} title="Xem chi tiet">
+                    <button type="button" className="qtrv-icon-btn" onClick={() => onPreview(review)} title="Xem chi tiết">
                       <Eye size={16} />
                     </button>
 
@@ -129,7 +129,7 @@ export default function ReviewAdminTable({
                         type="button"
                         className="qtrv-icon-btn success"
                         onClick={() => onApprove(review.id)}
-                        title="Duyet"
+                        title="Duyệt"
                       >
                         <CheckCircle2 size={16} />
                       </button>
@@ -140,7 +140,7 @@ export default function ReviewAdminTable({
                         type="button"
                         className="qtrv-icon-btn warning"
                         onClick={() => onReject(review.id)}
-                        title="Tu choi"
+                        title="Từ chối"
                       >
                         <ShieldX size={16} />
                       </button>
@@ -151,12 +151,12 @@ export default function ReviewAdminTable({
                       className="qtrv-icon-btn danger"
                       onClick={() => {
                         Swal.fire({
-                          title: 'Xoa noi dung nay?',
-                          text: 'Hanh dong nay khong the hoan tac.',
+                          title: 'Xóa nội dung này?',
+                          text: 'Hành động này không thể hoàn tác.',
                           icon: 'warning',
                           showCancelButton: true,
-                          confirmButtonText: 'Xoa',
-                          cancelButtonText: 'Huy',
+                          confirmButtonText: 'Xóa',
+                          cancelButtonText: 'Hủy',
                           confirmButtonColor: '#dc2626',
                         }).then((result) => {
                           if (result.isConfirmed) {
@@ -164,7 +164,7 @@ export default function ReviewAdminTable({
                           }
                         });
                       }}
-                      title="Xoa"
+                      title="Xóa"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -178,7 +178,7 @@ export default function ReviewAdminTable({
 
       <div className="qtrv-pagination">
         <button type="button" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage <= 1}>
-          Truoc
+          Trước
         </button>
 
         <div className="qtrv-pagination__numbers">
