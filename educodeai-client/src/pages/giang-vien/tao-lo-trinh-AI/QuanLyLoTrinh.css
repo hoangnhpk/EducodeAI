@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 /* =========================================
    CONTAINER VÀ GRID CHÍNH
    ========================================= */
@@ -275,6 +273,8 @@
     color: #ef4444;
     transform: scale(1.1);
 }
+/* Import font chữ hiện đại nếu sếp chưa có */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 .quan-ly-container, 
 .pro-modal-v2, 
@@ -541,4 +541,30 @@ button {
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
+}
+/* Nút xóa lộ trình ngoài Card danh sách */
+.btn-delete-small {
+    border: 2px solid #ef4444;
+    color: #ef4444;
+    font-weight: 700;
+    padding: 6px 18px;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-delete-small:hover {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+}
+
+/* Tinh chỉnh cho Modal scroll */
+.course-scroll-area::-webkit-scrollbar {
+    width: 6px;
+}
+.course-scroll-area::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
 }
