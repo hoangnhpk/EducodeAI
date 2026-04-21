@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using educodeai_server.Data;
@@ -42,6 +42,23 @@ namespace educodeai_server.Controllers.QuanTriVien
             {
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
+        }
+        // API cho Frontend quét liên tục xem có đang bảo trì không
+        [HttpGet("check-bao-tri")]
+        [AllowAnonymous]
+        public IActionResult CheckBaoTri()
+        {
+            return Ok(new { isMaintenance = Helpers.MaintenanceMiddleware.IsUnderMaintenance });
+        }
+
+        // API CÔNG TẮC: Chỗ này sếp gắn vào nút Bật/Tắt bảo trì ở giao diện Admin
+        [HttpPost("toggle-bao-tri")]
+        // [Authorize] -> (Nhớ phân quyền Admin chỗ này nhé)
+        public IActionResult ToggleBaoTri([FromBody] bool status)
+        {
+            Helpers.MaintenanceMiddleware.IsUnderMaintenance = status;
+            string msg = status ? "CẢNH BÁO: Đã BẬT bảo trì hệ thống!" : "Thành công: Đã TẮT bảo trì, hệ thống hoạt động bình thường!";
+            return Ok(new { success = true, message = msg, currentStatus = status });
         }
 
         [HttpPost("cap-nhat")]
