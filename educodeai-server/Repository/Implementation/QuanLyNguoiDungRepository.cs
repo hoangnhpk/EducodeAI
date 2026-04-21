@@ -18,12 +18,16 @@ namespace educodeai_server.Repository.Implementation
 
         public async Task<List<NguoiDungModel>> LayTatCaAsync()
         {
-            return await _context.NguoiDungs.ToListAsync();
+            return await _context.NguoiDungs
+                .Include(u => u.DanhSachPhienDangNhap)
+                .ToListAsync();
         }
 
         public async Task<NguoiDungModel?> LayTheoIdAsync(int maNguoiDung)
         {
-            return await _context.NguoiDungs.FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
+            return await _context.NguoiDungs
+                .Include(u => u.DanhSachPhienDangNhap)
+                .FirstOrDefaultAsync(x => x.MaNguoiDung == maNguoiDung);
         }
 
         public async Task<bool> ThemMoiAsync(NguoiDungModel nguoiDung)
