@@ -1,0 +1,33 @@
+import { MdPeople, MdRateReview, MdSettings } from 'react-icons/md';
+import { NavLink } from 'react-router-dom';
+
+export default function SidebarQuanTriVienMoi() {
+  return (
+    <aside className="qtv-sidebar">
+      <div className="qtv-sidebar-header">
+        <div className="header-logo">
+          <MdSettings className="header-icon-spin" />
+          <span>QUAN TRI</span>
+        </div>
+        <small className="system-label">EduCodeAI System</small>
+      </div>
+
+      <nav className="qtv-sidebar-nav">
+        <NavLink to="/quan-tri-vien/nguoi-dung" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><MdPeople /></div>
+          <span>Nguoi Dung</span>
+        </NavLink>
+
+        <NavLink to="/quan-tri-vien/quan-ly-api-key" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><i className="bi bi-key-fill"></i></div>
+          <span>Quan ly API AI</span>
+        </NavLink>
+
+        <NavLink to="/quan-tri-vien/quan-ly-binh-luan-review" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><MdRateReview /></div>
+          <span>Danh gia khoa hoc</span>
+        </NavLink>
+      </nav>
+    </aside>
+  );
+}

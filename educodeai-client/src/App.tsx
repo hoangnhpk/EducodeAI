@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import Router from "./router/index";
 import { authService } from "./services/auth.service";
 import { getDeviceInfo } from "./utils/deviceHelper";
