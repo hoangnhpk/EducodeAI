@@ -5,6 +5,7 @@ import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
 import LayoutBlank from "../layouts/hoc-vien/LayoutBlank";
 import LayoutGiangVien from "../layouts/giang-vien/LayoutGiangVien";
 import LayoutQuanTriVien from "../layouts/quan-tri-vien/LayoutQuanTriVien";
+import { SystemConfigProvider } from '../contexts/SystemConfigContext';
 
 // /* ===== AUTH ===== */
 import DangNhap from "../pages/auth/DangNhap";
@@ -20,8 +21,10 @@ import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinh
 import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
 import ChiTietLoTrinhAI from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/ChiTietLoTrinhAI";
 import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
+import KhongGianHocTap from "@/pages/hoc-vien/khong-gian-hoc-tap/KhongGianHocTap";
 import DoiMatKhau from "../pages/hoc-vien/ho-so-hoc-vien/DoiMatKhau";
 import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
+import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
 
 // /* ===== GIẢNG VIÊN ===== */
 import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
@@ -32,11 +35,14 @@ import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 import QuanLyHocVienKhoaHoc from "../pages/giang-vien/quan-ly-hoc-vien/QuanLyHocVienKhoaHoc";
 import TaoLoTrinhAI from '../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI';
+import QuanLyBaiTapThucHanh from '../pages/giang-vien/bai-tap-thuc-hanh/QuanLyBaiTapThucHanh';
 // /* ===== ADMIN ===== */
 import QuanLyReviewMoi from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReviewMoi";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
 import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
 import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
+import CauHinhHeThong from '../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeThong';
+import ThongKeAdmin from "@/pages/quan-tri-vien/thong-ke/ThongKeAdmin";
 
 // Component để điều hướng trang chủ dựa trên Role
 const HomeRedirect = () => {
@@ -53,6 +59,7 @@ const HomeRedirect = () => {
 
 export default function AppRouter() {
   return (
+    <SystemConfigProvider>
     <BrowserRouter>
       <Routes>
         {/* ========================================== */}
@@ -79,11 +86,13 @@ export default function AppRouter() {
           }
         >
           <Route path="/yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
+          <Route path="/khong-gian-hoc-tap" element={<KhongGianHocTap />} />
           <Route path="/ho-so" element={<HoSoHocVienPage />} />
           <Route path="/bao-mat" element={<DoiMatKhau />} />
           <Route path="/thiet-bi" element={<QuanLyThietBi />} />
           <Route path="/khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
           <Route path="/chi-tiet-lo-trinh/:id" element={<ChiTietLoTrinhAI />} />
+          <Route path="/kham-pha-lo-trinh" element={<KhamPhaLoTrinh />} />
         </Route>
 
         {/* NỘI DUNG KHÓA HỌC (Layout trống, Role 2) */}
@@ -109,7 +118,7 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<ThongKeHocTap />} /> {/* Default load vào thống kê */}
+          <Route index element={<KhoaHocCuaToi />} /> {/* Default load vào thống kê */}
           <Route path="thong-ke" element={<ThongKeHocTap />} />
           <Route path="bai-tap" element={<TaoBaiTap />} />
           <Route path="quiz" element={<TaoQuiz />} />
@@ -118,6 +127,7 @@ export default function AppRouter() {
           <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
           <Route path="lop-hoc" element={<QuanLyHocVienKhoaHoc />} />
           <Route path="tao-lo-trinh-AI" element={<TaoLoTrinhAI />} />
+          <Route path="bai-tap-thuc-hanh" element={<QuanLyBaiTapThucHanh />} />
         </Route>
 
 
@@ -132,11 +142,13 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<QuanLyNguoiDung />} /> {/* Default load vào Quản lý người dùng */}
+          <Route index element={<ThongKeAdmin />} /> {/* Default load vào Thống kê */}
+          <Route path="thong-ke" element={<ThongKeAdmin />} />
           <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
           <Route path="quan-ly-binh-luan-review" element={<QuanLyReviewMoi />} />
           <Route path="quan-ly-hoc-vien" element={<QuanLyHocVien />} />
           <Route path="quan-ly-api-key" element={<QuanLyApiKey />} />
+          <Route path="cau-hinh-he-thong" element={<CauHinhHeThong />} />
         </Route>
 
         {/* CATCH ALL 404 */}
@@ -144,5 +156,6 @@ export default function AppRouter() {
 
       </Routes>
     </BrowserRouter>
+    </SystemConfigProvider>
   );
 }

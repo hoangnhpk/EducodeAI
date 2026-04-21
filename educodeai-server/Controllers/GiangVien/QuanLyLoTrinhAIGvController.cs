@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
@@ -20,25 +20,52 @@ namespace educodeai_server.Controllers.GiangVien
             _context = context;
         }
 
-        // 1. LẤY DANH SÁCH LỘ TRÌNH AI
+        // --- MỚI: LẤY DANH SÁCH KHÓA HỌC CÓ SẴN ĐỂ CHỌN ---
+        [HttpGet("danh-sach-khoa-hoc-co-san")]
+        public async Task<IActionResult> GetKhoaHocCoSan()
+        {
+            try
+            {
+                // Chỉ lấy các trường cần thiết để FE hiển thị và chọn
+                var danhSach = await _context.KhoaHocs
+                    .Select(x => new
+                    {
+                        maKhoaHoc = x.MaKhoaHoc,
+                        tenKhoaHoc = x.TenKhoaHoc,
+                        hinhAnh = x.HinhAnh,
+                        linhVuc = x.LinhVuc
+                    })
+                    .ToListAsync();
+                return Ok(new { success = true, data = danhSach });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        // 1. LẤY DANH SÁCH LỘ TRÌNH CỦA GIẢNG VIÊN
+        // 1. LẤY TẤT CẢ DANH SÁCH LỘ TRÌNH (GIẢNG VIÊN ĐƯỢC XEM HẾT)
         [HttpGet("danh-sach")]
         public async Task<IActionResult> GetDanhSach()
         {
             try
             {
-                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!int.TryParse(userIdStr, out int maNd)) return Unauthorized();
-
+                // Vẫn check login nhưng không lọc theo UserID nữa để hiện tất cả
                 var danhSach = await _context.LoTrinhAIs
-                    .Where(x => x.MaNguoiDung == maNd)
                     .OrderByDescending(x => x.NgayTao)
-                    .Select(x => new {
-                        // Ép tên thuộc tính về chữ thường đầu để React đọc được ngay
+                    .Select(x => new
+                    {
                         maLoTrinh = x.MaLoTrinh,
                         yeuCau = x.YeuCau,
                         trangThai = x.TrangThai,
                         ngayTao = x.NgayTao,
-                        noiDungJSON = x.NoiDungJSON
+                        noiDungJSON = x.NoiDungJSON,
+                        // Thêm thông tin người tạo để Gv biết lộ trình này của ai
+                        tenNguoiTao = _context.NguoiDungs
+                                        .Where(n => n.MaNguoiDung == x.MaNguoiDung)
+                                        .Select(n => n.HoTen)
+                                        .FirstOrDefault() ?? "Hệ thống AI"
                     })
                     .ToListAsync();
 
@@ -49,36 +76,8 @@ namespace educodeai_server.Controllers.GiangVien
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-
-        // 2. CẬP NHẬT LỘ TRÌNH AI (SỬA YÊU CẦU HOẶC NỘI DUNG)
-        [HttpPut("cap-nhat/{id}")]
-        public async Task<IActionResult> CapNhatLoTrinh(int id, [FromBody] JsonElement data)
-        {
-            try
-            {
-                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!int.TryParse(userIdStr, out int maNd)) return Unauthorized();
-
-                var loTrinh = await _context.LoTrinhAIs
-                    .FirstOrDefaultAsync(x => x.MaLoTrinh == id && x.MaNguoiDung == maNd);
-
-                if (loTrinh == null) return NotFound(new { success = false, message = "Không tìm thấy lộ trình AI." });
-
-                // Cập nhật các trường khớp 100% với Model sếp gửi
-                if (data.TryGetProperty("YeuCau", out var yeuCau)) loTrinh.YeuCau = yeuCau.GetString() ?? "";
-                if (data.TryGetProperty("TrangThai", out var trangThai)) loTrinh.TrangThai = trangThai.GetString();
-                // Nếu sếp muốn sửa cả JSON nội dung thì thêm dòng dưới
-                if (data.TryGetProperty("NoiDungJSON", out var noiDung)) loTrinh.NoiDungJSON = noiDung.GetString() ?? "";
-
-                await _context.SaveChangesAsync();
-                return Ok(new { success = true, message = "Đã cập nhật lộ trình AI thành công!" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, error = ex.Message });
-            }
-        }
-
+        // 2. THÊM MỚI LỘ TRÌNH (Lưu dạng Bắt buộc / Nâng cao)
+        // 2. THÊM MỚI LỘ TRÌNH (Đóng gói chuẩn cấu trúc AI)
         [HttpPost("them-moi")]
         public async Task<IActionResult> ThemMoi([FromBody] JsonElement data)
         {
@@ -87,12 +86,22 @@ namespace educodeai_server.Controllers.GiangVien
                 var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!int.TryParse(userIdStr, out int maNd)) return Unauthorized();
 
+                string yeuCauStr = data.TryGetProperty("YeuCau", out var yeuCau) ? yeuCau.GetString() ?? "" : "Lộ trình mới";
+                string noiDungRaw = data.TryGetProperty("NoiDungJSON", out var noiDung) ? noiDung.GetString() ?? "[]" : "[]";
+
+                // 👉 ĐÓNG GÓI CHUẨN AI: Biến mảng FE gửi lên thành Object { tenLoTrinh, loTrinh }
+                var rawCourses = JsonSerializer.Deserialize<JsonElement>(noiDungRaw);
+                var aiFormat = new
+                {
+                    tenLoTrinh = yeuCauStr,
+                    loTrinh = rawCourses // Đây là mảng các chặng học
+                };
+
                 var newLoTrinh = new LoTrinhAIModel
                 {
                     MaNguoiDung = maNd,
-                    YeuCau = data.TryGetProperty("YeuCau", out var yeuCau) ? yeuCau.GetString() ?? "" : "",
-                    // Nội dung JSON lúc này sẽ chứa các khóa học với trạng thái: Bắt buộc/Tự chọn
-                    NoiDungJSON = data.TryGetProperty("NoiDungJSON", out var noiDung) ? noiDung.GetString() ?? "[]" : "[]",
+                    YeuCau = yeuCauStr,
+                    NoiDungJSON = JsonSerializer.Serialize(aiFormat), // Lưu chuỗi JSON đã đóng gói
                     TrangThai = "Hoạt động",
                     NgayTao = DateTime.Now
                 };
@@ -100,26 +109,66 @@ namespace educodeai_server.Controllers.GiangVien
                 _context.LoTrinhAIs.Add(newLoTrinh);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { success = true, message = "Đã tạo lộ trình giảng dạy mới!" });
+                return Ok(new { success = true, message = "Đã tạo lộ trình chuẩn cấu trúc AI!" });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = "Lỗi khi thêm mới", error = ex.Message });
             }
         }
-        // 3. XÓA LỘ TRÌNH AI
-        [HttpDelete("xoa/{id}")]
-        public async Task<IActionResult> XoaLoTrinh(int id)
+
+        // 3. CẬP NHẬT LỘ TRÌNH (Đóng gói chuẩn cấu trúc AI)
+        [HttpPut("cap-nhat/{id}")]
+        public async Task<IActionResult> CapNhatLoTrinh(int id, [FromBody] JsonElement data)
         {
             try
             {
                 var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!int.TryParse(userIdStr, out int maNd)) return Unauthorized();
 
-                var loTrinh = await _context.LoTrinhAIs
-                    .FirstOrDefaultAsync(x => x.MaLoTrinh == id && x.MaNguoiDung == maNd);
+                var loTrinh = await _context.LoTrinhAIs.FirstOrDefaultAsync(x => x.MaLoTrinh == id);
+                if (loTrinh == null) return NotFound(new { success = false, message = "Không tìm thấy lộ trình." });
 
-                if (loTrinh == null) return NotFound(new { success = false });
+                string yeuCauStr = data.TryGetProperty("YeuCau", out var yeuCau) ? yeuCau.GetString() ?? loTrinh.YeuCau : loTrinh.YeuCau;
+                string noiDungRaw = data.TryGetProperty("NoiDungJSON", out var noiDung) ? noiDung.GetString() ?? "[]" : "[]";
+
+                // 👉 ĐÓNG GÓI CHUẨN AI: Tương tự như thêm mới
+                var rawCourses = JsonSerializer.Deserialize<JsonElement>(noiDungRaw);
+                var aiFormat = new
+                {
+                    tenLoTrinh = yeuCauStr,
+                    loTrinh = rawCourses
+                };
+
+                loTrinh.YeuCau = yeuCauStr;
+                loTrinh.TrangThai = data.TryGetProperty("TrangThai", out var trangThai) ? trangThai.GetString() : loTrinh.TrangThai;
+                loTrinh.NoiDungJSON = JsonSerializer.Serialize(aiFormat);
+
+                await _context.SaveChangesAsync();
+                return Ok(new { success = true, message = "Cập nhật lộ trình chuẩn AI thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Lỗi Server", error = ex.Message });
+            }
+        }
+
+        // 4. XÓA LỘ TRÌNH
+        // 4. XÓA LỘ TRÌNH (Cho phép Giảng viên xóa bất kỳ lộ trình nào)
+        [HttpDelete("xoa/{id}")]
+        public async Task<IActionResult> XoaLoTrinh(int id)
+        {
+            try
+            {
+                // Vẫn giữ check login để bảo mật
+                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdStr, out int maNd)) return Unauthorized();
+
+                // TÌM LỘ TRÌNH: Bỏ điều kiện x.MaNguoiDung == maNd để có thể xóa toàn quyền
+                var loTrinh = await _context.LoTrinhAIs
+                    .FirstOrDefaultAsync(x => x.MaLoTrinh == id);
+
+                if (loTrinh == null) return NotFound(new { success = false, message = "Không tìm thấy lộ trình." });
 
                 _context.LoTrinhAIs.Remove(loTrinh);
                 await _context.SaveChangesAsync();
