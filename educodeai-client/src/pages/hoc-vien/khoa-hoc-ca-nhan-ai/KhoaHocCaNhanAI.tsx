@@ -255,13 +255,18 @@ const KhoaHocCaNhanAI = () => {
                                             </div>
 
                                             <div className="d-flex gap-2 mt-auto">
-                                                <button onClick={() => handlePreview(item, true)} className="btn btn-warning text-dark flex-grow-1 fw-bold">
-                                                    Xem chi tiết
-                                                </button>
-                                                <button onClick={() => handleRemoveSaved(item.maLoTrinh)} className="btn btn-outline-danger" title="Bỏ lưu">
-                                                    <i className="fa fa-trash-alt"></i>
-                                                </button>
-                                            </div>
+    {/* 👉 ĐÃ SỬA: Đổi từ Button mở Modal thành Link bay thẳng sang trang Chi Tiết */}
+    <Link 
+        to={`/chi-tiet-lo-trinh/${encodeId(item.maLoTrinh)}`} 
+        className="btn btn-warning text-dark flex-grow-1 fw-bold text-center text-decoration-none"
+    >
+        Xem chi tiết
+    </Link>
+    
+    <button onClick={() => handleRemoveSaved(item.maLoTrinh)} className="btn btn-outline-danger" title="Bỏ lưu">
+        <i className="fa fa-trash-alt"></i>
+    </button>
+</div>
                                         </div>
                                     );
                                 })
