@@ -10,6 +10,7 @@ interface LoTrinhKhamPha {
 }
 
 interface ChangHoc { 
+    maKhoaHoc: number; // Đã thêm mã khóa học
     ten: string; 
     trangThai: string; 
     hinhAnh: string; 
@@ -23,6 +24,13 @@ interface LoTrinhChiTiet {
     cacChangHoc: ChangHoc[]; 
 }
 
+// 👉 ĐÃ THÊM: Interface cho Khóa học gốc từ DB
+interface IKhoaHocGoc {
+    maKhoaHoc: number;
+    tenKhoaHoc: string;
+    hinhAnh: string;
+}
+
 const KhamPhaLoTrinh = () => {
     const [danhSach, setDanhSach] = useState<LoTrinhKhamPha[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +42,9 @@ const KhamPhaLoTrinh = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detail, setDetail] = useState<LoTrinhChiTiet | null>(null);
+    
+    // 👉 ĐÃ THÊM: State lưu trữ "Từ điển" khóa học có sẵn
+    const [khoaHocCoSan, setKhoaHocCoSan] = useState<IKhoaHocGoc[]>([]);
 
     // ==========================================
     // BỘ LỌC SIÊU CẤP: BÓC TÁCH DỮ LIỆU SẠCH TỪ AI
@@ -81,23 +92,27 @@ const KhamPhaLoTrinh = () => {
             }
 
             if (jsonData) {
-                // Xử lý cấu trúc lồng nhau từ JSON sếp gửi (loTrinh -> khoaHocSuDung)
-                const rawSteps = jsonData.loTrinh || jsonData.cacChangHoc || jsonData.steps || [];
+                const rawSteps = jsonData.loTrinh || jsonData.cacChangHoc || jsonData.steps || jsonData.khoaHocSuDung || [];
                 let finalSteps: any[] = [];
 
                 if (Array.isArray(rawSteps)) {
                     rawSteps.forEach((item: any) => {
-                        // Nếu là cấu trúc giai đoạn chứa mảng khóa học
                         if (item.khoaHocSuDung && Array.isArray(item.khoaHocSuDung)) {
                             item.khoaHocSuDung.forEach((kh: any) => {
                                 finalSteps.push({
+                                    maKhoaHoc: kh.maKhoaHoc || 0, // 👉 Lấy mã khóa học
                                     ten: kh.tenKhoaHoc || kh.ten || "Khóa học",
-                                    trangThai: kh.ghiChu || "Bắt buộc",
+                                    trangThai: kh.ghiChu || kh.loai || kh.trangThai || "Bắt buộc",
                                     hinhAnh: kh.hinhAnh || ""
                                 });
                             });
                         } else {
-                            finalSteps.push(item);
+                            finalSteps.push({
+                                maKhoaHoc: item.maKhoaHoc || 0, // 👉 Lấy mã khóa học
+                                ten: item.ten || item.tenKhoaHoc || "Khóa học",
+                                trangThai: item.trangThai || item.loai || item.ghiChu || "Bắt buộc",
+                                hinhAnh: item.hinhAnh || ""
+                            });
                         }
                     });
                 }
@@ -112,6 +127,43 @@ const KhamPhaLoTrinh = () => {
             return fallback;
         }
     };
+
+    // Hàm backup nếu lấy ảnh từ khóa học bị lỗi
+    const getSmartIcon = (courseName: string, fallbackImg: string) => {
+        const nameLower = (courseName || "").toLowerCase();
+        
+        if (nameLower.includes('javascript') || nameLower.includes('js')) 
+            return 'https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png';
+        if (nameLower.includes('react')) 
+            return 'https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg';
+        if (nameLower.includes('c#') || nameLower.includes('csharp') || nameLower.includes('.net')) 
+            return 'https://upload.wikimedia.org/wikipedia/commons/4/4f/Csharp_Logo.png';
+        if (nameLower.includes('nhập môn') || nameLower.includes('cơ bản') || nameLower.includes('it')) 
+            return 'https://cdn-icons-png.flaticon.com/512/1197/1197408.png';
+        if (nameLower.includes('database') || nameLower.includes('sql') || nameLower.includes('dữ liệu')) 
+            return 'https://cdn-icons-png.flaticon.com/512/2885/2885412.png';
+            
+        const shortName = (courseName || "AI").substring(0, 2).toUpperCase();
+        return fallbackImg && fallbackImg.startsWith('http') 
+            ? fallbackImg 
+            : `https://placehold.co/100x100/1e293b/ffffff?text=${shortName}`;
+    };
+
+    // 👉 ĐÃ THÊM: Gọi API lấy danh sách khóa học gốc làm "Từ điển"
+    useEffect(() => {
+        const fetchKhoaHocCoSan = async () => {
+            try {
+                const token = localStorage.getItem('user_token');
+                // Lưu ý: Nếu sếp có API này dành riêng cho /hocvien/ thì sửa lại đường dẫn nhé
+                const response = await fetch('https://localhost:7284/api/giangvien/quan-ly-lo-trinh/danh-sach-khoa-hoc-co-san', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                if (result.success) setKhoaHocCoSan(result.data);
+            } catch (error) { console.error("Lỗi lấy danh sách khóa học:", error); }
+        };
+        fetchKhoaHocCoSan();
+    }, []);
 
     useEffect(() => {
         const timer = setTimeout(() => { 
@@ -223,29 +275,54 @@ const KhamPhaLoTrinh = () => {
                             {detailLoading ? <div className="kp-loading-spinner">Đang lấy dữ liệu...</div> : detail && (
                                 <div className="kp-modal-timeline">
                                     {(() => {
-                                        // QUAN TRỌNG: Lấy dữ liệu từ noiDungJSON của item hiện tại để bóc tách chặng
                                         const originalItem = danhSach.find(x => x.maLoTrinh === detail.maLoTrinh);
                                         const roadmapData = getCleanContent(originalItem?.noiDungJSON || "");
                                         
-                                        return roadmapData.steps.map((chang: any, i: number) => (
-                                            <div key={i} className="kp-timeline-item">
-                                                <div className="kp-item-rank">{i + 1}</div>
-                                                <div className="kp-item-icon-wrapper">
-                                                    <img 
-                                                        src="https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png" 
-                                                        className="kp-item-img" 
-                                                        onError={e => e.currentTarget.src = 'https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png'} 
-                                                        alt={chang.ten}
-                                                    />
+                                        return roadmapData.steps.map((chang: any, i: number) => {
+                                            
+                                            // 👉 THUẬT TOÁN MATCHING KẾT HỢP
+                                            let finalImgSrc = "";
+                                            
+                                            // 1. Cố gắng tìm trong DB có khóa học nào trùng ID hoặc trùng Tên không
+                                            const matchedCourse = khoaHocCoSan.find(k => 
+                                                (chang.maKhoaHoc && k.maKhoaHoc === chang.maKhoaHoc) || 
+                                                k.tenKhoaHoc.toLowerCase().includes(chang.ten.toLowerCase()) || 
+                                                chang.ten.toLowerCase().includes(k.tenKhoaHoc.toLowerCase())
+                                            );
+
+                                            if (matchedCourse && matchedCourse.hinhAnh) {
+                                                // 2. Nếu khớp DB -> Lấy ảnh gốc (xử lý link có http hoặc gắn /img/ vào)
+                                                finalImgSrc = matchedCourse.hinhAnh.startsWith('http') 
+                                                    ? matchedCourse.hinhAnh 
+                                                    : `/img/${matchedCourse.hinhAnh}`;
+                                            } else {
+                                                // 3. Nếu AI bịa ra khóa hoàn toàn mới -> Gọi Smart Icon
+                                                finalImgSrc = getSmartIcon(chang.ten, chang.hinhAnh);
+                                            }
+
+                                            return (
+                                                <div key={i} className="kp-timeline-item">
+                                                    <div className="kp-item-rank">{i + 1}</div>
+                                                    <div className="kp-item-icon-wrapper">
+                                                        <img 
+                                                            src={finalImgSrc} 
+                                                            className="kp-item-img" 
+                                                            onError={e => {
+                                                                const shortName = (chang.ten || "AI").substring(0, 2).toUpperCase();
+                                                                e.currentTarget.src = `https://placehold.co/100x100/1e293b/ffffff?text=${shortName}`;
+                                                            }} 
+                                                            alt={chang.ten}
+                                                        />
+                                                    </div>
+                                                    <div className="kp-item-info">
+                                                        <h4>{chang.ten || "Chương trình học"}</h4>
+                                                        <span className="kp-item-badge is-req">
+                                                            {chang.trangThai || "Bắt buộc"}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div className="kp-item-info">
-                                                    <h4>{chang.ten || "Chương trình học"}</h4>
-                                                    <span className="kp-item-badge is-req">
-                                                        {chang.trangThai || "Bắt buộc"}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ));
+                                            );
+                                        });
                                     })()}
                                 </div>
                             )}
