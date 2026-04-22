@@ -24,10 +24,7 @@ export default function SidebarQuanTriVienMoi() {
           <div className="link-icon"><MdPeople /></div>
           <span>Người Dùng</span>
         </NavLink>
-        <NavLink to="/quan-tri-vien/thong-ke" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
-                  <div className="link-icon"><MdDashboard /></div>
-                  <span>Thống kê</span>
-                </NavLink>
+        
 
         <NavLink to="/quan-tri-vien/quan-ly-api-key" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><i className="bi bi-key-fill"></i></div>
