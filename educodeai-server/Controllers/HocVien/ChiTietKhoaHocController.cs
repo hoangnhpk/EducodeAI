@@ -1,4 +1,4 @@
-﻿using educodeai_server.Data;
+using educodeai_server.Data;
 using educodeai_server.DTOs.KhoaHoc;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
@@ -97,6 +97,7 @@ namespace EduCodeAI.Controllers.HocVien
         {
             int maNguoiDung = LayNguoiDungID.LayID(User);
             var khoaHoc = await _context.KhoaHocs
+                .Include(k => k.GiangVien)
                 .Include(k => k.ChuongHocs)
                     .ThenInclude(c => c.BaiHocs)
                 .FirstOrDefaultAsync(k => k.MaKhoaHoc == id);
@@ -105,6 +106,11 @@ namespace EduCodeAI.Controllers.HocVien
             {
                 return NotFound("Không tìm thấy khóa học");
             }
+
+            // Tính điểm đánh giá trung bình
+            var danhGias = await _context.DanhGias.Where(d => d.MaKhoaHoc == id).ToListAsync();
+            double diemTB = danhGias.Any() ? Math.Round(danhGias.Average(d => d.SoSao), 1) : 0;
+            int tongDanhGia = danhGias.Count;
 
             return Ok(new
             {
@@ -115,7 +121,20 @@ namespace EduCodeAI.Controllers.HocVien
                 donViTienTe = khoaHoc.DonViTienTe,
                 khoaHocDaDangKy = maNguoiDung > 0 && await _context.DangKyKhoaHocs.AnyAsync(dk =>
                     dk.MaKhoaHoc == khoaHoc.MaKhoaHoc && dk.MaNguoiDung == maNguoiDung),
+                hinhAnh = khoaHoc.HinhAnh,
+                linhVuc = khoaHoc.LinhVuc,
+                trinhDo = khoaHoc.TrinhDo,
+                thoiLuongGio = khoaHoc.ThoiLuongGio,
+                diemDanhGiaTB = diemTB,
+                tongDanhGia = tongDanhGia,
+                coChungChi = khoaHoc.CoChungChi,
+                tenChungChi = khoaHoc.TenChungChi,
                 slug = SlugHelper.Generate(khoaHoc.TenKhoaHoc),
+                giangVien = khoaHoc.GiangVien != null ? new {
+                    maGiangVien = khoaHoc.GiangVien.MaNguoiDung,
+                    hoTen = khoaHoc.GiangVien.HoTen,
+                    anhDaiDien = khoaHoc.GiangVien.AnhDaiDien
+                } : null,
                 chuongs = khoaHoc.ChuongHocs.Select(chuong => new
                 {
                     maChuong = chuong.MaChuong,
@@ -129,6 +148,50 @@ namespace EduCodeAI.Controllers.HocVien
                         thoiLuong = bai.ThoiLuong
                     }).ToList()
                 }).ToList()
+            });
+        }
+
+        [HttpGet("{id}/danh-gia")]
+        public async Task<IActionResult> GetDanhGiaKhoaHoc(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 5, [FromQuery] string filter = "all")
+        {
+            var query = _context.DanhGias
+                .Include(d => d.NguoiDung)
+                .Where(d => d.MaKhoaHoc == id); // Tạm lấy tất cả để dễ test, có thể thêm: && d.TrangThai == "DaDuyet"
+
+            if (filter == "positive")
+            {
+                query = query.Where(d => d.SoSao >= 4);
+            }
+            else if (filter == "negative")
+            {
+                query = query.Where(d => d.SoSao <= 3);
+            }
+
+            var totalCount = await query.CountAsync();
+            var danhGias = await query
+                .OrderByDescending(d => d.NgayDanhGia)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(d => new
+                {
+                    maDanhGia = d.MaDanhGia,
+                    soSao = d.SoSao,
+                    nhanXet = d.NhanXet,
+                    ngayDanhGia = d.NgayDanhGia,
+                    nguoiDung = new
+                    {
+                        hoTen = d.NguoiDung.HoTen,
+                        anhDaiDien = d.NguoiDung.AnhDaiDien
+                    }
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                items = danhGias,
+                totalCount = totalCount,
+                totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                currentPage = page
             });
         }
     }

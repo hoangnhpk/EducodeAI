@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import Router from "./router/index";
 import { authService } from "./services/auth.service";
 import { getDeviceInfo } from "./utils/deviceHelper";
+import MaintenanceGuard from "./pages/quan-tri-vien/cau-hinh-he-thong/MaintenanceGuard";
 
 function App() {
   useEffect(() => {
@@ -19,13 +20,15 @@ function App() {
           console.log("Phiên đã bị vô hiệu hóa.");
         }
       }
-    }, 5000); // 5 giây là mức tối ưu cho "lập tức" mà không gây tải server
+    }, 10000); // 10 giây là mức tối ưu cho "lập tức" mà không gây tải server
 
     return () => clearInterval(checkSessionInterval);
   }, []);
 
   return (
+    <MaintenanceGuard>
       <Router />
+      </MaintenanceGuard>
   );
 }
 

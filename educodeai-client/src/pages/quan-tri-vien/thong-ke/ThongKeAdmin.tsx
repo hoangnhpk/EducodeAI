@@ -260,7 +260,7 @@ export default function ThongKeAdmin() {
       <div className="adm-stats-header">
         <div>
           <h1 className="adm-stats-title">THỐNG KÊ HỆ THỐNG</h1>
-          
+
         </div>
       </div>
 
@@ -308,7 +308,7 @@ export default function ThongKeAdmin() {
 
       <div className="adm-chart card border-0 shadow-sm">
         <div className="adm-chart__header">
-          <h2 className="adm-chart__title">Lượt đăng ký theo tháng</h2>
+          <h2 className="adm-chart__title"><i className="bi bi-graph-up" style={{ marginRight: '8px', color: '#ea580c' }}></i>Lượt đăng ký theo tháng</h2>
           <div className="adm-chart__filters">
             <div className="adm-chart__filter">
               <span className="adm-chart__filter-label">Từ</span>
@@ -427,7 +427,7 @@ export default function ThongKeAdmin() {
       <div className="adm-top-grid">
         <div className="adm-top card border-0 shadow-sm">
           <div className="adm-top__header">
-            <h3 className="adm-top__title">Top 5 khóa học nhiều đăng ký</h3>
+            <h3 className="adm-top__title"><i className="bi bi-trophy" style={{ marginRight: '8px', color: '#ea580c' }}></i>Top 5 khóa học nhiều đăng ký</h3>
             <span className="adm-top__range">
               {monthInputToLabel(chartFrom)} - {monthInputToLabel(chartTo)}
             </span>
@@ -466,7 +466,7 @@ export default function ThongKeAdmin() {
 
         <div className="adm-top card border-0 shadow-sm">
           <div className="adm-top__header">
-            <h3 className="adm-top__title">Top 5 giảng viên nhiều đăng ký</h3>
+            <h3 className="adm-top__title"><i className="bi bi-person-video3" style={{ color: '#0284c7',marginRight: '8px' }}></i>Top 5 giảng viên nhiều đăng ký</h3>
             <span className="adm-top__range">
               {monthInputToLabel(chartFrom)} - {monthInputToLabel(chartTo)}
             </span>
@@ -508,7 +508,7 @@ export default function ThongKeAdmin() {
       <div className="adm-widgets-grid">
         <div className="adm-widget card border-0 shadow-sm">
           <div className="adm-widget__header">
-            <h3 className="adm-widget__title">Chất lượng khóa học</h3>
+            <h3 className="adm-widget__title"><i className="bi bi-bar-chart-line" style={{ marginRight: '8px', color: '#ea580c' }}></i>Chất lượng khóa học</h3>
             <span className="adm-widget__range">
               {monthInputToLabel(chartFrom)} - {monthInputToLabel(chartTo)}
             </span>
@@ -562,7 +562,33 @@ export default function ThongKeAdmin() {
                             {x.soBinhLuan.toLocaleString('vi-VN')}
                           </td>
                           <td style={{ textAlign: 'center' }}>
-                            {x.soDanhGia > 0 ? fmt2(x.diemDanhGiaTrungBinh) : '—'}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                              {/* Phần hiển thị Star Icon */}
+                              <div style={{ color: '#ea580c', fontSize: '14px', display: 'flex', gap: '2px' }}>
+                                {[1, 2, 3, 4, 5].map((star) => {
+                                  const rating = x.diemDanhGiaTrungBinh || 0;
+                                  return (
+                                    <i
+                                      key={star}
+                                      className={
+                                        rating >= star
+                                          ? 'bi bi-star-fill' // Sao đầy
+                                          : rating >= star - 0.5
+                                            ? 'bi bi-star-half' // NỬA NGÔI SAO ĐÂY SẾP
+                                            : 'bi bi-star'      // Sao rỗng
+                                      }
+                                    ></i>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Con số hiển thị */}
+                              <span style={{ fontWeight: 800, color: '#334155' }}>
+                                {x.soDanhGia > 0
+                                  ? Number(x.diemDanhGiaTrungBinh).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 1 })
+                                  : '—'}
+                              </span>
+                            </div>
                           </td>
                           <td style={{ textAlign: 'center' }}>
                             {fmtPercent01(x.tyLeHoanThanh)}
@@ -734,8 +760,8 @@ export default function ThongKeAdmin() {
                     <div className="adm-modal__meta adm-modal__meta--footer">
                       {detailData
                         ? `Trang ${detailData.page}/${detailData.totalPages} • Tổng ${detailData.totalItems.toLocaleString(
-                            'vi-VN'
-                          )}`
+                          'vi-VN'
+                        )}`
                         : ''}
                     </div>
                     <div className="adm-modal__pager">
