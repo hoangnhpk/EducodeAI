@@ -1,4 +1,4 @@
-import { Trophy } from "lucide-react";
+﻿import { Trophy } from "lucide-react";
 import type { HocVien } from "./Types";
 import "./css/top-students.css";
 
@@ -7,30 +7,30 @@ interface Props {
 }
 
 const TopStudents = ({ students }: Props) => {
-  // Sắp xếp theo điểm TB giảm dần và lấy top 5
+  const getProgress = (hv: HocVien) => Number(hv.tyLeHoanThanh ?? hv.tienDo ?? 0);
+  const getName = (hv: HocVien) => hv.tenHocVien?.trim() || hv.hoTen?.trim() || "—";
+
   const topStudents = [...students]
-    .sort((a, b) => Number(b.diemTrungBinh ?? 0) - Number(a.diemTrungBinh ?? 0))
+    .sort((a, b) => getProgress(b) - getProgress(a))
     .slice(0, 5);
 
   return (
     <div className="top-students-card">
-      {/* ===== HEADER ===== */}
       <div className="top-students-header">
         <Trophy color="#facc15" size={20} />
         Top học viên xuất sắc
       </div>
 
-      {/* ===== LIST ===== */}
       <div className="top-students-list">
         {topStudents.map((hocVien, index) => (
-          <div key={hocVien.maHocVien ?? `top-${index}`} className="top-student-item">
+          <div key={hocVien.maHocVien ?? hocVien.maNguoiDung ?? `top-${index}`} className="top-student-item">
             <div className="top-rank">{index + 1}</div>
 
             <div className="top-info">
-              <strong>{hocVien.tenHocVien?.trim() || "—"}</strong>
+              <strong>{getName(hocVien)}</strong>
               <span>{hocVien.email?.trim() || "—"}</span>
-              <small style={{ color: '#10b981', fontSize: '12px' }}>
-                Hoàn thành: {Number(hocVien.tyLeHoanThanh ?? 0).toFixed(1)}%
+              <small style={{ color: "#10b981", fontSize: "12px" }}>
+                Hoàn thành: {getProgress(hocVien).toFixed(1)}%
               </small>
             </div>
 
@@ -41,7 +41,7 @@ const TopStudents = ({ students }: Props) => {
         ))}
 
         {topStudents.length === 0 && (
-          <p style={{ textAlign: "center", color: "#6b7280", padding: '20px' }}>
+          <p style={{ textAlign: "center", color: "#6b7280", padding: "20px" }}>
             Chưa có dữ liệu
           </p>
         )}

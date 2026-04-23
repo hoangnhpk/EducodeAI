@@ -36,8 +36,11 @@ namespace educodeai_server.Models
         public string? TrangThai { get; set; } = "Hoạt động";
 
         public DateTime NgayThamGia { get; set; } = DateTime.UtcNow;
-        // mới thêm
+        // m?i thm 
         public string? LyDoKhoa { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.Column(TypeName = "timestamp with time zone")]
+        public DateTime? ThoiGianMoKhoa { get; set; }
 
 
         // CÁC THƯỜNG CHO BẢO MẬT & OTP

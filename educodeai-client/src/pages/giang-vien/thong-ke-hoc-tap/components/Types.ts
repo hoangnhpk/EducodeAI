@@ -1,11 +1,9 @@
-// ================== API RESPONSE TYPES ==================
+﻿// ================== API RESPONSE TYPES ==================
 
 export interface PagedResult<T> {
   total: number;
   data: T[];
 }
-
-// ================== OVERVIEW ==================
 
 export interface ThongKeOverview {
   gioHocTrungBinh?: number | null;
@@ -14,26 +12,21 @@ export interface ThongKeOverview {
   tyLeHoanThanhTB?: number | null;
 }
 
-// ================== TRẠNG THÁI HỌC VIÊN ==================
-
 export interface TrangThaiHocVien {
-  trangThai: string; // "Hoàn thành", "Đang học", "Chưa bắt đầu", "Nguy cơ bỏ học"
+  trangThai: string;
   soLuong: number;
 }
-
-// ================== TIẾN ĐỘ THEO THỜI GIAN ==================
 
 export interface TienDoTheoThoiGian {
   tuan: number;
   tyLeHoanThanh: number;
 }
 
-// ================== HỌC VIÊN ==================
-
 export interface HocVien {
-  maHocVien: number;
-  /** API có thể trả null nếu hồ sơ chưa đủ */
+  maHocVien?: number;
+  maNguoiDung?: number;
   tenHocVien?: string | null;
+  hoTen?: string | null;
   email?: string | null;
   anhDaiDien?: string;
   soKhoaHocThamGia?: number | null;
@@ -41,18 +34,17 @@ export interface HocVien {
   tongBaiTap?: number | null;
   tyLeHoanThanh?: number | null;
   diemTrungBinh?: number | null;
-  trangThai: string; // "Hoàn thành" | "Đang học" | "Nguy cơ bỏ học"
+  tienDo?: number | null;
+  soBaiDaNop?: number | null;
+  gioHoc?: number | null;
+  trangThai?: string;
 }
-
-// ================== API PARAMS ==================
 
 export interface HocVienParams {
   page?: number;
   pageSize?: number;
   search?: string;
 }
-
-// ================== OLD TYPES (GIỮ LẠI ĐỂ TƯƠNG THÍCH) ==================
 
 export interface Student {
   id: number;
@@ -63,8 +55,6 @@ export interface Student {
   avgScore: number;
   status: 'completed' | 'in-progress' | 'at-risk';
 }
-
-// ================== CHART DATA ==================
 
 export interface ChartDataPoint {
   name: string;

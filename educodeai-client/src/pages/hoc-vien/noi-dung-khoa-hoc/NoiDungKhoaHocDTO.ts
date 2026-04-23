@@ -71,6 +71,7 @@ export interface BaiHoc {
 
     thongTinQuiz?: BaiTapQuizDTO | null;
     thongTinThucHanh?: BaiTapThucHanhDTO | null;
+    maBaiTapThucHanh?: number | null;
 }
 
 export interface ChuongHoc {

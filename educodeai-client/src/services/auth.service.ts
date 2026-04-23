@@ -56,6 +56,16 @@ export const authService = {
     });
   },
 
+  // 5.5. XÁC NHẬN THAY THẾ THIẾT BỊ (Khi đầy 3 phiên)
+  confirmReplaceDevice: async (payload: { taiKhoan: string, otpCode: string }) => {
+    const { maThietBi, tenThietBi } = getDeviceInfo();
+    return await api.post('/api/XacThuc/xac-nhan-thay-the-thiet-bi', {
+      ...payload,
+      maThietBi,
+      tenThietBi
+    });
+  },
+
   // 6. ĐĂNG NHẬP BẰNG GOOGLE / FACEBOOK
   googleLogin: async (payload: { email: string, name: string, picture: string }, maThietBi: string, tenThietBi: string) => {
     return await api.post(`/api/XacThuc/google-login?maThietBi=${maThietBi}&tenThietBi=${tenThietBi}`, payload);
@@ -73,12 +83,15 @@ export const authService = {
   logout: async () => {
     const { maThietBi } = getDeviceInfo();
     try {
-      await api.post('/api/XacThuc/dang-xuat', { maThietBi });
+      await api.post('/api/XacThuc/dang-xuat', `"${maThietBi}"`, {
+        headers: { 'Content-Type': 'application/json' }
+      });
     } finally {
       localStorage.removeItem('user_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('token');
       localStorage.removeItem('user_info');
+      localStorage.removeItem('refresh_token'); // Clear refresh token as well
     }
   },
   // 8. QUÊN MẬT KHẨU - YÊU CẦU GỬI OTP

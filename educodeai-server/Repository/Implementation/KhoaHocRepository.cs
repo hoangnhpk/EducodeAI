@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Data;
 using educodeai_server.Models;
@@ -9,6 +9,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace educodeai_server.Repository.Implementation
 {
@@ -152,7 +153,11 @@ namespace educodeai_server.Repository.Implementation
                                             ChoPhepLamLai = bt.BaiTap_Quiz.ChoPhepLamLai,
                                             DaoCauHoi = bt.BaiTap_Quiz.DaoCauHoi,
                                             DuLieuCauHoiJSON = bt.BaiTap_Quiz.DuLieuCauHoi
-                                        }).FirstOrDefault()
+                                        }).FirstOrDefault(),
+                                    MaBaiTapThucHanh = bh.BaiTaps
+                                        .Where(bt => bt.BaiTapThucHanh != null)
+                                        .Select(bt => (int?)bt.MaBaiTap)
+                                        .FirstOrDefault()
                                 }).ToList()
                         }).ToList()
                 }).FirstOrDefaultAsync();
@@ -638,40 +643,9 @@ namespace educodeai_server.Repository.Implementation
                         chungChi.NgayCap = ngayCap;
                         _context.ChungChiKhoaHocs.Update(chungChi);
                     }
-
                     await _context.SaveChangesAsync();
 
-                    var tepPdf = ChungChiPdfHelper.TaoPdf(new ChungChiPdfRequest
-                    {
-                        TenChungChi = khoaHoc.TenChungChi ?? "Chứng nhận hoàn thành",
-                        HoTenHocVien = dto.HoTenHienThi,
-                        TenKhoaHoc = khoaHoc.TenKhoaHoc,
-                        MaChungChi = chungChi.MaChungChi,
-                        NgayCap = chungChi.NgayCap,
-                        DiemSo = diemSo
-                    });
-
-                    var emailSent = await EmailHelper.SendEmailAsync(
-                        dto.EmailNhan,
-                        $"[{khoaHoc.TenKhoaHoc}] Chứng chỉ hoàn thành khóa học",
-                        TaoNoiDungEmailChungChi(khoaHoc, dto.HoTenHienThi, chungChi.MaChungChi, diemSo),
-                        new[]
-                        {
-                            new EmailAttachmentData
-                            {
-                                FileName = TaoTenFileChungChi(khoaHoc.TenKhoaHoc, dto.HoTenHienThi),
-                                Content = tepPdf,
-                                MediaType = "application/pdf"
-                            }
-                        });
-
-                    chungChi.DaGuiEmail = emailSent;
-                    chungChi.NgayGuiEmail = emailSent ? DateTime.UtcNow : null;
-                    await _context.SaveChangesAsync();
-
-                    thongBao = emailSent
-                        ? "Bạn đã đạt yêu cầu. Chứng chỉ PDF đã được gửi về email của bạn."
-                        : "Bạn đã đạt yêu cầu. Chứng chỉ đã được tạo nhưng hệ thống chưa gửi email thành công.";
+                    thongBao = "Bạn đã đạt yêu cầu. Chứng chỉ đang được tạo và gửi bản PDF về email của bạn trong ít phút.";
                 }
 
                 await transaction.CommitAsync();
@@ -696,6 +670,22 @@ namespace educodeai_server.Repository.Implementation
                     ThanhCong = false,
                     ThongBao = $"Không thể lưu kết quả bài kiểm tra chứng chỉ: {ex.Message}"
                 };
+            }
+        }
+
+        public async Task CapNhatTrangThaiGuiEmailChungChiAsync(int maKhoaHoc, int maNguoiDung, bool trangThai)
+        {
+            var chungChi = await _context.ChungChiKhoaHocs
+                .FirstOrDefaultAsync(x => x.MaKhoaHoc == maKhoaHoc && x.MaNguoiDung == maNguoiDung);
+
+            if (chungChi != null)
+            {
+                chungChi.DaGuiEmail = trangThai;
+                if (trangThai)
+                {
+                    chungChi.NgayGuiEmail = DateTime.UtcNow;
+                }
+                await _context.SaveChangesAsync();
             }
         }
 
@@ -894,35 +884,7 @@ namespace educodeai_server.Repository.Implementation
             return $"CC-{maKhoaHoc}-{maNguoiDung}-{DateTime.UtcNow:yyyyMMddHHmmss}";
         }
 
-        private static string TaoNoiDungEmailChungChi(
-            KhoaHocModel khoaHoc,
-            string hoTenHienThi,
-            string maChungChi,
-            double diemSo)
-        {
-            var tenChungChi = khoaHoc.TenChungChi ?? "Chứng nhận hoàn thành";
-            return $"""
-                <div style="font-family:Segoe UI,Arial,sans-serif;color:#1f2937;line-height:1.6">
-                    <h2 style="margin-bottom:8px;color:#181d38">{tenChungChi}</h2>
-                    <p>Chúc mừng <strong>{hoTenHienThi}</strong>, bạn đã hoàn thành khóa học <strong>{khoaHoc.TenKhoaHoc}</strong> và đạt <strong>{Math.Round(diemSo, 2):0.##}%</strong> ở bài kiểm tra cuối khóa.</p>
-                    <p>Hệ thống đã đính kèm chứng chỉ PDF trong email này để bạn lưu trữ và sử dụng khi cần.</p>
-                    <p style="margin-top:20px"><strong>Mã chứng chỉ:</strong> {maChungChi}</p>
-                    <p>Trân trọng,<br/>EduCodeAI</p>
-                </div>
-                """;
-        }
 
-        private static string TaoTenFileChungChi(string tenKhoaHoc, string hoTenHienThi)
-        {
-            var tenFile = $"{hoTenHienThi}-{tenKhoaHoc}"
-                .Normalize(NormalizationForm.FormD);
-            var builder = new string(tenFile
-                .Where(c => char.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
-                .Select(c => Array.IndexOf(Path.GetInvalidFileNameChars(), c) >= 0 ? '-' : c)
-                .ToArray());
-
-            return $"{builder.Replace(' ', '-')}.pdf";
-        }
 
         private sealed class CauHoiQuizRaw
         {

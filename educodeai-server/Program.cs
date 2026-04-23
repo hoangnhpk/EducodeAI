@@ -55,7 +55,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, sqlOptions =>
+    {
+        // Tự động thử lại khi gặp lỗi kết nối gián đoạn (như lỗi DNS 'No such host is known' khi treo lâu)
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null);
+    }));
 
 try
 {
@@ -99,6 +106,7 @@ builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
+builder.Services.AddScoped<BaiTapThucHanhHocVienService>();
 builder.Services.AddHttpClient<BaiTapService>();
 
 // Người dùng & Thống kê
@@ -145,6 +153,9 @@ builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
 builder.Services.Configure<PaymentMailOptions>(builder.Configuration.GetSection("PaymentMail"));
 
+// YouTube Service
+builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();
+
 // ==========================================
 // 6. CẤU HÌNH CORS & SWAGGER
 // ==========================================
@@ -152,7 +163,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://educodeai-client.vercel.app", "http://localhost:5173", "http://localhost:5210", "http://localhost:3000")
+        policy.WithOrigins("https://educodeai-client.vercel.app", "http://localhost:3000")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -207,6 +218,7 @@ app.UseHttpsRedirection();
 // Kích hoạt CORS (Phải đặt trước UseAuthorization)
 app.UseCors("AllowReactApp");
 app.UseStaticFiles();
+app.UseMiddleware<MaintenanceMiddleware>();
 
 app.UseAuthentication();
 app.UseSessionCheck();
