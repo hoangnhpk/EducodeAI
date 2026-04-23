@@ -35,14 +35,20 @@ export const SystemConfigProvider = ({ children }: { children: React.ReactNode }
         fetchConfigs();
 
         // 2. THIẾT LẬP KẾT NỐI SIGNALR
+        let daDongKetNoi = false;
         const baseUrl = import.meta.env.VITE_API_URL || 'https://localhost:7284';
         const connection = new signalR.HubConnectionBuilder()
             .withUrl(`${baseUrl}/systemConfigHub`) // Khớp với MapHub bên Backend
             .withAutomaticReconnect() // Tự động kết nối lại nếu rớt mạng
+            .configureLogging(signalR.LogLevel.Error)
             .build();
 
         connection.start()
             .then(() => {
+                if (daDongKetNoi) {
+                    void connection.stop();
+                    return;
+                }
                 console.log("Đã kết nối SignalR thành công!");
                 
                 // 3. LẮNG NGHE TÍN HIỆU TỪ BACKEND
@@ -51,13 +57,23 @@ export const SystemConfigProvider = ({ children }: { children: React.ReactNode }
                     fetchConfigs(); 
                 });
             })
-            .catch(err => console.error("SignalR Connection Error: ", err));
+            .catch(err => {
+                if (daDongKetNoi) return;
+
+                const message = String(err?.message ?? err ?? "");
+                // Dev/StrictMode có thể stop connection trong lúc negotiation, không ảnh hưởng nghiệp vụ.
+                if (message.includes("stopped during negotiation")) {
+                    console.debug("SignalR bị dừng trong lúc khởi tạo (bỏ qua).");
+                    return;
+                }
+
+                console.warn("SignalR chưa kết nối được, hệ thống sẽ tự thử lại.", err);
+            });
 
         // Dọn dẹp kết nối khi đóng web
         return () => {
-            if (connection) {
-                connection.stop();
-            }
+            daDongKetNoi = true;
+            void connection.stop();
         };
     }, []);
 
