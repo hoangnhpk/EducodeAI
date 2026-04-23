@@ -41,6 +41,8 @@ interface ValidationErrors {
   linhVuc?: string;
   trinhDo?: string;
   thoiLuongGio?: string;
+  giaKhoaHoc?: string;
+  donViTienTe?: string;
   tenChungChi?: string;
   diemDatChungChi?: string;
   soCauHoiChungChi?: string;
@@ -62,6 +64,9 @@ const DEFAULT_FORM: KhoaHocCreateUpdate = {
   trinhDo: 'Cơ bản',
   thoiLuongGio: 1,
   trangThai: 'Hoạt động',
+  giaKhoaHoc: 10000,
+  donViTienTe: 'VND',
+  choPhepMua: true,
   kyNangChinh: '',
   coChungChi: false,
   tenChungChi: '',
@@ -95,6 +100,9 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
         trinhDo: detail.trinhDo,
         thoiLuongGio: detail.thoiLuongGio,
         trangThai: detail.trangThai ?? 'Hoạt động',
+        giaKhoaHoc: detail.giaKhoaHoc ?? 10000,
+        donViTienTe: detail.donViTienTe ?? 'VND',
+        choPhepMua: true,
         kyNangChinh: detail.kyNangChinh ?? '',
         coChungChi: detail.coChungChi,
         tenChungChi: detail.tenChungChi ?? '',
@@ -124,6 +132,14 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
     if (!form.trinhDo) e.trinhDo = 'Vui lòng chọn trình độ.';
     if (!form.thoiLuongGio || form.thoiLuongGio <= 0) e.thoiLuongGio = 'Thời lượng phải lớn hơn 0.';
     if (form.thoiLuongGio > 999) e.thoiLuongGio = 'Thời lượng tối đa 999 giờ.';
+
+    if (form.giaKhoaHoc === undefined || form.giaKhoaHoc === null) {
+      e.giaKhoaHoc = 'Vui lòng nhập giá khóa học.';
+    } else if (form.giaKhoaHoc < 10000 || form.giaKhoaHoc > 15000) {
+      e.giaKhoaHoc = 'Giá khóa học phải từ 10,000 đến 15,000 VNĐ';
+    }
+    if (!form.donViTienTe?.trim()) e.donViTienTe = 'Đơn vị tiền tệ không được để trống.';
+
     if (form.coChungChi) {
       if (!form.tenChungChi?.trim()) e.tenChungChi = 'Tên chứng chỉ không được để trống khi bật chứng chỉ.';
       if (form.diemDatChungChi < 0 || form.diemDatChungChi > 100) e.diemDatChungChi = 'Điểm đạt phải từ 0–100.';
@@ -307,6 +323,35 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
                   <option value="Hoạt động">Hoạt động</option>
                   <option value="Không hoạt động">Không hoạt động</option>
                 </select>
+              </div>
+            </div>
+
+            <div className="khm-form-grid-2" style={{ marginTop: 16, marginBottom: 16 }}>
+              <div className="khm-form-group">
+                <label className="khm-form-label">Giá khóa học (VNĐ) <span className="req">*</span></label>
+                <input
+                  type="number"
+                  className={`khm-form-input ${errors.giaKhoaHoc ? 'error' : ''}`}
+                  min={10000} max={15000} step={1000}
+                  value={form.giaKhoaHoc}
+                  onChange={e => set('giaKhoaHoc', Number(e.target.value))}
+                  disabled={submitting}
+                  placeholder="Ví dụ: 10000"
+                />
+                {errors.giaKhoaHoc && <div className="khm-form-error">⚠ {errors.giaKhoaHoc}</div>}
+                <div className="khm-form-hint">Giá khóa học phải từ 10,000 đến 15,000 VNĐ</div>
+              </div>
+
+              <div className="khm-form-group">
+                <label className="khm-form-label">Đơn vị tiền tệ <span className="req">*</span></label>
+                <input
+                  type="text"
+                  className={`khm-form-input ${errors.donViTienTe ? 'error' : ''}`}
+                  value={form.donViTienTe}
+                  onChange={e => set('donViTienTe', e.target.value)}
+                  disabled={submitting}
+                />
+                {errors.donViTienTe && <div className="khm-form-error">⚠ {errors.donViTienTe}</div>}
               </div>
             </div>
 

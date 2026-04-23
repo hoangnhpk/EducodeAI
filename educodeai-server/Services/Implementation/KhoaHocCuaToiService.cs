@@ -632,6 +632,9 @@ OUTPUT JSON THUẦN
                 SoHocVien = k.DangKyKhoaHocs?.Count ?? 0,
                 DiemDanhGiaTB = k.DiemDanhGiaTB,
                 TrangThai = k.TrangThai,
+                GiaKhoaHoc = k.GiaKhoaHoc,
+                DonViTienTe = k.DonViTienTe,
+                ChoPhepMua = k.ChoPhepMua,
                 CoChungChi = k.CoChungChi,
                 DaCoDeThiChungChi = !string.IsNullOrWhiteSpace(k.DuLieuDeChungChiJSON),
                 NgayTao = k.NgayTao,
@@ -651,6 +654,9 @@ OUTPUT JSON THUẦN
                 TrinhDo = k.TrinhDo,
                 ThoiLuongGio = k.ThoiLuongGio,
                 TrangThai = k.TrangThai,
+                GiaKhoaHoc = k.GiaKhoaHoc,
+                DonViTienTe = k.DonViTienTe,
+                ChoPhepMua = k.ChoPhepMua,
                 NgayTao = k.NgayTao,
                 CoChungChi = k.CoChungChi,
                 TenChungChi = k.TenChungChi,
@@ -723,6 +729,9 @@ OUTPUT JSON THUẦN
                 TrinhDo = dto.TrinhDo,
                 ThoiLuongGio = dto.ThoiLuongGio,
                 TrangThai = dto.TrangThai,
+                GiaKhoaHoc = dto.GiaKhoaHoc,
+                DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe,
+                ChoPhepMua = true,
                 MaGiangVien = maGiangVien,
                 NgayTao = DateTime.Now,
                 KyNangChinh = dto.KyNangChinh ?? string.Empty,
@@ -745,6 +754,9 @@ OUTPUT JSON THUẦN
             khoaHoc.TrinhDo = dto.TrinhDo;
             khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;
             khoaHoc.TrangThai = dto.TrangThai;
+            khoaHoc.GiaKhoaHoc = dto.GiaKhoaHoc;
+            khoaHoc.DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe;
+            khoaHoc.ChoPhepMua = true;
             khoaHoc.KyNangChinh = dto.KyNangChinh ?? string.Empty;
             khoaHoc.CoChungChi = dto.CoChungChi;
             khoaHoc.TenChungChi = dto.CoChungChi
@@ -794,6 +806,12 @@ OUTPUT JSON THUẦN
 
             if (dto.ThoiLuongGio <= 0)
                 errors.Add("Thời lượng khóa học phải lớn hơn 0.");
+
+            if (dto.GiaKhoaHoc < 10000 || dto.GiaKhoaHoc > 15000)
+                errors.Add("Giá khóa học phải từ 10,000 đến 15,000 VNĐ");
+            
+            if (string.IsNullOrWhiteSpace(dto.DonViTienTe))
+                errors.Add("Đơn vị tiền tệ không được để trống khi khóa học có phí.");
 
             if (dto.CoChungChi)
             {
