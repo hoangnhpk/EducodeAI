@@ -43,7 +43,9 @@ export interface HoTroThanhToanKhoaHocItemDTO {
 
 export interface HoTroThanhToanChiTietDTO {
   maGiaoDichHoTro: number;
+  loaiHoTro: "COURSE_PURCHASE" | "WITHDRAW_REQUEST";
   maDonHang: number;
+  maYeuCauRutTien?: number;
   noiDungChuyenKhoan: string;
   maNguoiDung: number;
   tenHocVien: string;

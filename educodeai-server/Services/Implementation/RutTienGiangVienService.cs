@@ -8,6 +8,7 @@ using educodeai_server.DTOs.ThanhToan;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -34,6 +35,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<ThongTinViGiangVienDTO> LayThongTinViAsync(int maGiangVien)
         {
+            await DamBaoCotGuiEmailRutTienTonTaiAsync();
+
             var giangVien = await _dbContext.NguoiDungs
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.MaNguoiDung == maGiangVien && x.VaiTro == 1);
@@ -114,6 +117,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<YeuCauRutTienChiTietDTO> TaoYeuCauRutTienAsync(int maGiangVien, YeuCauRutTienDTO yeuCau)
         {
+            await DamBaoCotGuiEmailRutTienTonTaiAsync();
+
             var giangVien = await _dbContext.NguoiDungs
                 .FirstOrDefaultAsync(x => x.MaNguoiDung == maGiangVien && x.VaiTro == 1);
 
@@ -137,20 +142,12 @@ namespace educodeai_server.Services.Implementation
                 throw new ApplicationException("Số dư khả dụng không đủ để thực hiện yêu cầu rút.");
             }
 
-            var banGhi = new YeuCauRutTienGiangVienModel
-            {
-                MaGiangVien = maGiangVien,
-                SoTienYeuCau = yeuCau.SoTienYeuCau,
-                TrangThaiYeuCau = "CHO_DUYET",
-                LoaiTien = "VND",
-                MaNganHangNhan = giangVien.MaNganHangNhanTien!,
-                SoTaiKhoanNhan = giangVien.SoTaiKhoanNhanTien!,
-                TenTaiKhoanNhan = giangVien.TenTaiKhoanNhanTien!,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _dbContext.YeuCauRutTienGiangViens.Add(banGhi);
-            await _dbContext.SaveChangesAsync();
+            var banGhi = await TaoBanGhiYeuCauRutTienMoiCoRetryAsync(
+                maGiangVien,
+                yeuCau.SoTienYeuCau,
+                giangVien.MaNganHangNhanTien!,
+                giangVien.SoTaiKhoanNhanTien!,
+                giangVien.TenTaiKhoanNhanTien!);
 
             banGhi.NoiDungChuyenKhoan = await TaoMaNoiDungChuyenKhoanDocNhatAsync();
             banGhi.DuongDanAnhQr = TaoDuongDanQrRutTien(
@@ -164,8 +161,72 @@ namespace educodeai_server.Services.Implementation
             return await MapChiTietYeuCauAsync(banGhi.MaYeuCauRutTien);
         }
 
+        private async Task<YeuCauRutTienGiangVienModel> TaoBanGhiYeuCauRutTienMoiCoRetryAsync(
+            int maGiangVien,
+            decimal soTienYeuCau,
+            string maNganHangNhan,
+            string soTaiKhoanNhan,
+            string tenTaiKhoanNhan)
+        {
+            for (int lan = 0; lan < 3; lan++)
+            {
+                var banGhi = new YeuCauRutTienGiangVienModel
+                {
+                    MaGiangVien = maGiangVien,
+                    SoTienYeuCau = soTienYeuCau,
+                    TrangThaiYeuCau = "CHO_DUYET",
+                    LoaiTien = "VND",
+                    MaNganHangNhan = maNganHangNhan,
+                    SoTaiKhoanNhan = soTaiKhoanNhan,
+                    TenTaiKhoanNhan = tenTaiKhoanNhan,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Fallback cho môi trường sequence bị lệch (thường gặp sau seed/restore trên Supabase).
+                if (lan > 0)
+                {
+                    int maxId = await _dbContext.YeuCauRutTienGiangViens
+                        .Select(x => (int?)x.MaYeuCauRutTien)
+                        .MaxAsync() ?? 0;
+                    banGhi.MaYeuCauRutTien = maxId + 1;
+                }
+
+                _dbContext.YeuCauRutTienGiangViens.Add(banGhi);
+                try
+                {
+                    await _dbContext.SaveChangesAsync();
+                    return banGhi;
+                }
+                catch (DbUpdateException ex) when (LaLoiTrungKhoaChinhYeuCauRutTien(ex))
+                {
+                    _dbContext.Entry(banGhi).State = EntityState.Detached;
+                }
+                catch (DbUpdateException ex)
+                {
+                    throw new ApplicationException(
+                        $"Không thể tạo yêu cầu rút tiền: {ex.InnerException?.Message ?? ex.Message}");
+                }
+            }
+
+            throw new ApplicationException("Không thể tạo yêu cầu rút tiền do xung đột dữ liệu. Vui lòng thử lại sau.");
+        }
+
+        private static bool LaLoiTrungKhoaChinhYeuCauRutTien(DbUpdateException ex)
+        {
+            if (ex.InnerException is PostgresException pg)
+            {
+                return string.Equals(pg.SqlState, PostgresErrorCodes.UniqueViolation, StringComparison.Ordinal)
+                    && (string.Equals(pg.ConstraintName, "PK_YeuCauRutTienGiangViens", StringComparison.Ordinal)
+                        || pg.MessageText.Contains("YeuCauRutTienGiangViens", StringComparison.OrdinalIgnoreCase));
+            }
+
+            return false;
+        }
+
         public async Task<List<YeuCauRutTienChiTietDTO>> LayLichSuRutTienCuaGiangVienAsync(int maGiangVien)
         {
+            await DamBaoCotGuiEmailRutTienTonTaiAsync();
+
             return await _dbContext.YeuCauRutTienGiangViens
                 .AsNoTracking()
                 .Where(x => x.MaGiangVien == maGiangVien)
@@ -176,6 +237,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<List<YeuCauRutTienChiTietDTO>> LayDanhSachChoDoiSoatAsync(string? trangThai)
         {
+            await DamBaoCotGuiEmailRutTienTonTaiAsync();
+
             IQueryable<YeuCauRutTienGiangVienModel> query = _dbContext.YeuCauRutTienGiangViens
                 .AsNoTracking()
                 .Include(x => x.GiangVien)
@@ -194,6 +257,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<YeuCauRutTienChiTietDTO> LayChiTietChoQuanTriAsync(int maYeuCauRutTien)
         {
+            await DamBaoCotGuiEmailRutTienTonTaiAsync();
+
             await DamBaoNoiDungVaQrNeuThieuAsync(maYeuCauRutTien);
             var dto = await MapChiTietYeuCauAsync(maYeuCauRutTien);
             BoSungQrXemTruocNeuCan(dto);
@@ -202,6 +267,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<YeuCauRutTienChiTietDTO> XacNhanDaChuyenKhoanThuCongAsync(int maYeuCauRutTien, int maQuanTriVien)
         {
+            await DamBaoCotGuiEmailRutTienTonTaiAsync();
+
             var banGhi = await _dbContext.YeuCauRutTienGiangViens
                 .Include(x => x.GiangVien)
                 .FirstOrDefaultAsync(x => x.MaYeuCauRutTien == maYeuCauRutTien);
@@ -268,6 +335,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<YeuCauRutTienChiTietDTO> DuyetYeuCauVaTaoQrAsync(int maYeuCauRutTien, int maQuanTriVien, DuyetYeuCauRutTienDTO? yeuCau)
         {
+            await DamBaoCotGuiEmailRutTienTonTaiAsync();
+
             var banGhi = await _dbContext.YeuCauRutTienGiangViens
                 .Include(x => x.GiangVien)
                 .FirstOrDefaultAsync(x => x.MaYeuCauRutTien == maYeuCauRutTien);
@@ -304,6 +373,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<YeuCauRutTienChiTietDTO> TuChoiYeuCauAsync(int maYeuCauRutTien, int maQuanTriVien, TuChoiYeuCauRutTienDTO yeuCau)
         {
+            await DamBaoCotGuiEmailRutTienTonTaiAsync();
+
             var banGhi = await _dbContext.YeuCauRutTienGiangViens
                 .Include(x => x.GiangVien)
                 .FirstOrDefaultAsync(x => x.MaYeuCauRutTien == maYeuCauRutTien);
@@ -330,6 +401,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<bool> XuLyWebhookRutTienAsync(ThongBaoWebhookSePayDTO duLieuWebhook)
         {
+            await DamBaoCotGuiEmailRutTienTonTaiAsync();
+
             if (!string.Equals(duLieuWebhook.transferType, "out", StringComparison.OrdinalIgnoreCase))
             {
                 return false;
@@ -387,6 +460,27 @@ namespace educodeai_server.Services.Implementation
             }
 
             return true;
+        }
+
+        private async Task DamBaoCotGuiEmailRutTienTonTaiAsync()
+        {
+            if (!string.Equals(_dbContext.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            try
+            {
+                await _dbContext.Database.ExecuteSqlRawAsync(
+                    """
+                    ALTER TABLE "YeuCauRutTienGiangViens"
+                    ADD COLUMN IF NOT EXISTS "GuiEmailRutTienThanhCongLuc" timestamp with time zone NULL;
+                    """);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Không thể tự động thêm cột GuiEmailRutTienThanhCongLuc.");
+            }
         }
 
         private async Task<(decimal tongDoanhThuDaGhiNhan, decimal tongDangChoXuLyRut, decimal tongDaChuyenKhoan)> TinhToanSoDuViAsync(int maGiangVien)
@@ -589,8 +683,10 @@ namespace educodeai_server.Services.Implementation
             {
                 MaYeuCauRutTien = x.MaYeuCauRutTien,
                 MaGiangVien = x.MaGiangVien,
-                TenGiangVien = x.GiangVien.HoTen ?? $"Giang vien #{x.MaGiangVien}",
-                EmailGiangVien = x.GiangVien.Email,
+                TenGiangVien = x.GiangVien != null
+                    ? (x.GiangVien.HoTen ?? $"Giang vien #{x.MaGiangVien}")
+                    : $"Giang vien #{x.MaGiangVien}",
+                EmailGiangVien = x.GiangVien != null ? x.GiangVien.Email : null,
                 SoTienYeuCau = x.SoTienYeuCau,
                 TrangThaiYeuCau = x.TrangThaiYeuCau,
                 LoaiTien = x.LoaiTien,
@@ -614,8 +710,8 @@ namespace educodeai_server.Services.Implementation
             {
                 MaYeuCauRutTien = x.MaYeuCauRutTien,
                 MaGiangVien = x.MaGiangVien,
-                TenGiangVien = x.GiangVien.HoTen ?? $"Giang vien #{x.MaGiangVien}",
-                EmailGiangVien = x.GiangVien.Email,
+                TenGiangVien = x.GiangVien?.HoTen ?? $"Giang vien #{x.MaGiangVien}",
+                EmailGiangVien = x.GiangVien?.Email,
                 SoTienYeuCau = x.SoTienYeuCau,
                 TrangThaiYeuCau = x.TrangThaiYeuCau,
                 LoaiTien = x.LoaiTien,

@@ -11,6 +11,7 @@ namespace educodeai_server.Services.Implementation
     public class ThanhToanKhoaHocService : IThanhToanKhoaHocService
     {
         private const string CongThanhToanHoTro = "SEPAY_SUPPORT";
+        private const string LoaiHoTroMuaKhoaHoc = "COURSE_PURCHASE";
         private const string TrangThaiHoTroChoXuLy = "SUPPORT_PENDING";
         private const string TrangThaiHoTroChapThuan = "SUPPORT_APPROVED";
         private const string TrangThaiHoTroTuChoi = "SUPPORT_REJECTED";
@@ -392,16 +393,15 @@ namespace educodeai_server.Services.Implementation
                     .ThenInclude(d => d.ChiTietDonHangs)
                     .ThenInclude(ct => ct.KhoaHoc);
 
-            if (!string.IsNullOrWhiteSpace(trangThai))
+            string? trangThaiLoc = string.IsNullOrWhiteSpace(trangThai) ? null : trangThai.Trim().ToUpperInvariant();
+            if (trangThaiLoc != null)
             {
-                string trangThaiCanLoc = trangThai.Trim().ToUpperInvariant();
-                query = query.Where(x => x.TrangThai == trangThaiCanLoc);
+                query = query.Where(x => x.TrangThai == trangThaiLoc);
             }
 
-            var danhSach = (await query
-                    .OrderByDescending(x => x.CreatedAt)
-                    .ToListAsync())
+            var danhSach = (await query.ToListAsync())
                 .Select(MapHoTroDanhSachItem)
+                .OrderByDescending(x => x.CreatedAt)
                 .ToList();
 
             if (string.IsNullOrWhiteSpace(tuKhoa))
@@ -416,6 +416,7 @@ namespace educodeai_server.Services.Implementation
                     (x.TenHocVien?.ToLowerInvariant().Contains(tuKhoaLoc) ?? false) ||
                     (x.EmailHocVien?.ToLowerInvariant().Contains(tuKhoaLoc) ?? false) ||
                     (x.KhoaHocDaiDien?.ToLowerInvariant().Contains(tuKhoaLoc) ?? false) ||
+                    (x.NoiDungChuyenKhoan?.ToLowerInvariant().Contains(tuKhoaLoc) ?? false) ||
                     (x.ThongTinLienLac?.ToLowerInvariant().Contains(tuKhoaLoc) ?? false))
                 .ToList();
         }
@@ -441,6 +442,16 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<HoTroThanhToanChiTietDTO> ChapThuanYeuCauHoTroAsync(int maGiaoDichHoTro, int maQuanTriVien, XuLyYeuCauHoTroThanhToanDTO yeuCau)
+        {
+            return await ChapThuanHoTroMuaKhoaHocAsync(maGiaoDichHoTro, maQuanTriVien, yeuCau);
+        }
+
+        public async Task<HoTroThanhToanChiTietDTO> TuChoiYeuCauHoTroAsync(int maGiaoDichHoTro, int maQuanTriVien, XuLyYeuCauHoTroThanhToanDTO yeuCau)
+        {
+            return await TuChoiHoTroMuaKhoaHocAsync(maGiaoDichHoTro, maQuanTriVien, yeuCau);
+        }
+
+        private async Task<HoTroThanhToanChiTietDTO> ChapThuanHoTroMuaKhoaHocAsync(int maGiaoDichHoTro, int maQuanTriVien, XuLyYeuCauHoTroThanhToanDTO yeuCau)
         {
             string? ghiChuAdmin = string.IsNullOrWhiteSpace(yeuCau.GhiChuAdmin) ? null : yeuCau.GhiChuAdmin.Trim();
             int maDonHang = 0;
@@ -585,7 +596,7 @@ namespace educodeai_server.Services.Implementation
             return await LayChiTietYeuCauHoTroChoAdminAsync(maGiaoDichHoTro);
         }
 
-        public async Task<HoTroThanhToanChiTietDTO> TuChoiYeuCauHoTroAsync(int maGiaoDichHoTro, int maQuanTriVien, XuLyYeuCauHoTroThanhToanDTO yeuCau)
+        private async Task<HoTroThanhToanChiTietDTO> TuChoiHoTroMuaKhoaHocAsync(int maGiaoDichHoTro, int maQuanTriVien, XuLyYeuCauHoTroThanhToanDTO yeuCau)
         {
             var hoTro = await _dbContext.GiaoDichThanhToans
                 .FirstOrDefaultAsync(x => x.MaGiaoDich == maGiaoDichHoTro && x.CongThanhToan == CongThanhToanHoTro);
@@ -850,7 +861,9 @@ namespace educodeai_server.Services.Implementation
             return new HoTroThanhToanDanhSachItemDTO
             {
                 MaGiaoDichHoTro = x.MaGiaoDich,
+                LoaiHoTro = LoaiHoTroMuaKhoaHoc,
                 MaDonHang = x.MaDonHang,
+                MaYeuCauRutTien = null,
                 NoiDungChuyenKhoan = $"EDU{x.MaDonHang}",
                 MaNguoiDung = x.DonHang.MaNguoiDung,
                 TenHocVien = x.DonHang.NguoiDung.HoTen ?? x.DonHang.NguoiDung.TaiKhoan,
@@ -876,7 +889,9 @@ namespace educodeai_server.Services.Implementation
             return new HoTroThanhToanChiTietDTO
             {
                 MaGiaoDichHoTro = hoTro.MaGiaoDich,
+                LoaiHoTro = LoaiHoTroMuaKhoaHoc,
                 MaDonHang = hoTro.MaDonHang,
+                MaYeuCauRutTien = null,
                 NoiDungChuyenKhoan = $"EDU{hoTro.MaDonHang}",
                 MaNguoiDung = hoTro.DonHang.MaNguoiDung,
                 TenHocVien = hoTro.DonHang.NguoiDung.HoTen ?? hoTro.DonHang.NguoiDung.TaiKhoan,
