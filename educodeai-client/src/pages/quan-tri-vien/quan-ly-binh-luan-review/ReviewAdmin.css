@@ -1,5 +1,5 @@
 .qtrv-page {
-  padding: 36px 40px;
+  padding: 24px 32px;
   min-height: 100%;
   background: var(--bg-main);
   font-family: var(--font-main);
@@ -7,10 +7,10 @@
 
 .qtrv-hero {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .qtrv-hero__content,
@@ -28,14 +28,14 @@
 .qtrv-hero__content {
   flex: 1;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
-  padding: 24px 26px;
+  padding: 20px 24px;
 }
 
 .qtrv-hero__icon {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -61,10 +61,11 @@
 }
 
 .qtrv-hero__aside {
-  min-width: 260px;
-  padding: 22px 24px;
+  min-width: 240px;
+  padding: 16px 24px;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .qtrv-kpi-pill {
@@ -92,13 +93,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr);
   gap: 20px;
-  margin-bottom: 24px;
-  align-items: start; /* Prevents cards from stretching vertically */
+  margin-bottom: 20px;
+  align-items: stretch; /* Stretch cards to match rating panel height if needed, but we'll manage column-wise */
 }
 
 .qtrv-cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -107,11 +108,10 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  padding: 18px;
+  padding: 16px 20px;
   display: flex;
   gap: 14px;
   align-items: center;
-  height: 100%; /* In case they wrap inside the grid */
 }
 
 .qtrv-card__icon {
@@ -136,8 +136,8 @@
 }
 
 .qtrv-card__value {
-  margin-top: 6px;
-  font-size: 28px;
+  margin-top: 4px;
+  font-size: 24px;
   color: var(--text-dark);
   line-height: 1;
 }
@@ -168,14 +168,14 @@
 }
 
 .qtrv-rating-panel {
-  padding: 22px 24px;
+  padding: 16px 20px;
 }
 
 .qtrv-rating-panel__header {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
 .qtrv-rating-panel__header h3 {
@@ -249,8 +249,8 @@
 }
 
 .qtrv-filters-card {
-  padding: 20px 22px;
-  margin-bottom: 24px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
 }
 
 .qtrv-filters-card__header,
@@ -371,12 +371,12 @@
 .qtrv-search-box input,
 .qtrv-filter-grid select {
   width: 100%;
-  height: 46px;
+  height: 40px;
   border: none;
   outline: none;
   background: transparent;
   color: var(--text-dark);
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .qtrv-filter-grid {
@@ -395,7 +395,7 @@
 }
 
 .qtrv-reset-btn {
-  height: 46px;
+  height: 40px;
   font-size: 13px;
   font-weight: var(--font-weight-semibold);
 }
