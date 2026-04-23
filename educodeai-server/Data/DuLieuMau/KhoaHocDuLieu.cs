@@ -22,6 +22,9 @@ namespace educodeai_server.Data.DuLieuMau
                     TrinhDo = "Người mới",
                     ThoiLuongGio = 35,
                     KyNangChinh = "C++, OOP, Con trỏ, Cấu trúc dữ liệu",
+                    GiaKhoaHoc = 12000,
+                    DonViTienTe = "VND",
+                    ChoPhepMua = true,
                     NgayTao = new DateTime(2026, 1, 1)
                 },
                 // Khóa học 2: Kiến Thức Nhập Môn IT
@@ -38,6 +41,9 @@ namespace educodeai_server.Data.DuLieuMau
                     TrinhDo = "Người mới",
                     ThoiLuongGio = 8,
                     KyNangChinh = "IT Foundation, Client-Server, Domain, Career Guidance",
+                    GiaKhoaHoc = 10000,
+                    DonViTienTe = "VND",
+                    ChoPhepMua = true,
                     NgayTao = new DateTime(2026, 1, 1)
                 },
                 // Khóa học 3: JavaScript Nâng Cao
@@ -54,6 +60,9 @@ namespace educodeai_server.Data.DuLieuMau
                     TrinhDo = "Trung cấp",
                     ThoiLuongGio = 15,
                     KyNangChinh = "JavaScript, Closure, This, Bind, Call, Apply, Redux",
+                    GiaKhoaHoc = 13500,
+                    DonViTienTe = "VND",
+                    ChoPhepMua = true,
                     NgayTao = new DateTime(2026, 1, 1)
                 },
                 // KHÓA HỌC MỚI: Lập Trình JavaScript Cơ Bản
@@ -70,6 +79,9 @@ namespace educodeai_server.Data.DuLieuMau
                     TrinhDo = "Người mới",
                     ThoiLuongGio = 20,
                     KyNangChinh = "JavaScript, Functions, Arrays, DOM, Form Validation",
+                    GiaKhoaHoc = 11000,
+                    DonViTienTe = "VND",
+                    ChoPhepMua = true,
                     NgayTao = new DateTime(2026, 1, 1)
                 },
                 // KHÓA 5: App "Đừng Chạm Tay Lên Mặt"
@@ -86,6 +98,9 @@ namespace educodeai_server.Data.DuLieuMau
                     TrinhDo = "Trung cấp",
                     ThoiLuongGio = 12,
                     KyNangChinh = "React, TensorFlow.js, Machine Learning, Computer Vision",
+                    GiaKhoaHoc = 14900,
+                    DonViTienTe = "VND",
+                    ChoPhepMua = true,
                     NgayTao = new DateTime(2026, 1, 1)
                 },
                 // KHÓA 6: Node & ExpressJS
@@ -102,6 +117,9 @@ namespace educodeai_server.Data.DuLieuMau
                     TrinhDo = "Người mới",
                     ThoiLuongGio = 25,
                     KyNangChinh = "Node.js, ExpressJS, MongoDB, REST API, MVC Pattern",
+                    GiaKhoaHoc = 12500,
+                    DonViTienTe = "VND",
+                    ChoPhepMua = true,
                     NgayTao = new DateTime(2026, 1, 1)
                 },
                 // KHÓA 7: Responsive Với Grid System
@@ -118,6 +136,9 @@ namespace educodeai_server.Data.DuLieuMau
                     TrinhDo = "Người mới",
                     ThoiLuongGio = 10,
                     KyNangChinh = "CSS Grid, Responsive Design, Media Queries, Flexbox, Viewport",
+                    GiaKhoaHoc = 10500,
+                    DonViTienTe = "VND",
+                    ChoPhepMua = true,
                     NgayTao = new DateTime(2026, 1, 1)
                 },
                 // KHÓA 8: Làm việc với Terminal & Ubuntu
@@ -134,6 +155,9 @@ namespace educodeai_server.Data.DuLieuMau
                     TrinhDo = "Người mới",
                     ThoiLuongGio = 18,
                     KyNangChinh = "Linux, Ubuntu, WSL, Terminal Commands, Server Deployment, Nginx",
+                    GiaKhoaHoc = 14000,
+                    DonViTienTe = "VND",
+                    ChoPhepMua = true,
                     NgayTao = new DateTime(2026, 1, 1)
                 }
             );
