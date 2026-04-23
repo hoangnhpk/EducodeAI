@@ -73,6 +73,8 @@ namespace educodeai_server.Models
         public virtual ICollection<DoanhThuGiangVienModel> DoanhThuGiangViens { get; set; } = null!;
         public virtual ICollection<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; } = null!;
         public virtual ICollection<YeuCauRutTienGiangVienModel> YeuCauDaDuyets { get; set; } = null!;
+        public virtual ICollection<HoTroRutTienGiangVienModel> HoTroRutTienGiangViens { get; set; } = new List<HoTroRutTienGiangVienModel>();
+        public virtual ICollection<HoTroRutTienGiangVienModel> HoTroRutTienDaXuLys { get; set; } = new List<HoTroRutTienGiangVienModel>();
 
         // Navigation mới cho tính năng quản lý thiết bị
         public virtual ICollection<PhienDangNhapModel> DanhSachPhienDangNhap { get; set; } = new List<PhienDangNhapModel>();

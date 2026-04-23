@@ -27,7 +27,10 @@ export default function QuanLyHoTroThanhToanHocVien() {
   const taiDanhSach = async (imLang = false) => {
     try {
       if (!imLang) setDangTai(true);
-      const duLieu = await HoTroThanhToanAdminService.layDanhSach(trangThaiLoc || undefined, tuKhoa || undefined);
+      const duLieu = await HoTroThanhToanAdminService.layDanhSach(
+        trangThaiLoc || undefined,
+        tuKhoa || undefined
+      );
       setDanhSach(duLieu);
     } catch (error: any) {
       if (!imLang) {
@@ -72,7 +75,10 @@ export default function QuanLyHoTroThanhToanHocVien() {
     if (!kq.isConfirmed) return;
 
     try {
-      await HoTroThanhToanAdminService.chapThuan(chiTiet.maGiaoDichHoTro, (kq.value || "").trim() || undefined);
+      await HoTroThanhToanAdminService.chapThuan(
+        chiTiet.maGiaoDichHoTro,
+        (kq.value || "").trim() || undefined
+      );
       await Swal.fire("Thành công", "Đã chấp thuận yêu cầu và ghi nhận thanh toán.", "success");
       dongChiTiet();
       await taiDanhSach(true);
@@ -94,7 +100,10 @@ export default function QuanLyHoTroThanhToanHocVien() {
     if (!kq.isConfirmed) return;
 
     try {
-      await HoTroThanhToanAdminService.tuChoi(chiTiet.maGiaoDichHoTro, (kq.value || "").trim() || undefined);
+      await HoTroThanhToanAdminService.tuChoi(
+        chiTiet.maGiaoDichHoTro,
+        (kq.value || "").trim() || undefined
+      );
       await Swal.fire("Đã từ chối", "Yêu cầu hỗ trợ đã được cập nhật trạng thái từ chối.", "success");
       dongChiTiet();
       await taiDanhSach(true);
@@ -201,7 +210,7 @@ export default function QuanLyHoTroThanhToanHocVien() {
                       <div className="col-md-6">
                         <p><strong>Học viên:</strong> {chiTiet.tenHocVien}</p>
                         <p><strong>Email:</strong> {chiTiet.emailHocVien || "—"}</p>
-                        <p><strong>Mã đơn:</strong> #{chiTiet.maDonHang}</p>
+                        <p><strong>Mã tham chiếu:</strong> Đơn #{chiTiet.maDonHang}</p>
                         <p><strong>Nội dung chuyển khoản:</strong> <code>{chiTiet.noiDungChuyenKhoan}</code></p>
                         <p><strong>Số tiền:</strong> {chiTiet.soTienDonHang.toLocaleString("vi-VN")} {chiTiet.loaiTien}</p>
                         <p><strong>Trạng thái hỗ trợ:</strong> {hienThiTrangThai(chiTiet.trangThaiHoTro)}</p>

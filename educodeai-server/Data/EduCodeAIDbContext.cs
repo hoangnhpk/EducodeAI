@@ -44,6 +44,7 @@ namespace educodeai_server.Data
         public DbSet<MaGiamGiaModel> MaGiamGias { get; set; }
         public DbSet<DoanhThuGiangVienModel> DoanhThuGiangViens { get; set; }
         public DbSet<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; }
+        public DbSet<HoTroRutTienGiangVienModel> HoTroRutTienGiangViens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -79,6 +80,7 @@ namespace educodeai_server.Data
             modelBuilder.Entity<MaGiamGiaModel>().HasIndex(v => v.Code).IsUnique();
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.NoiDungChuyenKhoan).IsUnique();
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.MaGiaoDichSePay).IsUnique();
+            modelBuilder.Entity<HoTroRutTienGiangVienModel>().HasIndex(x => new { x.MaYeuCauRutTien, x.TrangThaiHoTro });
 
 
             // ====== RELATIONSHIPS CONFIGURATION ======
@@ -172,6 +174,18 @@ namespace educodeai_server.Data
                 .HasMany(n => n.YeuCauDaDuyets)
                 .WithOne(x => x.QuanTriVienDuyet)
                 .HasForeignKey(x => x.MaQuanTriVienDuyet)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.HoTroRutTienGiangViens)
+                .WithOne(x => x.GiangVien)
+                .HasForeignKey(x => x.MaGiangVien)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.HoTroRutTienDaXuLys)
+                .WithOne(x => x.QuanTriVienXuLy)
+                .HasForeignKey(x => x.MaQuanTriVienXuLy)
                 .OnDelete(DeleteBehavior.NoAction);
 
             // KhoaHocModel relationships
@@ -319,6 +333,12 @@ namespace educodeai_server.Data
 
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>()
                 .ToTable(t => t.HasCheckConstraint("CK_YeuCauRutTienGiangVien_SoTienYeuCau_Duong", "\"SoTienYeuCau\" > 0"));
+
+            modelBuilder.Entity<YeuCauRutTienGiangVienModel>()
+                .HasMany(x => x.YeuCauHoTro)
+                .WithOne(x => x.YeuCauRutTien)
+                .HasForeignKey(x => x.MaYeuCauRutTien)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ====== SEED DATA ======
             KhoaHocDuLieu.SeedKhoaHoc(modelBuilder);

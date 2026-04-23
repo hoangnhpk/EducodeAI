@@ -27,7 +27,9 @@ namespace educodeai_server.DTOs.ThanhToan
     public class HoTroThanhToanDanhSachItemDTO
     {
         public int MaGiaoDichHoTro { get; set; }
+        public string LoaiHoTro { get; set; } = "COURSE_PURCHASE";
         public int MaDonHang { get; set; }
+        public int? MaYeuCauRutTien { get; set; }
         public string NoiDungChuyenKhoan { get; set; } = string.Empty;
         public int MaNguoiDung { get; set; }
         public string TenHocVien { get; set; } = string.Empty;
@@ -47,7 +49,9 @@ namespace educodeai_server.DTOs.ThanhToan
     public class HoTroThanhToanChiTietDTO
     {
         public int MaGiaoDichHoTro { get; set; }
+        public string LoaiHoTro { get; set; } = "COURSE_PURCHASE";
         public int MaDonHang { get; set; }
+        public int? MaYeuCauRutTien { get; set; }
         public string NoiDungChuyenKhoan { get; set; } = string.Empty;
         public int MaNguoiDung { get; set; }
         public string TenHocVien { get; set; } = string.Empty;
