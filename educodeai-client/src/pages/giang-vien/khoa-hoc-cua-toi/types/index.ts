@@ -15,6 +15,9 @@ export interface KhoaHocListItem {
   tienDoTrungBinh: number;
   diemDanhGiaTB: number;
   trangThai?: string;
+  giaKhoaHoc: number;
+  donViTienTe: string;
+  choPhepMua: boolean;
   coChungChi: boolean;
   daCoDeThiChungChi: boolean;
   ngayTao: string;
@@ -29,6 +32,9 @@ export interface KhoaHocDetail {
   trinhDo: string;
   thoiLuongGio: number;
   trangThai?: string;
+  giaKhoaHoc: number;
+  donViTienTe: string;
+  choPhepMua: boolean;
   ngayTao: string;
   coChungChi: boolean;
   tenChungChi?: string;
@@ -54,6 +60,9 @@ export interface KhoaHocCreateUpdate {
   trinhDo: string;
   thoiLuongGio: number;
   trangThai?: string;
+  giaKhoaHoc: number;
+  donViTienTe: string;
+  choPhepMua: boolean;
   kyNangChinh?: string;
   coChungChi: boolean;
   tenChungChi?: string;

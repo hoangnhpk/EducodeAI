@@ -56,25 +56,39 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpPost("tao-moi")]
         public async Task<IActionResult> TaoKhoaHoc([FromForm] KhoaHocCreateUpdateDTO dto)
         {
-            var maGiangVien = GetMaGiangVien();
-            if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.TaoKhoaHocAsync(maGiangVien, dto);
-            if (result <= 0)
-                return BadRequest(new { success = false, message = "Tạo khóa học thất bại" });
-            return Ok(new { success = true, maKhoaHoc = result, message = "Tạo khóa học thành công" });
+            try
+            {
+                var maGiangVien = GetMaGiangVien();
+                if (maGiangVien == 0) return Unauthorized();
+                
+                var result = await _service.TaoKhoaHocAsync(maGiangVien, dto);
+                if (result <= 0)
+                    return BadRequest(new { success = false, message = "Tạo khóa học thất bại" });
+                return Ok(new { success = true, maKhoaHoc = result, message = "Tạo khóa học thành công" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPut("cap-nhat/{maKhoaHoc}")]
         public async Task<IActionResult> CapNhatKhoaHoc(int maKhoaHoc, [FromForm] KhoaHocCreateUpdateDTO dto)
         {
-            var maGiangVien = GetMaGiangVien();
-            if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.CapNhatKhoaHocAsync(maKhoaHoc, maGiangVien, dto);
-            if (!result)
-                return BadRequest(new { success = false, message = "Cập nhật khóa học thất bại" });
-            return Ok(new { success = true, message = "Cập nhật khóa học thành công" });
+            try
+            {
+                var maGiangVien = GetMaGiangVien();
+                if (maGiangVien == 0) return Unauthorized();
+                
+                var result = await _service.CapNhatKhoaHocAsync(maKhoaHoc, maGiangVien, dto);
+                if (!result)
+                    return BadRequest(new { success = false, message = "Cập nhật khóa học thất bại" });
+                return Ok(new { success = true, message = "Cập nhật khóa học thành công" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpDelete("xoa/{maKhoaHoc}")]

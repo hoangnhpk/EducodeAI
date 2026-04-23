@@ -1,4 +1,4 @@
-﻿public class KhoaHocGiangVienListDTO
+public class KhoaHocGiangVienListDTO
 {
     public int MaKhoaHoc { get; set; }
     public string TenKhoaHoc { get; set; } = null!;
@@ -13,6 +13,9 @@
 
     public double DiemDanhGiaTB { get; set; }
     public string? TrangThai { get; set; }
+    public decimal GiaKhoaHoc { get; set; }
+    public string DonViTienTe { get; set; } = "VND";
+    public bool ChoPhepMua { get; set; }
     public bool CoChungChi { get; set; }
     public bool DaCoDeThiChungChi { get; set; }
     public DateTime NgayTao { get; set; }
@@ -31,6 +34,9 @@ public class KhoaHocGiangVienDetailDTO
     public int ThoiLuongGio { get; set; }
 
     public string? TrangThai { get; set; }
+    public decimal GiaKhoaHoc { get; set; }
+    public string DonViTienTe { get; set; } = "VND";
+    public bool ChoPhepMua { get; set; }
     public DateTime NgayTao { get; set; }
     public bool CoChungChi { get; set; }
     public string? TenChungChi { get; set; }
@@ -73,6 +79,9 @@ public class KhoaHocCreateUpdateDTO
     public int ThoiLuongGio { get; set; }
 
     public string? TrangThai { get; set; }
+    public decimal GiaKhoaHoc { get; set; }
+    public string DonViTienTe { get; set; } = "VND";
+    public bool ChoPhepMua { get; set; }
     public string? KyNangChinh { get; set; }
     public bool CoChungChi { get; set; }
     public string? TenChungChi { get; set; }
