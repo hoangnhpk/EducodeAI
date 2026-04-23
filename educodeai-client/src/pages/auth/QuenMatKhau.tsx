@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
-import { getDeviceInfo } from '../../utils/deviceHelper';
+
 import { FaArrowLeft } from 'react-icons/fa';
 
 const QuenMatKhau: React.FC = () => {
-    const navigate = useNavigate();
+
     const [step, setStep] = useState<'forgot' | 'reset' | 'replace'>('forgot');
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
@@ -110,13 +110,10 @@ const QuenMatKhau: React.FC = () => {
 
         setLoading(true);
         try {
-            const { maThietBi, tenThietBi } = getDeviceInfo();
             const response: any = await authService.resetPassword({
                 Email: email,
                 NewPassword: password,
-                OtpCode: otp,
-                MaThietBi: maThietBi,
-                TenThietBi: tenThietBi
+                OtpCode: otp
             });
 
             if (response.requiresLogoutOldest) {
