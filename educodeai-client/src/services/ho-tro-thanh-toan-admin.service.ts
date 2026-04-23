@@ -3,6 +3,7 @@ import type { HoTroThanhToanChiTietDTO } from "@/services/thanh-toan-khoa-hoc.se
 
 export interface HoTroThanhToanDanhSachItemDTO {
   maGiaoDichHoTro: number;
+  loaiHoTro: "COURSE_PURCHASE";
   maDonHang: number;
   noiDungChuyenKhoan: string;
   maNguoiDung: number;

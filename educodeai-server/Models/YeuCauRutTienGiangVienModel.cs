@@ -58,5 +58,7 @@ namespace educodeai_server.Models
 
         [StringLength(500)]
         public string? GhiChuAdmin { get; set; }
+
+        public virtual ICollection<HoTroRutTienGiangVienModel> YeuCauHoTro { get; set; } = new List<HoTroRutTienGiangVienModel>();
     }
 }

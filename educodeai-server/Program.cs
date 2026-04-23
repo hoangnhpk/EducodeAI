@@ -208,47 +208,48 @@ educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 
 // PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
 // Nếu setval không chạy → trùng PK → 500 khi tạo mã QR.
-try
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
-    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
-    {
-        var bangVaCot = new[]
-        {
-            ("DonHangKhoaHocs", "MaDonHang"),
-            ("ChiTietDonHangs", "MaChiTiet"),
-            ("GiaoDichThanhToans", "MaGiaoDich"),
-            ("DoanhThuGiangViens", "MaDoanhThu"),
-            ("MaGiamGias", "MaVoucher"),
-        };
-        foreach (var (bang, cot) in bangVaCot)
-        {
-            try
-            {
-                db.Database.ExecuteSqlRaw(
-                    $"""
-                    SELECT setval(
-                        COALESCE(
-                            pg_get_identity_sequence('"{bang}"'::regclass, '{cot}'),
-                            pg_get_serial_sequence('public."{bang}"', '{cot}')
-                        )::regclass,
-                        COALESCE((SELECT MAX("{cot}") FROM "{bang}"), 0),
-                        true
-                    );
-                    """);
-            }
-            catch (Exception exBang)
-            {
-                Console.WriteLine($"Đồng bộ sequence {bang}.{cot}: {exBang.Message}");
-            }
-        }
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Không đồng bộ sequence PostgreSQL (bỏ qua nếu DB chưa migrate): {ex.Message}");
-}
+//try
+//{
+//    using var scope = app.Services.CreateScope();
+//    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
+//    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
+//    {
+//        var bangVaCot = new[]
+//        {
+//            ("DonHangKhoaHocs", "MaDonHang"),
+//            ("ChiTietDonHangs", "MaChiTiet"),
+//            ("GiaoDichThanhToans", "MaGiaoDich"),
+//            ("DoanhThuGiangViens", "MaDoanhThu"),
+//            ("MaGiamGias", "MaVoucher"),
+//        };
+//        foreach (var (bang, cot) in bangVaCot)
+//        {
+//            try
+//            {
+//                db.Database.ExecuteSqlRaw(
+//                    $"""
+//                    SELECT setval(
+//                        COALESCE(
+//                            pg_get_identity_sequence('"{bang}"'::regclass, '{cot}'),
+//                            pg_get_serial_sequence('public."{bang}"', '{cot}')
+//                        )::regclass,
+//                        COALESCE((SELECT MAX("{cot}") FROM "{bang}"), 0),
+//                        true
+//                    );
+//                    """);
+//            }
+//            catch (Exception exBang)
+//            {
+//                Console.WriteLine($"Đồng bộ sequence {bang}.{cot}: {exBang.Message}");
+//            }
+//        }
+
+//    }
+//}
+//catch (Exception ex)
+//{
+//    Console.WriteLine($"Không đồng bộ sequence PostgreSQL (bỏ qua nếu DB chưa migrate): {ex.Message}");
+//}
 
 // ==========================================
 // 7. PIPELINE REQUEST (Middleware)
