@@ -67,23 +67,41 @@ builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
 try
 {
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+
     if (!string.IsNullOrEmpty(redisConnectionString))
     {
-        var redis = ConnectionMultiplexer.Connect(redisConnectionString);
+        var configOptions = ConfigurationOptions.Parse(redisConnectionString);
+        configOptions.AbortOnConnectFail = false;
+        configOptions.ConnectTimeout = 2000;
+        configOptions.SyncTimeout = 2000;
+        configOptions.ReconnectRetryPolicy = new ExponentialRetry(500);
+
+        var redis = ConnectionMultiplexer.Connect(configOptions);
+        // 🔥 Check trạng thái ngay lúc start
+        if (redis.IsConnected)
+        {
+            Console.WriteLine("Redis CONNECTED successfully");
+        }
+        else
+        {
+            Console.WriteLine("Redis NOT connected at startup (will retry...)");
+        }
+
         builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
         builder.Services.AddScoped<IRedisService, RedisService>();
-        Console.WriteLine("Redis connected successfully");
     }
     else
     {
-        throw new Exception("Redis connection string is empty");
+        Console.WriteLine("Redis connection string is empty – using MemoryCache fallback");
+        builder.Services.AddScoped<IRedisService, FallbackRedisService>();
     }
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Redis connection failed, using MemoryCache fallback: {ex.Message}");
+    Console.WriteLine($"Redis setup failed, using MemoryCache fallback: {ex.Message}");
     builder.Services.AddScoped<IRedisService, FallbackRedisService>();
 }
+
 
 // ==========================================
 // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
@@ -243,7 +261,6 @@ educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 //                Console.WriteLine($"Đồng bộ sequence {bang}.{cot}: {exBang.Message}");
 //            }
 //        }
-
 //    }
 //}
 //catch (Exception ex)

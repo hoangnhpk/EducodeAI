@@ -18,6 +18,7 @@ interface BaiTapThucHanhHocVienRenderDTO {
     ngonNgu: string;
     mucDo: string;
     goiY: string | null;
+    loiGiaiMau?: string | null;
     testCases: TestCaseHienThiDTO[];
 }
 
@@ -44,6 +45,38 @@ interface BaiTapIDEProps {
     khiHoanThanh?: (phanTram: number, daDat: boolean) => void;
 }
 
+const parseGoiY = (goiY: string | null) => {
+    if (!goiY) return { cleanGoiY: null, vars: [] };
+    const match = goiY.match(/\[VARS:\s*(.*?)\]/i);
+    if (match) {
+        const vars = match[1].split(',').map(v => v.trim()).filter(v => v);
+        const cleanGoiY = goiY.replace(match[0], '').trim();
+        return { cleanGoiY, vars };
+    }
+    return { cleanGoiY: goiY, vars: [] };
+};
+
+const renderFormattedInput = (input: string, vars: string[]) => {
+    if (!vars || vars.length === 0 || !input) return input;
+    const lines = input.trim().split('\n');
+    return (
+        <div className="cp-formatted-input">
+            {lines.map((line, i) => {
+                const varName = vars[i];
+                if (varName) {
+                    return (
+                        <div key={i} className="cp-input-line">
+                            <span className="cp-input-var-name">{varName} = </span>
+                            <span className="cp-input-value">{line}</span>
+                        </div>
+                    );
+                }
+                return <div key={i} className="cp-input-value">{line}</div>;
+            })}
+        </div>
+    );
+};
+
 export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) => {
     // States
     const [duLieu, setDuLieu] = useState<BaiTapThucHanhHocVienRenderDTO | null>(null);
@@ -53,6 +86,7 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
     const [code, setCode] = useState<string>('');
     const [activeTab, setActiveTab] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [daSai, setDaSai] = useState(false);
 
     // Lưu kết quả test: mảng các object chứa status và actual output
     const [testResults, setTestResults] = useState<{ status: 'idle' | 'running' | 'pass' | 'fail', output: string, error?: string }[]>([]);
@@ -69,18 +103,42 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                 const data = response as BaiTapThucHanhHocVienRenderDTO;
                 setDuLieu(data);
 
+                const { vars: fetchedVars } = parseGoiY(data.goiY);
                 let defaultCode = '';
                 const _lang = data.ngonNgu.toLowerCase();
+
                 if (_lang === 'python' || _lang === 'python3') {
-                    defaultCode = '# 💡 ĐỌC DỮ LIỆU:\n# - 1 số: n = int(input())\n# - Nhiều số cùng dòng: a, b = map(int, input().split())\n# - Chuỗi: s = input()\n\n';
+                    if (fetchedVars.length > 0) {
+                        defaultCode = '# 💡 GỢI Ý ĐỌC DỮ LIỆU:\n';
+                        fetchedVars.forEach(v => {
+                            defaultCode += `${v} = int(input())\n`;
+                        });
+                        defaultCode += '\n# Viết code xử lý tại đây\n\n';
+                    } else {
+                        defaultCode = '# 💡 ĐỌC DỮ LIỆU:\n# - 1 số: n = int(input())\n# - Nhiều số cùng dòng: a, b = map(int, input().split())\n# - Chuỗi: s = input()\n\n';
+                    }
                 } else if (_lang === 'c++' || _lang === 'cpp') {
-                    defaultCode = '#include <iostream>\nusing namespace std;\n\nint main() {\n    // cin >> x; để đọc đầu vào\n    \n    return 0;\n}';
+                    if (fetchedVars.length > 0) {
+                        const varDecl = fetchedVars.map(v => `int ${v};`).join(' ');
+                        const varCin = fetchedVars.map(v => v).join(' >> ');
+                        defaultCode = `#include <iostream>\nusing namespace std;\n\nint main() {\n    // Khai báo và đọc dữ liệu\n    ${varDecl}\n    cin >> ${varCin};\n    \n    // Viết code xử lý tại đây\n    \n    return 0;\n}`;
+                    } else {
+                        defaultCode = '#include <iostream>\nusing namespace std;\n\nint main() {\n    // cin >> x; để đọc đầu vào\n    \n    return 0;\n}';
+                    }
                 } else if (_lang === 'c') {
                     defaultCode = '#include <stdio.h>\n\nint main() {\n    // scanf("%d", &x); để đọc đầu vào\n    \n    return 0;\n}';
                 } else if (_lang === 'c#' || _lang === 'csharp') {
                     defaultCode = 'using System;\n\nclass Program {\n    static void Main() {\n        // Console.ReadLine() để đọc đầu vào\n        \n    }\n}';
                 } else if (_lang === 'java') {
-                    defaultCode = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // sc.nextInt(), sc.nextLine() để đọc dữ liệu\n        \n    }\n}';
+                    if (fetchedVars.length > 0) {
+                        let scanCode = '';
+                        fetchedVars.forEach(v => {
+                            scanCode += `        int ${v} = sc.nextInt();\n`;
+                        });
+                        defaultCode = `import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Đọc dữ liệu\n${scanCode}\n        // Viết code xử lý tại đây\n        \n    }\n}`;
+                    } else {
+                        defaultCode = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // sc.nextInt(), sc.nextLine() để đọc dữ liệu\n        \n    }\n}';
+                    }
                 } else if (_lang === 'javascript' || _lang === 'js' || _lang === 'nodejs') {
                     defaultCode = '// 💡 Đọc dữ liệu đầu vào (stdin) trong Node.js:\nconst readline = require(\'readline\');\nconst rl = readline.createInterface({ input: process.stdin });\nconst lines = [];\nrl.on(\'line\', line => lines.push(line.trim()));\nrl.on(\'close\', () => {\n    // Xử lý dữ liệu ở đây\n    const n = parseInt(lines[0]);\n    console.log(n);\n});\n';
                 } else if (_lang === 'typescript' || _lang === 'ts') {
@@ -154,12 +212,14 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                 const passCount = data.results.filter(r => r.isPassed).length;
 
                 if (data.passedAll) {
+                    setDaSai(false);
                     if (khiHoanThanh) {
                         const phanTram = (passCount / duLieu.testCases.length) * 100;
                         khiHoanThanh(phanTram, true);
                     }
                     Swal.fire({ title: 'Thành công!', text: 'Hoàn thành bài tập.', icon: 'success', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
                 } else {
+                    setDaSai(true);
                     Swal.fire({ title: 'Sai kết quả!', text: 'Kiểm tra lại code của bạn.', icon: 'error', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
                 }
             } else {
@@ -178,6 +238,8 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
 
     if (loading) return <div className="p-4">Đang tải bài tập thực hành...</div>;
     if (error || !duLieu) return <div className="p-4 text-red-500">{error || 'Bài tập không tồn tại.'}</div>;
+
+    const { cleanGoiY, vars } = parseGoiY(duLieu.goiY);
 
     return (
         <div className="cp-ide-wrapper">
@@ -199,16 +261,18 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                     {duLieu.testCases.length > 0 && (
                         <>
                             <p><strong>Ví dụ khi nhập:</strong></p>
-                            <div className="cp-example-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{duLieu.testCases[0].inputDuLieu}</div>
+                            <div className="cp-example-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                                {renderFormattedInput(duLieu.testCases[0].inputDuLieu, vars)}
+                            </div>
                             <p><strong>Kết quả đầu ra mong đợi:</strong></p>
                             <div className="cp-example-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{duLieu.testCases[0].outputMongDoi}</div>
                         </>
                     )}
 
-                    {duLieu.goiY && (
+                    {cleanGoiY && (
                         <div style={{ marginTop: '1.5rem', padding: '1rem', borderLeft: '4px solid #fcebb6', background: '#fffbeb', borderRadius: 4 }}>
                             <h4 style={{ margin: '0 0 0.5rem 0', color: '#b45309', fontSize: '0.95rem' }}><i className="fas fa-lightbulb"></i> Gợi ý</h4>
-                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#78350f' }}>{duLieu.goiY}</p>
+                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#78350f' }}>{cleanGoiY}</p>
                         </div>
                     )}
                 </div>
@@ -261,6 +325,17 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                                     Bài kiểm tra {idx + 1}
                                 </button>
                             ))}
+
+                            {daSai && duLieu.loiGiaiMau && (
+                                <button
+                                    className={`cp-test-tab-btn ${activeTab === -1 ? 'active' : ''}`}
+                                    onClick={() => setActiveTab(-1)}
+                                    style={{ color: '#f69050' }}
+                                >
+                                    <i className="fas fa-lightbulb" style={{ marginRight: 4 }}></i>
+                                    Lời giải mẫu
+                                </button>
+                            )}
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <button
@@ -296,7 +371,9 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                                 ) : (
                                     <>
                                         <div className="cp-io-label">Đầu vào:</div>
-                                        <div className="cp-io-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{tc.inputDuLieu || "Không có đầu vào"}</div>
+                                        <div className="cp-io-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                                            {renderFormattedInput(tc.inputDuLieu, vars) || "Không có đầu vào"}
+                                        </div>
 
                                         <div className="cp-io-label">Đầu ra mong đợi:</div>
                                         <div className="cp-io-box" style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{tc.outputMongDoi}</div>
@@ -333,6 +410,35 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                                 )}
                             </div>
                         ))}
+
+                        {/* TAB LỜI GIẢI MẪU */}
+                        {activeTab === -1 && duLieu.loiGiaiMau && (
+                            <div className="cp-test-pane active anim-enter">
+                                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
+                                    <div style={{ padding: '12px 16px', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 600, color: '#1e293b' }}>
+                                            <i className="fas fa-code" style={{ color: '#f69050', marginRight: 8 }}></i>
+                                            Lời giải tham khảo ({duLieu.ngonNgu})
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                void navigator.clipboard.writeText(duLieu.loiGiaiMau || '');
+                                                Swal.fire({ text: 'Đã sao chép lời giải!', icon: 'success', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+                                            }}
+                                            style={{ border: 'none', background: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.85rem' }}
+                                        >
+                                            <i className="far fa-copy"></i> Sao chép
+                                        </button>
+                                    </div>
+                                    <div style={{ padding: '16px', background: '#0f172a', color: '#e2e8f0', fontSize: '0.9rem', overflowX: 'auto' }}>
+                                        <pre style={{ margin: 0, fontFamily: 'monospace', lineHeight: 1.6 }}>{duLieu.loiGiaiMau}</pre>
+                                    </div>
+                                </div>
+                                <div style={{ marginTop: '16px', padding: '12px', background: '#fffbeb', borderLeft: '4px solid #fcebb6', borderRadius: 4, fontSize: '0.85rem', color: '#78350f' }}>
+                                    💡 <strong>Lưu ý:</strong> Hãy cố gắng hiểu logic của lời giải trước khi áp dụng để nâng cao kỹ năng tư duy lập trình của bạn.
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
