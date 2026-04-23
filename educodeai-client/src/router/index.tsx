@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ProtectedRoute from "../pages/auth/ProtectedRoute"; 
 
 import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
@@ -57,19 +57,37 @@ const HomeRedirect = () => {
   return <TrangChuHocVien />;
 };
 
+// Component ngăn Admin/Giảng viên vào các trang Public và Học viên
+const PublicOrStudentRoute = ({ children }: { children?: React.ReactNode }) => {
+  const userRaw = localStorage.getItem('user_info');
+  if (!userRaw) return children ? <>{children}</> : <Outlet />;
+
+  const user = JSON.parse(userRaw);
+  const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
+
+  // Nếu là Admin, đá về Dashboard Admin
+  if (role === 0) return <Navigate to="/quan-tri-vien" replace />;
+  // Nếu là Giảng viên, đá về Dashboard Giảng viên
+  if (role === 1) return <Navigate to="/giang-vien" replace />;
+  
+  return children ? <>{children}</> : <Outlet />;
+};
+
 export default function AppRouter() {
   return (
     <SystemConfigProvider>
     <BrowserRouter>
       <Routes>
         {/* ========================================== */}
-        {/* ROUTES CÔNG KHAI (Ai cũng vào được)          */}
+        {/* ROUTES CÔNG KHAI (Chỉ Guest hoặc Học viên) */}
         {/* ========================================== */}
-        <Route path="/dang-nhap" element={<DangNhap />} />
-        <Route path="/dang-ky" element={<DangKy />} />
-        <Route path="/quen-mat-khau" element={<QuenMatKhau />} />
+        <Route element={<PublicOrStudentRoute />}>
+          <Route path="/dang-nhap" element={<DangNhap />} />
+          <Route path="/dang-ky" element={<DangKy />} />
+          <Route path="/quen-mat-khau" element={<QuenMatKhau />} />
+        </Route>
 
-        <Route element={<LayoutHocVien />}>
+        <Route element={<PublicOrStudentRoute><LayoutHocVien /></PublicOrStudentRoute>}>
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
         </Route>
