@@ -20,20 +20,40 @@ namespace educodeai_server.Helpers
         {
             if (context.User.Identity?.IsAuthenticated == true)
             {
-                // 1. Lấy ID của user đang đăng nhập (Kiểm tra nhiều loại claim)
+                // 1. Lấy ID của user đang đăng nhập
                 var userIdClaim = context.User.FindFirst("id")?.Value 
                               ?? context.User.FindFirst("MaNguoiDung")?.Value
                               ?? context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out int userId))
                 {
-                    // 2. Tìm user trong DB để kiểm tra trạng thái khóa
-                    var user = await dbContext.NguoiDungs
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
+                    // 2. Kiểm tra trạng thái user — cache 60s để tránh query DB liên tục
+                    var userCacheKey = $"user_status_{userId}";
+                    if (!_cache.TryGetValue(userCacheKey, out string? userStatus))
+                    {
+                        try
+                        {
+                            var user = await dbContext.NguoiDungs
+                                .AsNoTracking()
+                                .Select(u => new { u.MaNguoiDung, u.TrangThai, u.LyDoKhoa })
+                                .FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
 
-                    if (user != null && (string.Equals(user.TrangThai, "Bị khóa", StringComparison.OrdinalIgnoreCase) 
-                                     || string.Equals(user.TrangThai, "Khóa vĩnh viễn", StringComparison.OrdinalIgnoreCase)))
+                            userStatus = user?.TrangThai ?? "Hoạt động";
+                            _cache.Set(userCacheKey, userStatus, TimeSpan.FromSeconds(60));
+                        }
+                        catch (Exception ex) when (
+                            ex is System.Net.Sockets.SocketException ||
+                            ex is Microsoft.EntityFrameworkCore.DbUpdateException ||
+                            ex.InnerException is System.Net.Sockets.SocketException)
+                        {
+                            // Lỗi mất kết nối tạm thời → bỏ qua kiểm tra, cho request đi tiếp
+                            // tránh việc lỗi DB làm sập toàn bộ request pipeline
+                            userStatus = "Hoạt động";
+                        }
+                    }
+
+                    if (string.Equals(userStatus, "Bị khóa", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(userStatus, "Khóa vĩnh viễn", StringComparison.OrdinalIgnoreCase))
                     {
                         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                         context.Response.ContentType = "application/json";
@@ -41,31 +61,38 @@ namespace educodeai_server.Helpers
                         {
                             status = 401,
                             isBanned = true,
-                            reason = user.LyDoKhoa ?? "Tài khoản của bạn đã bị khóa bởi quản trị viên.",
                             message = "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên."
                         });
                         return;
                     }
                 }
 
-                // 3. Tìm claim MaPhien (kiểm tra cả tên tùy chỉnh và tên đầy đủ)
+                // 3. Kiểm tra session (phiên đăng nhập)
                 var maPhienClaim = context.User.FindFirst("MaPhien")?.Value;
 
                 if (!string.IsNullOrEmpty(maPhienClaim) && int.TryParse(maPhienClaim, out int maPhien))
                 {
                     var cacheKey = $"session_{maPhien}";
 
-                    // Lấy từ cache trước — tránh query DB mỗi request
                     if (!_cache.TryGetValue(cacheKey, out bool isActive))
                     {
-                        var phien = await dbContext.PhienDangNhaps
-                            .AsNoTracking()
-                            .FirstOrDefaultAsync(p => p.MaPhien == maPhien);
+                        try
+                        {
+                            var phien = await dbContext.PhienDangNhaps
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(p => p.MaPhien == maPhien);
 
-                        isActive = phien != null && phien.DangHoatDong;
-
-                        // Cache 60 giây — giảm 60x số lần query DB
-                        _cache.Set(cacheKey, isActive, TimeSpan.FromSeconds(60));
+                            isActive = phien != null && phien.DangHoatDong;
+                            _cache.Set(cacheKey, isActive, TimeSpan.FromSeconds(60));
+                        }
+                        catch (Exception ex) when (
+                            ex is System.Net.Sockets.SocketException ||
+                            ex is Microsoft.EntityFrameworkCore.DbUpdateException ||
+                            ex.InnerException is System.Net.Sockets.SocketException)
+                        {
+                            // Lỗi mất kết nối tạm thời → coi session còn hiệu lực, cho đi tiếp
+                            isActive = true;
+                        }
                     }
 
                     if (!isActive)

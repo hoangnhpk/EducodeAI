@@ -49,15 +49,26 @@ namespace educodeai_server.Controllers
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
                 return Unauthorized();
 
-            var user = await _context.NguoiDungs.FindAsync(userId);
-            if (user == null) return Unauthorized();
-
-            if (user.TrangThai == "Bị khóa" || user.TrangThai == "Khóa vĩnh viễn")
+            try
             {
-                return Ok(new { isBanned = true, reason = user.LyDoKhoa ?? "Vi phạm quy định hệ thống." });
-            }
+                var user = await _context.NguoiDungs.FindAsync(userId);
+                if (user == null) return Unauthorized();
 
-            return Ok(new { isBanned = false });
+                if (user.TrangThai == "Bị khóa" || user.TrangThai == "Khóa vĩnh viễn")
+                {
+                    return Ok(new { isBanned = true, reason = user.LyDoKhoa ?? "Vi phạm quy định hệ thống." });
+                }
+
+                return Ok(new { isBanned = false });
+            }
+            catch (Exception ex) when (
+                ex is System.Net.Sockets.SocketException ||
+                ex.InnerException is System.Net.Sockets.SocketException ||
+                ex is Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                // Lỗi kết nối DB tạm thời → trả về bình thường, không crash app
+                return Ok(new { isBanned = false });
+            }
         }
     }
 }
