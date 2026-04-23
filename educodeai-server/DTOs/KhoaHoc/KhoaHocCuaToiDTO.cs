@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 public class KhoaHocGiangVienListDTO
 {
     public int MaKhoaHoc { get; set; }
@@ -146,6 +148,7 @@ public class BaiHocVideoDetailDTO
     public string? LinkVideo { get; set; }
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
+    public string LoaiBaiHoc { get; set; } = "Video";
 }
 
 public class BaiHocVideoCreateUpdateDTO
@@ -164,6 +167,26 @@ public class ThemVideoResponseDTO
     public string? LinkVideo { get; set; }
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
+    public string LoaiBaiHoc { get; set; } = "Video";
+}
+
+// ─── BÀI HỌC FILE ───
+public class BaiHocFileCreateUpdateDTO
+{
+    public string TieuDe { get; set; } = null!;
+    public string? MoTa { get; set; }
+    public IFormFile? File { get; set; }
+    public int ThuTu { get; set; }
+}
+
+public class ThemFileResponseDTO
+{
+    public int MaBaiHoc { get; set; }
+    public string TieuDe { get; set; } = null!;
+    public string? MoTa { get; set; }
+    public string? LinkVideo { get; set; }
+    public int ThuTu { get; set; }
+    public string LoaiBaiHoc { get; set; } = "File";
 }
 
 // ─── REORDER DTOs ───
@@ -190,4 +213,17 @@ public class CertificateConfigDTO
     public bool DaCoDeThiChungChi { get; set; }
     public string? NguonDeChungChi { get; set; }
     public DateTime? NgayTaoDeChungChi { get; set; }
+}
+
+// ─── ĐỀ THI CHỨNG CHỈ ───
+public class CauHoiChungChiDTO
+{
+    public int Id { get; set; }
+    public string CauHoi { get; set; } = null!;
+    public string DapAnA { get; set; } = null!;
+    public string DapAnB { get; set; } = null!;
+    public string DapAnC { get; set; } = null!;
+    public string DapAnD { get; set; } = null!;
+    public string DapAnDung { get; set; } = "A";
+    public string GiaiThich { get; set; } = string.Empty;
 }
