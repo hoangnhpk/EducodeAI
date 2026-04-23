@@ -88,6 +88,8 @@ export const authService = {
       });
     } finally {
       localStorage.removeItem('user_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user_info');
       localStorage.removeItem('refresh_token'); // Clear refresh token as well
     }

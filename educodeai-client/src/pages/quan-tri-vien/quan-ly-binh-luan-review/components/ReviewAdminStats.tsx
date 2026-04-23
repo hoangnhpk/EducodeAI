@@ -7,6 +7,7 @@ interface Props {
 
 const cards = [
   { key: 'tongDanhGia', title: 'Tổng đánh giá', icon: Star, className: 'qtrv-card qtrv-card--amber' },
+  { key: 'danhGiaTrungBinh', title: 'Đánh giá trung bình', icon: Star, className: 'qtrv-card qtrv-card--blue' },
   { key: 'daDuyet', title: 'Đã duyệt', icon: CheckCircle2, className: 'qtrv-card qtrv-card--green' },
   { key: 'tuChoi', title: 'Từ chối', icon: ShieldAlert, className: 'qtrv-card qtrv-card--red' },
 ] as const;
@@ -26,7 +27,11 @@ export default function ReviewAdminStats({ data }: Props) {
             </div>
             <div className="qtrv-card__body">
               <span className="qtrv-card__label">{title}</span>
-              <strong className="qtrv-card__value">{data[key]}</strong>
+              <strong className="qtrv-card__value">
+                {typeof data[key] === 'number' && key === 'danhGiaTrungBinh' 
+                  ? (data[key] as number).toFixed(1) 
+                  : data[key]}
+              </strong>
             </div>
           </article>
         ))}

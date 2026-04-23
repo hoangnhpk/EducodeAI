@@ -1,4 +1,4 @@
-import { MdSchool, MdBook, MdEditNote, MdQuiz, MdCode, MdPeople, MdDashboard } from 'react-icons/md';
+﻿import { MdSchool, MdBook, MdEditNote, MdQuiz, MdCode, MdPeople, MdDashboard } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function SidebarGiangVien() {
@@ -14,49 +14,33 @@ export default function SidebarGiangVien() {
         <h2><MdSchool /> Giảng Viên</h2>
       </div>
       <nav className="gv-sidebar-nav">
-        
-        <Link 
-          to="/giang-vien/thong-ke" 
-          className={`gv-nav-link ${isActive('/giang-vien/thong-ke') || location.pathname === '/giang-vien' ? 'active' : ''}`}
-        >
+        <Link to="/giang-vien/thong-ke" className={`gv-nav-link ${isActive('/giang-vien/thong-ke') || location.pathname === '/giang-vien' ? 'active' : ''}`}>
           <MdDashboard /> Thống Kê
         </Link>
-        
-        <Link 
-          to="/giang-vien/khoa-hoc-cua-toi" 
-          className={`gv-nav-link ${isActive('/giang-vien/khoa-hoc-cua-toi') ? 'active' : ''}`}
-        >
+
+        <Link to="/giang-vien/khoa-hoc-cua-toi" className={`gv-nav-link ${isActive('/giang-vien/khoa-hoc-cua-toi') ? 'active' : ''}`}>
           <MdBook /> Khóa Học
         </Link>
-        
-        <Link 
-          to="/giang-vien/bai-tap-thuc-hanh" 
-          className={`gv-nav-link ${isActive('/giang-vien/bai-tap-thuc-hanh') ? 'active' : ''}`}
-        >
+
+        <Link to="/giang-vien/bai-tap-thuc-hanh" className={`gv-nav-link ${isActive('/giang-vien/bai-tap-thuc-hanh') ? 'active' : ''}`}>
           <MdCode /> Bài tập thực hành (AI)
         </Link>
-        
-        <Link 
-          to="/giang-vien/bai-tap" 
-          className={`gv-nav-link ${isActive('/giang-vien/bai-tap') ? 'active' : ''}`}
-        >
+
+        <Link to="/giang-vien/bai-tap" className={`gv-nav-link ${isActive('/giang-vien/bai-tap') ? 'active' : ''}`}>
           <MdQuiz /> Quản lý bài tập (Quiz)
         </Link>
-        
-        <Link 
-          to="/giang-vien/lop-hoc" 
-          className={`gv-nav-link ${isActive('/giang-vien/lop-hoc') ? 'active' : ''}`}
-        >
+
+        <Link to="/giang-vien/lop-hoc" className={`gv-nav-link ${isActive('/giang-vien/lop-hoc') ? 'active' : ''}`}>
           <MdPeople /> Quản Lý Lớp Học
         </Link>
-        
-        <Link 
-          to="/giang-vien/tao-lo-trinh-AI" 
-          className={`gv-nav-link ${isActive('/giang-vien/tao-lo-trinh-AI') ? 'active' : ''}`}
-        >
+
+        <Link to="/giang-vien/tao-lo-trinh-AI" className={`gv-nav-link ${isActive('/giang-vien/tao-lo-trinh-AI') ? 'active' : ''}`}>
           <MdEditNote /> Quản Lý Lộ Trình AI
         </Link>
 
+        <Link to="/giang-vien/rut-tien" className={`gv-nav-link ${isActive('/giang-vien/rut-tien') ? 'active' : ''}`}>
+          <MdEditNote /> Rút Tiền
+        </Link>
       </nav>
     </aside>
   );

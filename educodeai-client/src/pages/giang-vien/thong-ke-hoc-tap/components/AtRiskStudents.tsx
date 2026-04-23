@@ -1,4 +1,4 @@
-import type { HocVien } from "./Types";
+﻿import type { HocVien } from "./Types";
 import { AlertTriangle, Mail } from "lucide-react";
 import "./css/at-risk-students.css";
 
@@ -7,54 +7,53 @@ interface Props {
 }
 
 const AtRiskStudents = ({ students }: Props) => {
-  // Lọc học viên có nguy cơ bỏ học hoặc tỷ lệ hoàn thành < 50%
+  const getProgress = (hv: HocVien) => Number(hv.tyLeHoanThanh ?? hv.tienDo ?? 0);
+  const getName = (hv: HocVien) => hv.tenHocVien?.trim() || hv.hoTen?.trim() || "—";
+
   const atRiskStudents = students
-    .filter(
-      (hv) => 
-        hv.trangThai === "Nguy cơ bỏ học" || 
-        hv.tienDo < 50
-    )
-    .sort((a, b) => a.tienDo - b.tienDo) // Sắp xếp theo tỷ lệ tăng dần (thấp nhất trước)
+    .filter((hv) => hv.trangThai === "Nguy cơ bỏ học" || getProgress(hv) < 50)
+    .sort((a, b) => getProgress(a) - getProgress(b))
     .slice(0, 5);
 
   const handleContact = (hocVien: HocVien) => {
-    // TODO: Implement send email functionality
-    window.location.href = `mailto:${hocVien.email}?subject=Hỗ trợ học tập&body=Xin chào ${hocVien.hoTen}`;
+    const email = hocVien.email?.trim() || "";
+    if (!email) return;
+    const ten = getName(hocVien);
+    window.location.href = `mailto:${email}?subject=Hỗ trợ học tập&body=Xin chào ${encodeURIComponent(ten)}`;
   };
 
   return (
     <div className="at-risk-card">
-      {/* ===== HEADER ===== */}
       <div className="at-risk-header">
         <AlertTriangle color="#ef4444" size={20} />
         Học viên có nguy cơ bỏ học
       </div>
 
-      {/* ===== LIST ===== */}
       <div className="at-risk-list">
         {atRiskStudents.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#6b7280", padding: '20px' }}>
+          <p style={{ textAlign: "center", color: "#6b7280", padding: "20px" }}>
             Không có học viên có nguy cơ bỏ học
           </p>
         ) : (
-          atRiskStudents.map((hocVien) => (
-            <div key={hocVien.maNguoiDung} className="at-risk-item">
+          atRiskStudents.map((hocVien, idx) => (
+            <div key={hocVien.maHocVien ?? hocVien.maNguoiDung ?? `risk-${idx}`} className="at-risk-item">
               <div className="at-risk-icon">
                 <AlertTriangle size={18} />
               </div>
 
               <div className="at-risk-info">
-                <strong>{hocVien.hoTen}</strong>
-                <span>{hocVien.email}</span>
+                <strong>{getName(hocVien)}</strong>
+                <span>{hocVien.email?.trim() || "—"}</span>
                 <small>
-                  Hoàn thành: {hocVien.tienDo?.toFixed(1) || 0}% • 
-                  Số bài đã nộp: {hocVien.soBaiDaNop}
+                  Hoàn thành: {getProgress(hocVien).toFixed(1)}% • Điểm TB: {Number(hocVien.diemTrungBinh ?? 0).toFixed(1)}
                 </small>
               </div>
 
-              <button 
+              <button
+                type="button"
                 className="at-risk-btn"
                 onClick={() => handleContact(hocVien)}
+                disabled={!hocVien.email?.trim()}
                 title="Gửi email liên hệ"
               >
                 <Mail size={16} />

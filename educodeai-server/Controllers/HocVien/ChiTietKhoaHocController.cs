@@ -95,6 +95,7 @@ namespace EduCodeAI.Controllers.HocVien
         [HttpGet("{id}")]
         public async Task<IActionResult> GetKhoaHocById(int id)
         {
+            int maNguoiDung = LayNguoiDungID.LayID(User);
             var khoaHoc = await _context.KhoaHocs
                 .Include(k => k.GiangVien)
                 .Include(k => k.ChuongHocs)
@@ -115,8 +116,11 @@ namespace EduCodeAI.Controllers.HocVien
             {
                 maKhoaHoc = khoaHoc.MaKhoaHoc,
                 tenKhoaHoc = khoaHoc.TenKhoaHoc,
-                moTa = khoaHoc.MoTa,
-                kyNangChinh = khoaHoc.KyNangChinh,
+                moTa = khoaHoc.KyNangChinh,
+                giaKhoaHoc = khoaHoc.GiaKhoaHoc,
+                donViTienTe = khoaHoc.DonViTienTe,
+                khoaHocDaDangKy = maNguoiDung > 0 && await _context.DangKyKhoaHocs.AnyAsync(dk =>
+                    dk.MaKhoaHoc == khoaHoc.MaKhoaHoc && dk.MaNguoiDung == maNguoiDung),
                 hinhAnh = khoaHoc.HinhAnh,
                 linhVuc = khoaHoc.LinhVuc,
                 trinhDo = khoaHoc.TrinhDo,
