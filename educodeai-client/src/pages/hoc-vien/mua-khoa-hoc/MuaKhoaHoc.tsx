@@ -35,7 +35,10 @@ const MuaKhoaHoc = () => {
   const [dangMua, setDangMua] = useState(false);
   const [hienModalQr, setHienModalQr] = useState(false);
   const [dangKiemTra, setDangKiemTra] = useState(false);
+  const [dangGuiHoTro, setDangGuiHoTro] = useState(false);
+  const [thoiGianChoHoTroConLai, setThoiGianChoHoTroConLai] = useState(0);
   const boDemKiemTraRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const boDemMoHoTroRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const daChuyenTrangRef = useRef(false);
 
   const chuyenSangTrangHoc = (maKhoaHoc: number, tenKhoaHoc: string) => {
@@ -68,11 +71,40 @@ const MuaKhoaHoc = () => {
     }
   };
 
+  const dungBoDemMoHoTro = () => {
+    if (boDemMoHoTroRef.current) {
+      clearInterval(boDemMoHoTroRef.current);
+      boDemMoHoTroRef.current = null;
+    }
+  };
+
   useEffect(() => {
     return () => {
       dungBoDemKiemTra();
+      dungBoDemMoHoTro();
     };
   }, []);
+
+  useEffect(() => {
+    dungBoDemMoHoTro();
+    if (!hienModalQr || !duLieuQr) {
+      setThoiGianChoHoTroConLai(0);
+      return;
+    }
+
+    const mocMoNut = Date.now() + 20000;
+    const capNhat = () => {
+      const conLai = Math.max(0, Math.ceil((mocMoNut - Date.now()) / 1000));
+      setThoiGianChoHoTroConLai(conLai);
+      if (conLai <= 0) {
+        dungBoDemMoHoTro();
+      }
+    };
+
+    capNhat();
+    boDemMoHoTroRef.current = setInterval(capNhat, 1000);
+    return () => dungBoDemMoHoTro();
+  }, [hienModalQr, duLieuQr?.maDonHang]);
 
   const xuLyMuaNgay = async () => {
     if (!duLieuKhoaHoc) return;
@@ -110,21 +142,59 @@ const MuaKhoaHoc = () => {
     }
   };
 
-  const kiemTraNgayBayGio = async () => {
-    if (!duLieuQr || !duLieuKhoaHoc) return;
-    try {
-      const trangThai = await ThanhToanKhoaHocService.kiemTraTrangThaiThanhToan(duLieuQr.maDonHang);
-      if (trangThai.daMoKhoaHoc || trangThai.trangThaiDonHang === "PAID") {
-        daChuyenTrangRef.current = true;
-        dungBoDemKiemTra();
-        setHienModalQr(false);
-        await Swal.fire("Thành công", "Hệ thống đã nhận thanh toán, khóa học đã mở.", "success");
-        chuyenSangTrangHoc(duLieuKhoaHoc.maKhoaHoc, duLieuKhoaHoc.tenKhoaHoc);
-      } else {
-        await Swal.fire("Thông báo", "Hệ thống chưa nhận được tiền về. Bạn chờ thêm vài giây nhé.", "info");
+  const guiYeuCauHoTro = async () => {
+    if (!duLieuQr) return;
+    if (thoiGianChoHoTroConLai > 0) return;
+
+    const ketQua = await Swal.fire({
+      title: "Gửi yêu cầu admin hỗ trợ?",
+      html: `
+        <input id="ht-lien-lac" class="swal2-input" placeholder="SĐT/Zalo/Email liên hệ nhanh" />
+        <textarea id="ht-noi-dung" class="swal2-textarea" placeholder="Mô tả ngắn (tùy chọn)"></textarea>
+      `,
+      showCancelButton: true,
+      confirmButtonText: "Gửi yêu cầu",
+      cancelButtonText: "Hủy",
+      focusConfirm: false,
+      didOpen: () => {
+        const container = Swal.getContainer();
+        if (container) {
+          container.style.zIndex = "12000";
+        }
+      },
+      preConfirm: () => {
+        const lienLac = (document.getElementById("ht-lien-lac") as HTMLInputElement | null)?.value?.trim() ?? "";
+        const noiDung = (document.getElementById("ht-noi-dung") as HTMLTextAreaElement | null)?.value?.trim() ?? "";
+        if (!lienLac) {
+          Swal.showValidationMessage("Vui lòng nhập thông tin liên lạc nhanh.");
+          return;
+        }
+        return { lienLac, noiDung };
       }
-    } catch {
-      await Swal.fire("Lỗi", "Không kiểm tra được trạng thái thanh toán lúc này.", "error");
+    });
+
+    if (!ketQua.isConfirmed || !ketQua.value) return;
+
+    try {
+      setDangGuiHoTro(true);
+      await ThanhToanKhoaHocService.taoYeuCauHoTroThanhToan(
+        duLieuQr.maDonHang,
+        ketQua.value.lienLac,
+        ketQua.value.noiDung || undefined
+      );
+      dungBoDemKiemTra();
+      dungBoDemMoHoTro();
+      setHienModalQr(false);
+      await Swal.fire(
+        "Đã gửi",
+        "Admin đã nhận yêu cầu hỗ trợ của bạn. Vui lòng giữ lại nội dung chuyển khoản để đối soát.",
+        "success"
+      );
+    } catch (loi: any) {
+      const thongBao = loi?.response?.data?.thongBao || "Không gửi được yêu cầu hỗ trợ lúc này.";
+      await Swal.fire("Lỗi", thongBao, "error");
+    } finally {
+      setDangGuiHoTro(false);
     }
   };
 
@@ -208,9 +278,21 @@ const MuaKhoaHoc = () => {
               </div>
             </div>
 
+            <div className="small text-muted mb-3">
+              Sau 30 giây chuyển khoản thành công mà không thấy hệ thống cập nhật, hãy bấm nút báo admin hỗ trợ.
+            </div>
+
             <div className="d-flex gap-2">
-              <button className="btn btn-primary flex-fill" onClick={kiemTraNgayBayGio}>
-                Tôi đã chuyển khoản xong
+              <button
+                className="btn btn-warning flex-fill"
+                disabled={dangGuiHoTro || thoiGianChoHoTroConLai > 0}
+                onClick={() => void guiYeuCauHoTro()}
+              >
+                {dangGuiHoTro
+                  ? "Đang gửi..."
+                  : thoiGianChoHoTroConLai > 0
+                    ? `Báo admin hỗ trợ (${thoiGianChoHoTroConLai}s)`
+                    : "Báo admin hỗ trợ"}
               </button>
               <button
                 className="btn btn-outline-secondary"

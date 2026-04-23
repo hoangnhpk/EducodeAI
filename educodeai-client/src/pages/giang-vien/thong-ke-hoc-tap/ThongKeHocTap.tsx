@@ -142,7 +142,6 @@ export default function ThongKeHocTap() {
         <StatCard
           title="GIá»œ Há»ŒC TB / Há»ŒC VIÃŠN"
           value={`${Number(overview?.gioHocTrungBinh ?? 0).toFixed(1)}h`}
-          value={`${overview?.gioHocTrungBinh?.toFixed(1) || 0}h`}
           subtitle="Trung bÃ¬nh má»—i há»c viÃªn"
           icon={Clock}
           gradient="icon-purple"
@@ -167,7 +166,6 @@ export default function ThongKeHocTap() {
         <StatCard
           title="Tá»¶ Lá»† HOÃ€N THÃ€NH"
           value={`${Number(overview?.tyLeHoanThanhTB ?? 0).toFixed(1)}%`}
-          value={`${overview?.tyLeHoanThanhTB?.toFixed(1) || 0}%`}
           subtitle={
             Number(overview?.tyLeHoanThanhTB ?? 0) >= 70
               ? "âœ“ Tá»‘t"

@@ -45,11 +45,24 @@ import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
 import CauHinhHeThong from "../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeThong";
 import ThongKeAdmin from "@/pages/quan-tri-vien/thong-ke/ThongKeAdmin";
 import QuanLyRutTienGiangVien from "../pages/quan-tri-vien/rut-tien-giang-vien/QuanLyRutTienGiangVien";
+import QuanLyHoTroThanhToanHocVien from "@/pages/quan-tri-vien/ho-tro-thanh-toan-hoc-vien/QuanLyHoTroThanhToanHocVien";
+
+const readUserInfo = (): any | null => {
+  const userRaw = localStorage.getItem("user_info");
+  if (!userRaw || userRaw === "undefined" || userRaw === "null") return null;
+
+  try {
+    const parsed = JSON.parse(userRaw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    localStorage.removeItem("user_info");
+    return null;
+  }
+};
 
 const HomeRedirect = () => {
-  const userRaw = localStorage.getItem("user_info");
-  if (!userRaw) return <TrangChuHocVien />;
-  const user = JSON.parse(userRaw);
+  const user = readUserInfo();
+  if (!user) return <TrangChuHocVien />;
   const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
   if (role === 0) return <Navigate to="/quan-tri-vien" replace />;
   if (role === 1) return <Navigate to="/giang-vien" replace />;
@@ -57,9 +70,8 @@ const HomeRedirect = () => {
 };
 
 const PublicOrStudentRoute = ({ children }: { children?: React.ReactNode }) => {
-  const userRaw = localStorage.getItem("user_info");
-  if (!userRaw) return children ? <>{children}</> : <Outlet />;
-  const user = JSON.parse(userRaw);
+  const user = readUserInfo();
+  if (!user) return children ? <>{children}</> : <Outlet />;
   const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
   if (role === 0) return <Navigate to="/quan-tri-vien" replace />;
   if (role === 1) return <Navigate to="/giang-vien" replace />;
@@ -123,6 +135,7 @@ export default function AppRouter() {
             <Route path="quan-ly-api-key" element={<QuanLyApiKey />} />
             <Route path="cau-hinh-he-thong" element={<CauHinhHeThong />} />
             <Route path="rut-tien-giang-vien" element={<QuanLyRutTienGiangVien />} />
+            <Route path="ho-tro-thanh-toan-hoc-vien" element={<QuanLyHoTroThanhToanHocVien />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
