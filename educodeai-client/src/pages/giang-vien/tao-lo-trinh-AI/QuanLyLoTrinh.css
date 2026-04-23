@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 /* =========================================
    CONTAINER VÀ GRID CHÍNH
    ========================================= */
@@ -273,8 +275,6 @@
     color: #ef4444;
     transform: scale(1.1);
 }
-/* Import font chữ hiện đại nếu sếp chưa có */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 .quan-ly-container, 
 .pro-modal-v2, 

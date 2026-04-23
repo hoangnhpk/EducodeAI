@@ -57,6 +57,15 @@ namespace educodeai_server.Models
         public string? NguonDeChungChi { get; set; }
 
         public DateTime? NgayTaoDeChungChi { get; set; }
+        [Range(10000, 15000)]
+        [Column(TypeName = "numeric(18,2)")]
+        public decimal GiaKhoaHoc { get; set; } = 10000;
+
+        [StringLength(10)]
+        public string DonViTienTe { get; set; } = "VND";
+
+        public bool ChoPhepMua { get; set; } = true;
+
 
         public DateTime NgayTao { get; set; } = DateTime.UtcNow;
 
@@ -64,7 +73,11 @@ namespace educodeai_server.Models
         public virtual ICollection<ChuongHocModel> ChuongHocs { get; set; } = null!;
         public virtual ICollection<DangKyKhoaHocModel> DangKyKhoaHocs { get; set; } = null!;
         public virtual ICollection<DanhGiaModel> DanhGias { get; set; } = null!;
+
         public virtual ICollection<KetQuaKiemTraChungChiModel> KetQuaKiemTraChungChis { get; set; } = null!;
         public virtual ICollection<ChungChiKhoaHocModel> ChungChiKhoaHocs { get; set; } = null!;
+
+        public virtual ICollection<ChiTietDonHangModel> ChiTietDonHangs { get; set; } = null!;
+
     }
 }
