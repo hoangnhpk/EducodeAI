@@ -12,8 +12,29 @@ const getGiangVienId = (): number => {
   return 1;
 };
 
-const LINH_VUC = ['Công nghệ thông tin', 'Lập trình', 'Toán học', 'Ngoại ngữ', 'Thiết kế', 'Kinh doanh', 'Khoa học', 'Nghệ thuật', 'Khác'];
-const TRINH_DO = ['Cơ bản', 'Trung cấp', 'Nâng cao'];
+const LINH_VUC = [
+  'Lập trình hệ thống',
+  'Công nghệ thông tin',
+  'Web Development',
+  'Mobile Development',
+  'AI & Machine Learning',
+  'Backend Development',
+  'Frontend Development',
+  'Fullstack Development',
+  'Web Design & UI/UX',
+  'System Administration & DevOps',
+  'Cyber Security',
+  'Data Science',
+  'Database Administration',
+  'Cloud Computing',
+  'Game Development',
+  'Kiểm thử phần mềm',
+  'Mạng máy tính',
+  'IoT & Embedded',
+  'Phân tích nghiệp vụ',
+  'Quản lý dự án CNTT'
+];
+const TRINH_DO = ['Người mới', 'Trung cấp', 'Nâng cao'];
 
 interface ValidationErrors {
   tenKhoaHoc?: string;
@@ -40,7 +61,7 @@ const DEFAULT_FORM: KhoaHocCreateUpdate = {
   linhVuc: '',
   trinhDo: 'Cơ bản',
   thoiLuongGio: 1,
-  trangThai: 'Draft',
+  trangThai: 'Hoạt động',
   kyNangChinh: '',
   coChungChi: false,
   tenChungChi: '',
@@ -73,7 +94,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
         linhVuc: detail.linhVuc,
         trinhDo: detail.trinhDo,
         thoiLuongGio: detail.thoiLuongGio,
-        trangThai: detail.trangThai ?? 'Draft',
+        trangThai: detail.trangThai ?? 'Hoạt động',
         kyNangChinh: detail.kyNangChinh ?? '',
         coChungChi: detail.coChungChi,
         tenChungChi: detail.tenChungChi ?? '',
@@ -279,13 +300,12 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
                 <label className="khm-form-label">Trạng thái</label>
                 <select
                   className="khm-form-select"
-                  value={form.trangThai ?? 'Draft'}
+                  value={form.trangThai ?? 'Hoạt động'}
                   onChange={e => set('trangThai', e.target.value)}
                   disabled={submitting}
                 >
-                  <option value="Draft">Nháp</option>
-                  <option value="Published">Đang dạy</option>
-                  <option value="Archived">Lưu trữ</option>
+                  <option value="Hoạt động">Hoạt động</option>
+                  <option value="Không hoạt động">Không hoạt động</option>
                 </select>
               </div>
             </div>

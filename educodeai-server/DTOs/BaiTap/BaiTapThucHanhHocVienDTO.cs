@@ -11,6 +11,7 @@ namespace educodeai_server.DTOs.BaiTap
         public string NgonNgu { get; set; } = string.Empty;
         public string MucDo { get; set; } = string.Empty;
         public string? GoiY { get; set; }
+        public string? LoiGiaiMau { get; set; }
         public List<TestCaseHienThiDTO> TestCases { get; set; } = new List<TestCaseHienThiDTO>();
     }
 

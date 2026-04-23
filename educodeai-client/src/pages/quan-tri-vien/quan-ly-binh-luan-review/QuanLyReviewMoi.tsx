@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
-import { ShieldCheck, Star } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { reviewAdminService } from '../../../services/review-admin.service';
 import ReviewAdminDetailDrawer from './components/ReviewAdminDetailDrawer';
 import ReviewAdminFilters from './components/ReviewAdminFilters';
@@ -131,16 +131,6 @@ export default function QuanLyReviewMoi() {
               Theo dõi chất lượng khóa học, kiểm duyệt nhận xét học viên và xử lý các đánh giá
               không phù hợp trong giao diện quản trị hiện có.
             </p>
-          </div>
-        </div>
-
-        <div className="qtrv-hero__aside">
-          <div className="qtrv-kpi-pill">
-            <Star size={18} />
-            <div>
-              <strong>{thongKe?.danhGiaTrungBinh.toFixed(1) || '0.0'}</strong>
-              <span>Điểm đánh giá trung bình</span>
-            </div>
           </div>
         </div>
       </section>
