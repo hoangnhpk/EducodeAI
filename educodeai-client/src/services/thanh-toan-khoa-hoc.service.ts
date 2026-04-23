@@ -36,6 +36,31 @@ export interface TrangThaiThanhToanDTO {
   thongBao: string;
 }
 
+export interface HoTroThanhToanKhoaHocItemDTO {
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+}
+
+export interface HoTroThanhToanChiTietDTO {
+  maGiaoDichHoTro: number;
+  maDonHang: number;
+  noiDungChuyenKhoan: string;
+  maNguoiDung: number;
+  tenHocVien: string;
+  emailHocVien?: string;
+  soTienDonHang: number;
+  loaiTien: string;
+  trangThaiHoTro: string;
+  trangThaiDonHang: string;
+  thongTinLienLac: string;
+  noiDungHocVien?: string;
+  ghiChuAdmin?: string;
+  maQuanTriVienXuLy?: number;
+  createdAt: string;
+  xuLyLuc?: string;
+  danhSachKhoaHoc: HoTroThanhToanKhoaHocItemDTO[];
+}
+
 export const ThanhToanKhoaHocService = {
   layThongTinMuaKhoaHoc: async (maKhoaHoc: number): Promise<ThongTinMuaKhoaHocDTO> => {
     return await axiosClient.get<ThongTinMuaKhoaHocDTO>(`/api/hocvien/thanh-toan-khoa-hoc/${maKhoaHoc}`);
@@ -55,5 +80,16 @@ export const ThanhToanKhoaHocService = {
 
   kiemTraTrangThaiThanhToan: async (maDonHang: number): Promise<TrangThaiThanhToanDTO> => {
     return await axiosClient.get<TrangThaiThanhToanDTO>(`/api/hocvien/thanh-toan-khoa-hoc/kiem-tra-trang-thai/${maDonHang}`);
+  },
+
+  taoYeuCauHoTroThanhToan: async (
+    maDonHang: number,
+    thongTinLienLac: string,
+    noiDungHocVien?: string
+  ): Promise<HoTroThanhToanChiTietDTO> => {
+    return await axiosClient.post<HoTroThanhToanChiTietDTO>(
+      `/api/hocvien/thanh-toan-khoa-hoc/${maDonHang}/yeu-cau-ho-tro`,
+      { thongTinLienLac, noiDungHocVien }
+    );
   }
 };

@@ -42,6 +42,11 @@ export default function SidebarQuanTriVienMoi() {
           <div className="link-icon"><i className="bi bi-wallet2" aria-hidden /></div>
           <span>Rút tiền giảng viên</span>
         </NavLink>
+
+        <NavLink to="/quan-tri-vien/ho-tro-thanh-toan-hoc-vien" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><i className="bi bi-headset" aria-hidden /></div>
+          <span>Hỗ trợ thanh toán</span>
+        </NavLink>
       </nav>
     </aside>
   );

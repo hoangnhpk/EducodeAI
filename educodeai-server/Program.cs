@@ -163,7 +163,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://educodeai-client.vercel.app", "http://localhost:3000")
+        policy.WithOrigins("https://educodeai-client.vercel.app",
+                           "http://localhost:3000", "http://localhost:3001",
+                           "http://127.0.0.1:3000", "http://127.0.0.1:3001",
+                           "http://[::1]:3000", "http://[::1]:3001")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -203,6 +206,50 @@ var app = builder.Build();
 // Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 
+// PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
+// Nếu setval không chạy → trùng PK → 500 khi tạo mã QR.
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
+    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
+    {
+        var bangVaCot = new[]
+        {
+            ("DonHangKhoaHocs", "MaDonHang"),
+            ("ChiTietDonHangs", "MaChiTiet"),
+            ("GiaoDichThanhToans", "MaGiaoDich"),
+            ("DoanhThuGiangViens", "MaDoanhThu"),
+            ("MaGiamGias", "MaVoucher"),
+        };
+        foreach (var (bang, cot) in bangVaCot)
+        {
+            try
+            {
+                db.Database.ExecuteSqlRaw(
+                    $"""
+                    SELECT setval(
+                        COALESCE(
+                            pg_get_identity_sequence('"{bang}"'::regclass, '{cot}'),
+                            pg_get_serial_sequence('public."{bang}"', '{cot}')
+                        )::regclass,
+                        COALESCE((SELECT MAX("{cot}") FROM "{bang}"), 0),
+                        true
+                    );
+                    """);
+            }
+            catch (Exception exBang)
+            {
+                Console.WriteLine($"Đồng bộ sequence {bang}.{cot}: {exBang.Message}");
+            }
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Không đồng bộ sequence PostgreSQL (bỏ qua nếu DB chưa migrate): {ex.Message}");
+}
+
 // ==========================================
 // 7. PIPELINE REQUEST (Middleware)
 // ==========================================
@@ -214,16 +261,18 @@ if (app.Environment.IsDevelopment())
 // app.UseSwagger();
 // app.UseSwaggerUI();
 app.UseHttpsRedirection();
-
-// Kích hoạt CORS (Phải đặt trước UseAuthorization)
-app.UseCors("AllowReactApp");
 app.UseStaticFiles();
+
+// CORS: phải đặt sau UseRouting và trước UseAuthentication/UseAuthorization
+// (https://learn.microsoft.com/en-us/aspnet/core/security/cors)
+app.UseRouting();
+app.UseCors("AllowReactApp");
 app.UseMiddleware<MaintenanceMiddleware>();
 
 app.UseAuthentication();
 app.UseSessionCheck();
 app.UseAuthorization();
-app.MapHub<SystemConfigHub>("/systemConfigHub");
+app.MapHub<SystemConfigHub>("/systemConfigHub").RequireCors("AllowReactApp");
 
 app.MapControllers();
 

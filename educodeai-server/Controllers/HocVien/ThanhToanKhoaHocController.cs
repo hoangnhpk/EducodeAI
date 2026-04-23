@@ -3,6 +3,7 @@ using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace educodeai_server.Controllers.HocVien
 {
@@ -13,10 +14,17 @@ namespace educodeai_server.Controllers.HocVien
     public class ThanhToanKhoaHocController : ControllerBase
     {
         private readonly IThanhToanKhoaHocService _thanhToanKhoaHocService;
+        private readonly IWebHostEnvironment _moiTruong;
+        private readonly ILogger<ThanhToanKhoaHocController> _logger;
 
-        public ThanhToanKhoaHocController(IThanhToanKhoaHocService thanhToanKhoaHocService)
+        public ThanhToanKhoaHocController(
+            IThanhToanKhoaHocService thanhToanKhoaHocService,
+            IWebHostEnvironment moiTruong,
+            ILogger<ThanhToanKhoaHocController> logger)
         {
             _thanhToanKhoaHocService = thanhToanKhoaHocService;
+            _moiTruong = moiTruong;
+            _logger = logger;
         }
 
         [HttpGet("{maKhoaHoc:int}")]
@@ -84,6 +92,34 @@ namespace educodeai_server.Controllers.HocVien
             {
                 return BadRequest(new { thongBao = ex.Message });
             }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "TaoMaQr: lỗi lưu CSDL (thường do trùng PK / sequence hoặc FK).");
+                if (_moiTruong.IsDevelopment())
+                {
+                    return StatusCode(500, new
+                    {
+                        thongBao = "Lỗi lưu đơn hàng thanh toán.",
+                        chiTiet = ex.InnerException?.Message ?? ex.Message
+                    });
+                }
+
+                return StatusCode(500, new { thongBao = "Không tạo được mã thanh toán. Vui lòng thử lại sau." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "TaoMaQr: lỗi không xác định.");
+                if (_moiTruong.IsDevelopment())
+                {
+                    return StatusCode(500, new
+                    {
+                        thongBao = ex.Message,
+                        chiTiet = ex.InnerException?.Message
+                    });
+                }
+
+                return StatusCode(500, new { thongBao = "Không tạo được mã thanh toán. Vui lòng thử lại sau." });
+            }
         }
 
         [HttpGet("kiem-tra-trang-thai/{maDonHang:int}")]
@@ -100,6 +136,32 @@ namespace educodeai_server.Controllers.HocVien
             {
                 var trangThai = await _thanhToanKhoaHocService.KiemTraTrangThaiThanhToanAsync(maDonHang, maNguoiDung);
                 return Ok(trangThai);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
+
+        [HttpPost("{maDonHang:int}/yeu-cau-ho-tro")]
+        [HttpPost("{maDonHang:int}/yeu_cau_ho_tro")]
+        public async Task<IActionResult> TaoYeuCauHoTroThanhToan(int maDonHang, [FromBody] YeuCauHoTroThanhToanDTO yeuCau)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { thongBao = "Dữ liệu yêu cầu không hợp lệ." });
+            }
+
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            if (maNguoiDung == 0)
+            {
+                return Unauthorized(new { thongBao = "Bạn cần đăng nhập để thực hiện chức năng này." });
+            }
+
+            try
+            {
+                var duLieu = await _thanhToanKhoaHocService.TaoYeuCauHoTroThanhToanAsync(maDonHang, maNguoiDung, yeuCau);
+                return Ok(duLieu);
             }
             catch (ApplicationException ex)
             {
