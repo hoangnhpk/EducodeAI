@@ -32,7 +32,7 @@ namespace educodeai_server.Services.Implementation
             else if (lang == "swift")                                            compiler = "swift-6.0.1";
             else if (lang == "scala")                                            compiler = "scala-3.5.1";
             else if (lang == "r")                                                compiler = "r-4.4.1";
-            else if (lang == "kotlin")                                           compiler = "groovy-4.0.23"; // Wandbox không có Kotlin, fallback Groovy
+            else if (lang == "kotlin")                                           compiler = "groovy-4.0.23"; 
             else                                                                 compiler = "cpython-3.12.7";
 
             var requestPayload = new

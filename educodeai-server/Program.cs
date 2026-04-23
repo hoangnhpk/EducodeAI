@@ -11,6 +11,7 @@ using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
@@ -54,28 +55,53 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, sqlOptions =>
+    {
+        // Tự động thử lại khi gặp lỗi kết nối gián đoạn (như lỗi DNS 'No such host is known' khi treo lâu)
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null);
+    }));
 
 try
 {
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+
     if (!string.IsNullOrEmpty(redisConnectionString))
     {
-        var redis = ConnectionMultiplexer.Connect(redisConnectionString);
+        var configOptions = ConfigurationOptions.Parse(redisConnectionString);
+        configOptions.AbortOnConnectFail = false;
+        configOptions.ConnectTimeout = 2000;
+        configOptions.SyncTimeout = 2000;
+        configOptions.ReconnectRetryPolicy = new ExponentialRetry(500);
+
+        var redis = ConnectionMultiplexer.Connect(configOptions);
+        // 🔥 Check trạng thái ngay lúc start
+        if (redis.IsConnected)
+        {
+            Console.WriteLine("Redis CONNECTED successfully");
+        }
+        else
+        {
+            Console.WriteLine("Redis NOT connected at startup (will retry...)");
+        }
+
         builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
         builder.Services.AddScoped<IRedisService, RedisService>();
-        Console.WriteLine("Redis connected successfully");
     }
     else
     {
-        throw new Exception("Redis connection string is empty");
+        Console.WriteLine("Redis connection string is empty – using MemoryCache fallback");
+        builder.Services.AddScoped<IRedisService, FallbackRedisService>();
     }
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Redis connection failed, using MemoryCache fallback: {ex.Message}");
+    Console.WriteLine($"Redis setup failed, using MemoryCache fallback: {ex.Message}");
     builder.Services.AddScoped<IRedisService, FallbackRedisService>();
 }
+
 
 // ==========================================
 // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
@@ -90,6 +116,10 @@ builder.Services.AddScoped<IXacThucService, XacThucService>();
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
+builder.Services.AddScoped<IThanhToanKhoaHocService, ThanhToanKhoaHocService>();
+builder.Services.AddScoped<IThanhToanEmailService, ThanhToanEmailService>();
+builder.Services.AddScoped<IRutTienGiangVienEmailService, RutTienGiangVienEmailService>();
+builder.Services.AddScoped<IRutTienGiangVienService, RutTienGiangVienService>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
@@ -139,6 +169,7 @@ builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =
 });
 
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
+builder.Services.Configure<PaymentMailOptions>(builder.Configuration.GetSection("PaymentMail"));
 
 // YouTube Service
 builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();
@@ -150,7 +181,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://educodeai-client.vercel.app", "http://localhost:3000")
+        policy.WithOrigins("https://educodeai-client.vercel.app",
+                           "http://localhost:3000", "http://localhost:3001",
+                           "http://127.0.0.1:3000", "http://127.0.0.1:3001",
+                           "http://[::1]:3000", "http://[::1]:3001")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -190,6 +224,50 @@ var app = builder.Build();
 // Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 
+// PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
+// Nếu setval không chạy → trùng PK → 500 khi tạo mã QR.
+//try
+//{
+//    using var scope = app.Services.CreateScope();
+//    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
+//    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
+//    {
+//        var bangVaCot = new[]
+//        {
+//            ("DonHangKhoaHocs", "MaDonHang"),
+//            ("ChiTietDonHangs", "MaChiTiet"),
+//            ("GiaoDichThanhToans", "MaGiaoDich"),
+//            ("DoanhThuGiangViens", "MaDoanhThu"),
+//            ("MaGiamGias", "MaVoucher"),
+//        };
+//        foreach (var (bang, cot) in bangVaCot)
+//        {
+//            try
+//            {
+//                db.Database.ExecuteSqlRaw(
+//                    $"""
+//                    SELECT setval(
+//                        COALESCE(
+//                            pg_get_identity_sequence('"{bang}"'::regclass, '{cot}'),
+//                            pg_get_serial_sequence('public."{bang}"', '{cot}')
+//                        )::regclass,
+//                        COALESCE((SELECT MAX("{cot}") FROM "{bang}"), 0),
+//                        true
+//                    );
+//                    """);
+//            }
+//            catch (Exception exBang)
+//            {
+//                Console.WriteLine($"Đồng bộ sequence {bang}.{cot}: {exBang.Message}");
+//            }
+//        }
+//    }
+//}
+//catch (Exception ex)
+//{
+//    Console.WriteLine($"Không đồng bộ sequence PostgreSQL (bỏ qua nếu DB chưa migrate): {ex.Message}");
+//}
+
 // ==========================================
 // 7. PIPELINE REQUEST (Middleware)
 // ==========================================
@@ -201,15 +279,18 @@ if (app.Environment.IsDevelopment())
 // app.UseSwagger();
 // app.UseSwaggerUI();
 app.UseHttpsRedirection();
-
-// Kích hoạt CORS (Phải đặt trước UseAuthorization)
-app.UseCors("AllowReactApp");
 app.UseStaticFiles();
+
+// CORS: phải đặt sau UseRouting và trước UseAuthentication/UseAuthorization
+// (https://learn.microsoft.com/en-us/aspnet/core/security/cors)
+app.UseRouting();
+app.UseCors("AllowReactApp");
+app.UseMiddleware<MaintenanceMiddleware>();
 
 app.UseAuthentication();
 app.UseSessionCheck();
 app.UseAuthorization();
-app.MapHub<SystemConfigHub>("/systemConfigHub");
+app.MapHub<SystemConfigHub>("/systemConfigHub").RequireCors("AllowReactApp");
 
 app.MapControllers();
 

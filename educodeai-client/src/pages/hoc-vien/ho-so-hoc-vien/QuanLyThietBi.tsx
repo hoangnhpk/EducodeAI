@@ -131,7 +131,7 @@ const QuanLyThietBi: React.FC = () => {
                                                 )}
                                             </div>
                                             <div className="text-muted small">
-                                                Hoạt động cuối: {new Date(device.thoiGianHoatDongCuoi).toLocaleString()}
+                                                Hoạt động cuối: {new Date(device.thoiGianHoatDongCuoi + (device.thoiGianHoatDongCuoi.endsWith('Z') ? '' : 'Z')).toLocaleString('vi-VN')}
                                             </div>
                                         </div>
                                     </div>

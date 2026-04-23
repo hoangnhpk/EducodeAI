@@ -4,6 +4,7 @@ import {
   BsPersonFill, BsSearch, BsChevronLeft, BsChevronRight,
   BsEyeFill, BsCheckCircleFill, BsX, BsCircle, BsChevronDown
 } from 'react-icons/bs';
+import { getUserId } from '@/utils/authHelper';
 
 interface KhoaHoc {
   maKhoaHoc: number;
@@ -87,7 +88,7 @@ export default function QuanLyHocVienKhoaHoc() {
   const [expandedChapters, setExpandedChapters] = useState<number[]>([]); // Quản lý trạng thái đóng/mở chương
 
   const API_URL = import.meta.env.VITE_API_URL;
-  const maGiangVien = 1;
+  const maGiangVien = useMemo(() => getUserId() ?? 1, []);
 
   useEffect(() => { setCurrentPage(1); }, [searchInput]);
 
@@ -96,7 +97,29 @@ export default function QuanLyHocVienKhoaHoc() {
       const res = await fetch(`${API_URL}/api/giang-vien/lop-hoc/danh-sach-khoa/${maGiangVien}`);
       if (res.ok) {
         const result = await res.json();
-        setKhoaHocs(result.data);
+        const data = (result?.data ?? []) as KhoaHoc[];
+        if (Array.isArray(data) && data.length > 0) {
+          setKhoaHocs(data);
+          return;
+        }
+
+        // Fallback: nếu giảng viên chưa có lớp học / API trả rỗng,
+        // vẫn xổ ra toàn bộ khóa học có sẵn để lựa chọn.
+        const token = (localStorage.getItem('user_token') ?? '').trim();
+        const resAll = await fetch(`${API_URL}/api/giangvien/quan-ly-lo-trinh/danh-sach-khoa-hoc-co-san`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (resAll.ok) {
+          const all = await resAll.json();
+          const mapped: KhoaHoc[] = ((all?.data ?? []) as any[]).map((x) => ({
+            maKhoaHoc: Number(x.maKhoaHoc),
+            tenKhoaHoc: String(x.tenKhoaHoc ?? ''),
+            soLuongHocVien: 0,
+          })).filter((x) => Number.isFinite(x.maKhoaHoc) && x.maKhoaHoc > 0 && x.tenKhoaHoc);
+          setKhoaHocs(mapped);
+        } else {
+          setKhoaHocs([]);
+        }
       }
     } catch (error) { console.error(error); }
   }, [API_URL, maGiangVien]);

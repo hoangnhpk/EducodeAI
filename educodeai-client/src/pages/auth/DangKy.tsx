@@ -133,10 +133,11 @@ const RegisterPage = () => {
                     text: "Hệ thống đã tự động đăng nhập cho bạn.",
                     timer: 2000,
                     showConfirmButton: false
+                }).then(() => {
+                    // Chuyển hướng và load lại trang để nhận diện thiết bị chuẩn xác
+                    navigate('/');
+                    window.location.reload();
                 });
-
-                // Chuyển hướng đến trang chủ hoặc Dashboard thay vì trang đăng nhập
-                navigate('/');
 
                 // Nếu bạn dùng Redux hoặc Context API để quản lý user, hãy dispatch action ở đây
                 // dispatch(loginSuccess(user));

@@ -33,6 +33,7 @@ namespace educodeai_server.Services.Implementation
                 NgonNgu = model.NgonNgu,
                 MucDo = model.MucDo,
                 GoiY = model.GoiY,
+                LoiGiaiMau = model.LoiGiaiMau,
                 TestCases = model.TestCases.Select(tc => new TestCaseHienThiDTO
                 {
                     MaTestCase = tc.MaTestCase,

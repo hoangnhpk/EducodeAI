@@ -46,9 +46,9 @@ namespace educodeai_server.Controllers
             return BadRequest("Cập nhật thất bại");
         }
         [HttpPut("khoa-nguoi-dung/{id}")]
-        public async Task<IActionResult> KhoaNguoiDung(string id)
+        public async Task<IActionResult> KhoaNguoiDung(string id, [FromQuery] string lyDo = "", [FromQuery] string thoiHan = "")
         {
-            var result = await _service.KhoaNguoiDungAsync(id);
+            var result = await _service.KhoaNguoiDungAsync(id, lyDo, thoiHan);
             if (result)
             {
                 return Ok(new { message = "Cập nhật trạng thái thành công" });

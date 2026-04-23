@@ -92,6 +92,20 @@ namespace educodeai_server.Controllers
             }
         }
 
+        [HttpPost("xac-nhan-thay-the-thiet-bi")]
+        public async Task<IActionResult> XacNhanThayTheThietBi([FromBody] XacNhanOtpRequest request)
+        {
+            try
+            {
+                var result = await _xacThucService.XacNhanThayTheThietBiAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         #endregion
 
         #region 2. API ĐĂNG KÝ (Bảo vệ bằng Bộ nhớ tạm RAM)
