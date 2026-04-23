@@ -41,6 +41,7 @@ const NoiDungKhoaHoc = () => {
     const [hoTenHienThiChungChi, setHoTenHienThiChungChi] = useState('');
     const [emailNhanChungChi, setEmailNhanChungChi] = useState('');
     const videoRef = useRef<NoiDungVideoRef>(null);
+    const initiallyFinishedRef = useRef<boolean | null>(null);
 
     const maNguoiDung = getUserId() ?? 0;
     const thongTinNguoiDung = getUserInfo();
@@ -79,6 +80,10 @@ const NoiDungKhoaHoc = () => {
     }, [layDuLieuKhoaHoc]);
 
     useEffect(() => {
+        initiallyFinishedRef.current = null;
+    }, [id]);
+
+    useEffect(() => {
         if (idBaiHoc !== 0 && id) {
             localStorage.setItem(`bai_hoc_dang_hoc_${id}`, idBaiHoc.toString());
         }
@@ -105,10 +110,22 @@ const NoiDungKhoaHoc = () => {
     const hienTabChungChi = khoaHoc?.coChungChi === true;
 
     useEffect(() => {
-        if (!khoaHoc || !khoaHoc.coChungChi || !daHoanThanhKhoaHoc) return;
+        if (!khoaHoc || !khoaHoc.coChungChi || !daHoanThanhKhoaHoc) {
+            if (khoaHoc && !daHoanThanhKhoaHoc) {
+                initiallyFinishedRef.current = false;
+            }
+            return;
+        }
 
         const modalKey = `shown_certificate_prompt_${khoaHoc.maKhoaHoc}`;
         if (localStorage.getItem(modalKey)) return;
+
+        // Nếu mới load trang mà đã hoàn thành rồi thì không hiện thình lình
+        // Chỉ hiện nếu người dùng vừa hoàn thành bài học cuối cùng trong phiên này
+        if (initiallyFinishedRef.current === null) {
+            initiallyFinishedRef.current = true;
+            return;
+        }
 
         void Swal.fire({
             title: daCapChungChi ? 'Khóa học đã hoàn thành' : 'Chúc mừng bạn!',
