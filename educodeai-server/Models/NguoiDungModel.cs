@@ -36,8 +36,11 @@ namespace educodeai_server.Models
         public string? TrangThai { get; set; } = "Hoạt động";
 
         public DateTime NgayThamGia { get; set; } = DateTime.UtcNow;
-        // mới thêm
+        // m?i thm 
         public string? LyDoKhoa { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.Column(TypeName = "timestamp with time zone")]
+        public DateTime? ThoiGianMoKhoa { get; set; }
 
 
         // CÁC THƯỜNG CHO BẢO MẬT & OTP
@@ -46,7 +49,16 @@ namespace educodeai_server.Models
         [StringLength(10)]
         public string? MaOTP { get; set; }
         public DateTime? ThoiGianHetHanOTP { get; set; }
- 
+
+        [StringLength(50)]
+        public string? MaNganHangNhanTien { get; set; }
+
+        [StringLength(50)]
+        public string? SoTaiKhoanNhanTien { get; set; }
+
+        [StringLength(255)]
+        public string? TenTaiKhoanNhanTien { get; set; }
+
         public virtual ICollection<KhoaHocModel> KhoaHocs { get; set; } = null!;
         public virtual ICollection<DangKyKhoaHocModel> DangKyKhoaHocs { get; set; } = null!;
         public virtual ICollection<TienDoBaiHocModel> TienDoBaiHocs { get; set; } = null!;
@@ -57,6 +69,12 @@ namespace educodeai_server.Models
         public virtual ICollection<KetQuaKiemTraChungChiModel> KetQuaKiemTraChungChis { get; set; } = null!;
         public virtual ICollection<ChungChiKhoaHocModel> ChungChiKhoaHocs { get; set; } = null!;
         public virtual ICollection<LoTrinhAIModel> LoTrinhAIs { get; set; } = null!;
+        public virtual ICollection<DonHangKhoaHocModel> DonHangKhoaHocs { get; set; } = null!;
+        public virtual ICollection<DoanhThuGiangVienModel> DoanhThuGiangViens { get; set; } = null!;
+        public virtual ICollection<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; } = null!;
+        public virtual ICollection<YeuCauRutTienGiangVienModel> YeuCauDaDuyets { get; set; } = null!;
+        public virtual ICollection<HoTroRutTienGiangVienModel> HoTroRutTienGiangViens { get; set; } = new List<HoTroRutTienGiangVienModel>();
+        public virtual ICollection<HoTroRutTienGiangVienModel> HoTroRutTienDaXuLys { get; set; } = new List<HoTroRutTienGiangVienModel>();
 
         // Navigation mới cho tính năng quản lý thiết bị
         public virtual ICollection<PhienDangNhapModel> DanhSachPhienDangNhap { get; set; } = new List<PhienDangNhapModel>();

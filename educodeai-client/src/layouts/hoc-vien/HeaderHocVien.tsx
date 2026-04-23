@@ -20,6 +20,8 @@ export default function HeaderHocVien() {
   // Hàm xử lý đăng xuất
   const handleLogout = () => {
     localStorage.removeItem("user_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("token");
     localStorage.removeItem("user_info");
     setUser(null);
     alert("Bạn đã đăng xuất thành công!");
@@ -80,6 +82,9 @@ export default function HeaderHocVien() {
                 </Link>
                 <Link to="/khong-gian-hoc-tap" className="dropdown-item">
                   Không gian học tập
+                </Link>
+                <Link to="/hoc-vien/khoa-hoc-cua-toi" className="dropdown-item">
+                  Khóa học của tôi
                 </Link>
                 <Link to="/khoa-hoc-ai-cua-toi" className="dropdown-item">
                   Lộ trình của tôi

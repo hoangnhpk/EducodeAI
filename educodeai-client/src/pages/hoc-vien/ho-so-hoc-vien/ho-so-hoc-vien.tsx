@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import TongQuan from "./tong-quan";
-import KhoaHocCuaToi from "./khoa-hoc-cua-toi";
+import KhoaHocCuaToi from "../khoa-hoc-cua-toi/KhoaHocCuaToiHocVien";
 import CaiDat from "./cai-dat";
 import {
   getHoSoHocVien,
