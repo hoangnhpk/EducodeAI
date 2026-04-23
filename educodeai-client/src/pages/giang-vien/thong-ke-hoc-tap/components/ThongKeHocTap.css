@@ -207,3 +207,150 @@
   }
 }
 
+.income-section {
+  margin-bottom: 28px;
+}
+
+.income-section-header {
+  margin-bottom: 16px;
+}
+
+.income-section-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.income-section-header p {
+  margin-top: 4px;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.income-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.income-overview-card {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.income-overview-card strong {
+  font-size: 20px;
+  color: #111827;
+}
+
+.income-overview-card small {
+  color: #6b7280;
+}
+
+.income-label {
+  color: #334155;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 700;
+}
+
+.income-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.income-group-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.income-group-tabs button {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.income-group-tabs button.active {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.income-empty-state {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.income-course-table-wrapper {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  margin-top: 8px;
+}
+
+.income-course-table-wrapper h5 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.income-course-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.income-course-table th,
+.income-course-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 8px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.income-course-table th {
+  color: #334155;
+  font-weight: 700;
+}
+
+.income-empty-row {
+  text-align: center !important;
+  color: #6b7280;
+}
+
+@media (max-width: 1200px) {
+  .income-overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .income-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .income-chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

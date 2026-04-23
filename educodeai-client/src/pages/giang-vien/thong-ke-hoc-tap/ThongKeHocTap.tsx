@@ -1,11 +1,20 @@
 ﻿import { useState, useEffect } from "react";
-import type { HocVien, ThongKeOverview, TrangThaiHocVien } from "./components/Types";
+import type {
+  HocVien,
+  NhomThuNhapTheoThoiGian,
+  ThongKeOverview,
+  ThuNhapTheoKhoaHoc,
+  ThuNhapTheoThoiGian,
+  ThuNhapTongQuan,
+  TrangThaiHocVien,
+} from "./components/Types";
 import { thongKeHocTapService } from "../../../services/thong-ke-hoc-tap.service";
 import ChartsSection from "./components/ChartsSection";
 import StatCard from "./components/StatCard";
 import StudentTable from "./components/StudentTable";
 import TopStudents from "./components/TopStudents";
 import AtRiskStudents from "./components/AtRiskStudents";
+import IncomeSection from "./components/IncomeSection";
 import {
   Clock,
   BookOpen,
@@ -21,6 +30,10 @@ export default function ThongKeHocTap() {
   const [overview, setOverview] = useState<ThongKeOverview | null>(null);
   const [trangThaiData, setTrangThaiData] = useState<TrangThaiHocVien[]>([]);
   const [students, setStudents] = useState<HocVien[]>([]);
+  const [thuNhapTongQuan, setThuNhapTongQuan] = useState<ThuNhapTongQuan | null>(null);
+  const [thuNhapTheoThoiGian, setThuNhapTheoThoiGian] = useState<ThuNhapTheoThoiGian[]>([]);
+  const [thuNhapTheoKhoaHoc, setThuNhapTheoKhoaHoc] = useState<ThuNhapTheoKhoaHoc[]>([]);
+  const [nhomThuNhap, setNhomThuNhap] = useState<NhomThuNhapTheoThoiGian>("month");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalStudents, setTotalStudents] = useState(0);
@@ -35,6 +48,12 @@ export default function ThongKeHocTap() {
   }, []);
 
   useEffect(() => {
+    if (!loading) {
+      fetchThuNhapTheoThoiGian();
+    }
+  }, [nhomThuNhap]);
+
+  useEffect(() => {
     fetchStudents();
   }, [currentPage, searchTerm]);
 
@@ -44,18 +63,34 @@ export default function ThongKeHocTap() {
       setError(null);
 
       // Fetch tất cả data song song
-      const [overviewData, trangThaiRes] = await Promise.all([
+      const [overviewData, trangThaiRes, thuNhapTongQuanRes, thuNhapTheoThoiGianRes, thuNhapTheoKhoaHocRes] = await Promise.all([
         thongKeHocTapService.getOverview(),
         thongKeHocTapService.getTrangThaiHocVien(),
+        thongKeHocTapService.getThuNhapTongQuan(),
+        thongKeHocTapService.getThuNhapTheoThoiGian(nhomThuNhap),
+        thongKeHocTapService.getThuNhapTheoKhoaHoc(10),
       ]);
 
       setOverview(overviewData);
       setTrangThaiData(trangThaiRes);
+      setThuNhapTongQuan(thuNhapTongQuanRes);
+      setThuNhapTheoThoiGian(thuNhapTheoThoiGianRes);
+      setThuNhapTheoKhoaHoc(thuNhapTheoKhoaHocRes);
     } catch (err: any) {
       console.error("Error fetching data:", err);
       setError(err.response?.data?.message || "Không thể tải dữ liệu");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchThuNhapTheoThoiGian = async () => {
+    try {
+      const data = await thongKeHocTapService.getThuNhapTheoThoiGian(nhomThuNhap);
+      setThuNhapTheoThoiGian(data);
+    } catch (err) {
+      console.error("Error fetching income timeline:", err);
+      setThuNhapTheoThoiGian([]);
     }
   };
 
@@ -180,6 +215,15 @@ export default function ThongKeHocTap() {
 
       {/* Charts */}
       <ChartsSection trangThaiData={trangThaiData} />
+
+      {/* Income section */}
+      <IncomeSection
+        tongQuan={thuNhapTongQuan}
+        theoThoiGian={thuNhapTheoThoiGian}
+        theoKhoaHoc={thuNhapTheoKhoaHoc}
+        nhomTheo={nhomThuNhap}
+        onNhomTheoChange={setNhomThuNhap}
+      />
 
       {/* STUDENT TABLE */}
       <div className="student-section">

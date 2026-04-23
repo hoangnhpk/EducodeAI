@@ -3,6 +3,9 @@ using educodeai_server.Data;
 using educodeai_server.Services.Interface;
 using educodeai_server.DTOs.ThongKeHocTap;
 using educodeai_server.Common;
+using System.Globalization;
+using educodeai_server.Helpers;
+using System.Net;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -19,7 +22,17 @@ namespace educodeai_server.Services.Implementation
         public async Task<ThongKeOverviewDTO> GetOverviewAsync(int maGiangVien)
         {
             var khoaHocIds = await _context.KhoaHocs
-                .Where(kh => kh.MaGiangVien == maGiangVien && kh.TrangThai == "Active")
+                .Where(kh =>
+                    kh.MaGiangVien == maGiangVien
+                    && (
+                        kh.TrangThai == null
+                        || (
+                            kh.TrangThai != "Đã xóa"
+                            && kh.TrangThai != "DaXoa"
+                            && kh.TrangThai != "Deleted"
+                        )
+                    )
+                )
                 .Select(kh => kh.MaKhoaHoc)
                 .ToListAsync();
 
@@ -110,6 +123,210 @@ namespace educodeai_server.Services.Implementation
         public async Task<List<TienDoTheoThoiGianDTO>> GetTienDoTheoThoiGianAsync(int maGiangVien)
         {
             return new List<TienDoTheoThoiGianDTO>();
+        }
+
+        public async Task<ThuNhapTongQuanDTO> GetThuNhapTongQuanAsync(int maGiangVien)
+        {
+            var doanhThuQuery = _context.DoanhThuGiangViens
+                .AsNoTracking()
+                .Where(x => x.MaGiangVien == maGiangVien);
+
+            var tongDoanhThu = await doanhThuQuery.SumAsync(x => (decimal?)x.TongTienDonHang) ?? 0m;
+            var tongPhiNenTang = await doanhThuQuery.SumAsync(x => (decimal?)x.PhiNenTang) ?? 0m;
+            var tongThucNhan = await doanhThuQuery.SumAsync(x => (decimal?)x.ThucNhanGiangVien) ?? 0m;
+            var tongDonHang = await doanhThuQuery.Select(x => x.MaDonHang).Distinct().CountAsync();
+
+            var thangNay = DateTime.UtcNow;
+            var thucNhanThangNay = await doanhThuQuery
+                .Where(x => x.CreatedAt.Year == thangNay.Year && x.CreatedAt.Month == thangNay.Month)
+                .SumAsync(x => (decimal?)x.ThucNhanGiangVien) ?? 0m;
+
+            return new ThuNhapTongQuanDTO
+            {
+                TongDoanhThu = tongDoanhThu,
+                TongPhiNenTang = tongPhiNenTang,
+                TongThucNhan = tongThucNhan,
+                ThucNhanThangNay = thucNhanThangNay,
+                TongDonHang = tongDonHang
+            };
+        }
+
+        public async Task<List<ThuNhapTheoThoiGianDTO>> GetThuNhapTheoThoiGianAsync(int maGiangVien, string? nhomTheo)
+        {
+            string mode = (nhomTheo ?? "month").Trim().ToLowerInvariant();
+            if (mode is not ("day" or "week" or "month"))
+            {
+                mode = "month";
+            }
+
+            var data = await _context.DoanhThuGiangViens
+                .AsNoTracking()
+                .Where(x => x.MaGiangVien == maGiangVien)
+                .Select(x => new
+                {
+                    x.CreatedAt,
+                    x.TongTienDonHang,
+                    x.PhiNenTang,
+                    x.ThucNhanGiangVien
+                })
+                .ToListAsync();
+
+            var grouped = mode switch
+            {
+                "day" => data
+                    .GroupBy(x => x.CreatedAt.Date)
+                    .OrderBy(g => g.Key)
+                    .Select(g => new ThuNhapTheoThoiGianDTO
+                    {
+                        NhanThoiGian = g.Key.ToString("dd/MM", CultureInfo.InvariantCulture),
+                        TongDoanhThu = g.Sum(x => x.TongTienDonHang),
+                        PhiNenTang = g.Sum(x => x.PhiNenTang),
+                        ThucNhan = g.Sum(x => x.ThucNhanGiangVien)
+                    })
+                    .ToList(),
+                "week" => data
+                    .GroupBy(x => new { Year = ISOWeek.GetYear(x.CreatedAt.Date), Week = ISOWeek.GetWeekOfYear(x.CreatedAt.Date) })
+                    .OrderBy(g => g.Key.Year)
+                    .ThenBy(g => g.Key.Week)
+                    .Select(g => new ThuNhapTheoThoiGianDTO
+                    {
+                        NhanThoiGian = $"T{g.Key.Week}/{g.Key.Year}",
+                        TongDoanhThu = g.Sum(x => x.TongTienDonHang),
+                        PhiNenTang = g.Sum(x => x.PhiNenTang),
+                        ThucNhan = g.Sum(x => x.ThucNhanGiangVien)
+                    })
+                    .ToList(),
+                _ => data
+                    .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
+                    .OrderBy(g => g.Key.Year)
+                    .ThenBy(g => g.Key.Month)
+                    .Select(g => new ThuNhapTheoThoiGianDTO
+                    {
+                        NhanThoiGian = $"{g.Key.Month:00}/{g.Key.Year}",
+                        TongDoanhThu = g.Sum(x => x.TongTienDonHang),
+                        PhiNenTang = g.Sum(x => x.PhiNenTang),
+                        ThucNhan = g.Sum(x => x.ThucNhanGiangVien)
+                    })
+                    .ToList()
+            };
+
+            return grouped;
+        }
+
+        public async Task<List<ThuNhapTheoKhoaHocDTO>> GetThuNhapTheoKhoaHocAsync(int maGiangVien, int top)
+        {
+            int topValue = Math.Clamp(top, 1, 20);
+
+            var data = await _context.DoanhThuGiangViens
+                .AsNoTracking()
+                .Where(x => x.MaGiangVien == maGiangVien)
+                .Select(x => new
+                {
+                    x.MaDonHang,
+                    x.TongTienDonHang,
+                    x.PhiNenTang,
+                    x.ThucNhanGiangVien,
+                    MaKhoaHoc = _context.ChiTietDonHangs
+                        .Where(ct => ct.MaDonHang == x.MaDonHang)
+                        .Join(
+                            _context.KhoaHocs,
+                            ct => ct.MaKhoaHoc,
+                            kh => kh.MaKhoaHoc,
+                            (ct, kh) => new { ct.MaKhoaHoc, kh.MaGiangVien })
+                        .Where(z => z.MaGiangVien == maGiangVien)
+                        .Select(z => (int?)z.MaKhoaHoc)
+                        .FirstOrDefault(),
+                    TenKhoaHoc = _context.ChiTietDonHangs
+                        .Where(ct => ct.MaDonHang == x.MaDonHang)
+                        .Join(
+                            _context.KhoaHocs,
+                            ct => ct.MaKhoaHoc,
+                            kh => kh.MaKhoaHoc,
+                            (ct, kh) => new { kh.TenKhoaHoc, kh.MaGiangVien })
+                        .Where(z => z.MaGiangVien == maGiangVien)
+                        .Select(z => z.TenKhoaHoc)
+                        .FirstOrDefault()
+                })
+                .Where(x => x.MaKhoaHoc != null)
+                .ToListAsync();
+
+            return data
+                .GroupBy(x => new { MaKhoaHoc = x.MaKhoaHoc!.Value, TenKhoaHoc = x.TenKhoaHoc ?? "Khóa học không xác định" })
+                .Select(g => new ThuNhapTheoKhoaHocDTO
+                {
+                    MaKhoaHoc = g.Key.MaKhoaHoc,
+                    TenKhoaHoc = g.Key.TenKhoaHoc,
+                    SoDonHang = g.Select(x => x.MaDonHang).Distinct().Count(),
+                    TongDoanhThu = g.Sum(x => x.TongTienDonHang),
+                    PhiNenTang = g.Sum(x => x.PhiNenTang),
+                    ThucNhan = g.Sum(x => x.ThucNhanGiangVien)
+                })
+                .OrderByDescending(x => x.ThucNhan)
+                .Take(topValue)
+                .ToList();
+        }
+
+        public async Task GuiCanhBaoHocVienNguyCoBoHocAsync(int maGiangVien, int maHocVien)
+        {
+            var duLieuHocVien = await (
+                from dk in _context.DangKyKhoaHocs
+                join kh in _context.KhoaHocs on dk.MaKhoaHoc equals kh.MaKhoaHoc
+                join nd in _context.NguoiDungs on dk.MaNguoiDung equals nd.MaNguoiDung
+                where kh.MaGiangVien == maGiangVien && dk.MaNguoiDung == maHocVien
+                select new
+                {
+                    nd.HoTen,
+                    nd.Email,
+                    dk.TienDo,
+                    kh.TenKhoaHoc
+                }
+            ).ToListAsync();
+
+            if (duLieuHocVien.Count == 0)
+            {
+                throw new InvalidOperationException("Không tìm thấy học viên trong các khóa học của giảng viên.");
+            }
+
+            var email = duLieuHocVien.First().Email?.Trim();
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new InvalidOperationException("Học viên chưa có email để gửi cảnh báo.");
+            }
+
+            var hoTen = duLieuHocVien.First().HoTen?.Trim();
+            var tenHocVien = string.IsNullOrWhiteSpace(hoTen) ? "bạn" : hoTen;
+            var tienDoTrungBinh = Math.Round(duLieuHocVien.Average(x => x.TienDo), 1);
+
+            var dsKhoaHoc = duLieuHocVien
+                .Select(x => x.TenKhoaHoc)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .Take(3)
+                .ToList();
+
+            var khoaHocHienThi = dsKhoaHoc.Count == 0
+                ? "các khóa học"
+                : string.Join(", ", dsKhoaHoc.Select(WebUtility.HtmlEncode));
+
+            var subject = "EduCodeAI - Nhắc nhở tiến độ học tập";
+            var body = $@"
+<div style='font-family: Arial, sans-serif; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;'>
+  <h2 style='color: #dc2626; margin-top: 0;'>Nhắc nhở học tập</h2>
+  <p>Chào <b>{WebUtility.HtmlEncode(tenHocVien)}</b>,</p>
+  <p>Giảng viên nhận thấy tiến độ học tập của bạn đang cần được cải thiện.</p>
+  <ul>
+    <li>Tiến độ trung bình hiện tại: <b>{tienDoTrungBinh}%</b></li>
+    <li>Khóa học liên quan: <b>{khoaHocHienThi}</b></li>
+  </ul>
+  <p>Hãy dành thêm thời gian để tiếp tục học và hoàn thành lộ trình của bạn nhé.</p>
+  <p style='font-size:12px;color:#6b7280;margin-top:16px;'>Email này được gửi tự động từ hệ thống EduCodeAI.</p>
+</div>";
+
+            var daGui = await EmailHelper.SendEmailAsync(email, subject, body);
+            if (!daGui)
+            {
+                throw new InvalidOperationException("Gửi email thất bại. Vui lòng thử lại sau.");
+            }
         }
 
         // ================== DANH SÁCH HỌC VIÊN (STUB) ==================
