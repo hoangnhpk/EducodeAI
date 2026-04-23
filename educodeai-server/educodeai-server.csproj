@@ -31,4 +31,8 @@
     <PackageReference Include="YoutubeExplode" Version="6.5.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\bai-hoc\" />
+  </ItemGroup>
+
 </Project>

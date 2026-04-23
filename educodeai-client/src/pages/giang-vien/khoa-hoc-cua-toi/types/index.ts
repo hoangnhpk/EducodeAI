@@ -127,6 +127,7 @@ export interface BaiHocDetail {
   linkVideo?: string;
   thoiLuong: number;
   thuTu: number;
+  loaiBaiHoc?: string;
 }
 
 export interface BaiHocCreateUpdate {
@@ -137,6 +138,13 @@ export interface BaiHocCreateUpdate {
   thuTu: number;
 }
 
+export interface BaiHocFileCreateUpdate {
+  tieuDe: string;
+  moTa?: string;
+  file?: File | null;
+  thuTu: number;
+}
+
 export interface BaiHocResponse {
   maBaiHoc: number;
   tieuDe: string;
@@ -144,6 +152,7 @@ export interface BaiHocResponse {
   linkVideo?: string;
   thoiLuong: number;
   thuTu: number;
+  loaiBaiHoc?: string;
 }
 
 export interface ReorderBaiHocItem {
@@ -171,6 +180,17 @@ export interface KetQuaTaoDeChungChiAI {
   soCauHoi: number;
   nguonDeChungChi?: string | null;
   ngayTaoDeChungChi?: string | null;
+}
+
+export interface CauHoiChungChi {
+  id: number;
+  cauHoi: string;
+  dapAnA: string;
+  dapAnB: string;
+  dapAnC: string;
+  dapAnD: string;
+  dapAnDung: string;
+  giaiThich: string;
 }
 
 // ---------- YouTube ----------

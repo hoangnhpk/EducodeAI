@@ -251,15 +251,66 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
             </div>
 
             <div className="khm-form-group">
-              <label className="khm-form-label">Link hình ảnh cover</label>
-              <input
-                className="khm-form-input"
-                placeholder="https://..."
-                value={form.hinhAnh ?? ''}
-                onChange={e => set('hinhAnh', e.target.value)}
-                disabled={submitting}
-              />
-              <div className="khm-form-hint">Dán URL hình ảnh từ internet</div>
+              <label className="khm-form-label">Hình ảnh cover (Link hoặc Upload)</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  className="khm-form-input"
+                  placeholder="https://... hoặc bấm nút bên cạnh để tải ảnh lên"
+                  value={form.hinhAnh ?? ''}
+                  onChange={e => set('hinhAnh', e.target.value)}
+                  disabled={submitting}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="khm-btn khm-btn-outline khm-btn-sm"
+                  onClick={() => document.getElementById('upload-course-img')?.click()}
+                  disabled={submitting}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  Upload File
+                </button>
+                <input
+                  type="file"
+                  id="upload-course-img"
+                  style={{ display: 'none' }}
+                  accept=".jpg,.jpeg,.png,.webp,.gif"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                      showToast('error', 'Kích thước ảnh vượt quá 5MB.');
+                      e.target.value = '';
+                      return;
+                    }
+                    try {
+                      setSubmitting(true);
+                      const url = await api.uploadHinhAnhKhoaHoc(file);
+                      if (url) {
+                        set('hinhAnh', url);
+                        showToast('success', 'Upload ảnh thành công!');
+                      }
+                    } catch (err: any) {
+                      showToast('error', err?.message || 'Lỗi khi upload ảnh.');
+                    } finally {
+                      setSubmitting(false);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+              </div>
+              <div className="khm-form-hint">Dán URL từ internet hoặc tải ảnh trực tiếp từ máy tính.</div>
+              {form.hinhAnh && (
+                <div style={{ marginTop: '12px' }}>
+                  <img
+                    src={form.hinhAnh}
+                    alt="Course Preview"
+                    style={{ maxHeight: '160px', borderRadius: '4px', border: '1px solid #ddd', objectFit: 'cover' }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    onLoad={(e) => { (e.target as HTMLImageElement).style.display = 'block'; }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
