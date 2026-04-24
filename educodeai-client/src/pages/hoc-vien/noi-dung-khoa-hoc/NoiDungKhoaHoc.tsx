@@ -320,6 +320,24 @@ const NoiDungKhoaHoc = () => {
                 };
             });
 
+            // Lạc quan (optimistic UI update): Background worker sẽ gửi email rất nhanh (sau 1-2 giây)
+            // nên ta tự động cập nhật trạng thái đã gửi để user trải nghiệm liền mạch
+            if (ketQua.daDat) {
+                setTimeout(() => {
+                    setKhoaHoc((prevData) => {
+                        if (!prevData || !prevData.thongTinChungChi) return prevData;
+                        return {
+                            ...prevData,
+                            thongTinChungChi: {
+                                ...prevData.thongTinChungChi,
+                                daGuiEmail: true,
+                                ngayGuiEmail: new Date().toISOString()
+                            }
+                        };
+                    });
+                }, 2500);
+            }
+
             setDangLamKiemTraChungChi(false);
 
             void Swal.fire({
