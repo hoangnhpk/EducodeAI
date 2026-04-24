@@ -58,5 +58,41 @@ namespace educodeai_server.Controllers.GiangVien
 
             return Ok(result);
         }
+
+        [HttpGet("thu-nhap/tong-quan")]
+        public async Task<IActionResult> GetThuNhapTongQuan()
+        {
+            int maGiangVien = int.Parse(User.FindFirst("MaNguoiDung")!.Value);
+            return Ok(await _service.GetThuNhapTongQuanAsync(maGiangVien));
+        }
+
+        [HttpGet("thu-nhap/theo-thoi-gian")]
+        public async Task<IActionResult> GetThuNhapTheoThoiGian([FromQuery] string? nhomTheo = "month")
+        {
+            int maGiangVien = int.Parse(User.FindFirst("MaNguoiDung")!.Value);
+            return Ok(await _service.GetThuNhapTheoThoiGianAsync(maGiangVien, nhomTheo));
+        }
+
+        [HttpGet("thu-nhap/theo-khoa-hoc")]
+        public async Task<IActionResult> GetThuNhapTheoKhoaHoc([FromQuery] int top = 8)
+        {
+            int maGiangVien = int.Parse(User.FindFirst("MaNguoiDung")!.Value);
+            return Ok(await _service.GetThuNhapTheoKhoaHocAsync(maGiangVien, top));
+        }
+
+        [HttpPost("hoc-vien/{maHocVien:int}/gui-canh-bao")]
+        public async Task<IActionResult> GuiCanhBaoHocVienNguyCoBoHoc(int maHocVien)
+        {
+            try
+            {
+                int maGiangVien = int.Parse(User.FindFirst("MaNguoiDung")!.Value);
+                await _service.GuiCanhBaoHocVienNguyCoBoHocAsync(maGiangVien, maHocVien);
+                return Ok(new { message = "Đã gửi email cảnh báo cho học viên." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

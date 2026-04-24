@@ -15,6 +15,7 @@ namespace educodeai_server.Services.Implementation
         private const string TrangThaiHoTroChoXuLy = "SUPPORT_PENDING";
         private const string TrangThaiHoTroChapThuan = "SUPPORT_APPROVED";
         private const string TrangThaiHoTroTuChoi = "SUPPORT_REJECTED";
+        private const decimal TyLePhiNenTangMacDinh = 0.2m; // 20%
 
         private readonly EduCodeAIDbContext _dbContext;
         private readonly IConfiguration _cauHinh;
@@ -110,8 +111,8 @@ namespace educodeai_server.Services.Implementation
                 {
                     var thoiGianHienTai = DateTime.UtcNow;
                     var tongTien = khoaHoc.GiaKhoaHoc;
-                    var soTienNenTang = Math.Round(tongTien * 0.2m, 2);
-                    var soTienGiangVienNhan = tongTien - soTienNenTang;
+                    var soTienNenTang = TinhPhiNenTang(tongTien);
+                    var soTienGiangVienNhan = TinhTienThucNhanGiangVien(tongTien);
 
                     var donHang = new DonHangKhoaHocModel
                     {
@@ -547,14 +548,14 @@ namespace educodeai_server.Services.Implementation
 
                                 if (khoaHocDauTien != null)
                                 {
-                                    var soTienNenTang = Math.Round(donHang.TongTien * 0.2m, 2);
+                                    var soTienNenTang = TinhPhiNenTang(donHang.TongTien);
                                     _dbContext.DoanhThuGiangViens.Add(new DoanhThuGiangVienModel
                                     {
                                         MaGiangVien = khoaHocDauTien.MaGiangVien,
                                         MaDonHang = donHang.MaDonHang,
                                         TongTienDonHang = donHang.TongTien,
                                         PhiNenTang = soTienNenTang,
-                                        ThucNhanGiangVien = donHang.TongTien - soTienNenTang,
+                                        ThucNhanGiangVien = TinhTienThucNhanGiangVien(donHang.TongTien),
                                         TrangThaiDoiSoat = "PENDING",
                                         CreatedAt = thoiGianHienTai
                                     });
@@ -729,14 +730,14 @@ namespace educodeai_server.Services.Implementation
 
                         if (khoaHocDauTien != null)
                         {
-                            var soTienNenTang = Math.Round(donHang.TongTien * 0.2m, 2);
+                            var soTienNenTang = TinhPhiNenTang(donHang.TongTien);
                             _dbContext.DoanhThuGiangViens.Add(new DoanhThuGiangVienModel
                             {
                                 MaGiangVien = khoaHocDauTien.MaGiangVien,
                                 MaDonHang = donHang.MaDonHang,
                                 TongTienDonHang = donHang.TongTien,
                                 PhiNenTang = soTienNenTang,
-                                ThucNhanGiangVien = donHang.TongTien - soTienNenTang,
+                                ThucNhanGiangVien = TinhTienThucNhanGiangVien(donHang.TongTien),
                                 TrangThaiDoiSoat = "PENDING",
                                 CreatedAt = thoiGianHienTai
                             });
@@ -920,6 +921,38 @@ namespace educodeai_server.Services.Implementation
         private string TaoNoiDungChuyenKhoan(int maDonHang)
         {
             return $"EDU{maDonHang}";
+        }
+
+        private decimal LayTyLePhiNenTang()
+        {
+            string? raw = _cauHinh["ThanhToan:TyLePhiNenTang"];
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return TyLePhiNenTangMacDinh;
+            }
+
+            if (!decimal.TryParse(raw, out var tyLe))
+            {
+                return TyLePhiNenTangMacDinh;
+            }
+
+            // Cho phép cấu hình dạng 20 hoặc 0.2
+            if (tyLe > 1m)
+            {
+                tyLe /= 100m;
+            }
+
+            return decimal.Clamp(tyLe, 0m, 1m);
+        }
+
+        private decimal TinhPhiNenTang(decimal tongTien)
+        {
+            return Math.Round(tongTien * LayTyLePhiNenTang(), 2);
+        }
+
+        private decimal TinhTienThucNhanGiangVien(decimal tongTien)
+        {
+            return tongTien - TinhPhiNenTang(tongTien);
         }
 
         private string TaoDuongDanAnhQr(decimal soTien, string noiDungChuyenKhoan)

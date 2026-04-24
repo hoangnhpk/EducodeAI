@@ -22,6 +22,32 @@ export interface TienDoTheoThoiGian {
   tyLeHoanThanh: number;
 }
 
+export type NhomThuNhapTheoThoiGian = 'day' | 'week' | 'month';
+
+export interface ThuNhapTongQuan {
+  tongDoanhThu: number;
+  tongPhiNenTang: number;
+  tongThucNhan: number;
+  thucNhanThangNay: number;
+  tongDonHang: number;
+}
+
+export interface ThuNhapTheoThoiGian {
+  nhanThoiGian: string;
+  tongDoanhThu: number;
+  phiNenTang: number;
+  thucNhan: number;
+}
+
+export interface ThuNhapTheoKhoaHoc {
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  soDonHang: number;
+  tongDoanhThu: number;
+  phiNenTang: number;
+  thucNhan: number;
+}
+
 export interface HocVien {
   maHocVien?: number;
   maNguoiDung?: number;
