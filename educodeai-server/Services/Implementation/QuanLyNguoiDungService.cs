@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs.NguoiDung;
+using educodeai_server.DTOs.NguoiDung;
 using educodeai_server.Services.Interface;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Models;
@@ -21,17 +21,28 @@ public class QuanLyNguoiDungService : IQuanLyNguoiDungService
     public async Task<IEnumerable<QuanLyNguoiDungDTO>> LayDanhSachNguoiDungAsync()
     {
         var danhSach = await _repo.LayTatCaAsync();
+        var now = DateTime.UtcNow;
 
-        return danhSach.Select(nd => new QuanLyNguoiDungDTO
-        {
-            MaNguoiDung = nd.MaNguoiDung.ToString(),
-            AnhDaiDien = nd.AnhDaiDien,
-            HoTen = nd.HoTen,
-            Email = nd.Email,
-            TrangThai = nd.TrangThai == "Hoạt động",
-            NgayTao = nd.NgayThamGia,
-            VaiTro = VaiTro(nd.VaiTro) 
-        });
+        // Chỉ hiển thị Giảng viên (1) và Học viên (2)
+        return danhSach
+            .Where(nd => nd.VaiTro == 1 || nd.VaiTro == 2)
+            .Select(nd => 
+            {
+                var isExpiredLock = nd.TrangThai == "Bị khóa" && nd.ThoiGianMoKhoa.HasValue && nd.ThoiGianMoKhoa.Value <= now;
+                
+                return new QuanLyNguoiDungDTO
+                {
+                    MaNguoiDung = nd.MaNguoiDung.ToString(),
+                    AnhDaiDien = nd.AnhDaiDien,
+                    HoTen = nd.HoTen,
+                    Email = nd.Email,
+                    TrangThai = isExpiredLock ? "Hoạt động" : nd.TrangThai,
+                    LyDoKhoa = isExpiredLock ? null : nd.LyDoKhoa,
+                    ThoiGianMoKhoa = isExpiredLock ? null : nd.ThoiGianMoKhoa,
+                    NgayTao = nd.NgayThamGia,
+                    VaiTro = VaiTro(nd.VaiTro) 
+                };
+            });
     }
     private string VaiTro(int vaiTro)
     {
@@ -90,7 +101,7 @@ public class QuanLyNguoiDungService : IQuanLyNguoiDungService
         }
         return await _repo.CapNhatAsync(nd);
     }
-    public async Task<bool> KhoaNguoiDungAsync(string id)
+    public async Task<bool> KhoaNguoiDungAsync(string id, string lyDo = "", string thoiHan = "")
     {
         if (!int.TryParse(id, out int maId))
         {
@@ -101,7 +112,43 @@ public class QuanLyNguoiDungService : IQuanLyNguoiDungService
         {
             return false;
         }
-        nd.TrangThai = (nd.TrangThai == "Hoạt động") ? "Bị khóa" : "Hoạt động";
+
+        if (nd.TrangThai == "Hoạt động")
+        {
+            nd.TrangThai = thoiHan == "vinh-vien" ? "Khóa vĩnh viễn" : "Bị khóa";
+            nd.LyDoKhoa = lyDo;
+            
+            if (thoiHan != "vinh-vien")
+            {
+                nd.ThoiGianMoKhoa = thoiHan switch
+                {
+                    "15s" => DateTime.UtcNow.AddSeconds(15),
+                    "1d" => DateTime.UtcNow.AddDays(1),
+                    "3d" => DateTime.UtcNow.AddDays(3),
+                    "1w" => DateTime.UtcNow.AddDays(7),
+                    "2w" => DateTime.UtcNow.AddDays(14),
+                    "1m" => DateTime.UtcNow.AddMonths(1),
+                    _ => null
+                };
+            }
+            else
+            {
+                nd.ThoiGianMoKhoa = null;
+            }
+
+            // Xóa tất cả phiên đăng nhập khi bị khóa
+            if (nd.DanhSachPhienDangNhap != null)
+            {
+                nd.DanhSachPhienDangNhap.Clear();
+            }
+        }
+        else
+        {
+            nd.TrangThai = "Hoạt động";
+            nd.LyDoKhoa = null;
+            nd.ThoiGianMoKhoa = null;
+        }
+
         return await _repo.CapNhatAsync(nd);
     }
 
@@ -116,6 +163,13 @@ public class QuanLyNguoiDungService : IQuanLyNguoiDungService
         {
             return false;
         }
+        
+        // Chỉ có thể xóa nếu khóa vĩnh viễn
+        if (nd.TrangThai != "Khóa vĩnh viễn")
+        {
+            return false;
+        }
+
         return await _repo.XoaAsync(nd);
     }
 }

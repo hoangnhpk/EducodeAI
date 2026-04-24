@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
@@ -10,11 +10,13 @@ import ReCAPTCHA from "react-google-recaptcha";
 
 const DangNhap: React.FC = () => {
     const navigate = useNavigate();
+    const recaptchaRef = useRef<any>(null);
     
     // State quản lý luồng
-    const [step, setStep] = useState<1 | 2>(1); // 1: Login, 2: OTP
+    const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Login, 2: OTP, 3: Replace Device
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<{ identifier?: string; password?: string; otp?: string }>({});
+    const [replaceDeviceInfo, setReplaceDeviceInfo] = useState<{ oldestDeviceName: string; email: string } | null>(null);
 
     // State dữ liệu form
     const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -23,7 +25,7 @@ const DangNhap: React.FC = () => {
     const [showCaptcha, setShowCaptcha] = useState(false); 
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
-    const GOOGLE_CLIENT_ID = "936326067432-hcndgs9gnnfculp14smdl8e6bnqb4is9.apps.googleusercontent.com";
+    const GOOGLE_CLIENT_ID = "335320969122-3e5a0uoj7scbhmgi83utlesvf5rbrtdt.apps.googleusercontent.com";
     const FACEBOOK_APP_ID = "994470786348116";
     
     const redirectByUserRole = (user: any) => {
@@ -52,16 +54,39 @@ const DangNhap: React.FC = () => {
             if (response.requiresOtp) {
                 setStep(2);
                 Swal.fire({ icon: 'info', title: 'Thiết bị mới', text: response.message, timer: 2000, showConfirmButton: false });
+            } else if (response.requiresLogoutOldest) {
+                // ... (giữ nguyên logic đầy phiên)
+                setReplaceDeviceInfo({ oldestDeviceName: response.oldestDeviceName, email: response.email });
+                const result = await Swal.fire({ title: 'Giới hạn đăng nhập', html: `Tài khoản của bạn đã đạt giới hạn 3 thiết bị.<br/><br/>Bạn có muốn đăng xuất thiết bị <b>${response.oldestDeviceName}</b> để tiếp tục truy cập trên trình duyệt này không?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Đồng ý, thay thế', cancelButtonText: 'Hủy bỏ', confirmButtonColor: '#fb873f', reverseButtons: true });
+                if (result.isConfirmed) {
+                    setStep(3);
+                    Swal.fire({ icon: 'info', title: 'Xác nhận OTP', text: 'Mã OTP đã được gửi về Email của bạn để xác nhận thay thế thiết bị.', timer: 2500, showConfirmButton: false });
+                }
             } else if (response.requiresCaptcha) {
+                // KÍCH HOẠT CAPTCHA SAU 3 LẦN SAI
                 setShowCaptcha(true);
-                setErrors({}); 
+                setErrors({ identifier: response.message }); 
+                Swal.fire({ icon: 'warning', title: 'Xác thực bảo mật', text: response.message });
             } else if (response.token) {
                 handleLoginSuccess(response);
             }
         } catch (error: any) {
-            setErrors({ identifier: error.response?.data?.message || "Tài khoản hoặc mật khẩu không chính xác!" });
+            const errorMsg = error.response?.data?.message || "Tài khoản hoặc mật khẩu không chính xác!";
+            setErrors({ identifier: errorMsg });
             setCaptchaToken(null);
-            setShowCaptcha(false);
+            
+            // LUÔN RESET CAPTCHA KHI CÓ LỖI (để người dùng không bị kẹt dấu tích xanh)
+            if (recaptchaRef.current) {
+                recaptchaRef.current.reset();
+            }
+            
+            if (errorMsg.includes("thành công")) {
+                // ĐÁP ỨNG YÊU CẦU: Nếu đã xác minh Captcha xong nhưng sai pass, ẩn Captcha và bắt nhập lại
+                setShowCaptcha(false);
+                setPassword(''); // Xóa mật khẩu để người dùng nhập lại từ đầu
+            } else if (errorMsg.includes("3/3") || errorMsg.includes("4/3")) {
+                setShowCaptcha(true);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -112,6 +137,27 @@ const DangNhap: React.FC = () => {
         }
     };
 
+    // BƯỚC 3: Xử lý Xác thực OTP thay thế thiết bị
+    const handleVerifyReplaceDevice = async () => {
+        if (otp.length !== 6) {
+            setErrors({ otp: "Mã OTP phải gồm 6 chữ số" });
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const response: any = await authService.confirmReplaceDevice({
+                taiKhoan: replaceDeviceInfo?.email || emailOrUsername,
+                otpCode: otp
+            });
+            handleLoginSuccess(response);
+        } catch (error: any) {
+            setErrors({ otp: error.response?.data?.message || "Mã OTP không chính xác!" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleLoginSuccess = async (res: any) => {
         localStorage.setItem('user_token', res.token);
         localStorage.setItem('refresh_token', res.refreshToken); // Lưu refresh token
@@ -149,7 +195,7 @@ const DangNhap: React.FC = () => {
                                         <div className="col-12 text-start">
                                             <div className="form-floating">
                                                 <input type="text" className={`form-control ${errors.identifier ? 'is-invalid' : ''}`}
-                                                    placeholder="Tài khoản hoặc Email" value={emailOrUsername} onChange={(e) => {setEmailOrUsername(e.target.value); setErrors({})}} disabled={isLoading || showCaptcha} />
+                                                    placeholder="Tài khoản hoặc Email" value={emailOrUsername} onChange={(e) => {setEmailOrUsername(e.target.value); setErrors({})}} disabled={isLoading} />
                                                 <label>Email của bạn</label>
                                                 {errors.identifier && <div className="invalid-feedback">{errors.identifier}</div>}
                                             </div>
@@ -158,16 +204,20 @@ const DangNhap: React.FC = () => {
                                         <div className="col-12 text-start">
                                             <div className="form-floating">
                                                 <input type="password" className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                                                    placeholder="Mật khẩu" value={password} onChange={(e) => {setPassword(e.target.value); setErrors({})}} disabled={isLoading || showCaptcha} />
+                                                    placeholder="Mật khẩu" value={password} onChange={(e) => {setPassword(e.target.value); setErrors({})}} disabled={isLoading} />
                                                 <label>Mật khẩu</label>
                                                 {errors.password && <div className="invalid-feedback">{errors.password}</div>}
                                             </div>
                                         </div>
 
+                                        <div className="col-12 text-end">
+                                            <Link to="/quen-mat-khau" className="text-decoration-none small" style={{ color: '#fb873f' }}>Quên mật khẩu?</Link>
+                                        </div>
+
                                         {/* WIDGET CAPTCHA - Chỉ hiện khi Backend yêu cầu */}
                                         {showCaptcha && (
                                             <div className="col-12 d-flex flex-column align-items-center my-2 animate__animated animate__zoomIn">
-                                                <p className="small text-success fw-bold mb-2">Vui lòng xác thực Captcha.</p>
+                                                <p className="small text-danger fw-bold mb-2">Vui lòng xác thực mã bên dưới.</p>
                                                 <ReCAPTCHA
                                                     sitekey="6Legm5csAAAAABr5FTIC25geZIxrxlmF5ORzuiYt"
                                                     onChange={onCaptchaVerify}
@@ -175,19 +225,16 @@ const DangNhap: React.FC = () => {
                                             </div>
                                         )}
 
-                                        <div className="col-12 text-end">
-                                            <Link to="/quen-mat-khau" className="text-decoration-none small" style={{ color: '#fb873f' }}>Quên mật khẩu?</Link>
+                                        <div className="col-12">
+                                            <button className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill" 
+                                                type="submit" style={{ backgroundColor: '#fb873f' }} 
+                                                disabled={isLoading || (showCaptcha && !captchaToken)}>
+                                                {isLoading ? "Đang xử lý..." : "Tiếp theo"}
+                                            </button>
                                         </div>
 
-                                        {/* Chỉ hiện nút đăng nhập khi chưa show captcha */}
                                         {!showCaptcha && (
                                             <>
-                                                <div className="col-12">
-                                                    <button className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill" type="submit" style={{ backgroundColor: '#fb873f' }} disabled={isLoading}>
-                                                        {isLoading ? "Đang xử lý..." : "Tiếp theo"}
-                                                    </button>
-                                                </div>
-
                                                 <div className="col-12 my-3 text-center position-relative">
                                                     <hr />
                                                     <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted">Hoặc đăng nhập với</span>
@@ -278,8 +325,14 @@ const DangNhap: React.FC = () => {
                                     <button className="btn btn-link text-decoration-none text-muted p-0 mb-3" onClick={() => { setStep(1); setOtp(''); setShowCaptcha(false); }}>
                                         <FaArrowLeft className="me-1" /> Quay lại
                                     </button>
-                                    <h2 className="h4 mb-3 fw-bold">Xác thực thiết bị</h2>
-                                    <p className="small text-muted">Vui lòng nhập mã OTP vừa được gửi đến Email của bạn để đăng nhập trên thiết bị này.</p>
+                                    <h2 className="h4 mb-3 fw-bold">
+                                        {step === 3 ? "Xác nhận thay thế" : "Xác thực thiết bị"}
+                                    </h2>
+                                    <p className="small text-muted">
+                                        {step === 3 
+                                            ? `Nhập mã OTP để xác nhận đăng xuất thiết bị ${replaceDeviceInfo?.oldestDeviceName} và đăng nhập thiết bị này.`
+                                            : "Vui lòng nhập mã OTP vừa được gửi đến Email của bạn để đăng nhập trên thiết bị này."}
+                                    </p>
                                     
                                     <div className="form-floating my-4 text-start">
                                         <input type="text" className={`form-control text-center fs-3 fw-bold ${errors.otp ? 'is-invalid' : ''}`} 
@@ -289,7 +342,9 @@ const DangNhap: React.FC = () => {
                                     </div>
 
                                     <button className="btn btn-primary w-100 py-3 mb-3 text-white border-0 fw-bold rounded-pill" 
-                                        style={{ backgroundColor: '#fb873f' }} onClick={handleVerifyOtp} disabled={otp.length !== 6 || isLoading}>
+                                        style={{ backgroundColor: '#fb873f' }} 
+                                        onClick={step === 3 ? handleVerifyReplaceDevice : handleVerifyOtp} 
+                                        disabled={otp.length !== 6 || isLoading}>
                                         {isLoading ? <span className="spinner-border spinner-border-sm"></span> : "Xác nhận và Đăng nhập"}
                                     </button>
                                 </div>

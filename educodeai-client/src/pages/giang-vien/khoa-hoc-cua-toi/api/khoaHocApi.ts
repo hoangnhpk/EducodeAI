@@ -16,6 +16,7 @@ import type {
   YouTubeVideoItem,
   PlaylistImportRequest,
   PlaylistImportResult,
+  CauHoiChungChi,
 } from '../types';
 
 const BASE = '/api/giang-vien/khoa-hoc';
@@ -59,9 +60,18 @@ export const getChiTietKhoaHoc = async (_maGiangVien: number, maKhoaHoc: number)
 // [HttpPost("tao-moi")] -> [FromForm]
 export const taoKhoaHoc = async (_maGiangVien: number, dto: KhoaHocCreateUpdate) => {
   const res: any = await axiosClient.post(`${BASE}/tao-moi`, toFormData(dto));
-  // Returns Ok(new { success = true, maKhoaHoc = ..., message = ... })
   if (!res || res.success === false) return 0;
   return Number(res.maKhoaHoc || res.data?.maKhoaHoc || res.data || 0);
+};
+
+// [HttpPost("upload-hinh-anh")]
+export const uploadHinhAnhKhoaHoc = async (file: File) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res: any = await axiosClient.post(`${BASE}/upload-hinh-anh`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return res?.url as string;
 };
 
 // [HttpPut("cap-nhat/{maKhoaHoc}")] -> [FromForm]
@@ -94,8 +104,20 @@ export const saveCertificateConfig = async (_maGiangVien: number, maKhoaHoc: num
 
 // [HttpPost("tao-de-chung-chi-ai/{maKhoaHoc}")]
 export const taoDeChungChiBangAI = async (_maGiangVien: number, maKhoaHoc: number) => {
-  const res = await axiosClient.post(`${BASE}/tao-de-chung-chi-ai/${maKhoaHoc}`);
+  const res = await axiosClient.post(`${BASE}/tao-de-chung-chi-ai/${maKhoaHoc}`, undefined, { timeout: 120000 });
   return extractData<KetQuaTaoDeChungChiAI>(res);
+};
+
+// [HttpGet("de-chung-chi/{maKhoaHoc}")]
+export const getDeChungChi = async (_maGiangVien: number, maKhoaHoc: number) => {
+  const res = await axiosClient.get(`${BASE}/de-chung-chi/${maKhoaHoc}`);
+  return extractData<CauHoiChungChi[]>(res);
+};
+
+// [HttpPut("de-chung-chi/{maKhoaHoc}")]
+export const updateDeChungChi = async (_maGiangVien: number, maKhoaHoc: number, data: CauHoiChungChi[]) => {
+  const res: any = await axiosClient.put(`${BASE}/de-chung-chi/${maKhoaHoc}`, data);
+  return res.data;
 };
 
 // [HttpPost("courses/{maKhoaHoc}/certificate/enable")]
@@ -151,6 +173,34 @@ export const themBaiHoc = async (_maGiangVien: number, maChuong: number, dto: Ba
 // [HttpPut("cap-nhat-video/{maBaiHoc}")] -> [FromForm]
 export const capNhatBaiHoc = async (_maGiangVien: number, maBaiHoc: number, dto: BaiHocCreateUpdate) => {
   const res: any = await axiosClient.put(`${BASE}/cap-nhat-video/${maBaiHoc}`, toFormData(dto));
+  return res?.success ?? true;
+};
+
+// [HttpPost("them-file/{maChuong}")]
+export const themBaiHocFile = async (maChuong: number, dto: any) => {
+  const fd = new FormData();
+  if(dto.tieuDe) fd.append('TieuDe', dto.tieuDe);
+  if(dto.moTa) fd.append('MoTa', dto.moTa);
+  if(dto.file) fd.append('File', dto.file);
+  fd.append('ThuTu', dto.thuTu.toString());
+  
+  const res = await axiosClient.post(`${BASE}/them-file/${maChuong}`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return extractData<BaiHocResponse>(res);
+};
+
+// [HttpPut("cap-nhat-file/{maBaiHoc}")]
+export const capNhatBaiHocFile = async (maBaiHoc: number, dto: any) => {
+  const fd = new FormData();
+  if(dto.tieuDe) fd.append('TieuDe', dto.tieuDe);
+  if(dto.moTa) fd.append('MoTa', dto.moTa);
+  if(dto.file) fd.append('File', dto.file);
+  fd.append('ThuTu', dto.thuTu.toString());
+
+  const res: any = await axiosClient.put(`${BASE}/cap-nhat-file/${maBaiHoc}`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
   return res?.success ?? true;
 };
 

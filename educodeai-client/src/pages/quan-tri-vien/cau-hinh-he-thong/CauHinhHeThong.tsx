@@ -7,9 +7,8 @@ const CauHinhHeThong = () => {
     const [activeTab, setActiveTab] = useState('general');
     const [isLoading, setIsLoading] = useState(false);
     const { refreshConfigs } = useSystemConfig();
-    const fileInputRef = useRef<HTMLInputElement>(null); // Ref để trigger chọn file
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Khởi tạo state
     const [configs, setConfigs] = useState<Record<string, string>>({
         TenWebsite: '',
         EmailLienHe: '',
@@ -21,11 +20,15 @@ const CauHinhHeThong = () => {
         GioiHanDungLuong: '50'
     });
 
+    // 👉 Lấy URL tĩnh từ biến môi trường
+    const apiUrl = import.meta.env.VITE_API_URL;
+
     const fetchConfigs = async () => {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('user_token');
-            const res = await fetch('https://localhost:7284/api/quan-tri/cau-hinh/lay-cau-hinh', {
+            // 👉 ĐÃ SỬA: Dùng apiUrl thay cho localhost
+            const res = await fetch(`${apiUrl}/api/quan-tri/cau-hinh/lay-cau-hinh`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             
@@ -56,12 +59,9 @@ const CauHinhHeThong = () => {
         setConfigs(prev => ({ ...prev, [key]: value }));
     };
 
-    // Xử lý khi chọn file ảnh banner mới
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Tạm thời cập nhật tên file vào state để hiển thị preview 
-            // Sếp cần API upload thực tế để lưu file này lên server
             setConfigs(prev => ({ ...prev, BannerChinh: file.name }));
             Swal.fire({
                 icon: 'info',
@@ -82,7 +82,8 @@ const CauHinhHeThong = () => {
                 GiaTri: configs[key]
             }));
 
-            const res = await fetch('https://localhost:7284/api/quan-tri/cau-hinh/cap-nhat', {
+            // 👉 ĐÃ SỬA: Dùng apiUrl thay cho localhost
+            const res = await fetch(`${apiUrl}/api/quan-tri/cau-hinh/cap-nhat`, {
                 method: 'POST',
                 headers: { 
                     'Authorization': `Bearer ${token}`, 
@@ -93,6 +94,16 @@ const CauHinhHeThong = () => {
             
             const result = await res.json();
             if (result.success) {
+                const isBaoTri = configs.CheDoBaoTri === 'true';
+                try {
+                    // 👉 ĐÃ SỬA: Dùng apiUrl thay cho localhost
+                    await fetch(`${apiUrl}/api/quan-tri/cau-hinh/toggle-bao-tri`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(isBaoTri)
+                    });
+                } catch (e) { console.error("Không gọi được API Toggle Bảo Trì"); }
+
                 await refreshConfigs(); 
                 localStorage.setItem('trigger_update_config', Date.now().toString());
                 Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đã cập nhật hệ thống!', timer: 2000, showConfirmButton: false });
@@ -213,9 +224,16 @@ const CauHinhHeThong = () => {
                                             <span className="slider round"></span>
                                         </label>
                                     </div>
-                                    <div className="form-group" style={{marginTop: '25px'}}>
-                                        <label>Giới hạn dung lượng tải lên (MB):</label>
-                                        <input type="number" className="input-config" style={{width: '200px'}} value={configs.GioiHanDungLuong} onChange={e => handleChange('GioiHanDungLuong', e.target.value)} />
+                                    
+                                    <div className="form-group" style={{marginTop: '25px', opacity: 0.7}}>
+                                        <label>Giới hạn dung lượng tải lên (MB) - <span style={{color: '#ef4444'}}>Đã khóa</span>:</label>
+                                        <input 
+                                            type="number" 
+                                            className="input-config" 
+                                            style={{width: '200px', cursor: 'not-allowed', backgroundColor: '#f1f5f9'}} 
+                                            value={configs.GioiHanDungLuong} 
+                                            disabled 
+                                        />
                                     </div>
                                 </div>
                             )}
