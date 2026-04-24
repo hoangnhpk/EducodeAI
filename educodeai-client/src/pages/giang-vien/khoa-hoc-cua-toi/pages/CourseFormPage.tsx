@@ -208,7 +208,10 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
           </span>
         </div>
 
-        <div className="khm-page-header" style={{ marginBottom: 24 }}>
+        <div className="khm-page-header" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button className="khm-btn khm-btn-outline khm-btn-sm" onClick={onCancel} style={{ borderRadius: 6, padding: '8px 12px' }}>
+            ← Quay lại
+          </button>
           <div>
             <h1 className="khm-page-title">{isEdit ? 'Chỉnh sửa khóa học' : 'Tạo khóa học mới'}</h1>
             <p className="khm-page-subtitle">Điền đầy đủ thông tin rồi lưu lại.</p>
