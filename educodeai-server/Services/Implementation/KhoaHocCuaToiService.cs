@@ -506,7 +506,8 @@ THÔNG TIN:
 YÊU CẦU BẮT BUỘC:
 1. Không dùng markdown.
 2. Không trả về bất kỳ text nào ngoài cú pháp mảng JSON hợp lệ.
-3. Trả về đúng 1 mảng JSON chứa các objects như ví dụ bên dưới:
+3. TUYỆT ĐỐI KHÔNG dùng dấu ngoặc kép ("") bên trong các đoạn text/mã code của câu hỏi hay đáp án. Hãy ưu tiên dùng dấu nháy đơn ('') để tránh làm hỏng cấu trúc JSON.
+4. Trả về đúng 1 mảng JSON chứa các objects như ví dụ bên dưới:
 
 [
   {{
