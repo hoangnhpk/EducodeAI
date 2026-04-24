@@ -31,6 +31,14 @@ const dinhDangNgay = (ngay?: string | null) => {
     return date.toLocaleDateString('vi-VN');
 };
 
+const xepLoaiDiem = (diem?: number | null): string => {
+    if (diem == null) return '--';
+    if (diem >= 90) return 'Xuất sắc';
+    if (diem >= 80) return 'Giỏi';
+    if (diem >= 70) return 'Khá';
+    return 'Đạt';
+};
+
 export const TabChungChi = ({
     tenKhoaHoc,
     tenHocVien,
@@ -45,7 +53,7 @@ export const TabChungChi = ({
     onThayDoiEmailNhan,
     onBatDauThi,
     onNopBai,
-    onInChungChi
+    onInChungChi: _onInChungChi
 }: TabChungChiProps) => {
     if (!baiKiemTraChungChi) {
         return (
@@ -196,79 +204,75 @@ export const TabChungChi = ({
 
                     {daCapChungChi ? (
                         <>
-                            {/* ── Google-Cloud-style certificate card ── */}
-                            <div className="cp-cert-frame" id="certificate-print-card">
-                                {/* outer navy border → inner accent border handled by CSS */}
-                                <div className="cp-cert-inner">
+                            {/* ── Certificate card ── */}
+                            <div className="cp-cert-v2" id="certificate-print-card">
+                                {/* Decorative corner ornaments */}
+                                <div className="cp-cert-v2__corner tl">✦</div>
+                                <div className="cp-cert-v2__corner tr">✦</div>
+                                <div className="cp-cert-v2__corner bl">✦</div>
+                                <div className="cp-cert-v2__corner br">✦</div>
 
-                                    {/* Brand */}
-                                    <div className="cp-cert-brand-row">
-                                        <span className="cp-cert-brand">
-                                            <span style={{ color: '#1A2B4A' }}>Edu</span>
-                                            <span style={{ color: '#4A90D9' }}>Code</span>
-                                            <span style={{ color: '#F5A623' }}>AI</span>
-                                        </span>
-                                        <span className="cp-cert-label">CERTIFICATE OF COMPLETION</span>
+                                {/* Top border line pair */}
+                                <div className="cp-cert-v2__lines" />
+
+                                {/* Logo row */}
+                                <div className="cp-cert-v2__brand">
+                                    <span style={{ color: '#1A2B4A', fontWeight: 800 }}>Edu</span>
+                                    <span style={{ color: '#4A90D9', fontWeight: 800 }}>Code</span>
+                                    <span style={{ color: '#F5A623', fontWeight: 800 }}>AI</span>
+                                </div>
+
+                                {/* Title */}
+                                <h2 className="cp-cert-v2__title">Chứng Chỉ</h2>
+
+                                {/* Gold divider */}
+                                <div className="cp-cert-v2__gold-rule" />
+
+                                {/* Sub heading */}
+                                <p className="cp-cert-v2__sub">CHỨNG NHẬN TRÂN TRỌNG TRAO ĐẾN</p>
+
+                                {/* Recipient name */}
+                                <h3 className="cp-cert-v2__name">{tenNguoiNhan}</h3>
+
+                                {/* Course label */}
+                                <p className="cp-cert-v2__course-label">Khóa học</p>
+                                <p className="cp-cert-v2__course-name">
+                                    {thongTinChungChi?.tenKhoaHoc || tenKhoaHoc}
+                                </p>
+
+                                {/* Bottom row: date | gold seal | signature */}
+                                <div className="cp-cert-v2__bottom">
+                                    {/* Date */}
+                                    <div className="cp-cert-v2__date-col">
+                                        <span className="cp-cert-v2__date-val">{dinhDangNgay(thongTinChungChi?.ngayCap)}</span>
+                                        <div className="cp-cert-v2__date-line" />
+                                        <span className="cp-cert-v2__date-label">NGÀY CẤP</span>
                                     </div>
 
-                                    <div className="cp-cert-divider gold" />
-
-                                    {/* Certify phrase */}
-                                    <p className="cp-cert-phrase">This is to certify that</p>
-
-                                    {/* Learner name */}
-                                    <h2 className="cp-cert-name">{tenNguoiNhan}</h2>
-                                    <div className="cp-cert-name-underline" />
-
-                                    <p className="cp-cert-phrase" style={{ marginTop: '14px' }}>
-                                        has successfully completed the course
-                                    </p>
-
-                                    {/* Course name */}
-                                    <h3 className="cp-cert-course">
-                                        {thongTinChungChi?.tenKhoaHoc || tenKhoaHoc}
-                                    </h3>
-
-                                    <div className="cp-cert-divider gold" style={{ marginTop: '18px' }} />
-
-                                    {/* Bottom row */}
-                                    <div className="cp-cert-bottom">
-                                        {/* Meta info */}
-                                        <div className="cp-cert-meta">
-                                            <div className="cp-cert-meta-row">
-                                                <span className="cp-cert-meta-key">Certificate ID</span>
-                                                <span className="cp-cert-meta-val">{thongTinChungChi?.maChungChi}</span>
-                                            </div>
-                                            <div className="cp-cert-meta-row">
-                                                <span className="cp-cert-meta-key">Issue Date</span>
-                                                <span className="cp-cert-meta-val">{dinhDangNgay(thongTinChungChi?.ngayCap)}</span>
-                                            </div>
-                                            <div className="cp-cert-meta-row">
-                                                <span className="cp-cert-meta-key">Certified As</span>
-                                                <span className="cp-cert-meta-val">{tenNguoiNhan}</span>
+                                    {/* Gold seal */}
+                                    <div className="cp-cert-v2__seal">
+                                        <div className="cp-cert-v2__seal-outer">
+                                            <div className="cp-cert-v2__seal-inner">
+                                                <span className="cp-cert-v2__seal-grade">{xepLoaiDiem(thongTinChungChi?.diemLanGanNhat)}</span>
+                                                <span className="cp-cert-v2__seal-sub">XẾP LOẠI</span>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        {/* Score badge */}
-                                        <div className="cp-cert-badge">
-                                            <span className="cp-cert-badge-label">SCORE</span>
-                                            <span className="cp-cert-badge-score">
-                                                {thongTinChungChi?.diemLanGanNhat != null
-                                                    ? `${Math.round(thongTinChungChi.diemLanGanNhat)}%`
-                                                    : '--'}
-                                            </span>
-                                            <div className="cp-cert-badge-divider" />
-                                            <span className="cp-cert-badge-sub">FINAL EXAM</span>
-                                        </div>
-
-                                        {/* Signature */}
-                                        <div className="cp-cert-sig">
-                                            <div className="cp-cert-sig-line" />
-                                            <span className="cp-cert-sig-name">EduCodeAI Board</span>
-                                            <span className="cp-cert-sig-role">Authorized Signature</span>
-                                        </div>
+                                    {/* Signature */}
+                                    <div className="cp-cert-v2__sig-col">
+                                        <svg width="110" height="32" viewBox="0 0 110 32" fill="none">
+                                            <path d="M6 24 C12 8,20 4,28 16 C34 24,38 6,48 10 C56 13,58 22,66 18 C74 14,78 6,88 12 C96 16,102 20,108 14"
+                                                stroke="#8B6914" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                                            <path d="M28 20 C32 26,36 28,42 24" stroke="#8B6914" strokeWidth="1.2" strokeLinecap="round"/>
+                                        </svg>
+                                        <div className="cp-cert-v2__sig-line" />
+                                        <span className="cp-cert-v2__sig-label">CHỮ KÝ XÁC NHẬN</span>
                                     </div>
                                 </div>
+
+                                {/* Bottom border line pair */}
+                                <div className="cp-cert-v2__lines" />
                             </div>
 
                             <div className="cp-certificate-email-status">
