@@ -103,6 +103,7 @@ namespace educodeai_server.Services.Implementation
                     catch (Exception ex)
                     {
                         Console.WriteLine($"[EmailBgTask] Lỗi: {ex.Message}");
+                        System.IO.File.WriteAllText("EmailBgTask_Error.txt", ex.ToString());
                     }
                 });
             }

@@ -281,7 +281,7 @@ export const TabChungChi = ({
                                     <p>{thongTinChungChi?.emailNhan || emailNhan || '--'}</p>
                                 </div>
                                 <span className={thongTinChungChi?.daGuiEmail ? 'sent' : 'pending'}>
-                                    {thongTinChungChi?.daGuiEmail ? 'Đã gửi PDF' : 'Chưa gửi được email'}
+                                    {thongTinChungChi?.daGuiEmail ? 'Đã gửi PDF' : 'Đang chuẩn bị gửi PDF...'}
                                 </span>
                             </div>
 
