@@ -159,6 +159,12 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
           <span className="khm-breadcrumb-current">{detail.tenKhoaHoc}</span>
         </div>
 
+        <div style={{ marginBottom: 16 }}>
+          <button className="khm-btn khm-btn-outline khm-btn-sm" onClick={onBack} style={{ borderRadius: 6 }}>
+            ← Quay lại trang danh sách
+          </button>
+        </div>
+
         {/* Course header */}
         <div className="khm-card" style={{ marginBottom: 24, display: 'flex', gap: 20, padding: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <img
