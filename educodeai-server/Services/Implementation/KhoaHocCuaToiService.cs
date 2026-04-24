@@ -63,7 +63,7 @@ namespace educodeai_server.Services.Implement
             if (khoaHoc == null) return false;
 
             khoaHoc.TrangThai = "Đã xóa";
-            
+
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
             return true;
@@ -122,12 +122,13 @@ namespace educodeai_server.Services.Implement
         {
             var chuong = await _repository.GetChuongWithKhoaHocAsync(maChuong);
             if (chuong == null || chuong.KhoaHoc.MaGiangVien != maGiangVien)
-                throw new UnauthorizedAccessException("KhÃ´ng cÃ³ quyá»n thÃªm video vÃ o chÆ°Æ¡ng nÃ y.");
+                throw new UnauthorizedAccessException("KhÃ´ng cÃ³ quyá»n thÃªm video vÃ o chÆ°Æ¡ng nÃ y.");
 
             var baiHoc = new BaiHocModel
             {
                 MaChuong = maChuong,
                 TieuDe = dto.TieuDe,
+                NoiDung = WrapParagraph(dto.MoTa),
                 LinkVideo = ExtractEmbedUrl(dto.LinkVideo),
                 ThoiLuong = dto.ThoiLuong,
                 ThuTu = dto.ThuTu,
@@ -152,10 +153,10 @@ namespace educodeai_server.Services.Implement
         {
             var baiHoc = await _repository.GetBaiHocWithChuongAsync(maBaiHoc);
             if (baiHoc == null) return false;
-
             if (baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien) return false;
 
             baiHoc.TieuDe = dto.TieuDe;
+            baiHoc.NoiDung = WrapParagraph(dto.MoTa ?? baiHoc.NoiDung);
             baiHoc.LinkVideo = ExtractEmbedUrl(dto.LinkVideo);
             baiHoc.ThoiLuong = dto.ThoiLuong;
             baiHoc.ThuTu = dto.ThuTu;
@@ -165,90 +166,291 @@ namespace educodeai_server.Services.Implement
             return true;
         }
 
-        // ===== XOÁ VIDEO =====
-        public async Task<bool> XoaVideoAsync(int maBaiHoc, int maGiangVien)
+        // ===== XOÁ VIDEO HOẶC FILE =====
+        public async Task<bool> XoaVideoAsync(int maBaiHoc, int maGiangVien, string webRootPath)
         {
             var baiHoc = await _repository.GetBaiHocWithChuongAsync(maBaiHoc);
             if (baiHoc == null) return false;
 
             if (baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien) return false;
 
+            if (baiHoc.LoaiBaiHoc == "File" && !string.IsNullOrEmpty(baiHoc.LinkVideo))
+            {
+                try
+                {
+                    var fileName = System.IO.Path.GetFileName(baiHoc.LinkVideo);
+                    var filePath = System.IO.Path.Combine(webRootPath, "uploads", "bai-hoc", fileName);
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+                }
+                catch { } // Ignore delete fail
+            }
+
             await _repository.DeleteBaiHocAsync(baiHoc);
+            await _repository.SaveChangesAsync();
+            return true;
+        }
+
+        // ===== THÊM FILE =====
+        public async Task<ThemFileResponseDTO> ThemFileAsync(int maChuong, int maGiangVien, BaiHocFileCreateUpdateDTO dto, string webRootPath)
+        {
+            var chuong = await _repository.GetChuongWithKhoaHocAsync(maChuong);
+            if (chuong == null || chuong.KhoaHoc.MaGiangVien != maGiangVien)
+                throw new UnauthorizedAccessException("Không có quyền thêm bài học vào chương này.");
+
+            string? fileUrl = null;
+            if (dto.File != null && dto.File.Length > 0)
+            {
+                var allowedTypes = new[] { ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".txt", ".zip", ".rar" };
+                var ext = System.IO.Path.GetExtension(dto.File.FileName).ToLowerInvariant();
+                if (!allowedTypes.Contains(ext))
+                    throw new ArgumentException("Định dạng file không được hỗ trợ.");
+                if (dto.File.Length > 50 * 1024 * 1024)
+                    throw new ArgumentException("Kích thước file không được vượt quá 50MB.");
+
+                var folder = System.IO.Path.Combine(webRootPath, "uploads", "bai-hoc");
+                System.IO.Directory.CreateDirectory(folder);
+
+                var fileName = $"{Guid.NewGuid()}{ext}";
+                var filePath = System.IO.Path.Combine(folder, fileName);
+
+                await using var stream = new System.IO.FileStream(filePath, System.IO.FileMode.Create);
+                await dto.File.CopyToAsync(stream);
+
+                fileUrl = $"/uploads/bai-hoc/{fileName}";
+            }
+
+            var baiHoc = new BaiHocModel
+            {
+                MaChuong = maChuong,
+                TieuDe = dto.TieuDe,
+                NoiDung = WrapParagraph(dto.MoTa),
+                LinkVideo = fileUrl,
+                ThuTu = dto.ThuTu,
+                LoaiBaiHoc = "File",
+            };
+
+            await _repository.AddBaiHocAsync(baiHoc);
+            await _repository.SaveChangesAsync();
+
+            return new ThemFileResponseDTO
+            {
+                MaBaiHoc = baiHoc.MaBaiHoc,
+                TieuDe = baiHoc.TieuDe,
+                MoTa = baiHoc.NoiDung,
+                LinkVideo = baiHoc.LinkVideo,
+                ThuTu = baiHoc.ThuTu,
+            };
+        }
+
+        // ===== CẬP NHẬT FILE =====
+        public async Task<bool> CapNhatFileAsync(int maBaiHoc, int maGiangVien, BaiHocFileCreateUpdateDTO dto, string webRootPath)
+        {
+            var baiHoc = await _repository.GetBaiHocWithChuongAsync(maBaiHoc);
+            if (baiHoc == null) return false;
+            if (baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien) return false;
+
+            baiHoc.TieuDe = dto.TieuDe;
+            baiHoc.NoiDung = WrapParagraph(dto.MoTa ?? baiHoc.NoiDung);
+            baiHoc.ThuTu = dto.ThuTu;
+
+            if (dto.File != null && dto.File.Length > 0)
+            {
+                var allowedTypes = new[] { ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".txt", ".zip", ".rar" };
+                var ext = System.IO.Path.GetExtension(dto.File.FileName).ToLowerInvariant();
+                if (!allowedTypes.Contains(ext))
+                    throw new ArgumentException("Định dạng file không được hỗ trợ.");
+                if (dto.File.Length > 50 * 1024 * 1024)
+                    throw new ArgumentException("Kích thước file không được vượt quá 50MB.");
+
+                var folder = System.IO.Path.Combine(webRootPath, "uploads", "bai-hoc");
+                System.IO.Directory.CreateDirectory(folder);
+
+                var fileName = $"{Guid.NewGuid()}{ext}";
+                var filePath = System.IO.Path.Combine(folder, fileName);
+
+                await using var stream = new System.IO.FileStream(filePath, System.IO.FileMode.Create);
+                await dto.File.CopyToAsync(stream);
+
+                if (!string.IsNullOrEmpty(baiHoc.LinkVideo))
+                {
+                    try
+                    {
+                        var oldFileName = System.IO.Path.GetFileName(baiHoc.LinkVideo);
+                        var oldFilePath = System.IO.Path.Combine(webRootPath, "uploads", "bai-hoc", oldFileName);
+                        if (System.IO.File.Exists(oldFilePath))
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                    }
+                    catch { } // Ignore errors when deleting old file
+                }
+
+                baiHoc.LinkVideo = $"/uploads/bai-hoc/{fileName}";
+            }
+
+            await _repository.UpdateBaiHocAsync(baiHoc);
             await _repository.SaveChangesAsync();
             return true;
         }
 
         public async Task<KetQuaTaoDeChungChiAIDTO> TaoDeChungChiBangAIAsync(int maKhoaHoc, int maGiangVien)
         {
+            try
+            {
+                var khoaHoc = await _repository.GetKhoaHocForCertificateAsync(maKhoaHoc, maGiangVien);
+                if (khoaHoc == null)
+                    return new KetQuaTaoDeChungChiAIDTO { ThanhCong = false, ThongBao = "Không tìm thấy khóa học." };
+
+                if (!khoaHoc.CoChungChi)
+                    return new KetQuaTaoDeChungChiAIDTO { ThanhCong = false, ThongBao = "Khóa học này chưa bật chế độ chứng chỉ." };
+
+                if (khoaHoc.ChuongHocs == null || !khoaHoc.ChuongHocs.Any() || !khoaHoc.ChuongHocs.Any(c => c.BaiHocs != null && c.BaiHocs.Any()))
+                    return new KetQuaTaoDeChungChiAIDTO { ThanhCong = false, ThongBao = "Khóa học chưa có bài học nào để tạo đề." };
+
+                var noiDungKhoaHoc = TaoNoiDungTongHopChoAI(khoaHoc);
+                if (string.IsNullOrWhiteSpace(noiDungKhoaHoc))
+                    return new KetQuaTaoDeChungChiAIDTO { ThanhCong = false, ThongBao = "Khóa học chưa có đủ nội dung để AI tạo đề chứng chỉ." };
+
+                var soCauHoi = khoaHoc.SoCauHoiChungChi > 0 ? khoaHoc.SoCauHoiChungChi : 20;
+                var prompt = TaoPromptDeThiChungChi(khoaHoc, noiDungKhoaHoc, soCauHoi);
+
+                Console.WriteLine($"[AI Certificate] Bắt đầu gọi AI cho khóa {maKhoaHoc}");
+                Console.WriteLine($"[AI Certificate Prompt]: {prompt}");
+
+                var aiResult = await _gemini.GenerateAsync(prompt);
+
+                string rawTextFromAI = "";
+                try
+                {
+                    rawTextFromAI = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(aiResult);
+                    Console.WriteLine($"[AI Certificate Raw Content]:\n{rawTextFromAI}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AI Certificate Error] Không lấy được text từ Gemini: {ex.Message}");
+                    Console.WriteLine($"[AI Certificate Raw Output]: {aiResult}");
+                    return new KetQuaTaoDeChungChiAIDTO { ThanhCong = false, ThongBao = "Phản hồi từ AI không đúng cấu trúc (không thấy content)." };
+                }
+
+                // Tìm kiếm mảng JSON bằng Regex vì helper kia chỉ support code block object
+                var jsonMatch = System.Text.RegularExpressions.Regex.Match(rawTextFromAI, @"\[\s*\{[\s\S]*\}\s*\]");
+                if (!jsonMatch.Success)
+                {
+                    Console.WriteLine("[AI Certificate Error] AI trả về kết quả không chứa mảng JSON.");
+                    return new KetQuaTaoDeChungChiAIDTO { ThanhCong = false, ThongBao = "AI trả về nội dung không phải JSON hợp lệ. Vui lòng thử lại." };
+                }
+
+                var jsonChuanHoa = jsonMatch.Value;
+                Console.WriteLine($"[AI Certificate JSON Parsed]:\n{jsonChuanHoa}");
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    AllowTrailingCommas = true
+                };
+
+                List<CauHoiChungChiAIItem> danhSachCauHoi;
+                try
+                {
+                    danhSachCauHoi = JsonSerializer.Deserialize<List<CauHoiChungChiAIItem>>(jsonChuanHoa, options) ?? new List<CauHoiChungChiAIItem>();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AI Certificate Parse Error]: {ex.Message}");
+                    return new KetQuaTaoDeChungChiAIDTO { ThanhCong = false, ThongBao = "Lỗi khi đọc kết quả JSON từ AI." };
+                }
+
+                if (danhSachCauHoi.Count == 0)
+                {
+                    return new KetQuaTaoDeChungChiAIDTO { ThanhCong = false, ThongBao = "AI chưa trả về bộ đề hợp lệ (danh sách rỗng)." };
+                }
+
+                khoaHoc.DuLieuDeChungChiJSON = Newtonsoft.Json.JsonConvert.SerializeObject(
+                    danhSachCauHoi.Select((cauHoi, index) => new
+                    {
+                        id = index + 1,
+                        cauHoi = cauHoi.CauHoi ?? "",
+                        dapAnA = cauHoi.DapAnA ?? "",
+                        dapAnB = cauHoi.DapAnB ?? "",
+                        dapAnC = cauHoi.DapAnC ?? "",
+                        dapAnD = cauHoi.DapAnD ?? "",
+                        dapAnDung = (cauHoi.DapAnDung ?? "A").Trim().ToUpper(),
+                        giaiThich = cauHoi.GiaiThich ?? ""
+                    }),
+                    Newtonsoft.Json.Formatting.Indented
+                );
+                khoaHoc.NguonDeChungChi = "AI";
+                khoaHoc.NgayTaoDeChungChi = DateTime.UtcNow;
+
+                await _repository.UpdateKhoaHocAsync(khoaHoc);
+                await _repository.SaveChangesAsync();
+
+                Console.WriteLine($"[AI Certificate] Lưu DB thành công cho khóa {maKhoaHoc}");
+
+                return new KetQuaTaoDeChungChiAIDTO
+                {
+                    ThanhCong = true,
+                    ThongBao = "Đã tạo đề chứng chỉ bằng AI thành công.",
+                    SoCauHoi = danhSachCauHoi.Count,
+                    NguonDeChungChi = khoaHoc.NguonDeChungChi,
+                    NgayTaoDeChungChi = khoaHoc.NgayTaoDeChungChi
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AI Certificate Exception]: {ex}");
+                return new KetQuaTaoDeChungChiAIDTO { ThanhCong = false, ThongBao = "Xảy ra lỗi hệ thống khi tạo đề. Vui lòng xem log." };
+            }
+        }
+
+        public async Task<List<CauHoiChungChiDTO>> GetDeChungChiAsync(int maKhoaHoc, int maGiangVien)
+        {
             var khoaHoc = await _repository.GetKhoaHocForCertificateAsync(maKhoaHoc, maGiangVien);
-            if (khoaHoc == null)
+            if (khoaHoc == null || string.IsNullOrWhiteSpace(khoaHoc.DuLieuDeChungChiJSON))
+                return new List<CauHoiChungChiDTO>();
+
+            try
             {
-                return new KetQuaTaoDeChungChiAIDTO
-                {
-                    ThanhCong = false,
-                    ThongBao = "Không tìm thấy khóa học."
-                };
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                return JsonSerializer.Deserialize<List<CauHoiChungChiDTO>>(khoaHoc.DuLieuDeChungChiJSON, options) 
+                       ?? new List<CauHoiChungChiDTO>();
             }
-
-            if (!khoaHoc.CoChungChi)
+            catch
             {
-                return new KetQuaTaoDeChungChiAIDTO
-                {
-                    ThanhCong = false,
-                    ThongBao = "Khóa học này chưa bật chế độ chứng chỉ."
-                };
+                return new List<CauHoiChungChiDTO>();
             }
+        }
 
-            var noiDungKhoaHoc = TaoNoiDungTongHopChoAI(khoaHoc);
-            if (string.IsNullOrWhiteSpace(noiDungKhoaHoc))
-            {
-                return new KetQuaTaoDeChungChiAIDTO
-                {
-                    ThanhCong = false,
-                    ThongBao = "Khóa học chưa có đủ nội dung để AI tạo đề chứng chỉ."
-                };
-            }
+        public async Task<bool> UpdateDeChungChiAsync(int maKhoaHoc, int maGiangVien, List<CauHoiChungChiDTO> danhSachCauHoi)
+        {
+            var khoaHoc = await _repository.GetKhoaHocForCertificateAsync(maKhoaHoc, maGiangVien);
+            if (khoaHoc == null) return false;
 
-            var soCauHoi = khoaHoc.SoCauHoiChungChi > 0 ? khoaHoc.SoCauHoiChungChi : 20;
-            var prompt = TaoPromptDeThiChungChi(khoaHoc, noiDungKhoaHoc, soCauHoi);
-            var aiResult = await _gemini.GenerateAsync(prompt);
-            var jsonChuanHoa = ChuanHoaJsonTuAIHelper.ChuanHoa(aiResult);
-
-            var danhSachCauHoi = JsonSerializer.Deserialize<List<CauHoiChungChiAIItem>>(jsonChuanHoa) ?? new List<CauHoiChungChiAIItem>();
-            if (danhSachCauHoi.Count == 0)
-            {
-                return new KetQuaTaoDeChungChiAIDTO
-                {
-                    ThanhCong = false,
-                    ThongBao = "AI chưa trả về bộ đề hợp lệ. Vui lòng thử lại."
-                };
-            }
-
-            khoaHoc.DuLieuDeChungChiJSON = JsonSerializer.Serialize(danhSachCauHoi.Select((cauHoi, index) => new
+            var dtoList = danhSachCauHoi.Select((c, index) => new
             {
                 id = index + 1,
-                cauHoi = cauHoi.CauHoi,
-                dapAnA = cauHoi.DapAnA,
-                dapAnB = cauHoi.DapAnB,
-                dapAnC = cauHoi.DapAnC,
-                dapAnD = cauHoi.DapAnD,
-                dapAnDung = cauHoi.DapAnDung,
-                giaiThich = cauHoi.GiaiThich
-            }));
-            khoaHoc.NguonDeChungChi = "AI";
+                cauHoi = c.CauHoi ?? "",
+                dapAnA = c.DapAnA ?? "",
+                dapAnB = c.DapAnB ?? "",
+                dapAnC = c.DapAnC ?? "",
+                dapAnD = c.DapAnD ?? "",
+                dapAnDung = (c.DapAnDung ?? "A").Trim().ToUpper(),
+                giaiThich = c.GiaiThich ?? ""
+            }).ToList();
+
+            khoaHoc.DuLieuDeChungChiJSON = Newtonsoft.Json.JsonConvert.SerializeObject(
+                dtoList,
+                Newtonsoft.Json.Formatting.Indented
+            );
+            khoaHoc.NguonDeChungChi = "NguoiDung";
             khoaHoc.NgayTaoDeChungChi = DateTime.UtcNow;
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
-
-            return new KetQuaTaoDeChungChiAIDTO
-            {
-                ThanhCong = true,
-                ThongBao = "Đã tạo đề chứng chỉ bằng AI thành công.",
-                SoCauHoi = danhSachCauHoi.Count,
-                NguonDeChungChi = khoaHoc.NguonDeChungChi,
-                NgayTaoDeChungChi = khoaHoc.NgayTaoDeChungChi
-            };
+            return true;
         }
 
         private static string? ExtractEmbedUrl(string? url)
@@ -280,10 +482,8 @@ namespace educodeai_server.Services.Implement
                 .SelectMany(chuong => chuong.BaiHocs.OrderBy(baiHoc => baiHoc.ThuTu))
                 .Select((baiHoc, index) =>
                 {
-                    var noiDung = string.IsNullOrWhiteSpace(baiHoc.NoiDung)
-                        ? "Không có mô tả chi tiết."
-                        : baiHoc.NoiDung;
-                    return $"Bài {index + 1}: {baiHoc.TieuDe}\n{noiDung}";
+                    // Lược bỏ hoàn toàn NoiDung/MoTa từ Youtube để tránh spam vào prompt gây nhiễu AI
+                    return $"Bài {index + 1}: {baiHoc.TieuDe}";
                 })
                 .ToList() ?? new List<string>();
 
@@ -293,39 +493,35 @@ namespace educodeai_server.Services.Implement
         private static string TaoPromptDeThiChungChi(KhoaHocModel khoaHoc, string noiDungKhoaHoc, int soCauHoi)
         {
             var tenChungChi = khoaHoc.TenChungChi ?? "Chứng nhận hoàn thành";
-            return $@"
-Bạn là chuyên gia giáo dục của hệ thống EduCodeAI.
-Hãy tạo đúng {soCauHoi} câu hỏi trắc nghiệm cho bài kiểm tra nhận chứng chỉ của khóa học.
+            return $@"Bạn là hệ thống tạo đề thi. Chỉ trả về JSON hợp lệ, không giải thích.
+Tạo đúng {soCauHoi} câu hỏi trắc nghiệm dựa trên nội dung khóa học.
 
-THÔNG TIN KHÓA HỌC
+THÔNG TIN:
 - Tên khóa học: {khoaHoc.TenKhoaHoc}
 - Tên chứng chỉ: {tenChungChi}
-- Lĩnh vực: {khoaHoc.LinhVuc}
-- Trình độ: {khoaHoc.TrinhDo}
-- Mô tả: {khoaHoc.MoTa}
-
-NỘI DUNG KHÓA HỌC
+- Mô tả khóa học: {khoaHoc.MoTa}
+- Nội dung tóm tắt:
 {noiDungKhoaHoc}
 
-YÊU CẦU
-1. Câu hỏi phải bám sát nội dung khóa học.
-2. Mỗi câu có 4 đáp án A, B, C, D và chỉ có 1 đáp án đúng.
-3. Trường dapAnDung chỉ nhận A, B, C hoặc D.
-4. Mỗi câu cần có giải thích ngắn gọn.
-5. Không dùng markdown, không giải thích thêm ngoài JSON.
+YÊU CẦU BẮT BUỘC:
+1. Không dùng markdown.
+2. Không trả về bất kỳ text nào ngoài cú pháp mảng JSON hợp lệ.
+3. Trả về đúng 1 mảng JSON chứa các objects như ví dụ bên dưới:
 
-OUTPUT JSON THUẦN
 [
   {{
-    ""cauHoi"": """",
-    ""dapAnA"": """",
-    ""dapAnB"": """",
-    ""dapAnC"": """",
-    ""dapAnD"": """",
+    ""id"": 1,
+    ""cauHoi"": ""Ví dụ câu hỏi?"",
+    ""dapAnA"": ""Ví dụ A"",
+    ""dapAnB"": ""Ví dụ B"",
+    ""dapAnC"": ""Ví dụ C"",
+    ""dapAnD"": ""Ví dụ D"",
     ""dapAnDung"": ""A"",
-    ""giaiThich"": """"
+    ""giaiThich"": ""Giải thích ngắn gọn cho đáp án A.""
   }}
-]";
+]
+
+BẮT ĐẦU (Chỉ output JSON, không giải thích):";
         }
 
         // ===== YOUTUBE PLAYLIST IMPORT =====
@@ -361,7 +557,7 @@ OUTPUT JSON THUẦN
         public async Task<YouTubePlaylistVideosResponseDTO> GetPlaylistVideosAsync(string playlistId)
         {
             var videos = await _youtubeService.GetPlaylistVideosAsync(playlistId);
-            
+
             return new YouTubePlaylistVideosResponseDTO
             {
                 Success = true,
@@ -406,7 +602,7 @@ OUTPUT JSON THUẦN
                 };
                 await _repository.AddChuongAsync(chuong);
                 await _repository.SaveChangesAsync(); // save to generate MaChuong
-                
+
                 // Initialize BaiHocs collection for newly created chapter
                 chuong.BaiHocs = new List<BaiHocModel>();
             }
@@ -431,7 +627,7 @@ OUTPUT JSON THUẦN
                 {
                     MaChuong = chuong.MaChuong,
                     TieuDe = title,
-                    NoiDung = video.Description,
+                    NoiDung = WrapParagraph(video.Description),
                     LinkVideo = $"https://www.youtube.com/watch?v={video.VideoId}",
                     ThoiLuong = video.Duration > 0 ? (video.Duration / 60) : 0, // Convert to minutes or 0
                     ThuTu = ++currentOrder,
@@ -617,8 +813,17 @@ OUTPUT JSON THUẦN
 
         // ===== HELPER METHODS =====
 
+        private static string? WrapParagraph(string? content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+                return content;
 
+            var trimmed = content.Trim();
+            if (trimmed.StartsWith("<p>") && trimmed.EndsWith("</p>"))
+                return content;
 
+            return $"<p>{content}</p>";
+        }
 
         private static KhoaHocGiangVienListDTO MapToKhoaHocListDTO(KhoaHocModel k)
         {
@@ -633,6 +838,9 @@ OUTPUT JSON THUẦN
                 SoHocVien = k.DangKyKhoaHocs?.Count ?? 0,
                 DiemDanhGiaTB = k.DiemDanhGiaTB,
                 TrangThai = k.TrangThai,
+                GiaKhoaHoc = k.GiaKhoaHoc,
+                DonViTienTe = k.DonViTienTe,
+                ChoPhepMua = k.ChoPhepMua,
                 CoChungChi = k.CoChungChi,
                 DaCoDeThiChungChi = !string.IsNullOrWhiteSpace(k.DuLieuDeChungChiJSON),
                 NgayTao = k.NgayTao,
@@ -652,6 +860,9 @@ OUTPUT JSON THUẦN
                 TrinhDo = k.TrinhDo,
                 ThoiLuongGio = k.ThoiLuongGio,
                 TrangThai = k.TrangThai,
+                GiaKhoaHoc = k.GiaKhoaHoc,
+                DonViTienTe = k.DonViTienTe,
+                ChoPhepMua = k.ChoPhepMua,
                 NgayTao = k.NgayTao,
                 CoChungChi = k.CoChungChi,
                 TenChungChi = k.TenChungChi,
@@ -709,7 +920,8 @@ OUTPUT JSON THUẦN
                 TieuDe = b.TieuDe,
                 LinkVideo = b.LinkVideo,
                 ThoiLuong = b.ThoiLuong ?? 0,
-                ThuTu = b.ThuTu
+                ThuTu = b.ThuTu,
+                LoaiBaiHoc = b.LoaiBaiHoc
             }).ToList() ?? new();
         }
 
@@ -724,6 +936,9 @@ OUTPUT JSON THUẦN
                 TrinhDo = dto.TrinhDo,
                 ThoiLuongGio = dto.ThoiLuongGio,
                 TrangThai = dto.TrangThai,
+                GiaKhoaHoc = dto.GiaKhoaHoc,
+                DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe,
+                ChoPhepMua = true,
                 MaGiangVien = maGiangVien,
                 NgayTao = DateTime.Now,
                 KyNangChinh = dto.KyNangChinh ?? string.Empty,
@@ -746,6 +961,9 @@ OUTPUT JSON THUẦN
             khoaHoc.TrinhDo = dto.TrinhDo;
             khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;
             khoaHoc.TrangThai = dto.TrangThai;
+            khoaHoc.GiaKhoaHoc = dto.GiaKhoaHoc;
+            khoaHoc.DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe;
+            khoaHoc.ChoPhepMua = true;
             khoaHoc.KyNangChinh = dto.KyNangChinh ?? string.Empty;
             khoaHoc.CoChungChi = dto.CoChungChi;
             khoaHoc.TenChungChi = dto.CoChungChi
@@ -795,6 +1013,12 @@ OUTPUT JSON THUẦN
 
             if (dto.ThoiLuongGio <= 0)
                 errors.Add("Thời lượng khóa học phải lớn hơn 0.");
+
+            if (dto.GiaKhoaHoc < 10000 || dto.GiaKhoaHoc > 15000)
+                errors.Add("Giá khóa học phải từ 10,000 đến 15,000 VNĐ");
+            
+            if (string.IsNullOrWhiteSpace(dto.DonViTienTe))
+                errors.Add("Đơn vị tiền tệ không được để trống khi khóa học có phí.");
 
             if (dto.CoChungChi)
             {

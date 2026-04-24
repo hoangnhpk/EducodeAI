@@ -1,13 +1,14 @@
 using educodeai_server.DTOs.NguoiDung;
+using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace educodeai_server.Controllers.HocVien
 {
     [ApiController]
     [Route("api/hoc-vien")]
+    [Authorize(Roles = "HocVien,GiangVien")]
     public class HoSoHocVienController : ControllerBase
     {
         private readonly IHocVienService _hocVienService;
@@ -21,7 +22,12 @@ namespace educodeai_server.Controllers.HocVien
         [HttpGet("ho-so")]
         public IActionResult GetHoSoHocVien()
         {
-            int maNguoiDung = 2; // TODO: lấy từ JWT sau
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            if (maNguoiDung == 0)
+            {
+                return Unauthorized(new { message = "Bạn cần đăng nhập để xem hồ sơ." });
+            }
+
             var result = _hocVienService.GetHoSoHocVien(maNguoiDung);
             return Ok(result);
         }
@@ -32,7 +38,16 @@ namespace educodeai_server.Controllers.HocVien
             [FromForm] UpdateHoSoHocVienDTO dto
         )
         {
-            int maNguoiDung = 2; // TODO: lấy từ JWT sau
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Dữ liệu hồ sơ không hợp lệ." });
+            }
+
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            if (maNguoiDung == 0)
+            {
+                return Unauthorized(new { message = "Bạn cần đăng nhập để cập nhật hồ sơ." });
+            }
 
             var result = await _hocVienService.UpdateHoSoHocVien(
                 maNguoiDung,

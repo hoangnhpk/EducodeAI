@@ -1,4 +1,4 @@
-import { MdPeople, MdRateReview, MdSettings, MdDashboard } from 'react-icons/md';
+﻿import { MdPeople, MdRateReview, MdSettings, MdDashboard } from 'react-icons/md';
 import { NavLink } from 'react-router-dom';
 
 export default function SidebarQuanTriVienMoi() {
@@ -31,6 +31,21 @@ export default function SidebarQuanTriVienMoi() {
         <NavLink to="/quan-tri-vien/quan-ly-binh-luan-review" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><MdRateReview /></div>
           <span>Đánh giá khóa học</span>
+        </NavLink>
+
+        <NavLink to="/quan-tri-vien/cau-hinh-he-thong" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><i className="fa fa-cogs"></i></div>
+          <span>Cấu hình hệ thống</span>
+        </NavLink>
+
+        <NavLink to="/quan-tri-vien/rut-tien-giang-vien" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><i className="bi bi-wallet2" aria-hidden /></div>
+          <span>Rút tiền giảng viên</span>
+        </NavLink>
+
+        <NavLink to="/quan-tri-vien/ho-tro-thanh-toan-hoc-vien" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><i className="bi bi-headset" aria-hidden /></div>
+          <span>Hỗ trợ thanh toán</span>
         </NavLink>
       </nav>
     </aside>
