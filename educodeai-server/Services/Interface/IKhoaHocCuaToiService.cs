@@ -15,7 +15,11 @@ namespace educodeai_server.Services.Interface
         Task<bool> XoaChuongAsync(int maChuong, int maGiangVien);
         Task<ThemVideoResponseDTO> ThemVideoAsync(int maChuong, int maGiangVien, BaiHocVideoCreateUpdateDTO dto);
         Task<bool> CapNhatVideoAsync(int maBaiHoc, int maGiangVien, BaiHocVideoCreateUpdateDTO dto);
-        Task<bool> XoaVideoAsync(int maBaiHoc, int maGiangVien);
+        Task<bool> XoaVideoAsync(int maBaiHoc, int maGiangVien, string webRootPath);
+        
+        Task<ThemFileResponseDTO> ThemFileAsync(int maChuong, int maGiangVien, BaiHocFileCreateUpdateDTO dto, string webRootPath);
+        Task<bool> CapNhatFileAsync(int maBaiHoc, int maGiangVien, BaiHocFileCreateUpdateDTO dto, string webRootPath);
+
         Task<KetQuaTaoDeChungChiAIDTO> TaoDeChungChiBangAIAsync(int maKhoaHoc, int maGiangVien);
 
         // YouTube Playlist Import
@@ -33,5 +37,9 @@ namespace educodeai_server.Services.Interface
         Task<bool> UpdateCertificateConfigAsync(int maKhoaHoc, int maGiangVien, CertificateConfigDTO config);
         Task<bool> EnableCertificateAsync(int maKhoaHoc, int maGiangVien);
         Task<bool> DisableCertificateAsync(int maKhoaHoc, int maGiangVien);
+
+        // Edit Certificate Quiz
+        Task<List<CauHoiChungChiDTO>> GetDeChungChiAsync(int maKhoaHoc, int maGiangVien);
+        Task<bool> UpdateDeChungChiAsync(int maKhoaHoc, int maGiangVien, List<CauHoiChungChiDTO> danhSachCauHoi);
     }
 }

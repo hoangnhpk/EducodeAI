@@ -6,6 +6,7 @@ import LessonListEditor from '../components/LessonListEditor';
 import { FormSkeleton } from '../components/ui/Skeleton';
 import { useToastStandalone } from '../components/ui/Toast';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import QuizEditorModal from '../components/QuizEditorModal';
 
 const getGiangVienId = (): number => {
   try { const u = JSON.parse(localStorage.getItem('user_info') || '{}'); return u.maNguoiDung ?? u.id ?? 1; }
@@ -45,6 +46,8 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
   const [certErrors, setCertErrors] = useState<Record<string, string>>({});
   const [savingCert, setSavingCert] = useState(false);
   const [confirmCertToggle, setConfirmCertToggle] = useState<'enable' | 'disable' | null>(null);
+  const [generatingAI, setGeneratingAI] = useState(false);
+  const [showQuizEditor, setShowQuizEditor] = useState(false);
 
   const loadDetail = useCallback(async () => {
     try {
@@ -116,6 +119,24 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
     } finally { setSavingCert(false); }
   };
 
+  const handleGenerateAIQuiz = async () => {
+    if (!detail) return;
+    try {
+      setGeneratingAI(true);
+      const res: any = await api.taoDeChungChiBangAI(maGiangVien, maKhoaHoc);
+      if (res?.thanhCong) {
+        showToast('success', res.thongBao || 'Tạo đề bằng AI thành công!');
+        void loadDetail();
+      } else {
+        showToast('error', res?.thongBao || 'Lỗi khi tạo đề: ' + (res?.message || 'Vui lòng thử lại.'));
+      }
+    } catch (err: any) {
+      showToast('error', err?.message || 'Lỗi máy chủ khi gọi AI.');
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
+
   if (loading) return <div className="khm-wrapper"><div className="khm-page"><FormSkeleton /></div></div>;
   if (error || !detail) return (
     <div className="khm-wrapper"><div className="khm-page">
@@ -136,6 +157,12 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
           <button onClick={onBack}>Khóa học của tôi</button>
           <span className="khm-breadcrumb-sep">›</span>
           <span className="khm-breadcrumb-current">{detail.tenKhoaHoc}</span>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <button className="khm-btn khm-btn-outline khm-btn-sm" onClick={onBack} style={{ borderRadius: 6 }}>
+            ← Quay lại trang danh sách
+          </button>
         </div>
 
         {/* Course header */}
@@ -342,8 +369,16 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                 )}
 
                 {certForm.coChungChi && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                    <button className="khm-btn khm-btn-primary" onClick={() => void handleSaveCert()} disabled={savingCert}>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: 16 }}>
+                    {detail.daCoDeThiChungChi && (
+                      <button className="khm-btn khm-btn-outline" onClick={() => setShowQuizEditor(true)}>
+                        🔍 Xem & Chỉnh sửa đề thi
+                      </button>
+                    )}
+                    <button className="khm-btn khm-btn-accent" onClick={() => void handleGenerateAIQuiz()} disabled={savingCert || generatingAI}>
+                      {generatingAI ? <><span className="khm-spinner khm-spinner-sm" /> Đang tạo đề AI...</> : '✨ Tạo đề bằng AI'}
+                    </button>
+                    <button className="khm-btn khm-btn-primary" onClick={() => void handleSaveCert()} disabled={savingCert || generatingAI}>
                       {savingCert ? <><span className="khm-spinner khm-spinner-sm" /> Đang lưu...</> : '💾 Lưu cấu hình'}
                     </button>
                   </div>
@@ -374,6 +409,13 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
         isLoading={savingCert}
         onConfirm={() => void handleConfirmCertToggle()}
         onCancel={() => setConfirmCertToggle(null)}
+      />
+
+      {/* Quiz Editor Modal */}
+      <QuizEditorModal 
+        maKhoaHoc={maKhoaHoc} 
+        isOpen={showQuizEditor} 
+        onClose={() => setShowQuizEditor(false)} 
       />
     </div>
   );

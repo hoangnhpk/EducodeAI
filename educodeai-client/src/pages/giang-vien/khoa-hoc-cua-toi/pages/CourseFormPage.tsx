@@ -41,6 +41,8 @@ interface ValidationErrors {
   linhVuc?: string;
   trinhDo?: string;
   thoiLuongGio?: string;
+  giaKhoaHoc?: string;
+  donViTienTe?: string;
   tenChungChi?: string;
   diemDatChungChi?: string;
   soCauHoiChungChi?: string;
@@ -62,6 +64,9 @@ const DEFAULT_FORM: KhoaHocCreateUpdate = {
   trinhDo: 'Cơ bản',
   thoiLuongGio: 1,
   trangThai: 'Hoạt động',
+  giaKhoaHoc: 10000,
+  donViTienTe: 'VND',
+  choPhepMua: true,
   kyNangChinh: '',
   coChungChi: false,
   tenChungChi: '',
@@ -95,6 +100,9 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
         trinhDo: detail.trinhDo,
         thoiLuongGio: detail.thoiLuongGio,
         trangThai: detail.trangThai ?? 'Hoạt động',
+        giaKhoaHoc: detail.giaKhoaHoc ?? 10000,
+        donViTienTe: detail.donViTienTe ?? 'VND',
+        choPhepMua: true,
         kyNangChinh: detail.kyNangChinh ?? '',
         coChungChi: detail.coChungChi,
         tenChungChi: detail.tenChungChi ?? '',
@@ -124,6 +132,14 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
     if (!form.trinhDo) e.trinhDo = 'Vui lòng chọn trình độ.';
     if (!form.thoiLuongGio || form.thoiLuongGio <= 0) e.thoiLuongGio = 'Thời lượng phải lớn hơn 0.';
     if (form.thoiLuongGio > 999) e.thoiLuongGio = 'Thời lượng tối đa 999 giờ.';
+
+    if (form.giaKhoaHoc === undefined || form.giaKhoaHoc === null) {
+      e.giaKhoaHoc = 'Vui lòng nhập giá khóa học.';
+    } else if (form.giaKhoaHoc < 10000 || form.giaKhoaHoc > 15000) {
+      e.giaKhoaHoc = 'Giá khóa học phải từ 10,000 đến 15,000 VNĐ';
+    }
+    if (!form.donViTienTe?.trim()) e.donViTienTe = 'Đơn vị tiền tệ không được để trống.';
+
     if (form.coChungChi) {
       if (!form.tenChungChi?.trim()) e.tenChungChi = 'Tên chứng chỉ không được để trống khi bật chứng chỉ.';
       if (form.diemDatChungChi < 0 || form.diemDatChungChi > 100) e.diemDatChungChi = 'Điểm đạt phải từ 0–100.';
@@ -192,7 +208,10 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
           </span>
         </div>
 
-        <div className="khm-page-header" style={{ marginBottom: 24 }}>
+        <div className="khm-page-header" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button className="khm-btn khm-btn-outline khm-btn-sm" onClick={onCancel} style={{ borderRadius: 6, padding: '8px 12px' }}>
+            ← Quay lại
+          </button>
           <div>
             <h1 className="khm-page-title">{isEdit ? 'Chỉnh sửa khóa học' : 'Tạo khóa học mới'}</h1>
             <p className="khm-page-subtitle">Điền đầy đủ thông tin rồi lưu lại.</p>
@@ -235,15 +254,66 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
             </div>
 
             <div className="khm-form-group">
-              <label className="khm-form-label">Link hình ảnh cover</label>
-              <input
-                className="khm-form-input"
-                placeholder="https://..."
-                value={form.hinhAnh ?? ''}
-                onChange={e => set('hinhAnh', e.target.value)}
-                disabled={submitting}
-              />
-              <div className="khm-form-hint">Dán URL hình ảnh từ internet</div>
+              <label className="khm-form-label">Hình ảnh cover (Link hoặc Upload)</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  className="khm-form-input"
+                  placeholder="https://... hoặc bấm nút bên cạnh để tải ảnh lên"
+                  value={form.hinhAnh ?? ''}
+                  onChange={e => set('hinhAnh', e.target.value)}
+                  disabled={submitting}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="khm-btn khm-btn-outline khm-btn-sm"
+                  onClick={() => document.getElementById('upload-course-img')?.click()}
+                  disabled={submitting}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  Upload File
+                </button>
+                <input
+                  type="file"
+                  id="upload-course-img"
+                  style={{ display: 'none' }}
+                  accept=".jpg,.jpeg,.png,.webp,.gif"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                      showToast('error', 'Kích thước ảnh vượt quá 5MB.');
+                      e.target.value = '';
+                      return;
+                    }
+                    try {
+                      setSubmitting(true);
+                      const url = await api.uploadHinhAnhKhoaHoc(file);
+                      if (url) {
+                        set('hinhAnh', url);
+                        showToast('success', 'Upload ảnh thành công!');
+                      }
+                    } catch (err: any) {
+                      showToast('error', err?.message || 'Lỗi khi upload ảnh.');
+                    } finally {
+                      setSubmitting(false);
+                      e.target.value = '';
+                    }
+                  }}
+                />
+              </div>
+              <div className="khm-form-hint">Dán URL từ internet hoặc tải ảnh trực tiếp từ máy tính.</div>
+              {form.hinhAnh && (
+                <div style={{ marginTop: '12px' }}>
+                  <img
+                    src={form.hinhAnh}
+                    alt="Course Preview"
+                    style={{ maxHeight: '160px', borderRadius: '4px', border: '1px solid #ddd', objectFit: 'cover' }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    onLoad={(e) => { (e.target as HTMLImageElement).style.display = 'block'; }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -307,6 +377,35 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
                   <option value="Hoạt động">Hoạt động</option>
                   <option value="Không hoạt động">Không hoạt động</option>
                 </select>
+              </div>
+            </div>
+
+            <div className="khm-form-grid-2" style={{ marginTop: 16, marginBottom: 16 }}>
+              <div className="khm-form-group">
+                <label className="khm-form-label">Giá khóa học (VNĐ) <span className="req">*</span></label>
+                <input
+                  type="number"
+                  className={`khm-form-input ${errors.giaKhoaHoc ? 'error' : ''}`}
+                  min={10000} max={15000} step={1000}
+                  value={form.giaKhoaHoc}
+                  onChange={e => set('giaKhoaHoc', Number(e.target.value))}
+                  disabled={submitting}
+                  placeholder="Ví dụ: 10000"
+                />
+                {errors.giaKhoaHoc && <div className="khm-form-error">⚠ {errors.giaKhoaHoc}</div>}
+                <div className="khm-form-hint">Giá khóa học phải từ 10,000 đến 15,000 VNĐ</div>
+              </div>
+
+              <div className="khm-form-group">
+                <label className="khm-form-label">Đơn vị tiền tệ <span className="req">*</span></label>
+                <input
+                  type="text"
+                  className={`khm-form-input ${errors.donViTienTe ? 'error' : ''}`}
+                  value={form.donViTienTe}
+                  onChange={e => set('donViTienTe', e.target.value)}
+                  disabled={submitting}
+                />
+                {errors.donViTienTe && <div className="khm-form-error">⚠ {errors.donViTienTe}</div>}
               </div>
             </div>
 

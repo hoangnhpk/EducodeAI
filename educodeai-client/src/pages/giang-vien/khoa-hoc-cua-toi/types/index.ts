@@ -15,6 +15,9 @@ export interface KhoaHocListItem {
   tienDoTrungBinh: number;
   diemDanhGiaTB: number;
   trangThai?: string;
+  giaKhoaHoc: number;
+  donViTienTe: string;
+  choPhepMua: boolean;
   coChungChi: boolean;
   daCoDeThiChungChi: boolean;
   ngayTao: string;
@@ -29,6 +32,9 @@ export interface KhoaHocDetail {
   trinhDo: string;
   thoiLuongGio: number;
   trangThai?: string;
+  giaKhoaHoc: number;
+  donViTienTe: string;
+  choPhepMua: boolean;
   ngayTao: string;
   coChungChi: boolean;
   tenChungChi?: string;
@@ -54,6 +60,9 @@ export interface KhoaHocCreateUpdate {
   trinhDo: string;
   thoiLuongGio: number;
   trangThai?: string;
+  giaKhoaHoc: number;
+  donViTienTe: string;
+  choPhepMua: boolean;
   kyNangChinh?: string;
   coChungChi: boolean;
   tenChungChi?: string;
@@ -118,6 +127,7 @@ export interface BaiHocDetail {
   linkVideo?: string;
   thoiLuong: number;
   thuTu: number;
+  loaiBaiHoc?: string;
 }
 
 export interface BaiHocCreateUpdate {
@@ -128,6 +138,13 @@ export interface BaiHocCreateUpdate {
   thuTu: number;
 }
 
+export interface BaiHocFileCreateUpdate {
+  tieuDe: string;
+  moTa?: string;
+  file?: File | null;
+  thuTu: number;
+}
+
 export interface BaiHocResponse {
   maBaiHoc: number;
   tieuDe: string;
@@ -135,6 +152,7 @@ export interface BaiHocResponse {
   linkVideo?: string;
   thoiLuong: number;
   thuTu: number;
+  loaiBaiHoc?: string;
 }
 
 export interface ReorderBaiHocItem {
@@ -162,6 +180,17 @@ export interface KetQuaTaoDeChungChiAI {
   soCauHoi: number;
   nguonDeChungChi?: string | null;
   ngayTaoDeChungChi?: string | null;
+}
+
+export interface CauHoiChungChi {
+  id: number;
+  cauHoi: string;
+  dapAnA: string;
+  dapAnB: string;
+  dapAnC: string;
+  dapAnD: string;
+  dapAnDung: string;
+  giaiThich: string;
 }
 
 // ---------- YouTube ----------
