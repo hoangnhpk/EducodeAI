@@ -1,4 +1,3 @@
-using System.Globalization;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -20,18 +19,19 @@ namespace educodeai_server.Helpers
 
     public static class ChungChiPdfHelper
     {
-        // Color palette – Classic Elegant Style
-        private const string ColNavy       = "#1A2B4A";   
-        private const string ColGold       = "#C9A84C";   // primary gold
-        private const string ColGoldLight  = "#F9EFC0";   // seal background
-        private const string ColAccent     = "#4A90D9";   
-        private const string ColBg         = "#FFFDF7";   // cream background
-        private const string ColText       = "#1A2B4A";
-        private const string ColSubtext    = "#8B6914";   // gold labels text
+        // ── Colour palette ────────────────────────────────────────────
+        private const string ColNavy      = "#1A2B4A";
+        private const string ColGold      = "#C9A84C";
+        private const string ColGoldLight = "#F9EFC0";
+        private const string ColAccent    = "#4A90D9";
+        private const string ColBg        = "#FFFDF7";
+        private const string ColSubtext   = "#8B6914";
 
-        private const string FontSans      = "Arial";
-        private const string FontSerif     = "Times New Roman";
+        // ── Fonts ─────────────────────────────────────────────────────
+        private const string FontSans  = "Arial";
+        private const string FontSerif = "Times New Roman";
 
+        // ─────────────────────────────────────────────────────────────
         public static byte[] TaoPdf(ChungChiPdfRequest request)
         {
             QuestPDF.Settings.License = LicenseType.Community;
@@ -45,14 +45,14 @@ namespace educodeai_server.Helpers
                     page.DefaultTextStyle(x => x
                         .FontFamily(FontSans)
                         .FontSize(11)
-                        .FontColor(ColText));
+                        .FontColor(ColNavy));
                     page.Background(ColBg);
-
                     page.Content().Element(x => BuildCertificate(x, request));
                 });
             }).GeneratePdf();
         }
 
+        // ── Outer double-gold border ───────────────────────────────────
         private static void BuildCertificate(IContainer root, ChungChiPdfRequest req)
         {
             root
@@ -63,6 +63,7 @@ namespace educodeai_server.Helpers
                 .Element(x => BuildBody(x, req));
         }
 
+        // ── Main body ─────────────────────────────────────────────────
         private static void BuildBody(IContainer container, ChungChiPdfRequest req)
         {
             container
@@ -70,109 +71,121 @@ namespace educodeai_server.Helpers
                 .Padding(40)
                 .Column(col =>
                 {
-                    // Corners (simulated ornaments)
-                    col.Item().Row(r => {
-                        r.RelativeItem().Text("✦").FontSize(20).FontColor(ColGold);
-                        r.RelativeItem().AlignRight().Text("✦").FontSize(20).FontColor(ColGold);
+                    // Corner ornaments ✦
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("✦").FontSize(18).FontColor(ColGold);
+                        r.RelativeItem().AlignRight().Text("✦").FontSize(18).FontColor(ColGold);
                     });
 
-                    // Logo / Brand
-                    col.Item().AlignCenter().Element(x => {
-                        x.Text(t => {
-                            t.Span("Edu").Bold().FontSize(26).FontColor(ColNavy);
-                            t.Span("Code").Bold().FontSize(26).FontColor(ColAccent);
-                            t.Span("AI").Bold().FontSize(26).FontColor(ColGold);
-                        });
+                    // ── Brand ─────────────────────────────────────────
+                    col.Item().AlignCenter().Text(t =>
+                    {
+                        t.Span("Edu").Bold().FontSize(24).FontColor(ColNavy).FontFamily(FontSans);
+                        t.Span("Code").Bold().FontSize(24).FontColor(ColAccent).FontFamily(FontSans);
+                        t.Span("AI").Bold().FontSize(24).FontColor(ColGold).FontFamily(FontSans);
                     });
 
-                    col.Item().Height(10);
+                    col.Item().Height(8);
 
-                    // Title
+                    // ── Title in italic serif ──────────────────────────
                     col.Item().AlignCenter()
                         .Text("Chứng Chỉ")
                         .FontFamily(FontSerif).Italic()
-                        .FontSize(52).FontColor(ColText);
+                        .FontSize(54).FontColor(ColNavy);
 
-                    col.Item().Height(4);
-                    col.Item().AlignCenter().Width(380).Height(2).Background(ColGold);
-                    col.Item().Height(12);
+                    // ── Gold rule ─────────────────────────────────────
+                    col.Item().Height(6);
+                    col.Item().AlignCenter().Width(360).Height(1.5f).Background(ColGold);
+                    col.Item().Height(10);
 
-                    // Sub label
+                    // ── Sub-label ─────────────────────────────────────
                     col.Item().AlignCenter()
                         .Text("CHỨNG NHẬN TRÂN TRỌNG TRAO ĐẾN")
-                        .FontSize(10).SemiBold().FontColor(ColSubtext).LetterSpacing(0.2f);
+                        .FontSize(9).SemiBold().FontColor(ColSubtext).LetterSpacing(0.18f);
 
-                    col.Item().Height(16);
+                    col.Item().Height(14);
 
-                    // Learner Name
+                    // ── Recipient name – italic serif (matches web) ────
                     col.Item().AlignCenter()
-                        .Text(req.HoTenHocVien?.ToUpper() ?? "")
-                        .FontFamily(FontSerif).Bold()
-                        .FontSize(42).FontColor(ColNavy);
+                        .Text(req.HoTenHocVien ?? "")
+                        .FontFamily(FontSerif).Italic()
+                        .FontSize(38).FontColor(ColNavy);
 
-                    col.Item().Height(16);
+                    col.Item().Height(14);
 
-                    // Course section
+                    // ── Course ────────────────────────────────────────
                     col.Item().AlignCenter()
-                        .Text("Khóa học")
-                        .FontSize(10).SemiBold().FontColor(ColSubtext).LetterSpacing(0.15f);
+                        .Text("KHÓA HỌC")
+                        .FontSize(9).SemiBold().FontColor(ColSubtext).LetterSpacing(0.15f);
 
                     col.Item().AlignCenter()
-                        .Text(req.TenKhoaHoc?.ToUpper() ?? "")
+                        .Text(req.TenKhoaHoc.ToUpper())
                         .FontFamily(FontSans).ExtraBold()
-                        .FontSize(22).FontColor(ColNavy);
+                        .FontSize(20).FontColor(ColNavy);
 
-                    col.Item().Height(30);
+                    col.Item().Height(28);
 
-                    // Bottom info row
+                    // ── Bottom row: date | seal | signature ───────────
                     col.Item().Row(row =>
                     {
-                        // Date column
-                        row.RelativeItem().AlignBottom().Column(c => {
-                           c.Item().Text(req.NgayCap.ToLocalTime().ToString("dd/MM/yyyy"))
-                               .FontSize(11).Bold().FontColor(ColNavy);
-                           c.Item().Height(2);
-                           c.Item().Width(120).Height(1).Background(ColGold);
-                           c.Item().Text("NGÀY CẤP").FontSize(8).Bold().FontColor(ColSubtext);
+                        // Date
+                        row.RelativeItem().AlignBottom().Column(c =>
+                        {
+                            c.Item().Text(req.NgayCap.ToLocalTime().ToString("dd/MM/yyyy"))
+                                .FontSize(12).Bold().FontColor(ColNavy);
+                            c.Item().Height(2);
+                            c.Item().Width(120).Height(1).Background(ColGold);
+                            c.Item().Text("NGÀY CẤP").FontSize(8).Bold().FontColor(ColSubtext).LetterSpacing(0.1f);
                         });
 
-                        // Gold Seal
-                        row.ConstantItem(100).AlignCenter().Element(x => BuildSeal(x, req.DiemSo));
+                        // Circular Gold Seal (drawn with SVG)
+                        row.ConstantItem(110).AlignCenter().AlignMiddle()
+                            .Element(x => BuildCircularSeal(x, req.DiemSo));
 
-                        // Signature column
-                        row.RelativeItem().AlignBottom().AlignRight().Column(c => {
-                           // Fake cursive signature style
-                           c.Item().Width(110).Height(30).AlignCenter().Text("~EduCodeAI~")
-                               .FontFamily(FontSerif).Italic().FontSize(18).FontColor(ColSubtext);
-                           c.Item().Height(2);
-                           c.Item().Width(140).Height(1).Background(ColGold);
-                           c.Item().AlignRight().Text("CHỮ KÝ XÁC NHẬN").FontSize(8).Bold().FontColor(ColSubtext);
+                        // Signature SVG-style
+                        row.RelativeItem().AlignBottom().AlignRight().Column(c =>
+                        {
+                            var svgSignature = $@"<svg width='140' height='36' viewBox='0 0 140 36' xmlns='http://www.w3.org/2000/svg'>
+                                <path d='M5.6 25.2 C16.8 5.4, 30.8 1.8, 44.8 16.2 C53.2 25.2, 61.6 3.6, 77 10.8 C86.8 16.2, 92.4 23.4, 106.4 19.8 C120.4 16.2, 127.4 9, 135.8 9' fill='none' stroke='{ColSubtext}' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/>
+                                <path d='M28 21.6 C39.2 28.8, 50.4 30.6, 64.4 25.9' fill='none' stroke='{ColSubtext}' stroke-width='1' stroke-linecap='round'/>
+                            </svg>";
+
+                            c.Item().Width(140).Height(36).Svg(svgSignature);
+
+                            c.Item().Height(2);
+                            c.Item().Width(140).Height(1).Background(ColGold);
+                            c.Item().AlignRight().Text("CHỮ KÝ XÁC NHẬN")
+                                .FontSize(8).Bold().FontColor(ColSubtext).LetterSpacing(0.1f);
                         });
                     });
-                    
-                    col.Item().Height(12);
-                    col.Item().Row(r => {
-                        r.RelativeItem().Text("✦").FontSize(20).FontColor(ColGold);
-                        r.RelativeItem().AlignRight().Text("✦").FontSize(20).FontColor(ColGold);
+
+                    col.Item().Height(14);
+
+                    // Bottom corner ornaments ✦
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("✦").FontSize(18).FontColor(ColGold);
+                        r.RelativeItem().AlignRight().Text("✦").FontSize(18).FontColor(ColGold);
                     });
                 });
         }
 
-        private static void BuildSeal(IContainer container, double score)
+        // ── Circular seal drawn with SVG ─────────────────
+        private static void BuildCircularSeal(IContainer container, double score)
         {
             var classification = LayXepLoai(score);
-            
-            container.Width(80).Height(80)
-                .Background(ColGold)
-                .Padding(3)
-                .Background(ColGoldLight)
-                .Border(1.5f).BorderColor(ColGold)
-                .AlignCenter().AlignMiddle()
-                .Column(col =>
-                {
-                    col.Item().AlignCenter().Text("XẾP LOẠI").FontSize(6).Bold().FontColor(ColSubtext);
-                    col.Item().AlignCenter().Text(classification).FontSize(11).ExtraBold().FontColor("#7A5A00");
-                });
+            float textSize = classification.Length > 3 ? 10.5f : 12f;
+
+            var svgSeal = $@"<svg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'>
+                <circle cx='45' cy='45' r='43' fill='{ColGold}' />
+                <circle cx='45' cy='45' r='39' fill='{ColGoldLight}' />
+                <circle cx='45' cy='45' r='37' fill='none' stroke='{ColGold}' stroke-width='1.2' />
+                <text x='45' y='34' font-family='{FontSans}, Arial, sans-serif' font-size='7.5' font-weight='bold' fill='{ColSubtext}' text-anchor='middle'>XẾP LOẠI</text>
+                <text x='45' y='53' font-family='{FontSans}, Arial, sans-serif' font-size='{textSize}' font-weight='bold' fill='#7A5A00' text-anchor='middle'>{classification}</text>
+            </svg>";
+
+            container.Width(90).Height(90).Svg(svgSeal);
         }
 
         private static string LayXepLoai(double score)
