@@ -47,8 +47,8 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
           <div className="col-12 mb-4">
             <label className="btth-label">Bài học đang chọn</label>
             <div className="input-group">
-               <span className="input-group-text bg-light border-end-0" style={{ borderRadius: '10px 0 0 10px' }}><i className="bi bi-journal-text" /></span>
-               <input
+              <span className="input-group-text bg-light border-end-0" style={{ borderRadius: '10px 0 0 10px' }}><i className="bi bi-journal-text" /></span>
+              <input
                 type="text"
                 className="form-control border-start-0"
                 style={{ borderRadius: '0 10px 10px 0', background: '#f8fafc', fontWeight: 600, color: baiHocId ? '#0F172A' : '#94A3B8' }}
@@ -72,9 +72,19 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
             <select className="form-select form-control" value={ngonNgu} onChange={(e) => setNgonNgu(e.target.value)}>
               <option value="Python">Python</option>
               <option value="C++">C++</option>
+              <option value="C">C</option>
+              <option value="C#">C#</option>
               <option value="Java">Java</option>
               <option value="JavaScript">JavaScript</option>
-              <option value="C#">C#</option>
+              <option value="TypeScript">TypeScript</option>
+              <option value="Go">Go</option>
+              <option value="Rust">Rust</option>
+              <option value="Ruby">Ruby</option>
+              <option value="PHP">PHP</option>
+              <option value="Swift">Swift</option>
+              <option value="Scala">Scala</option>
+              <option value="R">R</option>
+              <option value="Kotlin">Kotlin</option>
             </select>
           </div>
 

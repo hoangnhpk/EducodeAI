@@ -56,25 +56,39 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpPost("tao-moi")]
         public async Task<IActionResult> TaoKhoaHoc([FromForm] KhoaHocCreateUpdateDTO dto)
         {
-            var maGiangVien = GetMaGiangVien();
-            if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.TaoKhoaHocAsync(maGiangVien, dto);
-            if (result <= 0)
-                return BadRequest(new { success = false, message = "Tạo khóa học thất bại" });
-            return Ok(new { success = true, maKhoaHoc = result, message = "Tạo khóa học thành công" });
+            try
+            {
+                var maGiangVien = GetMaGiangVien();
+                if (maGiangVien == 0) return Unauthorized();
+                
+                var result = await _service.TaoKhoaHocAsync(maGiangVien, dto);
+                if (result <= 0)
+                    return BadRequest(new { success = false, message = "Tạo khóa học thất bại" });
+                return Ok(new { success = true, maKhoaHoc = result, message = "Tạo khóa học thành công" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPut("cap-nhat/{maKhoaHoc}")]
         public async Task<IActionResult> CapNhatKhoaHoc(int maKhoaHoc, [FromForm] KhoaHocCreateUpdateDTO dto)
         {
-            var maGiangVien = GetMaGiangVien();
-            if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.CapNhatKhoaHocAsync(maKhoaHoc, maGiangVien, dto);
-            if (!result)
-                return BadRequest(new { success = false, message = "Cập nhật khóa học thất bại" });
-            return Ok(new { success = true, message = "Cập nhật khóa học thành công" });
+            try
+            {
+                var maGiangVien = GetMaGiangVien();
+                if (maGiangVien == 0) return Unauthorized();
+                
+                var result = await _service.CapNhatKhoaHocAsync(maKhoaHoc, maGiangVien, dto);
+                if (!result)
+                    return BadRequest(new { success = false, message = "Cập nhật khóa học thất bại" });
+                return Ok(new { success = true, message = "Cập nhật khóa học thành công" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpDelete("xoa/{maKhoaHoc}")]
@@ -156,15 +170,37 @@ namespace educodeai_server.Controllers.GiangVien
         }
 
         [HttpDelete("xoa-video/{maBaiHoc}")]
-        public async Task<IActionResult> XoaVideo(int maBaiHoc)
+        public async Task<IActionResult> XoaVideo(int maBaiHoc, [FromServices] IWebHostEnvironment env)
         {
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
             
-            var result = await _service.XoaVideoAsync(maBaiHoc, maGiangVien);
+            var result = await _service.XoaVideoAsync(maBaiHoc, maGiangVien, env.WebRootPath);
             if (!result)
                 return BadRequest(new { success = false, message = "Xóa bài học thất bại" });
             return Ok(new { success = true, message = "Xóa bài học thành công" });
+        }
+
+        [HttpPost("them-file/{maChuong}")]
+        public async Task<IActionResult> ThemFile(int maChuong, [FromForm] BaiHocFileCreateUpdateDTO dto, [FromServices] IWebHostEnvironment env)
+        {
+            var maGiangVien = GetMaGiangVien();
+            if (maGiangVien == 0) return Unauthorized();
+
+            var result = await _service.ThemFileAsync(maChuong, maGiangVien, dto, env.WebRootPath);
+            return Ok(new { success = true, data = result });
+        }
+
+        [HttpPut("cap-nhat-file/{maBaiHoc}")]
+        public async Task<IActionResult> CapNhatFile(int maBaiHoc, [FromForm] BaiHocFileCreateUpdateDTO dto, [FromServices] IWebHostEnvironment env)
+        {
+            var maGiangVien = GetMaGiangVien();
+            if (maGiangVien == 0) return Unauthorized();
+
+            var result = await _service.CapNhatFileAsync(maBaiHoc, maGiangVien, dto, env.WebRootPath);
+            if (!result)
+                return BadRequest(new { success = false, message = "Cập nhật bài học thất bại" });
+            return Ok(new { success = true, message = "Cập nhật bài học thành công" });
         }
 
         [HttpPost("upload-hinh-anh")]
@@ -314,7 +350,31 @@ namespace educodeai_server.Controllers.GiangVien
             if (!result)
                 return NotFound("Không tìm thấy khóa học");
 
-            return Ok("Tắt chứng chỉ thành công");
+            return Ok(new { success = true, data = "Tắt chứng chỉ thành công" });
+        }
+
+        // ===== XEM VÀ SỬA ĐỀ THI CHỨNG CHỈ =====
+        [HttpGet("de-chung-chi/{maKhoaHoc}")]
+        public async Task<IActionResult> GetDeChungChi(int maKhoaHoc)
+        {
+            var maGiangVien = GetMaGiangVien();
+            if (maGiangVien == 0) return Unauthorized();
+
+            var data = await _service.GetDeChungChiAsync(maKhoaHoc, maGiangVien);
+            return Ok(new { success = true, data = data });
+        }
+
+        [HttpPut("de-chung-chi/{maKhoaHoc}")]
+        public async Task<IActionResult> UpdateDeChungChi(int maKhoaHoc, [FromBody] List<CauHoiChungChiDTO> request)
+        {
+            var maGiangVien = GetMaGiangVien();
+            if (maGiangVien == 0) return Unauthorized();
+
+            var result = await _service.UpdateDeChungChiAsync(maKhoaHoc, maGiangVien, request);
+            if (!result)
+                return NotFound("Không tìm thấy khóa học hoặc khóa học không thuộc về bạn.");
+
+            return Ok(new { success = true, message = "Đã lưu đề thi thành công" });
         }
     }
 }
