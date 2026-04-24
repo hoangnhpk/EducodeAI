@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import type {
   HocVien,
   NhomThuNhapTheoThoiGian,
@@ -167,7 +167,7 @@ export default function ThongKeHocTap() {
   return (
     <div className="thong-ke-container">
       {/* Header */}
-      <div className="page-header">
+      <div className="thong-ke-page-header">
         <h2>Thống kê học tập</h2>
         <p>Theo dõi tiến độ và hiệu quả học tập của học viên</p>
       </div>
