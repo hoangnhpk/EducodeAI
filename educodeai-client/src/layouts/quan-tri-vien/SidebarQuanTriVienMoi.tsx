@@ -1,4 +1,4 @@
-﻿import { MdPeople, MdRateReview, MdSettings, MdDashboard } from 'react-icons/md';
+﻿import { MdPeople, MdRateReview, MdSettings, MdDashboard, MdCardGiftcard } from 'react-icons/md';
 import { NavLink } from 'react-router-dom';
 
 export default function SidebarQuanTriVienMoi() {
@@ -26,6 +26,11 @@ export default function SidebarQuanTriVienMoi() {
         <NavLink to="/quan-tri-vien/quan-ly-api-key" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><i className="bi bi-key-fill"></i></div>
           <span>Quản lý API AI</span>
+        </NavLink>
+
+        <NavLink to="/quan-tri-vien/quan-ly-hoc-vien" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><MdCardGiftcard /></div>
+          <span>Tặng khóa học</span>
         </NavLink>
 
         <NavLink to="/quan-tri-vien/quan-ly-binh-luan-review" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
