@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import './QuanLyHocVienKhoaHoc.css';
 import {
   BsPersonFill, BsSearch, BsChevronLeft, BsChevronRight,
-  BsEyeFill, BsCheckCircleFill, BsX, BsCircle, BsChevronDown
+  BsEyeFill, BsCheckCircleFill, BsX, BsCircle, BsChevronDown, BsGiftFill
 } from 'react-icons/bs';
 import { getUserId } from '@/utils/authHelper';
+import Swal from 'sweetalert2';
+import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
 
 interface KhoaHoc {
   maKhoaHoc: number;
@@ -27,6 +29,15 @@ interface KhoaHocHocVien {
   tenKhoaHoc: string;
   ngayDangKy: string;
   trangThai: string;
+}
+interface LichSuQuaTang {
+  maQuaTang: number;
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  tenNguoiNhan: string;
+  emailNguoiNhan?: string;
+  trangThai: string;
+  createdAt: string;
 }
 
 // Interfaces cho dữ liệu Popup Tiến độ (Cập nhật có thời gian)
@@ -86,6 +97,12 @@ export default function QuanLyHocVienKhoaHoc() {
   const [studentCourses, setStudentCourses] = useState<KhoaHocHocVien[]>([]);
   const [loadingModal, setLoadingModal] = useState<boolean>(false);
   const [expandedChapters, setExpandedChapters] = useState<number[]>([]); // Quản lý trạng thái đóng/mở chương
+  const [dangTangCho, setDangTangCho] = useState<number | null>(null);
+  const [lichSuQuaTang, setLichSuQuaTang] = useState<LichSuQuaTang[]>([]);
+  const [dangTaiLichSu, setDangTaiLichSu] = useState<boolean>(false);
+  const [tuKhoaLichSu, setTuKhoaLichSu] = useState<string>('');
+  const [trangLichSu, setTrangLichSu] = useState<number>(1);
+  const pageSizeLichSu = 10;
 
   const API_URL = import.meta.env.VITE_API_URL;
   const maGiangVien = useMemo(() => getUserId() ?? 1, []);
@@ -145,6 +162,10 @@ export default function QuanLyHocVienKhoaHoc() {
     fetchHocViens(selectedKhoaHoc);
     setCurrentPage(1);
   }, [fetchHocViens, selectedKhoaHoc]);
+
+  useEffect(() => {
+    void fetchLichSuQuaTang(selectedKhoaHoc !== ALL_COURSES_VALUE ? Number(selectedKhoaHoc) : undefined, tuKhoaLichSu || undefined);
+  }, [selectedKhoaHoc]);
 
   const openStudentCoursesModal = useCallback(async (maNguoiDung: number) => {
     setModalMode('DANH_SACH_KHOA');
@@ -252,6 +273,84 @@ export default function QuanLyHocVienKhoaHoc() {
 
   const paginate = useCallback((pageNumber: number) => setCurrentPage(pageNumber), []);
 
+  const fetchLichSuQuaTang = useCallback(async (maKhoaHoc?: number, tuKhoa?: string) => {
+    try {
+      setDangTaiLichSu(true);
+      const data = await quaTangKhoaHocService.lichSuGiangVien(maKhoaHoc, tuKhoa);
+      setLichSuQuaTang(data);
+      setTrangLichSu(1);
+    } catch {
+      setLichSuQuaTang([]);
+    } finally {
+      setDangTaiLichSu(false);
+    }
+  }, []);
+
+  const tongTrangLichSu = Math.max(1, Math.ceil(lichSuQuaTang.length / pageSizeLichSu));
+  const lichSuTrangHienTai = lichSuQuaTang.slice((trangLichSu - 1) * pageSizeLichSu, trangLichSu * pageSizeLichSu);
+
+  const xuatCsvLichSu = useCallback(() => {
+    if (lichSuQuaTang.length === 0) {
+      void Swal.fire('Không có dữ liệu', 'Hiện chưa có lịch sử để xuất.', 'info');
+      return;
+    }
+    const headers = ["MaQuaTang", "MaKhoaHoc", "TenKhoaHoc", "TenNguoiNhan", "EmailNguoiNhan", "TrangThai", "CreatedAt"];
+    const rows = lichSuQuaTang.map((x) => [
+      x.maQuaTang,
+      x.maKhoaHoc,
+      `"${(x.tenKhoaHoc || "").replace(/"/g, '""')}"`,
+      `"${(x.tenNguoiNhan || "").replace(/"/g, '""')}"`,
+      `"${(x.emailNguoiNhan || "").replace(/"/g, '""')}"`,
+      x.trangThai,
+      x.createdAt
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lich-su-qua-tang-giang-vien-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [lichSuQuaTang]);
+
+  const handleTangKhoaHoc = useCallback(async (hocVien: HocVien) => {
+    if (selectedKhoaHoc === ALL_COURSES_VALUE) {
+      await Swal.fire('Chưa thể tặng', 'Vui lòng chọn cụ thể một khóa học trước khi tặng.', 'warning');
+      return;
+    }
+
+    const ketQua = await Swal.fire({
+      title: `Tặng khóa học cho ${hocVien.hoTen}`,
+      html: `<textarea id="gv-tang-loi-nhan" class="swal2-textarea" placeholder="Lời nhắn (tùy chọn)"></textarea>`,
+      showCancelButton: true,
+      confirmButtonText: 'Xác nhận tặng',
+      cancelButtonText: 'Hủy',
+      preConfirm: () => {
+        const loiNhan = (document.getElementById('gv-tang-loi-nhan') as HTMLTextAreaElement | null)?.value?.trim() ?? '';
+        return { loiNhan };
+      }
+    });
+
+    if (!ketQua.isConfirmed) return;
+
+    try {
+      setDangTangCho(hocVien.maNguoiDung);
+      const res = await quaTangKhoaHocService.giangVienTang({
+        maKhoaHoc: Number(selectedKhoaHoc),
+        maNguoiNhan: hocVien.maNguoiDung,
+        loiNhan: ketQua.value?.loiNhan || undefined
+      });
+
+      await Swal.fire('Thành công', res.thongBao || 'Đã tặng khóa học thành công.', 'success');
+      await fetchLichSuQuaTang(Number(selectedKhoaHoc), tuKhoaLichSu || undefined);
+    } catch (error: any) {
+      await Swal.fire('Không thể tặng', error?.response?.data?.thongBao || 'Đã có lỗi xảy ra.', 'error');
+    } finally {
+      setDangTangCho(null);
+    }
+  }, [selectedKhoaHoc, fetchLichSuQuaTang, tuKhoaLichSu]);
+
   return (
     <div className="qllh-container">
       <div className="qllh-header">
@@ -342,6 +441,14 @@ export default function QuanLyHocVienKhoaHoc() {
 
                     <td className="qllh-col-actions">
                       <button
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a16207', padding: '8px' }}
+                        title="Tặng khóa học"
+                        onClick={() => void handleTangKhoaHoc(hv)}
+                        disabled={dangTangCho === hv.maNguoiDung}
+                      >
+                        <BsGiftFill size={18} />
+                      </button>
+                      <button
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f97316', padding: '8px' }}
                         title={selectedKhoaHoc === '0' ? "Xem các khóa đã đăng ký" : "Xem tiến độ chi tiết"}
                         onClick={() => handleViewDetailClick(hv)}
@@ -368,6 +475,80 @@ export default function QuanLyHocVienKhoaHoc() {
           )}
         </div>
       )}
+
+      <div className="qllh-table-wrapper" style={{ marginTop: 20 }}>
+        <div className="qllh-filter-bar" style={{ marginBottom: 0 }}>
+          <div style={{ minWidth: 260 }}>
+            <h3 style={{ margin: 0, color: '#9a3412' }}>Lịch sử tặng khóa học</h3>
+            <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 13 }}>Theo dõi các lượt tặng học viên gần đây.</p>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void fetchLichSuQuaTang(selectedKhoaHoc !== ALL_COURSES_VALUE ? Number(selectedKhoaHoc) : undefined, tuKhoaLichSu || undefined);
+            }}
+            className="qllh-search-form"
+            style={{ maxWidth: 520 }}
+          >
+            <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+              <BsSearch style={{ position: 'absolute', left: '16px', color: '#9ca3af' }} />
+              <input
+                type="search"
+                placeholder="Tìm mã/tên/email người nhận..."
+                className="qllh-search-input"
+                value={tuKhoaLichSu}
+                onChange={(e) => setTuKhoaLichSu(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="qllh-btn-search">Lọc</button>
+            <button type="button" className="qllh-btn-search" onClick={xuatCsvLichSu}>Xuất CSV</button>
+          </form>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table className="qllh-table">
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>Khóa học</th>
+                <th>Người nhận</th>
+                <th>Trạng thái</th>
+                <th>Thời gian</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dangTaiLichSu ? (
+                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20 }}>Đang tải lịch sử...</td></tr>
+              ) : lichSuQuaTang.length === 0 ? (
+                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20 }}>Chưa có lịch sử tặng khóa học.</td></tr>
+              ) : (
+                lichSuTrangHienTai.map((item) => (
+                  <tr key={item.maQuaTang}>
+                    <td>#{item.maQuaTang}</td>
+                    <td>{item.tenKhoaHoc}</td>
+                    <td>{item.tenNguoiNhan}<br /><small style={{ color: '#6b7280' }}>{item.emailNguoiNhan || '—'}</small></td>
+                    <td>{item.trangThai}</td>
+                    <td>{new Date(item.createdAt).toLocaleString('vi-VN')}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        {!dangTaiLichSu && lichSuQuaTang.length > 0 && (
+          <div className="qllh-pagination">
+            <span className="qllh-page-info">
+              Trang {trangLichSu} / {tongTrangLichSu}
+            </span>
+            <button className="qllh-page-btn" onClick={() => setTrangLichSu((p) => Math.max(1, p - 1))} disabled={trangLichSu === 1}>
+              <BsChevronLeft size={12} />
+            </button>
+            <button className="qllh-page-btn" onClick={() => setTrangLichSu((p) => Math.min(tongTrangLichSu, p + 1))} disabled={trangLichSu >= tongTrangLichSu}>
+              <BsChevronRight size={12} />
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* POPUP LINH HOẠT TÙY CHẾ ĐỘ */}
       {showModal && (
