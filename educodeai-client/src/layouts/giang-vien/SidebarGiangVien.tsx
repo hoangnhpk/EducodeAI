@@ -1,4 +1,4 @@
-﻿import { MdSchool, MdBook, MdEditNote, MdQuiz, MdCode, MdPeople, MdDashboard } from 'react-icons/md';
+﻿import { MdSchool, MdBook, MdEditNote, MdQuiz, MdCode, MdPeople, MdDashboard, MdCardGiftcard } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function SidebarGiangVien() {
@@ -32,6 +32,10 @@ export default function SidebarGiangVien() {
 
         <Link to="/giang-vien/lop-hoc" className={`gv-nav-link ${isActive('/giang-vien/lop-hoc') ? 'active' : ''}`}>
           <MdPeople /> Quản Lý Lớp Học
+        </Link>
+
+        <Link to="/giang-vien/tang-khoa-hoc" className={`gv-nav-link ${isActive('/giang-vien/tang-khoa-hoc') ? 'active' : ''}`}>
+          <MdCardGiftcard /> Tặng Khóa Học
         </Link>
 
         <Link to="/giang-vien/tao-lo-trinh-AI" className={`gv-nav-link ${isActive('/giang-vien/tao-lo-trinh-AI') ? 'active' : ''}`}>

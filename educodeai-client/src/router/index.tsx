@@ -34,6 +34,7 @@ import CaiDatQuiz from "../pages/giang-vien/tao-bai-tap-test-case/CaiDatQuizCont
 import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 import QuanLyHocVienKhoaHoc from "../pages/giang-vien/quan-ly-hoc-vien/QuanLyHocVienKhoaHoc";
+import TangKhoaHocGiangVien from "../pages/giang-vien/tang-khoa-hoc/TangKhoaHocGiangVien";
 import TaoLoTrinhAI from "../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI";
 import QuanLyBaiTapThucHanh from "../pages/giang-vien/bai-tap-thuc-hanh/QuanLyBaiTapThucHanh";
 import RutTienGiangVien from "../pages/giang-vien/rut-tien/RutTienGiangVien";
@@ -121,6 +122,7 @@ export default function AppRouter() {
             <Route path="cai-dat" element={<CaiDatQuiz />} />
             <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
             <Route path="lop-hoc" element={<QuanLyHocVienKhoaHoc />} />
+            <Route path="tang-khoa-hoc" element={<TangKhoaHocGiangVien />} />
             <Route path="tao-lo-trinh-AI" element={<TaoLoTrinhAI />} />
             <Route path="bai-tap-thuc-hanh" element={<QuanLyBaiTapThucHanh />} />
             <Route path="rut-tien" element={<RutTienGiangVien />} />
