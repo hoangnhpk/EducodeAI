@@ -26,6 +26,8 @@ import KhoaHocCuaToiHocVien from "@/pages/hoc-vien/khoa-hoc-cua-toi/KhoaHocCuaTo
 import DoiMatKhau from "../pages/hoc-vien/ho-so-hoc-vien/DoiMatKhau";
 import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
+import NhapMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/NhapMaQuaTang";
+import LichSuMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/LichSuMaQuaTang";
 
 import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
 import TaoQuiz from "../pages/giang-vien/tao-bai-tap-test-case/TaoQuizContent";
@@ -62,15 +64,10 @@ const readUserInfo = (): any | null => {
 };
 
 const HomeRedirect = () => {
-  const user = readUserInfo();
-  if (!user) return <TrangChuHocVien />;
-  const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
-  if (role === 0) return <Navigate to="/quan-tri-vien" replace />;
-  if (role === 1) return <Navigate to="/giang-vien" replace />;
   return <TrangChuHocVien />;
 };
 
-const PublicOrStudentRoute = ({ children }: { children?: React.ReactNode }) => {
+const PublicAuthRoute = ({ children }: { children?: React.ReactNode }) => {
   const user = readUserInfo();
   if (!user) return children ? <>{children}</> : <Outlet />;
   const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
@@ -79,18 +76,22 @@ const PublicOrStudentRoute = ({ children }: { children?: React.ReactNode }) => {
   return children ? <>{children}</> : <Outlet />;
 };
 
+const PublicRoute = ({ children }: { children?: React.ReactNode }) => {
+  return children ? <>{children}</> : <Outlet />;
+};
+
 export default function AppRouter() {
   return (
     <SystemConfigProvider>
       <BrowserRouter>
         <Routes>
-          <Route element={<PublicOrStudentRoute />}>
+          <Route element={<PublicAuthRoute />}>
             <Route path="/dang-nhap" element={<DangNhap />} />
             <Route path="/dang-ky" element={<DangKy />} />
             <Route path="/quen-mat-khau" element={<QuenMatKhau />} />
           </Route>
 
-          <Route element={<PublicOrStudentRoute><LayoutHocVien /></PublicOrStudentRoute>}>
+          <Route element={<PublicRoute><LayoutHocVien /></PublicRoute>}>
             <Route path="/" element={<HomeRedirect />} />
             <Route path="/khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
           </Route>
@@ -107,6 +108,8 @@ export default function AppRouter() {
             <Route path="/khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
             <Route path="/chi-tiet-lo-trinh/:id" element={<ChiTietLoTrinhAI />} />
             <Route path="/kham-pha-lo-trinh" element={<KhamPhaLoTrinh />} />
+            <Route path="/hoc-vien/nhap-ma-qua-tang" element={<NhapMaQuaTang />} />
+            <Route path="/hoc-vien/lich-su-ma-qua-tang" element={<LichSuMaQuaTang />} />
           </Route>
 
           <Route element={<ProtectedRoute allowRoles={[0, 1, 2]}><LayoutBlank /></ProtectedRoute>}>
