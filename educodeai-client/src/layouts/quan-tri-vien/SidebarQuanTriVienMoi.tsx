@@ -52,6 +52,16 @@ export default function SidebarQuanTriVienMoi() {
           <div className="link-icon"><i className="bi bi-headset" aria-hidden /></div>
           <span>Hỗ trợ thanh toán</span>
         </NavLink>
+
+        <NavLink to="/quan-tri-vien/ma-qua-tang" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><MdCardGiftcard /></div>
+          <span>Mã quà tặng học viên</span>
+        </NavLink>
+
+        <NavLink to="/quan-tri-vien/ma-giam-gia" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><i className="bi bi-ticket-perforated" aria-hidden /></div>
+          <span>Mã giảm giá</span>
+        </NavLink>
       </nav>
     </aside>
   );

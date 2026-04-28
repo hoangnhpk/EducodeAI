@@ -40,6 +40,7 @@ import TangKhoaHocGiangVien from "../pages/giang-vien/tang-khoa-hoc/TangKhoaHocG
 import TaoLoTrinhAI from "../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI";
 import QuanLyBaiTapThucHanh from "../pages/giang-vien/bai-tap-thuc-hanh/QuanLyBaiTapThucHanh";
 import RutTienGiangVien from "../pages/giang-vien/rut-tien/RutTienGiangVien";
+import QuanLyMaGiamGiaGiangVien from "@/pages/giang-vien/ma-giam-gia/QuanLyMaGiamGiaGiangVien";
 
 import QuanLyReviewMoi from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReviewMoi";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
@@ -49,6 +50,8 @@ import CauHinhHeThong from "../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeTh
 import ThongKeAdmin from "@/pages/quan-tri-vien/thong-ke/ThongKeAdmin";
 import QuanLyRutTienGiangVien from "../pages/quan-tri-vien/rut-tien-giang-vien/QuanLyRutTienGiangVien";
 import QuanLyHoTroThanhToanHocVien from "@/pages/quan-tri-vien/ho-tro-thanh-toan-hoc-vien/QuanLyHoTroThanhToanHocVien";
+import QuanLyMaQuaTang from "@/pages/quan-tri-vien/ma-qua-tang/QuanLyMaQuaTang";
+import QuanLyMaGiamGiaAdmin from "@/pages/quan-tri-vien/ma-giam-gia/QuanLyMaGiamGiaAdmin";
 
 const readUserInfo = (): any | null => {
   const userRaw = localStorage.getItem("user_info");
@@ -129,6 +132,7 @@ export default function AppRouter() {
             <Route path="tao-lo-trinh-AI" element={<TaoLoTrinhAI />} />
             <Route path="bai-tap-thuc-hanh" element={<QuanLyBaiTapThucHanh />} />
             <Route path="rut-tien" element={<RutTienGiangVien />} />
+            <Route path="ma-giam-gia" element={<QuanLyMaGiamGiaGiangVien />} />
           </Route>
 
           <Route path="/quan-tri-vien" element={<ProtectedRoute allowRoles={[0]}><LayoutQuanTriVien /></ProtectedRoute>}>
@@ -141,6 +145,8 @@ export default function AppRouter() {
             <Route path="cau-hinh-he-thong" element={<CauHinhHeThong />} />
             <Route path="rut-tien-giang-vien" element={<QuanLyRutTienGiangVien />} />
             <Route path="ho-tro-thanh-toan-hoc-vien" element={<QuanLyHoTroThanhToanHocVien />} />
+            <Route path="ma-qua-tang" element={<QuanLyMaQuaTang />} />
+            <Route path="ma-giam-gia" element={<QuanLyMaGiamGiaAdmin />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

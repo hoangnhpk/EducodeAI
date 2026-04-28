@@ -41,6 +41,7 @@ const MuaKhoaHoc = () => {
   const [dangGuiHoTro, setDangGuiHoTro] = useState(false);
   const [thoiGianChoHoTroConLai, setThoiGianChoHoTroConLai] = useState(0);
   const [duLieuGift, setDuLieuGift] = useState<ThongTinMaQuaTangDTO | null>(null);
+  const [maVoucher, setMaVoucher] = useState("");
   const boDemKiemTraRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const boDemMoHoTroRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const daChuyenTrangRef = useRef(false);
@@ -116,7 +117,7 @@ const MuaKhoaHoc = () => {
     try {
       setDangMua(true);
       daChuyenTrangRef.current = false;
-      const duLieuMaQr = await ThanhToanKhoaHocService.taoMaQrThanhToan(duLieuKhoaHoc.maKhoaHoc);
+      const duLieuMaQr = await ThanhToanKhoaHocService.taoMaQrThanhToan(duLieuKhoaHoc.maKhoaHoc, maVoucher);
       setDuLieuQr(duLieuMaQr);
       setHienModalQr(true);
 
@@ -151,7 +152,7 @@ const MuaKhoaHoc = () => {
     if (!duLieuKhoaHoc) return;
     try {
       setDangTaoMaTang(true);
-      const gift = await ThanhToanKhoaHocService.taoMaQuaTang(duLieuKhoaHoc.maKhoaHoc);
+      const gift = await ThanhToanKhoaHocService.taoMaQuaTang(duLieuKhoaHoc.maKhoaHoc, maVoucher);
       setDuLieuGift(gift);
       setHienModalGift(true);
 
@@ -259,6 +260,19 @@ const MuaKhoaHoc = () => {
                   </div>
                 </div>
                 <span className="badge bg-warning text-dark">Marketplace</span>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Mã giảm giá (nếu có)</label>
+                <input
+                  className="form-control"
+                  placeholder="Nhập mã giảm giá trước khi tạo QR"
+                  value={maVoucher}
+                  onChange={(e) => setMaVoucher(e.target.value.toUpperCase())}
+                />
+                <div className="form-text">
+                  Mỗi đơn chỉ dùng 1 mã, mã sẽ được đối soát khi thanh toán thành công.
+                </div>
               </div>
 
               {duLieuKhoaHoc.daMua ? (
