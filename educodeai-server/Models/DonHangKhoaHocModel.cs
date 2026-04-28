@@ -22,6 +22,9 @@ namespace educodeai_server.Models
         [StringLength(30)]
         public string TrangThaiDonHang { get; set; } = "CREATED";
 
+        [StringLength(30)]
+        public string LoaiDonHang { get; set; } = "COURSE_PURCHASE";
+
         [StringLength(100)]
         public string IdempotencyKey { get; set; } = null!;
 
@@ -32,5 +35,6 @@ namespace educodeai_server.Models
         public virtual ICollection<ChiTietDonHangModel> ChiTietDonHangs { get; set; } = new List<ChiTietDonHangModel>();
         public virtual ICollection<GiaoDichThanhToanModel> GiaoDichThanhToans { get; set; } = new List<GiaoDichThanhToanModel>();
         public virtual ICollection<ThongBaoEmailThanhToanModel> ThongBaoEmailThanhToans { get; set; } = new List<ThongBaoEmailThanhToanModel>();
+        public virtual ICollection<MaQuaTangHocVienModel> MaQuaTangHocViens { get; set; } = new List<MaQuaTangHocVienModel>();
     }
 }

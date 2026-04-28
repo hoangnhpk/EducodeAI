@@ -36,6 +36,53 @@ export interface TrangThaiThanhToanDTO {
   thongBao: string;
 }
 
+export interface ThongTinMaQuaTangDTO {
+  maQuaTang: number;
+  code: string;
+  maDonHang: number;
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  soTienCanThanhToan: number;
+  donViTienTe: string;
+  noiDungChuyenKhoan: string;
+  duongDanAnhQr: string;
+  hetHanThanhToan?: string;
+  trangThaiMaQuaTang: string;
+}
+
+export interface TrangThaiMaQuaTangDTO {
+  maDonHang: number;
+  trangThaiDonHang: string;
+  trangThaiMaQuaTang: string;
+  sanSangSuDung: boolean;
+  thongBao: string;
+}
+
+export interface KetQuaNhapMaQuaTangDTO {
+  thanhCong: boolean;
+  thongBao: string;
+  code: string;
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  maNguoiNhan: number;
+}
+
+export interface LichSuMaQuaTangDTO {
+  maQuaTang: number;
+  code: string;
+  maDonHang: number;
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  soTien: number;
+  donViTienTe: string;
+  noiDungChuyenKhoan: string;
+  trangThai: string;
+  createdAt: string;
+  activatedAt?: string;
+  redeemedAt?: string;
+  tenNguoiNhan?: string;
+}
+
 export interface HoTroThanhToanKhoaHocItemDTO {
   maKhoaHoc: number;
   tenKhoaHoc: string;
@@ -78,6 +125,26 @@ export const ThanhToanKhoaHocService = {
     return await axiosClient.post<ThongTinMaQRThanhToanDTO>("/api/hocvien/thanh-toan-khoa-hoc/tao-ma-qr", {
       maKhoaHoc
     });
+  },
+
+  taoMaQuaTang: async (maKhoaHoc: number): Promise<ThongTinMaQuaTangDTO> => {
+    return await axiosClient.post<ThongTinMaQuaTangDTO>("/api/hocvien/thanh-toan-khoa-hoc/tao-ma-qua-tang", {
+      maKhoaHoc
+    });
+  },
+
+  kiemTraTrangThaiMaQuaTang: async (maDonHang: number): Promise<TrangThaiMaQuaTangDTO> => {
+    return await axiosClient.get<TrangThaiMaQuaTangDTO>(
+      `/api/hocvien/thanh-toan-khoa-hoc/kiem-tra-trang-thai-ma-qua-tang/${maDonHang}`
+    );
+  },
+
+  nhapMaQuaTang: async (code: string): Promise<KetQuaNhapMaQuaTangDTO> => {
+    return await axiosClient.post<KetQuaNhapMaQuaTangDTO>("/api/hocvien/thanh-toan-khoa-hoc/nhap-ma-qua-tang", { code });
+  },
+
+  layLichSuMaQuaTang: async (): Promise<LichSuMaQuaTangDTO[]> => {
+    return await axiosClient.get<LichSuMaQuaTangDTO[]>("/api/hocvien/thanh-toan-khoa-hoc/lich-su-ma-qua-tang");
   },
 
   kiemTraTrangThaiThanhToan: async (maDonHang: number): Promise<TrangThaiThanhToanDTO> => {
