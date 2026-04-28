@@ -12,6 +12,7 @@ namespace educodeai_server.Services.Interface
         Task<TrangThaiMaQuaTangDTO> KiemTraTrangThaiMaQuaTangAsync(int maDonHang, int maNguoiDung);
         Task<KetQuaNhapMaQuaTangDTO> NhapMaQuaTangAsync(NhapMaQuaTangDTO yeuCau, int maNguoiDung);
         Task<IReadOnlyList<LichSuMaQuaTangDTO>> LayLichSuMaQuaTangAsync(int maNguoiDung);
+        Task<IReadOnlyList<LichSuMaQuaTangDTO>> LayLichSuMaQuaTangChoAdminAsync(string? trangThai, string? tuKhoa);
         Task<bool> XuLyThongBaoSePayAsync(ThongBaoWebhookSePayDTO duLieuWebhook);
         Task<HoTroThanhToanChiTietDTO> TaoYeuCauHoTroThanhToanAsync(int maDonHang, int maNguoiDung, YeuCauHoTroThanhToanDTO yeuCau);
         Task<IReadOnlyList<HoTroThanhToanDanhSachItemDTO>> LayDanhSachYeuCauHoTroChoAdminAsync(string? trangThai, string? tuKhoa);
