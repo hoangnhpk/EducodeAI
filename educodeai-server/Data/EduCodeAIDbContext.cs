@@ -42,6 +42,7 @@ namespace educodeai_server.Data
         public DbSet<GiaoDichThanhToanModel> GiaoDichThanhToans { get; set; }
         public DbSet<ThongBaoEmailThanhToanModel> ThongBaoEmailThanhToans { get; set; }
         public DbSet<MaGiamGiaModel> MaGiamGias { get; set; }
+        public DbSet<MaGiamGiaKhoaHocModel> MaGiamGiaKhoaHocs { get; set; }
         public DbSet<DoanhThuGiangVienModel> DoanhThuGiangViens { get; set; }
         public DbSet<QuaTangKhoaHocModel> QuaTangKhoaHocs { get; set; }
         public DbSet<MaQuaTangHocVienModel> MaQuaTangHocViens { get; set; }
@@ -80,6 +81,7 @@ namespace educodeai_server.Data
             modelBuilder.Entity<ThongBaoEmailThanhToanModel>()
                 .HasIndex(x => new { x.MaDonHang, x.LoaiThongBao, x.EmailNhan }).IsUnique();
             modelBuilder.Entity<MaGiamGiaModel>().HasIndex(v => v.Code).IsUnique();
+            modelBuilder.Entity<MaGiamGiaKhoaHocModel>().HasIndex(x => new { x.MaVoucher, x.MaKhoaHoc }).IsUnique();
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.NoiDungChuyenKhoan).IsUnique();
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.MaGiaoDichSePay).IsUnique();
             modelBuilder.Entity<HoTroRutTienGiangVienModel>().HasIndex(x => new { x.MaYeuCauRutTien, x.TrangThaiHoTro });
@@ -162,6 +164,12 @@ namespace educodeai_server.Data
                 .HasMany(n => n.DonHangKhoaHocs)
                 .WithOne(d => d.NguoiDung)
                 .HasForeignKey(d => d.MaNguoiDung)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.MaGiamGiaDaTao)
+                .WithOne(v => v.NguoiTao)
+                .HasForeignKey(v => v.MaNguoiTao)
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<NguoiDungModel>()
@@ -261,6 +269,12 @@ namespace educodeai_server.Data
                 .HasMany(k => k.QuaTangKhoaHocs)
                 .WithOne(q => q.KhoaHoc)
                 .HasForeignKey(q => q.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.MaGiamGiaKhoaHocs)
+                .WithOne(x => x.KhoaHoc)
+                .HasForeignKey(x => x.MaKhoaHoc)
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<KhoaHocModel>()
@@ -377,6 +391,18 @@ namespace educodeai_server.Data
                 .HasMany(d => d.MaQuaTangHocViens)
                 .WithOne(x => x.DonHang)
                 .HasForeignKey(x => x.MaDonHang)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DonHangKhoaHocModel>()
+                .HasOne(d => d.Voucher)
+                .WithMany(v => v.DonHangSuDung)
+                .HasForeignKey(d => d.MaVoucher)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<MaGiamGiaModel>()
+                .HasMany(v => v.DanhSachKhoaHocApDung)
+                .WithOne(x => x.Voucher)
+                .HasForeignKey(x => x.MaVoucher)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>()

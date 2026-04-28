@@ -6,5 +6,8 @@ namespace educodeai_server.DTOs.ThanhToan
     {
         [Required]
         public int MaKhoaHoc { get; set; }
+
+        [StringLength(40)]
+        public string? MaVoucher { get; set; }
     }
 }

@@ -38,6 +38,10 @@ export default function SidebarGiangVien() {
           <MdCardGiftcard /> Tặng Khóa Học
         </Link>
 
+        <Link to="/giang-vien/ma-giam-gia" className={`gv-nav-link ${isActive('/giang-vien/ma-giam-gia') ? 'active' : ''}`}>
+          <MdCardGiftcard /> Mã Giảm Giá
+        </Link>
+
         <Link to="/giang-vien/tao-lo-trinh-AI" className={`gv-nav-link ${isActive('/giang-vien/tao-lo-trinh-AI') ? 'active' : ''}`}>
           <MdEditNote /> Quản Lý Lộ Trình AI
         </Link>

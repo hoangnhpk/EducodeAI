@@ -76,11 +76,16 @@ export interface LichSuMaQuaTangDTO {
   soTien: number;
   donViTienTe: string;
   noiDungChuyenKhoan: string;
+  maNguoiTang: number;
+  tenNguoiTang?: string;
+  emailNguoiTang?: string;
   trangThai: string;
   createdAt: string;
   activatedAt?: string;
   redeemedAt?: string;
+  maNguoiNhan?: number;
   tenNguoiNhan?: string;
+  emailNguoiNhan?: string;
 }
 
 export interface HoTroThanhToanKhoaHocItemDTO {
@@ -121,15 +126,17 @@ export const ThanhToanKhoaHocService = {
     });
   },
 
-  taoMaQrThanhToan: async (maKhoaHoc: number): Promise<ThongTinMaQRThanhToanDTO> => {
+  taoMaQrThanhToan: async (maKhoaHoc: number, maVoucher?: string): Promise<ThongTinMaQRThanhToanDTO> => {
     return await axiosClient.post<ThongTinMaQRThanhToanDTO>("/api/hocvien/thanh-toan-khoa-hoc/tao-ma-qr", {
-      maKhoaHoc
+      maKhoaHoc,
+      maVoucher: maVoucher?.trim() || undefined
     });
   },
 
-  taoMaQuaTang: async (maKhoaHoc: number): Promise<ThongTinMaQuaTangDTO> => {
+  taoMaQuaTang: async (maKhoaHoc: number, maVoucher?: string): Promise<ThongTinMaQuaTangDTO> => {
     return await axiosClient.post<ThongTinMaQuaTangDTO>("/api/hocvien/thanh-toan-khoa-hoc/tao-ma-qua-tang", {
-      maKhoaHoc
+      maKhoaHoc,
+      maVoucher: maVoucher?.trim() || undefined
     });
   },
 
