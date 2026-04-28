@@ -5,7 +5,8 @@ import { encodeId } from "@/utils/id-helper";
 import {
   ThanhToanKhoaHocService,
   type ThongTinMuaKhoaHocDTO,
-  type ThongTinMaQRThanhToanDTO
+  type ThongTinMaQRThanhToanDTO,
+  type ThongTinMaQuaTangDTO
 } from "@/services/thanh-toan-khoa-hoc.service";
 
 const taoSlug = (chuoi: string): string => {
@@ -33,10 +34,13 @@ const MuaKhoaHoc = () => {
   const [duLieuQr, setDuLieuQr] = useState<ThongTinMaQRThanhToanDTO | null>(null);
   const [dangTai, setDangTai] = useState(true);
   const [dangMua, setDangMua] = useState(false);
+  const [dangTaoMaTang, setDangTaoMaTang] = useState(false);
   const [hienModalQr, setHienModalQr] = useState(false);
+  const [hienModalGift, setHienModalGift] = useState(false);
   const [dangKiemTra, setDangKiemTra] = useState(false);
   const [dangGuiHoTro, setDangGuiHoTro] = useState(false);
   const [thoiGianChoHoTroConLai, setThoiGianChoHoTroConLai] = useState(0);
+  const [duLieuGift, setDuLieuGift] = useState<ThongTinMaQuaTangDTO | null>(null);
   const boDemKiemTraRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const boDemMoHoTroRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const daChuyenTrangRef = useRef(false);
@@ -87,7 +91,8 @@ const MuaKhoaHoc = () => {
 
   useEffect(() => {
     dungBoDemMoHoTro();
-    if (!hienModalQr || !duLieuQr) {
+    const coModalThanhToanMo = (hienModalQr && !!duLieuQr) || (hienModalGift && !!duLieuGift);
+    if (!coModalThanhToanMo) {
       setThoiGianChoHoTroConLai(0);
       return;
     }
@@ -104,7 +109,7 @@ const MuaKhoaHoc = () => {
     capNhat();
     boDemMoHoTroRef.current = setInterval(capNhat, 1000);
     return () => dungBoDemMoHoTro();
-  }, [hienModalQr, duLieuQr?.maDonHang]);
+  }, [hienModalQr, duLieuQr?.maDonHang, hienModalGift, duLieuGift?.maDonHang]);
 
   const xuLyMuaNgay = async () => {
     if (!duLieuKhoaHoc) return;
@@ -142,8 +147,39 @@ const MuaKhoaHoc = () => {
     }
   };
 
-  const guiYeuCauHoTro = async () => {
-    if (!duLieuQr) return;
+  const xuLyTaoMaQuaTang = async () => {
+    if (!duLieuKhoaHoc) return;
+    try {
+      setDangTaoMaTang(true);
+      const gift = await ThanhToanKhoaHocService.taoMaQuaTang(duLieuKhoaHoc.maKhoaHoc);
+      setDuLieuGift(gift);
+      setHienModalGift(true);
+
+      dungBoDemKiemTra();
+      boDemKiemTraRef.current = setInterval(async () => {
+        if (dangKiemTra) return;
+        try {
+          setDangKiemTra(true);
+          const trangThai = await ThanhToanKhoaHocService.kiemTraTrangThaiMaQuaTang(gift.maDonHang);
+          if (trangThai.sanSangSuDung) {
+            dungBoDemKiemTra();
+            await Swal.fire("Thành công", "Mã quà tặng đã được kích hoạt. Bạn có thể gửi code cho người nhận.", "success");
+          }
+        } catch {
+          // noop
+        } finally {
+          setDangKiemTra(false);
+        }
+      }, 3000);
+    } catch (loi: any) {
+      const thongBao = loi?.response?.data?.thongBao || "Không thể tạo mã quà tặng.";
+      await Swal.fire("Lỗi", thongBao, "error");
+    } finally {
+      setDangTaoMaTang(false);
+    }
+  };
+
+  const guiYeuCauHoTroTheoDonHang = async (maDonHang: number, dongModal: () => void) => {
     if (thoiGianChoHoTroConLai > 0) return;
 
     const ketQua = await Swal.fire({
@@ -178,13 +214,13 @@ const MuaKhoaHoc = () => {
     try {
       setDangGuiHoTro(true);
       await ThanhToanKhoaHocService.taoYeuCauHoTroThanhToan(
-        duLieuQr.maDonHang,
+        maDonHang,
         ketQua.value.lienLac,
         ketQua.value.noiDung || undefined
       );
       dungBoDemKiemTra();
       dungBoDemMoHoTro();
-      setHienModalQr(false);
+      dongModal();
       await Swal.fire(
         "Đã gửi",
         "Admin đã nhận yêu cầu hỗ trợ của bạn. Vui lòng giữ lại nội dung chuyển khoản để đối soát.",
@@ -233,13 +269,22 @@ const MuaKhoaHoc = () => {
                   Bạn đã mua khóa học - Vào học ngay
                 </button>
               ) : (
-                <button
-                  className="btn btn-primary w-100 py-2"
-                  disabled={dangMua || !duLieuKhoaHoc.choPhepMua}
-                  onClick={xuLyMuaNgay}
-                >
-                  {dangMua ? "Đang tạo mã QR..." : "Thanh toán khóa học"}
-                </button>
+                <div className="d-grid gap-2">
+                  <button
+                    className="btn btn-primary w-100 py-2"
+                    disabled={dangMua || !duLieuKhoaHoc.choPhepMua}
+                    onClick={xuLyMuaNgay}
+                  >
+                    {dangMua ? "Đang tạo mã QR..." : "Thanh toán khóa học"}
+                  </button>
+                  <button
+                    className="btn btn-outline-success w-100 py-2"
+                    disabled={dangTaoMaTang || !duLieuKhoaHoc.choPhepMua}
+                    onClick={() => void xuLyTaoMaQuaTang()}
+                  >
+                    {dangTaoMaTang ? "Đang tạo mã quà..." : "Tặng khóa học bằng mã code"}
+                  </button>
+                </div>
               )}
 
               {!duLieuKhoaHoc.choPhepMua && (
@@ -286,7 +331,11 @@ const MuaKhoaHoc = () => {
               <button
                 className="btn btn-warning flex-fill"
                 disabled={dangGuiHoTro || thoiGianChoHoTroConLai > 0}
-                onClick={() => void guiYeuCauHoTro()}
+                onClick={() =>
+                  void guiYeuCauHoTroTheoDonHang(duLieuQr.maDonHang, () => {
+                    setHienModalQr(false);
+                  })
+                }
               >
                 {dangGuiHoTro
                   ? "Đang gửi..."
@@ -303,6 +352,60 @@ const MuaKhoaHoc = () => {
               >
                 Đóng
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hienModalGift && duLieuGift && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 9999 }}
+        >
+          <div className="bg-white rounded p-4" style={{ width: "min(520px, 95vw)" }}>
+            <h4 className="fw-bold mb-2">Mã quà tặng: {duLieuGift.code}</h4>
+            <p className="text-muted mb-3">Thanh toán xong, mã sẽ tự kích hoạt để người nhận nhập.</p>
+            <div className="text-center mb-3">
+              <img src={duLieuGift.duongDanAnhQr} alt="Ma QR qua tang" style={{ width: 280, height: 280, objectFit: "contain" }} />
+            </div>
+            <div className="bg-light rounded p-3 mb-3">
+              <div className="d-flex justify-content-between">
+                <span className="text-muted">Số tiền</span>
+                <strong>{dinhDangTien(duLieuGift.soTienCanThanhToan, duLieuGift.donViTienTe)}</strong>
+              </div>
+              <div className="d-flex justify-content-between mt-2">
+                <span className="text-muted">Nội dung CK</span>
+                <strong className="text-primary">{duLieuGift.noiDungChuyenKhoan}</strong>
+              </div>
+            </div>
+            <div className="small text-muted mb-3">
+              Sau 30 giây chuyển khoản thành công mà không thấy hệ thống cập nhật, hãy bấm nút báo admin hỗ trợ.
+            </div>
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-warning flex-fill"
+                disabled={dangGuiHoTro || thoiGianChoHoTroConLai > 0}
+                onClick={() =>
+                  void guiYeuCauHoTroTheoDonHang(duLieuGift.maDonHang, () => {
+                    setHienModalGift(false);
+                  })
+                }
+              >
+                {dangGuiHoTro
+                  ? "Đang gửi..."
+                  : thoiGianChoHoTroConLai > 0
+                    ? `Báo admin hỗ trợ (${thoiGianChoHoTroConLai}s)`
+                    : "Báo admin hỗ trợ"}
+              </button>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => {
+                setHienModalGift(false);
+                dungBoDemKiemTra();
+              }}
+            >
+              Đóng
+            </button>
             </div>
           </div>
         </div>
