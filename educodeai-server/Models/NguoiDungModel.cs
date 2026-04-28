@@ -70,6 +70,7 @@ namespace educodeai_server.Models
         public virtual ICollection<ChungChiKhoaHocModel> ChungChiKhoaHocs { get; set; } = null!;
         public virtual ICollection<LoTrinhAIModel> LoTrinhAIs { get; set; } = null!;
         public virtual ICollection<DonHangKhoaHocModel> DonHangKhoaHocs { get; set; } = null!;
+        public virtual ICollection<MaGiamGiaModel> MaGiamGiaDaTao { get; set; } = new List<MaGiamGiaModel>();
         public virtual ICollection<MaQuaTangHocVienModel> MaQuaTangDaTao { get; set; } = new List<MaQuaTangHocVienModel>();
         public virtual ICollection<MaQuaTangHocVienModel> MaQuaTangDaNhan { get; set; } = new List<MaQuaTangHocVienModel>();
         public virtual ICollection<QuaTangKhoaHocModel> QuaTangDaTang { get; set; } = new List<QuaTangKhoaHocModel>();

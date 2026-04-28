@@ -16,6 +16,12 @@ namespace educodeai_server.Models
         [Column(TypeName = "numeric(18,2)")]
         public decimal TongTien { get; set; }
 
+        [Column(TypeName = "numeric(18,2)")]
+        public decimal TongTienGoc { get; set; }
+
+        [Column(TypeName = "numeric(18,2)")]
+        public decimal SoTienGiam { get; set; }
+
         [StringLength(10)]
         public string LoaiTien { get; set; } = "VND";
 
@@ -27,6 +33,14 @@ namespace educodeai_server.Models
 
         [StringLength(100)]
         public string IdempotencyKey { get; set; } = null!;
+
+        public int? MaVoucher { get; set; }
+
+        [ForeignKey("MaVoucher")]
+        public virtual MaGiamGiaModel? Voucher { get; set; }
+
+        [StringLength(40)]
+        public string? CodeVoucher { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
