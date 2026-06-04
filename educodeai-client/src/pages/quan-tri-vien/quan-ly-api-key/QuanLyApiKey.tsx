@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import type { KeyApiSummary, KeyApiManage, ThongKeHeThong } from "./QuanLyApiKey.types";
 import { keyApiService } from "../../../services/key-api.service";
 import StatCards from "./components/StatCards";
@@ -44,13 +45,18 @@ const QuanLyApiKey = () => {
 
       setDanhSach(data);
 
-      const sumReqs = data.reduce((sum, k: any) => sum + (k.daSuDungRequest ?? k.DaSuDungRequest ?? 0), 0);
-      const sumToks = data.reduce((sum, k: any) => sum + (k.daSuDungToken ?? k.DaSuDungToken ?? 0), 0);
+      const sumReqs = data.reduce((sum, k: any) => sum + (k.daSuDungRequest ?? 0), 0);
+      const sumToks = data.reduce((sum, k: any) => sum + (k.daSuDungToken ?? 0), 0);
+      // Tính % sử dụng trung bình thực tế từ Redis (thay vì hardcode)
+      const activeKeys = data.filter(k => k.trangThai && k.hanMucRequest > 0);
+      const avgPercent = activeKeys.length > 0
+        ? Math.round(activeKeys.reduce((sum, k) => sum + k.phanTramSuDung, 0) / activeKeys.length)
+        : 0;
       setThongKe({
         tongRequestHomNay: sumReqs,
         tongTokenDaDung: sumToks,
         trangThaiHeThong: "Ổn định",
-        phanTramTang: 12,
+        phanTramTang: avgPercent,
       });
     } catch (error) {
       console.error("Lỗi khi tải API Key:", error);
@@ -86,7 +92,17 @@ const QuanLyApiKey = () => {
 
   /* ---- Xóa Key ---- */
   const handleXoa = async (key: KeyApiSummary) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa Key này không?")) return;
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Xóa API Key?',
+      text: `Bạn có chắc muốn xóa key "${key.tenKey}" không? Hành động này không thể hoàn tác.`,
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy',
+    });
+    if (!result.isConfirmed) return;
     try {
       await keyApiService.delete(key.id);
       setDanhSach(prev => prev.filter(k => k.id !== key.id));
