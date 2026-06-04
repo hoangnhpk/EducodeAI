@@ -6,11 +6,13 @@ using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace educodeai_server.Controllers.GiangVien
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BaiTapController : ControllerBase
     {
         private readonly IBaiTapRepository _baiTapRepository;
@@ -46,7 +48,10 @@ namespace educodeai_server.Controllers.GiangVien
         {
             try
             {
-                int newQuizId = await _quizService.CreateQuizAsync(dto);
+                int maGiangVien = LayNguoiDungID.LayID(User);
+                if (maGiangVien <= 0) return Unauthorized(new { success = false, message = "Vui l?ng ??ng nh?p." });
+
+                int newQuizId = await _quizService.CreateQuizAsync(dto, maGiangVien);
 
                 return Ok(new
                 {
@@ -78,7 +83,10 @@ namespace educodeai_server.Controllers.GiangVien
         {
             try
             {
-                var danhSachCauHoiJson = await _quizService.GenerateQuizByAIAsync(dto);
+                int maGiangVien = LayNguoiDungID.LayID(User);
+                if (maGiangVien <= 0) return Unauthorized(new { success = false, message = "Vui l?ng ??ng nh?p." });
+
+                var danhSachCauHoiJson = await _quizService.GenerateQuizByAIAsync(dto, maGiangVien);
                 var danhSachCauHoi = JsonSerializer.Deserialize<object>(danhSachCauHoiJson);
 
                 return Ok(new
@@ -94,12 +102,47 @@ namespace educodeai_server.Controllers.GiangVien
             }
         }
 
+
+        [HttpPut("quiz/{maBaiTap}")]
+        public async Task<IActionResult> CapNhatQuiz(int maBaiTap, [FromBody] CreateQuizDTO dto)
+        {
+            try
+            {
+                int maGiangVien = LayNguoiDungID.LayID(User);
+                if (maGiangVien <= 0) return Unauthorized(new { success = false, message = "Vui l?ng ??ng nh?p." });
+
+                var daCapNhat = await _quizService.CapNhatQuizAsync(maBaiTap, dto, maGiangVien);
+                if (!daCapNhat)
+                {
+                    return NotFound(new { success = false, message = "Kh?ng t?m th?y quiz ho?c b?n kh?ng c? quy?n c?p nh?t." });
+                }
+
+                return Ok(new { success = true, message = "C?p nh?t quiz th?nh c?ng." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "L?i h? th?ng: " + ex.Message });
+            }
+        }
+
         [HttpDelete("xoa/{maBaiTap}")]
         public async Task<IActionResult> XoaBaiTap(int maBaiTap)
         {
             try
             {
-                 await _baiTapRepository.XoaBaiTapAsync(maBaiTap);
+                 int maGiangVien = LayNguoiDungID.LayID(User);
+                 if (maGiangVien <= 0) return Unauthorized(new { success = false, message = "Vui l?ng ??ng nh?p." });
+
+                 var daXoa = await _baiTapRepository.XoaBaiTapAsync(maBaiTap, maGiangVien);
+                 if (!daXoa) return NotFound(new { success = false, message = "Kh?ng t?m th?y b?i t?p ho?c b?n kh?ng c? quy?n x?a." });
                 return Ok(new
                 {
                     success = true,
@@ -178,7 +221,10 @@ namespace educodeai_server.Controllers.GiangVien
             try
             {
                 // Gọi xuống tầng Repository để moi móc dữ liệu
-                var chiTiet = await _baiTapRepository.LayChiTietBaiTapAsync(id);
+                int maGiangVien = LayNguoiDungID.LayID(User);
+                if (maGiangVien <= 0) return Unauthorized(new { success = false, message = "Vui l?ng ??ng nh?p." });
+
+                var chiTiet = await _baiTapRepository.LayChiTietBaiTapAsync(id, maGiangVien);
 
                 if (chiTiet == null)
                 {

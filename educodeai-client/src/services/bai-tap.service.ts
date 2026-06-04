@@ -30,6 +30,10 @@ export const BaiTapService = {
         return axiosClient.post<any>("/api/BaiTap/xuat-ban", data);
     },
 
+    capNhatQuiz: (maBaiTap: number, data: CreateQuizDTO) => {
+        return axiosClient.put<any>(`/api/BaiTap/quiz/${maBaiTap}`, data);
+    },
+
     deleteBaiTap: (maBaiTap: number) => {
         return axiosClient.delete<any>(`/api/BaiTap/xoa/${maBaiTap}`);
     },
