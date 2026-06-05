@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ProtectedRoute from "../pages/auth/ProtectedRoute";
 
 import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
@@ -26,6 +26,8 @@ import KhoaHocCuaToiHocVien from "@/pages/hoc-vien/khoa-hoc-cua-toi/KhoaHocCuaTo
 import DoiMatKhau from "../pages/hoc-vien/ho-so-hoc-vien/DoiMatKhau";
 import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
+import PhongVanAI from "../pages/hoc-vien/phong-van-ai/PhongVanAI";
+import SinhDoAnAI from "../pages/hoc-vien/sinh-do-an-ai/SinhDoAnAI";
 
 import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
 import TaoQuiz from "../pages/giang-vien/tao-bai-tap-test-case/TaoQuizContent";
@@ -106,6 +108,8 @@ export default function AppRouter() {
             <Route path="/khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
             <Route path="/chi-tiet-lo-trinh/:id" element={<ChiTietLoTrinhAI />} />
             <Route path="/kham-pha-lo-trinh" element={<KhamPhaLoTrinh />} />
+            <Route path="/phong-van-ai" element={<PhongVanAI />} />
+            <Route path="/sinh-do-an-ai" element={<SinhDoAnAI />} />
           </Route>
 
           <Route element={<ProtectedRoute allowRoles={[0, 1, 2]}><LayoutBlank /></ProtectedRoute>}>

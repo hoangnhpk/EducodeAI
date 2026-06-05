@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phòng Phỏng Vấn AI - EduCode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { colors: { primary: '#4f46e5' } } } }
+    </script>
+</head>
+<body class="bg-slate-900 font-sans text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Topbar -->
+    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-4 text-white">
+            <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-xl"><i class="fas fa-headset"></i></div>
+            <div>
+                <h1 class="text-lg font-bold leading-tight">Phòng Phỏng Vấn Technical</h1>
+                <p class="text-xs text-slate-400">Vị trí: .NET Backend Developer</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-bold border border-green-500/30 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Đang ghi âm
+            </span>
+            <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition-all text-sm">Rời phòng</button>
+        </div>
+    </header>
+
+    <!-- Chat Area -->
+    <main class="flex-1 flex flex-col bg-slate-50 relative">
+        
+        <!-- Messages -->
+        <div id="chat-box" class="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
+            
+            <!-- AI Message -->
+            <div class="flex gap-4">
+                <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shrink-0 shadow-md text-xl border-2 border-white"><i class="fas fa-robot"></i></div>
+                <div class="bg-white border border-slate-200 p-5 rounded-2xl rounded-tl-sm text-slate-700 shadow-sm max-w-[75%] text-lg">
+                    Chào em, anh là Technical Lead của dự án. Để bắt đầu, em hãy trình bày về những kĩ năng cơ bản em có và đã học qua nhé!
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Input Area -->
+        <div class="bg-white p-6 border-t border-slate-200 shrink-0">
+            <div class="max-w-4xl mx-auto flex items-center gap-4">
+                <button onclick="toggleMic()" id="mic-btn" class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-600 hover:bg-red-100 hover:text-red-500 transition-all flex items-center justify-center shrink-0 shadow-sm border border-slate-200">
+                    <i class="fas fa-microphone text-2xl"></i>
+                </button>
+                <input type="text" id="chat-input" placeholder="Nhấn vào Mic để nói hoặc gõ câu trả lời của bạn..." class="flex-1 bg-slate-50 px-6 py-4 rounded-2xl outline-none focus:bg-white focus:border-primary border border-slate-200 transition-all text-lg shadow-inner">
+                <button onclick="sendMessage()" class="w-14 h-14 rounded-2xl bg-primary text-white hover:bg-indigo-700 transition-all flex items-center justify-center shrink-0 shadow-md">
+                    <i class="fas fa-paper-plane text-xl"></i>
+                </button>
+            </div>
+            <p class="text-center text-slate-400 text-sm mt-3"><i class="fas fa-lightbulb text-yellow-500 mr-1"></i> Mẹo: Bạn nên bật Micro để rèn luyện kỹ năng trả lời phỏng vấn lưu loát hơn.</p>
+        </div>
+    </main>
+
+    <script>
+        let isRecording = false;
+        
+        function toggleMic() {
+            isRecording = !isRecording;
+            const micBtn = document.getElementById('mic-btn');
+            const input = document.getElementById('chat-input');
+            if (isRecording) {
+                micBtn.classList.replace('bg-slate-100', 'bg-red-500');
+                micBtn.classList.replace('hover:bg-red-100', 'hover:bg-red-600');
+                micBtn.classList.replace('text-slate-600', 'text-white');
+                micBtn.classList.replace('hover:text-red-500', 'text-white');
+                micBtn.classList.add('animate-pulse');
+                input.value = "Đang nhận diện giọng nói...";
+                input.disabled = true;
+                input.classList.add('text-primary', 'font-bold');
+            } else {
+                micBtn.classList.replace('bg-red-500', 'bg-slate-100');
+                micBtn.classList.replace('hover:bg-red-600', 'hover:bg-red-100');
+                micBtn.classList.replace('text-white', 'text-slate-600');
+                micBtn.classList.replace('text-white', 'hover:text-red-500');
+                micBtn.classList.remove('animate-pulse');
+                input.value = "Interface chỉ chứa khai báo phương thức, còn Abstract Class có thể chứa cả code thực thi bên trong ạ."; 
+                input.disabled = false;
+                input.classList.remove('text-primary', 'font-bold');
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            if (!input.value || input.value.includes("Đang nhận diện")) return;
+
+            const chatBox = document.getElementById('chat-box');
+            
+            // Render câu của người dùng
+            chatBox.innerHTML += `
+                <div class="flex gap-4 flex-row-reverse mt-4">
+                    <div class="w-12 h-12 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center shrink-0 border-2 border-white shadow-md text-xl"><i class="fas fa-user"></i></div>
+                    <div class="bg-slate-800 text-white p-5 rounded-2xl rounded-tr-sm shadow-sm max-w-[75%] text-lg">
+                        ${input.value}
+                    </div>
+                </div>
+            `;
+            input.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Fake AI typing
+            setTimeout(() => {
+                const typingId = 'typing-' + Date.now();
+                chatBox.innerHTML += `
+                    <div id="${typingId}" class="flex gap-4 mt-4">
+                        <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shrink-0 shadow-md text-xl border-2 border-white"><i class="fas fa-robot"></i></div>
+                        <div class="bg-white border border-slate-200 p-4 rounded-2xl rounded-tl-sm text-slate-500 flex items-center gap-2">
+                            <i class="fas fa-circle text-xs animate-bounce"></i>
+                            <i class="fas fa-circle text-xs animate-bounce" style="animation-delay: 0.1s"></i>
+                            <i class="fas fa-circle text-xs animate-bounce" style="animation-delay: 0.2s"></i>
+                        </div>
+                    </div>
+                `;
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                // Fake AI Trả lời
+                setTimeout(() => {
+                    document.getElementById(typingId).remove();
+                    chatBox.innerHTML += `
+                        <div class="flex gap-4 mt-4">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shrink-0 shadow-md text-xl border-2 border-white"><i class="fas fa-robot"></i></div>
+                            <div class="bg-white border border-slate-200 p-5 rounded-2xl rounded-tl-sm text-slate-700 shadow-sm max-w-[75%] text-lg">
+                                Chính xác! Vậy nếu dự án sử dụng đa kế thừa (Multiple Inheritance), em sẽ chọn dùng Interface hay Abstract Class?
+                            </div>
+                        </div>
+                        <div class="flex justify-start mt-2 ml-16">
+                            <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex gap-3 shadow-sm max-w-md">
+                                <i class="fas fa-star text-blue-500 mt-1 text-xl"></i>
+                                <div>
+                                    <h4 class="font-bold text-blue-900">Đánh giá nhanh: Rất tốt</h4>
+                                    <p class="text-blue-800 text-sm mt-1">Câu trả lời đi thẳng vào trọng tâm, phân biệt rõ bản chất của 2 khái niệm.</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 2000);
+            }, 600);
+        }
+    </script>
+</body>
+</html>
