@@ -137,15 +137,45 @@ const KhoaHocCaNhanAI = () => {
         });
     };
 
-    const handlePreview = (item: any, isSavedItem: boolean = false) => {
-        const clean = getCleanContent(item.noiDungJSON || item.NoiDungJSON || "");
+    const handlePreview = async (item: any, isSavedItem: boolean = false) => {
+        setIsPreviewOpen(true);
+        setViewData(null); // Hiện loading "Đang xử lý..."
+
+        let stepsToMatch: any[] = [];
+        let viewTitle = "";
+        let viewAuthor = "";
+
+        if (isSavedItem || item.noiDungJSON || item.NoiDungJSON) {
+            const clean = getCleanContent(item.noiDungJSON || item.NoiDungJSON || "");
+            stepsToMatch = clean.steps;
+            viewTitle = clean.title !== "Lộ trình AI" ? clean.title : (item.tenLoTrinh || item.yeuCau || item.tieuDe || "Lộ trình AI");
+            viewAuthor = item.tenGiangVien || item.tenNguoiTao || "Hệ thống AI";
+        } else {
+            try {
+                // Fix: Nếu là lộ trình gốc (không có noiDungJSON), gọi API lấy chi tiết để map vào popup
+                const detail = await aiRoadmapService.getChiTietLoTrinh(item.maLoTrinh);
+                detail.giaiDoan?.forEach((gd: any) => {
+                    gd.danhSachKhoaHoc?.forEach((kh: any) => {
+                        stepsToMatch.push({
+                            maKhoaHoc: kh.maKhoaHoc,
+                            ten: kh.tenKhoaHoc,
+                            trangThai: gd.mucTieu || "Bắt buộc",
+                            hinhAnh: ""
+                        });
+                    });
+                });
+                viewTitle = detail.tenLoTrinh || item.tenLoTrinh;
+                viewAuthor = "Hệ thống AI";
+            } catch (err) {
+                console.error("Lỗi lấy chi tiết preview:", err);
+            }
+        }
 
         // 👉 THUẬT TOÁN SMART MATCHING
-        const matchedSteps = clean.steps.map((step: any) => {
+        const matchedSteps = stepsToMatch.map((step: any) => {
             let img = step.hinhAnh;
             let name = step.ten;
 
-            // Nếu khóa học do AI nhả ra bị 'mù' ảnh, đem tên đi dò trong kho
             if (!img && khoaHocCoSan.length > 0) {
                 const found = khoaHocCoSan.find(k =>
                     k.tenKhoaHoc.toLowerCase().includes(name.toLowerCase()) ||
@@ -160,11 +190,10 @@ const KhoaHocCaNhanAI = () => {
         });
 
         setViewData({
-            title: clean.title !== "Lộ trình AI" ? clean.title : (item.tenLoTrinh || item.yeuCau || item.tieuDe || "Lộ trình AI"),
+            title: viewTitle || "Lộ trình AI",
             steps: matchedSteps,
-            author: item.tenGiangVien || item.tenNguoiTao || "Hệ thống AI"
+            author: viewAuthor
         });
-        setIsPreviewOpen(true);
     };
 
     if (loading) {
@@ -187,6 +216,9 @@ const KhoaHocCaNhanAI = () => {
                         <div className="roadmap-heading">
                             <h2 className="display-6 mb-1">Danh sách lộ trình phát triển</h2>
                             <p className="text-muted">Lộ trình được thiết kế riêng dựa trên mục tiêu và trình độ của sếp.</p>
+                            <Link to="/sinh-do-an-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2">
+                                <i className="fas fa-laptop-code"></i> Sinh Đồ Án AI Thực Tế
+                            </Link>
                         </div>
 
                         <div className="roadmap-grid">
@@ -255,18 +287,18 @@ const KhoaHocCaNhanAI = () => {
                                             </div>
 
                                             <div className="d-flex gap-2 mt-auto">
-    {/* 👉 ĐÃ SỬA: Đổi từ Button mở Modal thành Link bay thẳng sang trang Chi Tiết */}
-    <Link 
-        to={`/chi-tiet-lo-trinh/${encodeId(item.maLoTrinh)}`} 
-        className="btn btn-warning text-dark flex-grow-1 fw-bold text-center text-decoration-none"
-    >
-        Xem chi tiết
-    </Link>
-    
-    <button onClick={() => handleRemoveSaved(item.maLoTrinh)} className="btn btn-outline-danger" title="Bỏ lưu">
-        <i className="fa fa-trash-alt"></i>
-    </button>
-</div>
+                                                {/* Đã chuyển Link thành Button mở Modal Preview để tránh lỗi nhảy trang */}
+                                                <button
+                                                    onClick={() => handlePreview(item, true)}
+                                                    className="btn btn-warning text-dark flex-grow-1 fw-bold text-center"
+                                                >
+                                                    Xem chi tiết
+                                                </button>
+
+                                                <button onClick={() => handleRemoveSaved(item.maLoTrinh)} className="btn btn-outline-danger" title="Bỏ lưu">
+                                                    <i className="fa fa-trash-alt"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     );
                                 })
