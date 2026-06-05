@@ -13,6 +13,9 @@ interface Props {
   onEdit: (maKhoaHoc: number) => void;
   onManage: (maKhoaHoc: number) => void;
   onArchive: (course: KhoaHocListItem) => void;
+  onDuplicate?: (maKhoaHoc: number) => void;
+  onPublish?: (maKhoaHoc: number) => void;
+  onHide?: (maKhoaHoc: number) => void;
   isDeleting?: boolean;
 }
 
@@ -22,7 +25,7 @@ const statusConfig = {
   Archived:  { label: 'Lưu trữ', cls: 'khm-badge-archived' },
 };
 
-const CourseCard: React.FC<Props> = ({ course, onEdit, onManage, onArchive, isDeleting }) => {
+const CourseCard: React.FC<Props> = ({ course, onEdit, onManage, onArchive, onDuplicate, onPublish, onHide, isDeleting }) => {
   const st = statusConfig[course.trangThai as keyof typeof statusConfig] ?? statusConfig.Draft;
 
   return (
@@ -49,13 +52,16 @@ const CourseCard: React.FC<Props> = ({ course, onEdit, onManage, onArchive, isDe
             <span>🎓</span> {course.soHocVien} HV
           </span>
           <span className="khm-course-card-meta-item">
+            <span>📚</span> {course.soChuong ?? 0} chương
+          </span>
+          <span className="khm-course-card-meta-item">
+            <span>📝</span> {course.soBaiHoc ?? 0} bài
+          </span>
+          <span className="khm-course-card-meta-item">
             <span>⏱</span> {course.thoiLuongGio}h
           </span>
           <span className="khm-course-card-meta-item">
             <span>⭐</span> {course.diemDanhGiaTB?.toFixed(1) ?? '—'}
-          </span>
-          <span className="khm-course-card-meta-item">
-            <span>📶</span> {course.trinhDo}
           </span>
         </div>
 
@@ -70,9 +76,39 @@ const CourseCard: React.FC<Props> = ({ course, onEdit, onManage, onArchive, isDe
           <button
             className="khm-btn khm-btn-outline khm-btn-sm"
             onClick={() => onEdit(course.maKhoaHoc)}
+            title="Chỉnh sửa thông tin"
           >
-            ✏️ Sửa
+            ✏️
           </button>
+          {onDuplicate && (
+            <button
+              className="khm-btn khm-btn-outline khm-btn-sm"
+              onClick={() => onDuplicate(course.maKhoaHoc)}
+              title="Nhân bản khóa học"
+            >
+              📋
+            </button>
+          )}
+          {onPublish && course.trangThai === 'Draft' && (
+            <button
+              className="khm-btn khm-btn-outline khm-btn-sm"
+              onClick={() => onPublish(course.maKhoaHoc)}
+              title="Xuất bản khóa học"
+              style={{ color: 'var(--khm-success)', borderColor: 'var(--khm-success)' }}
+            >
+              🚀
+            </button>
+          )}
+          {onHide && course.trangThai === 'Published' && (
+            <button
+              className="khm-btn khm-btn-outline khm-btn-sm"
+              onClick={() => onHide(course.maKhoaHoc)}
+              title="Ẩn khóa học"
+              style={{ color: 'var(--khm-warning)', borderColor: 'var(--khm-warning)' }}
+            >
+              👁️
+            </button>
+          )}
           <button
             className="khm-btn khm-btn-ghost khm-btn-sm"
             onClick={() => onArchive(course)}
