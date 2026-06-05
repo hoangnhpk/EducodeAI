@@ -110,42 +110,48 @@ const NoiDungKhoaHoc = () => {
     const hienTabChungChi = khoaHoc?.coChungChi === true;
 
     useEffect(() => {
-        if (!khoaHoc || !khoaHoc.coChungChi || !daHoanThanhKhoaHoc) {
-            if (khoaHoc && !daHoanThanhKhoaHoc) {
-                initiallyFinishedRef.current = false;
-            }
+        if (!khoaHoc || !khoaHoc.coChungChi) return;
+
+        if (!daHoanThanhKhoaHoc) {
+            initiallyFinishedRef.current = false;
             return;
         }
 
-        const modalKey = `shown_certificate_prompt_${khoaHoc.maKhoaHoc}`;
-        if (localStorage.getItem(modalKey)) return;
-
-        // Nếu mới load trang mà đã hoàn thành rồi thì không hiện thình lình
-        // Chỉ hiện nếu người dùng vừa hoàn thành bài học cuối cùng trong phiên này
+        // Nếu đã hoàn thành từ đầu thì đánh dấu đã biết, không hiện thình lình
         if (initiallyFinishedRef.current === null) {
             initiallyFinishedRef.current = true;
             return;
         }
 
+        // Nếu đã hiện thông báo trong phiên này hoặc đã lưu localStorage thì bỏ qua
+        const modalKey = `shown_certificate_prompt_${khoaHoc.maKhoaHoc}`;
+        if (localStorage.getItem(modalKey)) return;
+
+        // Nếu khóa học đã được cấp chứng chỉ rồi thì thường không cần hiện lại thông báo "chúc mừng đã xong" 
+        // trừ khi bạn muốn nhắc họ vào xem lại. Nhưng yêu cầu là "chỉ 1 lần" nên ta sẽ chặn.
+        if (daCapChungChi) {
+            localStorage.setItem(modalKey, 'true');
+            return;
+        }
+
+        // Đánh dấu đã hiện ngay lập tức trước khi gọi Swal để tránh re-render gây chồng modal
+        localStorage.setItem(modalKey, 'true');
+
         void Swal.fire({
-            title: daCapChungChi ? 'Khóa học đã hoàn thành' : 'Chúc mừng bạn!',
-            html: daCapChungChi
-                ? 'Bạn đã hoàn thành khóa học và có thể xem lại chứng chỉ bất cứ lúc nào.'
-                : 'Bạn đã hoàn thành toàn bộ khóa học.<br/><br/>Hãy làm bài kiểm tra cuối khóa để nhận chứng chỉ.',
+            title: 'Chúc mừng bạn!',
+            html: 'Bạn đã hoàn thành toàn bộ khóa học.<br/><br/>Hãy làm bài kiểm tra cuối khóa để nhận chứng chỉ nhé.',
             icon: 'success',
             showCancelButton: true,
             confirmButtonColor: '#f69050',
             cancelButtonColor: '#94a3b8',
-            confirmButtonText: daCapChungChi ? 'Xem chứng chỉ' : 'Làm bài kiểm tra',
+            confirmButtonText: 'Làm bài kiểm tra',
             cancelButtonText: 'Để sau'
         }).then((result) => {
             if (result.isConfirmed) {
                 setTabActive('chungchi');
             }
         });
-
-        localStorage.setItem(modalKey, 'true');
-    }, [daCapChungChi, daHoanThanhKhoaHoc, khoaHoc]);
+    }, [daCapChungChi, daHoanThanhKhoaHoc, khoaHoc?.maKhoaHoc, khoaHoc?.coChungChi]);
 
     const handleSeekVideo = (seconds: number) => {
         videoRef.current?.seekTo(seconds);
@@ -313,6 +319,24 @@ const NoiDungKhoaHoc = () => {
                     thongTinChungChi: ketQua.thongTinChungChi ?? prevData.thongTinChungChi
                 };
             });
+
+            // Lạc quan (optimistic UI update): Background worker sẽ gửi email rất nhanh (sau 1-2 giây)
+            // nên ta tự động cập nhật trạng thái đã gửi để user trải nghiệm liền mạch
+            if (ketQua.daDat) {
+                setTimeout(() => {
+                    setKhoaHoc((prevData) => {
+                        if (!prevData || !prevData.thongTinChungChi) return prevData;
+                        return {
+                            ...prevData,
+                            thongTinChungChi: {
+                                ...prevData.thongTinChungChi,
+                                daGuiEmail: true,
+                                ngayGuiEmail: new Date().toISOString()
+                            }
+                        };
+                    });
+                }, 2500);
+            }
 
             setDangLamKiemTraChungChi(false);
 

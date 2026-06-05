@@ -78,15 +78,23 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
                 // THÊM LOGIC: Kiểm tra LocalStorage xem có dữ liệu cũ không
                 const storageKey = `quiz_progress_${duLieu.maBaiTap}`;
                 const savedProgress = localStorage.getItem(storageKey);
-                
+                let khoiPhuc = false;
+
                 if (savedProgress) {
-                    // Nếu có thì khôi phục lại toàn bộ đáp án, vị trí câu hỏi
                     const parsedProgress = JSON.parse(savedProgress);
-                    setDapAnNguoiDung(parsedProgress.dapAnNguoiDung || {});
-                    setDaNopBai(parsedProgress.daNopBai || false);
-                    setChiSoHienTai(parsedProgress.chiSoHienTai || 0);
-                } else {
-                    // Nếu không có thì làm mới
+                    // Yêu cầu: "Lúc thi lại không nên hiện đáp án cũ. Chỉ hiện lúc vừa làm xong."
+                    // -> Không khôi phục nếu dữ liệu trong storage báo là đã nộp bài.
+                    if (!parsedProgress.daNopBai) {
+                        setDapAnNguoiDung(parsedProgress.dapAnNguoiDung || {});
+                        setDaNopBai(false);
+                        setChiSoHienTai(parsedProgress.chiSoHienTai || 0);
+                        khoiPhuc = true;
+                    } else {
+                        localStorage.removeItem(storageKey);
+                    }
+                }
+                
+                if (!khoiPhuc) {
                     setDapAnNguoiDung({});
                     setDaNopBai(false);
                     setChiSoHienTai(0);

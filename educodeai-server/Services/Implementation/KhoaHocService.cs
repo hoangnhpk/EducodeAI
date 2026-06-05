@@ -103,6 +103,7 @@ namespace educodeai_server.Services.Implementation
                     catch (Exception ex)
                     {
                         Console.WriteLine($"[EmailBgTask] Lỗi: {ex.Message}");
+                        System.IO.File.WriteAllText("EmailBgTask_Error.txt", ex.ToString());
                     }
                 });
             }
@@ -287,7 +288,7 @@ namespace educodeai_server.Services.Implementation
                     <!-- Header -->
                     <div style="background:#1A2B4A;padding:40px 30px;text-align:center;">
                       <div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:#A0B3C6;text-transform:uppercase;margin-bottom:12px">
-                        EduCodeAI · Certificate of Completion
+                        EduCodeAI · Chứng chỉ hoàn thành
                       </div>
                       <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#ffffff;line-height:1.3">
                         Chúc mừng, {hoTenHienThi}! 🎉
