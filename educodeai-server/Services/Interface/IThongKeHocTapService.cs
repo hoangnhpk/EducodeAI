@@ -11,6 +11,14 @@ namespace educodeai_server.Services.Interface
 
         Task<List<TienDoTheoThoiGianDTO>> GetTienDoTheoThoiGianAsync(int maGiangVien);
 
+        Task<ThuNhapTongQuanDTO> GetThuNhapTongQuanAsync(int maGiangVien);
+
+        Task<List<ThuNhapTheoThoiGianDTO>> GetThuNhapTheoThoiGianAsync(int maGiangVien, string? nhomTheo);
+
+        Task<List<ThuNhapTheoKhoaHocDTO>> GetThuNhapTheoKhoaHocAsync(int maGiangVien, int top);
+
+        Task GuiCanhBaoHocVienNguyCoBoHocAsync(int maGiangVien, int maHocVien);
+
         Task<PagedResult<HocVienThongKeDTO>> GetHocVienAsync(
             int maGiangVien,
             int page,

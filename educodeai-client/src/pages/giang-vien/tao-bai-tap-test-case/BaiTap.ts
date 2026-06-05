@@ -7,6 +7,10 @@ export interface DanhSachBaiTapDTO {
     tenChuong: string;
     tenBaiHoc: string;
     trangThai: string;
+    soCauHoi?: number;
+    soTestCase?: number;
+    thoiGianLamBai?: number;
+    ngayCapNhat?: string;
 }
 
 export interface GenerateQuizAIDTO {

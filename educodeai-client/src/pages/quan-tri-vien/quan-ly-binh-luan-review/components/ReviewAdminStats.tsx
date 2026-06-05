@@ -7,7 +7,7 @@ interface Props {
 
 const cards = [
   { key: 'tongDanhGia', title: 'Tổng đánh giá', icon: Star, className: 'qtrv-card qtrv-card--amber' },
-  { key: 'danhGiaTrungBinh', title: 'Đánh giá trung bình', icon: Star, className: 'qtrv-card qtrv-card--blue' },
+  { key: 'danhGiaTrungBinh', title: 'Đánh giá TB', icon: Star, className: 'qtrv-card qtrv-card--blue' },
   { key: 'daDuyet', title: 'Đã duyệt', icon: CheckCircle2, className: 'qtrv-card qtrv-card--green' },
   { key: 'tuChoi', title: 'Từ chối', icon: ShieldAlert, className: 'qtrv-card qtrv-card--red' },
 ] as const;
@@ -23,13 +23,13 @@ export default function ReviewAdminStats({ data }: Props) {
         {cards.map(({ key, title, icon: Icon, className }) => (
           <article key={key} className={className}>
             <div className="qtrv-card__icon">
-              <Icon size={22} />
+              <Icon size={16} />
             </div>
             <div className="qtrv-card__body">
               <span className="qtrv-card__label">{title}</span>
               <strong className="qtrv-card__value">
-                {typeof data[key] === 'number' && key === 'danhGiaTrungBinh' 
-                  ? (data[key] as number).toFixed(1) 
+                {typeof data[key] === 'number' && key === 'danhGiaTrungBinh'
+                  ? (data[key] as number).toFixed(1)
                   : data[key]}
               </strong>
             </div>
@@ -39,43 +39,22 @@ export default function ReviewAdminStats({ data }: Props) {
 
       <aside className="qtrv-rating-panel">
         <div className="qtrv-rating-panel__header">
-          <div>
-            <h3>Chất lượng đánh giá</h3>
-            <p>Phân bổ mức sao của học viên trên toàn hệ thống.</p>
-          </div>
+          <h3>Chất lượng</h3>
           <div className="qtrv-rating-panel__score">
             <strong>{data.danhGiaTrungBinh.toFixed(1)}</strong>
             <span>/ 5.0</span>
           </div>
         </div>
-
         <div className="qtrv-stars-inline">
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
               key={star}
-              size={18}
+              size={14}
               fill={star <= Math.round(data.danhGiaTrungBinh) ? '#f59e0b' : 'none'}
               color={star <= Math.round(data.danhGiaTrungBinh) ? '#f59e0b' : '#d1d5db'}
             />
           ))}
           <span>{totalRatings} đánh giá</span>
-        </div>
-
-        <div className="qtrv-rating-bars">
-          {[5, 4, 3, 2, 1].map((star) => {
-            const count = data.phanBoSao[`star${star}` as keyof typeof data.phanBoSao];
-            const width = totalRatings > 0 ? (count / totalRatings) * 100 : 0;
-
-            return (
-              <div key={star} className="qtrv-rating-bar">
-                <span>{star} sao</span>
-                <div className="qtrv-rating-bar__track">
-                  <div className="qtrv-rating-bar__fill" style={{ width: `${width}%` }} />
-                </div>
-                <strong>{count}</strong>
-              </div>
-            );
-          })}
         </div>
       </aside>
     </section>

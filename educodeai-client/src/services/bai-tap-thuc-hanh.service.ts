@@ -4,6 +4,9 @@ import type {
   BaiTapThucHanhData,
   SaveBaiTapThucHanhDTO,
   ApiResponse,
+  GenerateQuizAIDTO,
+  QuizAIData,
+  CreateQuizDTO,
 } from '@/pages/giang-vien/bai-tap-thuc-hanh/BaiTapThucHanhDTO';
 
 // Base API cho giảng viên quản lý bài tập thực hành
@@ -21,7 +24,7 @@ export const BaiTapThucHanhService = {
   // ── AI Generate: POST /api/lecturer/practice-exercises/generate ──
   generateBaiTap: (dto: GenerateBaiTapThucHanhDTO) =>
     axiosClient.post<ApiResponse<BaiTapThucHanhData>>(`${BASE}/generate`, dto, {
-      timeout: 120000, // AI có thể mất thời gian lâu để suy nghĩ
+      timeout: 120000,
     }),
 
   // ── Save: POST /api/lecturer/practice-exercises?lessonId=... ──
@@ -39,4 +42,19 @@ export const BaiTapThucHanhService = {
   // ── Delete: DELETE /api/lecturer/practice-exercises/{maBaiTap} ──
   deleteBaiTap: (maBaiTap: number) =>
     axiosClient.delete<ApiResponse<null>>(`${BASE}/${maBaiTap}`),
+
+  // ── QUIZ AI: POST /api/BaiTap/tao-bang-ai ──
+  generateQuiz: (dto: GenerateQuizAIDTO) =>
+    axiosClient.post<{ success: boolean; message: string; data: QuizAIData }>(
+      '/api/BaiTap/tao-bang-ai',
+      dto,
+      { timeout: 120000 }
+    ),
+
+  // ── Lưu Quiz: POST /api/BaiTap/xuat-ban ──
+  saveQuiz: (dto: CreateQuizDTO) =>
+    axiosClient.post<{ success: boolean; message: string; maBaiTapQuiz: number }>(
+      '/api/BaiTap/xuat-ban',
+      dto
+    ),
 };
