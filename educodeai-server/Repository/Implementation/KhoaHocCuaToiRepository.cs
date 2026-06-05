@@ -67,6 +67,7 @@ namespace educodeai_server.Repository.Implementation
         {
             return await _context.ChuongHocs
                 .Include(c => c.KhoaHoc)
+                .Include(c => c.BaiHocs)
                 .FirstOrDefaultAsync(c => c.MaChuong == maChuong);
         }
 
