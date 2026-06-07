@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using educodeai_server.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using educodeai_server.DTOs.AI;
@@ -12,23 +13,118 @@ namespace educodeai_server.Services.Implementation
     public class KhoaHocService : IKhoaHocService
     {
         private readonly IKhoaHocRepository _khoaHocRepository;
-
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IRedisService _redisService;
+        private readonly ILogger<KhoaHocService> _logger;
 
-        public KhoaHocService(IKhoaHocRepository khoaHocRepository, IServiceScopeFactory scopeFactory)
+        // TTL constants
+        private static readonly TimeSpan _ttlDanhSachKhoaHoc = TimeSpan.FromMinutes(15);
+        private static readonly TimeSpan _ttlChiTietKhoaHoc  = TimeSpan.FromMinutes(30);
+
+        public KhoaHocService(IKhoaHocRepository khoaHocRepository, IServiceScopeFactory scopeFactory, IRedisService redisService, ILogger<KhoaHocService> logger)
         {
             _khoaHocRepository = khoaHocRepository;
             _scopeFactory = scopeFactory;
+            _redisService = redisService;
+            _logger = logger;
         }
 
+        // ------- Cache-Aside: Danh sách khóa học -------
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung)
         {
-            return await _khoaHocRepository.GetAllKhoaHocsAsync(maNguoiDung);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            const string publicKey = "CourseList:Public";
+
+            // 1. Đọc Public Cache
+            var cached = await _redisService.LayGiaTriAsync(publicKey);
+            List<KhoaHocDto>? publicList = null;
+            if (cached != null)
+            {
+                publicList = JsonSerializer.Deserialize<List<KhoaHocDto>>(cached);
+                _logger.LogInformation("[CACHE HIT] GetAllKhoaHocsAsync - Key: {Key} - {Count} khóa học từ Cache ({Elapsed}ms)",
+                    publicKey, publicList?.Count ?? 0, sw.ElapsedMilliseconds);
+            }
+
+            if (publicList == null)
+            {
+                // 2. Cache miss -> query DB
+                _logger.LogInformation("[CACHE MISS] GetAllKhoaHocsAsync - Key: {Key} - Truy vấn DB...", publicKey);
+                var allResult = await _khoaHocRepository.GetAllKhoaHocsAsync(0);
+                publicList = allResult.ToList();
+                await _redisService.LuuGiaTriAsync(publicKey, JsonSerializer.Serialize(publicList), _ttlDanhSachKhoaHoc);
+                _logger.LogInformation("[DB QUERY] GetAllKhoaHocsAsync - Đã lưu {Count} khóa học vào Cache (TTL: {TTL}) - ({Elapsed}ms)",
+                    publicList.Count, _ttlDanhSachKhoaHoc, sw.ElapsedMilliseconds);
+            }
+
+            // 3. Nếu user đăng nhập, lấy thêm trạng thái user từ DB riêng
+            if (maNguoiDung > 0)
+            {
+                _logger.LogInformation("[DB QUERY] GetAllKhoaHocsAsync - Lấy enrollment status cho user #{UserId}", maNguoiDung);
+                var userResult = await _khoaHocRepository.GetAllKhoaHocsAsync(maNguoiDung);
+                var enrolledIds = userResult.Where(x => x.KhoaHocDaDangKy).Select(x => x.MaKhoaHoc).ToHashSet();
+                foreach (var item in publicList)
+                {
+                    item.KhoaHocDaDangKy = enrolledIds.Contains(item.MaKhoaHoc);
+                }
+            }
+
+            return publicList;
         }
 
+        // ------- Cache-Aside: Chi tiết khóa học -------
         public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetKhoaHocByIdAsync(int maKhoaHoc, int maNguoiDung)
         {
-            return await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, maNguoiDung);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            // 1. Đọc version hiện tại của khóa học
+            var version = await _redisService.LayVersionKhoaHocAsync(maKhoaHoc);
+            var publicKey = $"course:{maKhoaHoc}:detail:v{version}";
+
+            // 2. Đọc Public Cache
+            var cached = await _redisService.LayGiaTriAsync(publicKey);
+            KhoaHoc_NoiDungKhoaHocDTO? detail = null;
+            if (cached != null)
+            {
+                detail = JsonSerializer.Deserialize<KhoaHoc_NoiDungKhoaHocDTO>(cached);
+                _logger.LogInformation("[CACHE HIT] GetKhoaHocByIdAsync - MaKhoaHoc: {Id}, Key: {Key} ({Elapsed}ms)",
+                    maKhoaHoc, publicKey, sw.ElapsedMilliseconds);
+            }
+
+            if (detail == null)
+            {
+                // 3. Cache miss -> query DB
+                _logger.LogInformation("[CACHE MISS] GetKhoaHocByIdAsync - MaKhoaHoc: {Id}, Key: {Key} - Truy vấn DB...",
+                    maKhoaHoc, publicKey);
+                detail = await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, 0);
+                if (detail != null)
+                {
+                    await _redisService.LuuGiaTriAsync(publicKey, JsonSerializer.Serialize(detail), _ttlChiTietKhoaHoc);
+                    _logger.LogInformation("[DB QUERY] GetKhoaHocByIdAsync - Đã lưu khóa học #{Id} vào Cache (TTL: {TTL}) - ({Elapsed}ms)",
+                        maKhoaHoc, _ttlChiTietKhoaHoc, sw.ElapsedMilliseconds);
+                }
+            }
+
+            // 4. Overlay trạng thái DaXem từng bài học theo user
+            if (detail != null && maNguoiDung > 0)
+            {
+                _logger.LogInformation("[DB QUERY] GetKhoaHocByIdAsync - Overlay DaXem cho user #{UserId}, khóa học #{CourseId}",
+                    maNguoiDung, maKhoaHoc);
+                var userDetail = await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, maNguoiDung);
+                if (userDetail != null)
+                {
+                    foreach (var chuong in detail.DanhSachChuongHoc)
+                    {
+                        var userChuong = userDetail.DanhSachChuongHoc.FirstOrDefault(c => c.Id == chuong.Id);
+                        if (userChuong == null) continue;
+                        foreach (var bai in chuong.DanhSachBaiHoc)
+                        {
+                            var userBai = userChuong.DanhSachBaiHoc.FirstOrDefault(b => b.Id == bai.Id);
+                            if (userBai != null) bai.DaXem = userBai.DaXem;
+                        }
+                    }
+                }
+            }
+
+            return detail;
         }
 
         public async Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto)
