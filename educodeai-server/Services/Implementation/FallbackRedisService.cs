@@ -14,11 +14,11 @@ namespace educodeai_server.Services
             _logger = logger;
         }
 
-        public async Task LuuGiaTriAsync(string key, string giaTri)
+        public async Task LuuGiaTriAsync(string key, string giaTri, TimeSpan? expiry = null)
         {
             try
             {
-                _memoryCache.Set(key, giaTri, TimeSpan.FromHours(1));
+                _memoryCache.Set(key, giaTri, expiry ?? TimeSpan.FromHours(1));
                 _logger.LogWarning("Redis không available, using MemoryCache for key: {Key}", key);
             }
             catch (Exception ex)
@@ -188,6 +188,22 @@ namespace educodeai_server.Services
                 _logger.LogError(ex, "Error searching keys by pattern in MemoryCache: {Pattern}", pattern);
                 return Enumerable.Empty<string>();
             }
+        }
+
+        // --- Course Cache Versioning (MemoryCache Fallback) ---
+        public Task<long> LayVersionKhoaHocAsync(int maKhoaHoc)
+        {
+            var key = $"course:{maKhoaHoc}:version";
+            _memoryCache.TryGetValue(key, out long version);
+            return Task.FromResult(version == 0 ? 1L : version);
+        }
+
+        public Task TangVersionKhoaHocAsync(int maKhoaHoc)
+        {
+            var key = $"course:{maKhoaHoc}:version";
+            _memoryCache.TryGetValue(key, out long current);
+            _memoryCache.Set(key, current + 1, TimeSpan.FromHours(24));
+            return Task.CompletedTask;
         }
     }
 }

@@ -14,9 +14,15 @@ namespace educodeai_server.Services
             _logger = logger;
         }
 
-        public async Task LuuGiaTriAsync(string key, string giaTri)
+        public async Task LuuGiaTriAsync(string key, string giaTri, TimeSpan? expiry = null)
         {
-            try { await _db.StringSetAsync(key, giaTri); }
+            try
+            {
+                if (expiry.HasValue)
+                    await _db.StringSetAsync(key, giaTri, expiry.Value);
+                else
+                    await _db.StringSetAsync(key, giaTri);
+            }
             catch (RedisConnectionException ex) { _logger.LogWarning(ex, "Redis unavailable – LuuGiaTriAsync({Key}) skipped", key); }
         }
 
@@ -98,6 +104,36 @@ namespace educodeai_server.Services
                 return Enumerable.Empty<string>();
             }
         }
+
+        // --- Course Cache Versioning ---
+        public async Task<long> LayVersionKhoaHocAsync(int maKhoaHoc)
+        {
+            try
+            {
+                var key = $"course:{maKhoaHoc}:version";
+                var val = await _db.StringGetAsync(key);
+                return val.HasValue && long.TryParse(val, out var v) ? v : 1;
+            }
+            catch (RedisConnectionException ex)
+            {
+                _logger.LogWarning(ex, "Redis unavailable – LayVersionKhoaHocAsync({MaKhoaHoc}) returned 1", maKhoaHoc);
+                return 1;
+            }
+        }
+
+        public async Task TangVersionKhoaHocAsync(int maKhoaHoc)
+        {
+            try
+            {
+                var key = $"course:{maKhoaHoc}:version";
+                await _db.StringIncrementAsync(key);
+                // Version key sống 24h để tránh rác RAM khi khóa học bị xóa
+                await _db.KeyExpireAsync(key, TimeSpan.FromHours(24));
+            }
+            catch (RedisConnectionException ex)
+            {
+                _logger.LogWarning(ex, "Redis unavailable – TangVersionKhoaHocAsync({MaKhoaHoc}) skipped", maKhoaHoc);
+            }
+        }
     }
 }
-
