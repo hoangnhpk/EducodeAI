@@ -40,9 +40,20 @@ namespace educodeai_server.Services.Implementation
             List<KhoaHocDto>? publicList = null;
             if (cached != null)
             {
-                publicList = JsonSerializer.Deserialize<List<KhoaHocDto>>(cached);
-                _logger.LogInformation("[CACHE HIT] GetAllKhoaHocsAsync - Key: {Key} - {Count} khóa học từ Cache ({Elapsed}ms)",
-                    publicKey, publicList?.Count ?? 0, sw.ElapsedMilliseconds);
+                try
+                {
+                    publicList = JsonSerializer.Deserialize<List<KhoaHocDto>>(cached);
+                    if (publicList != null)
+                    {
+                        _logger.LogInformation("[CACHE HIT] GetAllKhoaHocsAsync - Key: {Key} - {Count} khóa học từ Cache ({Elapsed}ms)",
+                            publicKey, publicList.Count, sw.ElapsedMilliseconds);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetAllKhoaHocsAsync. Fallback sang DB.");
+                    publicList = null;
+                }
             }
 
             if (publicList == null)
@@ -84,9 +95,20 @@ namespace educodeai_server.Services.Implementation
             KhoaHoc_NoiDungKhoaHocDTO? detail = null;
             if (cached != null)
             {
-                detail = JsonSerializer.Deserialize<KhoaHoc_NoiDungKhoaHocDTO>(cached);
-                _logger.LogInformation("[CACHE HIT] GetKhoaHocByIdAsync - MaKhoaHoc: {Id}, Key: {Key} ({Elapsed}ms)",
-                    maKhoaHoc, publicKey, sw.ElapsedMilliseconds);
+                try
+                {
+                    detail = JsonSerializer.Deserialize<KhoaHoc_NoiDungKhoaHocDTO>(cached);
+                    if (detail != null)
+                    {
+                        _logger.LogInformation("[CACHE HIT] GetKhoaHocByIdAsync - MaKhoaHoc: {Id}, Key: {Key} ({Elapsed}ms)",
+                            maKhoaHoc, publicKey, sw.ElapsedMilliseconds);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetKhoaHocByIdAsync. Fallback sang DB.");
+                    detail = null;
+                }
             }
 
             if (detail == null)
@@ -121,6 +143,10 @@ namespace educodeai_server.Services.Implementation
                             if (userBai != null) bai.DaXem = userBai.DaXem;
                         }
                     }
+
+                    // Cập nhật các thông tin chứng chỉ cá nhân hóa
+                    detail.BaiKiemTraChungChi = userDetail.BaiKiemTraChungChi;
+                    detail.ThongTinChungChi = userDetail.ThongTinChungChi;
                 }
             }
 

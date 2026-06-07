@@ -127,8 +127,8 @@ namespace educodeai_server.Services
             {
                 var key = $"course:{maKhoaHoc}:version";
                 await _db.StringIncrementAsync(key);
-                // Version key sống 24h để tránh rác RAM khi khóa học bị xóa
-                await _db.KeyExpireAsync(key, TimeSpan.FromHours(24));
+                // Version key sống 30 ngày (Dài hơn detail)
+                await _db.KeyExpireAsync(key, TimeSpan.FromDays(30));
             }
             catch (RedisConnectionException ex)
             {
