@@ -202,7 +202,7 @@ namespace educodeai_server.Services
         {
             var key = $"course:{maKhoaHoc}:version";
             _memoryCache.TryGetValue(key, out long current);
-            _memoryCache.Set(key, current + 1, TimeSpan.FromHours(24));
+            _memoryCache.Set(key, current + 1, TimeSpan.FromDays(30));
             return Task.CompletedTask;
         }
     }

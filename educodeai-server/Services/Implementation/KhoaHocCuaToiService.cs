@@ -47,8 +47,19 @@ namespace educodeai_server.Services.Implement
 
             if (cached != null)
             {
-                list = JsonSerializer.Deserialize<List<KhoaHocGiangVienListDTO>>(cached);
-                _logger.LogInformation("[CACHE HIT] GetDanhSachKhoaHocAsync - Giảng viên: {Id} ({Elapsed}ms)", maGiangVien, sw.ElapsedMilliseconds);
+                try
+                {
+                    list = JsonSerializer.Deserialize<List<KhoaHocGiangVienListDTO>>(cached);
+                    if (list != null)
+                    {
+                        _logger.LogInformation("[CACHE HIT] GetDanhSachKhoaHocAsync - Giảng viên: {Id} ({Elapsed}ms)", maGiangVien, sw.ElapsedMilliseconds);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetDanhSachKhoaHocAsync. Fallback sang DB.");
+                    list = null;
+                }
             }
 
             if (list == null)
@@ -74,8 +85,19 @@ namespace educodeai_server.Services.Implement
 
             if (cached != null)
             {
-                detail = JsonSerializer.Deserialize<KhoaHocGiangVienDetailDTO>(cached);
-                _logger.LogInformation("[CACHE HIT] GetChiTietKhoaHocAsync(Static) - Khóa học {Id} ({Elapsed}ms)", maKhoaHoc, sw.ElapsedMilliseconds);
+                try
+                {
+                    detail = JsonSerializer.Deserialize<KhoaHocGiangVienDetailDTO>(cached);
+                    if (detail != null)
+                    {
+                        _logger.LogInformation("[CACHE HIT] GetChiTietKhoaHocAsync(Static) - Khóa học {Id} ({Elapsed}ms)", maKhoaHoc, sw.ElapsedMilliseconds);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetChiTietKhoaHocAsync. Fallback sang DB.");
+                    detail = null;
+                }
             }
 
             if (detail == null)
@@ -482,6 +504,8 @@ namespace educodeai_server.Services.Implement
 
                 await _repository.UpdateKhoaHocAsync(khoaHoc);
                 await _repository.SaveChangesAsync();
+                await InvalidateCourseListAsync(maGiangVien);
+                await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
 
                 Console.WriteLine($"[AI Certificate] Lưu DB thành công cho khóa {maKhoaHoc}");
 
@@ -545,6 +569,8 @@ namespace educodeai_server.Services.Implement
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             return true;
         }
 
@@ -916,6 +942,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             return true;
         }
 
