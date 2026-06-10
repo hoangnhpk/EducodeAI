@@ -30,9 +30,6 @@ import NhapMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/NhapMaQuaTang";
 import LichSuMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/LichSuMaQuaTang";
 
 import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
-import TaoQuiz from "../pages/giang-vien/tao-bai-tap-test-case/TaoQuizContent";
-import PreviewQuiz from "../pages/giang-vien/tao-bai-tap-test-case/PreviewQuizContent";
-import CaiDatQuiz from "../pages/giang-vien/tao-bai-tap-test-case/CaiDatQuizContent";
 import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 import QuanLyHocVienKhoaHoc from "../pages/giang-vien/quan-ly-hoc-vien/QuanLyHocVienKhoaHoc";
@@ -123,14 +120,15 @@ export default function AppRouter() {
             <Route index element={<ThongKeHocTap />} />
             <Route path="thong-ke" element={<ThongKeHocTap />} />
             <Route path="bai-tap" element={<TaoBaiTap />} />
-            <Route path="quiz" element={<TaoQuiz />} />
-            <Route path="preview-quiz" element={<PreviewQuiz />} />
-            <Route path="cai-dat" element={<CaiDatQuiz />} />
+            <Route path="bai-tap/tao-thuc-hanh" element={<QuanLyBaiTapThucHanh />} />
+            <Route path="quiz" element={<Navigate to="/giang-vien/bai-tap" replace />} />
+            <Route path="preview-quiz" element={<Navigate to="/giang-vien/bai-tap" replace />} />
+            <Route path="cai-dat" element={<Navigate to="/giang-vien/bai-tap" replace />} />
             <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
             <Route path="lop-hoc" element={<QuanLyHocVienKhoaHoc />} />
             <Route path="tang-khoa-hoc" element={<TangKhoaHocGiangVien />} />
             <Route path="tao-lo-trinh-AI" element={<TaoLoTrinhAI />} />
-            <Route path="bai-tap-thuc-hanh" element={<QuanLyBaiTapThucHanh />} />
+            <Route path="bai-tap-thuc-hanh" element={<Navigate to="/giang-vien/bai-tap/tao-thuc-hanh" replace />} />
             <Route path="rut-tien" element={<RutTienGiangVien />} />
             <Route path="ma-giam-gia" element={<QuanLyMaGiamGiaGiangVien />} />
           </Route>

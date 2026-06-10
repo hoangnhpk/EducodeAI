@@ -24,6 +24,7 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
       MaBaiHoc: baiHocId, // Thêm cả PascalCase cho chắc
       difficulty: mucDo,
       language: ngonNgu,
+      topicTags: [], // Gửi mảng rỗng vì backend yêu cầu field này
       estimatedTime: thoiGian,
       customInstructions: yeuCau,
     });

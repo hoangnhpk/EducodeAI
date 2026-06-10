@@ -1,11 +1,13 @@
 using educodeai_server.DTOs.AI;
 using educodeai_server.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace educodeai_server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class KeyApiController : ControllerBase
     {
         private readonly IKeyApiService _keyApiService;
