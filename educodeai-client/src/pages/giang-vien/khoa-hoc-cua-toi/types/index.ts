@@ -21,6 +21,8 @@ export interface KhoaHocListItem {
   coChungChi: boolean;
   daCoDeThiChungChi: boolean;
   ngayTao: string;
+  soChuong?: number;
+  soBaiHoc?: number;
 }
 
 export interface KhoaHocDetail {

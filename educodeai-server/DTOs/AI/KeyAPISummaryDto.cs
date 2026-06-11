@@ -12,7 +12,7 @@ namespace educodeai_server.DTOs.AI
         public int DaSuDungRequest { get; set; }
         public int HanMucToken { get; set; }
         public int DaSuDungToken { get; set; }
-        public string MaKeyFull { get; set; } = string.Empty;
+        public string MaKeyMasked { get; set; } = string.Empty;
         public double PhanTramSuDung { get; set; } // Tính toán từ Request đã dùng / Hạn mức
     }
 

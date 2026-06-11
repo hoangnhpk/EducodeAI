@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.local
+.DS_Store
+
+# Bỏ qua các file tạm của Supabase
+supabase/.temp/
+supabase/.branches/

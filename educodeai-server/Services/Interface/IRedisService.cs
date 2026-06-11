@@ -2,7 +2,7 @@ namespace educodeai_server.Services.Interface
 {
     public interface IRedisService
     {
-        Task LuuGiaTriAsync(string key, string giaTri);
+        Task LuuGiaTriAsync(string key, string giaTri, TimeSpan? expiry = null);
         Task<string?> LayGiaTriAsync(string key);
         Task XoaKeyAsync(string key);
 
@@ -12,5 +12,9 @@ namespace educodeai_server.Services.Interface
         Task DayVaoCuoiListAsync(string key, string giaTri);
         Task<IEnumerable<string>> LayTuDauListAsync(string key, int soLuong);
         IEnumerable<string> LayDanhSachKeyTheoPattern(string pattern);
+
+        // Course Cache Versioning
+        Task<long> LayVersionKhoaHocAsync(int maKhoaHoc);
+        Task TangVersionKhoaHocAsync(int maKhoaHoc);
     }
 }

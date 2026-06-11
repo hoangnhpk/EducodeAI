@@ -19,7 +19,7 @@ namespace educodeai_server.Services.Implementation
         }
 
         // Hàm xử lý logic tạo quiz
-        public async Task<int> CreateQuizAsync(CreateQuizDTO dto)
+        public async Task<int> CreateQuizAsync(CreateQuizDTO dto, int maGiangVien)
         {
             // Bắt lỗi nhẹ nhàng sương sương
             if (dto.MaBaiHoc <= 0)
@@ -46,7 +46,7 @@ namespace educodeai_server.Services.Implementation
             // Gọi đệ Repository chốt sổ vào Database
             return await _baiTapRepository.CreateQuizAsync(baiTap, quiz);
         }
-        public async Task<string> GenerateQuizByAIAsync(GenerateQuizAIDTO dto)
+        public async Task<string> GenerateQuizByAIAsync(GenerateQuizAIDTO dto, int maGiangVien)
         {
             // 1. Lấy nội dung bài học từ DB
             var noiDungBaiHoc = await _baiTapRepository.GetNoiDungBaiHocAsync(dto.MaBaiHoc);
@@ -111,6 +111,21 @@ namespace educodeai_server.Services.Implementation
 
             return resultChuanHoa; // Trả nguyên cục JSON về cho FE hiển thị ở Màn 2 (Preview)
         }
+        public async Task<bool> CapNhatQuizAsync(int maBaiTap, CreateQuizDTO dto, int maGiangVien)
+        {
+            if (maBaiTap <= 0) throw new ArgumentException("M? b?i t?p kh?ng h?p l?.");
+            ValidateQuiz(dto);
+            return await _baiTapRepository.CapNhatQuizAsync(maBaiTap, maGiangVien, dto);
+        }
+
+        private static void ValidateQuiz(CreateQuizDTO dto)
+        {
+            if (dto.MaBaiHoc <= 0) throw new ArgumentException("M? b?i h?c kh?ng h?p l?.");
+            if (dto.ThoiGianLamBai <= 0 || dto.ThoiGianLamBai > 600) throw new ArgumentException("Th?i gian l?m b?i ph?i t? 1 ??n 600 ph?t.");
+            if (dto.DiemCanDat < 0 || dto.DiemCanDat > 100) throw new ArgumentException("?i?m c?n ??t ph?i t? 0 ??n 100.");
+            if (string.IsNullOrWhiteSpace(dto.DuLieuCauHoi)) throw new ArgumentException("D? li?u c?u h?i kh?ng ???c ?? tr?ng.");
+        }
+
     }
 
 }

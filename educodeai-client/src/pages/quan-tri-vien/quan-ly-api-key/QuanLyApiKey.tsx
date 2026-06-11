@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 import type { KeyApiSummary, KeyApiManage, ThongKeHeThong } from "./QuanLyApiKey.types";
 import { keyApiService } from "../../../services/key-api.service";
 import StatCards from "./components/StatCards";
@@ -22,6 +23,13 @@ const QuanLyApiKey = () => {
   const [editingKey, setEditingKey] = useState<KeyApiSummary | null>(null);
   const [thongKe, setThongKe] = useState<ThongKeHeThong>(MOCK_THONG_KE);
 
+  // Phase 5 State
+  const [revealedKeys, setRevealedKeys] = useState<Record<number, string>>({});
+  const [isRevealing, setIsRevealing] = useState<number | null>(null);
+  const [isSyncing, setIsSyncing] = useState<number | null>(null);
+  const [isResetting, setIsResetting] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
+
   // Fetch danh sách Key từ API
   const fetchKeys = async () => {
     setIsLoading(true);
@@ -31,7 +39,7 @@ const QuanLyApiKey = () => {
       const data: KeyApiSummary[] = rawData.map((k: any) => ({
         id: k.id ?? k.ID ?? k.Id ?? 0,
         tenKey: k.tenKey || k.TenKey || "Không tên",
-        maKeyFull: k.maKeyFull || k.MaKeyFull || `sk-...${k.id || k.ID || k.Id || "0"}`,
+        maKeyMasked: k.maKeyMasked || k.MaKeyMasked || "sk-...***",
         loaiKey: k.loaiKey || k.LoaiKey || "Khác",
         trangThai: k.trangThai ?? k.TrangThai ?? false,
         thuTuUuTien: k.thuTuUuTien ?? k.ThuTuUuTien ?? 0,
@@ -44,13 +52,18 @@ const QuanLyApiKey = () => {
 
       setDanhSach(data);
 
-      const sumReqs = data.reduce((sum, k: any) => sum + (k.daSuDungRequest ?? k.DaSuDungRequest ?? 0), 0);
-      const sumToks = data.reduce((sum, k: any) => sum + (k.daSuDungToken ?? k.DaSuDungToken ?? 0), 0);
+      const sumReqs = data.reduce((sum, k: any) => sum + (k.daSuDungRequest ?? 0), 0);
+      const sumToks = data.reduce((sum, k: any) => sum + (k.daSuDungToken ?? 0), 0);
+      // Tính % sử dụng trung bình thực tế từ Redis (thay vì hardcode)
+      const activeKeys = data.filter(k => k.trangThai && k.hanMucRequest > 0);
+      const avgPercent = activeKeys.length > 0
+        ? Math.round(activeKeys.reduce((sum, k) => sum + k.phanTramSuDung, 0) / activeKeys.length)
+        : 0;
       setThongKe({
         tongRequestHomNay: sumReqs,
         tongTokenDaDung: sumToks,
         trangThaiHeThong: "Ổn định",
-        phanTramTang: 12,
+        phanTramTang: avgPercent,
       });
     } catch (error) {
       console.error("Lỗi khi tải API Key:", error);
@@ -74,24 +87,127 @@ const QuanLyApiKey = () => {
     }
   };
 
+  /* ---- Hiện Key ---- */
+  const handleReveal = async (key: KeyApiSummary) => {
+    if (revealedKeys[key.id]) {
+      const newRevealed = { ...revealedKeys };
+      delete newRevealed[key.id];
+      setRevealedKeys(newRevealed);
+      return;
+    }
+
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Hiển thị API Key?',
+      text: 'Hành động này sẽ được ghi log. Bạn có chắc muốn xem Key này?',
+      showCancelButton: true,
+      confirmButtonColor: '#eab308',
+      confirmButtonText: 'Hiển thị',
+      cancelButtonText: 'Hủy'
+    });
+    
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsRevealing(key.id);
+      const res = await keyApiService.revealKey(key.id);
+      const data = (res as any).data ? (res as any).data : res;
+      const revealedKey = data.maKeyFull || data.MaKeyFull;
+      setRevealedKeys(prev => ({ ...prev, [key.id]: revealedKey }));
+      
+      // Auto hide after 30s
+      setTimeout(() => {
+        setRevealedKeys(prev => {
+          const updated = { ...prev };
+          delete updated[key.id];
+          return updated;
+        });
+      }, 30000);
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Lỗi', 'Không thể hiển thị API Key', 'error');
+    } finally {
+      setIsRevealing(null);
+    }
+  };
+
   /* ---- Đồng bộ Redis ---- */
   const handleCapMoi = async (key: KeyApiSummary) => {
     try {
+      setIsSyncing(key.id);
       await keyApiService.syncToRedis(key.id);
       fetchKeys();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Đã đồng bộ lên Redis',
+        showConfirmButton: false,
+        timer: 3000
+      });
     } catch (error) {
       console.error("Lỗi đồng bộ Redis:", error);
+      Swal.fire('Lỗi', 'Đồng bộ thất bại', 'error');
+    } finally {
+      setIsSyncing(null);
+    }
+  };
+
+  /* ---- Reset Usage ---- */
+  const handleResetUsage = async (key: KeyApiSummary) => {
+    const result = await Swal.fire({
+      icon: 'error',
+      title: 'NGUY HIỂM: Reset Usage?',
+      text: `Bạn có chắc muốn reset mức sử dụng của key "${key.tenKey}" về 0? Hệ thống sẽ tạo một baseline mới.`,
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonText: 'Hủy',
+      confirmButtonText: 'Reset'
+    });
+    
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsResetting(key.id);
+      await keyApiService.resetUsage(key.id);
+      fetchKeys();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Đã reset usage về 0',
+        showConfirmButton: false,
+        timer: 3000
+      });
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Lỗi', 'Không thể reset usage', 'error');
+    } finally {
+      setIsResetting(null);
     }
   };
 
   /* ---- Xóa Key ---- */
   const handleXoa = async (key: KeyApiSummary) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa Key này không?")) return;
+    const result = await Swal.fire({
+      icon: 'error',
+      title: 'Xóa API Key?',
+      text: `Bạn có chắc muốn xóa key "${key.tenKey}" không? Hành động này không thể hoàn tác.`,
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Xóa',
+      cancelButtonText: 'Hủy',
+    });
+    if (!result.isConfirmed) return;
     try {
+      setIsDeleting(key.id);
       await keyApiService.delete(key.id);
       setDanhSach(prev => prev.filter(k => k.id !== key.id));
     } catch (error) {
       console.error("Lỗi xóa key:", error);
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -127,8 +243,7 @@ const QuanLyApiKey = () => {
   const soKeyHoatDong = danhSach.filter((k) => k.trangThai).length;
 
   const danhSachLoc = danhSach.filter((k) =>
-    k.tenKey.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    k.maKeyFull.toLowerCase().includes(searchTerm.toLowerCase())
+    k.tenKey.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -202,11 +317,18 @@ const QuanLyApiKey = () => {
             </div>
           )}
           <BangApiKey
-            danhSach={danhSachLoc} // Dùng danh sách đã lọc nè
+            danhSach={danhSachLoc}
+            revealedKeys={revealedKeys}
             onSua={handleSua}
             onKhoa={handleKhoa}
             onCapMoi={handleCapMoi}
+            onResetUsage={handleResetUsage}
             onXoa={handleXoa}
+            onReveal={handleReveal}
+            isRevealing={isRevealing}
+            isSyncing={isSyncing}
+            isResetting={isResetting}
+            isDeleting={isDeleting}
           />
         </div>
 
