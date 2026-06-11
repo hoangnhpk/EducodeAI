@@ -255,13 +255,23 @@ const RegisterPage = () => {
                             </div>
                         )}
 
-                        <div className="col-12 mt-4 d-flex justify-content-between align-items-center">
-                            <Link to="/" className="text-decoration-none fw-bold small" style={{ color: '#fb873f' }}>
-                                <i className="bi bi-house-door-fill me-1"></i> Trang chủ
-                            </Link>
-                            <p className="mb-0 small">
-                                Đã có tài khoản? <Link className="text-decoration-none fw-bold" style={{ color: '#fb873f' }} to="/dang-nhap">Đăng nhập</Link>
-                            </p>
+                        <div className="col-12 mt-4 d-flex flex-column align-items-center gap-3">
+                            <div className="d-flex justify-content-between align-items-center w-100">
+                                <Link to="/" className="text-decoration-none fw-bold small" style={{ color: '#fb873f' }}>
+                                    <i className="bi bi-house-door-fill me-1"></i> Trang chủ
+                                </Link>
+                                <p className="mb-0 small">
+                                    Đã có tài khoản? <Link className="text-decoration-none fw-bold" style={{ color: '#fb873f' }} to="/dang-nhap">Đăng nhập</Link>
+                                </p>
+                            </div>
+                            
+                            <hr className="w-100 my-1 text-muted" />
+                            
+                            <div className="text-center w-100">
+                                <p className="mb-0 small text-muted">
+                                    Bạn là chuyên gia? <Link className="text-decoration-none fw-bold ms-1" style={{ color: '#fb873f' }} to="/dang-ky-giang-vien">Đăng ký tài khoản giảng viên</Link>
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -195,22 +195,21 @@ namespace educodeai_server.Services.Implementation
 
         // API MỚI: Xác nhận OTP để đá thiết bị cũ và cho thiết bị mới vào
         public async Task<object> XacNhanThayTheThietBiAsync(XacNhanOtpRequest r) {
-            // r.TaiKhoan ở đây là Email
-            if (!_memoryCache.TryGetValue("OTP_ReplaceDevice_" + r.TaiKhoan, out (string Otp, string NewMaThietBi, string NewTenThietBi, int OldMaPhien) cached))
+            var user = await LayNguoiDungKemThietBiAsync(r.TaiKhoan);
+            if (user == null) throw new Exception("Người dùng không tồn tại.");
+
+            if (!_memoryCache.TryGetValue("OTP_ReplaceDevice_" + user.Email, out (string Otp, string NewMaThietBi, string NewTenThietBi, int OldMaPhien) cached))
                 throw new Exception("Mã OTP đã hết hạn hoặc không hợp lệ.");
 
             if (cached.Otp != r.OtpCode)
                 throw new Exception("Mã OTP không chính xác.");
-
-            var user = await LayNguoiDungKemThietBiAsync(r.TaiKhoan);
-            if (user == null) throw new Exception("Người dùng không tồn tại.");
 
             // 1. Đăng xuất thiết bị cũ nhất
             var oldestSession = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaPhien == cached.OldMaPhien);
             if (oldestSession != null) oldestSession.DangHoatDong = false;
 
             // 2. Xử lý đăng nhập cho thiết bị mới
-            _memoryCache.Remove("OTP_ReplaceDevice_" + r.TaiKhoan);
+            _memoryCache.Remove("OTP_ReplaceDevice_" + user.Email);
             return await XuLyDangNhapThanhCongAsync(user, cached.NewMaThietBi, cached.NewTenThietBi);
         }
 
@@ -451,17 +450,17 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<object> XacNhanOtpVaDangNhapAsync(XacNhanOtpRequest r) {
+            var user = await LayNguoiDungKemThietBiAsync(r.TaiKhoan);
+            if (user == null) throw new Exception("Người dùng không tồn tại.");
+
             // Hàm này dùng cho luồng đăng nhập thiết bị mới yêu cầu OTP
-            if (!_memoryCache.TryGetValue("OTP_LoginNewDevice_" + r.TaiKhoan, out (string Otp, string MaThietBi, string TenThietBi) cached))
+            if (!_memoryCache.TryGetValue("OTP_LoginNewDevice_" + user.Email, out (string Otp, string MaThietBi, string TenThietBi) cached))
                 throw new Exception("Mã OTP đã hết hạn.");
 
             if (cached.Otp != r.OtpCode)
                 throw new Exception("Mã OTP không chính xác.");
 
-            var user = await LayNguoiDungKemThietBiAsync(r.TaiKhoan);
-            if (user == null) throw new Exception("Người dùng không tồn tại.");
-
-            _memoryCache.Remove("OTP_LoginNewDevice_" + r.TaiKhoan);
+            _memoryCache.Remove("OTP_LoginNewDevice_" + user.Email);
             return await XuLyDangNhapThanhCongAsync(user, cached.MaThietBi, cached.TenThietBi);
         }
 

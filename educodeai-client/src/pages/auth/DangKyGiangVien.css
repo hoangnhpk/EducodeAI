@@ -1,0 +1,542 @@
+.dkgv-container {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 40px 20px;
+  color: #333;
+}
+
+.dkgv-main-card {
+  max-width: 860px;
+  margin: 0 auto;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1px solid #eaeaea;
+}
+
+/* Progress Header */
+.dkgv-progress-header {
+  background-color: #323438;
+  padding: 30px 40px;
+  color: #fff;
+}
+
+.dkgv-progress-header.step2-header {
+  padding: 40px 40px;
+}
+
+.dkgv-progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.dkgv-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  position: relative;
+}
+
+.dkgv-step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #4a4d52;
+  color: #a0a3a8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 12px;
+  transition: all 0.3s;
+}
+
+.dkgv-step.active .dkgv-step-circle {
+  background-color: #f69050;
+  color: #fff;
+}
+
+.dkgv-step.completed .dkgv-step-circle {
+  background-color: #f69050;
+  color: #fff;
+}
+
+.dkgv-step-label {
+  font-size: 13px;
+  color: #a0a3a8;
+  font-weight: 500;
+}
+
+.dkgv-step.active .dkgv-step-label {
+  color: #fff;
+}
+
+.dkgv-progress-line {
+  position: absolute;
+  top: 20px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background-color: #4a4d52;
+  z-index: 1;
+}
+
+.dkgv-progress-line-fill {
+  height: 100%;
+  background-color: #f69050;
+  transition: width 0.3s ease;
+}
+
+/* Step 2 alternative header */
+.dkgv-progress-alt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+  padding-top: 20px;
+}
+
+.dkgv-progress-alt .dkgv-progress-line {
+  top: 40px;
+  background-color: #e4e6eb;
+}
+
+.dkgv-progress-alt .dkgv-step-circle {
+  background-color: #f0f2f5;
+  color: #65676b;
+}
+
+.dkgv-progress-alt .dkgv-step.active .dkgv-step-circle,
+.dkgv-progress-alt .dkgv-step.completed .dkgv-step-circle {
+  background-color: #b75d16;
+  color: #fff;
+}
+
+.dkgv-progress-alt .dkgv-step-label {
+  color: #65676b;
+}
+
+.dkgv-progress-alt .dkgv-step.active .dkgv-step-label {
+  color: #b75d16;
+  font-weight: 600;
+}
+
+
+/* Body */
+.dkgv-body {
+  padding: 40px;
+}
+
+.dkgv-title-section {
+  text-align: left;
+  margin-bottom: 30px;
+}
+
+.dkgv-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1c1e21;
+}
+
+.dkgv-page-subtitle {
+  color: #65676b;
+  font-size: 15px;
+}
+
+/* Avatar Upload */
+.dkgv-avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  margin-bottom: 40px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid #e4e6eb;
+}
+
+.dkgv-avatar-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px dashed #b0b3b8;
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
+
+.dkgv-avatar-icon {
+  font-size: 30px;
+  color: #8a8d91;
+}
+
+.dkgv-avatar-edit {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 28px;
+  height: 28px;
+  background-color: #b75d16;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border: 2px solid #fff;
+}
+
+.dkgv-avatar-info h5 {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.dkgv-avatar-info p {
+  color: #65676b;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.dkgv-btn-outline {
+  background-color: #fff;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dkgv-btn-outline:hover {
+  background-color: #f3f4f6;
+}
+
+/* Forms */
+.dkgv-form-group {
+  margin-bottom: 25px;
+}
+
+.dkgv-form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #1c1e21;
+}
+
+.dkgv-form-control {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1c1e21;
+  transition: border-color 0.2s;
+}
+
+.dkgv-form-control:focus {
+  outline: none;
+  border-color: #f69050;
+  box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.1);
+}
+
+.dkgv-form-control::placeholder {
+  color: #9ca3af;
+}
+
+.dkgv-char-count {
+  text-align: right;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+/* Step 2 KYC */
+.dkgv-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  margin-top: 40px;
+  color: #1c1e21;
+}
+
+.dkgv-section-title i {
+  color: #b75d16;
+}
+
+.dkgv-section-title:first-child {
+  margin-top: 0;
+}
+
+.dkgv-phone-input-wrap {
+  display: flex;
+  gap: 15px;
+}
+
+.dkgv-phone-input-wrap .dkgv-input-icon {
+  position: relative;
+  flex: 1;
+}
+
+.dkgv-phone-input-wrap .dkgv-input-icon i {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+}
+
+.dkgv-btn-brown {
+  background-color: #a04b0c;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dkgv-btn-brown:hover {
+  background-color: #8c4109;
+}
+
+.dkgv-note-text {
+  font-size: 13px;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.dkgv-doc-type-toggle {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.dkgv-doc-btn {
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #4b5563;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.dkgv-doc-btn.active {
+  background-color: #fdf1e8;
+  border-color: #f69050;
+  color: #b75d16;
+}
+
+.dkgv-upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.dkgv-upload-box-wrap {
+  text-align: left;
+}
+
+.dkgv-upload-box-label {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #374151;
+}
+
+.dkgv-upload-box {
+  border: 2px dashed #d1d5db;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dkgv-upload-box:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.dkgv-upload-box-icon {
+  font-size: 28px;
+  color: #b75d16;
+  margin-bottom: 15px;
+}
+
+.dkgv-upload-box-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 5px;
+}
+
+.dkgv-upload-box-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.dkgv-info-alert {
+  background-color: #f3f4f6;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.dkgv-info-alert i {
+  color: #6b7280;
+  font-size: 16px;
+}
+
+/* Step 3 Payment */
+.dkgv-payment-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.dkgv-payment-methods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+  margin-top: 20px;
+}
+
+.dkgv-method-card {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 20px 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dkgv-method-card.active {
+  background-color: #fdf1e8;
+  border-color: #f69050;
+}
+
+.dkgv-method-icon {
+  font-size: 24px;
+  color: #a04b0c;
+  margin-bottom: 10px;
+}
+
+.dkgv-method-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.dkgv-method-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.dkgv-method-card.active .dkgv-method-title,
+.dkgv-method-card.active .dkgv-method-desc {
+  color: #a04b0c;
+}
+
+.dkgv-optional-text {
+  font-weight: normal;
+  color: #6b7280;
+  float: right;
+  font-size: 12px;
+}
+
+.dkgv-security-note {
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dkgv-security-note i {
+  color: #3b82f6;
+}
+
+/* Footer Buttons */
+.dkgv-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 40px;
+  padding-top: 25px;
+  border-top: 1px solid #e4e6eb;
+}
+
+.dkgv-btn-back {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.dkgv-btn-back:hover {
+  background-color: #f3f4f6;
+}
+
+.dkgv-btn-next {
+  background-color: #f69050;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dkgv-btn-next:hover {
+  background-color: #e57d3c;
+}
+
+.dkgv-btn-next.brown {
+  background-color: #a04b0c;
+}
+
+.dkgv-btn-next.brown:hover {
+  background-color: #8c4109;
+}
