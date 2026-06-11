@@ -68,7 +68,7 @@ namespace educodeai_server.Services.Implementation
             return key;
         }
 
-        public async Task<bool> CreateNewKeyAsync(KeyAPIManageDto dto)
+        public async Task<bool> CreateNewKeyAsync(KeyAPIManageDto dto, int adminId, string? ipAddress)
         {
             if (string.IsNullOrWhiteSpace(dto.TenKey) || string.IsNullOrWhiteSpace(dto.MaKeyRaw))
             {
@@ -77,29 +77,29 @@ namespace educodeai_server.Services.Implementation
             int newKeyId = await _keyApiRepo.CreateKeyAsync(dto);
             if (newKeyId > 0)
             {
-                await SyncKeyToRedisAsync(newKeyId);
+                await SyncKeyToRedisAsync(newKeyId, adminId, ipAddress);
                 return true;
             }
             return false;
         }
 
-        public async Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto)
+        public async Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto, int adminId, string? ipAddress)
         {
             if (id <= 0 || string.IsNullOrWhiteSpace(dto.TenKey)) return false;
 
-            var isUpdated = await _keyApiRepo.UpdateKeyAsync(id, dto);
+            var isUpdated = await _keyApiRepo.UpdateKeyAsync(id, dto, adminId, ipAddress);
             if (isUpdated)
             {
-                await SyncKeyToRedisAsync(id);
+                await SyncKeyToRedisAsync(id, adminId, ipAddress);
             }
             return isUpdated;
         }
 
-        public async Task<bool> ToggleKeyStatusAsync(int id, bool status)
+        public async Task<bool> ToggleKeyStatusAsync(int id, bool status, int adminId, string? ipAddress)
         {
             if (id <= 0) return false;
 
-            var isUpdated = await _keyApiRepo.UpdateStatusAsync(id, status);
+            var isUpdated = await _keyApiRepo.UpdateStatusAsync(id, status, adminId, ipAddress);
 
             if (isUpdated)
             {
@@ -107,7 +107,7 @@ namespace educodeai_server.Services.Implementation
 
                 if (status)
                 {
-                    await SyncKeyToRedisAsync(id);
+                    await SyncKeyToRedisAsync(id, adminId, ipAddress);
                 }
                 else
                 {
@@ -118,11 +118,11 @@ namespace educodeai_server.Services.Implementation
             return isUpdated;
         }
 
-        public async Task<bool> DeleteKeyAsync(int id)
+        public async Task<bool> SoftDeleteKeyAsync(int id, int adminId, string? ipAddress)
         {
             if (id <= 0) return false;
 
-            var isDeleted = await _keyApiRepo.DeleteKeyAsync(id);
+            var isDeleted = await _keyApiRepo.SoftDeleteKeyAsync(id, adminId, ipAddress);
 
             if (isDeleted)
             {
@@ -132,7 +132,7 @@ namespace educodeai_server.Services.Implementation
             return isDeleted;
         }
 
-        public async Task<bool> SyncKeyToRedisAsync(int id)
+        public async Task<bool> SyncKeyToRedisAsync(int id, int adminId, string? ipAddress)
         {
             var rawKey = await _keyApiRepo.GetRawKeyForRedisAsync(id);
 
@@ -144,11 +144,46 @@ namespace educodeai_server.Services.Implementation
             await _redisService.LuuHashAsync(redisKey, "HanMucRequest", rawKey.HanMucRequest.ToString());
             await _redisService.LuuHashAsync(redisKey, "HanMucToken", rawKey.HanMucToken.ToString());
 
-            await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0");
-            await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");
             await _redisService.LuuHashAsync(redisKey, "TrangThai", rawKey.TrangThai.ToString());
 
+            var auditLog = new educodeai_server.Models.ApiKeyAuditLog
+            {
+                Action = AuditAction.SYNC_CONFIG,
+                AdminId = adminId,
+                KeyApiId = id,
+                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { hanMucRequest = rawKey.HanMucRequest, hanMucToken = rawKey.HanMucToken, trangThai = rawKey.TrangThai, redisKey }),
+                IpAddress = ipAddress,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _keyApiRepo.AddAuditLogAsync(auditLog);
+
             return true;
+        }
+
+        public async Task<bool> ResetKeyUsageAsync(int id, int adminId, string? ipAddress)
+        {
+            if (id <= 0) return false;
+
+            var isReset = await _keyApiRepo.ResetKeyUsageAsync(id, adminId, ipAddress);
+
+            if (isReset)
+            {
+                var rawKey = await _keyApiRepo.GetRawKeyForRedisAsync(id);
+                if (rawKey != null && rawKey.TrangThai)
+                {
+                    string redisKey = $"EduCodeAI:KeyPool:{id}";
+                    await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0");
+                    await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");
+                }
+            }
+
+            return isReset;
+        }
+
+        public async Task<ApiKeyRevealDto?> RevealKeyAsync(int id, int adminId, string? ipAddress)
+        {
+            if (id <= 0) return null;
+            return await _keyApiRepo.RevealKeyAsync(id, adminId, ipAddress);
         }
     }
 }

@@ -49,9 +49,14 @@ namespace educodeai_server.Services.Implementation
                             publicKey, publicList.Count, sw.ElapsedMilliseconds);
                     }
                 }
-                catch (Exception ex)
+                catch (JsonException ex)
                 {
                     _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetAllKhoaHocsAsync. Fallback sang DB.");
+                    publicList = null;
+                }
+                catch (NotSupportedException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi kiểu dữ liệu deserialize GetAllKhoaHocsAsync. Fallback sang DB.");
                     publicList = null;
                 }
             }
@@ -104,9 +109,14 @@ namespace educodeai_server.Services.Implementation
                             maKhoaHoc, publicKey, sw.ElapsedMilliseconds);
                     }
                 }
-                catch (Exception ex)
+                catch (JsonException ex)
                 {
                     _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetKhoaHocByIdAsync. Fallback sang DB.");
+                    detail = null;
+                }
+                catch (NotSupportedException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi kiểu dữ liệu deserialize GetKhoaHocByIdAsync. Fallback sang DB.");
                     detail = null;
                 }
             }

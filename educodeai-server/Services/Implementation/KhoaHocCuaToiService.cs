@@ -55,9 +55,14 @@ namespace educodeai_server.Services.Implement
                         _logger.LogInformation("[CACHE HIT] GetDanhSachKhoaHocAsync - Giảng viên: {Id} ({Elapsed}ms)", maGiangVien, sw.ElapsedMilliseconds);
                     }
                 }
-                catch (Exception ex)
+                catch (JsonException ex)
                 {
                     _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetDanhSachKhoaHocAsync. Fallback sang DB.");
+                    list = null;
+                }
+                catch (NotSupportedException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi kiểu dữ liệu deserialize GetDanhSachKhoaHocAsync. Fallback sang DB.");
                     list = null;
                 }
             }
@@ -93,9 +98,14 @@ namespace educodeai_server.Services.Implement
                         _logger.LogInformation("[CACHE HIT] GetChiTietKhoaHocAsync(Static) - Khóa học {Id} ({Elapsed}ms)", maKhoaHoc, sw.ElapsedMilliseconds);
                     }
                 }
-                catch (Exception ex)
+                catch (JsonException ex)
                 {
                     _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetChiTietKhoaHocAsync. Fallback sang DB.");
+                    detail = null;
+                }
+                catch (NotSupportedException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi kiểu dữ liệu deserialize GetChiTietKhoaHocAsync. Fallback sang DB.");
                     detail = null;
                 }
             }

@@ -23,6 +23,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<IEnumerable<KeyAPISummaryDto?>> GetSummaryListAsync()
         {
             var rawList = await _context.KeyAPIs
+                .Where(k => k.DeletedAt == null)
                 .OrderBy(k => k.ThuTuUuTien)
                 .Select(k => new 
                 {
@@ -34,8 +35,8 @@ namespace educodeai_server.Repository.Implementation
                     k.HanMucRequest,
                     k.HanMucToken,
                     k.MaKeyMaHoa,
-                    DaSuDungRequest = k.NhatKySuDungs.Count(),
-                    DaSuDungToken = k.NhatKySuDungs.Sum(n => (int?)n.SoTokenTieuHao) ?? 0
+                    DaSuDungRequest = k.NhatKySuDungs.Count(n => k.LastUsageResetAt == null || n.ThoiGianGoi > k.LastUsageResetAt),
+                    DaSuDungToken = k.NhatKySuDungs.Where(n => k.LastUsageResetAt == null || n.ThoiGianGoi > k.LastUsageResetAt).Sum(n => (int?)n.SoTokenTieuHao) ?? 0
                 })
                 .ToListAsync();
 
@@ -50,7 +51,7 @@ namespace educodeai_server.Repository.Implementation
                 HanMucToken = k.HanMucToken,
                 DaSuDungRequest = k.DaSuDungRequest,
                 DaSuDungToken = k.DaSuDungToken,
-                MaKeyFull = MaHoaHelper.GiaiMa(k.MaKeyMaHoa, _secretKey),
+                MaKeyMasked = MaskKey(MaHoaHelper.GiaiMa(k.MaKeyMaHoa, _secretKey)),
                 PhanTramSuDung = k.HanMucRequest > 0 
                                  ? Math.Round((double)k.DaSuDungRequest / k.HanMucRequest * 100, 2) 
                                  : 0
@@ -60,7 +61,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<KeyAPISummaryDto?> GetByIdAsync(int id)
         {
             var rawKey = await _context.KeyAPIs
-                .Where(k => k.ID == id)
+                .Where(k => k.ID == id && k.DeletedAt == null)
                 .Select(k => new
                 {
                     k.ID,
@@ -71,8 +72,8 @@ namespace educodeai_server.Repository.Implementation
                     k.HanMucRequest,
                     k.HanMucToken,
                     k.MaKeyMaHoa,
-                    DaSuDungRequest = k.NhatKySuDungs.Count(),
-                    DaSuDungToken = k.NhatKySuDungs.Sum(n => (int?)n.SoTokenTieuHao) ?? 0
+                    DaSuDungRequest = k.NhatKySuDungs.Count(n => k.LastUsageResetAt == null || n.ThoiGianGoi > k.LastUsageResetAt),
+                    DaSuDungToken = k.NhatKySuDungs.Where(n => k.LastUsageResetAt == null || n.ThoiGianGoi > k.LastUsageResetAt).Sum(n => (int?)n.SoTokenTieuHao) ?? 0
                 })
                 .FirstOrDefaultAsync();
 
@@ -89,7 +90,7 @@ namespace educodeai_server.Repository.Implementation
                 HanMucToken = rawKey.HanMucToken,
                 DaSuDungRequest = rawKey.DaSuDungRequest,
                 DaSuDungToken = rawKey.DaSuDungToken,
-                MaKeyFull = MaHoaHelper.GiaiMa(rawKey.MaKeyMaHoa, _secretKey),
+                MaKeyMasked = MaskKey(MaHoaHelper.GiaiMa(rawKey.MaKeyMaHoa, _secretKey)),
                 PhanTramSuDung = rawKey.HanMucRequest > 0 
                                  ? Math.Round((double)rawKey.DaSuDungRequest / rawKey.HanMucRequest * 100, 2) 
                                  : 0
@@ -115,10 +116,12 @@ namespace educodeai_server.Repository.Implementation
             return isSaved ? newKey.ID : 0;
         }
 
-        public async Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto)
+        public async Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto, int adminId, string? ipAddress)
         {
-            var key = await _context.KeyAPIs.FindAsync(id);
+            var key = await _context.KeyAPIs.FirstOrDefaultAsync(k => k.ID == id && k.DeletedAt == null);
             if (key == null) return false;
+
+            string beforeJson = System.Text.Json.JsonSerializer.Serialize(new { key.TenKey, key.LoaiKey, key.ThuTuUuTien, key.HanMucRequest, key.HanMucToken, key.TrangThai });
 
             key.TenKey = dto.TenKey;
             key.LoaiKey = dto.LoaiKey;
@@ -131,37 +134,147 @@ namespace educodeai_server.Repository.Implementation
                 key.MaKeyMaHoa = MaHoaHelper.MaHoa(dto.MaKeyRaw, _secretKey);
             }
 
+            string afterJson = System.Text.Json.JsonSerializer.Serialize(new { key.TenKey, key.LoaiKey, key.ThuTuUuTien, key.HanMucRequest, key.HanMucToken, key.TrangThai });
+
+            var auditLog = new ApiKeyAuditLog
+            {
+                Action = AuditAction.UPDATE_KEY,
+                AdminId = adminId,
+                KeyApiId = id,
+                BeforeJson = beforeJson,
+                AfterJson = afterJson,
+                IpAddress = ipAddress,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _context.ApiKeyAuditLogs.AddAsync(auditLog);
+
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<bool> UpdateStatusAsync(int id, bool status)
+        public async Task<bool> UpdateStatusAsync(int id, bool status, int adminId, string? ipAddress)
         {
-            var key = await _context.KeyAPIs.FindAsync(id);
+            var key = await _context.KeyAPIs.FirstOrDefaultAsync(k => k.ID == id && k.DeletedAt == null);
             if (key == null) return false;
 
+            string beforeJson = System.Text.Json.JsonSerializer.Serialize(new { key.TrangThai });
             key.TrangThai = status;
+            string afterJson = System.Text.Json.JsonSerializer.Serialize(new { key.TrangThai });
+
+            var auditLog = new ApiKeyAuditLog
+            {
+                Action = AuditAction.TOGGLE_STATUS,
+                AdminId = adminId,
+                KeyApiId = id,
+                BeforeJson = beforeJson,
+                AfterJson = afterJson,
+                IpAddress = ipAddress,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _context.ApiKeyAuditLogs.AddAsync(auditLog);
+
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<bool> DeleteKeyAsync(int id)
+        public async Task<bool> SoftDeleteKeyAsync(int id, int adminId, string? ipAddress)
         {
-            var key = await _context.KeyAPIs.FindAsync(id);
+            var key = await _context.KeyAPIs.FirstOrDefaultAsync(k => k.ID == id && k.DeletedAt == null);
             if (key == null) return false;
 
-            _context.KeyAPIs.Remove(key);
+            string beforeJson = System.Text.Json.JsonSerializer.Serialize(new { key.TrangThai, key.DeletedAt });
+            
+            key.DeletedAt = DateTime.UtcNow;
+            key.DeletedBy = adminId;
+            key.TrangThai = false; // Cũng tắt luôn
+
+            string afterJson = System.Text.Json.JsonSerializer.Serialize(new { key.TrangThai, key.DeletedAt, key.DeletedBy });
+
+            var auditLog = new ApiKeyAuditLog
+            {
+                Action = AuditAction.SOFT_DELETE,
+                AdminId = adminId,
+                KeyApiId = id,
+                BeforeJson = beforeJson,
+                AfterJson = afterJson,
+                IpAddress = ipAddress,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _context.ApiKeyAuditLogs.AddAsync(auditLog);
+
             return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task<KeyAPIModel?> GetRawKeyForRedisAsync(int id)
         {
-            return await _context.KeyAPIs.FindAsync(id);
+            return await _context.KeyAPIs.FirstOrDefaultAsync(k => k.ID == id && k.DeletedAt == null);
         }
 
         public async Task<IEnumerable<KeyAPIModel>> GetActiveKeysAsync()
         {
             return await _context.KeyAPIs
-                .Where(k => k.TrangThai)
+                .Where(k => k.TrangThai && k.DeletedAt == null)
                 .ToListAsync();
+        }
+
+        public async Task<bool> ResetKeyUsageAsync(int id, int adminId, string? ipAddress)
+        {
+            var key = await _context.KeyAPIs.FirstOrDefaultAsync(k => k.ID == id && k.DeletedAt == null && k.TrangThai == true);
+            if (key == null) return false;
+
+            string beforeJson = System.Text.Json.JsonSerializer.Serialize(new { key.LastUsageResetAt });
+            key.LastUsageResetAt = DateTime.UtcNow;
+            string afterJson = System.Text.Json.JsonSerializer.Serialize(new { key.LastUsageResetAt });
+
+            var auditLog = new ApiKeyAuditLog
+            {
+                Action = AuditAction.RESET_USAGE,
+                AdminId = adminId,
+                KeyApiId = id,
+                BeforeJson = beforeJson,
+                AfterJson = afterJson,
+                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { reason = "manual_reset", redisReset = true }),
+                IpAddress = ipAddress,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _context.ApiKeyAuditLogs.AddAsync(auditLog);
+
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<ApiKeyRevealDto?> RevealKeyAsync(int id, int adminId, string? ipAddress)
+        {
+            var key = await _context.KeyAPIs.FirstOrDefaultAsync(k => k.ID == id && k.DeletedAt == null);
+            if (key == null) return null;
+
+            var auditLog = new ApiKeyAuditLog
+            {
+                Action = AuditAction.REVEAL_KEY,
+                AdminId = adminId,
+                KeyApiId = id,
+                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { maskedKey = MaskKey(MaHoaHelper.GiaiMa(key.MaKeyMaHoa, _secretKey)), revealedAt = DateTime.UtcNow, reason = "manual_reveal" }),
+                IpAddress = ipAddress,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _context.ApiKeyAuditLogs.AddAsync(auditLog);
+            await _context.SaveChangesAsync();
+
+            return new ApiKeyRevealDto
+            {
+                Id = key.ID,
+                MaKeyFull = MaHoaHelper.GiaiMa(key.MaKeyMaHoa, _secretKey),
+                RevealedAt = DateTime.UtcNow
+            };
+        }
+
+        public async Task AddAuditLogAsync(ApiKeyAuditLog log)
+        {
+            await _context.ApiKeyAuditLogs.AddAsync(log);
+            await _context.SaveChangesAsync();
+        }
+
+        private string MaskKey(string? fullKey)
+        {
+            if (string.IsNullOrEmpty(fullKey) || fullKey.Length < 8) return "********";
+            return fullKey.Substring(0, 3) + "..." + fullKey.Substring(fullKey.Length - 4);
         }
     }
 }

@@ -3,10 +3,17 @@ import type { KeyApiSummary } from "../QuanLyApiKey.types";
 
 interface Props {
     danhSach: KeyApiSummary[];
+    revealedKeys: Record<number, string>;
     onSua: (key: KeyApiSummary) => void;
     onKhoa: (key: KeyApiSummary) => void;
     onCapMoi: (key: KeyApiSummary) => void;
+    onResetUsage: (key: KeyApiSummary) => void;
     onXoa: (key: KeyApiSummary) => void;
+    onReveal: (key: KeyApiSummary) => void;
+    isRevealing: number | null;
+    isSyncing: number | null;
+    isResetting: number | null;
+    isDeleting: number | null;
 }
 
 /** Tính % usage và trả về class màu progress bar */
@@ -20,24 +27,14 @@ const mauBar = (da: number, max: number) => {
     return "akm-limit-bar--ok";
 };
 
-const BangApiKey = ({ danhSach, onSua, onKhoa, onCapMoi, onXoa }: Props) => {
+const BangApiKey = ({ danhSach, revealedKeys, onSua, onKhoa, onCapMoi, onResetUsage, onXoa, onReveal, isRevealing, isSyncing, isResetting, isDeleting }: Props) => {
     const [copiedId, setCopiedId] = useState<number | null>(null);
-    // Trạng thái lưu các ID của key đang hiển thị
-    const [visibleKeys, setVisibleKeys] = useState<number[]>([]);
 
-    const copy = (key: KeyApiSummary) => {
-        const textToCopy = key.maKeyFull || `sk-...${key.id || 0}`;
-        navigator.clipboard.writeText(textToCopy).then(() => {
+    const copy = (key: KeyApiSummary, displayKey: string) => {
+        navigator.clipboard.writeText(displayKey).then(() => {
             setCopiedId(key.id);
             setTimeout(() => setCopiedId(null), 1500);
         });
-    };
-
-    // Hàm ẩn/hiện key API
-    const toggleShowKey = (id: number) => {
-        setVisibleKeys((prev) =>
-            prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]
-        );
     };
 
     if (danhSach.length === 0) {
@@ -68,7 +65,7 @@ const BangApiKey = ({ danhSach, onSua, onKhoa, onCapMoi, onXoa }: Props) => {
                         const hmReq = key.hanMucRequest ?? key.HanMucRequest ?? 0;
                         const daTok = key.daSuDungToken ?? key.DaSuDungToken ?? 0;
                         const hmTok = key.hanMucToken ?? key.HanMucToken ?? 0;
-                        const maKey = key.maKeyFull || key.MaKeyFull || `sk-....${key.id || key.ID || key.Id || 0}`;
+                        const maKeyMasked = key.maKeyMasked || key.MaKeyMasked || "sk-...***";
 
                         const rPct = pct(daReq, hmReq);
                         const tPct = pct(daTok, hmTok);
@@ -80,12 +77,9 @@ const BangApiKey = ({ danhSach, onSua, onKhoa, onCapMoi, onXoa }: Props) => {
                         const rWidth = rPct === 0 && daReq > 0 ? 2 : rPct;
                         const tWidth = tPct === 0 && daTok > 0 ? 2 : tPct;
 
-                        // Xử lý che mã Key (chỉ hiện 3 ký tự đầu và 3 ký tự cuối)
-                        const isVisible = visibleKeys.includes(key.id);
-                        const maskedKey = maKey.length > 8 
-                            ? `${maKey.substring(0, 3)}...${maKey.substring(maKey.length - 3)}`
-                            : "sk-...***";
-                        const displayKey = isVisible ? maKey : maskedKey;
+                        // Xử lý che mã Key
+                        const isRevealed = !!revealedKeys[key.id];
+                        const displayKey = isRevealed ? revealedKeys[key.id] : maKeyMasked;
 
                         return (
                             <tr key={key.id}>
@@ -102,15 +96,20 @@ const BangApiKey = ({ danhSach, onSua, onKhoa, onCapMoi, onXoa }: Props) => {
                                         <span className="akm-key-btns">
                                             <button
                                                 className="akm-icon-btn"
-                                                title={isVisible ? "Ẩn mã" : "Xem mã đầy đủ"}
-                                                onClick={() => toggleShowKey(key.id)}
+                                                title={isRevealed ? "Ẩn mã" : "Xem mã đầy đủ"}
+                                                onClick={() => onReveal(key)}
+                                                disabled={isRevealing === key.id}
                                             >
-                                                <i className={`bi ${isVisible ? "bi-eye-slash" : "bi-eye"}`}></i>
+                                                {isRevealing === key.id ? (
+                                                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                ) : (
+                                                    <i className={`bi ${isRevealed ? "bi-eye-slash" : "bi-eye"}`}></i>
+                                                )}
                                             </button>
                                             <button
                                                 className="akm-icon-btn"
-                                                title="Sao chép"
-                                                onClick={() => copy(key)}
+                                                title={isRevealed ? "Sao chép mã gốc" : "Sao chép mã bị che"}
+                                                onClick={() => copy(key, displayKey)}
                                             >
                                                 <i className={`bi ${copiedId === key.id ? "bi-check-lg text-success" : "bi-clipboard"}`}></i>
                                             </button>
@@ -185,14 +184,34 @@ const BangApiKey = ({ danhSach, onSua, onKhoa, onCapMoi, onXoa }: Props) => {
                                                 </button>
                                             </li>
                                             <li>
-                                                <button className="dropdown-item" onClick={() => onCapMoi(key)}>
-                                                    <i className="bi bi-cloud-arrow-up text-info me-2"></i>Đồng bộ Redis
+                                                <button className="dropdown-item" onClick={() => onCapMoi(key)} disabled={isSyncing === key.id}>
+                                                    {isSyncing === key.id ? (
+                                                        <span className="spinner-border spinner-border-sm text-info me-2"></span>
+                                                    ) : (
+                                                        <i className="bi bi-cloud-arrow-up text-info me-2"></i>
+                                                    )}
+                                                    Đồng bộ Redis
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button className="dropdown-item text-danger" onClick={() => onResetUsage(key)} disabled={isResetting === key.id}>
+                                                    {isResetting === key.id ? (
+                                                        <span className="spinner-border spinner-border-sm text-danger me-2"></span>
+                                                    ) : (
+                                                        <i className="bi bi-arrow-counterclockwise text-danger me-2"></i>
+                                                    )}
+                                                    Reset Usage
                                                 </button>
                                             </li>
                                             <li><hr className="dropdown-divider" /></li>
                                             <li>
-                                                <button className="dropdown-item text-danger" onClick={() => onXoa(key)}>
-                                                    <i className="bi bi-trash3 me-2"></i>Xoá Key
+                                                <button className="dropdown-item text-danger" onClick={() => onXoa(key)} disabled={isDeleting === key.id}>
+                                                    {isDeleting === key.id ? (
+                                                        <span className="spinner-border spinner-border-sm text-danger me-2"></span>
+                                                    ) : (
+                                                        <i className="bi bi-trash3 me-2"></i>
+                                                    )}
+                                                    Xoá Key
                                                 </button>
                                             </li>
                                         </ul>
