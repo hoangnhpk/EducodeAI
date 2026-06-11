@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace educodeai_server.Models
 {
@@ -27,6 +27,10 @@ namespace educodeai_server.Models
         public int HanMucToken { get; set; } = 2000000;
 
         public DateTime NgayTao { get; set; } = DateTime.UtcNow;
+
+        public DateTime? DeletedAt { get; set; }
+        public int? DeletedBy { get; set; }
+        public DateTime? LastUsageResetAt { get; set; }
 
         // Relationship: Một Key có nhiều Nhật ký sử dụng
         public virtual ICollection<NhatKySuDungModel> NhatKySuDungs { get; set; } = new List<NhatKySuDungModel>();

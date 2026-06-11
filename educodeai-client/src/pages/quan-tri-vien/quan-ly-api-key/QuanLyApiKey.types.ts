@@ -15,7 +15,13 @@ export interface KeyApiSummary {
   daSuDungRequest: number;
   hanMucToken: number;
   daSuDungToken: number;
+  maKeyMasked: string;
+}
+
+export interface ApiKeyRevealDto {
+  id: number;
   maKeyFull: string;
+  revealedAt: string;
 }
 
 export interface KeyApiManage {
