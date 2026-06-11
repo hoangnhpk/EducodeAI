@@ -20,6 +20,7 @@ namespace educodeai_server.Helpers
         private readonly IKeyApiRepository _keyApiRepo;
         private readonly ILogger<GeminiAIService> _logger;
         private readonly string _secretKey;
+        private readonly string _modelName;
 
         private static int _currentKeyIndex = 0;
         private static readonly object _lock = new object();
@@ -31,6 +32,7 @@ namespace educodeai_server.Helpers
             _keyApiRepo = keyApiRepo;
             _logger = logger;
             _secretKey = config["ApiSecurity:SecretKey"] ?? throw new Exception("Chưa cấu hình SecretKey!");
+            _modelName = config["GeminiAI:Model"] ?? "gemini-1.5-flash";
         }
 
         private async Task<List<string>> LayDanhSachKeyHopLeTuRedisAsync()
@@ -188,7 +190,7 @@ namespace educodeai_server.Helpers
                     string maHoa = await _redisService.LayHashAsync(currentRedisKey, "MaKeyMaHoa");
                     string rawKey = MaHoaHelper.GiaiMa(maHoa, _secretKey);
 
-                    string requestUrl = $"v1beta/models/gemma-3-27b-it:generateContent?key={rawKey}";
+                    string requestUrl = $"v1beta/models/{_modelName}:generateContent?key={rawKey}";
 
                     HttpResponseMessage response = null;
 
@@ -245,6 +247,13 @@ namespace educodeai_server.Helpers
                         soLanThuLai++;
                         await Task.Delay(2000);
                         continue;
+                    }
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        var body = await response.Content.ReadAsStringAsync();
+                        _logger.LogError("[Gemini] Model/API endpoint kh?ng t?n t?i. Model={Model}, Body={Body}", _modelName, body);
+                        throw new Exception($"Model AI '{_modelName}' kh?ng t?n t?i ho?c ch?a ???c Google h? tr?. Vui l?ng ki?m tra c?u h?nh GeminiAI:Model.");
                     }
 
                     response.EnsureSuccessStatusCode();
