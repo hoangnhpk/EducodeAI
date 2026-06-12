@@ -1,17 +1,21 @@
 using educodeai_server.Data;
 using educodeai_server.DTOs.QuanTriVien;
+using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace educodeai_server.Services.Implementation
 {
     public class QuanLyDanhGiaService : IQuanLyDanhGiaService
     {
         private readonly EduCodeAIDbContext _context;
+        private readonly IGeminiAIService _gemini;
 
-        public QuanLyDanhGiaService(EduCodeAIDbContext context)
+        public QuanLyDanhGiaService(EduCodeAIDbContext context, IGeminiAIService gemini)
         {
             _context = context;
+            _gemini = gemini;
         }
 
         public async Task<ThongKeDanhGiaAdminDTO> LayThongKeAsync(int? maKhoaHoc = null)
@@ -32,6 +36,7 @@ namespace educodeai_server.Services.Implementation
             return new ThongKeDanhGiaAdminDTO
             {
                 TongDanhGia = tongDanhGia,
+                ChoDuyet = danhSach.Count(x => x.TrangThai == "ChoDuyet"),
                 DaDuyet = danhSach.Count(x => x.TrangThai == "DaDuyet"),
                 TuChoi = danhSach.Count(x => x.TrangThai == "TuChoi"),
                 DanhGiaTrungBinh = tongDanhGia > 0 ? Math.Round(danhSach.Average(x => x.SoSao), 1) : 0,
@@ -124,42 +129,61 @@ namespace educodeai_server.Services.Implementation
             };
         }
 
-        public async Task<bool> CapNhatTrangThaiAsync(int id, string trangThai)
+        /// <summary>
+        /// Lấy tất cả review đang Chờ Duyệt → gửi cho Gemini phân tích → cập nhật tự động.
+        /// Gemini sẽ trả về JSON: [{"id": 1, "ketQua": "DaDuyet", "lyDo": "..."}]
+        /// </summary>
+        public async Task<KetQuaAIDuyetDTO> DuyetHangLoatBangAIAsync()
         {
-            var danhGia = await _context.DanhGias.FindAsync(id);
-            if (danhGia == null)
-            {
-                return false;
-            }
-
-            danhGia.TrangThai = trangThai;
-            return await _context.SaveChangesAsync() > 0;
-        }
-
-        public async Task<bool> XoaAsync(int id)
-        {
-            var danhGia = await _context.DanhGias.FindAsync(id);
-            if (danhGia == null)
-            {
-                return false;
-            }
-
-            _context.DanhGias.Remove(danhGia);
-            return await _context.SaveChangesAsync() > 0;
-        }
-
-        public async Task<List<DanhGiaAdminKhoaHocDTO>> LayDanhSachKhoaHocFilterAsync()
-        {
-            return await _context.KhoaHocs
+            // 1. Lấy tối đa 20 review mỗi lần
+            var danhSachChoDuyet = await _context.DanhGias
                 .AsNoTracking()
-                .OrderBy(x => x.TenKhoaHoc)
-                .Select(x => new DanhGiaAdminKhoaHocDTO
+                .Where(x => x.TrangThai == "ChoDuyet")
+                .OrderBy(x => x.NgayDanhGia)
+                .Take(20)
+                .Select(x => new
                 {
-                    Id = x.MaKhoaHoc,
-                    TenKhoaHoc = x.TenKhoaHoc,
-                    GiangVien = x.GiangVien.HoTen
+                    x.MaDanhGia,
+                    x.NhanXet,
+                    x.SoSao,
+                    TenNguoiDung = x.NguoiDung.HoTen,
+                    TenKhoaHoc = x.KhoaHoc.TenKhoaHoc
                 })
                 .ToListAsync();
-        }
-    }
-}
+
+            if (danhSachChoDuyet.Count == 0)
+                return new KetQuaAIDuyetDTO();
+
+            // 2. Xây dựng prompt chặt hơn, có ngữ cảnh tối thiểu
+            var payload = danhSachChoDuyet.Select(x => new
+            {
+                id = x.MaDanhGia,
+                soSao = x.SoSao,
+                nguoiDung = x.TenNguoiDung,
+                khoaHoc = x.TenKhoaHoc,
+                noiDung = x.NhanXet
+            }).ToList();
+
+            var inputJson = JsonSerializer.Serialize(payload);
+
+            string prompt = """
+You are a strict content moderator for Vietnamese course reviews.
+Decide ONLY between "DaDuyet" and "TuChoi".
+
+Reject if the review contains: profanity, harassment, spam, ads, hate, violence, sexual content, personal data exposure, or is clearly off-topic.
+If unclear but not harmful, approve.
+
+Return ONLY valid JSON array with the exact input ids.
+Schema:
+[{"id":123,"ketQua":"DaDuyet","lyDo":"short reason"}]
+
+Input:
+{0}
+""";
+            prompt = string.Format(prompt, inputJson);
+
+            string rawResponse;
+            try
+            {
+                rawResponse = await _gemini.GenerateAsync(prompt);
+    

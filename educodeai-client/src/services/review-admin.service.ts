@@ -122,6 +122,7 @@ const shouldFallbackToMock = (error: unknown) =>
 const calculateThongKe = (items: ReviewItem[]): ThongKeReview => {
   return {
     tongDanhGia: items.length,
+    choDuyet: items.filter((item) => item.trangThai === 'ChoDuyet').length,
     daDuyet: items.filter((item) => item.trangThai === 'DaDuyet').length,
     tuChoi: items.filter((item) => item.trangThai === 'TuChoi').length,
     danhGiaTrungBinh: items.length > 0 ? items.reduce((sum, item) => sum + item.soSao, 0) / items.length : 0,
@@ -291,6 +292,20 @@ export const reviewAdminService = {
       if (!shouldFallbackToMock(error)) throw error;
       return removeMockReview(id);
     }
+  },
+
+  /** Gọi Gemini AI duyệt hàng loạt tất cả review đang ChoDuyet */
+  async aiDuyetHangLoat(): Promise<{
+    tongXuLy: number;
+    soDaDuyet: number;
+    soTuChoi: number;
+  }> {
+    const data = await axiosInstance.post<{
+      success: boolean;
+      message: string;
+      data: { tongXuLy: number; soDaDuyet: number; soTuChoi: number };
+    }>('api/admin/danh-gia/ai-duyet-hang-loat');
+    return (data as any).data;
   },
 };
 

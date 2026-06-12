@@ -281,7 +281,7 @@ export const TabChungChi = ({
                                     <p>{thongTinChungChi?.emailNhan || emailNhan || '--'}</p>
                                 </div>
                                 <span className={thongTinChungChi?.daGuiEmail ? 'sent' : 'pending'}>
-                                    {thongTinChungChi?.daGuiEmail ? 'Đã gửi PDF' : 'Đang chuẩn bị gửi PDF...'}
+                                    {thongTinChungChi?.daGuiEmail ? '✅ Đã gửi PDF' : '⏳ Đang chuẩn bị gửi PDF...'}
                                 </span>
                             </div>
 
@@ -289,9 +289,36 @@ export const TabChungChi = ({
                                 <p className="cp-certificate-hint">PDF đã được gửi lúc {dinhDangNgay(thongTinChungChi.ngayGuiEmail)}.</p>
                             )}
 
-                            {/* <button className="cp-certificate-action secondary" onClick={onInChungChi}>
-                                <i className="fas fa-download" /> Tải / In chứng chỉ
-                            </button> */}
+                            {/* Nút hành động chứng chỉ */}
+                            <div className="cp-certificate-actions-row">
+                                <button className="cp-certificate-action secondary" onClick={_onInChungChi}>
+                                    <i className="fas fa-download" /> Tải / In chứng chỉ
+                                </button>
+
+                                {thongTinChungChi?.maChungChi && (
+                                    <button
+                                        className="cp-certificate-action ghost"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(thongTinChungChi.maChungChi || '');
+                                            const btn = document.activeElement as HTMLButtonElement;
+                                            const orig = btn.innerHTML;
+                                            btn.innerHTML = '<i class="fas fa-check"></i> Đã sao chép!';
+                                            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+                                        }}
+                                    >
+                                        <i className="fas fa-copy" /> Sao chép mã CC
+                                    </button>
+                                )}
+
+                                <a
+                                    className="cp-certificate-action linkedin"
+                                    href={`https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(thongTinChungChi?.tenKhoaHoc || tenKhoaHoc)}&organizationName=EducodeAI&issueYear=${new Date(thongTinChungChi?.ngayCap || Date.now()).getFullYear()}&certUrl=${encodeURIComponent(window.location.href)}&certId=${encodeURIComponent(thongTinChungChi?.maChungChi || '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <i className="fab fa-linkedin" /> Chia sẻ LinkedIn
+                                </a>
+                            </div>
                         </>
                     ) : (
                         <div className="cp-certificate-placeholder">

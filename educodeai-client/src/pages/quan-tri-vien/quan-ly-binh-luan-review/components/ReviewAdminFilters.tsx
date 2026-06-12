@@ -41,8 +41,9 @@ export default function ReviewAdminFilters({
         onChange={(e) => handleChange('trangThai', e.target.value as ReviewFilterParams['trangThai'])}
       >
         <option value="TatCa">Tất cả trạng thái</option>
-        <option value="DaDuyet">Đã duyệt</option>
-        <option value="TuChoi">Từ chối</option>
+        <option value="ChoDuyet">⏳ Chờ duyệt</option>
+        <option value="DaDuyet">✅ Đã duyệt</option>
+        <option value="TuChoi">❌ Từ chối</option>
       </select>
 
       <select
