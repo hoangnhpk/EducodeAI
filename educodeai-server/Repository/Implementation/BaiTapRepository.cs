@@ -39,26 +39,31 @@ namespace educodeai_server.Repository.Implementation
 
         public async Task<int> CreateQuizAsync(BaiTapModel baiTap, BaiTap_QuizModel quiz)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
 
-            try
+            return await executionStrategy.ExecuteAsync(async () =>
             {
-                await _context.BaiTaps.AddAsync(baiTap);
-                await _context.SaveChangesAsync();
+                await using var transaction = await _context.Database.BeginTransactionAsync();
 
-                quiz.MaBaiTap = baiTap.MaBaiTap;
-                await _context.BaiTap_Quizs.AddAsync(quiz);
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.BaiTaps.AddAsync(baiTap);
+                    await _context.SaveChangesAsync();
 
-                await transaction.CommitAsync();
+                    quiz.MaBaiTap = baiTap.MaBaiTap;
+                    await _context.BaiTap_Quizs.AddAsync(quiz);
+                    await _context.SaveChangesAsync();
 
-                return quiz.MaBaiTapQuiz;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+                    await transaction.CommitAsync();
+
+                    return quiz.MaBaiTapQuiz;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
 
         public async Task<BaiTap_QuizModel?> GetQuizDetailAsync(int quizId)
@@ -115,26 +120,64 @@ namespace educodeai_server.Repository.Implementation
                 .ToListAsync();
         }
 
-        public async Task<bool> XoaBaiTapAsync(int maBaiTapQuiz)
+        public async Task<bool> CapNhatQuizAsync(int maBaiTap, int maGiangVien, CreateQuizDTO dto)
         {
-            var quiz = await _context.BaiTap_Quizs.FindAsync(maBaiTapQuiz);
-            if (quiz == null)
-                return false;
-            _context.BaiTap_Quizs.Remove(quiz);
-            var baiTap = await _context.BaiTaps.FindAsync(quiz.MaBaiTap);
-            if (baiTap != null)
-            {
-                _context.BaiTaps.Remove(baiTap);
-            }
+            var quiz = await _context.BaiTap_Quizs
+                .Include(q => q.BaiTap)
+                    .ThenInclude(bt => bt.BaiHoc)
+                        .ThenInclude(bh => bh.ChuongHoc)
+                            .ThenInclude(ch => ch.KhoaHoc)
+                .FirstOrDefaultAsync(q => q.MaBaiTap == maBaiTap && q.BaiTap.BaiHoc.ChuongHoc.KhoaHoc.MaGiangVien == maGiangVien);
+
+            if (quiz == null) return false;
+
+            quiz.ThoiGianLamBai = dto.ThoiGianLamBai;
+            quiz.DiemCanDat = dto.DiemCanDat;
+            quiz.ChoPhepLamLai = dto.ChoPhepLamLai;
+            quiz.DaoCauHoi = dto.DaoCauHoi;
+            quiz.DuLieuCauHoi = dto.DuLieuCauHoi;
+
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<object> LayChiTietBaiTapAsync(int maBaiTap)
+        public async Task<bool> XoaBaiTapAsync(int maBaiTap, int maGiangVien)
         {
-            // Dùng Entity Framework Core query thẳng vào bảng BaiTap_Quiz dựa trên ERD của ông
+            var baiTap = await _context.BaiTaps
+                .Include(b => b.BaiHoc)
+                    .ThenInclude(bh => bh.ChuongHoc)
+                        .ThenInclude(ch => ch.KhoaHoc)
+                .Include(b => b.BaiTap_Quiz)
+                .FirstOrDefaultAsync(b => b.MaBaiTap == maBaiTap && b.BaiHoc.ChuongHoc.KhoaHoc.MaGiangVien == maGiangVien);
+
+            if (baiTap == null) return false;
+
+            if (baiTap.BaiTap_Quiz != null)
+            {
+                _context.BaiTap_Quizs.Remove(baiTap.BaiTap_Quiz);
+            }
+
+            _context.BaiTaps.Remove(baiTap);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> KiemTraBaiHocThuocGiangVienAsync(int maBaiHoc, int maGiangVien)
+        {
+            return await _context.BaiHocs
+                .AnyAsync(bh => bh.MaBaiHoc == maBaiHoc && bh.ChuongHoc.KhoaHoc.MaGiangVien == maGiangVien);
+        }
+
+        public async Task<bool> KiemTraBaiTapThuocGiangVienAsync(int maBaiTap, int maGiangVien)
+        {
+            return await _context.BaiTaps
+                .AnyAsync(bt => bt.MaBaiTap == maBaiTap && bt.BaiHoc.ChuongHoc.KhoaHoc.MaGiangVien == maGiangVien);
+        }
+
+        public async Task<object?> LayChiTietBaiTapAsync(int maBaiTap, int maGiangVien)
+        {
             var chiTietQuiz = await _context.BaiTap_Quizs
-                .Where(q => q.MaBaiTap == maBaiTap)
+                .Where(q => q.MaBaiTap == maBaiTap && q.BaiTap.BaiHoc.ChuongHoc.KhoaHoc.MaGiangVien == maGiangVien)
                 .Select(q => new
                 {
                     q.MaBaiTap,
@@ -142,7 +185,6 @@ namespace educodeai_server.Repository.Implementation
                     q.DiemCanDat,
                     q.ChoPhepLamLai,
                     q.DaoCauHoi,
-                    // Quan trọng nhất: Kéo cái chuỗi JSON đang nằm trong Database ra
                     duLieuCauHoiJSON = q.DuLieuCauHoi
                 })
                 .FirstOrDefaultAsync();

@@ -86,6 +86,12 @@ export default function HeaderHocVien() {
                 <Link to="/hoc-vien/khoa-hoc-cua-toi" className="dropdown-item">
                   Khóa học của tôi
                 </Link>
+                <Link to="/hoc-vien/nhap-ma-qua-tang" className="dropdown-item">
+                  Nhập mã quà tặng
+                </Link>
+                <Link to="/hoc-vien/lich-su-ma-qua-tang" className="dropdown-item">
+                  Lịch sử mã quà tặng
+                </Link>
                 <Link to="/khoa-hoc-ai-cua-toi" className="dropdown-item">
                   Lộ trình của tôi
                 </Link>
