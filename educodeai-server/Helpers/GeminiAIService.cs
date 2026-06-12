@@ -38,15 +38,16 @@ namespace educodeai_server.Helpers
         private async Task<List<string>> LayDanhSachKeyHopLeTuRedisAsync()
         {
             var validKeys = new List<string>();
+            var keys = new List<string>();
             try
             {
-                var keys = _redisService.LayDanhSachKeyTheoPattern("EduCodeAI:KeyPool:*").ToList();
+                keys = _redisService.LayDanhSachKeyTheoPattern("EduCodeAI:KeyPool:*").ToList();
                 foreach (var k in keys)
                 {
                     var trangThaiStr = await _redisService.LayHashAsync(k, "TrangThai");
                     if (bool.TryParse(trangThaiStr, out bool isOk) && isOk)
                     {
-                        var reqMaxStr = await _redisService.LayHashAsync(k, "HanMucRequest");
+                        var reqMaxStr = await _redisService.LayHashAsync(k, "RPDLimit");
                         var reqUsedStr = await _redisService.LayHashAsync(k, "RequestDaDung");
                         int.TryParse(reqMaxStr, out int max);
                         int.TryParse(reqUsedStr, out int used);
@@ -64,7 +65,7 @@ namespace educodeai_server.Helpers
             }
 
             // Nếu không có keys từ Redis, thử lấy từ database
-            if (validKeys.Count == 0)
+            if (keys.Count == 0)
             {
                 try
                 {
@@ -77,11 +78,23 @@ namespace educodeai_server.Helpers
                             
                             // Äông bá key vào Redis/MemoryCache
                             await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", key.MaKeyMaHoa);
-                            await _redisService.LuuHashAsync(redisKey, "HanMucRequest", key.HanMucRequest.ToString());
-                            await _redisService.LuuHashAsync(redisKey, "HanMucToken", key.HanMucToken.ToString());
-                            await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0"); // Bát dáu tù 0
-                            await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");  // Bát dáu tù 0
+                            await _redisService.LuuHashAsync(redisKey, "RPMLimit", key.RPMLimit.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "TPMLimit", key.TPMLimit.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "RPDLimit", key.RPDLimit.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "ModelSuDung", key.ModelSuDung);
                             await _redisService.LuuHashAsync(redisKey, "TrangThai", "true");
+                            
+                            var existingReq = await _redisService.LayHashAsync(redisKey, "RequestDaDung");
+                            if (string.IsNullOrEmpty(existingReq))
+                            {
+                                await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0");
+                            }
+                            
+                            var existingTok = await _redisService.LayHashAsync(redisKey, "TokenDaDung");
+                            if (string.IsNullOrEmpty(existingTok))
+                            {
+                                await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");
+                            }
                             
                             validKeys.Add(redisKey);
                         }
@@ -190,7 +203,11 @@ namespace educodeai_server.Helpers
                     string maHoa = await _redisService.LayHashAsync(currentRedisKey, "MaKeyMaHoa");
                     string rawKey = MaHoaHelper.GiaiMa(maHoa, _secretKey);
 
-                    string requestUrl = $"v1beta/models/{_modelName}:generateContent?key={rawKey}";
+                    string modelSuDung = await _redisService.LayHashAsync(currentRedisKey, "ModelSuDung");
+                    if (string.IsNullOrWhiteSpace(modelSuDung)) modelSuDung = _modelName;
+                    else if (modelSuDung.StartsWith("models/")) modelSuDung = modelSuDung.Substring(7);
+
+                    string requestUrl = $"v1beta/models/{modelSuDung}:generateContent?key={rawKey}";
 
                     HttpResponseMessage response = null;
 
@@ -274,7 +291,7 @@ namespace educodeai_server.Helpers
                 {
                     ID_Key = keyId,
                     SoTokenTieuHao = tokens,
-                    ThoiGianGoi = DateTime.Now,
+                    ThoiGianGoi = DateTime.UtcNow,
                     MaTrangThai = statusCode,
                     DuongDanAPI = url
                 };

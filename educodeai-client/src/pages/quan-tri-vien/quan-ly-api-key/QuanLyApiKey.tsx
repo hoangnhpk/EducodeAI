@@ -43,21 +43,24 @@ const QuanLyApiKey = () => {
         loaiKey: k.loaiKey || k.LoaiKey || "Khác",
         trangThai: k.trangThai ?? k.TrangThai ?? false,
         thuTuUuTien: k.thuTuUuTien ?? k.ThuTuUuTien ?? 0,
-        hanMucRequest: k.hanMucRequest ?? k.HanMucRequest ?? 0,
-        daSuDungRequest: k.daSuDungRequest ?? k.DaSuDungRequest ?? 0,
-        hanMucToken: k.hanMucToken ?? k.HanMucToken ?? 0,
-        daSuDungToken: k.daSuDungToken ?? k.DaSuDungToken ?? 0,
-        phanTramSuDung: k.phanTramSuDung ?? k.PhanTramSuDung ?? 0
+        modelSuDung: k.modelSuDung || k.ModelSuDung || "",
+        rpmLimit: k.rpmLimit ?? k.RPMLimit ?? 0,
+        tpmLimit: k.tpmLimit ?? k.TPMLimit ?? 0,
+        rpdLimit: k.rpdLimit ?? k.RPDLimit ?? 0,
+        daSuDungRequestHomNay: k.daSuDungRequestHomNay ?? k.DaSuDungRequestHomNay ?? 0,
+        daSuDungTokenHomNay: k.daSuDungTokenHomNay ?? k.DaSuDungTokenHomNay ?? 0,
+        phanTramRPD: k.phanTramRPD ?? k.PhanTramRPD ?? 0,
+        dangBiCooldown: k.dangBiCooldown ?? k.DangBiCooldown ?? false
       }));
 
       setDanhSach(data);
 
-      const sumReqs = data.reduce((sum, k: any) => sum + (k.daSuDungRequest ?? 0), 0);
-      const sumToks = data.reduce((sum, k: any) => sum + (k.daSuDungToken ?? 0), 0);
+      const sumReqs = data.reduce((sum, k) => sum + k.daSuDungRequestHomNay, 0);
+      const sumToks = data.reduce((sum, k) => sum + k.daSuDungTokenHomNay, 0);
       // Tính % sử dụng trung bình thực tế từ Redis (thay vì hardcode)
-      const activeKeys = data.filter(k => k.trangThai && k.hanMucRequest > 0);
+      const activeKeys = data.filter(k => k.trangThai && k.rpdLimit > 0);
       const avgPercent = activeKeys.length > 0
-        ? Math.round(activeKeys.reduce((sum, k) => sum + k.phanTramSuDung, 0) / activeKeys.length)
+        ? Math.round(activeKeys.reduce((sum, k) => sum + k.phanTramRPD, 0) / activeKeys.length)
         : 0;
       setThongKe({
         tongRequestHomNay: sumReqs,
