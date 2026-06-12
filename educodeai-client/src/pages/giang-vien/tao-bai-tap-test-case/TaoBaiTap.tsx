@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { BaiTapService } from '@/services/bai-tap.service';
 import type { DanhSachBaiTapDTO } from '@/pages/giang-vien/tao-bai-tap-test-case/BaiTap';
@@ -8,29 +8,36 @@ import QuizDetailView from './QuizDetailView';
 import { Suspense, lazy } from 'react';
 
 const PreviewBaiTapAI = lazy(() => import('../bai-tap-thuc-hanh/PreviewBaiTapAI'));
+const QuanLyBaiTapThucHanh = lazy(() => import('../bai-tap-thuc-hanh/QuanLyBaiTapThucHanh'));
 
 const QuanLyBaiTapContent = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [chiTietQuiz, setChiTietQuiz] = useState<any>(null);
+    const [cheDoManHinh, setCheDoManHinh] = useState<'list' | 'createPractice' | 'createQuiz'>('list');
 
     const [danhSachBaiTap, setDanhSachBaiTap] = useState<DanhSachBaiTapDTO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [tuKhoa, setTuKhoa] = useState('');
+    const [locLoai, setLocLoai] = useState('TatCa');
+    const [locTrangThai, setLocTrangThai] = useState('TatCa');
+    const [locKhoaHoc, setLocKhoaHoc] = useState('TatCa');
+    const [trangHienTai, setTrangHienTai] = useState(1);
+    const kichThuocTrang = 10;
+
+    const fetchDanhSach = async () => {
+        try {
+            setIsLoading(true);
+            const data = await BaiTapService.getDanhSachByGiangVien();
+            setDanhSachBaiTap(data);
+        } catch (error) {
+            console.error("L?i t?i danh s?ch b?i t?p:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDanhSach = async () => {
-            try {
-                setIsLoading(true);
-
-                const data = await BaiTapService.getDanhSachByGiangVien();
-                setDanhSachBaiTap(data);
-            } catch (error) {
-                console.error("Úi dồi ôi lỗi kéo data Bài Tập:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchDanhSach();
     }, []);
 
@@ -76,21 +83,30 @@ const QuanLyBaiTapContent = () => {
             let response;
             if (baiTap.loaiBaiTap === 'IDE') {
                 response = await BaiTapThucHanhService.getChiTiet(maBaiTap);
-                setChiTietQuiz({ ...response.data, loaiBaiTap: 'IDE' });
+                setChiTietQuiz({ ...(response?.data ?? response), loaiBaiTap: 'IDE' });
             } else {
                 response = await BaiTapService.getChiTietBaiTap(maBaiTap);
 
-                // Xử lý Quiz questions
-                let danhSachCauHoi = [];
-                const rawData = response.data?.duLieuCauHoiJSON || response.duLieuCauHoiJSON || response.data?.danhSachCauHoi || '[]';
+                const payload = response?.data ?? response;
+                let danhSachCauHoi: any[] = [];
+                const rawData = payload?.duLieuCauHoiJSON || payload?.duLieuCauHoi || payload?.danhSachCauHoi || '[]';
 
-                if (typeof rawData === 'string') {
-                    danhSachCauHoi = JSON.parse(rawData);
-                } else if (Array.isArray(rawData)) {
-                    danhSachCauHoi = rawData;
+                const parsedData = typeof rawData === 'string' ? JSON.parse(rawData || '[]') : rawData;
+                if (Array.isArray(parsedData)) {
+                    danhSachCauHoi = parsedData;
+                } else if (parsedData && typeof parsedData === 'object') {
+                    danhSachCauHoi = parsedData['C\u00e2u h\u1ecfi'] || parsedData['C\u00c3\u00a2u h\u00e1\u00bb\u008fi'] || parsedData.cauHoi || parsedData.questions || [];
                 }
 
-                setChiTietQuiz({ ...response.data, danhSachCauHoi, loaiBaiTap: 'Quiz' });
+                setChiTietQuiz({
+                    ...payload,
+                    tenBaiTap: baiTap.tenBaiTap,
+                    tenKhoaHoc: baiTap.tenKhoaHoc,
+                    tenChuong: baiTap.tenChuong,
+                    tenBaiHoc: baiTap.tenBaiHoc,
+                    danhSachCauHoi,
+                    loaiBaiTap: 'Quiz'
+                });
             }
         } catch (error) {
             console.error("Lỗi lấy chi tiết:", error);
@@ -106,11 +122,84 @@ const QuanLyBaiTapContent = () => {
         setChiTietQuiz(null);
     };
 
+    const danhSachKhoaHocFilter = useMemo(() => {
+        return Array.from(new Set(danhSachBaiTap.map(x => x.tenKhoaHoc).filter(Boolean)));
+    }, [danhSachBaiTap]);
+
+    const danhSachDaLoc = useMemo(() => {
+        const keyword = tuKhoa.trim().toLowerCase();
+        return danhSachBaiTap.filter(bt => {
+            const khopTuKhoa = !keyword || [bt.tenBaiTap, bt.tenKhoaHoc, bt.tenChuong, bt.tenBaiHoc]
+                .some(v => (v || '').toLowerCase().includes(keyword));
+            const khopLoai = locLoai === 'TatCa' || bt.loaiBaiTap === locLoai;
+            const khopTrangThai = locTrangThai === 'TatCa' || bt.trangThai === locTrangThai;
+            const khopKhoaHoc = locKhoaHoc === 'TatCa' || bt.tenKhoaHoc === locKhoaHoc;
+            return khopTuKhoa && khopLoai && khopTrangThai && khopKhoaHoc;
+        });
+    }, [danhSachBaiTap, tuKhoa, locLoai, locTrangThai, locKhoaHoc]);
+
+    const tongSoTrang = Math.max(1, Math.ceil(danhSachDaLoc.length / kichThuocTrang));
+    const danhSachHienThi = danhSachDaLoc.slice((trangHienTai - 1) * kichThuocTrang, trangHienTai * kichThuocTrang);
+
+    useEffect(() => {
+        setTrangHienTai(1);
+    }, [tuKhoa, locLoai, locTrangThai, locKhoaHoc]);
+
+    if (cheDoManHinh === 'createPractice' || cheDoManHinh === 'createQuiz') {
+        const isQuizMode = cheDoManHinh === 'createQuiz';
+        return (
+            <Suspense fallback={<div className="main-content" style={{ padding: 40 }}>Đang tải màn tạo bài tập...</div>}>
+                <QuanLyBaiTapThucHanh
+                    embedded
+                    initialTab={isQuizMode ? "quiz" : "create"}
+                    onBackToList={() => {
+                        setCheDoManHinh('list');
+                        fetchDanhSach();
+                    }}
+                />
+            </Suspense>
+        );
+    }
+
     return (
         <div className="main-content" style={{ padding: '40px 48px', animation: 'fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-            <div className="tabs">
-                <a href="/giang-vien/quiz" className="tab active text-decoration-none">+ Tạo Quiz</a>
-                {/* <button className="tab">+ Tạo Bài Thực Hành</button> */}
+            <div className="tabs" style={{ justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div className="d-flex gap-2 flex-wrap">
+                    <button type="button" className="tab text-decoration-none" onClick={() => setCheDoManHinh('createPractice')}>+ Tạo bài tập thực hành AI</button>
+                    
+                </div>
+                <button type="button" className="tab active text-decoration-none" onClick={() => setCheDoManHinh('createQuiz')}>+ Tạo bài tập Quiz</button>
+            </div>
+            <div className="card mb-3" style={{ padding: 16 }}>
+                <div className="row g-3">
+                    <div className="col-md-4">
+                        <input className="form-control" placeholder="Tìm theo tên bài tập, khóa học, chương, bài học..." value={tuKhoa} onChange={e => setTuKhoa(e.target.value)} />
+                    </div>
+                    <div className="col-md-3">
+                        <select className="form-select" value={locKhoaHoc} onChange={e => setLocKhoaHoc(e.target.value)}>
+                            <option value="TatCa">Tất cả khóa học</option>
+                            {danhSachKhoaHocFilter.map(kh => <option key={kh} value={kh}>{kh}</option>)}
+                        </select>
+                    </div>
+                    <div className="col-md-2">
+                        <select className="form-select" value={locLoai} onChange={e => setLocLoai(e.target.value)}>
+                            <option value="TatCa">Tất cả loại</option>
+                            <option value="Quiz">Quiz</option>
+                            <option value="IDE">Thực hành IDE</option>
+                        </select>
+                    </div>
+                    <div className="col-md-2">
+                        <select className="form-select" value={locTrangThai} onChange={e => setLocTrangThai(e.target.value)}>
+                            <option value="TatCa">Tất cả trạng thái</option>
+                            <option value="Draft">Nháp</option>
+                            <option value="Published">Đã xuất bản</option>
+                            <option value="Hidden">Đã ẩn</option>
+                        </select>
+                    </div>
+                    <div className="col-md-1">
+                        <button className="btn btn-outline-secondary w-100" onClick={() => { setTuKhoa(''); setLocLoai('TatCa'); setLocTrangThai('TatCa'); setLocKhoaHoc('TatCa'); }}>Reset</button>
+                    </div>
+                </div>
             </div>
             <div className="card">
                 <div className="table-container">
@@ -134,14 +223,14 @@ const QuanLyBaiTapContent = () => {
                                         Đang thỉnh data từ server về...
                                     </td>
                                 </tr>
-                            ) : danhSachBaiTap.length === 0 ? (
+                            ) : danhSachHienThi.length === 0 ? (
                                 <tr className="empty-row">
                                     <td colSpan={7} style={{ textAlign: 'center', padding: '30px' }}>
                                         Chưa có bài tập nào, tạo mới ngay đi sếp ơi!
                                     </td>
                                 </tr>
                             ) : (
-                                danhSachBaiTap.map((baiTap) => (
+                                danhSachHienThi.map((baiTap) => (
                                     <tr key={baiTap.maBaiTap}>
                                         {/* Cột Tên Bài Tập */}
                                         <td>
@@ -200,6 +289,13 @@ const QuanLyBaiTapContent = () => {
                         </tbody>
                     </table>
                 </div>
+                <div className="d-flex justify-content-between align-items-center mt-3 px-2 pb-2">
+                    <span className="text-muted">Trang {trangHienTai}/{tongSoTrang}</span>
+                    <div className="btn-group">
+                        <button className="btn btn-outline-primary" disabled={trangHienTai <= 1} onClick={() => setTrangHienTai(p => Math.max(1, p - 1))}>Trước</button>
+                        <button className="btn btn-outline-primary" disabled={trangHienTai >= tongSoTrang} onClick={() => setTrangHienTai(p => Math.min(tongSoTrang, p + 1))}>Sau</button>
+                    </div>
+                </div>
             </div>
             {isModalOpen && (
                 <div className="quiz-modal-overlay" onClick={closeModal}>
@@ -224,7 +320,7 @@ const QuanLyBaiTapContent = () => {
                                     <p className="mt-4 fw-bold text-muted">Đang thỉnh dữ liệu chi tiết...</p>
                                 </div>
                             ) : chiTietQuiz?.loaiBaiTap === 'IDE' ? (
-                                <Suspense fallback={<div className="p-5 text-center">Đang tải trình biên dịch...</div>}>
+            <Suspense fallback={<div className="main-content" style={{ padding: 40 }}>Đang tải màn tạo bài tập...</div>}>
                                     <PreviewBaiTapAI
                                         data={chiTietQuiz}
                                         editable={false}
