@@ -2147,6 +2147,39 @@ video::-webkit-media-controls-playback-rate-button {
     border: 1px solid rgba(246, 144, 80, 0.24);
 }
 
+.cp-certificate-action.ghost {
+    background: #f1f5f9;
+    color: #475569;
+    box-shadow: none;
+    border: 1px solid #e2e8f0;
+}
+
+.cp-certificate-action.ghost:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #1e293b;
+    transform: translateY(-1px);
+}
+
+.cp-certificate-action.linkedin {
+    background: linear-gradient(135deg, #0077b5 0%, #005885 100%);
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 119, 181, 0.25);
+}
+
+.cp-certificate-action.linkedin:hover {
+    background: linear-gradient(135deg, #0088cc 0%, #0066a0 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 119, 181, 0.35);
+}
+
+.cp-certificate-actions-row {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
 .cp-certificate-hint {
     margin: 0.75rem 0 0;
     color: #b45309;

@@ -41,6 +41,7 @@ namespace educodeai_server.DTOs.QuanTriVien
     public class ThongKeDanhGiaAdminDTO
     {
         public int TongDanhGia { get; set; }
+        public int ChoDuyet { get; set; }   // Số đánh giá đang chờ Admin xét duyệt
         public int DaDuyet { get; set; }
         public int TuChoi { get; set; }
         public double DanhGiaTrungBinh { get; set; }
@@ -63,5 +64,21 @@ namespace educodeai_server.DTOs.QuanTriVien
         public int Page { get; set; }
         public int PageSize { get; set; }
         public int TotalPages { get; set; }
+    }
+
+    public class KetQuaAIDuyetDTO
+    {
+        public int TongXuLy { get; set; }
+        public int SoDaDuyet { get; set; }
+        public int SoTuChoi { get; set; }
+        public List<ChiTietAIDuyetDTO> ChiTiet { get; set; } = new();
+    }
+
+    public class ChiTietAIDuyetDTO
+    {
+        public int Id { get; set; }
+        public string NoiDung { get; set; } = string.Empty;
+        public string KetQua { get; set; } = string.Empty;  // "DaDuyet" | "TuChoi"
+        public string LyDo { get; set; } = string.Empty;
     }
 }
