@@ -22,21 +22,28 @@ namespace educodeai_server.Repository.Implementation
 
         public async Task<IEnumerable<KeyAPISummaryDto?>> GetSummaryListAsync()
         {
+            var todayUtc = DateTime.UtcNow.Date;
+
             var rawList = await _context.KeyAPIs
                 .Where(k => k.DeletedAt == null)
                 .OrderBy(k => k.ThuTuUuTien)
-                .Select(k => new 
+                .Select(k => new
                 {
                     k.ID,
                     k.TenKey,
                     k.LoaiKey,
                     k.TrangThai,
                     k.ThuTuUuTien,
-                    k.HanMucRequest,
-                    k.HanMucToken,
+                    k.RPMLimit,
+                    k.TPMLimit,
+                    k.RPDLimit,
+                    k.ModelSuDung,
                     k.MaKeyMaHoa,
-                    DaSuDungRequest = k.NhatKySuDungs.Count(n => k.LastUsageResetAt == null || n.ThoiGianGoi > k.LastUsageResetAt),
-                    DaSuDungToken = k.NhatKySuDungs.Where(n => k.LastUsageResetAt == null || n.ThoiGianGoi > k.LastUsageResetAt).Sum(n => (int?)n.SoTokenTieuHao) ?? 0
+                    // Đếm usage trong ngày hôm nay (UTC) cho RPD
+                    DaSuDungRequestHomNay = k.NhatKySuDungs.Count(n => n.ThoiGianGoi >= todayUtc && (k.LastUsageResetAt == null || n.ThoiGianGoi >= k.LastUsageResetAt)),
+                    DaSuDungTokenHomNay = k.NhatKySuDungs
+                        .Where(n => n.ThoiGianGoi >= todayUtc && (k.LastUsageResetAt == null || n.ThoiGianGoi >= k.LastUsageResetAt))
+                        .Sum(n => (int?)n.SoTokenTieuHao) ?? 0
                 })
                 .ToListAsync();
 
@@ -47,19 +54,24 @@ namespace educodeai_server.Repository.Implementation
                 LoaiKey = k.LoaiKey,
                 TrangThai = k.TrangThai,
                 ThuTuUuTien = k.ThuTuUuTien,
-                HanMucRequest = k.HanMucRequest,
-                HanMucToken = k.HanMucToken,
-                DaSuDungRequest = k.DaSuDungRequest,
-                DaSuDungToken = k.DaSuDungToken,
+                RPMLimit = k.RPMLimit,
+                TPMLimit = k.TPMLimit,
+                RPDLimit = k.RPDLimit,
+                ModelSuDung = k.ModelSuDung,
                 MaKeyMasked = MaskKey(MaHoaHelper.GiaiMa(k.MaKeyMaHoa, _secretKey)),
-                PhanTramSuDung = k.HanMucRequest > 0 
-                                 ? Math.Round((double)k.DaSuDungRequest / k.HanMucRequest * 100, 2) 
-                                 : 0
+                DaSuDungRequestHomNay = k.DaSuDungRequestHomNay,
+                DaSuDungTokenHomNay = k.DaSuDungTokenHomNay,
+                PhanTramRPD = k.RPDLimit > 0
+                    ? Math.Round((double)k.DaSuDungRequestHomNay / k.RPDLimit * 100, 2)
+                    : 0,
+                DangBiCooldown = false // Phase 7B sẽ check Redis cooldown
             });
         }
 
         public async Task<KeyAPISummaryDto?> GetByIdAsync(int id)
         {
+            var todayUtc = DateTime.UtcNow.Date;
+
             var rawKey = await _context.KeyAPIs
                 .Where(k => k.ID == id && k.DeletedAt == null)
                 .Select(k => new
@@ -69,11 +81,15 @@ namespace educodeai_server.Repository.Implementation
                     k.LoaiKey,
                     k.TrangThai,
                     k.ThuTuUuTien,
-                    k.HanMucRequest,
-                    k.HanMucToken,
+                    k.RPMLimit,
+                    k.TPMLimit,
+                    k.RPDLimit,
+                    k.ModelSuDung,
                     k.MaKeyMaHoa,
-                    DaSuDungRequest = k.NhatKySuDungs.Count(n => k.LastUsageResetAt == null || n.ThoiGianGoi > k.LastUsageResetAt),
-                    DaSuDungToken = k.NhatKySuDungs.Where(n => k.LastUsageResetAt == null || n.ThoiGianGoi > k.LastUsageResetAt).Sum(n => (int?)n.SoTokenTieuHao) ?? 0
+                    DaSuDungRequestHomNay = k.NhatKySuDungs.Count(n => n.ThoiGianGoi >= todayUtc && (k.LastUsageResetAt == null || n.ThoiGianGoi >= k.LastUsageResetAt)),
+                    DaSuDungTokenHomNay = k.NhatKySuDungs
+                        .Where(n => n.ThoiGianGoi >= todayUtc && (k.LastUsageResetAt == null || n.ThoiGianGoi >= k.LastUsageResetAt))
+                        .Sum(n => (int?)n.SoTokenTieuHao) ?? 0
                 })
                 .FirstOrDefaultAsync();
 
@@ -86,14 +102,17 @@ namespace educodeai_server.Repository.Implementation
                 LoaiKey = rawKey.LoaiKey,
                 TrangThai = rawKey.TrangThai,
                 ThuTuUuTien = rawKey.ThuTuUuTien,
-                HanMucRequest = rawKey.HanMucRequest,
-                HanMucToken = rawKey.HanMucToken,
-                DaSuDungRequest = rawKey.DaSuDungRequest,
-                DaSuDungToken = rawKey.DaSuDungToken,
+                RPMLimit = rawKey.RPMLimit,
+                TPMLimit = rawKey.TPMLimit,
+                RPDLimit = rawKey.RPDLimit,
+                ModelSuDung = rawKey.ModelSuDung,
                 MaKeyMasked = MaskKey(MaHoaHelper.GiaiMa(rawKey.MaKeyMaHoa, _secretKey)),
-                PhanTramSuDung = rawKey.HanMucRequest > 0 
-                                 ? Math.Round((double)rawKey.DaSuDungRequest / rawKey.HanMucRequest * 100, 2) 
-                                 : 0
+                DaSuDungRequestHomNay = rawKey.DaSuDungRequestHomNay,
+                DaSuDungTokenHomNay = rawKey.DaSuDungTokenHomNay,
+                PhanTramRPD = rawKey.RPDLimit > 0
+                    ? Math.Round((double)rawKey.DaSuDungRequestHomNay / rawKey.RPDLimit * 100, 2)
+                    : 0,
+                DangBiCooldown = false
             };
         }
 
@@ -106,9 +125,11 @@ namespace educodeai_server.Repository.Implementation
                 LoaiKey = dto.LoaiKey,
                 TrangThai = true,
                 ThuTuUuTien = dto.ThuTuUuTien,
-                HanMucRequest = dto.HanMucRequest,
-                HanMucToken = dto.HanMucToken,
-                NgayTao = DateTime.Now
+                RPMLimit = dto.RPMLimit,
+                TPMLimit = dto.TPMLimit,
+                RPDLimit = dto.RPDLimit,
+                ModelSuDung = dto.ModelSuDung,
+                NgayTao = DateTime.UtcNow
             };
 
             await _context.KeyAPIs.AddAsync(newKey);
@@ -121,20 +142,30 @@ namespace educodeai_server.Repository.Implementation
             var key = await _context.KeyAPIs.FirstOrDefaultAsync(k => k.ID == id && k.DeletedAt == null);
             if (key == null) return false;
 
-            string beforeJson = System.Text.Json.JsonSerializer.Serialize(new { key.TenKey, key.LoaiKey, key.ThuTuUuTien, key.HanMucRequest, key.HanMucToken, key.TrangThai });
+            string beforeJson = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                key.TenKey, key.LoaiKey, key.ThuTuUuTien,
+                key.RPMLimit, key.TPMLimit, key.RPDLimit, key.ModelSuDung, key.TrangThai
+            });
 
             key.TenKey = dto.TenKey;
             key.LoaiKey = dto.LoaiKey;
             key.ThuTuUuTien = dto.ThuTuUuTien;
-            key.HanMucRequest = dto.HanMucRequest;
-            key.HanMucToken = dto.HanMucToken;
-            
+            key.RPMLimit = dto.RPMLimit;
+            key.TPMLimit = dto.TPMLimit;
+            key.RPDLimit = dto.RPDLimit;
+            key.ModelSuDung = dto.ModelSuDung;
+
             if (!string.IsNullOrWhiteSpace(dto.MaKeyRaw))
             {
                 key.MaKeyMaHoa = MaHoaHelper.MaHoa(dto.MaKeyRaw, _secretKey);
             }
 
-            string afterJson = System.Text.Json.JsonSerializer.Serialize(new { key.TenKey, key.LoaiKey, key.ThuTuUuTien, key.HanMucRequest, key.HanMucToken, key.TrangThai });
+            string afterJson = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                key.TenKey, key.LoaiKey, key.ThuTuUuTien,
+                key.RPMLimit, key.TPMLimit, key.RPDLimit, key.ModelSuDung, key.TrangThai
+            });
 
             var auditLog = new ApiKeyAuditLog
             {
