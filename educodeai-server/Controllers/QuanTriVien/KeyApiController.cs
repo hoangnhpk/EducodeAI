@@ -52,6 +52,14 @@ namespace educodeai_server.Controllers
                     .GetProperty("models")
                     .EnumerateArray()
                     .Where(m => m.TryGetProperty("name", out _))
+                    .Where(m => 
+                    {
+                        if (m.TryGetProperty("supportedGenerationMethods", out var methods))
+                        {
+                            return methods.EnumerateArray().Any(method => method.GetString() == "generateContent");
+                        }
+                        return false;
+                    })
                     .Select(m => new GeminiModelItemDto
                     {
                         Name = m.GetProperty("name").GetString() ?? "",

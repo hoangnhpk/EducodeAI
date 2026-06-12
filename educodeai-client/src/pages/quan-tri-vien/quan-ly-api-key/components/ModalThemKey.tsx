@@ -174,11 +174,11 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                 </div>
 
                 {/* Chọn Model */}
-                {modelList.length > 0 && (
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold text-muted small mb-1">
-                      Model sử dụng <span className="text-danger">*</span>
-                    </label>
+                <div className="mb-3">
+                  <label className="form-label fw-semibold text-muted small mb-1">
+                    Model sử dụng <span className="text-danger">*</span>
+                  </label>
+                  {modelList.length > 0 ? (
                     <select
                       className="form-select form-select-sm"
                       required
@@ -193,11 +193,21 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                         </option>
                       ))}
                     </select>
-                    <div className="form-text small" style={{ fontSize: "11.5px" }}>
-                      Mỗi Key chỉ được gắn 1 model duy nhất.
-                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      required
+                      placeholder="VD: gemini-1.5-flash"
+                      value={formData.modelSuDung}
+                      onChange={(e) => setFormData({ ...formData, modelSuDung: e.target.value })}
+                      disabled={isSubmitting}
+                    />
+                  )}
+                  <div className="form-text small" style={{ fontSize: "11.5px" }}>
+                    Mỗi Key chỉ được gắn 1 model duy nhất. Nhập tên model (ví dụ: gemini-1.5-flash) nếu không tải được danh sách.
                   </div>
-                )}
+                </div>
 
                 {/* Loại Key & Ưu tiên */}
                 <div className="row g-3 mb-3">

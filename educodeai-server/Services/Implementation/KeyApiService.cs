@@ -23,9 +23,9 @@ namespace educodeai_server.Services.Implementation
             {
                 if (key != null && key.TrangThai)
                 {
-                    string redisKey = $"EduCodeAI:KeyPool:{key.ID}";
-                    var reqStr = await _redisService.LayHashAsync(redisKey, "RequestDaDung");
-                    var tokStr = await _redisService.LayHashAsync(redisKey, "TokenDaDung");
+                    string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
+                    var reqStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
+                    var tokStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
 
                     if (int.TryParse(reqStr, out int req))
                     {
@@ -53,9 +53,9 @@ namespace educodeai_server.Services.Implementation
 
             if (key != null && key.TrangThai)
             {
-                string redisKey = $"EduCodeAI:KeyPool:{key.ID}";
-                var reqStr = await _redisService.LayHashAsync(redisKey, "RequestDaDung");
-                var tokStr = await _redisService.LayHashAsync(redisKey, "TokenDaDung");
+                string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
+                var reqStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
+                var tokStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
 
                 if (int.TryParse(reqStr, out int req)) key.DaSuDungRequestHomNay = req;
                 if (int.TryParse(tokStr, out int tok)) key.DaSuDungTokenHomNay = tok;
@@ -92,7 +92,8 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto, int adminId, string? ipAddress)
         {
-            if (id <= 0 || string.IsNullOrWhiteSpace(dto.TenKey) || string.IsNullOrWhiteSpace(dto.ModelSuDung)) return false;
+            if (string.IsNullOrWhiteSpace(dto.ModelSuDung)) dto.ModelSuDung = "gemma-4-31b-it";
+            if (id <= 0 || string.IsNullOrWhiteSpace(dto.TenKey)) return false;
 
             if (dto.RPMLimit <= 0 || dto.TPMLimit <= 0 || dto.RPDLimit <= 0) return false;
 
@@ -181,9 +182,9 @@ namespace educodeai_server.Services.Implementation
                 var rawKey = await _keyApiRepo.GetRawKeyForRedisAsync(id);
                 if (rawKey != null && rawKey.TrangThai)
                 {
-                    string redisKey = $"EduCodeAI:KeyPool:{id}";
-                    await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0");
-                    await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");
+                    string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
+                    await _redisService.XoaKeyAsync($"EduCodeAI:Usage:RPD:{id}:{homNaySuffix}");
+                    await _redisService.XoaKeyAsync($"EduCodeAI:Usage:DailyToken:{id}:{homNaySuffix}");
                 }
             }
 
