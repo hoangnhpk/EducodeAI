@@ -205,5 +205,13 @@ namespace educodeai_server.Services
             _memoryCache.Set(key, current + 1, TimeSpan.FromDays(30));
             return Task.CompletedTask;
         }
+
+        // --- Lua Script Atomic Operations (MemoryCache Fallback) ---
+        public Task<dynamic> ThucThiLuaScriptAsync(string script, string[] keys, string[] args)
+        {
+            _logger.LogWarning("Redis không available, Lua Script execution is mocked and will always return success (0).");
+            // Trả về 0 tương đương với success code trong logic ReserveQuota/CommitQuota của RateLimitService
+            return Task.FromResult<dynamic>(0);
+        }
     }
 }
