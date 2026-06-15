@@ -117,6 +117,9 @@ namespace EduCodeAI.Controllers.HocVien
                 maKhoaHoc = khoaHoc.MaKhoaHoc,
                 tenKhoaHoc = khoaHoc.TenKhoaHoc,
                 moTa = khoaHoc.KyNangChinh,
+                videoGioiThieu = khoaHoc.VideoGioiThieu,
+                banSeHocDuocGi = !string.IsNullOrEmpty(khoaHoc.BanSeHocDuocGi) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(khoaHoc.BanSeHocDuocGi) : new List<string>(),
+                tongSoHocVien = await _context.DangKyKhoaHocs.CountAsync(dk => dk.MaKhoaHoc == khoaHoc.MaKhoaHoc),
                 giaKhoaHoc = khoaHoc.GiaKhoaHoc,
                 donViTienTe = khoaHoc.DonViTienTe,
                 khoaHocDaDangKy = maNguoiDung > 0 && await _context.DangKyKhoaHocs.AnyAsync(dk =>
