@@ -129,13 +129,38 @@ namespace educodeai_server.Services.Implementation
             };
         }
 
-        /// <summary>
-        /// Lấy tất cả review đang Chờ Duyệt → gửi cho Gemini phân tích → cập nhật tự động.
-        /// Gemini sẽ trả về JSON: [{"id": 1, "ketQua": "DaDuyet", "lyDo": "..."}]
-        /// </summary>
+        public async Task<bool> CapNhatTrangThaiAsync(int id, string trangThai)
+        {
+            var danhGia = await _context.DanhGias.FindAsync(id);
+            if (danhGia == null) return false;
+            danhGia.TrangThai = trangThai;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> XoaAsync(int id)
+        {
+            var danhGia = await _context.DanhGias.FindAsync(id);
+            if (danhGia == null) return false;
+            _context.DanhGias.Remove(danhGia);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<List<DanhGiaAdminKhoaHocDTO>> LayDanhSachKhoaHocFilterAsync()
+        {
+            return await _context.KhoaHocs
+                .AsNoTracking()
+                .OrderBy(x => x.TenKhoaHoc)
+                .Select(x => new DanhGiaAdminKhoaHocDTO
+                {
+                    Id = x.MaKhoaHoc,
+                    TenKhoaHoc = x.TenKhoaHoc,
+                    GiangVien = x.GiangVien.HoTen
+                })
+                .ToListAsync();
+        }
+
         public async Task<KetQuaAIDuyetDTO> DuyetHangLoatBangAIAsync()
         {
-            // 1. Lấy tối đa 20 review mỗi lần
             var danhSachChoDuyet = await _context.DanhGias
                 .AsNoTracking()
                 .Where(x => x.TrangThai == "ChoDuyet")
@@ -154,7 +179,6 @@ namespace educodeai_server.Services.Implementation
             if (danhSachChoDuyet.Count == 0)
                 return new KetQuaAIDuyetDTO();
 
-            // 2. Xây dựng prompt chặt hơn, có ngữ cảnh tối thiểu
             var payload = danhSachChoDuyet.Select(x => new
             {
                 id = x.MaDanhGia,
@@ -167,23 +191,89 @@ namespace educodeai_server.Services.Implementation
             var inputJson = JsonSerializer.Serialize(payload);
 
             string prompt = """
-You are a strict content moderator for Vietnamese course reviews.
-Decide ONLY between "DaDuyet" and "TuChoi".
+                You are a strict content moderator for Vietnamese course reviews.
+                Decide ONLY between "DaDuyet" and "TuChoi".
 
-Reject if the review contains: profanity, harassment, spam, ads, hate, violence, sexual content, personal data exposure, or is clearly off-topic.
-If unclear but not harmful, approve.
+                Reject if the review contains: profanity, harassment, spam, ads, hate, violence, sexual content, personal data exposure, or is clearly off-topic.
+                If unclear but not harmful, approve.
 
-Return ONLY valid JSON array with the exact input ids.
-Schema:
-[{"id":123,"ketQua":"DaDuyet","lyDo":"short reason"}]
+                Return ONLY valid JSON array with the exact input ids.
+                Schema:
+                [{"id":123,"ketQua":"DaDuyet","lyDo":"short reason"}]
 
-Input:
-{0}
-""";
+                Input:
+                {0}
+                """;
             prompt = string.Format(prompt, inputJson);
 
             string rawResponse;
             try
             {
                 rawResponse = await _gemini.GenerateAsync(prompt);
-    
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AI Duyet] Lỗi Gemini: {ex.Message}");
+                return new KetQuaAIDuyetDTO { TongXuLy = 0 };
+            }
+
+            rawResponse = rawResponse.Trim();
+            if (rawResponse.StartsWith("```"))
+            {
+                var nl = rawResponse.IndexOf('\n');
+                if (nl >= 0) rawResponse = rawResponse[(nl + 1)..];
+                var closing = rawResponse.LastIndexOf("```");
+                if (closing >= 0) rawResponse = rawResponse[..closing];
+                rawResponse = rawResponse.Trim();
+            }
+
+            int startIdx = rawResponse.IndexOf('[');
+            int endIdx = rawResponse.LastIndexOf(']');
+            if (startIdx >= 0 && endIdx > startIdx)
+                rawResponse = rawResponse[startIdx..(endIdx + 1)];
+
+            List<ChiTietAIDuyetDTO> chiTiet;
+            try
+            {
+                chiTiet = JsonSerializer.Deserialize<List<ChiTietAIDuyetDTO>>(rawResponse,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+            }
+            catch
+            {
+                Console.WriteLine($"[AI Duyet] Không parse được JSON: {rawResponse}");
+                return new KetQuaAIDuyetDTO { TongXuLy = 0 };
+            }
+
+            var validIds = danhSachChoDuyet.Select(x => x.MaDanhGia).ToHashSet();
+            chiTiet = chiTiet
+                .Where(x => validIds.Contains(x.Id) && (x.KetQua == "DaDuyet" || x.KetQua == "TuChoi"))
+                .DistinctBy(x => x.Id)
+                .ToList();
+
+            if (chiTiet.Count == 0)
+            {
+                Console.WriteLine("[AI Duyet] AI trả về kết quả không hợp lệ hoặc không có item nào khớp input.");
+                return new KetQuaAIDuyetDTO { TongXuLy = 0 };
+            }
+
+            int soDaDuyet = 0, soTuChoi = 0;
+            foreach (var item in chiTiet)
+            {
+                var dg = await _context.DanhGias.FindAsync(item.Id);
+                if (dg == null) continue;
+                dg.TrangThai = item.KetQua == "TuChoi" ? "TuChoi" : "DaDuyet";
+                if (item.KetQua == "TuChoi") soTuChoi++; else soDaDuyet++;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new KetQuaAIDuyetDTO
+            {
+                TongXuLy = chiTiet.Count,
+                SoDaDuyet = soDaDuyet,
+                SoTuChoi = soTuChoi,
+                ChiTiet = chiTiet
+            };
+        }
+    }
+}

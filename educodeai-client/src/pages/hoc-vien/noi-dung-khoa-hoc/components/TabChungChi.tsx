@@ -1,5 +1,38 @@
+import React, { useState } from 'react';
 import { BaiTapTracNghiem } from '@/pages/hoc-vien/noi-dung-khoa-hoc/components/BaiTapTracNghiem';
 import type { BaiKiemTraChungChiDTO, ThongTinChungChiDTO } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO';
+
+// Component QR hiển thị via img (api.qrserver.com – không cần key, HTTPS, miễn phí)
+const CertQrCode: React.FC<{ maChungChi: string; size?: number }> = ({ maChungChi, size = 90 }) => {
+    const verifyUrl = `${window.location.origin}/chung-chi/xac-nhan?ma=${encodeURIComponent(maChungChi)}`;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(verifyUrl)}&size=${size}x${size}&margin=4&color=1A2B4A&bgcolor=fffdf7`;
+    const [loaded, setLoaded] = useState(false);
+    const [error, setError] = useState(false);
+
+    return (
+        <div className="cp-cert-qr-wrap">
+            {!loaded && !error && (
+                <div className="cp-cert-qr-skeleton" style={{ width: size, height: size }} />
+            )}
+            {error ? (
+                <div className="cp-cert-qr-fallback" style={{ width: size, height: size }}>
+                    <i className="fas fa-qrcode" />
+                </div>
+            ) : (
+                <img
+                    src={qrSrc}
+                    alt={`QR xác minh chứng chỉ ${maChungChi}`}
+                    width={size}
+                    height={size}
+                    style={{ display: loaded ? 'block' : 'none', borderRadius: 4 }}
+                    onLoad={() => setLoaded(true)}
+                    onError={() => setError(true)}
+                />
+            )}
+            <span className="cp-cert-qr-label">Quét để xác minh</span>
+        </div>
+    );
+};
 
 interface TabChungChiProps {
     tenKhoaHoc: string;
@@ -263,13 +296,23 @@ export const TabChungChi = ({
                                     <div className="cp-cert-v2__sig-col">
                                         <svg width="110" height="32" viewBox="0 0 110 32" fill="none">
                                             <path d="M6 24 C12 8,20 4,28 16 C34 24,38 6,48 10 C56 13,58 22,66 18 C74 14,78 6,88 12 C96 16,102 20,108 14"
-                                                stroke="#8B6914" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                                            <path d="M28 20 C32 26,36 28,42 24" stroke="#8B6914" strokeWidth="1.2" strokeLinecap="round"/>
+                                                stroke="#8B6914" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M28 20 C32 26,36 28,42 24" stroke="#8B6914" strokeWidth="1.2" strokeLinecap="round" />
                                         </svg>
                                         <div className="cp-cert-v2__sig-line" />
                                         <span className="cp-cert-v2__sig-label">CHỮ KÝ XÁC NHẬN</span>
                                     </div>
                                 </div>
+
+                                {/* QR code góc phải dưới */}
+                                {thongTinChungChi?.maChungChi && (
+                                    <div className="cp-cert-v2__qr-row">
+                                        <CertQrCode maChungChi={thongTinChungChi.maChungChi} size={72} />
+                                        <span className="cp-cert-v2__cert-id">
+                                            Mã CC: <strong>{thongTinChungChi.maChungChi}</strong>
+                                        </span>
+                                    </div>
+                                )}
 
                                 {/* Bottom border line pair */}
                                 <div className="cp-cert-v2__lines" />

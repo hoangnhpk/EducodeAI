@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
-import axiosClient from '@/configs/axios'
+import ReactMarkdown from 'react-markdown';
+import axiosClient from '@/configs/axios';
 import Swal from 'sweetalert2';
 
 // Interfaces
@@ -90,6 +91,12 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
 
     // Lưu kết quả test: mảng các object chứa status và actual output
     const [testResults, setTestResults] = useState<{ status: 'idle' | 'running' | 'pass' | 'fail', output: string, error?: string }[]>([]);
+
+    // AI Code Doctor states
+    const [aiDoctorOpen, setAiDoctorOpen] = useState(false);
+    const [aiDoctorLoading, setAiDoctorLoading] = useState(false);
+    const [aiDoctorResult, setAiDoctorResult] = useState<string | null>(null);
+    const aiDoctorRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchDuLieu = async () => {
@@ -233,6 +240,46 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
             setTestResults(duLieu.testCases.map(() => ({ status: 'fail', output: 'Lỗi mạng khi gọi API submit.' })));
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    // Hàm gọi AI Code Doctor phân tích lỗi
+    const handleAiDoctor = async () => {
+        if (!duLieu || !code.trim()) return;
+        setAiDoctorLoading(true);
+        setAiDoctorResult(null);
+        setAiDoctorOpen(true);
+
+        // Thu thập các test case bị sai từ kết quả hiện tại
+        const testCasesSai = testResults
+            .map((r, i) => ({ r, tc: duLieu.testCases[i] }))
+            .filter(({ r }) => r.status === 'fail' && !duLieu.testCases[testResults.indexOf(r)]?.laTestAn)
+            .slice(0, 3)
+            .map(({ r, tc }) => ({
+                Input: tc?.inputDuLieu ?? '',
+                KetQuaThucTe: r.output,
+                KetQuaMongDoi: tc?.outputMongDoi ?? ''
+            }));
+
+        // Lấy thông báo lỗi biên dịch nếu có
+        const thongBaoLoi = testResults.find(r => r.error)?.error ?? '';
+
+        try {
+            const res = await axiosClient.post(`/api/BaiTap/thuc-hanh/${maBaiTap}/ai-goi-y`, {
+                Code: code,
+                NgonNgu: duLieu.ngonNgu,
+                TieuDeBai: duLieu.tieuDe,
+                ThongBaoLoi: thongBaoLoi,
+                TestCasesSai: testCasesSai
+            }) as { thanhCong: boolean; noiDungPhanTich: string };
+
+            setAiDoctorResult(res.noiDungPhanTich);
+        } catch {
+            setAiDoctorResult('❌ AI đang bận hoặc gặp lỗi. Vui lòng thử lại sau.');
+        } finally {
+            setAiDoctorLoading(false);
+            // Scroll xuống panel AI
+            setTimeout(() => aiDoctorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
         }
     };
 
@@ -441,6 +488,77 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                         )}
                     </div>
                 </div>
+
+                {/* AI CODE DOCTOR PANEL - hiện khi daSai */}
+                {daSai && (
+                    <div className="cp-ai-doctor-bar">
+                        <div className="cp-ai-doctor-bar__left">
+                            <span className="cp-ai-doctor-bar__icon">🤖</span>
+                            <span className="cp-ai-doctor-bar__text">
+                                <strong>AI Code Doctor</strong>
+                                <span> — Bạn muốn AI phân tích lỗi và gợi ý hướng suy nghĩ?</span>
+                            </span>
+                        </div>
+                        <button
+                            className="cp-ai-doctor-bar__btn"
+                            onClick={handleAiDoctor}
+                            disabled={aiDoctorLoading}
+                        >
+                            {aiDoctorLoading
+                                ? <><i className="fas fa-circle-notch fa-spin" /> Đang phân tích...</>
+                                : <><i className="fas fa-stethoscope" /> Chẩn đoán lỗi</>
+                            }
+                        </button>
+                    </div>
+                )}
+
+                {/* KẾT QUẢ AI CODE DOCTOR */}
+                {aiDoctorOpen && (
+                    <div className="cp-ai-doctor-panel anim-enter" ref={aiDoctorRef}>
+                        <div className="cp-ai-doctor-panel__header">
+                            <div className="cp-ai-doctor-panel__title">
+                                <span className="cp-ai-doctor-panel__badge">🤖 AI Code Doctor</span>
+                                <span className="cp-ai-doctor-panel__subtitle">Phân tích lỗi · Gợi ý hướng suy nghĩ (không viết code thay bạn)</span>
+                            </div>
+                            <button
+                                className="cp-ai-doctor-panel__close"
+                                onClick={() => { setAiDoctorOpen(false); setAiDoctorResult(null); }}
+                                title="Đóng"
+                            >
+                                <i className="fas fa-times" />
+                            </button>
+                        </div>
+
+                        <div className="cp-ai-doctor-panel__body">
+                            {aiDoctorLoading && (
+                                <div className="cp-ai-doctor-panel__loading">
+                                    <div className="cp-ai-doctor-panel__loading-dots">
+                                        <span /><span /><span />
+                                    </div>
+                                    <p>AI đang đọc code của bạn và chuẩn bị gợi ý...</p>
+                                </div>
+                            )}
+                            {!aiDoctorLoading && aiDoctorResult && (
+                                <div className="cp-ai-doctor-panel__result">
+                                    <ReactMarkdown>{aiDoctorResult}</ReactMarkdown>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="cp-ai-doctor-panel__footer">
+                            <button
+                                className="cp-ai-doctor-panel__retry"
+                                onClick={handleAiDoctor}
+                                disabled={aiDoctorLoading}
+                            >
+                                <i className="fas fa-redo" /> Hỏi lại AI
+                            </button>
+                            <span className="cp-ai-doctor-panel__disclaimer">
+                                💡 AI chỉ gợi ý hướng suy nghĩ, không viết code giải pháp.
+                            </span>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
