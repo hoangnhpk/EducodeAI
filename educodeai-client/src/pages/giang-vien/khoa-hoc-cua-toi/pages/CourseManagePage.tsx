@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { KhoaHocDetail, CertificateConfig } from '../types';
-import * as api from '../api/khoaHocApi';
+import * as api from '@/services/khoa-hoc-cua-toi.service';
 import ChapterListEditor from '../components/ChapterListEditor';
 import LessonListEditor from '../components/LessonListEditor';
 import { FormSkeleton } from '../components/ui/Skeleton';
@@ -137,6 +137,19 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
     }
   };
 
+
+
+  const handleDelete = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn đưa khóa học này vào thùng rác? Học viên sẽ không thể truy cập nữa.")) return;
+    try {
+      await api.xoaKhoaHoc(maGiangVien, maKhoaHoc);
+      showToast('success', 'Khóa học đã được xóa mềm.');
+      onBack();
+    } catch {
+      showToast('error', 'Lỗi xóa khóa học.');
+    }
+  };
+
   if (loading) return <div className="khm-wrapper"><div className="khm-page"><FormSkeleton /></div></div>;
   if (error || !detail) return (
     <div className="khm-wrapper"><div className="khm-page">
@@ -177,7 +190,7 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
               <span className="khm-badge khm-badge-primary">{detail.linhVuc}</span>
               <span className="khm-badge khm-badge-draft">{detail.trinhDo}</span>
-              {detail.trangThai === 'Published' && <span className="khm-badge khm-badge-published">Đang dạy</span>}
+              {detail.trangThai === 'Hoạt động' && <span className="khm-badge khm-badge-published">Hoạt động</span>}
               {detail.coChungChi && <span className="khm-badge khm-badge-cert">🏆 Chứng chỉ</span>}
             </div>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--khm-gray-900)' }}>{detail.tenKhoaHoc}</h2>
@@ -250,9 +263,7 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                 <div>
                   <label className="khm-form-label">Trạng thái</label>
                   <div>
-                    {detail.trangThai === 'Published' && <span className="khm-badge khm-badge-published">Đang dạy</span>}
-                    {detail.trangThai === 'Draft' && <span className="khm-badge khm-badge-draft">Nháp</span>}
-                    {detail.trangThai === 'Archived' && <span className="khm-badge khm-badge-archived">Lưu trữ</span>}
+                    {detail.trangThai === 'Hoạt động' && <span className="khm-badge khm-badge-published">Hoạt động</span>}
                   </div>
                 </div>
                 <div>
@@ -478,14 +489,9 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                 <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid var(--khm-gray-100)' }}>
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 16, color: 'var(--khm-gray-800)' }}>Thao tác nguy hiểm</h4>
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    <button className="khm-btn khm-btn-outline" disabled>
-                      🚀 Xuất bản khóa học
-                    </button>
-                    <button className="khm-btn khm-btn-outline" disabled>
-                      👁️ Ẩn khóa học
-                    </button>
-                    <button className="khm-btn khm-btn-danger-ghost" disabled>
-                      🗑️ Xóa mềm
+
+                    <button className="khm-btn khm-btn-danger-ghost" onClick={() => void handleDelete()}>
+                      🗑️ Đưa vào thùng rác
                     </button>
                   </div>
                 </div>
