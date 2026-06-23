@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { GenerateQuizAIDTO } from './BaiTapThucHanhDTO';
+import type { GenerateQuizAIDTO } from '../types';
 
 interface Props {
   baiHocId: number | null;
