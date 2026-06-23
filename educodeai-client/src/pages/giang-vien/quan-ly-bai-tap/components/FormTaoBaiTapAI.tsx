@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { GenerateBaiTapThucHanhDTO } from './BaiTapThucHanhDTO';
+import type { GenerateBaiTapThucHanhDTO } from '../types';
 
 interface Props {
   baiHocId: number | null;

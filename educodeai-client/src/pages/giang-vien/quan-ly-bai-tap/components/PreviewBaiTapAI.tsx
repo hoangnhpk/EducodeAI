@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { BaiTapThucHanhData, TestCaseDto } from './BaiTapThucHanhDTO';
+import type { BaiTapThucHanhData, TestCaseDto } from '../types';
 import BangTestCase from './BangTestCase';
 
 interface Props {
