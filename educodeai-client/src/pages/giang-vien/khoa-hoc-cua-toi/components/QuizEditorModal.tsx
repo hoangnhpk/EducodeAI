@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { CauHoiChungChi } from '../types';
 import { useToastStandalone } from '../components/ui/Toast';
-import * as api from '../api/khoaHocApi';
+import * as api from '@/services/khoa-hoc-cua-toi.service';
 
 interface Props {
   maKhoaHoc: number;

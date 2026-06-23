@@ -1257,3 +1257,27 @@
   background: var(--khm-warning-light);
   color: var(--khm-warning);
 }
+/* ---------- Utility Classes ---------- */
+.khm-flex { display: flex; }
+.khm-flex-between { display: flex; justify-content: space-between; align-items: center; }
+.khm-items-center { align-items: center; }
+.khm-gap-8 { gap: 8px; }
+.khm-gap-10 { gap: 10px; }
+.khm-gap-16 { gap: 16px; }
+.khm-mb-16 { margin-bottom: 16px; }
+.khm-mb-24 { margin-bottom: 24px; }
+.khm-mt-8 { margin-top: 8px; }
+.khm-text-center { text-align: center; }
+.khm-py-60 { padding-top: 60px; padding-bottom: 60px; }
+.khm-px-24 { padding-left: 24px; padding-right: 24px; }
+.khm-mx-auto { margin-left: auto; margin-right: auto; }
+.khm-text-danger { color: var(--khm-danger); }
+.khm-text-accent { color: var(--khm-accent); }
+.khm-border-bottom { border-bottom: 1px solid var(--khm-gray-100); }
+.khm-text-sm { font-size: 0.85rem; }
+.khm-text-xs { font-size: 12px; }
+.khm-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.khm-text-primary { color: var(--khm-primary); }
+.khm-font-semibold { font-weight: 600; }
+.khm-relative { position: relative; }
+.khm-absolute-inset { position: absolute; inset: 0; }

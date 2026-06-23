@@ -5,6 +5,7 @@ using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using educodeai_server.Constants;
 
 namespace educodeai_server.Services.Implement
 {
@@ -167,15 +168,38 @@ namespace educodeai_server.Services.Implement
             return true;
         }
 
+
+
         // ===== XOÁ KHOÁ HỌC (SOFT DELETE) =====
         public async Task<bool> XoaKhoaHocAsync(int maKhoaHoc, int maGiangVien)
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
             if (khoaHoc == null) return false;
-            khoaHoc.TrangThai = "Đã xóa";
+            khoaHoc.TrangThai = TrangThaiKhoaHoc.DaXoa;
+            khoaHoc.DeletedAt = DateTime.UtcNow;
+            khoaHoc.DeletedBy = maGiangVien;
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
             // Tăng version + xóa list cache khi khóa học bị xóa
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
+            await _redisService.XoaKeyAsync("CourseList:Public");
+            return true;
+        }
+
+        // ===== KHÔI PHỤC KHOÁ HỌC =====
+        public async Task<bool> KhoiPhucKhoaHocAsync(int maKhoaHoc, int maGiangVien)
+        {
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
+            if (khoaHoc == null) return false;
+
+            khoaHoc.DeletedAt = null;
+            khoaHoc.DeletedBy = null;
+            khoaHoc.TrangThai = TrangThaiKhoaHoc.HoatDong;
+
+            await _repository.UpdateKhoaHocAsync(khoaHoc);
+            await _repository.SaveChangesAsync();
+
             await InvalidateCourseListAsync(maGiangVien);
             await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             await _redisService.XoaKeyAsync("CourseList:Public");
