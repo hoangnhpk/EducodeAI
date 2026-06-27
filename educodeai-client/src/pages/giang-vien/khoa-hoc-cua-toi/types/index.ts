@@ -132,6 +132,10 @@ export interface BaiHocDetail {
   loaiBaiHoc?: string;
   videoSource?: string;
   videoPublicId?: string;
+  hasSubtitle?: boolean;
+  videoStatus?: string;
+  subtitleSource?: string;
+  subtitleUrl?: string;
 }
 
 export interface BaiHocCreateUpdate {

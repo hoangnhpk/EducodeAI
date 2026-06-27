@@ -775,6 +775,10 @@
   border-radius: 6px;
   background: var(--khm-gray-100);
   flex-shrink: 0;
+  color: transparent;
+  font-size: 0;
+  overflow: hidden;
+  display: block;
 }
 .khm-list-item-thumb-placeholder {
   width: 56px;

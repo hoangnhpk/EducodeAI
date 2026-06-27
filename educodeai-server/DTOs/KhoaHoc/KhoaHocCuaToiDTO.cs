@@ -149,6 +149,12 @@ public class BaiHocVideoDetailDTO
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
     public string LoaiBaiHoc { get; set; } = "Video";
+    public string? VideoSource { get; set; }
+    public string? VideoPublicId { get; set; }
+    public bool HasSubtitle { get; set; }
+    public string? VideoStatus { get; set; }
+    public string? SubtitleSource { get; set; }
+    public string? SubtitleUrl { get; set; }
 }
 
 public class BaiHocVideoCreateUpdateDTO
