@@ -130,6 +130,8 @@ export interface BaiHocDetail {
   thoiLuong: number;
   thuTu: number;
   loaiBaiHoc?: string;
+  videoSource?: string;
+  videoPublicId?: string;
 }
 
 export interface BaiHocCreateUpdate {
@@ -138,6 +140,9 @@ export interface BaiHocCreateUpdate {
   linkVideo?: string;
   thoiLuong: number;
   thuTu: number;
+  videoSource?: string;
+  videoPublicId?: string;
+  videoSizeMb?: number;
 }
 
 export interface BaiHocFileCreateUpdate {
@@ -155,6 +160,8 @@ export interface BaiHocResponse {
   thoiLuong: number;
   thuTu: number;
   loaiBaiHoc?: string;
+  videoSource?: string;
+  videoPublicId?: string;
 }
 
 export interface ReorderBaiHocItem {

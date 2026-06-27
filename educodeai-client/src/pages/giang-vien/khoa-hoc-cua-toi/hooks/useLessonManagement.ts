@@ -4,6 +4,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import type { BaiHocDetail } from '../types';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
 import { useToastStandalone } from '../components/ui/Toast';
+import * as mediaApi from '@/services/media.service';
 
 const getGiangVienId = (): number => {
   try {
@@ -30,6 +31,7 @@ export const useLessonManagement = ({ maChuong, initialLessons }: UseLessonManag
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<BaiHocDetail | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   
   const [deleteTarget, setDeleteTarget] = useState<BaiHocDetail | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -66,33 +68,67 @@ export const useLessonManagement = ({ maChuong, initialLessons }: UseLessonManag
     }
   }, [lessons, maGiangVien, maChuong, showToast]);
 
-  const handleSave = async (type: 'Video' | 'File', dto: any) => {
+  const handleSave = async (type: 'Video' | 'File' | 'VideoUpload', dto: any) => {
     try {
       setSaving(true);
       if (editTarget) {
-        if (type === 'Video') {
+        if (type === 'Video' || type === 'VideoUpload') {
+          // Hiện tại chỉ cho phép đổi tiêu đề/mô tả nếu edit, chưa hỗ trợ replace video file trực tiếp
           await api.capNhatBaiHoc(maGiangVien, editTarget.maBaiHoc, dto);
         } else {
           await api.capNhatBaiHocFile(editTarget.maBaiHoc, dto);
         }
         setLessons(prev => prev.map(l => l.maBaiHoc === editTarget.maBaiHoc 
-          ? { ...l, tieuDe: dto.tieuDe, moTa: dto.moTa, thoiLuong: dto.thoiLuong || 0, linkVideo: (type === 'Video' ? dto.linkVideo : l.linkVideo) } 
+          ? { ...l, tieuDe: dto.tieuDe, moTa: dto.moTa, thoiLuong: dto.thoiLuong || l.thoiLuong, linkVideo: (type === 'Video' ? dto.linkVideo : l.linkVideo) } 
           : l));
         showToast('success', 'Cập nhật bài học thành công! (Tải lại trang để thấy file mới nhất)');
       } else {
         let res: any;
         if (type === 'Video') {
            res = await api.themBaiHoc(maGiangVien, maChuong, dto);
-        } else {
+           setLessons(prev => [...prev, { maBaiHoc: res.maBaiHoc, tieuDe: res.tieuDe, moTa: res.moTa, linkVideo: res.linkVideo, thoiLuong: res.thoiLuong || 0, thuTu: res.thuTu, loaiBaiHoc: 'Video', videoSource: 'youtube' }]);
+           showToast('success', 'Thêm bài học thành công!');
+        } else if (type === 'File') {
            res = await api.themBaiHocFile(maChuong, dto);
+           setLessons(prev => [...prev, { maBaiHoc: res.maBaiHoc, tieuDe: res.tieuDe, moTa: res.moTa, linkVideo: res.linkVideo, thoiLuong: res.thoiLuong || 0, thuTu: res.thuTu, loaiBaiHoc: 'File' }]);
+           showToast('success', 'Thêm bài học thành công!');
+        } else if (type === 'VideoUpload') {
+           setUploadProgress(0);
+           // 1. Lấy chữ ký
+           const sig = await mediaApi.layChuKyUploadVideo();
+
+           // 2. Đẩy lên Cloudinary
+           const uploadResult = await mediaApi.uploadVideoToCloudinary(dto.file, sig, (p) => setUploadProgress(p));
+
+           // 3. Tạo bài học với metadata Cloudinary
+           const duration = Math.round(uploadResult.duration || 0);
+           const sizeMb = Math.round((uploadResult.bytes || 0) / 1048576);
+           
+           const finalDto = {
+               ...dto,
+               linkVideo: uploadResult.secure_url,
+               thoiLuong: duration,
+               videoSource: 'cloudinary',
+               videoPublicId: uploadResult.public_id,
+               videoSizeMb: sizeMb
+           };
+           
+           res = await api.themBaiHoc(maGiangVien, maChuong, finalDto);
+
+           setLessons(prev => [...prev, { 
+               maBaiHoc: res.maBaiHoc, tieuDe: dto.tieuDe, moTa: dto.moTa, 
+               linkVideo: uploadResult.secure_url, 
+               thoiLuong: duration, 
+               thuTu: dto.thuTu, loaiBaiHoc: 'Video',
+               videoSource: 'cloudinary', videoPublicId: uploadResult.public_id
+           }]);
+           showToast('success', 'Tải video và thêm bài học thành công!');
         }
-        setLessons(prev => [...prev, { maBaiHoc: res.maBaiHoc, tieuDe: res.tieuDe, moTa: res.moTa, linkVideo: res.linkVideo, thoiLuong: res.thoiLuong || 0, thuTu: res.thuTu, loaiBaiHoc: type }]);
-        showToast('success', 'Thêm bài học thành công!');
       }
-      setModalOpen(false); setEditTarget(null);
+      setModalOpen(false); setEditTarget(null); setUploadProgress(null);
     } catch (err: any) {
       showToast('error', err?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
-    } finally { setSaving(false); }
+    } finally { setSaving(false); setUploadProgress(null); }
   };
 
   const handleConfirmDelete = async () => {
@@ -110,6 +146,7 @@ export const useLessonManagement = ({ maChuong, initialLessons }: UseLessonManag
 
   return {
     lessons, loading, error, modalOpen, editTarget, saving, deleteTarget, deleting, previewLesson,
+    uploadProgress, setLessons,
     setModalOpen, setEditTarget, setDeleteTarget, setPreviewLesson,
     loadLessons, handleDragEnd, handleSave, handleConfirmDelete,
     ToastContainer
