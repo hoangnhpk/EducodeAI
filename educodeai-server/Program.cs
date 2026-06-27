@@ -12,6 +12,7 @@ using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using CloudinaryDotNet;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
@@ -156,7 +157,7 @@ builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
 builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();
 builder.Services.AddScoped<IKeyApiService, KeyApiService>();
 builder.Services.AddScoped<IRateLimitService, RateLimitService>();
-
+builder.Services.AddScoped<IMediaService, MediaService>();
 
 // ==========================================
 // 5. CẤU HÌNH HTTP CLIENT CHO GEMINI (ĐÃ TỐI ƯU)
@@ -174,6 +175,20 @@ builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =
 
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
 builder.Services.Configure<PaymentMailOptions>(builder.Configuration.GetSection("PaymentMail"));
+
+// Cloudinary Configuration
+var cloudinaryConfig = builder.Configuration.GetSection("Cloudinary").Get<CauHinhCloudinary>();
+builder.Services.Configure<CauHinhCloudinary>(builder.Configuration.GetSection("Cloudinary"));
+var cloudinarySettings = builder.Configuration.GetSection("Cloudinary").Get<CauHinhCloudinary>();
+if (cloudinarySettings != null)
+{
+    var account = new Account(
+        cloudinarySettings.CloudName,
+        cloudinarySettings.ApiKey,
+        cloudinarySettings.ApiSecret);
+    var cloudinary = new Cloudinary(account);
+    builder.Services.AddSingleton(cloudinary);
+}
 
 // YouTube Service
 builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();

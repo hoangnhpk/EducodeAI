@@ -158,6 +158,9 @@ public class BaiHocVideoCreateUpdateDTO
     public string? LinkVideo { get; set; }
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
+    public string? VideoSource { get; set; }
+    public string? VideoPublicId { get; set; }
+    public int? VideoSizeMb { get; set; }
 }
 public class ThemVideoResponseDTO
 {

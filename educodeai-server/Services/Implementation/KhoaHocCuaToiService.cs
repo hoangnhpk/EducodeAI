@@ -272,6 +272,10 @@ namespace educodeai_server.Services.Implement
                 ThoiLuong = dto.ThoiLuong,
                 ThuTu = dto.ThuTu,
                 LoaiBaiHoc = "Video",
+                VideoSource = dto.VideoSource ?? "youtube",
+                VideoPublicId = dto.VideoPublicId,
+                VideoSizeMb = dto.VideoSizeMb,
+                VideoStatus = dto.VideoSource == "cloudinary" ? "ready" : null
             };
 
             await _repository.AddBaiHocAsync(baiHoc);

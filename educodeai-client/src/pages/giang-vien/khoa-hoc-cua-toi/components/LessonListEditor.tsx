@@ -14,6 +14,14 @@ import EmptyState from './ui/EmptyState';
 import ConfirmDialog from './ui/ConfirmDialog';
 import { ListItemSkeleton } from './ui/Skeleton';
 import { useLessonManagement } from '../hooks/useLessonManagement';
+import BulkUploadModal from './BulkUploadModal';
+
+const getGiangVienId = (): number => {
+  try {
+    const u = JSON.parse(localStorage.getItem('user_info') || '{}');
+    return u.maNguoiDung ?? u.id ?? 1;
+  } catch { return 1; }
+};
 
 const getYTId = (url?: string): string | null => {
   if (!url) return null;
@@ -32,13 +40,14 @@ interface LessonModalProps {
   editData?: BaiHocDetail | null;
   currentCount: number;
   isLoading: boolean;
-  onSave: (type: 'Video' | 'File', dto: any) => void;
+  uploadProgress: number | null;
+  onSave: (type: 'Video' | 'File' | 'VideoUpload', dto: any) => void;
   onClose: () => void;
 }
-const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCount, isLoading, onSave, onClose }) => {
+const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCount, isLoading, uploadProgress, onSave, onClose }) => {
   const isEdit = !!editData;
   const initialType = editData?.loaiBaiHoc === 'File' ? 'File' : 'Video';
-  const [loaiBaiHoc, setLoaiBaiHoc] = useState<'Video' | 'File'>(initialType);
+  const [loaiBaiHoc, setLoaiBaiHoc] = useState<'Video' | 'File' | 'VideoUpload'>(initialType);
   const [tieuDe, setTieuDe] = useState(editData?.tieuDe ?? '');
   const [moTa, setMoTa] = useState(editData?.moTa ?? '');
   const [linkVideo, setLinkVideo] = useState(editData?.linkVideo ?? '');
@@ -63,6 +72,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
     if (!tieuDe.trim()) e.tieuDe = 'Tiêu đề bài học không được để trống.';
     if (tieuDe.length > 200) e.tieuDe = 'Tiêu đề tối đa 200 ký tự.';
     if (loaiBaiHoc === 'File' && !isEdit && !file) e.file = 'Vui lòng chọn file tĩnh.';
+    if (loaiBaiHoc === 'VideoUpload' && !isEdit && !file) e.file = 'Vui lòng chọn video để tải lên.';
     setErrors(e);
     return !Object.keys(e).length;
   };
@@ -71,6 +81,8 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
     if (!validate()) return;
     if (loaiBaiHoc === 'Video') {
       onSave('Video', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), linkVideo: linkVideo.trim(), thoiLuong, thuTu: editData?.thuTu ?? currentCount + 1 });
+    } else if (loaiBaiHoc === 'VideoUpload') {
+      onSave('VideoUpload', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), file, thuTu: editData?.thuTu ?? currentCount + 1 });
     } else {
       onSave('File', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), file, thuTu: editData?.thuTu ?? currentCount + 1 });
     }
@@ -89,6 +101,10 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
               <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer' }}>
                 <input type="radio" name="loai" checked={loaiBaiHoc === 'Video'} onChange={() => setLoaiBaiHoc('Video')} />
                 Video (YouTube)
+              </label>
+              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer' }}>
+                <input type="radio" name="loai" checked={loaiBaiHoc === 'VideoUpload'} onChange={() => setLoaiBaiHoc('VideoUpload')} />
+                Video (Tải lên)
               </label>
               <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer' }}>
                 <input type="radio" name="loai" checked={loaiBaiHoc === 'File'} onChange={() => setLoaiBaiHoc('File')} />
@@ -133,6 +149,29 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
                 </div>
               </div>
             )
+          ) : loaiBaiHoc === 'VideoUpload' ? (
+            <div className="khm-form-group">
+              <label className="khm-form-label">Video đính kèm {isEdit && '(Bỏ qua nếu không đổi video)'}</label>
+              <input 
+                type="file" 
+                onChange={e => { setFile(e.target.files?.[0] || null); setErrors(p => ({ ...p, file: '' })) }} 
+                disabled={isLoading} 
+                accept="video/mp4,video/webm,video/ogg"
+                className={`khm-form-input ${errors.file ? 'error' : ''}`} 
+                style={{ padding: '6px 10px' }} 
+              />
+              {errors.file && <div className="khm-form-error">⚠ {errors.file}</div>}
+              {uploadProgress !== null && (
+                <div className="khm-mt-8">
+                  <div style={{ background: '#e2e8f0', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                    <div style={{ background: 'var(--khm-primary)', height: '100%', width: `${uploadProgress}%`, transition: 'width 0.2s' }} />
+                  </div>
+                  <div className="khm-text-sm khm-text-muted khm-mt-4 khm-flex khm-gap-8 khm-items-center">
+                    <span className="khm-spinner khm-spinner-sm" /> Đang xử lý tải lên: {uploadProgress}% (Vui lòng không đóng cửa sổ)
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="khm-form-group">
               <label className="khm-form-label">Tài liệu đính kèm {isEdit && '(Bỏ qua nếu không đổi file)'}</label>
@@ -197,6 +236,18 @@ const VideoPreviewModal: React.FC<{ lesson: BaiHocDetail | null; onClose: () => 
                 title={lesson.tieuDe}
               />
             </div>
+          ) : lesson.videoSource === 'cloudinary' ? (
+            <div className="khm-relative" style={{ background: '#000' }}>
+               <video 
+                 controls 
+                 controlsList="nodownload" 
+                 width="100%" 
+                 src={lesson.linkVideo} 
+                 poster={lesson.linkVideo ? lesson.linkVideo.replace('.mp4', '.jpg').replace('.webm', '.jpg') : undefined}
+               >
+                 Trình duyệt không hỗ trợ phát video.
+               </video>
+            </div>
           ) : (
             <div className="khm-text-center" style={{ padding: 40, color: 'var(--khm-gray-400)' }}>
               Không có video để xem trước.
@@ -242,10 +293,12 @@ const LessonRow: React.FC<{
              <div className="khm-list-item-thumb-placeholder khm-flex khm-items-center" style={{ color: 'var(--khm-primary)', fontSize: 24, justifyContent: 'center' }}>📄</div>
           ) : thumb ? (
             <img src={thumb} alt={lesson.tieuDe} className="khm-list-item-thumb" />
+          ) : lesson.videoSource === 'cloudinary' ? (
+            <img src={lesson.linkVideo?.replace('.mp4', '.jpg').replace('.webm', '.jpg')} alt={lesson.tieuDe} className="khm-list-item-thumb" />
           ) : (
             <div className="khm-list-item-thumb-placeholder">🎥</div>
           )}
-          {((isYT && thumb) || isFile) && (
+          {((isYT && thumb) || isFile || lesson.videoSource === 'cloudinary') && (
             <button
               onClick={() => onPreview(lesson)}
               className="khm-absolute-inset khm-flex khm-items-center"
@@ -266,7 +319,7 @@ const LessonRow: React.FC<{
         </div>
 
         <div className="khm-list-item-actions">
-          {((isYT && thumb) || isFile) && (
+          {((isYT && thumb) || isFile || lesson.videoSource === 'cloudinary') && (
             <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onPreview(lesson)} title="Xem">▶</button>
           )}
           <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onEdit(lesson)} title="Chỉnh sửa">✏️</button>
@@ -288,10 +341,14 @@ interface Props {
 const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons = [], onImportYT }) => {
   const {
     lessons, loading, error, modalOpen, editTarget, saving, deleteTarget, deleting, previewLesson,
+    uploadProgress, setLessons,
     setModalOpen, setEditTarget, setDeleteTarget, setPreviewLesson,
     loadLessons, handleDragEnd, handleSave, handleConfirmDelete,
     ToastContainer
   } = useLessonManagement({ maChuong, initialLessons });
+
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const maGiangVien = getGiangVienId();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -319,6 +376,9 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
               ▶ Import YouTube
             </button>
           )}
+          <button className="khm-btn khm-btn-secondary khm-btn-sm" onClick={() => setBulkModalOpen(true)} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1' }}>
+            📥 Tải lên Hàng loạt
+          </button>
           <button className="khm-btn khm-btn-primary khm-btn-sm" onClick={() => { setEditTarget(null); setModalOpen(true); }}>
             + Thêm bài học
           </button>
@@ -359,6 +419,7 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
         editData={editTarget}
         currentCount={lessons.length}
         isLoading={saving}
+        uploadProgress={uploadProgress}
         onSave={(type, dto) => void handleSave(type, dto)}
         onClose={() => { setModalOpen(false); setEditTarget(null); }}
       />
@@ -372,6 +433,21 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
         isLoading={deleting}
         onConfirm={() => void handleConfirmDelete()}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <BulkUploadModal 
+        isOpen={bulkModalOpen} 
+        onClose={() => setBulkModalOpen(false)} 
+        maGiangVien={maGiangVien} 
+        maChuong={maChuong} 
+        currentCount={lessons.length} 
+        onUploadSuccess={(newLessons) => {
+           setLessons(prev => {
+             const updated = [...prev, ...newLessons];
+             return updated.sort((a, b) => a.thuTu - b.thuTu);
+           });
+           setBulkModalOpen(false);
+        }} 
       />
 
       <VideoPreviewModal lesson={previewLesson} onClose={() => setPreviewLesson(null)} />
