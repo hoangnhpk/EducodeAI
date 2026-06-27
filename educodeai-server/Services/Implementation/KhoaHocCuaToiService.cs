@@ -15,6 +15,7 @@ namespace educodeai_server.Services.Implement
         private readonly IGeminiAIService _gemini;
         private readonly IYouTubeService _youtubeService;
         private readonly IRedisService _redisService;
+        private readonly IMediaService _mediaService;
         private readonly ILogger<KhoaHocCuaToiService> _logger;
 
         public KhoaHocCuaToiService(
@@ -22,12 +23,14 @@ namespace educodeai_server.Services.Implement
             IGeminiAIService gemini, 
             IYouTubeService youtubeService, 
             IRedisService redisService,
+            IMediaService mediaService,
             ILogger<KhoaHocCuaToiService> logger)
         {
             _repository = repository;
             _gemini = gemini;
             _youtubeService = youtubeService;
             _redisService = redisService;
+            _mediaService = mediaService;
             _logger = logger;
         }
 
@@ -333,6 +336,11 @@ namespace educodeai_server.Services.Implement
                     }
                 }
                 catch { } // Ignore delete fail
+            }
+            else if (baiHoc.LoaiBaiHoc == "Video" && baiHoc.VideoSource == "cloudinary" && !string.IsNullOrEmpty(baiHoc.VideoPublicId))
+            {
+                // Delete from Cloudinary
+                await _mediaService.DeleteVideoCloudinaryAsync(baiHoc.VideoPublicId);
             }
 
             await _repository.DeleteBaiHocAsync(baiHoc);
@@ -1095,7 +1103,13 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
                 LinkVideo = b.LinkVideo,
                 ThoiLuong = b.ThoiLuong ?? 0,
                 ThuTu = b.ThuTu,
-                LoaiBaiHoc = b.LoaiBaiHoc
+                LoaiBaiHoc = b.LoaiBaiHoc,
+                VideoSource = b.VideoSource,
+                VideoPublicId = b.VideoPublicId,
+                HasSubtitle = b.HasSubtitle,
+                VideoStatus = b.VideoStatus,
+                SubtitleSource = b.SubtitleSource,
+                SubtitleUrl = b.SubtitleUrl
             }).ToList() ?? new();
         }
 

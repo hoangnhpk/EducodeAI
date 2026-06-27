@@ -18,6 +18,7 @@ export interface ChuKyUploadVideoDTO {
     apiKey: string;
     cloudName: string;
     folder: string;
+    uploadPreset: string;
 }
 
 export const layChuKyUploadVideo = async () => {
@@ -67,6 +68,7 @@ export const uploadVideoToCloudinary = async (
     formData.append('timestamp', signatureData.timestamp);
     formData.append('signature', signatureData.signature);
     formData.append('folder', signatureData.folder);
+    formData.append('upload_preset', signatureData.uploadPreset);
 
     const res = await axios.post(url, formData, {
       headers: { 
@@ -85,4 +87,19 @@ export const uploadVideoToCloudinary = async (
   }
 
   return uploadResult; 
+};
+
+export const taiLenPhuDe = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await axiosClient.post(`${BASE}/tai-len-phu-de`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return extractData<{ url: string }>(res);
+};
+
+export const taoPhuDeAI = async (maBaiHoc: number) => {
+  const res = await axiosClient.post(`${BASE}/tao-phu-de-ai/${maBaiHoc}`);
+  // Since we just need it to not throw an error if successful
+  return extractData<any>(res);
 };

@@ -1,4 +1,5 @@
 using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using educodeai_server.Config;
 using educodeai_server.Data;
 using educodeai_server.DTOs.Media;
@@ -27,14 +28,15 @@ namespace educodeai_server.Services.Implementation
         public Task<ChuKyUploadVideoDTO> LayChuKyUploadVideoAsync(string maGiangVien, string folder)
         {
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-            var paramToSign = new Dictionary<string, object>
-            {
-                { "timestamp", timestamp },
-                { "folder", folder },
-                { "upload_preset", _cloudinaryConfig.UploadPreset }
-            };
+            var uploadPreset = _cloudinaryConfig.UploadPreset;
 
-            var signature = _cloudinary.Api.SignParameters(paramToSign);
+            // Xây dựng chuỗi để ký (yêu cầu của Cloudinary: xếp theo thứ tự a-z, nối bằng &)
+            // Các tham số gửi lên gồm: folder, timestamp, upload_preset
+            var toSign = $"folder={folder}&timestamp={timestamp}&upload_preset={uploadPreset}";
+            
+            // Nối thêm ApiSecret vào cuối chuỗi
+            var stringToHash = toSign + _cloudinaryConfig.ApiSecret;
+            var signature = ComputeSha1Hex(stringToHash);
 
             return Task.FromResult(new ChuKyUploadVideoDTO
             {
@@ -42,7 +44,8 @@ namespace educodeai_server.Services.Implementation
                 Signature = signature,
                 ApiKey = _cloudinaryConfig.ApiKey,
                 CloudName = _cloudinaryConfig.CloudName,
-                Folder = folder
+                Folder = folder,
+                UploadPreset = uploadPreset
             });
         }
 
@@ -113,7 +116,52 @@ namespace educodeai_server.Services.Implementation
 
                         var notifType = root.TryGetProperty("notification_type", out var typeProp) ? typeProp.GetString() : "unknown";
                         
-                        // TODO: Xử lý logic cụ thể theo notification_type (upload, eager, raw_convert...)
+                        // Xử lý tạo phụ đề AI
+                        if (root.TryGetProperty("info", out var infoProp))
+                        {
+                            if (infoProp.TryGetProperty("raw_convert", out var rcProp))
+                            {
+                                if (rcProp.TryGetProperty("google_speech", out var gsProp))
+                                {
+                                    var status = gsProp.TryGetProperty("status", out var sProp) ? sProp.GetString() : "";
+                                    if (status == "complete" || status == "pending") // pending could mean it's starting
+                                    {
+                                        if (status == "complete")
+                                        {
+                                            var publicId = root.TryGetProperty("public_id", out var pProp) ? pProp.GetString() : "";
+                                            var url = gsProp.TryGetProperty("url", out var uProp) ? uProp.GetString() : "";
+                                            
+                                            var baiHoc = await _context.BaiHocs.FirstOrDefaultAsync(b => b.VideoPublicId == publicId);
+                                            if (baiHoc != null && !string.IsNullOrEmpty(url))
+                                            {
+                                                baiHoc.SubtitleUrl = url;
+                                                baiHoc.HasSubtitle = true;
+                                                baiHoc.VideoStatus = "Ready";
+
+                                                // Release hold
+                                                var hold = await _context.AIBalanceHolds
+                                                    .Where(h => h.MaBaiHoc == baiHoc.MaBaiHoc && h.Status == "holding")
+                                                    .FirstOrDefaultAsync();
+                                                
+                                                if (hold != null)
+                                                {
+                                                    hold.Status = "committed";
+                                                    hold.SettledAt = DateTime.UtcNow;
+
+                                                    var quota = await _context.GiangVienQuotas.FirstOrDefaultAsync(q => q.MaGiangVien == hold.MaGiangVien);
+                                                    if (quota != null)
+                                                    {
+                                                        quota.AiBalanceUsd -= hold.AmountUsd;
+                                                        if (quota.AiBalanceUsd < 0) quota.AiBalanceUsd = 0;
+                                                    }
+                                                }
+                                                await _context.SaveChangesAsync();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         await DanhDauWebhookDaXuLyAsync(notificationId, notifType ?? "unknown", body);
                     }
@@ -150,8 +198,113 @@ namespace educodeai_server.Services.Implementation
 
         public string LayTokenPhatVideo(string publicId)
         {
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            return $"mock_token_for_{publicId}_{timestamp}";
+            var expiration = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 7200;
+            var acl = $"/video/upload/*";
+            var toSign = $"acl={acl}~exp={expiration}";
+            
+            var keyBytes = Encoding.UTF8.GetBytes(_cloudinaryConfig.ApiSecret);
+            using var hmac = new System.Security.Cryptography.HMACSHA256(keyBytes);
+            var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(toSign));
+            var hmacHex = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+            
+            return $"{toSign}~hmac={hmacHex}";
+        }
+
+        public async Task<string?> TaiLenPhuDeAsync(IFormFile file, string folder)
+        {
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            if (extension != ".vtt" && extension != ".srt")
+            {
+                return null;
+            }
+
+            using var stream = file.OpenReadStream();
+            var uploadParams = new RawUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = folder
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            if (uploadResult.Error != null) return null;
+
+            return uploadResult.SecureUrl?.ToString();
+        }
+
+        public async Task<(bool IsSuccess, string Message)> YeuCauTaoPhuDeAIAsync(int maGiangVien, int maBaiHoc)
+        {
+            var baiHoc = await _context.BaiHocs
+                .Include(b => b.ChuongHoc).ThenInclude(c => c.KhoaHoc)
+                .FirstOrDefaultAsync(b => b.MaBaiHoc == maBaiHoc);
+
+            if (baiHoc == null || baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien)
+                return (false, "Bài học không hợp lệ.");
+
+            if (string.IsNullOrEmpty(baiHoc.VideoPublicId))
+                return (false, "Bài học chưa có video trên Cloudinary.");
+
+            // Tính toán chi phí (Ví dụ: 0.06$ / phút)
+            var durationS = baiHoc.VideoDurationS ?? 0;
+            var minutes = Math.Ceiling((double)durationS / 60);
+            var costUsd = (decimal)minutes * 0.06m;
+
+            var quota = await _context.GiangVienQuotas.FirstOrDefaultAsync(q => q.MaGiangVien == maGiangVien);
+            if (quota == null)
+            {
+                quota = new GiangVienQuotaModel { MaGiangVien = maGiangVien };
+                _context.GiangVienQuotas.Add(quota);
+            }
+
+            if (quota.AiBalanceUsd < costUsd)
+                return (false, $"Số dư không đủ. Yêu cầu ${costUsd}, hiện có ${quota.AiBalanceUsd}");
+
+            // Hold tiền
+            var hold = new AIBalanceHoldModel
+            {
+                MaGiangVien = maGiangVien,
+                MaBaiHoc = maBaiHoc,
+                AmountUsd = costUsd,
+                Status = "holding"
+            };
+            _context.AIBalanceHolds.Add(hold);
+
+            // Cập nhật trạng thái
+            baiHoc.SubtitleSource = "ai";
+            baiHoc.VideoStatus = "Processing_Subtitle";
+            
+            // Gọi Cloudinary Addon (Nếu chạy báo lỗi UpdateResourceParams thì có thể do version SDK)
+            try
+            {
+                var updParams = new UpdateParams(baiHoc.VideoPublicId)
+                {
+                    ResourceType = ResourceType.Video,
+                    RawConvert = "google_speech:vi"
+                };
+                await _cloudinary.UpdateResourceAsync(updParams);
+            }
+            catch (Exception ex)
+            {
+                return (false, "Lỗi khi gọi Cloudinary: " + ex.Message);
+            }
+
+            await _context.SaveChangesAsync();
+            return (true, "Yêu cầu tạo phụ đề đã được gửi thành công");
+        }
+
+        public async Task<bool> DeleteVideoCloudinaryAsync(string publicId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(publicId)) return false;
+                var delParams = new DeletionParams(publicId) { ResourceType = ResourceType.Video };
+                var res = await _cloudinary.DestroyAsync(delParams);
+                return res.Result == "ok";
+            }
+            catch (Exception)
+            {
+                // Ignore delete fail or log it
+                return false;
+            }
         }
     }
 }
