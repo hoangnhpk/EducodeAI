@@ -36,6 +36,7 @@ namespace educodeai_server.Data
         public DbSet<VideoChapterModel> VideoChapters { get; set; }
         public DbSet<VideoQuizModel> VideoQuizs { get; set; }
         public DbSet<KeyAPIModel> KeyAPIs { get; set; }
+        public DbSet<ApiKeyAuditLog> ApiKeyAuditLogs { get; set; }
         public DbSet<NhatKySuDungModel> NhatKySuDungs { get; set; }
         public DbSet<DonHangKhoaHocModel> DonHangKhoaHocs { get; set; }
         public DbSet<ChiTietDonHangModel> ChiTietDonHangs { get; set; }

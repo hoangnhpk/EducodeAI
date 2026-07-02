@@ -67,8 +67,9 @@ builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
 try
 {
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+    var isRedisActive = builder.Configuration.GetValue<bool>("RedisConfig:IsActive", true);
 
-    if (!string.IsNullOrEmpty(redisConnectionString))
+    if (isRedisActive && !string.IsNullOrEmpty(redisConnectionString))
     {
         var configOptions = ConfigurationOptions.Parse(redisConnectionString);
         configOptions.AbortOnConnectFail = false;
@@ -92,7 +93,8 @@ try
     }
     else
     {
-        Console.WriteLine("Redis connection string is empty – using MemoryCache fallback");
+        var reason = !isRedisActive ? "turned OFF in appsettings" : "empty connection string";
+        Console.WriteLine($"Redis is {reason} – using MemoryCache fallback");
         builder.Services.AddScoped<IRedisService, FallbackRedisService>();
     }
 }
@@ -122,7 +124,6 @@ builder.Services.AddScoped<IQuaTangKhoaHocService, QuaTangKhoaHocService>();
 builder.Services.AddScoped<IThanhToanEmailService, ThanhToanEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienEmailService, RutTienGiangVienEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienService, RutTienGiangVienService>();
-builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
@@ -154,6 +155,7 @@ builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
 builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();
 builder.Services.AddScoped<IKeyApiService, KeyApiService>();
+builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 
 
 // ==========================================
