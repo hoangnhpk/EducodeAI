@@ -16,6 +16,9 @@ const FILTER_LABELS: Record<Filter, string> = {
   Archived: 'Lưu trữ',
 };
 
+type CategoryFilter = 'Tất cả' | string;
+const PAGE_SIZE = 9;
+
 const getGiangVienId = (): number => {
   try {
     const raw = localStorage.getItem('user_info');
@@ -42,6 +45,8 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('Tất cả');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('Tất cả');
+  const [currentPage, setCurrentPage] = useState(1);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<KhoaHocListItem | null>(null);
 
@@ -69,13 +74,29 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
     searchTimeout.current = setTimeout(() => setDebouncedSearch(val), 400);
   };
 
+  // Get unique categories from courses
+  const categories = ['Tất cả', ...Array.from(new Set(courses.map(c => c.linhVuc)))];
+
   const filtered = courses.filter(c => {
     const matchFilter = filter === 'Tất cả' || c.trangThai === filter;
+    const matchCategory = categoryFilter === 'Tất cả' || c.linhVuc === categoryFilter;
     const matchSearch = !debouncedSearch ||
       c.tenKhoaHoc.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       c.linhVuc.toLowerCase().includes(debouncedSearch.toLowerCase());
-    return matchFilter && matchSearch;
+    return matchFilter && matchCategory && matchSearch;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedCourses = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, categoryFilter, debouncedSearch]);
 
   const handleConfirmArchive = async () => {
     if (!confirmTarget) return;
@@ -90,6 +111,18 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleDuplicate = (_maKhoaHoc: number) => {
+    showToast('info', 'Tính năng nhân bản khóa học đang phát triển.');
+  };
+
+  const handlePublish = (_maKhoaHoc: number) => {
+    showToast('info', 'Tính năng xuất bản khóa học đang phát triển.');
+  };
+
+  const handleHide = (_maKhoaHoc: number) => {
+    showToast('info', 'Tính năng ẩn khóa học đang phát triển.');
   };
 
   // Stats
@@ -165,6 +198,15 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
               </button>
             ))}
           </div>
+          <select
+            className="khm-category-select"
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+          >
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat === 'Tất cả' ? 'Tất cả lĩnh vực' : cat}</option>
+            ))}
+          </select>
         </div>
 
         {/* Content */}
@@ -198,18 +240,46 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
             }
           />
         ) : (
-          <div className="khm-course-grid">
-            {filtered.map(c => (
-              <CourseCard
-                key={c.maKhoaHoc}
-                course={c}
-                onEdit={onEdit}
-                onManage={onManage}
-                onArchive={setConfirmTarget}
-                isDeleting={deletingId === c.maKhoaHoc}
-              />
-            ))}
-          </div>
+          <>
+            <div className="khm-course-grid">
+              {paginatedCourses.map(c => (
+                <CourseCard
+                  key={c.maKhoaHoc}
+                  course={c}
+                  onEdit={onEdit}
+                  onManage={onManage}
+                  onArchive={setConfirmTarget}
+                  onDuplicate={handleDuplicate}
+                  onPublish={handlePublish}
+                  onHide={handleHide}
+                  isDeleting={deletingId === c.maKhoaHoc}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="khm-pagination">
+                <button
+                  className="khm-btn khm-btn-outline khm-btn-sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  ← Trang trước
+                </button>
+                <span className="khm-pagination-info">
+                  Trang {currentPage} / {totalPages}
+                </span>
+                <button
+                  className="khm-btn khm-btn-outline khm-btn-sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Trang sau →
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

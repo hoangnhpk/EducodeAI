@@ -8,14 +8,17 @@ namespace educodeai_server.Services.Interface
 
         Task<KeyAPISummaryDto?> GetKeyByIdAsync(int id);
 
-        Task<bool> CreateNewKeyAsync(KeyAPIManageDto dto);
+        Task<bool> CreateNewKeyAsync(KeyAPIManageDto dto, int adminId, string? ipAddress);
 
-        Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto);
+        Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto, int adminId, string? ipAddress);
 
-        Task<bool> ToggleKeyStatusAsync(int id, bool status);
+        Task<bool> ToggleKeyStatusAsync(int id, bool status, int adminId, string? ipAddress);
 
-        Task<bool> DeleteKeyAsync(int id);
+        Task<bool> SoftDeleteKeyAsync(int id, int adminId, string? ipAddress);
 
-        Task<bool> SyncKeyToRedisAsync(int id);
+        Task<bool> SyncKeyToRedisAsync(int id, int adminId, string? ipAddress);
+
+        Task<bool> ResetKeyUsageAsync(int id, int adminId, string? ipAddress);
+        Task<ApiKeyRevealDto?> RevealKeyAsync(int id, int adminId, string? ipAddress);
     }
 }
