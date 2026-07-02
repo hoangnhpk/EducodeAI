@@ -1,32 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { BaiTapService } from '@/services/bai-tap.service';
 import type { DanhSachBaiTapDTO } from '@/pages/giang-vien/tao-bai-tap-test-case/BaiTap';
 import './QuanLyBaiTap.css';
+import { BaiTapThucHanhService } from '@/services/bai-tap-thuc-hanh.service';
+import QuizDetailView from './QuizDetailView';
+import { Suspense, lazy } from 'react';
+
+const PreviewBaiTapAI = lazy(() => import('../bai-tap-thuc-hanh/PreviewBaiTapAI'));
+const QuanLyBaiTapThucHanh = lazy(() => import('../bai-tap-thuc-hanh/QuanLyBaiTapThucHanh'));
 
 const QuanLyBaiTapContent = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [chiTietQuiz, setChiTietQuiz] = useState<any>(null);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [cheDoManHinh, setCheDoManHinh] = useState<'list' | 'createPractice' | 'createQuiz'>('list');
 
     const [danhSachBaiTap, setDanhSachBaiTap] = useState<DanhSachBaiTapDTO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [tuKhoa, setTuKhoa] = useState('');
+    const [locLoai, setLocLoai] = useState('TatCa');
+    const [locTrangThai, setLocTrangThai] = useState('TatCa');
+    const [locKhoaHoc, setLocKhoaHoc] = useState('TatCa');
+    const [trangHienTai, setTrangHienTai] = useState(1);
+    const kichThuocTrang = 10;
+
+    const fetchDanhSach = async () => {
+        try {
+            setIsLoading(true);
+            const data = await BaiTapService.getDanhSachByGiangVien();
+            setDanhSachBaiTap(data);
+        } catch (error) {
+            console.error("L?i t?i danh s?ch b?i t?p:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDanhSach = async () => {
-            try {
-                setIsLoading(true);
-
-                const data = await BaiTapService.getDanhSachByGiangVien();
-                setDanhSachBaiTap(data);
-            } catch (error) {
-                console.error("Úi dồi ôi lỗi kéo data Bài Tập:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchDanhSach();
     }, []);
 
@@ -40,22 +51,22 @@ const QuanLyBaiTapContent = () => {
         }).then(async result => {
             if (result.isConfirmed) {
                 try {
-                // Gọi API chém xuống Backend
-                const response = await BaiTapService.deleteBaiTap(maBaiTap);
-                
-                // Giả sử BE của ông trả về cục { success: true, message: "..." }
-                // Nếu BE chỉ trả status 200/204 không có body thì chỉ cần check try catch là đủ nha!
-                if (response.success !== false) { 
-                    Swal.fire({ icon: 'success', text: `Đã tiễn ẻm bay màu thành công!` });
-                    
-                    setDanhSachBaiTap(prevList => prevList.filter(bt => bt.maBaiTap !== maBaiTap));
-                } else {
-                    Swal.fire({ icon: 'error', text: "Úi, có lỗi cản địa: " + response.message });
+                    // Gọi API chém xuống Backend
+                    const response = await BaiTapService.deleteBaiTap(maBaiTap);
+
+                    // Giả sử BE của ông trả về cục { success: true, message: "..." }
+                    // Nếu BE chỉ trả status 200/204 không có body thì chỉ cần check try catch là đủ nha!
+                    if (response.success !== false) {
+                        Swal.fire({ icon: 'success', text: `Đã tiễn ẻm bay màu thành công!` });
+
+                        setDanhSachBaiTap(prevList => prevList.filter(bt => bt.maBaiTap !== maBaiTap));
+                    } else {
+                        Swal.fire({ icon: 'error', text: "Úi, có lỗi cản địa: " + response.message });
+                    }
+                } catch (error: any) {
+                    console.error("Lỗi sập nguồn khi xóa:", error);
+                    Swal.fire({ icon: 'error', text: "Server đang hờn dỗi, giấu không cho xóa rồi sếp ơi!" });
                 }
-            } catch (error: any) {
-                console.error("Lỗi sập nguồn khi xóa:", error);
-                Swal.fire({ icon: 'error', text: "Server đang hờn dỗi, giấu không cho xóa rồi sếp ơi!" });
-            }
             }
         });
     };
@@ -63,24 +74,40 @@ const QuanLyBaiTapContent = () => {
     const handleViewClick = async (maBaiTap: number) => {
         setIsModalOpen(true);
         setIsLoadingDetails(true);
-        setCurrentQuestionIndex(0); // Mở lên thì luôn bắt đầu từ câu 1
-        
-        try {
-            const response = await BaiTapService.getChiTietBaiTap(maBaiTap);
-            // Giả sử Backend trả về một object có chứa "duLieuCauHoiJSON" (dạng string) 
-            // Cần parse nó ra thành mảng Object. (Ông check lại tên biến BE nha)
-            let danhSachCauHoi = [];
-            
-            // Xử lý an toàn: Nếu nó là chuỗi thì parse, nếu nó là mảng sẵn thì lụm luôn
-            const rawData = response.data?.duLieuCauHoiJSON || response.duLieuCauHoiJSON || response.data?.danhSachCauHoi || '[]';
-            
-            if (typeof rawData === 'string') {
-                danhSachCauHoi = JSON.parse(rawData);
-            } else if (Array.isArray(rawData)) {
-                danhSachCauHoi = rawData;
-            }
 
-            setChiTietQuiz({ ...response.data, danhSachCauHoi });
+        // Lấy loại bài tập từ danh sách hiện có
+        const baiTap = danhSachBaiTap.find(b => b.maBaiTap === maBaiTap);
+        if (!baiTap) return;
+
+        try {
+            let response;
+            if (baiTap.loaiBaiTap === 'IDE') {
+                response = await BaiTapThucHanhService.getChiTiet(maBaiTap);
+                setChiTietQuiz({ ...(response?.data ?? response), loaiBaiTap: 'IDE' });
+            } else {
+                response = await BaiTapService.getChiTietBaiTap(maBaiTap);
+
+                const payload = response?.data ?? response;
+                let danhSachCauHoi: any[] = [];
+                const rawData = payload?.duLieuCauHoiJSON || payload?.duLieuCauHoi || payload?.danhSachCauHoi || '[]';
+
+                const parsedData = typeof rawData === 'string' ? JSON.parse(rawData || '[]') : rawData;
+                if (Array.isArray(parsedData)) {
+                    danhSachCauHoi = parsedData;
+                } else if (parsedData && typeof parsedData === 'object') {
+                    danhSachCauHoi = parsedData['C\u00e2u h\u1ecfi'] || parsedData['C\u00c3\u00a2u h\u00e1\u00bb\u008fi'] || parsedData.cauHoi || parsedData.questions || [];
+                }
+
+                setChiTietQuiz({
+                    ...payload,
+                    tenBaiTap: baiTap.tenBaiTap,
+                    tenKhoaHoc: baiTap.tenKhoaHoc,
+                    tenChuong: baiTap.tenChuong,
+                    tenBaiHoc: baiTap.tenBaiHoc,
+                    danhSachCauHoi,
+                    loaiBaiTap: 'Quiz'
+                });
+            }
         } catch (error) {
             console.error("Lỗi lấy chi tiết:", error);
             Swal.fire({ icon: 'error', text: "Lỗi kéo chi tiết bài tập rồi sếp ơi!" });
@@ -95,24 +122,84 @@ const QuanLyBaiTapContent = () => {
         setChiTietQuiz(null);
     };
 
-    // Hàm tiện ích để lướt câu hỏi trong Modal
-    const nextQuestion = () => {
-        if (chiTietQuiz && currentQuestionIndex < chiTietQuiz.danhSachCauHoi.length - 1) {
-            setCurrentQuestionIndex(prev => prev + 1);
-        }
-    };
+    const danhSachKhoaHocFilter = useMemo(() => {
+        return Array.from(new Set(danhSachBaiTap.map(x => x.tenKhoaHoc).filter(Boolean)));
+    }, [danhSachBaiTap]);
 
-    const prevQuestion = () => {
-        if (currentQuestionIndex > 0) {
-            setCurrentQuestionIndex(prev => prev - 1);
-        }
-    };
+    const danhSachDaLoc = useMemo(() => {
+        const keyword = tuKhoa.trim().toLowerCase();
+        return danhSachBaiTap.filter(bt => {
+            const khopTuKhoa = !keyword || [bt.tenBaiTap, bt.tenKhoaHoc, bt.tenChuong, bt.tenBaiHoc]
+                .some(v => (v || '').toLowerCase().includes(keyword));
+            const khopLoai = locLoai === 'TatCa' || bt.loaiBaiTap === locLoai;
+            const khopTrangThai = locTrangThai === 'TatCa' || bt.trangThai === locTrangThai;
+            const khopKhoaHoc = locKhoaHoc === 'TatCa' || bt.tenKhoaHoc === locKhoaHoc;
+            return khopTuKhoa && khopLoai && khopTrangThai && khopKhoaHoc;
+        });
+    }, [danhSachBaiTap, tuKhoa, locLoai, locTrangThai, locKhoaHoc]);
+
+    const tongSoTrang = Math.max(1, Math.ceil(danhSachDaLoc.length / kichThuocTrang));
+    const danhSachHienThi = danhSachDaLoc.slice((trangHienTai - 1) * kichThuocTrang, trangHienTai * kichThuocTrang);
+
+    useEffect(() => {
+        setTrangHienTai(1);
+    }, [tuKhoa, locLoai, locTrangThai, locKhoaHoc]);
+
+    if (cheDoManHinh === 'createPractice' || cheDoManHinh === 'createQuiz') {
+        const isQuizMode = cheDoManHinh === 'createQuiz';
+        return (
+            <Suspense fallback={<div className="main-content" style={{ padding: 40 }}>Đang tải màn tạo bài tập...</div>}>
+                <QuanLyBaiTapThucHanh
+                    embedded
+                    initialTab={isQuizMode ? "quiz" : "create"}
+                    onBackToList={() => {
+                        setCheDoManHinh('list');
+                        fetchDanhSach();
+                    }}
+                />
+            </Suspense>
+        );
+    }
 
     return (
         <div className="main-content" style={{ padding: '40px 48px', animation: 'fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-            <div className="tabs">
-                <a href="/giang-vien/quiz" className="tab active text-decoration-none">+ Tạo Quiz</a>
-                {/* <button className="tab">+ Tạo Bài Thực Hành</button> */}
+            <div className="tabs" style={{ justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div className="d-flex gap-2 flex-wrap">
+                    <button type="button" className="tab text-decoration-none" onClick={() => setCheDoManHinh('createPractice')}>+ Tạo bài tập thực hành AI</button>
+                    
+                </div>
+                <button type="button" className="tab active text-decoration-none" onClick={() => setCheDoManHinh('createQuiz')}>+ Tạo bài tập Quiz</button>
+            </div>
+            <div className="card mb-3" style={{ padding: 16 }}>
+                <div className="row g-3">
+                    <div className="col-md-4">
+                        <input className="form-control" placeholder="Tìm theo tên bài tập, khóa học, chương, bài học..." value={tuKhoa} onChange={e => setTuKhoa(e.target.value)} />
+                    </div>
+                    <div className="col-md-3">
+                        <select className="form-select" value={locKhoaHoc} onChange={e => setLocKhoaHoc(e.target.value)}>
+                            <option value="TatCa">Tất cả khóa học</option>
+                            {danhSachKhoaHocFilter.map(kh => <option key={kh} value={kh}>{kh}</option>)}
+                        </select>
+                    </div>
+                    <div className="col-md-2">
+                        <select className="form-select" value={locLoai} onChange={e => setLocLoai(e.target.value)}>
+                            <option value="TatCa">Tất cả loại</option>
+                            <option value="Quiz">Quiz</option>
+                            <option value="IDE">Thực hành IDE</option>
+                        </select>
+                    </div>
+                    <div className="col-md-2">
+                        <select className="form-select" value={locTrangThai} onChange={e => setLocTrangThai(e.target.value)}>
+                            <option value="TatCa">Tất cả trạng thái</option>
+                            <option value="Draft">Nháp</option>
+                            <option value="Published">Đã xuất bản</option>
+                            <option value="Hidden">Đã ẩn</option>
+                        </select>
+                    </div>
+                    <div className="col-md-1">
+                        <button className="btn btn-outline-secondary w-100" onClick={() => { setTuKhoa(''); setLocLoai('TatCa'); setLocTrangThai('TatCa'); setLocKhoaHoc('TatCa'); }}>Reset</button>
+                    </div>
+                </div>
             </div>
             <div className="card">
                 <div className="table-container">
@@ -136,14 +223,14 @@ const QuanLyBaiTapContent = () => {
                                         Đang thỉnh data từ server về...
                                     </td>
                                 </tr>
-                            ) : danhSachBaiTap.length === 0 ? (
+                            ) : danhSachHienThi.length === 0 ? (
                                 <tr className="empty-row">
                                     <td colSpan={7} style={{ textAlign: 'center', padding: '30px' }}>
                                         Chưa có bài tập nào, tạo mới ngay đi sếp ơi!
                                     </td>
                                 </tr>
                             ) : (
-                                danhSachBaiTap.map((baiTap) => (
+                                danhSachHienThi.map((baiTap) => (
                                     <tr key={baiTap.maBaiTap}>
                                         {/* Cột Tên Bài Tập */}
                                         <td>
@@ -189,8 +276,8 @@ const QuanLyBaiTapContent = () => {
                                                 <button className="action-btn view-btn" onClick={() => handleViewClick(baiTap.maBaiTap)}>
                                                     <i className="bi bi-eye"></i> Xem
                                                 </button>
-                                                <button className="action-btn delete-btn" 
-                                                onClick={() => handleDeleteClick(baiTap.maBaiTap, baiTap.tenBaiTap)}
+                                                <button className="action-btn delete-btn"
+                                                    onClick={() => handleDeleteClick(baiTap.maBaiTap, baiTap.tenBaiTap)}
                                                 >
                                                     <i className="bi bi-trash"></i> Xóa
                                                 </button>
@@ -202,69 +289,49 @@ const QuanLyBaiTapContent = () => {
                         </tbody>
                     </table>
                 </div>
+                <div className="d-flex justify-content-between align-items-center mt-3 px-2 pb-2">
+                    <span className="text-muted">Trang {trangHienTai}/{tongSoTrang}</span>
+                    <div className="btn-group">
+                        <button className="btn btn-outline-primary" disabled={trangHienTai <= 1} onClick={() => setTrangHienTai(p => Math.max(1, p - 1))}>Trước</button>
+                        <button className="btn btn-outline-primary" disabled={trangHienTai >= tongSoTrang} onClick={() => setTrangHienTai(p => Math.min(tongSoTrang, p + 1))}>Sau</button>
+                    </div>
+                </div>
             </div>
             {isModalOpen && (
                 <div className="quiz-modal-overlay" onClick={closeModal}>
                     <div className="quiz-modal-content" onClick={(e) => e.stopPropagation()}>
-                        
-                        <div className="quiz-modal-header">
-                            <h3>Chi tiết bài tập</h3>
-                            <button className="btn-close-modal" onClick={closeModal}>×</button>
+
+                        <div className="quiz-modal-header d-flex justify-content-between align-items-center" style={{ padding: '20px 24px', background: 'white', borderBottom: '1px solid #f1f5f9' }}>
+                            <div className="d-flex align-items-center">
+                                <div className="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
+                                    <i className="bi bi-file-earmark-text text-primary fs-5" />
+                                </div>
+                                <h3 className="m-0" style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b' }}>
+                                    {chiTietQuiz?.loaiBaiTap === 'IDE' ? 'Chi tiết Bài tập Thực hành' : 'Chi tiết Bài tập Quiz'}
+                                </h3>
+                            </div>
+                            <button className="btn-close-modal" onClick={closeModal} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><i className="bi bi-x-lg" /></button>
                         </div>
 
-                        <div className="quiz-modal-body">
-                            {/* ... (Toàn bộ phần logic if-else isLoadingDetails, currentQ... giữ nguyên y chang nha sếp) ... */}
-                            
-                            {/* Copy lại cho ông đỡ rối phần ruột nè */}
+                        <div className="quiz-modal-body" style={{ flex: 1, overflowY: 'auto', background: '#f8fafc' }}>
                             {isLoadingDetails ? (
-                                <div style={{ textAlign: 'center', padding: '40px' }}>
-                                    <i className="bi bi-arrow-repeat" style={{ animation: 'spin 1s linear infinite', fontSize: '24px', color: '#0066FF' }}></i>
-                                    <p style={{ marginTop: '12px', fontWeight: 600 }}>Đang mở khóa dữ liệu...</p>
+                                <div style={{ textAlign: 'center', padding: '60px' }}>
+                                    <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}></div>
+                                    <p className="mt-4 fw-bold text-muted">Đang thỉnh dữ liệu chi tiết...</p>
                                 </div>
-                            ) : !chiTietQuiz?.danhSachCauHoi || chiTietQuiz.danhSachCauHoi.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '40px', color: '#64748B' }}>
-                                    Bài tập này chưa có câu hỏi nào hoặc dữ liệu bị lỗi! 🥺
-                                </div>
+                            ) : chiTietQuiz?.loaiBaiTap === 'IDE' ? (
+            <Suspense fallback={<div className="main-content" style={{ padding: 40 }}>Đang tải màn tạo bài tập...</div>}>
+                                    <PreviewBaiTapAI
+                                        data={chiTietQuiz}
+                                        editable={false}
+                                        onSave={() => { }}
+                                        onCancel={() => setIsModalOpen(false)}
+                                    />
+                                </Suspense>
                             ) : (
-                                (() => {
-                                    const currentQ = chiTietQuiz.danhSachCauHoi[currentQuestionIndex];
-                                    return (
-                                        <div className="quiz-preview-wrapper">
-                                            <div className="q-header">
-                                                <div className="q-number">Câu {currentQuestionIndex + 1} / {chiTietQuiz.danhSachCauHoi.length}</div>
-                                            </div>
-                                            <div className="q-text">{currentQ.cauHoi}</div>
-                                            <div className="q-options">
-                                                {['A', 'B', 'C', 'D'].map(opt => (
-                                                    <div key={opt} className="q-opt-item">
-                                                        <div className="q-opt-label" style={{ background: currentQ.dapAnDung === opt ? '#E8EEFF' : '' }}>{opt}</div>
-                                                        <div className="q-opt-text" style={{ fontWeight: currentQ.dapAnDung === opt ? 700 : 500 }}>
-                                                            {currentQ[`dapAn${opt}`]}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div className="q-answer-box">
-                                                <div className="q-ans-label">Đáp án đúng & Giải thích:</div>
-                                                <div className="q-ans-value">✅ {currentQ.dapAnDung}</div>
-                                                <div className="q-ans-explain">💡 {currentQ.giaiThich}</div>
-                                            </div>
-                                        </div>
-                                    );
-                                })()
+                                <QuizDetailView data={chiTietQuiz} />
                             )}
                         </div>
-
-                        {chiTietQuiz?.danhSachCauHoi && chiTietQuiz.danhSachCauHoi.length > 0 && (
-                            <div className="quiz-modal-footer">
-                                <button className="btn-modal-nav" onClick={prevQuestion} disabled={currentQuestionIndex === 0}>
-                                    ← Câu trước
-                                </button>
-                                <button className="btn-modal-nav btn-modal-next" onClick={nextQuestion} disabled={currentQuestionIndex === chiTietQuiz.danhSachCauHoi.length - 1}>
-                                    Câu tiếp →
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
             )}

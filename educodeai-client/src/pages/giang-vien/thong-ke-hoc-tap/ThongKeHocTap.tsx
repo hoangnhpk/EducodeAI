@@ -43,17 +43,17 @@ export default function ThongKeHocTap() {
       setLoading(true);
       setError(null);
 
-      // Fetch tất cả data song song
-      const [overviewData, trangThaiData] = await Promise.all([
+      // Fetch táº¥t cáº£ data song song
+      const [overviewData, trangThaiRes] = await Promise.all([
         thongKeHocTapService.getOverview(),
         thongKeHocTapService.getTrangThaiHocVien(),
       ]);
 
       setOverview(overviewData);
-      setTrangThaiData(trangThaiData);
+      setTrangThaiData(trangThaiRes);
     } catch (err: any) {
       console.error("Error fetching data:", err);
-      setError(err.response?.data?.message || "Không thể tải dữ liệu");
+      setError(err.response?.data?.message || "KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u");
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export default function ThongKeHocTap() {
   // ================== HANDLERS ==================
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1); // Reset về trang 1 khi search
+    setCurrentPage(1); // Reset vá» trang 1 khi search
   };
 
   // ================== LOADING STATE ==================
@@ -91,7 +91,7 @@ export default function ThongKeHocTap() {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div className="spinner"></div>
-          <p>Đang tải dữ liệu...</p>
+          <p>Äang táº£i dá»¯ liá»‡u...</p>
         </div>
       </div>
     );
@@ -108,7 +108,7 @@ export default function ThongKeHocTap() {
           borderRadius: '8px',
           color: '#991b1b'
         }}>
-          <h3>Lỗi tải dữ liệu</h3>
+          <h3>Lá»—i táº£i dá»¯ liá»‡u</h3>
           <p>{error}</p>
           <button 
             onClick={fetchAllData}
@@ -122,7 +122,7 @@ export default function ThongKeHocTap() {
               cursor: 'pointer'
             }}
           >
-            Thử lại
+            Thá»­ láº¡i
           </button>
         </div>
       </div>
@@ -133,45 +133,45 @@ export default function ThongKeHocTap() {
     <div className="thong-ke-container">
       {/* Header */}
       <div className="page-header">
-        <h2>Thống kê học tập</h2>
-        <p>Theo dõi tiến độ và hiệu quả học tập của học viên</p>
+        <h2>Thá»‘ng kÃª há»c táº­p</h2>
+        <p>Theo dÃµi tiáº¿n Ä‘á»™ vÃ  hiá»‡u quáº£ há»c táº­p cá»§a há»c viÃªn</p>
       </div>
 
       {/* STAT CARDS */}
       <div className="stat-grid">
         <StatCard
-          title="GIỜ HỌC TB / HỌC VIÊN"
-          value={`${overview?.gioHocTrungBinh.toFixed(1) || 0}h`}
-          subtitle="Trung bình mỗi học viên"
+          title="GIá»œ Há»ŒC TB / Há»ŒC VIÃŠN"
+          value={`${Number(overview?.gioHocTrungBinh ?? 0).toFixed(1)}h`}
+          subtitle="Trung bÃ¬nh má»—i há»c viÃªn"
           icon={Clock}
           gradient="icon-purple"
         />
 
         <StatCard
-          title="KHÓA HỌC ĐANG DẠY"
-          value={overview?.soKhoaHocDangDay || 0}
-          subtitle="Khóa học đang hoạt động"
+          title="KHÃ“A Há»ŒC ÄANG Dáº Y"
+          value={String(overview?.soKhoaHocDangDay || 0)}
+          subtitle="KhÃ³a há»c Ä‘ang hoáº¡t Ä‘á»™ng"
           icon={BookOpen}
           gradient="icon-blue"
         />
 
         <StatCard
-          title="TỔNG BÀI TẬP"
-          value={overview?.tongBaiTap || 0}
-          subtitle="Tổng số bài tập đã giao"
+          title="Tá»”NG BÃ€I Táº¬P"
+          value={String(overview?.tongBaiTap || 0)}
+          subtitle="Tá»•ng sá»‘ bÃ i táº­p Ä‘Ã£ giao"
           icon={ClipboardCheck}
           gradient="icon-yellow"
         />
 
         <StatCard
-          title="TỶ LỆ HOÀN THÀNH"
-          value={`${overview?.tyLeHoanThanhTB.toFixed(1) || 0}%`}
+          title="Tá»¶ Lá»† HOÃ€N THÃ€NH"
+          value={`${Number(overview?.tyLeHoanThanhTB ?? 0).toFixed(1)}%`}
           subtitle={
-            (overview?.tyLeHoanThanhTB || 0) >= 70 
-              ? "✓ Tốt" 
-              : (overview?.tyLeHoanThanhTB || 0) >= 50 
-              ? "⚠ Trung bình" 
-              : "✗ Cần cải thiện"
+            Number(overview?.tyLeHoanThanhTB ?? 0) >= 70
+              ? "âœ“ Tá»‘t"
+              : Number(overview?.tyLeHoanThanhTB ?? 0) >= 50
+              ? "âš  Trung bÃ¬nh"
+              : "âœ— Cáº§n cáº£i thiá»‡n"
           }
           icon={CheckCircle}
           gradient="icon-green"
@@ -184,13 +184,13 @@ export default function ThongKeHocTap() {
       {/* STUDENT TABLE */}
       <div className="student-section">
         <div className="student-header">
-          <h3>Bảng chi tiết học viên ({totalStudents})</h3>
+          <h3>Báº£ng chi tiáº¿t há»c viÃªn ({totalStudents})</h3>
 
           <div className="search-box">
             <Search size={18} />
             <input
               type="text"
-              placeholder="Tìm kiếm học viên..."
+              placeholder="TÃ¬m kiáº¿m há»c viÃªn..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
             />
@@ -213,3 +213,4 @@ export default function ThongKeHocTap() {
     </div>
   );
 }
+

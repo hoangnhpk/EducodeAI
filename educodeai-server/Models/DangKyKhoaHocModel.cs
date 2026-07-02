@@ -15,7 +15,7 @@ namespace educodeai_server.Models
         [ForeignKey("MaKhoaHoc")]
         public virtual KhoaHocModel KhoaHoc { get; set; } = null!;
 
-        public DateTime NgayDangKy { get; set; } = DateTime.Now;
+        public DateTime NgayDangKy { get; set; } = DateTime.UtcNow;
 
         [StringLength(50)]
         public string? TrangThai { get; set; } // DangHoc, HoanThanh

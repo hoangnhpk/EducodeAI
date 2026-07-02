@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 
 // 1. Interface mô tả chính xác file JSON bạn truyền vào
 interface RawCauHoi {
+    id?: number;
     cauHoi: string;
     dapAnA: string;
     dapAnB: string;
@@ -62,7 +63,7 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
                 const bangChuCai: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
 
                 let cauHoiParsed: CauHoiDTO[] = rawData.map((item, index) => ({
-                    Id: index + 1, 
+                    Id: typeof item.id === 'number' ? item.id : index + 1,
                     NoiDung: item.cauHoi,
                     LuaChon: [item.dapAnA, item.dapAnB, item.dapAnC, item.dapAnD],
                     DapAnDung: bangChuCai[item.dapAnDung?.toUpperCase()] ?? 0,
@@ -77,15 +78,23 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
                 // THÊM LOGIC: Kiểm tra LocalStorage xem có dữ liệu cũ không
                 const storageKey = `quiz_progress_${duLieu.maBaiTap}`;
                 const savedProgress = localStorage.getItem(storageKey);
-                
+                let khoiPhuc = false;
+
                 if (savedProgress) {
-                    // Nếu có thì khôi phục lại toàn bộ đáp án, vị trí câu hỏi
                     const parsedProgress = JSON.parse(savedProgress);
-                    setDapAnNguoiDung(parsedProgress.dapAnNguoiDung || {});
-                    setDaNopBai(parsedProgress.daNopBai || false);
-                    setChiSoHienTai(parsedProgress.chiSoHienTai || 0);
-                } else {
-                    // Nếu không có thì làm mới
+                    // Yêu cầu: "Lúc thi lại không nên hiện đáp án cũ. Chỉ hiện lúc vừa làm xong."
+                    // -> Không khôi phục nếu dữ liệu trong storage báo là đã nộp bài.
+                    if (!parsedProgress.daNopBai) {
+                        setDapAnNguoiDung(parsedProgress.dapAnNguoiDung || {});
+                        setDaNopBai(false);
+                        setChiSoHienTai(parsedProgress.chiSoHienTai || 0);
+                        khoiPhuc = true;
+                    } else {
+                        localStorage.removeItem(storageKey);
+                    }
+                }
+                
+                if (!khoiPhuc) {
                     setDapAnNguoiDung({});
                     setDaNopBai(false);
                     setChiSoHienTai(0);
@@ -283,7 +292,6 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
                     <div className="cp-quiz-options">
                         {cauHoiHienTai.LuaChon.map((luaChon, index) => {
                             // Map index (0,1,2,3) thành ký tự (A,B,C,D) để hiển thị cho đẹp
-                            const nhanDien = String.fromCharCode(65 + index); 
                             
                             return (
                                 <div

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom"; // THÊM useNavigate
 import axios, { AxiosError } from "axios";
-import Swal from "sweetalert2"; // THÊM Swal để hiện thông báo
 import "../../../layouts/hoc-vien/ChiTietKhoaHoc.css";
 import { encodeId } from '@/utils/id-helper';
 type BaiHoc = {
@@ -20,13 +19,46 @@ type Chuong = {
   baiHocs?: BaiHoc[];
 };
 
+type GiangVien = {
+  maGiangVien: number;
+  hoTen: string;
+  anhDaiDien?: string;
+};
+
 type KhoaHoc = {
   maKhoaHoc: number;
   tenKhoaHoc: string;
   moTa?: string;
+  kyNangChinh?: string;
+  giaKhoaHoc?: number;
+  donViTienTe?: string;
   chuongs?: Chuong[];
   khoaHocDaDangKy?: boolean;
   slug?: string; 
+  diemDanhGiaTB?: number;
+  tongDanhGia?: number;
+  coChungChi?: boolean;
+  tenChungChi?: string;
+  thoiLuongGio?: number;
+  giangVien?: GiangVien;
+};
+
+type DanhGia = {
+  maDanhGia: number;
+  soSao: number;
+  nhanXet: string;
+  ngayDanhGia: string;
+  nguoiDung: {
+    hoTen: string;
+    anhDaiDien?: string;
+  }
+};
+
+type DanhGiaResponse = {
+  items: DanhGia[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
 };
 
 const ChiTietKhoaHoc = () => {
@@ -37,10 +69,11 @@ const ChiTietKhoaHoc = () => {
   const [openChapter, setOpenChapter] = useState<number | null>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // State xử lý lúc đang bấm nút Đăng ký (để hiện loading trên nút)
-  const [isEnrolling, setIsEnrolling] = useState(false); 
-
+ 
+  // State cho Đánh giá (Reviews)
+  const [reviews, setReviews] = useState<DanhGiaResponse | null>(null);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewFilter, setReviewFilter] = useState("all"); // "all", "positive", "negative"
   useEffect(() => {
     if (!id) return;
 
@@ -76,12 +109,39 @@ const ChiTietKhoaHoc = () => {
     fetchCourse();
   }, [id]);
 
+  // Fetch Đánh giá khi đổi Trang hoặc Filter
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchReviews = async () => {
+      try {
+        const res = await axios.get<DanhGiaResponse>(
+          `https://localhost:7284/api/hocvien/chitietkhoahoc/${id}/danh-gia?page=${reviewPage}&pageSize=5&filter=${reviewFilter}`
+        );
+        setReviews(res.data);
+      } catch (err) {
+        console.error("Lỗi lấy đánh giá:", err);
+      }
+    };
+
+    fetchReviews();
+  }, [id, reviewPage, reviewFilter]);
+
   const toggleChapter = (index: number) => {
     setOpenChapter(openChapter === index ? null : index);
   };
 
+  const dinhDangTien = (soTien?: number, donViTienTe?: string) => {
+    if (!soTien) return "0 VND";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: donViTienTe || "VND",
+      maximumFractionDigits: 0
+    }).format(soTien);
+  };
+
   // ==========================================
-  // HÀM XỬ LÝ ĐĂNG KÝ KHÓA HỌC
+  // HÀM XỬ LÝ CHUYỂN HƯỚNG ĐẾN MUA KHÓA HỌC
   // ==========================================
   const handleDangKy = async () => {
     if (!course) return;
@@ -91,55 +151,7 @@ const ChiTietKhoaHoc = () => {
       navigate(`/khoa-hoc/${course.slug}/${encodeId(course.maKhoaHoc)}`); // Sửa lại đường dẫn cho khớp với Router của bạn
       return;
     }
-
-    const token = localStorage.getItem("user_token"); // Lấy token từ nơi bạn lưu trữ
-    if (!token) {
-      Swal.fire("Cảnh báo", "Bạn cần đăng nhập để đăng ký khóa học này!", "warning").then(() => {
-          // navigate("/login"); // Mở comment dòng này nếu muốn đẩy user ra trang đăng nhập
-      });
-      return;
-    }
-
-    try {
-      setIsEnrolling(true);
-
-      // Gọi API Đăng ký bạn vừa viết ở Backend
-      const response = await axios.post(
-        `https://localhost:7284/api/hocvien/chitietkhoahoc/dang-ky`, // <-- SỬA ĐÚNG ĐƯỜNG DẪN API ĐĂNG KÝ CỦA BẠN
-        { maKhoaHoc: course.maKhoaHoc },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Bắt buộc phải có token
-          },
-        }
-      );
-
-      // Bắn pháo hoa thành công
-      Swal.fire({
-        title: 'Đăng ký thành công!',
-        text: 'Chào mừng bạn đến với khóa học.',
-        icon: 'success',
-        confirmButtonText: 'Vào học ngay',
-        confirmButtonColor: '#f69050'
-      }).then(() => {
-        // Chuyển hướng user sang màn hình học Video
-        navigate(`/khoa-hoc/${course.slug}/${encodeId(course.maKhoaHoc)}`); 
-      });
-
-    } catch (err: any) {
-      // Xử lý lỗi (Ví dụ: Backend báo lỗi 400 "Đã đăng ký rồi")
-      const errorMessage = err.response?.data?.message || "Đã xảy ra lỗi khi đăng ký khóa học.";
-      
-      if (err.response?.status === 400 && errorMessage.includes("đã đăng ký")) {
-        Swal.fire("Thông báo", "Bạn đã đăng ký khóa học này rồi!", "info").then(() => {
-            navigate(`/noi-dung-khoa-hoc/${course.maKhoaHoc}`);
-        });
-      } else {
-        Swal.fire("Thất bại", errorMessage, "error");
-      }
-    } finally {
-      setIsEnrolling(false);
-    }
+    navigate(`/mua-khoa-hoc/${course.maKhoaHoc}`);
   };
 
   if (loading) return <h3 style={{ padding: 40 }}>Đang tải dữ liệu...</h3>;
@@ -216,32 +228,113 @@ const ChiTietKhoaHoc = () => {
                 <p>Chưa có chương nào</p>
               )}
             </div>
+
+            {/* NHẬN XÉT ĐÁNH GIÁ */}
+            <div className="course-reviews mt-5" style={{ padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+                <h2 className="section-title mb-0" style={{ borderBottom: 'none', paddingBottom: 0 }}>Đánh giá học viên ({course.tongDanhGia || 0})</h2>
+                <div>
+                  <select 
+                    className="form-select form-select-sm" 
+                    value={reviewFilter} 
+                    onChange={(e) => { setReviewFilter(e.target.value); setReviewPage(1); }}
+                    style={{ width: 'auto', display: 'inline-block', borderRadius: '8px', cursor: 'pointer' }}
+                  >
+                    <option value="all">Tất cả đánh giá</option>
+                    <option value="positive">Tích cực (4-5 sao)</option>
+                    <option value="negative">Tiêu cực (1-3 sao)</option>
+                  </select>
+                </div>
+              </div>
+
+              {reviews && reviews.items.length > 0 ? (
+                <div className="reviews-list">
+                  {reviews.items.map(r => (
+                    <div key={r.maDanhGia} className="review-item" style={{ padding: '15px 0', borderBottom: '1px solid #eee' }}>
+                      <div style={{ display: 'flex', gap: '15px' }}>
+                        {r.nguoiDung.anhDaiDien && r.nguoiDung.anhDaiDien.trim() !== '' && r.nguoiDung.anhDaiDien !== 'null' ? (
+                          <img 
+                            src={r.nguoiDung.anhDaiDien} 
+                            alt="avatar" 
+                            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #f1f5f9' }} 
+                          />
+                        ) : (
+                          <div style={{
+                              width: '40px', height: '40px', borderRadius: '50%',
+                              background: '#f1f5f9', color: '#64748b', 
+                              display: 'flex', alignItems: 'center',
+                              justifyContent: 'center', fontWeight: 700, fontSize: 16
+                          }}>
+                              {r.nguoiDung.hoTen ? r.nguoiDung.hoTen[0].toUpperCase() : '?'}
+                          </div>
+                        )}
+                        <div style={{ flex: 1 }}>
+                          <h6 style={{ margin: 0, fontWeight: 'bold' }}>{r.nguoiDung.hoTen}</h6>
+                          <div style={{ color: '#ffc107', fontSize: '14px', margin: '5px 0' }}>
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <i key={i} className={i < r.soSao ? "fas fa-star" : "far fa-star"}></i>
+                            ))}
+                            <span style={{ color: '#666', marginLeft: '10px', fontSize: '12px' }}>
+                              {new Date(r.ngayDanhGia).toLocaleDateString('vi-VN')}
+                            </span>
+                          </div>
+                          <p style={{ margin: 0, color: '#444' }}>{r.nhanXet}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Phân trang */}
+                  {reviews.totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
+                      <button 
+                        className="btn btn-sm btn-outline-primary" 
+                        disabled={reviewPage === 1}
+                        onClick={() => setReviewPage(p => p - 1)}
+                        style={{ borderRadius: '6px' }}
+                      >
+                        Trước
+                      </button>
+                      <span style={{ lineHeight: '30px', fontWeight: '500' }}>{reviewPage} / {reviews.totalPages}</span>
+                      <button 
+                        className="btn btn-sm btn-outline-primary" 
+                        disabled={reviewPage === reviews.totalPages}
+                        onClick={() => setReviewPage(p => p + 1)}
+                        style={{ borderRadius: '6px' }}
+                      >
+                        Sau
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>Chưa có đánh giá nào phù hợp.</p>
+              )}
+            </div>
+
           </div>
 
           {/* ===== SIDEBAR ===== */}
           <div className="course-sidebar">
             <div className="sidebar-card">
               <div className="course-price">
-                Miễn phí <span className="free-badge">FREE</span>
+                {dinhDangTien(course.giaKhoaHoc, course.donViTienTe)} <span className="free-badge">VND</span>
               </div>
 
               {/* ===== NÚT BẤM ĐÃ ĐƯỢC NÂNG CẤP ===== */}
               <button 
                 className="enroll-btn" 
                 onClick={handleDangKy}
-                disabled={isEnrolling}
                 style={{ 
                     backgroundColor: course.khoaHocDaDangKy ? '#28a745' : undefined,
-                    opacity: isEnrolling ? 0.7 : 1,
-                    cursor: isEnrolling ? 'not-allowed' : 'pointer'
+                    opacity: 1,
+                    cursor: 'pointer'
                 }}
               >
-                {isEnrolling ? (
-                  <><i className="fas fa-spinner fa-spin me-2"></i> Đang xử lý...</>
-                ) : course.khoaHocDaDangKy ? (
+                {course.khoaHocDaDangKy ? (
                   "Tiếp tục học"
                 ) : (
-                  "Đăng ký ngay"
+                  "Mua khóa học"
                 )}
               </button>
 
@@ -254,7 +347,44 @@ const ChiTietKhoaHoc = () => {
                   ) || 0}{" "}
                   bài học
                 </li>
+                <li>
+                  <i className="fas fa-clock text-primary me-2"></i> {course.thoiLuongGio || 0} giờ học
+                </li>
+                {course.coChungChi && (
+                  <li>
+                    <i className="fas fa-certificate text-warning me-2"></i> Chứng chỉ: <span style={{fontWeight: 600}}>{course.tenChungChi || "Hoàn thành khóa học"}</span>
+                  </li>
+                )}
               </ul>
+
+              {/* THÔNG TIN GIẢNG VIÊN */}
+              {course.giangVien && (
+                <div className="instructor-info mt-4" style={{ paddingTop: '15px', borderTop: '1px solid #eee' }}>
+                  <h6 style={{ marginBottom: '12px', fontWeight: 'bold', fontSize: '14px', color: '#555' }}>Giảng viên hướng dẫn</h6>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {course.giangVien.anhDaiDien && course.giangVien.anhDaiDien.trim() !== '' && course.giangVien.anhDaiDien !== 'null' ? (
+                      <img 
+                        src={course.giangVien.anhDaiDien} 
+                        alt="avatar" 
+                        style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f69050' }} 
+                      />
+                    ) : (
+                      <div style={{
+                          width: '45px', height: '45px', borderRadius: '50%',
+                          background: '#f1f5f9', color: '#64748b',
+                          display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontWeight: 700, fontSize: 18
+                      }}>
+                          {course.giangVien.hoTen ? course.giangVien.hoTen[0].toUpperCase() : '?'}
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '15px' }}>{course.giangVien.hoTen}</div>
+                      <div style={{ fontSize: '12px', color: '#666' }}>Giảng viên EduCodeAI</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

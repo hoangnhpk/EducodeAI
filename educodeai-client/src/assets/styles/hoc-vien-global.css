@@ -321,7 +321,7 @@ body {
   background: rgba(15, 23, 43, 0.7);
 }
 
-.breadcrumb-item + .breadcrumb-item::before {
+.breadcrumb-item+.breadcrumb-item::before {
   color: var(--bg-light);
 }
 
@@ -462,6 +462,7 @@ body {
 }
 
 @media (min-width: 768px) {
+
   .testimonial-carousel::before,
   .testimonial-carousel::after {
     width: 200px;
@@ -469,6 +470,7 @@ body {
 }
 
 @media (min-width: 992px) {
+
   .testimonial-carousel::before,
   .testimonial-carousel::after {
     width: 300px;
@@ -699,6 +701,7 @@ body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -797,21 +800,25 @@ body {
     left: 1px;
     top: 19px;
   }
+
   54% {
     width: 0;
     left: 1px;
     top: 19px;
   }
+
   70% {
     width: 50px;
     left: -8px;
     top: 37px;
   }
+
   84% {
     width: 17px;
     left: 21px;
     top: 48px;
   }
+
   100% {
     width: 25px;
     left: 14px;
@@ -825,16 +832,19 @@ body {
     right: 46px;
     top: 54px;
   }
+
   65% {
     width: 0;
     right: 46px;
     top: 54px;
   }
+
   84% {
     width: 55px;
     right: 0px;
     top: 35px;
   }
+
   100% {
     width: 47px;
     right: 8px;
@@ -859,12 +869,15 @@ body {
     left: -100%;
     opacity: 0;
   }
+
   10% {
     opacity: 1;
   }
+
   90% {
     opacity: 1;
   }
+
   100% {
     left: 100%;
     opacity: 0;
@@ -927,13 +940,13 @@ body {
   text-shadow: 0 0 8px rgba(244, 67, 54, 0.3);
 }
 
-.otp-input-wrapper .form-floating > label {
+.otp-input-wrapper .form-floating>label {
   padding-right: 45px;
   transition: padding-right var(--transition-fast);
 }
 
-.otp-input-wrapper .form-control:not(:placeholder-shown) ~ label,
-.otp-input-wrapper .form-control:focus ~ label {
+.otp-input-wrapper .form-control:not(:placeholder-shown)~label,
+.otp-input-wrapper .form-control:focus~label {
   padding-right: 45px;
 }
 
@@ -942,9 +955,11 @@ body {
     transform: translateY(-50%) scale(0);
     opacity: 0;
   }
+
   50% {
     transform: translateY(-50%) scale(1.2);
   }
+
   100% {
     transform: translateY(-50%) scale(1);
     opacity: 1;
@@ -962,10 +977,12 @@ body {
     box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
     transform: scale(1);
   }
+
   50% {
     box-shadow: 0 0 0 15px rgba(76, 175, 80, 0);
     transform: scale(1.02);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
     transform: scale(1);
@@ -979,13 +996,24 @@ body {
 }
 
 @keyframes errorShake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-8px);
   }
-  20%, 40%, 60%, 80% {
+
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(8px);
   }
 }
@@ -1007,8 +1035,181 @@ body {
     opacity: 0;
     transform: translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ========== DROPDOWN SUBMENU (Bảo Mật Tài Khoản) ========== */
+.dropdown-submenu {
+  position: relative !important;
+}
+
+.dropdown-submenu>.dropdown-menu {
+  top: 0 !important;
+  /* Bắt buộc dính sát mép trên cùng của form cha */
+  margin-top: 0 !important;
+  /* Xóa margin gây lệch */
+
+  left: auto !important;
+  right: 100% !important;
+
+  /* BÍ QUYẾT XỬ LÝ TRƯỢT CHUỘT: 
+       Kéo form con lẹm vào trong form cha 5px để tạo "cầu nối" tàng hình */
+  margin-right: -5px !important;
+
+  display: none !important;
+  position: absolute !important;
+}
+
+/* KHI RÊ CHUỘT VÀO (HOVER) THÌ MỚI HIỆN */
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block !important;
+  animation: fadeIn 0.2s ease-in;
+}
+
+/* Xoay icon cho sinh động */
+.dropdown-submenu:hover>a i.fa-chevron-left {
+  transform: translateX(-3px);
+  transition: transform var(--transition-fast);
+}
+
+.dropdown-submenu .dropdown-item:hover {
+  background-color: var(--primary);
+  color: white !important;
+}
+
+/* ========== IMMERSIVE 3D & DYNAMIC MOTION EFFECTS ========== */
+
+/* 3D Scroll Reveal */
+.reveal-3d {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  transform: rotateX(8deg) translateY(45px) translateZ(-45px);
+  opacity: 0;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.reveal-3d.active {
+  transform: rotateX(0deg) translateY(0) translateZ(0);
+  opacity: 1;
+}
+
+/* Cursor Spotlight Halo (follows cursor with custom properties) */
+.cursor-spotlight-halo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  background: radial-gradient(750px circle at var(--mouse-x, 50vw) var(--mouse-y, 50vh),
+      rgba(246, 144, 80, 0.04),
+      transparent 80%);
+  z-index: 0;
+  transition: opacity 0.5s ease;
+}
+
+/* Floating Parallax Background Elements */
+.parallax-bg-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.floating-mesh-element {
+  position: absolute;
+  transform-style: preserve-3d;
+  transform: translate3d(var(--tx, 0px), var(--ty, 0px), var(--tz, 0px)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.08;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--primary);
+  padding: 10px;
+  border: 1px dashed rgba(246, 144, 80, 0.2);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+}
+
+.floating-mesh-1 {
+  top: 18%;
+  left: 4%;
+}
+
+.floating-mesh-2 {
+  top: 48%;
+  right: 5%;
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.floating-mesh-3 {
+  top: 78%;
+  left: 6%;
+  color: #0ea5e9;
+  border-color: rgba(14, 165, 233, 0.2);
+}
+
+/* Layered 3D Depth Card Animations (Transitions for Card Inner Elements) */
+.tilt-card-3d {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tilt-card-3d .category-title,
+.tilt-card-3d .bento-desc,
+.tilt-card-3d .bento-icon-box,
+.tilt-card-3d .bento-footer,
+.tilt-card-3d .card-img-wrapper,
+.tilt-card-3d h5,
+.tilt-card-3d .badge,
+.tilt-card-3d .course-action-group,
+.tilt-card-3d small {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+}
+
+/* Multi-layer translateZ on Hover */
+.tilt-card-3d:hover .bento-icon-box {
+  transform: translateZ(45px) scale(1.08);
+}
+
+.tilt-card-3d:hover .category-title {
+  transform: translateZ(30px);
+}
+
+.tilt-card-3d:hover .bento-desc {
+  transform: translateZ(15px);
+}
+
+.tilt-card-3d:hover .bento-footer {
+  transform: translateZ(25px);
+}
+
+/* Course Card Specifics */
+.tilt-card-3d:hover .card-img-wrapper {
+  transform: translateZ(25px) scale(1.02);
+}
+
+.tilt-card-3d:hover .badge {
+  transform: translateZ(40px) translateY(-2px);
+}
+
+.tilt-card-3d:hover h5 {
+  transform: translateZ(30px);
+}
+
+.tilt-card-3d:hover .course-action-group {
+  transform: translateZ(35px);
+}
+
+.tilt-card-3d:hover small {
+  transform: translateZ(20px);
 }

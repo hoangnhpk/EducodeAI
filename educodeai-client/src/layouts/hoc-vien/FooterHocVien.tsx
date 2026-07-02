@@ -1,6 +1,15 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useSystemConfig } from "../../contexts/SystemConfigContext";
 
 const FooterHocVien: React.FC = () => {
+  // Lấy dữ liệu cấu hình từ Context
+  const { configs } = useSystemConfig();
+
+  // Thêm useEffect để theo dõi sự thay đổi của configs (Realtime)
+  useEffect(() => {
+    // Component sẽ tự động re-render khi configs trong Context thay đổi
+  }, [configs]);
+
   return (
     <div
       className="container-fluid bg-dark text-light footer pt-5 mt-5 wow fadeIn"
@@ -43,15 +52,15 @@ const FooterHocVien: React.FC = () => {
             <h4 className="text-white mb-3">Liên hệ</h4>
             <p className="mb-2">
               <i className="fa fa-map-marker-alt me-3"></i>
-              123 Đường, TP.HCM, Việt Nam
+              {configs?.DiaChi || "123 Đường, TP.HCM, Việt Nam"}
             </p>
             <p className="mb-2">
               <i className="fa fa-phone-alt me-3"></i>
-              +84 123 456 789
+              {configs?.SoDienThoai || "+84 123 456 789"}
             </p>
             <p className="mb-2">
               <i className="fa fa-envelope me-3"></i>
-              secretcoder@gmail.com
+              {configs?.EmailLienHe || "support@educodeai.vn"}
             </p>
 
             <div className="d-flex pt-2">
@@ -108,7 +117,7 @@ const FooterHocVien: React.FC = () => {
             <div className="col-md-6 text-center text-md-start mb-3 mb-md-0">
               ©{" "}
               <a className="border-bottom" href="/">
-                Secret Coder
+                {configs?.TenWebsite || "EduCodeAI"}
               </a>
               , All Rights Reserved.
             </div>

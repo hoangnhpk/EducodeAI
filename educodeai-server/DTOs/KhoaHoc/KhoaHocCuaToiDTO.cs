@@ -1,4 +1,6 @@
-﻿public class KhoaHocGiangVienListDTO
+using Microsoft.AspNetCore.Http;
+
+public class KhoaHocGiangVienListDTO
 {
     public int MaKhoaHoc { get; set; }
     public string TenKhoaHoc { get; set; } = null!;
@@ -13,6 +15,11 @@
 
     public double DiemDanhGiaTB { get; set; }
     public string? TrangThai { get; set; }
+    public decimal GiaKhoaHoc { get; set; }
+    public string DonViTienTe { get; set; } = "VND";
+    public bool ChoPhepMua { get; set; }
+    public bool CoChungChi { get; set; }
+    public bool DaCoDeThiChungChi { get; set; }
     public DateTime NgayTao { get; set; }
 }
 
@@ -29,11 +36,23 @@ public class KhoaHocGiangVienDetailDTO
     public int ThoiLuongGio { get; set; }
 
     public string? TrangThai { get; set; }
+    public decimal GiaKhoaHoc { get; set; }
+    public string DonViTienTe { get; set; } = "VND";
+    public bool ChoPhepMua { get; set; }
     public DateTime NgayTao { get; set; }
+    public bool CoChungChi { get; set; }
+    public string? TenChungChi { get; set; }
+    public double DiemDatChungChi { get; set; }
+    public int SoCauHoiChungChi { get; set; }
+    public int ThoiGianLamBaiChungChi { get; set; }
+    public bool DaCoDeThiChungChi { get; set; }
+    public string? NguonDeChungChi { get; set; }
+    public DateTime? NgayTaoDeChungChi { get; set; }
 
     public int SoHocVien { get; set; }
     public double TiLeHoanThanh { get; set; }
     public double DiemDanhGiaTB { get; set; }
+    public string? KyNangChinh { get; set; }
 
     public List<HocVienTrongKhoaHocDTO> DanhSachHocVien { get; set; } = new();
     public List<ChuongHocDetailDTO> DanhSachChuong { get; set; } = new();
@@ -62,7 +81,24 @@ public class KhoaHocCreateUpdateDTO
     public int ThoiLuongGio { get; set; }
 
     public string? TrangThai { get; set; }
+    public decimal GiaKhoaHoc { get; set; }
+    public string DonViTienTe { get; set; } = "VND";
+    public bool ChoPhepMua { get; set; }
     public string? KyNangChinh { get; set; }
+    public bool CoChungChi { get; set; }
+    public string? TenChungChi { get; set; }
+    public double DiemDatChungChi { get; set; } = 80;
+    public int SoCauHoiChungChi { get; set; } = 20;
+    public int ThoiGianLamBaiChungChi { get; set; } = 30;
+}
+
+public class KetQuaTaoDeChungChiAIDTO
+{
+    public bool ThanhCong { get; set; }
+    public string ThongBao { get; set; } = string.Empty;
+    public int SoCauHoi { get; set; }
+    public string? NguonDeChungChi { get; set; }
+    public DateTime? NgayTaoDeChungChi { get; set; }
 }
 
 public class ChuongHocDTO
@@ -112,6 +148,7 @@ public class BaiHocVideoDetailDTO
     public string? LinkVideo { get; set; }
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
+    public string LoaiBaiHoc { get; set; } = "Video";
 }
 
 public class BaiHocVideoCreateUpdateDTO
@@ -130,4 +167,63 @@ public class ThemVideoResponseDTO
     public string? LinkVideo { get; set; }
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
+    public string LoaiBaiHoc { get; set; } = "Video";
+}
+
+// ─── BÀI HỌC FILE ───
+public class BaiHocFileCreateUpdateDTO
+{
+    public string TieuDe { get; set; } = null!;
+    public string? MoTa { get; set; }
+    public IFormFile? File { get; set; }
+    public int ThuTu { get; set; }
+}
+
+public class ThemFileResponseDTO
+{
+    public int MaBaiHoc { get; set; }
+    public string TieuDe { get; set; } = null!;
+    public string? MoTa { get; set; }
+    public string? LinkVideo { get; set; }
+    public int ThuTu { get; set; }
+    public string LoaiBaiHoc { get; set; } = "File";
+}
+
+// ─── REORDER DTOs ───
+public class ChapterReorderDTO
+{
+    public int MaChuong { get; set; }
+    public int ThuTu { get; set; }
+}
+
+public class LessonReorderDTO
+{
+    public int MaBaiHoc { get; set; }
+    public int ThuTu { get; set; }
+}
+
+// ─── CERTIFICATE CONFIG DTOs ───
+public class CertificateConfigDTO
+{
+    public bool CoChungChi { get; set; }
+    public string? TenChungChi { get; set; }
+    public double DiemDatChungChi { get; set; } = 80;
+    public int SoCauHoiChungChi { get; set; } = 20;
+    public int ThoiGianLamBaiChungChi { get; set; } = 30;
+    public bool DaCoDeThiChungChi { get; set; }
+    public string? NguonDeChungChi { get; set; }
+    public DateTime? NgayTaoDeChungChi { get; set; }
+}
+
+// ─── ĐỀ THI CHỨNG CHỈ ───
+public class CauHoiChungChiDTO
+{
+    public int Id { get; set; }
+    public string CauHoi { get; set; } = null!;
+    public string DapAnA { get; set; } = null!;
+    public string DapAnB { get; set; } = null!;
+    public string DapAnC { get; set; } = null!;
+    public string DapAnD { get; set; } = null!;
+    public string DapAnDung { get; set; } = "A";
+    public string GiaiThich { get; set; } = string.Empty;
 }

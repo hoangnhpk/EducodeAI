@@ -1,6 +1,7 @@
 using educodeai_server.Data.DuLieuMau;
 using educodeai_server.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq;
 
 namespace educodeai_server.Data
@@ -13,7 +14,7 @@ namespace educodeai_server.Data
 
         // 16 bảng dữ liệu
         public DbSet<NguoiDungModel> NguoiDungs { get; set; }
-        public DbSet<NgonNguLapTrinhModel> NgonNguLapTrinhs { get; set; }
+        public DbSet<PhienDangNhapModel> PhienDangNhaps { get; set; }
         public DbSet<KhoaHocModel> KhoaHocs { get; set; }
         public DbSet<ChuongHocModel> ChuongHocs { get; set; }
         public DbSet<BaiHocModel> BaiHocs { get; set; }
@@ -22,32 +23,84 @@ namespace educodeai_server.Data
         public DbSet<DanhGiaModel> DanhGias { get; set; }
         public DbSet<BinhLuanModel> BinhLuans { get; set; }
         public DbSet<BaiTapModel> BaiTaps { get; set; }
-        public DbSet<BaiTap_ThucHanhIDEModel> BaiTap_ThucHanhIDEs { get; set; }
         public DbSet<BaiTap_QuizModel> BaiTap_Quizs { get; set; }
-        public DbSet<BoThuNghiemModel> BoThuNghiems { get; set; }
+        public DbSet<BaiTapThucHanhModel> BaiTapThucHanhs { get; set; }
+        public DbSet<TestCaseThucHanhModel> TestCaseThucHanhs { get; set; }
         public DbSet<KetQuaLamBaiModel> KetQuaLamBais { get; set; }
+        public DbSet<KetQuaKiemTraChungChiModel> KetQuaKiemTraChungChis { get; set; }
+        public DbSet<ChungChiKhoaHocModel> ChungChiKhoaHocs { get; set; }
+        public DbSet<CauHinhHeThongModel> CauHinhs { get; set; }
         public DbSet<LoTrinhAIModel> LoTrinhAIs { get; set; }
         public DbSet<GhiChuAIModel> GhiChuAIs { get; set; }
         public DbSet<GhiChuBaiHocModel> GhiChuBaiHocs { get; set; }
-        public DbSet<GoiYAI_TaoBaiTapModel> GoiYAI_TaoBaiTapS { get; set; }
-        public DbSet<PhienBanBaiTapModel> PhienBanBaiTaps { get; set; }
-        public DbSet<RangBuocBaiTapModel> RangBuocBaiTaps { get; set; }
-        public DbSet<LoiGiaiMauModel> LoiGiaiMaus { get; set; }
+        public DbSet<VideoChapterModel> VideoChapters { get; set; }
+        public DbSet<VideoQuizModel> VideoQuizs { get; set; }
+        public DbSet<KeyAPIModel> KeyAPIs { get; set; }
+        public DbSet<ApiKeyAuditLog> ApiKeyAuditLogs { get; set; }
+        public DbSet<NhatKySuDungModel> NhatKySuDungs { get; set; }
+        public DbSet<DonHangKhoaHocModel> DonHangKhoaHocs { get; set; }
+        public DbSet<ChiTietDonHangModel> ChiTietDonHangs { get; set; }
+        public DbSet<GiaoDichThanhToanModel> GiaoDichThanhToans { get; set; }
+        public DbSet<ThongBaoEmailThanhToanModel> ThongBaoEmailThanhToans { get; set; }
+        public DbSet<MaGiamGiaModel> MaGiamGias { get; set; }
+        public DbSet<MaGiamGiaKhoaHocModel> MaGiamGiaKhoaHocs { get; set; }
+        public DbSet<DoanhThuGiangVienModel> DoanhThuGiangViens { get; set; }
+        public DbSet<QuaTangKhoaHocModel> QuaTangKhoaHocs { get; set; }
+        public DbSet<MaQuaTangHocVienModel> MaQuaTangHocViens { get; set; }
+        public DbSet<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; }
+        public DbSet<HoTroRutTienGiangVienModel> HoTroRutTienGiangViens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entity.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime))
+                    {
+                        property.SetValueConverter(
+                            new ValueConverter<DateTime, DateTime>(
+                                v => v.ToUniversalTime(),
+                                v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
+                            ));
+                    }
+                }
+            }
             base.OnModelCreating(modelBuilder);
 
             // ====== INDEXES ======
             modelBuilder.Entity<NguoiDungModel>().HasIndex(u => u.TaiKhoan).IsUnique();
             modelBuilder.Entity<NguoiDungModel>().HasIndex(u => u.Email).IsUnique();
             modelBuilder.Entity<TienDoBaiHocModel>().HasIndex(t => new { t.MaNguoiDung, t.MaBaiHoc }).IsUnique();
-            modelBuilder.Entity<BaiTap_ThucHanhIDEModel>().HasIndex(b => new { b.MaBaiTap, b.MaNgonNgu }).IsUnique();
             modelBuilder.Entity<DanhGiaModel>().HasIndex(d => new { d.MaNguoiDung, d.MaKhoaHoc }).IsUnique();
 
+            modelBuilder.Entity<ChungChiKhoaHocModel>().HasIndex(c => c.MaChungChi).IsUnique();
+            modelBuilder.Entity<ChungChiKhoaHocModel>().HasIndex(c => new { c.MaNguoiDung, c.MaKhoaHoc }).IsUnique();
+
+            modelBuilder.Entity<DonHangKhoaHocModel>().HasIndex(d => d.IdempotencyKey).IsUnique();
+            modelBuilder.Entity<GiaoDichThanhToanModel>().HasIndex(g => g.MaThamChieuNgoai).IsUnique();
+            modelBuilder.Entity<ThongBaoEmailThanhToanModel>()
+                .HasIndex(x => new { x.MaDonHang, x.LoaiThongBao, x.EmailNhan }).IsUnique();
+            modelBuilder.Entity<MaGiamGiaModel>().HasIndex(v => v.Code).IsUnique();
+            modelBuilder.Entity<MaGiamGiaKhoaHocModel>().HasIndex(x => new { x.MaVoucher, x.MaKhoaHoc }).IsUnique();
+            modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.NoiDungChuyenKhoan).IsUnique();
+            modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.MaGiaoDichSePay).IsUnique();
+            modelBuilder.Entity<HoTroRutTienGiangVienModel>().HasIndex(x => new { x.MaYeuCauRutTien, x.TrangThaiHoTro });
+            modelBuilder.Entity<QuaTangKhoaHocModel>().HasIndex(x => new { x.MaKhoaHoc, x.MaNguoiNhan, x.TrangThai });
+            modelBuilder.Entity<QuaTangKhoaHocModel>().HasIndex(x => new { x.MaNguoiTang, x.MaKhoaHoc, x.CreatedAt });
+            modelBuilder.Entity<MaQuaTangHocVienModel>().HasIndex(x => x.Code).IsUnique();
+            modelBuilder.Entity<MaQuaTangHocVienModel>().HasIndex(x => new { x.MaNguoiTang, x.TrangThai, x.CreatedAt });
+
+
             // ====== RELATIONSHIPS CONFIGURATION ======
-            
+
             // NguoiDungModel relationships
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.DanhSachPhienDangNhap)
+                .WithOne(p => p.NguoiDung)
+                .HasForeignKey(p => p.MaNguoiDung)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<NguoiDungModel>()
                 .HasMany(n => n.KhoaHocs)
                 .WithOne(k => k.GiangVien)
@@ -91,9 +144,87 @@ namespace educodeai_server.Data
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.KetQuaKiemTraChungChis)
+                .WithOne(kq => kq.NguoiDung)
+                .HasForeignKey(kq => kq.MaNguoiDung)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.ChungChiKhoaHocs)
+                .WithOne(c => c.NguoiDung)
+                .HasForeignKey(c => c.MaNguoiDung)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
                 .HasMany(n => n.LoTrinhAIs)
                 .WithOne(l => l.NguoiDung)
                 .HasForeignKey(l => l.MaNguoiDung)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.DonHangKhoaHocs)
+                .WithOne(d => d.NguoiDung)
+                .HasForeignKey(d => d.MaNguoiDung)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.MaGiamGiaDaTao)
+                .WithOne(v => v.NguoiTao)
+                .HasForeignKey(v => v.MaNguoiTao)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.MaQuaTangDaTao)
+                .WithOne(x => x.NguoiTang)
+                .HasForeignKey(x => x.MaNguoiTang)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.MaQuaTangDaNhan)
+                .WithOne(x => x.NguoiNhan)
+                .HasForeignKey(x => x.MaNguoiNhan)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.QuaTangDaTang)
+                .WithOne(q => q.NguoiTang)
+                .HasForeignKey(q => q.MaNguoiTang)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.QuaTangDaNhan)
+                .WithOne(q => q.NguoiNhan)
+                .HasForeignKey(q => q.MaNguoiNhan)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.DoanhThuGiangViens)
+                .WithOne(dt => dt.GiangVien)
+                .HasForeignKey(dt => dt.MaGiangVien)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.YeuCauRutTienGiangViens)
+                .WithOne(x => x.GiangVien)
+                .HasForeignKey(x => x.MaGiangVien)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.YeuCauDaDuyets)
+                .WithOne(x => x.QuanTriVienDuyet)
+                .HasForeignKey(x => x.MaQuanTriVienDuyet)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.HoTroRutTienGiangViens)
+                .WithOne(x => x.GiangVien)
+                .HasForeignKey(x => x.MaGiangVien)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.HoTroRutTienDaXuLys)
+                .WithOne(x => x.QuanTriVienXuLy)
+                .HasForeignKey(x => x.MaQuanTriVienXuLy)
                 .OnDelete(DeleteBehavior.NoAction);
 
             // KhoaHocModel relationships
@@ -114,6 +245,48 @@ namespace educodeai_server.Data
                 .WithOne(d => d.KhoaHoc)
                 .HasForeignKey(d => d.MaKhoaHoc)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Cấu hình từ nhánh dev (HEAD)
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.KetQuaKiemTraChungChis)
+                .WithOne(kq => kq.KhoaHoc)
+                .HasForeignKey(kq => kq.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.ChungChiKhoaHocs)
+                .WithOne(c => c.KhoaHoc)
+                .HasForeignKey(c => c.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Cấu hình từ nhánh Hoang1
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.ChiTietDonHangs)
+                .WithOne(c => c.KhoaHoc)
+                .HasForeignKey(c => c.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.QuaTangKhoaHocs)
+                .WithOne(q => q.KhoaHoc)
+                .HasForeignKey(q => q.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.MaGiamGiaKhoaHocs)
+                .WithOne(x => x.KhoaHoc)
+                .HasForeignKey(x => x.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.MaQuaTangHocViens)
+                .WithOne(x => x.KhoaHoc)
+                .HasForeignKey(x => x.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .ToTable(t => t.HasCheckConstraint("CK_KhoaHocs_GiaKhoaHoc_Range", "\"GiaKhoaHoc\" >= 10000 AND \"GiaKhoaHoc\" <= 15000"));
+
 
             // ChuongHocModel relationships
             modelBuilder.Entity<ChuongHocModel>()
@@ -149,9 +322,9 @@ namespace educodeai_server.Data
 
             // BaiTapModel relationships
             modelBuilder.Entity<BaiTapModel>()
-                .HasOne(bt => bt.BaiTap_NgonNgus)
-                .WithOne(btn => btn.BaiTap)
-                .HasForeignKey<BaiTap_ThucHanhIDEModel>(btn => btn.MaBaiTap)
+                .HasOne(bt => bt.BaiTapThucHanh)
+                .WithOne(bth => bth.BaiTap)
+                .HasForeignKey<BaiTapThucHanhModel>(bth => bth.MaBaiTap)
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<BaiTapModel>()
@@ -166,54 +339,12 @@ namespace educodeai_server.Data
                 .HasForeignKey(kq => kq.MaBaiTap)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // BaiTap_ThucHanhIDEModel relationships
-            modelBuilder.Entity<BaiTap_ThucHanhIDEModel>()
-                 .HasMany(btn => btn.BoThuNghiems)
-                 .WithOne(bth => bth.BaiTap_ThucHanh)
-                 .HasForeignKey(bth => bth.MaBaiTapThucHanh)
-                 .OnDelete(DeleteBehavior.NoAction);
-
-            // 1. LoiGiaiMauModel
-            modelBuilder.Entity<LoiGiaiMauModel>()
-                .HasOne(l => l.BaiTapThucHanh)
-                .WithMany() // Giả sử bên IDE không cần List<LoiGiaiMau>
-                .HasForeignKey(l => l.MaBaiTapThucHanh)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<LoiGiaiMauModel>()
-                .HasOne(l => l.NgonNguLapTrinh)
-                .WithMany()
-                .HasForeignKey(l => l.MaNgonNgu)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            // 2. RangBuocBaiTapModel
-            modelBuilder.Entity<RangBuocBaiTapModel>()
-                .HasOne(r => r.BaiTapThucHanh)
-                .WithMany()
-                .HasForeignKey(r => r.MaBaiTapThucHanh)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            // 3. PhienBanBaiTapModel
-            modelBuilder.Entity<PhienBanBaiTapModel>()
-                .HasOne(p => p.BaiTapThucHanh)
-                .WithMany()
-                .HasForeignKey(p => p.MaBaiTapThucHanh)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            // 4. GoiYAI_TaoBaiTapModel
-            modelBuilder.Entity<GoiYAI_TaoBaiTapModel>()
-                .HasOne(g => g.BaiTapThucHanh)
-                .WithMany()
-                .HasForeignKey(g => g.MaBaiTapThucHanh)
-                .OnDelete(DeleteBehavior.NoAction);
-
-
-            // NgonNguLapTrinhModel relationships
-            modelBuilder.Entity<NgonNguLapTrinhModel>()
-                .HasMany(n => n.BaiTap_NgonNgus)
-                .WithOne(btn => btn.NgonNgu)
-                .HasForeignKey(btn => btn.MaNgonNgu)
-                .OnDelete(DeleteBehavior.NoAction);
+            // BaiTapThucHanhModel relationships
+            modelBuilder.Entity<BaiTapThucHanhModel>()
+                 .HasMany(bth => bth.TestCases)
+                 .WithOne(tc => tc.BaiTapThucHanh)
+                 .HasForeignKey(tc => tc.MaBaiTapThucHanh)
+                 .OnDelete(DeleteBehavior.Cascade);
 
             // BinhLuanModel self-referencing relationship
             modelBuilder.Entity<BinhLuanModel>()
@@ -222,12 +353,76 @@ namespace educodeai_server.Data
                 .HasForeignKey(b => b.MaBinhLuanCha)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<ChungChiKhoaHocModel>()
+                .HasOne(c => c.KetQuaKiemTraChungChi)
+                .WithMany()
+                .HasForeignKey(c => c.MaKetQuaKiemTraChungChi)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<BaiHocModel>()
+                .HasMany(b => b.VideoChapters)
+                .WithOne(c => c.BaiHoc)
+                .HasForeignKey(c => c.MaBaiHoc)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VideoChapterModel>()
+                .HasMany(c => c.VideoQuizs)
+                .WithOne(q => q.Chapter)
+                .HasForeignKey(q => q.MaChapter)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DonHangKhoaHocModel>()
+                .HasMany(d => d.ChiTietDonHangs)
+                .WithOne(c => c.DonHang)
+                .HasForeignKey(c => c.MaDonHang)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DonHangKhoaHocModel>()
+                .HasMany(d => d.GiaoDichThanhToans)
+                .WithOne(g => g.DonHang)
+                .HasForeignKey(g => g.MaDonHang)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DonHangKhoaHocModel>()
+                .HasMany(d => d.ThongBaoEmailThanhToans)
+                .WithOne(t => t.DonHang)
+                .HasForeignKey(t => t.MaDonHang)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DonHangKhoaHocModel>()
+                .HasMany(d => d.MaQuaTangHocViens)
+                .WithOne(x => x.DonHang)
+                .HasForeignKey(x => x.MaDonHang)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DonHangKhoaHocModel>()
+                .HasOne(d => d.Voucher)
+                .WithMany(v => v.DonHangSuDung)
+                .HasForeignKey(d => d.MaVoucher)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<MaGiamGiaModel>()
+                .HasMany(v => v.DanhSachKhoaHocApDung)
+                .WithOne(x => x.Voucher)
+                .HasForeignKey(x => x.MaVoucher)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<YeuCauRutTienGiangVienModel>()
+                .ToTable(t => t.HasCheckConstraint("CK_YeuCauRutTienGiangVien_SoTienYeuCau_Duong", "\"SoTienYeuCau\" > 0"));
+
+            modelBuilder.Entity<YeuCauRutTienGiangVienModel>()
+                .HasMany(x => x.YeuCauHoTro)
+                .WithOne(x => x.YeuCauRutTien)
+                .HasForeignKey(x => x.MaYeuCauRutTien)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ====== SEED DATA ======
             KhoaHocDuLieu.SeedKhoaHoc(modelBuilder);
             ChuongHocDuLieu.SeedChuongHoc(modelBuilder);
             BaiHocDuLieu.SeedBaiHoc(modelBuilder);
             NguoiDungDuLieu.SeedNguoiDung(modelBuilder);
+            MarketplaceDuLieu.SeedMarketplace(modelBuilder);
+
+            
         }
     }
 }
