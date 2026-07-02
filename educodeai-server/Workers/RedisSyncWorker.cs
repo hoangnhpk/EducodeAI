@@ -95,10 +95,10 @@ namespace educodeai_server.Workers
 
                 foreach (var key in activeKeys)
                 {
-                    string redisKey = $"EduCodeAI:KeyPool:{key.ID}";
+                    string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
 
-                    var tokenDaDungStr = await redisService.LayHashAsync(redisKey, "TokenDaDung");
-                    var requestDaDungStr = await redisService.LayHashAsync(redisKey, "RequestDaDung");
+                    var tokenDaDungStr = await redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
+                    var requestDaDungStr = await redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
 
                     if (int.TryParse(tokenDaDungStr, out int tokenDaDungMoi) &&
                         int.TryParse(requestDaDungStr, out int requestDaDungMoi))
