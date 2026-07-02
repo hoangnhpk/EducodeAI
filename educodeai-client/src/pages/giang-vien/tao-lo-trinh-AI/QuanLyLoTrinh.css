@@ -1,0 +1,570 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* =========================================
+   CONTAINER VÀ GRID CHÍNH
+   ========================================= */
+.quan-ly-container {
+    padding: 2.5rem;
+    background-color: #f1f5f9;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+}
+
+.lo-trinh-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+/* Card danh sách lộ trình */
+.lo-trinh-card {
+    background-color: #ffffff !important;
+    border: 2px solid #e2e8f0;
+    border-radius: 1.25rem;
+    padding: 1.8rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    border-left: 6px solid #2563eb; /* Vạch màu xanh nhận diện thương hiệu */
+}
+
+.lo-trinh-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Header & Title của Card */
+.card-title {
+    margin-top: 10px;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.4;
+}
+
+/* Footer của Card - Fix lỗi ID */
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.id-tag {
+    font-weight: 800;
+    color: #64748b;
+    font-size: 0.85rem;
+    background: #f8fafc;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+/* =========================================
+   HỆ THỐNG NÚT BẤM (BUTTONS)
+   ========================================= */
+
+/* Nút Làm mới - Trắng tinh tế */
+.btn-refresh {
+    background: white !important;
+    color: #475569 !important;
+    border: 1.5px solid #e2e8f0 !important;
+    padding: 10px 20px !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-refresh:hover {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+/* Nút Thêm Mới - Xanh lá chuyên nghiệp (Sếp yêu cầu) */
+.btn-save {
+    background: #10b981 !important; /* Màu xanh lá chuẩn Emerald */
+    color: white !important;
+    border: none !important;
+    padding: 12px 25px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.btn-save:hover {
+    background: #059669 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px rgba(16, 185, 129, 0.4);
+}
+
+/* Nút Sửa/Xóa nhỏ trong Card */
+.btn-edit-small {
+    border: 2px solid #2563eb;
+    color: #2563eb;
+    font-weight: 700;
+    padding: 6px 18px;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-edit-small:hover {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-delete {
+    border: 2px solid #ef4444;
+    color: #ef4444;
+    font-weight: 700;
+    padding: 6px 18px;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Nút Hủy bỏ */
+.btn-cancel-pro {
+    background-color: #f1f5f9;
+    color: #475569;
+    padding: 12px 25px;
+    border-radius: 12px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+}
+
+/* =========================================
+   MODAL - FIX LỖI VÀ MỞ RỘNG
+   ========================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px); /* Làm mờ nền cực đẹp */
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000;
+}
+
+/* Mở rộng Modal lên 900px */
+.pro-modal-v2 {
+    width: 900px; 
+    background: white;
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+    animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalScaleUp {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header-pro {
+    padding: 25px 40px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body-pro {
+    padding: 30px 40px;
+    overflow-y: auto;
+    flex: 1;
+    background: #fcfcfd;
+}
+
+.modal-footer-pro {
+    padding: 20px 40px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    background: white;
+}
+
+/* =========================================
+   THIẾT KẾ CHẶNG HỌC (COURSE ITEMS)
+   ========================================= */
+.course-item-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.course-img-small {
+    width: 65px;
+    height: 65px;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.pro-step-num {
+    background: #eff6ff;
+    color: #2563eb;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+/* Trạng thái Bắt buộc / Nâng cao */
+.status-select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.st-req { background: #fee2e2 !important; color: #dc2626 !important; }
+.st-opt { background: #fef3c7 !important; color: #d97706 !important; }
+
+/* Badge trạng thái ngoài Card */
+.badge-status {
+    background-color: #dcfce7;
+    color: #166534;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+/* Nút xóa item khóa học */
+.btn-del-item {
+    color: #94a3b8;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-del-item:hover {
+    color: #ef4444;
+    transform: scale(1.1);
+}
+
+.quan-ly-container, 
+.pro-modal-v2, 
+.input-pro, 
+.select-pro, 
+.status-select,
+button {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    letter-spacing: -0.01em; /* Giúp chữ nhìn khít và sang hơn */
+}
+
+/* Fix con số bị "kì" - tạo hình tròn số thứ tự cực chuẩn */
+.pro-step-num, .course-rank {
+    background: #2563eb !important;
+    color: white !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    font-family: 'Inter', sans-serif !important; /* Ép font cho con số */
+    flex-shrink: 0;
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+}
+
+/* Làm đẹp ô Input và Select cho đồng bộ font */
+.input-pro {
+    font-weight: 500;
+    color: #1e293b;
+    border: 1.5px solid #e2e8f0;
+}
+
+.select-pro {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+}
+
+/* Fix tiêu đề bị thô */
+.modal-header-pro h2 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+/* Badge trạng thái nhìn cho "mượt" */
+.status-select {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
+    letter-spacing: 0.02em;
+    text-transform: none; /* Không để in hoa hết nhìn sẽ thanh thoát hơn */
+}
+/* =========================================
+   1. MODAL CƠ BẢN VÀ OVERLAY (GIAO DIỆN CHÍNH)
+   ========================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.7); /* Nền tối sang trọng */
+    backdrop-filter: blur(5px); /* Làm mờ nền phía sau */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+/* Modal Pro V2 - Bo góc lớn và rộng rãi */
+.pro-modal-v2 {
+    width: 750px; /* Tăng độ rộng để chứa ảnh đẹp hơn */
+    background: white;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   2. CSS MỚI CHO NÚT DẤU X (CLOSE BUTTON)
+   ========================================= */
+.modal-header-pro {
+    padding: 20px 30px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative; /* Để định vị nút X */
+}
+
+.modal-header-pro h2 {
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+/* NÚT DẤU X ĐÃ ĐƯỢC "ĐỘ" */
+.close-x {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    background: #f1f5f9; /* Nền xám nhạt */
+    border: none;
+    border-radius: 50%; /* Hình tròn */
+    color: #64748b;
+    font-size: 1.2rem;
+    line-height: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.close-x:hover {
+    background: #fee2e2; /* Nền đỏ nhạt khi hover */
+    color: #ef4444; /* Dấu X màu đỏ rực */
+    transform: rotate(90deg); /* Xoay nhẹ cho vui mắt */
+}
+
+/* =========================================
+   3. CSS MỚI CHO ITEM CÓ HÌNH ẢNH DƯỚI TÊN
+   ========================================= */
+.modal-body-pro {
+    padding: 30px;
+    overflow-y: auto;
+    flex: 1;
+    background: #fbfcfd;
+}
+
+/* Thẻ chứa mỗi chặng học - Có hình ảnh */
+.course-item-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+}
+
+.course-item-card:hover {
+    transform: translateY(-2px); /* Hiệu ứng nổi lên khi hover */
+}
+
+/* Số thứ tự chặng học */
+.pro-step-num {
+    background: #eff6ff;
+    color: #2563eb;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* Hình ảnh khóa học con - Đã thêm vào */
+.course-img-small {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover; /* Đảm bảo ảnh không bị méo */
+    border: 1px solid #f1f5f9;
+}
+
+/* Phần chứa tên và select */
+.course-info-select {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Tên khóa học - Làm đậm lên */
+.course-info-select .course-name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+/* Ô chọn trạng thái (Bắt buộc/Tự chọn) */
+.status-select {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #f8fafc;
+}
+
+/* Nút xóa chặng học */
+.btn-del-item {
+    color: #94a3b8;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-del-item:hover {
+    color: #ef4444;
+}
+
+/* =========================================
+   4. CÁC THÀNH PHẦN KHÁC (FOOTER, INPUT)
+   ========================================= */
+.form-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    margin-top: 8px;
+}
+
+.form-input:focus {
+    border-color: #2563eb;
+    outline: none;
+}
+
+.modal-footer-pro {
+    padding: 20px 30px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: white;
+}
+
+.btn-save-pro {
+    background: #059669; /* Xanh lá cây cho nút chính */
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-cancel-pro {
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+/* Nút xóa lộ trình ngoài Card danh sách */
+.btn-delete-small {
+    border: 2px solid #ef4444;
+    color: #ef4444;
+    font-weight: 700;
+    padding: 6px 18px;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-delete-small:hover {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+}
+
+/* Tinh chỉnh cho Modal scroll */
+.course-scroll-area::-webkit-scrollbar {
+    width: 6px;
+}
+.course-scroll-area::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}

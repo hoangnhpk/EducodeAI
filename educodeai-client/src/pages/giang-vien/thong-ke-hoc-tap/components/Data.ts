@@ -10,7 +10,7 @@ export const sampleData: { students: Student[] } = {
       assignments: 12,
       avgScore: 9.2,
       status: "completed",
-      course: "HTML & CSS Cơ bản",
+      // course: "HTML & CSS Cơ bản",
     },
     {
       id: 2,
@@ -20,7 +20,7 @@ export const sampleData: { students: Student[] } = {
       assignments: 10,
       avgScore: 8.5,
       status: "in-progress",
-      course: "JavaScript Nâng cao",
+      // course: "JavaScript Nâng cao",
     },
     {
       id: 3,
@@ -30,7 +30,7 @@ export const sampleData: { students: Student[] } = {
       assignments: 5,
       avgScore: 6.8,
       status: "at-risk",
-      course: "Python cho Người mới",
+      // course: "Python cho Người mới",
     },
     // ...
   ],

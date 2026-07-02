@@ -1,3 +1,4 @@
+
 import { Navigate } from 'react-router-dom';
 
 interface Props {
@@ -13,7 +14,25 @@ const ProtectedRoute: React.FC<Props> = ({ children, allowRoles }) => {
         return <Navigate to="/dang-nhap" replace />;
     }
 
-    const user = JSON.parse(userRaw);
+    let user: any;
+    try {
+        user = JSON.parse(userRaw);
+    } catch {
+        localStorage.removeItem("user_info");
+        localStorage.removeItem("user_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("token");
+        return <Navigate to="/dang-nhap" replace />;
+    }
+
+    if (!user || typeof user !== "object") {
+        localStorage.removeItem("user_info");
+        localStorage.removeItem("user_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("token");
+        return <Navigate to="/dang-nhap" replace />;
+    }
+
     const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
 
     // 2. Kiểm tra xem vai trò hiện tại có nằm trong danh sách cho phép không

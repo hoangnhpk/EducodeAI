@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
@@ -9,9 +9,8 @@ namespace educodeai_server.Helpers
         public static string ChuanHoa(string outputAI)
         {
             if (string.IsNullOrWhiteSpace(outputAI))
-                throw new Exception("Output AI rỗng");
+                throw new Exception("Output AI r?ng");
 
-            // 1. Parse JSON tổng của Gemini
             JObject root;
             try
             {
@@ -19,41 +18,133 @@ namespace educodeai_server.Helpers
             }
             catch
             {
-                throw new Exception("Output không phải JSON hợp lệ (Gemini response)");
+                throw new Exception("Output kh?ng ph?i JSON h?p l? (Gemini response)");
             }
 
-            // 2. Lấy text từ candidates -> content -> parts
-            var text = root["candidates"]?
+            var parts = root["candidates"]?
                 .First?["content"]?["parts"]?
-                .Select(p => p?["text"]?.ToString())
-                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+                .OfType<JObject>()
+                .ToList();
+
+            if (parts == null || parts.Count == 0)
+                throw new Exception("Kh?ng t?m th?y n?i dung text t? Gemini");
+
+            var texts = parts
+                .OrderBy(p => p["thought"]?.Value<bool>() == true ? 1 : 0) // ?u ti?n part tr? l?i th?t, b? qua thought n?u c?.
+                .Select(p => p["text"]?.ToString())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
+
+            foreach (var text in texts)
+            {
+                if (TryLayJsonHopLe(text!, out var json))
+                {
+                    return JToken.Parse(json).ToString(Formatting.Indented);
+                }
+            }
+
+            throw new Exception("Kh?ng t?m th?y JSON h?p l? trong ph?n h?i AI");
+        }
+
+        private static bool TryLayJsonHopLe(string text, out string json)
+        {
+            json = string.Empty;
 
             if (string.IsNullOrWhiteSpace(text))
-                throw new Exception("Không tìm thấy nội dung text từ Gemini");
+                return false;
 
-            // 3. Tìm JSON nằm trong ```json ... ```
-            var match = Regex.Match(
-                text,
-                @"```json\s*(\{[\s\S]*?\})\s*```",
-                RegexOptions.IgnoreCase
-            );
+            var candidates = new List<string>();
 
-            if (!match.Success)
-                throw new Exception("Không tìm thấy JSON trong code block ```json");
-
-            string rawJson = match.Groups[1].Value;
-
-            // 4. Parse + format JSON kết quả
-            try
+            // 1. H? tr? ```json ... ``` v? ``` ... ```
+            foreach (Match match in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
             {
-                return JToken.Parse(rawJson)
-                    .ToString(Formatting.Indented);
+                var content = match.Groups[1].Value.Trim();
+                if (!string.IsNullOrWhiteSpace(content))
+                    candidates.Add(content);
             }
-            catch (Exception ex)
+
+            // 2. H? tr? AI tr? JSON thu?n kh?ng c? code block.
+            candidates.Add(text.Trim());
+
+            // 3. H? tr? text c? prose + JSON: b?c c?c object/array c?n b?ng ngo?c.
+            candidates.AddRange(TrichXuatJsonCanBang(text));
+
+            foreach (var candidate in candidates)
             {
-                throw new Exception("JSON bên trong không hợp lệ", ex);
+                var raw = candidate.Trim();
+                if (string.IsNullOrWhiteSpace(raw)) continue;
+
+                try
+                {
+                    JToken.Parse(raw);
+                    json = raw;
+                    return true;
+                }
+                catch
+                {
+                    // Th? candidate ti?p theo.
+                }
             }
+
+            return false;
         }
+
+        private static IEnumerable<string> TrichXuatJsonCanBang(string text)
+        {
+            var results = new List<string>();
+            var startIndexes = text
+                .Select((ch, index) => new { ch, index })
+                .Where(x => x.ch == '{' || x.ch == '[')
+                .Select(x => x.index)
+                .ToList();
+
+            foreach (var start in startIndexes)
+            {
+                var open = text[start];
+                var close = open == '{' ? '}' : ']';
+                var depth = 0;
+                var inString = false;
+                var escaped = false;
+
+                for (var i = start; i < text.Length; i++)
+                {
+                    var ch = text[i];
+
+                    if (escaped)
+                    {
+                        escaped = false;
+                        continue;
+                    }
+
+                    if (ch == '\\' && inString)
+                    {
+                        escaped = true;
+                        continue;
+                    }
+
+                    if (ch == '"')
+                    {
+                        inString = !inString;
+                        continue;
+                    }
+
+                    if (inString) continue;
+
+                    if (ch == open) depth++;
+                    else if (ch == close) depth--;
+
+                    if (depth == 0)
+                    {
+                        results.Add(text.Substring(start, i - start + 1));
+                        break;
+                    }
+                }
+            }
+
+            // ?u ti?n ?o?n d?i nh?t v? th??ng l? JSON cu?i c?ng/??y ?? nh?t.
+            return results.OrderByDescending(x => x.Length);
+        }
+
         public static string usageMetadata(string outputAI)
         {
             if (string.IsNullOrWhiteSpace(outputAI))

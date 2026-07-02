@@ -1,17 +1,22 @@
-﻿using educodeai_server.Config;
+using System.Security.Claims;
+using System.Text;
+using educodeai_server.Config;
 using educodeai_server.Data;
 using educodeai_server.Helpers;
 using educodeai_server.Repository.Implementation;
 using educodeai_server.Repository.Interface;
+using educodeai_server.Services;
+using educodeai_server.Services.Implement;
 using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Security.Claims;
-using System.Text;
-using educodeai_server.Services.Implement;
+using StackExchange.Redis;
+using educodeai_server.Hubs;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration
@@ -19,6 +24,10 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Configuration.AddUserSecrets<Program>();
+// ==========================================
+// THÊM: ĐĂNG KÝ SIGNALR
+// ==========================================
+builder.Services.AddSignalR();
 
 // ==========================================
 // 2. CẤU HÌNH XÁC THỰC (JWT)
@@ -46,34 +55,109 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString, sqlOptions =>
+    {
+        // Tự động thử lại khi gặp lỗi kết nối gián đoạn (như lỗi DNS 'No such host is known' khi treo lâu)
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null);
+    }));
+
+try
+{
+    var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+    var isRedisActive = builder.Configuration.GetValue<bool>("RedisConfig:IsActive", true);
+
+    if (isRedisActive && !string.IsNullOrEmpty(redisConnectionString))
+    {
+        var configOptions = ConfigurationOptions.Parse(redisConnectionString);
+        configOptions.AbortOnConnectFail = false;
+        configOptions.ConnectTimeout = 2000;
+        configOptions.SyncTimeout = 2000;
+        configOptions.ReconnectRetryPolicy = new ExponentialRetry(500);
+
+        var redis = ConnectionMultiplexer.Connect(configOptions);
+        // 🔥 Check trạng thái ngay lúc start
+        if (redis.IsConnected)
+        {
+            Console.WriteLine("Redis CONNECTED successfully");
+        }
+        else
+        {
+            Console.WriteLine("Redis NOT connected at startup (will retry...)");
+        }
+
+        builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
+        builder.Services.AddScoped<IRedisService, RedisService>();
+    }
+    else
+    {
+        var reason = !isRedisActive ? "turned OFF in appsettings" : "empty connection string";
+        Console.WriteLine($"Redis is {reason} – using MemoryCache fallback");
+        builder.Services.AddScoped<IRedisService, FallbackRedisService>();
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Redis setup failed, using MemoryCache fallback: {ex.Message}");
+    builder.Services.AddScoped<IRedisService, FallbackRedisService>();
+}
+
 
 // ==========================================
 // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
 // ==========================================
+builder.Services.AddHttpContextAccessor();
+// Thêm bộ nhớ tạm để lưu OTP mà không cần dùng Database
+builder.Services.AddMemoryCache();
+// Dịch vụ Xác thực và Captcha mới
+builder.Services.AddScoped<ICaptchaService, CaptchaService>();
+builder.Services.AddScoped<IXacThucService, XacThucService>();
 // Khóa học & Bài tập
+builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
-builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
+builder.Services.AddScoped<IThanhToanKhoaHocService, ThanhToanKhoaHocService>();
+builder.Services.AddScoped<IMaGiamGiaService, MaGiamGiaService>();
+builder.Services.AddScoped<IQuaTangKhoaHocService, QuaTangKhoaHocService>();
+builder.Services.AddScoped<IThanhToanEmailService, ThanhToanEmailService>();
+builder.Services.AddScoped<IRutTienGiangVienEmailService, RutTienGiangVienEmailService>();
+builder.Services.AddScoped<IRutTienGiangVienService, RutTienGiangVienService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
+builder.Services.AddScoped<BaiTapThucHanhHocVienService>();
 builder.Services.AddHttpClient<BaiTapService>();
 
 // Người dùng & Thống kê
+
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
 builder.Services.AddScoped<IHocVienService, HocVienService>();
+builder.Services.AddScoped<IKhongGianHocTapService, KhongGianHocTapService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
+builder.Services.AddScoped<IThongKeAdminService, ThongKeAdminService>();
 
 // AI & Lộ trình
 builder.Services.AddScoped<IKhoaHocCuaToiRepository, KhoaHocCuaToiRepository>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
 builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
+builder.Services.AddScoped<IQuanLyHocVienService,QuanLyHocVienService>();
+builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocService>();
+builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
+builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
+builder.Services.AddScoped<ILoTrinhAIGvService, LoTrinhAIGvService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
+builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();
+builder.Services.AddScoped<IKeyApiService, KeyApiService>();
+builder.Services.AddScoped<ISinhDoAnAIService, SinhDoAnAIService>();
+builder.Services.AddScoped<IRateLimitService, RateLimitService>();
+
 
 // ==========================================
 // 5. CẤU HÌNH HTTP CLIENT CHO GEMINI (ĐÃ TỐI ƯU)
@@ -90,6 +174,10 @@ builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =
 });
 
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
+builder.Services.Configure<PaymentMailOptions>(builder.Configuration.GetSection("PaymentMail"));
+
+// YouTube Service
+builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();
 
 // ==========================================
 // 6. CẤU HÌNH CORS & SWAGGER
@@ -98,7 +186,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:5210")
+        policy.WithOrigins("https://educodeai-client.vercel.app",
+                           "http://localhost:3000", "http://localhost:3001",
+                           "http://127.0.0.1:3000", "http://127.0.0.1:3001",
+                           "http://[::1]:3000", "http://[::1]:3001")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -117,7 +208,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        In = ParameterLocation.Header,
+        In = ParameterLocation.Header,  
         Description = "Nhập theo format: Bearer {token}"
     });
 
@@ -135,23 +226,32 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
+educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
+
 // ==========================================
 // 7. PIPELINE REQUEST (Middleware)
 // ==========================================
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+   app.UseSwagger();
+   app.UseSwaggerUI();
 }
-
+// app.UseSwagger();
+// app.UseSwaggerUI();
 app.UseHttpsRedirection();
-
-// Kích hoạt CORS (Phải đặt trước UseAuthorization)
-app.UseCors("AllowReactApp");
 app.UseStaticFiles();
 
+// CORS: phải đặt sau UseRouting và trước UseAuthentication/UseAuthorization
+// (https://learn.microsoft.com/en-us/aspnet/core/security/cors)
+app.UseRouting();
+app.UseCors("AllowReactApp");
+app.UseMiddleware<MaintenanceMiddleware>();
+
 app.UseAuthentication();
+app.UseSessionCheck();
 app.UseAuthorization();
+app.MapHub<SystemConfigHub>("/systemConfigHub").RequireCors("AllowReactApp");
 
 app.MapControllers();
 

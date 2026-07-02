@@ -7,7 +7,8 @@ interface Props {
   idBaiHocHienTai: number;
   tabActive: string; // Nhận biến tabActive để biết đang mở Video hay Quiz
   videoDaXongLocal: number[]; // Nhận danh sách video đã xem xong trong phiên học
-  onChonBaiHoc: (id: number, tabDeMo?: 'hoc' | 'quiz') => void;
+  onChonBaiHoc: (id: number, tabDeMo?: 'hoc' | 'quiz' | 'ide') => void;
+  className?: string; // Class bổ sung (ví dụ: 'mobile-open' khi mở drawer)
 }
 
 export const DanhSachBaiHoc: React.FC<Props> = ({
@@ -16,6 +17,7 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
   tabActive,
   videoDaXongLocal,
   onChonBaiHoc,
+  className = '',
 }) => {
   const [openChapters, setOpenChapters] = useState<number[]>([]);
 
@@ -57,7 +59,7 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
   };
 
   return (
-    <aside className="cp-right">
+    <aside className={`cp-right${className ? ` ${className}` : ''}`}>
       <div className="cp-right-header">
         <h2>Nội dung khóa học</h2>
         <div className="cp-right-sub">
@@ -70,7 +72,7 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
         {cacChuong.map((chuong) => {
           const isOpen = openChapters.includes(chuong.id);
           const soBaiHoc = chuong.danhSachBaiHoc.length;
-          
+
           const tongThoiLuongGiay = chuong.danhSachBaiHoc.reduce(
             (total, bai) => total + (bai.thoiLuong ?? 0), 0
           );
@@ -93,17 +95,17 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                     const indexBai = tatCaBaiHoc.findIndex((b) => b.id === bai.id);
 
                     const daHoanThanh = bai.daXem === true; // Tức là đã vượt qua cả lý thuyết & quiz
-                    
+
                     // Bài Video bị khóa nếu bài TRƯỚC ĐÓ chưa hoàn thành
                     const biKhoa = indexBai > 0 && !tatCaBaiHoc[indexBai - 1].daXem;
-                    
+
                     // Quiz bị khóa nếu Video bị khóa HOẶC (chưa pass quiz VÀ chưa cày xong video)
                     const quizBiKhoa = biKhoa || (!daHoanThanh && !videoDaXongLocal.includes(bai.id));
 
                     // Xác định mục nào đang được chọn để bôi màu Cam
                     const dangHocVideo = bai.id === idBaiHocHienTai && tabActive !== 'quiz';
                     const dangHocQuiz = bai.id === idBaiHocHienTai && tabActive === 'quiz';
-                    
+
                     return (
                       <React.Fragment key={bai.id}>
                         {/* 1. MỤC BÀI HỌC CHÍNH (VIDEO/TEXT) */}
@@ -138,16 +140,16 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                                 onChonBaiHoc(bai.id, 'quiz');
                               } else {
                                 Swal.fire({
-                                    title: 'Chưa mở khóa',
-                                    text: 'Bạn cần xem xong bài học video ở trên để mở khóa phần bài tập này!',
-                                    icon: 'warning',
-                                    confirmButtonColor: '#f69050',
-                                    timer: 2000
+                                  title: 'Chưa mở khóa',
+                                  text: 'Bạn cần xem xong bài học video ở trên để mở khóa phần bài tập này!',
+                                  icon: 'warning',
+                                  confirmButtonColor: '#f69050',
+                                  timer: 2000
                                 });
                               }
                             }}
                             style={{
-                              paddingLeft: '3.5rem', 
+                              paddingLeft: '3.5rem',
                               backgroundColor: dangHocQuiz ? 'var(--cp-bg-active, #fff5eb)' : '#fcfcfc',
                               borderTop: '1px dashed #eee',
                               opacity: quizBiKhoa ? 0.6 : 1
@@ -162,7 +164,7 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                                 Bài tập trắc nghiệm
                               </div>
                               <div className="cp-lesson-meta">
-                                <i className="far fa-clock me-1"></i> {bai.thongTinQuiz.thoiGianLamBai} phút 
+                                <i className="far fa-clock me-1"></i> {bai.thongTinQuiz.thoiGianLamBai} phút
                                 <span className="mx-1">•</span> Yêu cầu {bai.thongTinQuiz.diemCanDat}%
                               </div>
                             </div>
@@ -173,6 +175,49 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                                 <i className="fas fa-lock"></i>
                               ) : (
                                 daHoanThanh ? <i className="fas fa-check-circle text-success" style={{ fontSize: '0.8rem' }}></i> : (dangHocQuiz && <i className="far fa-dot-circle"></i>)
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {/* 3. MỤC THỰC HÀNH IDE (ĐÍNH KÈM) */}
+                        {bai.maBaiTapThucHanh && (
+                          <div
+                            className={`cp-lesson-item cp-lesson-quiz-sub ${tabActive === 'ide' && bai.id === idBaiHocHienTai ? "cp-lesson-active" : ""} ${quizBiKhoa ? "cp-lesson-locked" : ""}`}
+                            onClick={() => {
+                              if (!quizBiKhoa) {
+                                onChonBaiHoc(bai.id, 'ide');
+                              } else {
+                                Swal.fire({
+                                  title: 'Chưa mở khóa',
+                                  text: 'Bạn cần xem xong bài học video ở trên để mở khóa phần bài tập này!',
+                                  icon: 'warning',
+                                  confirmButtonColor: '#f69050',
+                                  timer: 2000
+                                });
+                              }
+                            }}
+                            style={{
+                              paddingLeft: '3.5rem',
+                              backgroundColor: tabActive === 'ide' && bai.id === idBaiHocHienTai ? 'var(--cp-bg-active, #fff5eb)' : '#fcfcfc',
+                              borderTop: '1px dashed #eee',
+                              opacity: quizBiKhoa ? 0.6 : 1
+                            }}
+                          >
+                            <div className="cp-lesson-icon ide" style={{ background: 'transparent' }}>
+                              <i className="fas fa-keyboard" style={{ color: quizBiKhoa ? '#9ca3af' : '#2563eb' }}></i>
+                            </div>
+
+                            <div className="cp-lesson-main">
+                              <div className="cp-lesson-title" style={{ fontSize: '0.85rem' }}>
+                                Bài tập thực hành IDE
+                              </div>
+                            </div>
+
+                            <div className="cp-lesson-status">
+                              {quizBiKhoa ? (
+                                <i className="fas fa-lock"></i>
+                              ) : (
+                                daHoanThanh ? <i className="fas fa-check-circle text-success" style={{ fontSize: '0.8rem' }}></i> : (tabActive === 'ide' && bai.id === idBaiHocHienTai && <i className="far fa-dot-circle"></i>)
                               )}
                             </div>
                           </div>

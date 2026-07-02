@@ -1,4 +1,4 @@
-﻿namespace educodeai_server.DTOs.KhoaHoc
+namespace educodeai_server.DTOs.KhoaHoc
 {
     public class BaiHoc_NoiDungKhoaHocDTO
     {
@@ -12,6 +12,7 @@
         public bool DaXem { get; set; } = false;
 
         public BaiTapQuizDTO? ThongTinQuiz { get; set; }
+        public int? MaBaiTapThucHanh { get; set; }
 
     }
 
@@ -28,7 +29,11 @@
         public int MaKhoaHoc { get; set; }
         public string TenKhoaHoc { get; set; } = null!;
         public string? Slug { get; set; }
+        public bool CoChungChi { get; set; }
+        public string? TenChungChi { get; set; }
         public List<ChuongHoc_NoiDungKhoaHocDTO> DanhSachChuongHoc { get; set; } = new List<ChuongHoc_NoiDungKhoaHocDTO>();
+        public BaiKiemTraChungChiDTO? BaiKiemTraChungChi { get; set; }
+        public ThongTinChungChiDTO? ThongTinChungChi { get; set; }
     }
 
     public class TienDoBaiHocDTO
@@ -60,6 +65,42 @@
         public string DuLieuCauHoiJSON { get; set; } = null!;
     }
 
+    public class BaiKiemTraChungChiDTO
+    {
+        public int MaBaiKiemTra { get; set; }
+        public string TieuDe { get; set; } = "Bài kiểm tra nhận chứng chỉ";
+        public string MoTa { get; set; } = "Hoàn thành bài kiểm tra cuối khóa để nhận chứng chỉ.";
+        public int SoCauHoi { get; set; }
+        public int? ThoiGianLamBai { get; set; }
+        public double DiemCanDat { get; set; }
+        public bool ChoPhepLamLai { get; set; } = true;
+        public bool DaoCauHoi { get; set; } = true;
+        public bool DuDieuKienDuThi { get; set; }
+        public string? LyDoChuaDuDieuKien { get; set; }
+        public bool DaCoDeThi { get; set; }
+        public string? NguonDe { get; set; }
+        public string DuLieuCauHoiJSON { get; set; } = "[]";
+    }
+
+    public class ThongTinChungChiDTO
+    {
+        public bool DaCap { get; set; }
+        public string? MaChungChi { get; set; }
+        public DateTime? NgayCap { get; set; }
+        public int SoLanThi { get; set; }
+        public double? DiemLanGanNhat { get; set; }
+        public bool? DatLanGanNhat { get; set; }
+        public int? SoCauDungLanGanNhat { get; set; }
+        public int TongSoCauHoi { get; set; }
+        public string? TenHocVien { get; set; }
+        public string? TenKhoaHoc { get; set; }
+        public string? TenChungChi { get; set; }
+        public string? HoTenHienThi { get; set; }
+        public string? EmailNhan { get; set; }
+        public bool DaGuiEmail { get; set; }
+        public DateTime? NgayGuiEmail { get; set; }
+    }
+
     public class ChiTietCauTraLoiDTO
     {
         public int IdCauHoi { get; set; }   
@@ -77,5 +118,25 @@
         public bool DaDat { get; set; }      // True/False
 
         public List<ChiTietCauTraLoiDTO> ChiTietLamBai { get; set; } = new();
+    }
+
+    public class NopBaiKiemTraChungChiDTO
+    {
+        public int MaKhoaHoc { get; set; }
+        public int MaNguoiDung { get; set; }
+        public string HoTenHienThi { get; set; } = string.Empty;
+        public string EmailNhan { get; set; } = string.Empty;
+        public List<ChiTietCauTraLoiDTO> ChiTietLamBai { get; set; } = new();
+    }
+
+    public class KetQuaNopBaiKiemTraChungChiDTO
+    {
+        public bool ThanhCong { get; set; }
+        public bool DaDat { get; set; }
+        public double DiemSo { get; set; }
+        public int SoCauDung { get; set; }
+        public int TongSoCau { get; set; }
+        public string ThongBao { get; set; } = string.Empty;
+        public ThongTinChungChiDTO? ThongTinChungChi { get; set; }
     }
 }

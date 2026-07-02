@@ -1,4 +1,4 @@
-﻿using educodeai_server.Models;
+using educodeai_server.Models;
 
 namespace educodeai_server.Repository.Interface
 {
@@ -7,6 +7,8 @@ namespace educodeai_server.Repository.Interface
         // ===== KHÓA HỌC =====
         Task<List<KhoaHocModel>> GetKhoaHocByGiangVienAsync(int maGiangVien);
         Task<KhoaHocModel?> GetKhoaHocDetailAsync(int maKhoaHoc, int maGiangVien);
+        Task<KhoaHocModel?> GetKhoaHocDynamicStatsAsync(int maKhoaHoc, int maGiangVien);
+        Task<KhoaHocModel?> GetKhoaHocForCertificateAsync(int maKhoaHoc, int maGiangVien);
         Task AddKhoaHocAsync(KhoaHocModel khoaHoc);
         Task UpdateKhoaHocAsync(KhoaHocModel khoaHoc);
         Task DeleteKhoaHocAsync(KhoaHocModel khoaHoc);
