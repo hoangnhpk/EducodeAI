@@ -155,6 +155,7 @@ builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
 builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();
 builder.Services.AddScoped<IKeyApiService, KeyApiService>();
+builder.Services.AddScoped<ISinhDoAnAIService, SinhDoAnAIService>();
 builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 
 
