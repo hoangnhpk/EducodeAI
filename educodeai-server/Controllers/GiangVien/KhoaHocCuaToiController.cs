@@ -119,7 +119,7 @@ namespace educodeai_server.Controllers.GiangVien
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
             
-            var result = await _service.ThemChuongAsync(maKhoaHoc, dto);
+            var result = await _service.ThemChuongAsync(maKhoaHoc, maGiangVien, dto);
             return Ok(new { success = true, data = result });
         }
 

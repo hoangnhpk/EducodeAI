@@ -122,6 +122,31 @@ namespace educodeai_server.Controllers.HocVien
             }
         }
 
+        [HttpPost("tao-ma-qua-tang")]
+        public async Task<IActionResult> TaoMaQuaTang([FromBody] YeuCauTaoMaQuaTangDTO yeuCau)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { thongBao = "Dữ liệu yêu cầu không hợp lệ." });
+            }
+
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            if (maNguoiDung == 0)
+            {
+                return Unauthorized(new { thongBao = "Bạn cần đăng nhập để thực hiện chức năng này." });
+            }
+
+            try
+            {
+                var duLieu = await _thanhToanKhoaHocService.TaoMaQuaTangAsync(yeuCau, maNguoiDung);
+                return Ok(duLieu);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
+
         [HttpGet("kiem-tra-trang-thai/{maDonHang:int}")]
         [HttpGet("kiem_tra_trang_thai/{maDonHang:int}")]
         public async Task<IActionResult> KiemTraTrangThaiThanhToan(int maDonHang)
@@ -141,6 +166,64 @@ namespace educodeai_server.Controllers.HocVien
             {
                 return BadRequest(new { thongBao = ex.Message });
             }
+        }
+
+        [HttpGet("kiem-tra-trang-thai-ma-qua-tang/{maDonHang:int}")]
+        public async Task<IActionResult> KiemTraTrangThaiMaQuaTang(int maDonHang)
+        {
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            if (maNguoiDung == 0)
+            {
+                return Unauthorized(new { thongBao = "Bạn cần đăng nhập để thực hiện chức năng này." });
+            }
+
+            try
+            {
+                var trangThai = await _thanhToanKhoaHocService.KiemTraTrangThaiMaQuaTangAsync(maDonHang, maNguoiDung);
+                return Ok(trangThai);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
+
+        [HttpPost("nhap-ma-qua-tang")]
+        public async Task<IActionResult> NhapMaQuaTang([FromBody] NhapMaQuaTangDTO yeuCau)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { thongBao = "Dữ liệu yêu cầu không hợp lệ." });
+            }
+
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            if (maNguoiDung == 0)
+            {
+                return Unauthorized(new { thongBao = "Bạn cần đăng nhập để thực hiện chức năng này." });
+            }
+
+            try
+            {
+                var ketQua = await _thanhToanKhoaHocService.NhapMaQuaTangAsync(yeuCau, maNguoiDung);
+                return Ok(ketQua);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new { thongBao = ex.Message });
+            }
+        }
+
+        [HttpGet("lich-su-ma-qua-tang")]
+        public async Task<IActionResult> LayLichSuMaQuaTang()
+        {
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            if (maNguoiDung == 0)
+            {
+                return Unauthorized(new { thongBao = "Bạn cần đăng nhập để thực hiện chức năng này." });
+            }
+
+            var duLieu = await _thanhToanKhoaHocService.LayLichSuMaQuaTangAsync(maNguoiDung);
+            return Ok(duLieu);
         }
 
         [HttpPost("{maDonHang:int}/yeu-cau-ho-tro")]

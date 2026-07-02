@@ -1,20 +1,11 @@
 import { useState, useEffect } from "react";
-import type {
-  HocVien,
-  NhomThuNhapTheoThoiGian,
-  ThongKeOverview,
-  ThuNhapTheoKhoaHoc,
-  ThuNhapTheoThoiGian,
-  ThuNhapTongQuan,
-  TrangThaiHocVien,
-} from "./components/Types";
+import type { HocVien, ThongKeOverview, TrangThaiHocVien } from "./components/Types";
 import { thongKeHocTapService } from "../../../services/thong-ke-hoc-tap.service";
 import ChartsSection from "./components/ChartsSection";
 import StatCard from "./components/StatCard";
 import StudentTable from "./components/StudentTable";
 import TopStudents from "./components/TopStudents";
 import AtRiskStudents from "./components/AtRiskStudents";
-import IncomeSection from "./components/IncomeSection";
 import {
   Clock,
   BookOpen,
@@ -30,10 +21,6 @@ export default function ThongKeHocTap() {
   const [overview, setOverview] = useState<ThongKeOverview | null>(null);
   const [trangThaiData, setTrangThaiData] = useState<TrangThaiHocVien[]>([]);
   const [students, setStudents] = useState<HocVien[]>([]);
-  const [thuNhapTongQuan, setThuNhapTongQuan] = useState<ThuNhapTongQuan | null>(null);
-  const [thuNhapTheoThoiGian, setThuNhapTheoThoiGian] = useState<ThuNhapTheoThoiGian[]>([]);
-  const [thuNhapTheoKhoaHoc, setThuNhapTheoKhoaHoc] = useState<ThuNhapTheoKhoaHoc[]>([]);
-  const [nhomThuNhap, setNhomThuNhap] = useState<NhomThuNhapTheoThoiGian>("month");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalStudents, setTotalStudents] = useState(0);
@@ -48,12 +35,6 @@ export default function ThongKeHocTap() {
   }, []);
 
   useEffect(() => {
-    if (!loading) {
-      fetchThuNhapTheoThoiGian();
-    }
-  }, [nhomThuNhap]);
-
-  useEffect(() => {
     fetchStudents();
   }, [currentPage, searchTerm]);
 
@@ -62,35 +43,19 @@ export default function ThongKeHocTap() {
       setLoading(true);
       setError(null);
 
-      // Fetch tất cả data song song
-      const [overviewData, trangThaiRes, thuNhapTongQuanRes, thuNhapTheoThoiGianRes, thuNhapTheoKhoaHocRes] = await Promise.all([
+      // Fetch táº¥t cáº£ data song song
+      const [overviewData, trangThaiRes] = await Promise.all([
         thongKeHocTapService.getOverview(),
         thongKeHocTapService.getTrangThaiHocVien(),
-        thongKeHocTapService.getThuNhapTongQuan(),
-        thongKeHocTapService.getThuNhapTheoThoiGian(nhomThuNhap),
-        thongKeHocTapService.getThuNhapTheoKhoaHoc(10),
       ]);
 
       setOverview(overviewData);
       setTrangThaiData(trangThaiRes);
-      setThuNhapTongQuan(thuNhapTongQuanRes);
-      setThuNhapTheoThoiGian(thuNhapTheoThoiGianRes);
-      setThuNhapTheoKhoaHoc(thuNhapTheoKhoaHocRes);
     } catch (err: any) {
       console.error("Error fetching data:", err);
-      setError(err.response?.data?.message || "Không thể tải dữ liệu");
+      setError(err.response?.data?.message || "KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchThuNhapTheoThoiGian = async () => {
-    try {
-      const data = await thongKeHocTapService.getThuNhapTheoThoiGian(nhomThuNhap);
-      setThuNhapTheoThoiGian(data);
-    } catch (err) {
-      console.error("Error fetching income timeline:", err);
-      setThuNhapTheoThoiGian([]);
     }
   };
 
@@ -112,7 +77,7 @@ export default function ThongKeHocTap() {
   // ================== HANDLERS ==================
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1); // Reset về trang 1 khi search
+    setCurrentPage(1); // Reset vá» trang 1 khi search
   };
 
   // ================== LOADING STATE ==================
@@ -126,7 +91,7 @@ export default function ThongKeHocTap() {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div className="spinner"></div>
-          <p>Đang tải dữ liệu...</p>
+          <p>Äang táº£i dá»¯ liá»‡u...</p>
         </div>
       </div>
     );
@@ -143,7 +108,7 @@ export default function ThongKeHocTap() {
           borderRadius: '8px',
           color: '#991b1b'
         }}>
-          <h3>Lỗi tải dữ liệu</h3>
+          <h3>Lá»—i táº£i dá»¯ liá»‡u</h3>
           <p>{error}</p>
           <button 
             onClick={fetchAllData}
@@ -157,7 +122,7 @@ export default function ThongKeHocTap() {
               cursor: 'pointer'
             }}
           >
-            Thử lại
+            Thá»­ láº¡i
           </button>
         </div>
       </div>
@@ -167,46 +132,46 @@ export default function ThongKeHocTap() {
   return (
     <div className="thong-ke-container">
       {/* Header */}
-      <div className="thong-ke-page-header">
-        <h2>Thống kê học tập</h2>
-        <p>Theo dõi tiến độ và hiệu quả học tập của học viên</p>
+      <div className="page-header">
+        <h2>Thá»‘ng kÃª há»c táº­p</h2>
+        <p>Theo dÃµi tiáº¿n Ä‘á»™ vÃ  hiá»‡u quáº£ há»c táº­p cá»§a há»c viÃªn</p>
       </div>
 
       {/* STAT CARDS */}
       <div className="stat-grid">
         <StatCard
-          title="GIỜ HỌC TB / HỌC VIÊN"
+          title="GIá»œ Há»ŒC TB / Há»ŒC VIÃŠN"
           value={`${Number(overview?.gioHocTrungBinh ?? 0).toFixed(1)}h`}
-          subtitle="Trung bình mỗi học viên"
+          subtitle="Trung bÃ¬nh má»—i há»c viÃªn"
           icon={Clock}
           gradient="icon-purple"
         />
 
         <StatCard
-          title="KHÓA HỌC ĐANG DẠY"
+          title="KHÃ“A Há»ŒC ÄANG Dáº Y"
           value={String(overview?.soKhoaHocDangDay || 0)}
-          subtitle="Khóa học đang hoạt động"
+          subtitle="KhÃ³a há»c Ä‘ang hoáº¡t Ä‘á»™ng"
           icon={BookOpen}
           gradient="icon-blue"
         />
 
         <StatCard
-          title="TỔNG BÀI TẬP"
+          title="Tá»”NG BÃ€I Táº¬P"
           value={String(overview?.tongBaiTap || 0)}
-          subtitle="Tổng số bài tập đã giao"
+          subtitle="Tá»•ng sá»‘ bÃ i táº­p Ä‘Ã£ giao"
           icon={ClipboardCheck}
           gradient="icon-yellow"
         />
 
         <StatCard
-          title="TỶ LỆ HOÀN THÀNH"
+          title="Tá»¶ Lá»† HOÃ€N THÃ€NH"
           value={`${Number(overview?.tyLeHoanThanhTB ?? 0).toFixed(1)}%`}
           subtitle={
             Number(overview?.tyLeHoanThanhTB ?? 0) >= 70
-              ? "✓ Tốt"
+              ? "âœ“ Tá»‘t"
               : Number(overview?.tyLeHoanThanhTB ?? 0) >= 50
-              ? "⚠ Trung bình"
-              : "✗ Cần cải thiện"
+              ? "âš  Trung bÃ¬nh"
+              : "âœ— Cáº§n cáº£i thiá»‡n"
           }
           icon={CheckCircle}
           gradient="icon-green"
@@ -216,25 +181,16 @@ export default function ThongKeHocTap() {
       {/* Charts */}
       <ChartsSection trangThaiData={trangThaiData} />
 
-      {/* Income section */}
-      <IncomeSection
-        tongQuan={thuNhapTongQuan}
-        theoThoiGian={thuNhapTheoThoiGian}
-        theoKhoaHoc={thuNhapTheoKhoaHoc}
-        nhomTheo={nhomThuNhap}
-        onNhomTheoChange={setNhomThuNhap}
-      />
-
       {/* STUDENT TABLE */}
       <div className="student-section">
         <div className="student-header">
-          <h3>Bảng chi tiết học viên ({totalStudents})</h3>
+          <h3>Báº£ng chi tiáº¿t há»c viÃªn ({totalStudents})</h3>
 
           <div className="search-box">
             <Search size={18} />
             <input
               type="text"
-              placeholder="Tìm kiếm học viên..."
+              placeholder="TÃ¬m kiáº¿m há»c viÃªn..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
             />

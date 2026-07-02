@@ -36,19 +36,19 @@ const EduBanner: React.FC = () => {
             <div className="edu-slider-wrapper owl-carousel">
                 <div className="edu-slide-item">
                     {/* 4. Thay đổi src ảnh thành ảnh từ configs */}
-                    <img 
-                        src={configs?.BannerChinh ? `/img/${configs.BannerChinh}` : "/img/carousel-1.jpg"} 
-                        alt="Banner" 
-                        className="edu-bg-img" 
+                    <img
+                        src={configs?.BannerChinh ? `/img/${configs.BannerChinh}` : "/img/carousel-1.jpg"}
+                        alt="Banner"
+                        className="edu-bg-img"
                         onError={(e) => { e.currentTarget.src = "/img/carousel-1.jpg"; }}
                     />
                     <div className="edu-overlay">
                         <div className="container">
                             <div className="edu-content-box">
                                 <h5 className="edu-subtitle animated slideInDown">KHỞI ĐẦU TƯƠNG LAI</h5>
-                                <h1 className="edu-title animated slideInDown">Học Lập Trình <br/> <span>Dễ Dàng & Hiệu Quả</span></h1>
+                                <h1 className="edu-title animated slideInDown">Học Lập Trình <br /> <span>Dễ Dàng & Hiệu Quả</span></h1>
                                 <p className="edu-text animated fadeInUp">Lộ trình bài bản từ con số 0 đến khi có việc làm.</p>
-                                
+
                                 <div className="edu-btns-container animated fadeInUp">
                                     <Link to="/kham-pha-lo-trinh" className="edu-btn-main btn-orange">
                                         Khám phá ngay

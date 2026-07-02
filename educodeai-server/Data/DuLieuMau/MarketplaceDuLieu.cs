@@ -21,7 +21,8 @@ namespace educodeai_server.Data.DuLieuMau
                     SoLuongDaDung = 1,
                     KichHoat = true,
                     BatDauAt = new DateTime(2026, 1, 1),
-                    KetThucAt = new DateTime(2026, 12, 31)
+                    KetThucAt = new DateTime(2026, 12, 31),
+                    MaNguoiTao = 2
                 },
                 new MaGiamGiaModel
                 {
@@ -36,7 +37,8 @@ namespace educodeai_server.Data.DuLieuMau
                     SoLuongDaDung = 0,
                     KichHoat = true,
                     BatDauAt = new DateTime(2026, 1, 1),
-                    KetThucAt = new DateTime(2026, 12, 31)
+                    KetThucAt = new DateTime(2026, 12, 31),
+                    MaNguoiTao = 2
                 }
             );
 

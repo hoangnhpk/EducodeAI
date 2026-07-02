@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using educodeai_server.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using educodeai_server.DTOs.AI;
@@ -12,23 +13,154 @@ namespace educodeai_server.Services.Implementation
     public class KhoaHocService : IKhoaHocService
     {
         private readonly IKhoaHocRepository _khoaHocRepository;
-
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IRedisService _redisService;
+        private readonly ILogger<KhoaHocService> _logger;
 
-        public KhoaHocService(IKhoaHocRepository khoaHocRepository, IServiceScopeFactory scopeFactory)
+        // TTL constants
+        private static readonly TimeSpan _ttlDanhSachKhoaHoc = TimeSpan.FromMinutes(15);
+        private static readonly TimeSpan _ttlChiTietKhoaHoc  = TimeSpan.FromMinutes(30);
+
+        public KhoaHocService(IKhoaHocRepository khoaHocRepository, IServiceScopeFactory scopeFactory, IRedisService redisService, ILogger<KhoaHocService> logger)
         {
             _khoaHocRepository = khoaHocRepository;
             _scopeFactory = scopeFactory;
+            _redisService = redisService;
+            _logger = logger;
         }
 
+        // ------- Cache-Aside: Danh sách khóa học -------
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung)
         {
-            return await _khoaHocRepository.GetAllKhoaHocsAsync(maNguoiDung);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            const string publicKey = "CourseList:Public";
+
+            // 1. Đọc Public Cache
+            var cached = await _redisService.LayGiaTriAsync(publicKey);
+            List<KhoaHocDto>? publicList = null;
+            if (cached != null)
+            {
+                try
+                {
+                    publicList = JsonSerializer.Deserialize<List<KhoaHocDto>>(cached);
+                    if (publicList != null)
+                    {
+                        _logger.LogInformation("[CACHE HIT] GetAllKhoaHocsAsync - Key: {Key} - {Count} khóa học từ Cache ({Elapsed}ms)",
+                            publicKey, publicList.Count, sw.ElapsedMilliseconds);
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetAllKhoaHocsAsync. Fallback sang DB.");
+                    publicList = null;
+                }
+                catch (NotSupportedException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi kiểu dữ liệu deserialize GetAllKhoaHocsAsync. Fallback sang DB.");
+                    publicList = null;
+                }
+            }
+
+            if (publicList == null)
+            {
+                // 2. Cache miss -> query DB
+                _logger.LogInformation("[CACHE MISS] GetAllKhoaHocsAsync - Key: {Key} - Truy vấn DB...", publicKey);
+                var allResult = await _khoaHocRepository.GetAllKhoaHocsAsync(0);
+                publicList = allResult.ToList();
+                await _redisService.LuuGiaTriAsync(publicKey, JsonSerializer.Serialize(publicList), _ttlDanhSachKhoaHoc);
+                _logger.LogInformation("[DB QUERY] GetAllKhoaHocsAsync - Đã lưu {Count} khóa học vào Cache (TTL: {TTL}) - ({Elapsed}ms)",
+                    publicList.Count, _ttlDanhSachKhoaHoc, sw.ElapsedMilliseconds);
+            }
+
+            // 3. Nếu user đăng nhập, lấy thêm trạng thái user từ DB riêng
+            if (maNguoiDung > 0)
+            {
+                _logger.LogInformation("[DB QUERY] GetAllKhoaHocsAsync - Lấy enrollment status cho user #{UserId}", maNguoiDung);
+                var userResult = await _khoaHocRepository.GetAllKhoaHocsAsync(maNguoiDung);
+                var enrolledIds = userResult.Where(x => x.KhoaHocDaDangKy).Select(x => x.MaKhoaHoc).ToHashSet();
+                foreach (var item in publicList)
+                {
+                    item.KhoaHocDaDangKy = enrolledIds.Contains(item.MaKhoaHoc);
+                }
+            }
+
+            return publicList;
         }
 
+        // ------- Cache-Aside: Chi tiết khóa học -------
         public async Task<KhoaHoc_NoiDungKhoaHocDTO?> GetKhoaHocByIdAsync(int maKhoaHoc, int maNguoiDung)
         {
-            return await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, maNguoiDung);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            // 1. Đọc version hiện tại của khóa học
+            var version = await _redisService.LayVersionKhoaHocAsync(maKhoaHoc);
+            var publicKey = $"course:{maKhoaHoc}:detail:v{version}";
+
+            // 2. Đọc Public Cache
+            var cached = await _redisService.LayGiaTriAsync(publicKey);
+            KhoaHoc_NoiDungKhoaHocDTO? detail = null;
+            if (cached != null)
+            {
+                try
+                {
+                    detail = JsonSerializer.Deserialize<KhoaHoc_NoiDungKhoaHocDTO>(cached);
+                    if (detail != null)
+                    {
+                        _logger.LogInformation("[CACHE HIT] GetKhoaHocByIdAsync - MaKhoaHoc: {Id}, Key: {Key} ({Elapsed}ms)",
+                            maKhoaHoc, publicKey, sw.ElapsedMilliseconds);
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetKhoaHocByIdAsync. Fallback sang DB.");
+                    detail = null;
+                }
+                catch (NotSupportedException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi kiểu dữ liệu deserialize GetKhoaHocByIdAsync. Fallback sang DB.");
+                    detail = null;
+                }
+            }
+
+            if (detail == null)
+            {
+                // 3. Cache miss -> query DB
+                _logger.LogInformation("[CACHE MISS] GetKhoaHocByIdAsync - MaKhoaHoc: {Id}, Key: {Key} - Truy vấn DB...",
+                    maKhoaHoc, publicKey);
+                detail = await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, 0);
+                if (detail != null)
+                {
+                    await _redisService.LuuGiaTriAsync(publicKey, JsonSerializer.Serialize(detail), _ttlChiTietKhoaHoc);
+                    _logger.LogInformation("[DB QUERY] GetKhoaHocByIdAsync - Đã lưu khóa học #{Id} vào Cache (TTL: {TTL}) - ({Elapsed}ms)",
+                        maKhoaHoc, _ttlChiTietKhoaHoc, sw.ElapsedMilliseconds);
+                }
+            }
+
+            // 4. Overlay trạng thái DaXem từng bài học theo user
+            if (detail != null && maNguoiDung > 0)
+            {
+                _logger.LogInformation("[DB QUERY] GetKhoaHocByIdAsync - Overlay DaXem cho user #{UserId}, khóa học #{CourseId}",
+                    maNguoiDung, maKhoaHoc);
+                var userDetail = await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, maNguoiDung);
+                if (userDetail != null)
+                {
+                    foreach (var chuong in detail.DanhSachChuongHoc)
+                    {
+                        var userChuong = userDetail.DanhSachChuongHoc.FirstOrDefault(c => c.Id == chuong.Id);
+                        if (userChuong == null) continue;
+                        foreach (var bai in chuong.DanhSachBaiHoc)
+                        {
+                            var userBai = userChuong.DanhSachBaiHoc.FirstOrDefault(b => b.Id == bai.Id);
+                            if (userBai != null) bai.DaXem = userBai.DaXem;
+                        }
+                    }
+
+                    // Cập nhật các thông tin chứng chỉ cá nhân hóa
+                    detail.BaiKiemTraChungChi = userDetail.BaiKiemTraChungChi;
+                    detail.ThongTinChungChi = userDetail.ThongTinChungChi;
+                }
+            }
+
+            return detail;
         }
 
         public async Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto)
@@ -145,6 +277,8 @@ namespace educodeai_server.Services.Implementation
         public async Task<object> LayThongKeVaDanhSachAsync(int maKhoaHoc, int maNguoiDung)
         {
             var danhSachRaw = await _khoaHocRepository.LayDanhSachTheoKhoaHocAsync(maKhoaHoc, maNguoiDung);
+
+            // Thống kê chỉ tính review đã duyệt (số liệu công khai)
             var danhSachCongKhai = danhSachRaw.Where(x => x.TrangThai == "DaDuyet").ToList();
 
             var tongSo = danhSachCongKhai.Count;
@@ -164,14 +298,18 @@ namespace educodeai_server.Services.Implementation
                 }
             };
 
-            var danhSachOutput = danhSachRaw.Select(x => new {
-                id = x.MaDanhGia,
-                tenNguoiDung = x.NguoiDung?.HoTen ?? "Học viên",
-                maNguoiDung = x.MaNguoiDung,
-                soSao = x.SoSao,
-                noiDung = x.NhanXet,
-                ngayTao = x.NgayDanhGia
-            }).ToList();
+            // Danh sách: DaDuyet hiển công khai + ChoDuyet của chính mình (chầm chờ duyệt)
+            var danhSachOutput = danhSachRaw
+                .Where(x => x.TrangThai == "DaDuyet" || x.MaNguoiDung == maNguoiDung)
+                .Select(x => new {
+                    id = x.MaDanhGia,
+                    tenNguoiDung = x.NguoiDung?.HoTen ?? "Học viên",
+                    maNguoiDung = x.MaNguoiDung,
+                    soSao = x.SoSao,
+                    noiDung = x.NhanXet,
+                    ngayTao = x.NgayDanhGia,
+                    trangThai = x.TrangThai ?? "DaDuyet"
+                }).ToList();
 
             return new { ThongKe = thongKe, DanhSach = danhSachOutput };
         }
@@ -187,89 +325,86 @@ namespace educodeai_server.Services.Implementation
             bool daTonTai = await _khoaHocRepository.KiemTraDaDanhGiaAsync(yeuCau.MaKhoaHoc, yeuCau.MaNguoiDung);
             if (daTonTai) throw new Exception("Bạn đã đánh giá khóa học này rồi!");
 
-            // Lọc từ nhạy cảm
-            string nhanXetDaLoc = LocTuNhayCam(yeuCau.NhanXet);
-
+            // Submit → ChoDuyet (chỉ chính học viên thấy)
+            // Sau khi Admin/AI duyệt → DaDuyet (mọi người thấy)
+            // Bị từ chối → xóa khỏi DB (học viên có thể gửi lại)
             var model = new DanhGiaModel
             {
                 MaKhoaHoc = yeuCau.MaKhoaHoc,
                 MaNguoiDung = yeuCau.MaNguoiDung,
                 SoSao = yeuCau.SoSao,
-                NhanXet = nhanXetDaLoc,
+                NhanXet = yeuCau.NhanXet,
                 NgayDanhGia = DateTime.Now,
-                TrangThai = "DaDuyet"
+                TrangThai = "ChoDuyet"
             };
 
             return await _khoaHocRepository.ThemDanhGiaAsync(model);
         }
 
-        private static string LocTuNhayCam(string input)
+        /// <summary>
+        /// Kiểm tra xem chuỗi có chứa từ nhạy cảm không.
+        /// Xử lý các cách lách: chèn ký tự đặc biệt, số thay chữ, dấu, lặp chữ.
+        /// </summary>
+        private static bool KiemTraCoTuNhayCam(string input)
         {
-            if (string.IsNullOrWhiteSpace(input))
-                return input;
+            if (string.IsNullOrWhiteSpace(input)) return false;
 
-            var patterns = new[]
-            {
-                @"(?<!\p{L})n+g+u+(?!\p{L})",                 // ngu, nguuu
-                @"(?<!\p{L})d+\W*m+(?!\p{L})",               // dm, d m, d.m, d-m, dmmm
-                @"(?<!\p{L})d+\W*c+\W*m+(?!\p{L})",          // dcm, d c m, d.c.m, dcmm
-                @"(?<!\p{L})v+\W*c+\W*l+(?!\p{L})",          // vcl
-                @"(?<!\p{L})v+\W*l+(?!\p{L})",               // vl
-                @"(?<!\p{L})c+h+[o0]+(?!\p{L})",             // chó, cho, chooo
-                @"(?<!\p{L})l+[o0]+n+(?!\p{L})",             // lồn, lon, l0n
-                @"(?<!\p{L})c+[a4]+c+(?!\p{L})",             // cặc, cac, c4c
-                @"(?<!\p{L})d+[i1]+(?!\p{L})",               // đĩ, di, d1
-                @"(?<!\p{L})d+[i1]+t+(?!\p{L})",             // địt, dit, d1t
-                @"(?<!\p{L})d+u+(?!\p{L})",                  // đù, du
-                @"(?<!\p{L})c+[uư]+t+(?!\p{L})"              // cứt, cut
-            };
-
+            // Bước 1: Chuẩn hóa – loại bỏ dấu tiếng Việt, thay số/ký tự tương đương
             var lowered = input.ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
-            var normalizedChars = new System.Text.StringBuilder(lowered.Length);
-
+            var sb = new System.Text.StringBuilder(lowered.Length);
             foreach (var c in lowered)
             {
                 var cat = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
-                if (cat == System.Globalization.UnicodeCategory.NonSpacingMark)
-                    continue;
-
-                normalizedChars.Append(c switch
+                if (cat == System.Globalization.UnicodeCategory.NonSpacingMark) continue;
+                sb.Append(c switch
                 {
-                    'đ' => 'd',
-                    '0' => 'o',
-                    '1' => 'i',
-                    '4' => 'a',
+                    'đ' => 'd', '0' => 'o', '1' => 'i', '4' => 'a',
+                    '3' => 'e', '5' => 's', '7' => 't', '@' => 'a',
                     _ => c
                 });
             }
 
-            var normalized = normalizedChars.ToString();
-            var masked = new bool[input.Length];
+            // Bước 2: Xóa tất cả ký tự KHÔNG phải chữ cái/số để phát hiện lách kiểu "n.g.u" hay "n_g_u"
+            var stripped = System.Text.RegularExpressions.Regex.Replace(sb.ToString(), @"[^a-z0-9]", "");
 
-            foreach (var pattern in patterns)
+            // Bước 3: Kiểm tra trên CẢ HAI chuỗi: có dấu phân cách (sb) và không có (stripped)
+            var patterns = new[]
             {
-                foreach (System.Text.RegularExpressions.Match match in
-                        System.Text.RegularExpressions.Regex.Matches(
-                            normalized,
-                            pattern,
-                            System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                // --- Kiểm tra trên chuỗi normalized (có thể có dấu phân cách) ---
+                (@"n+[^a-z]*g+[^a-z]*u+",              sb.ToString()),   // n.g.u, n_g_u, ngu
+                (@"d+[^a-z]*m+",                        sb.ToString()),   // d.m, dm, d m
+                (@"d+[^a-z]*c+[^a-z]*m+",              sb.ToString()),   // d.c.m
+                (@"v+[^a-z]*c+[^a-z]*l+",              sb.ToString()),   // v.c.l
+                (@"v+[^a-z]*l+",                        sb.ToString()),   // v.l
+                (@"c+[^a-z]*h+[^a-z]*o+",              sb.ToString()),   // c.h.o
+                (@"l+[^a-z]*o+[^a-z]*n+",              sb.ToString()),   // l.o.n
+                (@"c+[^a-z]*a+[^a-z]*c+",              sb.ToString()),   // c.a.c
+                (@"d+[^a-z]*i+[^a-z]*t+",              sb.ToString()),   // d.i.t
+                (@"c+[^a-z]*u+[^a-z]*t+",              sb.ToString()),   // c.u.t
+                // --- Kiểm tra trên chuỗi đã loại hết ký tự đặc biệt ---
+                (@"ngu+",                               stripped),        // ngu, nguu
+                (@"dm+",                                stripped),        // dm, dmm
+                (@"dcm+",                               stripped),        // dcm
+                (@"vcl+",                               stripped),        // vcl
+                (@"cho+",                               stripped),        // cho
+                (@"lon+",                               stripped),        // lon
+                (@"cac+",                               stripped),        // cac
+                (@"dit+",                               stripped),        // dit
+                (@"cut+",                               stripped),        // cut
+                (@"du+",                                stripped),        // du
+            };
+
+            foreach (var (pattern, target) in patterns)
+            {
+                if (System.Text.RegularExpressions.Regex.IsMatch(
+                    target, pattern,
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                 {
-                    for (int i = match.Index; i < match.Index + match.Length && i < masked.Length; i++)
-                    {
-                        if (!char.IsWhiteSpace(input[i]))
-                            masked[i] = true;
-                    }
+                    return true; // Phát hiện vi phạm
                 }
             }
 
-            var result = input.ToCharArray();
-            for (int i = 0; i < result.Length; i++)
-            {
-                if (masked[i])
-                    result[i] = '*';
-            }
-
-            return new string(result);
+            return false;
         }
 
         private static string TaoNoiDungEmailChungChi(

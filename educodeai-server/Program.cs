@@ -67,8 +67,9 @@ builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
 try
 {
     var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+    var isRedisActive = builder.Configuration.GetValue<bool>("RedisConfig:IsActive", true);
 
-    if (!string.IsNullOrEmpty(redisConnectionString))
+    if (isRedisActive && !string.IsNullOrEmpty(redisConnectionString))
     {
         var configOptions = ConfigurationOptions.Parse(redisConnectionString);
         configOptions.AbortOnConnectFail = false;
@@ -92,7 +93,8 @@ try
     }
     else
     {
-        Console.WriteLine("Redis connection string is empty – using MemoryCache fallback");
+        var reason = !isRedisActive ? "turned OFF in appsettings" : "empty connection string";
+        Console.WriteLine($"Redis is {reason} – using MemoryCache fallback");
         builder.Services.AddScoped<IRedisService, FallbackRedisService>();
     }
 }
@@ -117,10 +119,11 @@ builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
 builder.Services.AddScoped<IThanhToanKhoaHocService, ThanhToanKhoaHocService>();
+builder.Services.AddScoped<IMaGiamGiaService, MaGiamGiaService>();
+builder.Services.AddScoped<IQuaTangKhoaHocService, QuaTangKhoaHocService>();
 builder.Services.AddScoped<IThanhToanEmailService, ThanhToanEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienEmailService, RutTienGiangVienEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienService, RutTienGiangVienService>();
-builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
@@ -153,6 +156,7 @@ builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
 builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();
 builder.Services.AddScoped<IKeyApiService, KeyApiService>();
 builder.Services.AddScoped<ISinhDoAnAIService, SinhDoAnAIService>();
+builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 
 
 // ==========================================
@@ -224,50 +228,6 @@ var app = builder.Build();
 
 // Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
-
-// PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
-// Nếu setval không chạy → trùng PK → 500 khi tạo mã QR.
-//try
-//{
-//    using var scope = app.Services.CreateScope();
-//    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
-//    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
-//    {
-//        var bangVaCot = new[]
-//        {
-//            ("DonHangKhoaHocs", "MaDonHang"),
-//            ("ChiTietDonHangs", "MaChiTiet"),
-//            ("GiaoDichThanhToans", "MaGiaoDich"),
-//            ("DoanhThuGiangViens", "MaDoanhThu"),
-//            ("MaGiamGias", "MaVoucher"),
-//        };
-//        foreach (var (bang, cot) in bangVaCot)
-//        {
-//            try
-//            {
-//                db.Database.ExecuteSqlRaw(
-//                    $"""
-//                    SELECT setval(
-//                        COALESCE(
-//                            pg_get_identity_sequence('"{bang}"'::regclass, '{cot}'),
-//                            pg_get_serial_sequence('public."{bang}"', '{cot}')
-//                        )::regclass,
-//                        COALESCE((SELECT MAX("{cot}") FROM "{bang}"), 0),
-//                        true
-//                    );
-//                    """);
-//            }
-//            catch (Exception exBang)
-//            {
-//                Console.WriteLine($"Đồng bộ sequence {bang}.{cot}: {exBang.Message}");
-//            }
-//        }
-//    }
-//}
-//catch (Exception ex)
-//{
-//    Console.WriteLine($"Không đồng bộ sequence PostgreSQL (bỏ qua nếu DB chưa migrate): {ex.Message}");
-//}
 
 // ==========================================
 // 7. PIPELINE REQUEST (Middleware)
