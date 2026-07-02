@@ -10,7 +10,7 @@ namespace educodeai_server.Services.Interface
         Task<int> TaoKhoaHocAsync(int maGiangVien, KhoaHocCreateUpdateDTO dto);
         Task<bool> CapNhatKhoaHocAsync(int maKhoaHoc, int maGiangVien, KhoaHocCreateUpdateDTO dto);
         Task<bool> XoaKhoaHocAsync(int maKhoaHoc, int maGiangVien);
-        Task<ThemChuongResponseDTO> ThemChuongAsync(int maKhoaHoc, ChuongHocCreateUpdateDTO dto);
+        Task<ThemChuongResponseDTO> ThemChuongAsync(int maKhoaHoc, int maGiangVien, ChuongHocCreateUpdateDTO dto);
         Task<bool> CapNhatChuongAsync(int maChuong, int maGiangVien, ChuongHocCreateUpdateDTO dto);
         Task<bool> XoaChuongAsync(int maChuong, int maGiangVien);
         Task<ThemVideoResponseDTO> ThemVideoAsync(int maChuong, int maGiangVien, BaiHocVideoCreateUpdateDTO dto);
@@ -43,3 +43,4 @@ namespace educodeai_server.Services.Interface
         Task<bool> UpdateDeChungChiAsync(int maKhoaHoc, int maGiangVien, List<CauHoiChungChiDTO> danhSachCauHoi);
     }
 }
+
