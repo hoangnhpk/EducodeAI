@@ -141,7 +141,7 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<BaiTapThucHanhPreviewDto> CreatePracticeExerciseAsync(BaiTapThucHanhPreviewDto dto, int maBaiHoc, int maGiangVien)
         {
-            // 1. Validate Ownership (Lấy hierarchy từ DB, không tin maBaiHoc từ Client)
+            // 1. Validate Ownership (L?y hierarchy t? DB, kh?ng tin maBaiHoc t? Client)
             var baiHoc = await _context.BaiHocs
                 .Include(bh => bh.ChuongHoc)
                     .ThenInclude(ch => ch.KhoaHoc)
@@ -149,64 +149,68 @@ namespace educodeai_server.Services.Implementation
 
             if (baiHoc == null || baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien)
             {
-                throw new UnauthorizedAccessException("Quyền truy cập bị từ chối.");
+                throw new UnauthorizedAccessException("Quy?n truy c?p b? t? ch?i.");
             }
 
-            // 2. Transaction for atomic create
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+
+            return await executionStrategy.ExecuteAsync(async () =>
             {
-                // Create Parent BaiTap
-                var baiTap = new BaiTapModel { MaBaiHoc = maBaiHoc };
-                _context.BaiTaps.Add(baiTap);
-                await _context.SaveChangesAsync();
+                await using var transaction = await _context.Database.BeginTransactionAsync();
 
-                // 3. Map DTO -> Model (Step 2 Mapping - ONLY supported fields)
-                var model = new BaiTapThucHanhModel
+                try
                 {
-                    MaBaiTap = baiTap.MaBaiTap,
-                    TieuDe = dto.Metadata.TieuDe,
-                    MoTaDeBai = dto.ProblemContent.MoTaDeBai,
-                    NgonNgu = dto.Metadata.NgonNgu,
-                    MucDo = dto.Metadata.MucDo,
-                    LoiGiaiMau = dto.Solution.LoiGiaiMau,
-                    GoiY = string.Join("\n", dto.GoiYs.Select(g => $"- {g.TieuDe}: {g.NoiDung}")), // Merge hints
-                    NgayTao = DateTime.UtcNow,
-                    TrangThai = true
-                };
-
-                _context.BaiTapThucHanhs.Add(model);
-                await _context.SaveChangesAsync();
-
-                // 4. Map TestCases
-                if (dto.Evaluation.TestCases != null)
-                {
-                    int thuTu = 0;
-                    foreach (var tc in dto.Evaluation.TestCases)
-                    {
-                        _context.TestCaseThucHanhs.Add(new TestCaseThucHanhModel
-                        {
-                            MaBaiTapThucHanh = model.MaBaiTapTH,
-                            InputDuLieu = tc.InputDuLieu,
-                            OutputMongDoi = tc.OutputMongDoi,
-                            LaTestAn = tc.LaTestAn,
-                            Diem = tc.Diem,
-                            ThuTu = thuTu++,
-                            NgayTao = DateTime.UtcNow
-                        });
-                    }
+                    // Create Parent BaiTap
+                    var baiTap = new BaiTapModel { MaBaiHoc = maBaiHoc };
+                    _context.BaiTaps.Add(baiTap);
                     await _context.SaveChangesAsync();
+
+                    // Map DTO -> Model
+                    var model = new BaiTapThucHanhModel
+                    {
+                        MaBaiTap = baiTap.MaBaiTap,
+                        TieuDe = dto.Metadata.TieuDe,
+                        MoTaDeBai = dto.ProblemContent.MoTaDeBai,
+                        NgonNgu = dto.Metadata.NgonNgu,
+                        MucDo = dto.Metadata.MucDo,
+                        LoiGiaiMau = dto.Solution.LoiGiaiMau,
+                        GoiY = string.Join("\n", dto.GoiYs.Select(g => $"- {g.TieuDe}: {g.NoiDung}")),
+                        NgayTao = DateTime.UtcNow,
+                        TrangThai = true
+                    };
+
+                    _context.BaiTapThucHanhs.Add(model);
+                    await _context.SaveChangesAsync();
+
+                    if (dto.Evaluation?.TestCases != null)
+                    {
+                        int thuTu = 0;
+                        foreach (var tc in dto.Evaluation.TestCases)
+                        {
+                            _context.TestCaseThucHanhs.Add(new TestCaseThucHanhModel
+                            {
+                                MaBaiTapThucHanh = model.MaBaiTapTH,
+                                InputDuLieu = tc.InputDuLieu,
+                                OutputMongDoi = tc.OutputMongDoi,
+                                LaTestAn = tc.LaTestAn,
+                                Diem = tc.Diem,
+                                ThuTu = thuTu++,
+                                NgayTao = DateTime.UtcNow
+                            });
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+
+                    await transaction.CommitAsync();
+
+                    return await GetDetailAsync(baiTap.MaBaiTap, maGiangVien);
                 }
-
-                await transaction.CommitAsync();
-
-                return await GetDetailAsync(baiTap.MaBaiTap, maGiangVien);
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
 
         public async Task<BaiTapThucHanhPreviewDto> GetDetailAsync(int maBaiTap, int maGiangVien)

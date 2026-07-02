@@ -36,6 +36,58 @@ export interface TrangThaiThanhToanDTO {
   thongBao: string;
 }
 
+export interface ThongTinMaQuaTangDTO {
+  maQuaTang: number;
+  code: string;
+  maDonHang: number;
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  soTienCanThanhToan: number;
+  donViTienTe: string;
+  noiDungChuyenKhoan: string;
+  duongDanAnhQr: string;
+  hetHanThanhToan?: string;
+  trangThaiMaQuaTang: string;
+}
+
+export interface TrangThaiMaQuaTangDTO {
+  maDonHang: number;
+  trangThaiDonHang: string;
+  trangThaiMaQuaTang: string;
+  sanSangSuDung: boolean;
+  thongBao: string;
+}
+
+export interface KetQuaNhapMaQuaTangDTO {
+  thanhCong: boolean;
+  thongBao: string;
+  code: string;
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  maNguoiNhan: number;
+}
+
+export interface LichSuMaQuaTangDTO {
+  maQuaTang: number;
+  code: string;
+  maDonHang: number;
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  soTien: number;
+  donViTienTe: string;
+  noiDungChuyenKhoan: string;
+  maNguoiTang: number;
+  tenNguoiTang?: string;
+  emailNguoiTang?: string;
+  trangThai: string;
+  createdAt: string;
+  activatedAt?: string;
+  redeemedAt?: string;
+  maNguoiNhan?: number;
+  tenNguoiNhan?: string;
+  emailNguoiNhan?: string;
+}
+
 export interface HoTroThanhToanKhoaHocItemDTO {
   maKhoaHoc: number;
   tenKhoaHoc: string;
@@ -74,10 +126,32 @@ export const ThanhToanKhoaHocService = {
     });
   },
 
-  taoMaQrThanhToan: async (maKhoaHoc: number): Promise<ThongTinMaQRThanhToanDTO> => {
+  taoMaQrThanhToan: async (maKhoaHoc: number, maVoucher?: string): Promise<ThongTinMaQRThanhToanDTO> => {
     return await axiosClient.post<ThongTinMaQRThanhToanDTO>("/api/hocvien/thanh-toan-khoa-hoc/tao-ma-qr", {
-      maKhoaHoc
+      maKhoaHoc,
+      maVoucher: maVoucher?.trim() || undefined
     });
+  },
+
+  taoMaQuaTang: async (maKhoaHoc: number, maVoucher?: string): Promise<ThongTinMaQuaTangDTO> => {
+    return await axiosClient.post<ThongTinMaQuaTangDTO>("/api/hocvien/thanh-toan-khoa-hoc/tao-ma-qua-tang", {
+      maKhoaHoc,
+      maVoucher: maVoucher?.trim() || undefined
+    });
+  },
+
+  kiemTraTrangThaiMaQuaTang: async (maDonHang: number): Promise<TrangThaiMaQuaTangDTO> => {
+    return await axiosClient.get<TrangThaiMaQuaTangDTO>(
+      `/api/hocvien/thanh-toan-khoa-hoc/kiem-tra-trang-thai-ma-qua-tang/${maDonHang}`
+    );
+  },
+
+  nhapMaQuaTang: async (code: string): Promise<KetQuaNhapMaQuaTangDTO> => {
+    return await axiosClient.post<KetQuaNhapMaQuaTangDTO>("/api/hocvien/thanh-toan-khoa-hoc/nhap-ma-qua-tang", { code });
+  },
+
+  layLichSuMaQuaTang: async (): Promise<LichSuMaQuaTangDTO[]> => {
+    return await axiosClient.get<LichSuMaQuaTangDTO[]>("/api/hocvien/thanh-toan-khoa-hoc/lich-su-ma-qua-tang");
   },
 
   kiemTraTrangThaiThanhToan: async (maDonHang: number): Promise<TrangThaiThanhToanDTO> => {

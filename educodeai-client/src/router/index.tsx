@@ -28,17 +28,18 @@ import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
 import PhongVanAI from "../pages/hoc-vien/phong-van-ai/PhongVanAI";
 import SinhDoAnAI from "../pages/hoc-vien/sinh-do-an-ai/SinhDoAnAI";
+import NhapMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/NhapMaQuaTang";
+import LichSuMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/LichSuMaQuaTang";
 
 import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
-import TaoQuiz from "../pages/giang-vien/tao-bai-tap-test-case/TaoQuizContent";
-import PreviewQuiz from "../pages/giang-vien/tao-bai-tap-test-case/PreviewQuizContent";
-import CaiDatQuiz from "../pages/giang-vien/tao-bai-tap-test-case/CaiDatQuizContent";
 import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
 import KhoaHocCuaToi from "../pages/giang-vien/khoa-hoc-cua-toi/KhoaHocCuaToi";
 import QuanLyHocVienKhoaHoc from "../pages/giang-vien/quan-ly-hoc-vien/QuanLyHocVienKhoaHoc";
+import TangKhoaHocGiangVien from "../pages/giang-vien/tang-khoa-hoc/TangKhoaHocGiangVien";
 import TaoLoTrinhAI from "../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI";
 import QuanLyBaiTapThucHanh from "../pages/giang-vien/bai-tap-thuc-hanh/QuanLyBaiTapThucHanh";
 import RutTienGiangVien from "../pages/giang-vien/rut-tien/RutTienGiangVien";
+import QuanLyMaGiamGiaGiangVien from "@/pages/giang-vien/ma-giam-gia/QuanLyMaGiamGiaGiangVien";
 
 import QuanLyReviewMoi from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReviewMoi";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
@@ -48,6 +49,8 @@ import CauHinhHeThong from "../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeTh
 import ThongKeAdmin from "@/pages/quan-tri-vien/thong-ke/ThongKeAdmin";
 import QuanLyRutTienGiangVien from "../pages/quan-tri-vien/rut-tien-giang-vien/QuanLyRutTienGiangVien";
 import QuanLyHoTroThanhToanHocVien from "@/pages/quan-tri-vien/ho-tro-thanh-toan-hoc-vien/QuanLyHoTroThanhToanHocVien";
+import QuanLyMaQuaTang from "@/pages/quan-tri-vien/ma-qua-tang/QuanLyMaQuaTang";
+import QuanLyMaGiamGiaAdmin from "@/pages/quan-tri-vien/ma-giam-gia/QuanLyMaGiamGiaAdmin";
 
 const readUserInfo = (): any | null => {
   const userRaw = localStorage.getItem("user_info");
@@ -63,15 +66,10 @@ const readUserInfo = (): any | null => {
 };
 
 const HomeRedirect = () => {
-  const user = readUserInfo();
-  if (!user) return <TrangChuHocVien />;
-  const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
-  if (role === 0) return <Navigate to="/quan-tri-vien" replace />;
-  if (role === 1) return <Navigate to="/giang-vien" replace />;
   return <TrangChuHocVien />;
 };
 
-const PublicOrStudentRoute = ({ children }: { children?: React.ReactNode }) => {
+const PublicAuthRoute = ({ children }: { children?: React.ReactNode }) => {
   const user = readUserInfo();
   if (!user) return children ? <>{children}</> : <Outlet />;
   const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
@@ -80,18 +78,22 @@ const PublicOrStudentRoute = ({ children }: { children?: React.ReactNode }) => {
   return children ? <>{children}</> : <Outlet />;
 };
 
+const PublicRoute = ({ children }: { children?: React.ReactNode }) => {
+  return children ? <>{children}</> : <Outlet />;
+};
+
 export default function AppRouter() {
   return (
     <SystemConfigProvider>
       <BrowserRouter>
         <Routes>
-          <Route element={<PublicOrStudentRoute />}>
+          <Route element={<PublicAuthRoute />}>
             <Route path="/dang-nhap" element={<DangNhap />} />
             <Route path="/dang-ky" element={<DangKy />} />
             <Route path="/quen-mat-khau" element={<QuenMatKhau />} />
           </Route>
 
-          <Route element={<PublicOrStudentRoute><LayoutHocVien /></PublicOrStudentRoute>}>
+          <Route element={<PublicRoute><LayoutHocVien /></PublicRoute>}>
             <Route path="/" element={<HomeRedirect />} />
             <Route path="/khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
           </Route>
@@ -110,6 +112,8 @@ export default function AppRouter() {
             <Route path="/kham-pha-lo-trinh" element={<KhamPhaLoTrinh />} />
             <Route path="/phong-van-ai" element={<PhongVanAI />} />
             <Route path="/sinh-do-an-ai" element={<SinhDoAnAI />} />
+            <Route path="/hoc-vien/nhap-ma-qua-tang" element={<NhapMaQuaTang />} />
+            <Route path="/hoc-vien/lich-su-ma-qua-tang" element={<LichSuMaQuaTang />} />
           </Route>
 
           <Route element={<ProtectedRoute allowRoles={[0, 1, 2]}><LayoutBlank /></ProtectedRoute>}>
@@ -120,14 +124,17 @@ export default function AppRouter() {
             <Route index element={<ThongKeHocTap />} />
             <Route path="thong-ke" element={<ThongKeHocTap />} />
             <Route path="bai-tap" element={<TaoBaiTap />} />
-            <Route path="quiz" element={<TaoQuiz />} />
-            <Route path="preview-quiz" element={<PreviewQuiz />} />
-            <Route path="cai-dat" element={<CaiDatQuiz />} />
+            <Route path="bai-tap/tao-thuc-hanh" element={<QuanLyBaiTapThucHanh />} />
+            <Route path="quiz" element={<Navigate to="/giang-vien/bai-tap" replace />} />
+            <Route path="preview-quiz" element={<Navigate to="/giang-vien/bai-tap" replace />} />
+            <Route path="cai-dat" element={<Navigate to="/giang-vien/bai-tap" replace />} />
             <Route path="khoa-hoc-cua-toi" element={<KhoaHocCuaToi />} />
             <Route path="lop-hoc" element={<QuanLyHocVienKhoaHoc />} />
+            <Route path="tang-khoa-hoc" element={<TangKhoaHocGiangVien />} />
             <Route path="tao-lo-trinh-AI" element={<TaoLoTrinhAI />} />
-            <Route path="bai-tap-thuc-hanh" element={<QuanLyBaiTapThucHanh />} />
+            <Route path="bai-tap-thuc-hanh" element={<Navigate to="/giang-vien/bai-tap/tao-thuc-hanh" replace />} />
             <Route path="rut-tien" element={<RutTienGiangVien />} />
+            <Route path="ma-giam-gia" element={<QuanLyMaGiamGiaGiangVien />} />
           </Route>
 
           <Route path="/quan-tri-vien" element={<ProtectedRoute allowRoles={[0]}><LayoutQuanTriVien /></ProtectedRoute>}>
@@ -140,6 +147,8 @@ export default function AppRouter() {
             <Route path="cau-hinh-he-thong" element={<CauHinhHeThong />} />
             <Route path="rut-tien-giang-vien" element={<QuanLyRutTienGiangVien />} />
             <Route path="ho-tro-thanh-toan-hoc-vien" element={<QuanLyHoTroThanhToanHocVien />} />
+            <Route path="ma-qua-tang" element={<QuanLyMaQuaTang />} />
+            <Route path="ma-giam-gia" element={<QuanLyMaGiamGiaAdmin />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

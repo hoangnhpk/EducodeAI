@@ -5,6 +5,7 @@ using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Net;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -15,6 +16,13 @@ namespace educodeai_server.Services.Implementation
         private const string TrangThaiHoTroChoXuLy = "SUPPORT_PENDING";
         private const string TrangThaiHoTroChapThuan = "SUPPORT_APPROVED";
         private const string TrangThaiHoTroTuChoi = "SUPPORT_REJECTED";
+        private const string LoaiDonHangMuaKhoaHoc = "COURSE_PURCHASE";
+        private const string LoaiDonHangGiftCode = "GIFT_CODE";
+        private const string TrangThaiGiftChoThanhToan = "PENDING_PAYMENT";
+        private const string TrangThaiGiftSanSang = "ACTIVE";
+        private const string TrangThaiGiftDaDung = "REDEEMED";
+        private const string LoaiGiamGiaPhanTram = "PERCENT";
+        private const string LoaiGiamGiaSoTien = "FIXED";
         private const decimal TyLePhiNenTangMacDinh = 0.2m; // 20%
 
         private readonly EduCodeAIDbContext _dbContext;
@@ -118,8 +126,11 @@ namespace educodeai_server.Services.Implementation
                     {
                         MaNguoiDung = maNguoiDung,
                         TongTien = tongTien,
+                        TongTienGoc = tongTien,
+                        SoTienGiam = 0,
                         LoaiTien = khoaHoc.DonViTienTe,
                         TrangThaiDonHang = "PAID",
+                        LoaiDonHang = LoaiDonHangMuaKhoaHoc,
                         IdempotencyKey = $"mua-{maNguoiDung}-{khoaHoc.MaKhoaHoc}-{Guid.NewGuid():N}",
                         CreatedAt = thoiGianHienTai,
                         UpdatedAt = thoiGianHienTai,
@@ -215,13 +226,17 @@ namespace educodeai_server.Services.Implementation
             }
 
             var thoiGianHienTai = DateTime.UtcNow;
+            string? maVoucherChuan = string.IsNullOrWhiteSpace(yeuCau.MaVoucher) ? null : yeuCau.MaVoucher.Trim().ToUpperInvariant();
+            var thongTinGiamGia = await TinhGiamGiaHopLeAsync(maVoucherChuan, maNguoiDung, yeuCau.MaKhoaHoc, khoaHoc.GiaKhoaHoc, false);
 
             var donHangCho = await _dbContext.DonHangKhoaHocs
                 .Include(x => x.ChiTietDonHangs)
                 .Where(x => x.MaNguoiDung == maNguoiDung
+                            && x.LoaiDonHang == LoaiDonHangMuaKhoaHoc
                             && x.TrangThaiDonHang == "PENDING"
                             && x.ExpiredAt != null
                             && x.ExpiredAt > thoiGianHienTai
+                            && x.CodeVoucher == maVoucherChuan
                             && x.ChiTietDonHangs.Any(ct => ct.MaKhoaHoc == yeuCau.MaKhoaHoc))
                 .OrderByDescending(x => x.CreatedAt)
                 .FirstOrDefaultAsync();
@@ -242,9 +257,14 @@ namespace educodeai_server.Services.Implementation
                         donHang = new DonHangKhoaHocModel
                         {
                             MaNguoiDung = maNguoiDung,
-                            TongTien = khoaHoc.GiaKhoaHoc,
+                            TongTien = thongTinGiamGia.TongTienSauGiam,
+                            TongTienGoc = khoaHoc.GiaKhoaHoc,
+                            SoTienGiam = thongTinGiamGia.SoTienGiam,
                             LoaiTien = khoaHoc.DonViTienTe,
                             TrangThaiDonHang = "PENDING",
+                            LoaiDonHang = LoaiDonHangMuaKhoaHoc,
+                            MaVoucher = thongTinGiamGia.Voucher?.MaVoucher,
+                            CodeVoucher = maVoucherChuan,
                             IdempotencyKey = $"qr-{maNguoiDung}-{khoaHoc.MaKhoaHoc}-{Guid.NewGuid():N}",
                             CreatedAt = thoiGianHienTai,
                             UpdatedAt = thoiGianHienTai,
@@ -259,8 +279,8 @@ namespace educodeai_server.Services.Implementation
                             MaDonHang = donHang.MaDonHang,
                             MaKhoaHoc = khoaHoc.MaKhoaHoc,
                             DonGia = khoaHoc.GiaKhoaHoc,
-                            GiamGia = 0,
-                            ThanhTien = khoaHoc.GiaKhoaHoc
+                            GiamGia = thongTinGiamGia.SoTienGiam,
+                            ThanhTien = thongTinGiamGia.TongTienSauGiam
                         });
 
                         _dbContext.GiaoDichThanhToans.Add(new GiaoDichThanhToanModel
@@ -307,6 +327,135 @@ namespace educodeai_server.Services.Implementation
             };
         }
 
+        public async Task<ThongTinMaQuaTangDTO> TaoMaQuaTangAsync(YeuCauTaoMaQuaTangDTO yeuCau, int maNguoiDung)
+        {
+            var khoaHoc = await _dbContext.KhoaHocs
+                .FirstOrDefaultAsync(x => x.MaKhoaHoc == yeuCau.MaKhoaHoc && x.TrangThai == "Hoạt động");
+
+            if (khoaHoc == null)
+            {
+                throw new ApplicationException("Khóa học không tồn tại hoặc đã ngừng hoạt động.");
+            }
+
+            if (!khoaHoc.ChoPhepMua)
+            {
+                throw new ApplicationException("Khóa học hiện chưa mở bán.");
+            }
+
+            var thoiGianHienTai = DateTime.UtcNow;
+            string? maVoucherChuan = string.IsNullOrWhiteSpace(yeuCau.MaVoucher) ? null : yeuCau.MaVoucher.Trim().ToUpperInvariant();
+            var thongTinGiamGia = await TinhGiamGiaHopLeAsync(maVoucherChuan, maNguoiDung, yeuCau.MaKhoaHoc, khoaHoc.GiaKhoaHoc, true);
+            var donHang = await _dbContext.DonHangKhoaHocs
+                .Include(x => x.ChiTietDonHangs)
+                .Include(x => x.MaQuaTangHocViens)
+                .Where(x => x.MaNguoiDung == maNguoiDung
+                            && x.LoaiDonHang == LoaiDonHangGiftCode
+                            && x.TrangThaiDonHang == "PENDING"
+                            && x.ExpiredAt != null
+                            && x.ExpiredAt > thoiGianHienTai
+                            && x.CodeVoucher == maVoucherChuan
+                            && x.ChiTietDonHangs.Any(ct => ct.MaKhoaHoc == yeuCau.MaKhoaHoc))
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (donHang == null)
+            {
+                var chienLuoc = _dbContext.Database.CreateExecutionStrategy();
+                await chienLuoc.ExecuteAsync(async () =>
+                {
+                    await using var giaoDich = await _dbContext.Database.BeginTransactionAsync();
+                    try
+                    {
+                        donHang = new DonHangKhoaHocModel
+                        {
+                            MaNguoiDung = maNguoiDung,
+                            TongTien = thongTinGiamGia.TongTienSauGiam,
+                            TongTienGoc = khoaHoc.GiaKhoaHoc,
+                            SoTienGiam = thongTinGiamGia.SoTienGiam,
+                            LoaiTien = khoaHoc.DonViTienTe,
+                            TrangThaiDonHang = "PENDING",
+                            LoaiDonHang = LoaiDonHangGiftCode,
+                            MaVoucher = thongTinGiamGia.Voucher?.MaVoucher,
+                            CodeVoucher = maVoucherChuan,
+                            IdempotencyKey = $"gift-{maNguoiDung}-{khoaHoc.MaKhoaHoc}-{Guid.NewGuid():N}",
+                            CreatedAt = thoiGianHienTai,
+                            UpdatedAt = thoiGianHienTai,
+                            ExpiredAt = thoiGianHienTai.AddMinutes(30)
+                        };
+
+                        _dbContext.DonHangKhoaHocs.Add(donHang);
+                        await _dbContext.SaveChangesAsync();
+
+                        _dbContext.ChiTietDonHangs.Add(new ChiTietDonHangModel
+                        {
+                            MaDonHang = donHang.MaDonHang,
+                            MaKhoaHoc = khoaHoc.MaKhoaHoc,
+                            DonGia = khoaHoc.GiaKhoaHoc,
+                            GiamGia = thongTinGiamGia.SoTienGiam,
+                            ThanhTien = thongTinGiamGia.TongTienSauGiam
+                        });
+
+                        _dbContext.GiaoDichThanhToans.Add(new GiaoDichThanhToanModel
+                        {
+                            MaDonHang = donHang.MaDonHang,
+                            CongThanhToan = "SEPAY",
+                            MaThamChieuNgoai = $"GD-GIFT-{donHang.MaDonHang}-{Guid.NewGuid():N}".ToUpperInvariant(),
+                            SoTien = khoaHoc.GiaKhoaHoc,
+                            TrangThai = "INITIATED",
+                            CreatedAt = thoiGianHienTai,
+                            UpdatedAt = thoiGianHienTai
+                        });
+
+                        _dbContext.MaQuaTangHocViens.Add(new MaQuaTangHocVienModel
+                        {
+                            Code = TaoCodeQuaTang(),
+                            MaDonHang = donHang.MaDonHang,
+                            MaKhoaHoc = khoaHoc.MaKhoaHoc,
+                            MaNguoiTang = maNguoiDung,
+                            TrangThai = TrangThaiGiftChoThanhToan,
+                            CreatedAt = thoiGianHienTai,
+                            ExpiredAt = thoiGianHienTai.AddDays(30)
+                        });
+
+                        await _dbContext.SaveChangesAsync();
+                        await giaoDich.CommitAsync();
+                    }
+                    catch
+                    {
+                        await giaoDich.RollbackAsync();
+                        throw;
+                    }
+                });
+            }
+
+            if (donHang == null)
+            {
+                throw new ApplicationException("Không thể khởi tạo mã quà tặng.");
+            }
+
+            var maQuaTang = await _dbContext.MaQuaTangHocViens
+                .AsNoTracking()
+                .Where(x => x.MaDonHang == donHang.MaDonHang)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstAsync();
+
+            string noiDungChuyenKhoan = TaoNoiDungChuyenKhoan(donHang.MaDonHang);
+            return new ThongTinMaQuaTangDTO
+            {
+                MaQuaTang = maQuaTang.MaQuaTang,
+                Code = maQuaTang.Code,
+                MaDonHang = donHang.MaDonHang,
+                MaKhoaHoc = khoaHoc.MaKhoaHoc,
+                TenKhoaHoc = khoaHoc.TenKhoaHoc,
+                SoTienCanThanhToan = donHang.TongTien,
+                DonViTienTe = donHang.LoaiTien,
+                NoiDungChuyenKhoan = noiDungChuyenKhoan,
+                DuongDanAnhQr = TaoDuongDanAnhQr(donHang.TongTien, noiDungChuyenKhoan),
+                HetHanThanhToan = donHang.ExpiredAt,
+                TrangThaiMaQuaTang = maQuaTang.TrangThai
+            };
+        }
+
         public async Task<TrangThaiThanhToanDTO> KiemTraTrangThaiThanhToanAsync(int maDonHang, int maNguoiDung)
         {
             var donHang = await _dbContext.DonHangKhoaHocs
@@ -331,6 +480,219 @@ namespace educodeai_server.Services.Implementation
                     ? "Thanh toán thành công, khóa học đã được mở."
                     : "Chưa nhận được xác nhận thanh toán."
             };
+        }
+
+        public async Task<TrangThaiMaQuaTangDTO> KiemTraTrangThaiMaQuaTangAsync(int maDonHang, int maNguoiDung)
+        {
+            var donHang = await _dbContext.DonHangKhoaHocs
+                .Include(x => x.MaQuaTangHocViens)
+                .FirstOrDefaultAsync(x => x.MaDonHang == maDonHang && x.MaNguoiDung == maNguoiDung && x.LoaiDonHang == LoaiDonHangGiftCode);
+
+            if (donHang == null)
+            {
+                throw new ApplicationException("Không tìm thấy đơn hàng quà tặng.");
+            }
+
+            var gift = donHang.MaQuaTangHocViens.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+            string trangThaiGift = gift?.TrangThai ?? TrangThaiGiftChoThanhToan;
+            bool sanSang = string.Equals(trangThaiGift, TrangThaiGiftSanSang, StringComparison.OrdinalIgnoreCase)
+                           || string.Equals(trangThaiGift, TrangThaiGiftDaDung, StringComparison.OrdinalIgnoreCase);
+
+            return new TrangThaiMaQuaTangDTO
+            {
+                MaDonHang = maDonHang,
+                TrangThaiDonHang = donHang.TrangThaiDonHang,
+                TrangThaiMaQuaTang = trangThaiGift,
+                SanSangSuDung = sanSang,
+                ThongBao = sanSang ? "Mã quà tặng đã sẵn sàng sử dụng." : "Chưa xác nhận thanh toán cho mã quà tặng."
+            };
+        }
+
+        public async Task<KetQuaNhapMaQuaTangDTO> NhapMaQuaTangAsync(NhapMaQuaTangDTO yeuCau, int maNguoiDung)
+        {
+            string code = yeuCau.Code.Trim().ToUpperInvariant();
+            var gift = await _dbContext.MaQuaTangHocViens
+                .Include(x => x.KhoaHoc)
+                .FirstOrDefaultAsync(x => x.Code == code);
+
+            if (gift == null)
+            {
+                throw new ApplicationException("Mã quà tặng không tồn tại.");
+            }
+
+            if (gift.MaNguoiTang == maNguoiDung)
+            {
+                throw new ApplicationException("Không thể tự nhận mã quà tặng do chính bạn tạo.");
+            }
+
+            if (gift.ExpiredAt.HasValue && gift.ExpiredAt.Value <= DateTime.UtcNow)
+            {
+                throw new ApplicationException("Mã quà tặng đã hết hạn.");
+            }
+
+            if (!string.Equals(gift.TrangThai, TrangThaiGiftSanSang, StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.Equals(gift.TrangThai, TrangThaiGiftDaDung, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ApplicationException("Mã quà tặng đã được sử dụng.");
+                }
+
+                throw new ApplicationException("Mã quà tặng chưa sẵn sàng sử dụng.");
+            }
+
+            bool daSoHuu = await _dbContext.DangKyKhoaHocs
+                .AnyAsync(x => x.MaNguoiDung == maNguoiDung && x.MaKhoaHoc == gift.MaKhoaHoc);
+            if (daSoHuu)
+            {
+                throw new ApplicationException("Bạn đã sở hữu khóa học này.");
+            }
+
+            var chienLuoc = _dbContext.Database.CreateExecutionStrategy();
+            await chienLuoc.ExecuteAsync(async () =>
+            {
+                await using var giaoDich = await _dbContext.Database.BeginTransactionAsync();
+                try
+                {
+                    var giftLock = await _dbContext.MaQuaTangHocViens
+                        .FirstOrDefaultAsync(x => x.MaQuaTang == gift.MaQuaTang);
+                    if (giftLock == null || !string.Equals(giftLock.TrangThai, TrangThaiGiftSanSang, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new ApplicationException("Mã quà tặng đã được sử dụng hoặc không còn hiệu lực.");
+                    }
+
+                    _dbContext.DangKyKhoaHocs.Add(new DangKyKhoaHocModel
+                    {
+                        MaNguoiDung = maNguoiDung,
+                        MaKhoaHoc = giftLock.MaKhoaHoc,
+                        NgayDangKy = DateTime.UtcNow,
+                        TrangThai = "DangHoc",
+                        TienDo = 0
+                    });
+
+                    giftLock.TrangThai = TrangThaiGiftDaDung;
+                    giftLock.MaNguoiNhan = maNguoiDung;
+                    giftLock.RedeemedAt = DateTime.UtcNow;
+
+                    await _dbContext.SaveChangesAsync();
+                    await giaoDich.CommitAsync();
+                }
+                catch
+                {
+                    await giaoDich.RollbackAsync();
+                    throw;
+                }
+            });
+
+            try
+            {
+                await GuiEmailKhiRedeemMaQuaTangAsync(gift.MaQuaTang, maNguoiDung);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Không gửi được email sau khi redeem mã quà tặng {MaQuaTang}", gift.MaQuaTang);
+            }
+
+            return new KetQuaNhapMaQuaTangDTO
+            {
+                ThanhCong = true,
+                ThongBao = "Nhập mã quà tặng thành công. Khóa học đã được mở.",
+                Code = code,
+                MaKhoaHoc = gift.MaKhoaHoc,
+                TenKhoaHoc = gift.KhoaHoc.TenKhoaHoc,
+                MaNguoiNhan = maNguoiDung
+            };
+        }
+
+        public async Task<IReadOnlyList<LichSuMaQuaTangDTO>> LayLichSuMaQuaTangAsync(int maNguoiDung)
+        {
+            return await _dbContext.MaQuaTangHocViens
+                .AsNoTracking()
+                .Include(x => x.KhoaHoc)
+                .Include(x => x.DonHang)
+                .Include(x => x.NguoiTang)
+                .Include(x => x.NguoiNhan)
+                .Where(x => x.MaNguoiTang == maNguoiDung)
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => new LichSuMaQuaTangDTO
+                {
+                    MaQuaTang = x.MaQuaTang,
+                    Code = x.Code,
+                    MaDonHang = x.MaDonHang,
+                    MaKhoaHoc = x.MaKhoaHoc,
+                    TenKhoaHoc = x.KhoaHoc.TenKhoaHoc,
+                    SoTien = x.DonHang.TongTien,
+                    DonViTienTe = x.DonHang.LoaiTien,
+                    NoiDungChuyenKhoan = $"EDU{x.MaDonHang}",
+                    MaNguoiTang = x.MaNguoiTang,
+                    TenNguoiTang = x.NguoiTang.HoTen ?? x.NguoiTang.TaiKhoan,
+                    EmailNguoiTang = x.NguoiTang.Email,
+                    TrangThai = x.TrangThai,
+                    CreatedAt = x.CreatedAt,
+                    ActivatedAt = x.ActivatedAt,
+                    RedeemedAt = x.RedeemedAt,
+                    MaNguoiNhan = x.MaNguoiNhan,
+                    TenNguoiNhan = x.NguoiNhan != null ? (x.NguoiNhan.HoTen ?? x.NguoiNhan.TaiKhoan) : null,
+                    EmailNguoiNhan = x.NguoiNhan != null ? x.NguoiNhan.Email : null
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<LichSuMaQuaTangDTO>> LayLichSuMaQuaTangChoAdminAsync(string? trangThai, string? tuKhoa)
+        {
+            IQueryable<MaQuaTangHocVienModel> query = _dbContext.MaQuaTangHocViens
+                .AsNoTracking()
+                .Include(x => x.KhoaHoc)
+                .Include(x => x.DonHang)
+                .Include(x => x.NguoiTang)
+                .Include(x => x.NguoiNhan);
+
+            string? trangThaiLoc = string.IsNullOrWhiteSpace(trangThai) ? null : trangThai.Trim().ToUpperInvariant();
+            if (!string.IsNullOrWhiteSpace(trangThaiLoc) && !string.Equals(trangThaiLoc, "ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(x => x.TrangThai == trangThaiLoc);
+            }
+
+            var duLieu = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => new LichSuMaQuaTangDTO
+                {
+                    MaQuaTang = x.MaQuaTang,
+                    Code = x.Code,
+                    MaDonHang = x.MaDonHang,
+                    MaKhoaHoc = x.MaKhoaHoc,
+                    TenKhoaHoc = x.KhoaHoc.TenKhoaHoc,
+                    SoTien = x.DonHang.TongTien,
+                    DonViTienTe = x.DonHang.LoaiTien,
+                    NoiDungChuyenKhoan = $"EDU{x.MaDonHang}",
+                    MaNguoiTang = x.MaNguoiTang,
+                    TenNguoiTang = x.NguoiTang.HoTen ?? x.NguoiTang.TaiKhoan,
+                    EmailNguoiTang = x.NguoiTang.Email,
+                    TrangThai = x.TrangThai,
+                    CreatedAt = x.CreatedAt,
+                    ActivatedAt = x.ActivatedAt,
+                    RedeemedAt = x.RedeemedAt,
+                    MaNguoiNhan = x.MaNguoiNhan,
+                    TenNguoiNhan = x.NguoiNhan != null ? (x.NguoiNhan.HoTen ?? x.NguoiNhan.TaiKhoan) : null,
+                    EmailNguoiNhan = x.NguoiNhan != null ? x.NguoiNhan.Email : null
+                })
+                .ToListAsync();
+
+            if (string.IsNullOrWhiteSpace(tuKhoa))
+            {
+                return duLieu;
+            }
+
+            string key = tuKhoa.Trim().ToLowerInvariant();
+            return duLieu.Where(x =>
+                    x.Code.ToLowerInvariant().Contains(key) ||
+                    x.TenKhoaHoc.ToLowerInvariant().Contains(key) ||
+                    x.MaDonHang.ToString().Contains(key, StringComparison.OrdinalIgnoreCase) ||
+                    x.NoiDungChuyenKhoan.ToLowerInvariant().Contains(key) ||
+                    (x.TenNguoiTang?.ToLowerInvariant().Contains(key) ?? false) ||
+                    (x.EmailNguoiTang?.ToLowerInvariant().Contains(key) ?? false) ||
+                    (x.TenNguoiNhan?.ToLowerInvariant().Contains(key) ?? false) ||
+                    (x.EmailNguoiNhan?.ToLowerInvariant().Contains(key) ?? false))
+                .ToList();
         }
 
         public async Task<HoTroThanhToanChiTietDTO> TaoYeuCauHoTroThanhToanAsync(int maDonHang, int maNguoiDung, YeuCauHoTroThanhToanDTO yeuCau)
@@ -457,6 +819,7 @@ namespace educodeai_server.Services.Implementation
             string? ghiChuAdmin = string.IsNullOrWhiteSpace(yeuCau.GhiChuAdmin) ? null : yeuCau.GhiChuAdmin.Trim();
             int maDonHang = 0;
             bool daMoKhoaMoi = false;
+            bool daKichHoatGift = false;
 
             var chienLuoc = _dbContext.Database.CreateExecutionStrategy();
             await chienLuoc.ExecuteAsync(async () =>
@@ -487,6 +850,7 @@ namespace educodeai_server.Services.Implementation
                     {
                         if (!string.Equals(donHang.TrangThaiDonHang, "PAID", StringComparison.OrdinalIgnoreCase))
                         {
+                            bool laDonHangGiftCode = string.Equals(donHang.LoaiDonHang, LoaiDonHangGiftCode, StringComparison.OrdinalIgnoreCase);
                             donHang.TrangThaiDonHang = "PAID";
                             donHang.UpdatedAt = thoiGianHienTai;
 
@@ -518,22 +882,36 @@ namespace educodeai_server.Services.Implementation
                                 giaoDichThanhToan.UpdatedAt = thoiGianHienTai;
                             }
 
-                            foreach (var chiTiet in donHang.ChiTietDonHangs)
+                            if (!laDonHangGiftCode)
                             {
-                                bool daDangKy = await _dbContext.DangKyKhoaHocs
-                                    .AnyAsync(x => x.MaNguoiDung == donHang.MaNguoiDung && x.MaKhoaHoc == chiTiet.MaKhoaHoc);
-
-                                if (!daDangKy)
+                                foreach (var chiTiet in donHang.ChiTietDonHangs)
                                 {
-                                    _dbContext.DangKyKhoaHocs.Add(new DangKyKhoaHocModel
+                                    bool daDangKy = await _dbContext.DangKyKhoaHocs
+                                        .AnyAsync(x => x.MaNguoiDung == donHang.MaNguoiDung && x.MaKhoaHoc == chiTiet.MaKhoaHoc);
+
+                                    if (!daDangKy)
                                     {
-                                        MaNguoiDung = donHang.MaNguoiDung,
-                                        MaKhoaHoc = chiTiet.MaKhoaHoc,
-                                        NgayDangKy = thoiGianHienTai,
-                                        TrangThai = "DangHoc",
-                                        TienDo = 0
-                                    });
-                                    daMoKhoaMoi = true;
+                                        _dbContext.DangKyKhoaHocs.Add(new DangKyKhoaHocModel
+                                        {
+                                            MaNguoiDung = donHang.MaNguoiDung,
+                                            MaKhoaHoc = chiTiet.MaKhoaHoc,
+                                            NgayDangKy = thoiGianHienTai,
+                                            TrangThai = "DangHoc",
+                                            TienDo = 0
+                                        });
+                                        daMoKhoaMoi = true;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var gift = await _dbContext.MaQuaTangHocViens
+                                    .FirstOrDefaultAsync(x => x.MaDonHang == donHang.MaDonHang);
+                                if (gift != null && string.Equals(gift.TrangThai, TrangThaiGiftChoThanhToan, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    gift.TrangThai = TrangThaiGiftSanSang;
+                                    gift.ActivatedAt = thoiGianHienTai;
+                                    daKichHoatGift = true;
                                 }
                             }
 
@@ -561,6 +939,8 @@ namespace educodeai_server.Services.Implementation
                                     });
                                 }
                             }
+
+                            await CongLuotVoucherNeuCanAsync(donHang);
                         }
 
                         hoTro.TrangThai = TrangThaiHoTroChapThuan;
@@ -582,7 +962,18 @@ namespace educodeai_server.Services.Implementation
                 }
             });
 
-            if (daMoKhoaMoi || maDonHang > 0)
+            if (daKichHoatGift)
+            {
+                try
+                {
+                    await GuiEmailKhiKichHoatMaQuaTangAsync(maDonHang);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Không gửi được email kích hoạt mã quà tặng sau khi admin chấp thuận hỗ trợ cho đơn {MaDonHang}", maDonHang);
+                }
+            }
+            else if (daMoKhoaMoi || maDonHang > 0)
             {
                 try
                 {
@@ -701,21 +1092,25 @@ namespace educodeai_server.Services.Implementation
                         giaoDichThanhToan.UpdatedAt = thoiGianHienTai;
                     }
 
-                    foreach (var chiTiet in donHang.ChiTietDonHangs)
+                    bool laDonHangGiftCode = string.Equals(donHang.LoaiDonHang, LoaiDonHangGiftCode, StringComparison.OrdinalIgnoreCase);
+                    if (!laDonHangGiftCode)
                     {
-                        bool daDangKy = await _dbContext.DangKyKhoaHocs
-                            .AnyAsync(x => x.MaNguoiDung == donHang.MaNguoiDung && x.MaKhoaHoc == chiTiet.MaKhoaHoc);
-
-                        if (!daDangKy)
+                        foreach (var chiTiet in donHang.ChiTietDonHangs)
                         {
-                            _dbContext.DangKyKhoaHocs.Add(new DangKyKhoaHocModel
+                            bool daDangKy = await _dbContext.DangKyKhoaHocs
+                                .AnyAsync(x => x.MaNguoiDung == donHang.MaNguoiDung && x.MaKhoaHoc == chiTiet.MaKhoaHoc);
+
+                            if (!daDangKy)
                             {
-                                MaNguoiDung = donHang.MaNguoiDung,
-                                MaKhoaHoc = chiTiet.MaKhoaHoc,
-                                NgayDangKy = thoiGianHienTai,
-                                TrangThai = "DangHoc",
-                                TienDo = 0
-                            });
+                                _dbContext.DangKyKhoaHocs.Add(new DangKyKhoaHocModel
+                                {
+                                    MaNguoiDung = donHang.MaNguoiDung,
+                                    MaKhoaHoc = chiTiet.MaKhoaHoc,
+                                    NgayDangKy = thoiGianHienTai,
+                                    TrangThai = "DangHoc",
+                                    TienDo = 0
+                                });
+                            }
                         }
                     }
 
@@ -744,16 +1139,43 @@ namespace educodeai_server.Services.Implementation
                         }
                     }
 
+                    if (laDonHangGiftCode)
+                    {
+                        var gift = await _dbContext.MaQuaTangHocViens
+                            .FirstOrDefaultAsync(x => x.MaDonHang == donHang.MaDonHang);
+                        if (gift != null && string.Equals(gift.TrangThai, TrangThaiGiftChoThanhToan, StringComparison.OrdinalIgnoreCase))
+                        {
+                            gift.TrangThai = TrangThaiGiftSanSang;
+                            gift.ActivatedAt = thoiGianHienTai;
+                        }
+                    }
+
+                    await CongLuotVoucherNeuCanAsync(donHang);
+
                     await _dbContext.SaveChangesAsync();
                     await giaoDich.CommitAsync();
 
-                    try
+                    if (!laDonHangGiftCode)
                     {
-                        await _thanhToanEmailService.GuiThongBaoThanhToanThanhCongHocVienAsync(donHang.MaDonHang);
+                        try
+                        {
+                            await _thanhToanEmailService.GuiThongBaoThanhToanThanhCongHocVienAsync(donHang.MaDonHang);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Không gửi được email thanh toán cho đơn {MaDonHang}", donHang.MaDonHang);
+                        }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        _logger.LogWarning(ex, "Không gửi được email thanh toán cho đơn {MaDonHang}", donHang.MaDonHang);
+                        try
+                        {
+                            await GuiEmailKhiKichHoatMaQuaTangAsync(donHang.MaDonHang);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Không gửi được email kích hoạt mã quà tặng cho đơn {MaDonHang}", donHang.MaDonHang);
+                        }
                     }
 
                     return true;
@@ -764,6 +1186,112 @@ namespace educodeai_server.Services.Implementation
                     throw;
                 }
             });
+        }
+
+        private sealed class ThongTinGiamGiaTinhToan
+        {
+            public MaGiamGiaModel? Voucher { get; init; }
+            public decimal SoTienGiam { get; init; }
+            public decimal TongTienSauGiam { get; init; }
+        }
+
+        private async Task<ThongTinGiamGiaTinhToan> TinhGiamGiaHopLeAsync(
+            string? maVoucher,
+            int maNguoiDung,
+            int maKhoaHoc,
+            decimal tongTienGoc,
+            bool laDonQuaTang)
+        {
+            if (string.IsNullOrWhiteSpace(maVoucher))
+            {
+                return new ThongTinGiamGiaTinhToan { SoTienGiam = 0, TongTienSauGiam = tongTienGoc };
+            }
+
+            string code = maVoucher.Trim().ToUpperInvariant();
+            var voucher = await _dbContext.MaGiamGias
+                .Include(x => x.DanhSachKhoaHocApDung)
+                .FirstOrDefaultAsync(x => x.Code == code);
+
+            if (voucher == null || !voucher.KichHoat)
+            {
+                throw new ApplicationException("Mã giảm giá không tồn tại hoặc đã ngừng hoạt động.");
+            }
+
+            var now = DateTime.UtcNow;
+            if (voucher.BatDauAt > now || voucher.KetThucAt < now)
+            {
+                throw new ApplicationException("Mã giảm giá chưa đến thời gian áp dụng hoặc đã hết hạn.");
+            }
+
+            if (voucher.SoLuongToiDa > 0 && voucher.SoLuongDaDung >= voucher.SoLuongToiDa)
+            {
+                throw new ApplicationException("Mã giảm giá đã hết lượt sử dụng.");
+            }
+
+            bool daDungTruocDo = await _dbContext.DonHangKhoaHocs
+                .AnyAsync(x => x.MaNguoiDung == maNguoiDung
+                               && x.MaVoucher == voucher.MaVoucher
+                               && x.TrangThaiDonHang == "PAID");
+            if (daDungTruocDo)
+            {
+                throw new ApplicationException("Bạn đã sử dụng mã giảm giá này trước đó.");
+            }
+
+            if (laDonQuaTang && !voucher.ChoPhepApDungChoQuaTang)
+            {
+                throw new ApplicationException("Mã giảm giá này không áp dụng cho đơn quà tặng.");
+            }
+
+            if (string.Equals(voucher.PhamViApDung, "ALL_TEACHER_COURSES", StringComparison.OrdinalIgnoreCase))
+            {
+                bool hopLe = await _dbContext.KhoaHocs
+                    .AnyAsync(x => x.MaKhoaHoc == maKhoaHoc && x.MaGiangVien == voucher.MaNguoiTao);
+                if (!hopLe)
+                {
+                    throw new ApplicationException("Mã giảm giá không áp dụng cho khóa học này.");
+                }
+            }
+            else
+            {
+                bool hopLe = voucher.DanhSachKhoaHocApDung.Any(x => x.MaKhoaHoc == maKhoaHoc);
+                if (!hopLe)
+                {
+                    throw new ApplicationException("Mã giảm giá không áp dụng cho khóa học này.");
+                }
+            }
+
+            decimal soTienGiam = voucher.LoaiGiamGia == LoaiGiamGiaPhanTram
+                ? Math.Round(tongTienGoc * voucher.GiaTriGiam / 100m, 2)
+                : voucher.GiaTriGiam;
+
+            if (voucher.LoaiGiamGia == LoaiGiamGiaPhanTram && voucher.GiamToiDa.HasValue)
+            {
+                soTienGiam = Math.Min(soTienGiam, voucher.GiamToiDa.Value);
+            }
+
+            soTienGiam = Math.Clamp(soTienGiam, 0, tongTienGoc);
+            return new ThongTinGiamGiaTinhToan
+            {
+                Voucher = voucher,
+                SoTienGiam = soTienGiam,
+                TongTienSauGiam = tongTienGoc - soTienGiam
+            };
+        }
+
+        private async Task CongLuotVoucherNeuCanAsync(DonHangKhoaHocModel donHang)
+        {
+            if (!donHang.MaVoucher.HasValue)
+            {
+                return;
+            }
+
+            var voucher = await _dbContext.MaGiamGias.FirstOrDefaultAsync(x => x.MaVoucher == donHang.MaVoucher.Value);
+            if (voucher == null)
+            {
+                return;
+            }
+
+            voucher.SoLuongDaDung += 1;
         }
 
         private static string TaoRawYeuCauHoTro(string? thongTinLienLac, string? noiDungHocVien, string? ghiChuAdmin, int? maQuanTriVien)
@@ -916,6 +1444,83 @@ namespace educodeai_server.Services.Implementation
                     })
                     .ToList()
             };
+        }
+
+        private string TaoCodeQuaTang()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            string part1 = new(Enumerable.Range(0, 4).Select(_ => chars[Random.Shared.Next(chars.Length)]).ToArray());
+            string part2 = new(Enumerable.Range(0, 4).Select(_ => chars[Random.Shared.Next(chars.Length)]).ToArray());
+            string part3 = new(Enumerable.Range(0, 4).Select(_ => chars[Random.Shared.Next(chars.Length)]).ToArray());
+            return $"EDG-{part1}-{part2}-{part3}";
+        }
+
+        private async Task GuiEmailKhiKichHoatMaQuaTangAsync(int maDonHang)
+        {
+            var duLieu = await _dbContext.MaQuaTangHocViens
+                .AsNoTracking()
+                .Include(x => x.KhoaHoc)
+                .Include(x => x.NguoiTang)
+                .FirstOrDefaultAsync(x => x.MaDonHang == maDonHang);
+
+            if (duLieu == null || string.IsNullOrWhiteSpace(duLieu.NguoiTang.Email))
+            {
+                return;
+            }
+
+            string tenNguoiTang = duLieu.NguoiTang.HoTen ?? duLieu.NguoiTang.TaiKhoan;
+            string subject = $"EduCodeAI - Mã quà tặng {duLieu.Code} đã sẵn sàng";
+            string body = $@"
+<div style='font-family: Arial, sans-serif; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;'>
+  <h2 style='color: #2563eb; margin-top: 0;'>Mã quà tặng đã kích hoạt</h2>
+  <p>Chào <b>{WebUtility.HtmlEncode(tenNguoiTang)}</b>,</p>
+  <p>Thanh toán quà tặng cho khóa <b>{WebUtility.HtmlEncode(duLieu.KhoaHoc.TenKhoaHoc)}</b> đã thành công.</p>
+  <p>Mã quà tặng của bạn là: <b>{WebUtility.HtmlEncode(duLieu.Code)}</b></p>
+  <p>Hãy gửi mã này cho người nhận để họ nhập và mở khóa học.</p>
+</div>";
+            await Helpers.EmailHelper.SendEmailAsync(duLieu.NguoiTang.Email!, subject, body);
+        }
+
+        private async Task GuiEmailKhiRedeemMaQuaTangAsync(int maQuaTang, int maNguoiNhan)
+        {
+            var duLieu = await _dbContext.MaQuaTangHocViens
+                .AsNoTracking()
+                .Include(x => x.KhoaHoc)
+                .Include(x => x.NguoiTang)
+                .Include(x => x.NguoiNhan)
+                .FirstOrDefaultAsync(x => x.MaQuaTang == maQuaTang);
+
+            if (duLieu == null)
+            {
+                return;
+            }
+
+            string tenKhoaHoc = duLieu.KhoaHoc.TenKhoaHoc;
+            string tenNguoiNhan = duLieu.NguoiNhan?.HoTen ?? duLieu.NguoiNhan?.TaiKhoan ?? $"Học viên #{maNguoiNhan}";
+
+            if (!string.IsNullOrWhiteSpace(duLieu.NguoiTang.Email))
+            {
+                string subjectTang = "EduCodeAI - Mã quà tặng đã được sử dụng";
+                string bodyTang = $@"
+<div style='font-family: Arial, sans-serif; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;'>
+  <h2 style='color: #16a34a; margin-top: 0;'>Mã quà tặng đã được nhận</h2>
+  <p>Mã <b>{WebUtility.HtmlEncode(duLieu.Code)}</b> đã được học viên <b>{WebUtility.HtmlEncode(tenNguoiNhan)}</b> sử dụng thành công.</p>
+  <p>Khóa học: <b>{WebUtility.HtmlEncode(tenKhoaHoc)}</b></p>
+</div>";
+                await Helpers.EmailHelper.SendEmailAsync(duLieu.NguoiTang.Email!, subjectTang, bodyTang);
+            }
+
+            if (!string.IsNullOrWhiteSpace(duLieu.NguoiNhan?.Email))
+            {
+                string subjectNhan = "EduCodeAI - Bạn đã nhận quà tặng khóa học";
+                string bodyNhan = $@"
+<div style='font-family: Arial, sans-serif; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px;'>
+  <h2 style='color: #16a34a; margin-top: 0;'>Nhận quà tặng thành công</h2>
+  <p>Bạn đã nhập mã <b>{WebUtility.HtmlEncode(duLieu.Code)}</b> thành công.</p>
+  <p>Khóa học: <b>{WebUtility.HtmlEncode(tenKhoaHoc)}</b> đã được mở trong tài khoản của bạn.</p>
+</div>";
+                await Helpers.EmailHelper.SendEmailAsync(duLieu.NguoiNhan.Email!, subjectNhan, bodyNhan);
+            }
         }
 
         private string TaoNoiDungChuyenKhoan(int maDonHang)
