@@ -1,5 +1,5 @@
 ﻿import type { HocVien } from "./Types";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import "./css/student-table.css";
 
 interface Props {
@@ -60,6 +60,7 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
             <th>Số bài đã nộp</th>
             <th>Tổng giờ học</th>
             <th>Trạng thái</th>
+            <th>Hành động</th>
           </tr>
         </thead>
 
@@ -93,13 +94,20 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
                 <td className="avg-score">{getStudyMetric(hocVien)}</td>
 
                 <td>{getStatusBadge(hocVien.trangThai ?? "")}</td>
+
+                <td>
+                  <button className="detail-btn">
+                    <Eye size={16} />
+                    Chi tiết
+                  </button>
+                </td>
               </tr>
             );
           })}
 
           {students.length === 0 && (
             <tr>
-              <td colSpan={6} style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={8} style={{ textAlign: "center", padding: 24 }}>
                 Không tìm thấy học viên
               </td>
             </tr>

@@ -156,20 +156,12 @@ const TrangChu: React.FC = () => {
                                                         Tiếp tục học
                                                     </Link>
                                                 ) : (
-                                                    <div className="course-action-group">
-                                                        <Link
-                                                            to={`/khoa-hoc/${kh.maKhoaHoc}`}
-                                                            className="btn btn-sm course-action-btn course-action-btn-detail"
-                                                        >
-                                                            Chi tiết
-                                                        </Link>
-                                                        <Link
-                                                            to={`/mua-khoa-hoc/${kh.maKhoaHoc}`}
-                                                            className="btn btn-sm course-action-btn course-action-btn-buy"
-                                                        >
-                                                            Mua ngay
-                                                        </Link>
-                                                    </div>
+                                                    <Link
+                                                        to={`/mua-khoa-hoc/${kh.maKhoaHoc}`}
+                                                        className="btn btn-sm btn-primary px-3 rounded-pill"
+                                                    >
+                                                        Mua khóa học
+                                                    </Link>
                                                 )}
                                             </div>
                                         </div>
@@ -223,38 +215,6 @@ const TrangChu: React.FC = () => {
                 .image-zoom:hover { transform: scale(1.1); }
                 .bg-dark-gradient { background: linear-gradient(45deg, #181d38, #2c3e50); color: #fff; }
                 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-
-                .course-action-group {
-                    display: flex;
-                    gap: 8px;
-                    align-items: center;
-                }
-                .course-action-btn {
-                    border-radius: 10px;
-                    padding: 6px 12px;
-                    font-size: 0.78rem;
-                    font-weight: 600;
-                    line-height: 1;
-                    white-space: nowrap;
-                    transition: all 0.2s ease;
-                }
-                .course-action-btn-detail {
-                    border-color: #cbd5e1;
-                    color: #334155;
-                    background: #f8fafc;
-                }
-                .course-action-btn-detail:hover {
-                    border-color: #3b82f6;
-                    color: #1d4ed8;
-                    background: #dbeafe;
-                }
-                .course-action-btn-buy:hover {
-                    background: #1d4ed8;
-                    border-color: #1d4ed8;
-                }
-                .course-action-btn-buy {
-                    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
-                }
             `}</style>
         </>
     );
