@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { CauHoiQuizDTO, QuizAIData, CreateQuizDTO } from './BaiTapThucHanhDTO';
+import type { CauHoiQuizDTO, QuizAIData, CreateQuizDTO } from '../types';
 
 const DAP_AN_LABELS = ['A', 'B', 'C', 'D'];
 

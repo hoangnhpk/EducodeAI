@@ -1,4 +1,4 @@
-import type { TestCaseDto } from './BaiTapThucHanhDTO';
+import type { TestCaseDto } from '../types';
 
 interface Props {
   testCases: TestCaseDto[];
