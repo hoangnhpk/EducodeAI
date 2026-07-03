@@ -1,5 +1,5 @@
 import axiosClient from '@/configs/axios';
-import type { KeyApiSummary, KeyApiManage } from '../pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey.types';
+import type { KeyApiSummary, KeyApiManage, ApiKeyRevealDto } from '../pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey.types';
 
 export const keyApiService = {
   getAll: () => axiosClient.get<KeyApiSummary[]>('/api/KeyApi'),
@@ -17,5 +17,9 @@ export const keyApiService = {
     
   delete: (id: number) => axiosClient.delete(`/api/KeyApi/${id}`),
   
-  syncToRedis: (id: number) => axiosClient.post(`/api/KeyApi/${id}/sync`)
+  syncToRedis: (id: number) => axiosClient.post(`/api/KeyApi/${id}/sync-config`),
+
+  resetUsage: (id: number) => axiosClient.post(`/api/KeyApi/${id}/reset-usage`),
+
+  revealKey: (id: number) => axiosClient.get<ApiKeyRevealDto>(`/api/KeyApi/${id}/reveal`)
 };

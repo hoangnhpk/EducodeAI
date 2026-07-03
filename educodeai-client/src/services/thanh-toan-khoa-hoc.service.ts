@@ -9,6 +9,7 @@ export interface ThongTinMuaKhoaHocDTO {
   donViTienTe: string;
   daMua: boolean;
   choPhepMua: boolean;
+  laMienPhi?: boolean;
 }
 
 export interface KetQuaMuaKhoaHocDTO {

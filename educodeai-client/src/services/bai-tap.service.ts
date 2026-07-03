@@ -1,8 +1,8 @@
 // Import cái axiosClient thần thánh của ông vào đây
 import axiosClient from "@/configs/axios";
-import type { DanhSachBaiTapDTO } from "@/pages/giang-vien/tao-bai-tap-test-case/BaiTap";
-import type { GenerateQuizAIDTO } from "@/pages/giang-vien/tao-bai-tap-test-case/BaiTap";
-import type { CreateQuizDTO } from "@/pages/giang-vien/tao-bai-tap-test-case/BaiTap";
+import type { DanhSachBaiTapDTO } from "@/pages/giang-vien/quan-ly-bai-tap/types";
+import type { GenerateQuizAIDTO } from "@/pages/giang-vien/quan-ly-bai-tap/types";
+import type { CreateQuizDTO } from "@/pages/giang-vien/quan-ly-bai-tap/types";
 
 export const BaiTapService = {
     getDanhSachByGiangVien: () => {
@@ -28,6 +28,10 @@ export const BaiTapService = {
     },
     xuatBanQuiz: (data: CreateQuizDTO) => {
         return axiosClient.post<any>("/api/BaiTap/xuat-ban", data);
+    },
+
+    capNhatQuiz: (maBaiTap: number, data: CreateQuizDTO) => {
+        return axiosClient.put<any>(`/api/BaiTap/quiz/${maBaiTap}`, data);
     },
 
     deleteBaiTap: (maBaiTap: number) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { KhoaHocDetail, CertificateConfig } from '../types';
-import * as api from '../api/khoaHocApi';
+import * as api from '@/services/khoa-hoc-cua-toi.service';
 import ChapterListEditor from '../components/ChapterListEditor';
 import LessonListEditor from '../components/LessonListEditor';
 import { FormSkeleton } from '../components/ui/Skeleton';
@@ -20,7 +20,7 @@ const getImageUrl = (url?: string) => {
   return `${BASE_URL}${url}`;
 };
 
-type Tab = 'chapters' | 'lessons' | 'certificate';
+type Tab = 'overview' | 'content' | 'import' | 'certificate' | 'settings';
 
 interface Props {
   maKhoaHoc: number;
@@ -36,7 +36,7 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
   const [detail, setDetail] = useState<KhoaHocDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('chapters');
+  const [tab, setTab] = useState<Tab>('overview');
   const [selectedChapter, setSelectedChapter] = useState<{ maChuong: number; tenChuong: string } | null>(null);
 
   // Certificate state
@@ -68,11 +68,11 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
 
   useEffect(() => { void loadDetail(); }, [loadDetail]);
 
-  // ---- Select chapter → switch to lessons tab ----
+  // ---- Select chapter → switch to content tab ----
   const handleSelectChapter = (maChuong: number) => {
     const ch = detail?.danhSachChuong.find(c => c.maChuong === maChuong);
     setSelectedChapter({ maChuong, tenChuong: ch?.tenChuong ?? '' });
-    setTab('lessons');
+    setTab('content');
   };
 
   // ---- Certificate ----
@@ -137,6 +137,19 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
     }
   };
 
+
+
+  const handleDelete = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn đưa khóa học này vào thùng rác? Học viên sẽ không thể truy cập nữa.")) return;
+    try {
+      await api.xoaKhoaHoc(maGiangVien, maKhoaHoc);
+      showToast('success', 'Khóa học đã được xóa mềm.');
+      onBack();
+    } catch {
+      showToast('error', 'Lỗi xóa khóa học.');
+    }
+  };
+
   if (loading) return <div className="khm-wrapper"><div className="khm-page"><FormSkeleton /></div></div>;
   if (error || !detail) return (
     <div className="khm-wrapper"><div className="khm-page">
@@ -177,7 +190,7 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
               <span className="khm-badge khm-badge-primary">{detail.linhVuc}</span>
               <span className="khm-badge khm-badge-draft">{detail.trinhDo}</span>
-              {detail.trangThai === 'Published' && <span className="khm-badge khm-badge-published">Đang dạy</span>}
+              {detail.trangThai === 'Hoạt động' && <span className="khm-badge khm-badge-published">Hoạt động</span>}
               {detail.coChungChi && <span className="khm-badge khm-badge-cert">🏆 Chứng chỉ</span>}
             </div>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--khm-gray-900)' }}>{detail.tenKhoaHoc}</h2>
@@ -211,53 +224,89 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
 
         {/* Tabs */}
         <div className="khm-tabs">
-          <button className={`khm-tab ${tab === 'chapters' ? 'active' : ''}`} onClick={() => setTab('chapters')}>
-            📁 Chương học
-            <span className="khm-tab-badge">{chapterCount}</span>
+          <button className={`khm-tab ${tab === 'overview' ? 'active' : ''}`} onClick={() => setTab('overview')}>
+            📊 Tổng quan
           </button>
-          <button
-            className={`khm-tab ${tab === 'lessons' ? 'active' : ''}`}
-            onClick={() => {
-              if (!selectedChapter && chapterCount > 0) {
-                const first = detail.danhSachChuong[0];
-                setSelectedChapter({ maChuong: first.maChuong, tenChuong: first.tenChuong });
-              }
-              setTab('lessons');
-            }}
-          >
-            🎥 Bài học
-            <span className="khm-tab-badge">{lessonCount}</span>
+          <button className={`khm-tab ${tab === 'content' ? 'active' : ''}`} onClick={() => setTab('content')}>
+            📁 Nội dung
+            <span className="khm-tab-badge">{chapterCount} chương / {lessonCount} bài</span>
+          </button>
+          <button className={`khm-tab ${tab === 'import' ? 'active' : ''}`} onClick={() => setTab('import')}>
+            ▶ Import YouTube
           </button>
           <button className={`khm-tab ${tab === 'certificate' ? 'active' : ''}`} onClick={() => setTab('certificate')}>
             🏆 Chứng chỉ
           </button>
+          <button className={`khm-tab ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>
+            ⚙️ Cài đặt
+          </button>
         </div>
 
-        {/* Tab: Chapters */}
-        {tab === 'chapters' && (
+        {/* Tab: Overview */}
+        {tab === 'overview' && (
           <div className="fade-in">
-            <ChapterListEditor
-              maKhoaHoc={maKhoaHoc}
-              initialChapters={detail.danhSachChuong}
-              onSelectChapter={handleSelectChapter}
-              onRefresh={() => void loadDetail()}
-            />
+            <div className="khm-card" style={{ padding: 24 }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 20, color: 'var(--khm-gray-900)' }}>Thông tin khóa học</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+                <div>
+                  <label className="khm-form-label">Tên khóa học</label>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--khm-gray-800)' }}>{detail.tenKhoaHoc}</div>
+                </div>
+                <div>
+                  <label className="khm-form-label">Danh mục</label>
+                  <div><span className="khm-badge khm-badge-primary">{detail.linhVuc}</span></div>
+                </div>
+                <div>
+                  <label className="khm-form-label">Trình độ</label>
+                  <div><span className="khm-badge khm-badge-draft">{detail.trinhDo}</span></div>
+                </div>
+                <div>
+                  <label className="khm-form-label">Trạng thái</label>
+                  <div>
+                    {detail.trangThai === 'Hoạt động' && <span className="khm-badge khm-badge-published">Hoạt động</span>}
+                  </div>
+                </div>
+                <div>
+                  <label className="khm-form-label">Giá khóa học</label>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--khm-gray-800)' }}>
+                    {detail.giaKhoaHoc.toLocaleString()} {detail.donViTienTe}
+                  </div>
+                </div>
+                <div>
+                  <label className="khm-form-label">Cho phép mua</label>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 600, color: detail.choPhepMua ? 'var(--khm-success)' : 'var(--khm-danger)' }}>
+                    {detail.choPhepMua ? '✅ Có' : '❌ Không'}
+                  </div>
+                </div>
+              </div>
+              {detail.moTa && (
+                <div style={{ marginTop: 20 }}>
+                  <label className="khm-form-label">Mô tả</label>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--khm-gray-700)', lineHeight: 1.6, background: 'var(--khm-gray-50)', padding: 16, borderRadius: 8 }}>
+                    {detail.moTa}
+                  </div>
+                </div>
+              )}
+              <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--khm-gray-100)' }}>
+                <button className="khm-btn khm-btn-primary" onClick={onEdit}>✏️ Chỉnh sửa thông tin</button>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Tab: Lessons */}
-        {tab === 'lessons' && (
+        {/* Tab: Content */}
+        {tab === 'content' && (
           <div className="fade-in">
             {!selectedChapter && chapterCount === 0 ? (
               <div className="khm-alert khm-alert-info">
                 📂 Bạn cần tạo ít nhất một chương trước khi thêm bài học.
-                <button className="khm-btn khm-btn-primary khm-btn-sm" style={{ marginLeft: 12 }} onClick={() => setTab('chapters')}>
-                  Tạo chương →
+                <button className="khm-btn khm-btn-primary khm-btn-sm" style={{ marginLeft: 12 }} onClick={() => setSelectedChapter(null)}>
+                  Tạo chương mới →
                 </button>
               </div>
             ) : (
               <>
-                {chapterCount > 1 && (
+                {chapterCount > 0 && (
                   <div style={{ marginBottom: 12 }}>
                     <select
                       className="khm-form-select"
@@ -285,10 +334,29 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                     onImportYT={onImportPlaylist}
                   />
                 ) : (
-                  <div className="khm-alert khm-alert-info">Vui lòng chọn chương để xem bài học.</div>
+                  <ChapterListEditor
+                    maKhoaHoc={maKhoaHoc}
+                    initialChapters={detail.danhSachChuong}
+                    onSelectChapter={handleSelectChapter}
+                    onRefresh={() => void loadDetail()}
+                  />
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {/* Tab: Import */}
+        {tab === 'import' && (
+          <div className="fade-in">
+            <div className="khm-card" style={{ padding: 24, textAlign: 'center' }}>
+              <div style={{ fontSize: '48px', marginBottom: 16 }}>▶️</div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12, color: 'var(--khm-gray-900)' }}>Import YouTube Playlist</h3>
+              <p style={{ fontSize: '0.9rem', color: 'var(--khm-gray-500)', marginBottom: 20, maxWidth: 400, margin: '0 auto 20px' }}>
+                Nhập URL playlist YouTube để tự động import các video vào khóa học.
+              </p>
+              <button className="khm-btn khm-btn-accent" onClick={onImportPlaylist}>Bắt đầu import →</button>
+            </div>
           </div>
         )}
 
@@ -389,6 +457,51 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                     ✅ Khóa học này đã có đề chứng chỉ ({detail.nguonDeChungChi}).
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Settings */}
+        {tab === 'settings' && (
+          <div className="fade-in">
+            <div className="khm-form-section">
+              <div className="khm-form-section-header">
+                <div className="khm-form-section-icon">⚙️</div>
+                <h3 className="khm-form-section-title">Cài đặt khóa học</h3>
+              </div>
+              <div className="khm-form-section-body">
+                <div className="khm-alert khm-alert-info" style={{ marginBottom: 20 }}>
+                  ℹ️ Các tính năng quản lý trạng thái khóa học đang phát triển.
+                </div>
+
+                <div className="khm-toggle-row">
+                  <div>
+                    <div className="khm-toggle-label">Cho phép mua khóa học</div>
+                    <div className="khm-toggle-sublabel">Học viên có thể tìm thấy và mua khóa học này</div>
+                  </div>
+                  <label className="khm-toggle">
+                    <input type="checkbox" checked={detail.choPhepMua} disabled />
+                    <span className="khm-toggle-slider" />
+                  </label>
+                </div>
+
+                <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid var(--khm-gray-100)' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 16, color: 'var(--khm-gray-800)' }}>Thao tác nguy hiểm</h4>
+                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+
+                    <button className="khm-btn khm-btn-danger-ghost" onClick={() => void handleDelete()}>
+                      🗑️ Đưa vào thùng rác
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid var(--khm-gray-100)' }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 12, color: 'var(--khm-gray-800)' }}>Lịch sử cập nhật</h4>
+                  <div className="khm-alert khm-alert-info">
+                    📅 Ngày tạo: {new Date(detail.ngayTao).toLocaleDateString('vi-VN')}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

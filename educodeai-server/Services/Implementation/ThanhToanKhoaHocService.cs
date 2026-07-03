@@ -1,5 +1,6 @@
 using educodeai_server.Data;
 using educodeai_server.DTOs.ThanhToan;
+using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -65,7 +66,8 @@ namespace educodeai_server.Services.Implementation
                 GiaKhoaHoc = khoaHoc.GiaKhoaHoc,
                 DonViTienTe = khoaHoc.DonViTienTe,
                 DaMua = daMua,
-                ChoPhepMua = khoaHoc.ChoPhepMua
+                ChoPhepMua = khoaHoc.ChoPhepMua,
+                LaMienPhi = KhoaHocPricingHelper.LaKhoaHocMienPhi(khoaHoc.DonViTienTe)
             };
         }
 
@@ -106,6 +108,28 @@ namespace educodeai_server.Services.Implementation
                     ThanhCong = true,
                     ThongBao = "Bạn đã mua khóa học này rồi.",
                     MaKhoaHoc = yeuCau.MaKhoaHoc,
+                    DaMua = true
+                };
+            }
+
+            if (KhoaHocPricingHelper.LaKhoaHocMienPhi(khoaHoc.DonViTienTe))
+            {
+                var thoiGianHienTai = DateTime.UtcNow;
+                _dbContext.DangKyKhoaHocs.Add(new DangKyKhoaHocModel
+                {
+                    MaNguoiDung = maNguoiDung,
+                    MaKhoaHoc = khoaHoc.MaKhoaHoc,
+                    NgayDangKy = thoiGianHienTai,
+                    TrangThai = "DangHoc",
+                    TienDo = 0
+                });
+                await _dbContext.SaveChangesAsync();
+
+                return new KetQuaMuaKhoaHocDTO
+                {
+                    ThanhCong = true,
+                    ThongBao = "Đăng ký khóa học miễn phí thành công.",
+                    MaKhoaHoc = khoaHoc.MaKhoaHoc,
                     DaMua = true
                 };
             }
@@ -215,6 +239,11 @@ namespace educodeai_server.Services.Implementation
             if (!khoaHoc.ChoPhepMua)
             {
                 throw new ApplicationException("Khóa học hiện chưa mở bán.");
+            }
+
+            if (KhoaHocPricingHelper.LaKhoaHocMienPhi(khoaHoc.DonViTienTe))
+            {
+                throw new ApplicationException("Khóa học miễn phí không cần thanh toán. Vui lòng đăng ký trực tiếp.");
             }
 
             var daMua = await _dbContext.DangKyKhoaHocs
@@ -340,6 +369,11 @@ namespace educodeai_server.Services.Implementation
             if (!khoaHoc.ChoPhepMua)
             {
                 throw new ApplicationException("Khóa học hiện chưa mở bán.");
+            }
+
+            if (KhoaHocPricingHelper.LaKhoaHocMienPhi(khoaHoc.DonViTienTe))
+            {
+                throw new ApplicationException("Khóa học miễn phí không hỗ trợ tạo mã quà tặng.");
             }
 
             var thoiGianHienTai = DateTime.UtcNow;

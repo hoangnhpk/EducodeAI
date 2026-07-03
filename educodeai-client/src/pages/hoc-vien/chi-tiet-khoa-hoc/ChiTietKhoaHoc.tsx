@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom"; // THÊM useNavigate
 import axios, { AxiosError } from "axios";
 import "../../../layouts/hoc-vien/ChiTietKhoaHoc.css";
 import { encodeId } from '@/utils/id-helper';
+import { formatGiaKhoaHoc, laKhoaHocMienPhi } from '@/utils/format-gia-khoa-hoc';
 type BaiHoc = {
   maBaiHoc: number;
   tenBaiHoc?: string;
@@ -131,14 +132,8 @@ const ChiTietKhoaHoc = () => {
     setOpenChapter(openChapter === index ? null : index);
   };
 
-  const dinhDangTien = (soTien?: number, donViTienTe?: string) => {
-    if (!soTien) return "0 VND";
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: donViTienTe || "VND",
-      maximumFractionDigits: 0
-    }).format(soTien);
-  };
+  const dinhDangTien = (soTien?: number, donViTienTe?: string) =>
+    formatGiaKhoaHoc(soTien ?? 0, donViTienTe ?? "VND");
 
   // ==========================================
   // HÀM XỬ LÝ CHUYỂN HƯỚNG ĐẾN MUA KHÓA HỌC
@@ -146,12 +141,22 @@ const ChiTietKhoaHoc = () => {
   const handleDangKy = async () => {
     if (!course) return;
 
-    // Nếu đã đăng ký rồi -> Bấm nút là chuyển thẳng qua trang Học luôn
     if (course.khoaHocDaDangKy) {
-      navigate(`/khoa-hoc/${course.slug}/${encodeId(course.maKhoaHoc)}`); // Sửa lại đường dẫn cho khớp với Router của bạn
+      navigate(`/khoa-hoc/${course.slug}/${encodeId(course.maKhoaHoc)}`);
       return;
     }
+
+    if (laKhoaHocMienPhi(course.donViTienTe)) {
+      navigate(`/mua-khoa-hoc/${course.maKhoaHoc}`);
+      return;
+    }
+
     navigate(`/mua-khoa-hoc/${course.maKhoaHoc}`);
+  };
+
+  const handleHocThu = () => {
+    if (!course?.slug) return;
+    navigate(`/khoa-hoc/${course.slug}/${encodeId(course.maKhoaHoc)}`);
   };
 
   if (loading) return <h3 style={{ padding: 40 }}>Đang tải dữ liệu...</h3>;
@@ -318,25 +323,34 @@ const ChiTietKhoaHoc = () => {
           <div className="course-sidebar">
             <div className="sidebar-card">
               <div className="course-price">
-                {dinhDangTien(course.giaKhoaHoc, course.donViTienTe)} <span className="free-badge">VND</span>
+                {dinhDangTien(course.giaKhoaHoc, course.donViTienTe)}
+                {!laKhoaHocMienPhi(course.donViTienTe) && (
+                  <span className="free-badge"> VND</span>
+                )}
               </div>
 
-              {/* ===== NÚT BẤM ĐÃ ĐƯỢC NÂNG CẤP ===== */}
-              <button 
-                className="enroll-btn" 
-                onClick={handleDangKy}
-                style={{ 
-                    backgroundColor: course.khoaHocDaDangKy ? '#28a745' : undefined,
-                    opacity: 1,
-                    cursor: 'pointer'
-                }}
-              >
-                {course.khoaHocDaDangKy ? (
-                  "Tiếp tục học"
-                ) : (
-                  "Mua khóa học"
-                )}
-              </button>
+              {course.khoaHocDaDangKy ? (
+                <button
+                  className="enroll-btn"
+                  onClick={handleDangKy}
+                  style={{ backgroundColor: "#28a745", opacity: 1, cursor: "pointer" }}
+                >
+                  Tiếp tục học
+                </button>
+              ) : laKhoaHocMienPhi(course.donViTienTe) ? (
+                <button className="enroll-btn" onClick={handleDangKy}>
+                  Học miễn phí
+                </button>
+              ) : (
+                <div className="d-grid gap-2">
+                  <button className="enroll-btn" onClick={handleHocThu} style={{ backgroundColor: "#17a2b8" }}>
+                    Học thử miễn phí
+                  </button>
+                  <button className="enroll-btn" onClick={handleDangKy}>
+                    Mua khóa học
+                  </button>
+                </div>
+              )}
 
               <ul className="sidebar-list mt-3">
                 <li>
