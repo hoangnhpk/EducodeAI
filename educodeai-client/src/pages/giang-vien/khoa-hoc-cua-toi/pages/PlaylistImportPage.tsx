@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import type { PlaylistAnalyzeResult, YouTubeVideoItem, ChuongHocDetail } from '../types';
-import * as api from '../api/khoaHocApi';
+import * as api from '@/services/khoa-hoc-cua-toi.service';
 import EmptyState from '../components/ui/EmptyState';
 import { useToastStandalone } from '../components/ui/Toast';
 

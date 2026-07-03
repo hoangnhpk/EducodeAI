@@ -68,6 +68,8 @@ export interface BaiHoc {
     thuTu: number;
     linkVideo?: string | null;
     daXem?: boolean;
+    laHocThu?: boolean;
+    biKhoa?: boolean;
 
     thongTinQuiz?: BaiTapQuizDTO | null;
     thongTinThucHanh?: BaiTapThucHanhDTO | null;
@@ -90,6 +92,10 @@ export interface KhoaHocData {
     danhSachChuongHoc: ChuongHoc[];
     baiKiemTraChungChi?: BaiKiemTraChungChiDTO | null;
     thongTinChungChi?: ThongTinChungChiDTO | null;
+    donViTienTe?: string;
+    daDangKy?: boolean;
+    laCheDoHocThu?: boolean;
+    soVideoHocThu?: number;
 }
 
 export interface GhiChuItem {

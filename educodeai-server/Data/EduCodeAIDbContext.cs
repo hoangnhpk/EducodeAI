@@ -49,6 +49,14 @@ namespace educodeai_server.Data
         public DbSet<MaQuaTangHocVienModel> MaQuaTangHocViens { get; set; }
         public DbSet<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; }
         public DbSet<HoTroRutTienGiangVienModel> HoTroRutTienGiangViens { get; set; }
+        public DbSet<DanhHieuModel> DanhHieus { get; set; }
+        public DbSet<MauNhiemVuTuanModel> MauNhiemVuTuans { get; set; }
+        public DbSet<NguoiDungGamificationModel> NguoiDungGamifications { get; set; }
+        public DbSet<NguoiDungDanhHieuModel> NguoiDungDanhHieus { get; set; }
+        public DbSet<TienDoNhiemVuTuanModel> TienDoNhiemVuTuans { get; set; }
+        public DbSet<WebhookLogModel> WebhookLogs { get; set; }
+        public DbSet<GiangVienQuotaModel> GiangVienQuotas { get; set; }
+        public DbSet<AIBalanceHoldModel> AIBalanceHolds { get; set; }
 
         // === MODULE ĐỒ ÁN THỰC CHIẾN ===
         public DbSet<DoAnThucChienModel> DoAnThucChiens { get; set; }
@@ -299,6 +307,10 @@ namespace educodeai_server.Data
                 .HasForeignKey(b => b.MaChuong)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<BaiHocModel>()
+                .Property(b => b.VideoSource)
+                .HasDefaultValue("youtube");
+
             // BaiHocModel relationships
             modelBuilder.Entity<BaiHocModel>()
                 .HasMany(b => b.BaiTaps)
@@ -447,6 +459,27 @@ namespace educodeai_server.Data
                 .WithOne(c => c.NguoiDung)
                 .HasForeignKey(c => c.MaNguoiDung)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // ====== GAMIFICATION / THỬ THÁCH ======
+            modelBuilder.Entity<TienDoNhiemVuTuanModel>()
+                .HasIndex(t => new { t.MaNguoiDung, t.MaMau, t.DauChuKy })
+                .IsUnique();
+
+            modelBuilder.Entity<NguoiDungDanhHieuModel>()
+                .HasIndex(x => new { x.MaNguoiDung, x.MaDanhHieu })
+                .IsUnique();
+
+            modelBuilder.Entity<NguoiDungGamificationModel>()
+                .HasOne(g => g.NguoiDung)
+                .WithOne()
+                .HasForeignKey<NguoiDungGamificationModel>(g => g.MaNguoiDung)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NguoiDungGamificationModel>()
+                .HasOne(g => g.DanhHieuDangDeo)
+                .WithMany()
+                .HasForeignKey(g => g.MaDanhHieuDangDeo)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // ====== SEED DATA ======
             KhoaHocDuLieu.SeedKhoaHoc(modelBuilder);

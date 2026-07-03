@@ -1,34 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { KhoaHocListItem } from '../types';
-import * as api from '../api/khoaHocApi';
+import React from 'react';
+import { useCourseList, FILTERS, FILTER_LABELS } from '../hooks/useCourseList';
 import CourseCard from '../components/CourseCard';
 import { CourseCardSkeleton } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
-import { useToastStandalone } from '../components/ui/Toast';
-
-type Filter = 'Tất cả' | 'Draft' | 'Published' | 'Archived';
-const FILTERS: Filter[] = ['Tất cả', 'Draft', 'Published', 'Archived'];
-const FILTER_LABELS: Record<Filter, string> = {
-  'Tất cả': 'Tất cả',
-  Draft: 'Nháp',
-  Published: 'Đang dạy',
-  Archived: 'Lưu trữ',
-};
-
-type CategoryFilter = 'Tất cả' | string;
-const PAGE_SIZE = 9;
-
-const getGiangVienId = (): number => {
-  try {
-    const raw = localStorage.getItem('user_info');
-    if (raw) {
-      const u = JSON.parse(raw);
-      return u.maNguoiDung ?? u.id ?? 1;
-    }
-  } catch { /* ignore */ }
-  return 1;
-};
 
 interface Props {
   onCreateNew: () => void;
@@ -37,99 +12,18 @@ interface Props {
 }
 
 const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
-  const maGiangVien = getGiangVienId();
-  const { showToast, ToastContainer } = useToastStandalone();
-
-  const [courses, setCourses] = useState<KhoaHocListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<Filter>('Tất cả');
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('Tất cả');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [confirmTarget, setConfirmTarget] = useState<KhoaHocListItem | null>(null);
-
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-
-  const loadCourses = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await api.getDanhSachKhoaHoc(maGiangVien);
-      setCourses(data);
-    } catch {
-      setError('Không thể tải danh sách khóa học. Vui lòng thử lại.');
-    } finally {
-      setLoading(false);
-    }
-  }, [maGiangVien]);
-
-  useEffect(() => { void loadCourses(); }, [loadCourses]);
-
-  const handleSearchChange = (val: string) => {
-    setSearchQuery(val);
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => setDebouncedSearch(val), 400);
-  };
-
-  // Get unique categories from courses
-  const categories = ['Tất cả', ...Array.from(new Set(courses.map(c => c.linhVuc)))];
-
-  const filtered = courses.filter(c => {
-    const matchFilter = filter === 'Tất cả' || c.trangThai === filter;
-    const matchCategory = categoryFilter === 'Tất cả' || c.linhVuc === categoryFilter;
-    const matchSearch = !debouncedSearch ||
-      c.tenKhoaHoc.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      c.linhVuc.toLowerCase().includes(debouncedSearch.toLowerCase());
-    return matchFilter && matchCategory && matchSearch;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginatedCourses = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filter, categoryFilter, debouncedSearch]);
-
-  const handleConfirmArchive = async () => {
-    if (!confirmTarget) return;
-    try {
-      setDeletingId(confirmTarget.maKhoaHoc);
-      setConfirmTarget(null);
-      await api.xoaKhoaHoc(maGiangVien, confirmTarget.maKhoaHoc);
-      setCourses(prev => prev.filter(c => c.maKhoaHoc !== confirmTarget.maKhoaHoc));
-      showToast('success', 'Khóa học đã được lưu trữ.');
-    } catch {
-      showToast('error', 'Lỗi lưu trữ khóa học. Vui lòng thử lại.');
-    } finally {
-      setDeletingId(null);
-    }
-  };
+  const {
+    courses, loading, error, searchQuery, filter, categoryFilter, currentPage,
+    deletingId, confirmTarget, debouncedSearch,
+    categories, filtered, paginatedCourses, totalPages, totalStudents, avgRating,
+    setFilter, setCategoryFilter, setCurrentPage, setConfirmTarget,
+    handleSearchChange, handleConfirmArchive, handleRestore, loadCourses,
+    ToastContainer, showToast
+  } = useCourseList();
 
   const handleDuplicate = (_maKhoaHoc: number) => {
     showToast('info', 'Tính năng nhân bản khóa học đang phát triển.');
   };
-
-  const handlePublish = (_maKhoaHoc: number) => {
-    showToast('info', 'Tính năng xuất bản khóa học đang phát triển.');
-  };
-
-  const handleHide = (_maKhoaHoc: number) => {
-    showToast('info', 'Tính năng ẩn khóa học đang phát triển.');
-  };
-
-  // Stats
-  const totalStudents = courses.reduce((s, c) => s + c.soHocVien, 0);
-  const avgRating = courses.length > 0
-    ? (courses.reduce((s, c) => s + c.diemDanhGiaTB, 0) / courses.length).toFixed(1)
-    : '—';
 
   return (
     <div className="khm-wrapper">
@@ -149,7 +43,7 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
 
         {/* Quick stats */}
         {!loading && !error && courses.length > 0 && (
-          <div className="khm-stat-row" style={{ marginBottom: 24 }}>
+          <div className="khm-stat-row khm-mb-24">
             <div className="khm-stat-card">
               <div className="khm-stat-value">{courses.length}</div>
               <div className="khm-stat-label">Khóa học</div>
@@ -159,7 +53,7 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
               <div className="khm-stat-label">Tổng HV</div>
             </div>
             <div className="khm-stat-card">
-              <div className="khm-stat-value" style={{ color: 'var(--khm-accent)' }}>{avgRating}</div>
+              <div className="khm-stat-value khm-text-accent">{avgRating}</div>
               <div className="khm-stat-label">Đánh giá TB</div>
             </div>
             <div className="khm-stat-card">
@@ -190,11 +84,6 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
                 onClick={() => setFilter(f)}
               >
                 {FILTER_LABELS[f]}
-                {f !== 'Tất cả' && (
-                  <span style={{ marginLeft: 4, fontSize: '0.7rem', opacity: 0.7 }}>
-                    ({courses.filter(c => c.trangThai === f).length})
-                  </span>
-                )}
               </button>
             ))}
           </div>
@@ -215,9 +104,9 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
             {[1, 2, 3, 4].map(i => <CourseCardSkeleton key={i} />)}
           </div>
         ) : error ? (
-          <div style={{ textAlign: 'center', padding: '60px 24px' }}>
-            <div className="khm-empty-icon" style={{ margin: '0 auto 16px' }}>⚠️</div>
-            <p style={{ color: 'var(--khm-danger)', marginBottom: 16 }}>{error}</p>
+          <div className="khm-text-center khm-py-60 khm-px-24">
+            <div className="khm-empty-icon khm-mx-auto khm-mb-16">⚠️</div>
+            <p className="khm-text-danger khm-mb-16">{error}</p>
             <button className="khm-btn khm-btn-outline" onClick={() => void loadCourses()}>
               Thử lại
             </button>
@@ -250,8 +139,7 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
                   onManage={onManage}
                   onArchive={setConfirmTarget}
                   onDuplicate={handleDuplicate}
-                  onPublish={handlePublish}
-                  onHide={handleHide}
+                  onRestore={handleRestore}
                   isDeleting={deletingId === c.maKhoaHoc}
                 />
               ))}
@@ -285,11 +173,11 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
 
       <ConfirmDialog
         isOpen={!!confirmTarget}
-        title="Lưu trữ khóa học?"
-        message={`Khóa học "${confirmTarget?.tenKhoaHoc ?? ''}" sẽ bị lưu trữ. Học viên hiện tại sẽ không thể tiếp tục truy cập.`}
-        confirmText="Lưu trữ"
+        title="Xóa khóa học?"
+        message={`Khóa học "${confirmTarget?.tenKhoaHoc ?? ''}" sẽ bị đưa vào thùng rác. Học viên sẽ không thể tiếp tục truy cập.`}
+        confirmText="Xóa mềm"
         cancelText="Hủy"
-        variant="warning"
+        variant="danger"
         onConfirm={() => void handleConfirmArchive()}
         onCancel={() => setConfirmTarget(null)}
       />
