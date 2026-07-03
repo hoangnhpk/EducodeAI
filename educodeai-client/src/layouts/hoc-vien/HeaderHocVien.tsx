@@ -63,6 +63,10 @@ export default function HeaderHocVien() {
             Không gian học tập
           </Link>
 
+          <Link to="/thu-thach-hoc-tap" className="nav-item nav-link">
+            Thử thách học tập
+          </Link>
+
           {/* KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP */}
           {user ? (
             <div className="nav-item dropdown px-lg-4">
@@ -82,6 +86,9 @@ export default function HeaderHocVien() {
                 </Link>
                 <Link to="/khong-gian-hoc-tap" className="dropdown-item">
                   Không gian học tập
+                </Link>
+                <Link to="/thu-thach-hoc-tap" className="dropdown-item">
+                  Thử thách học tập
                 </Link>
                 <Link to="/hoc-vien/khoa-hoc-cua-toi" className="dropdown-item">
                   Khóa học của tôi
