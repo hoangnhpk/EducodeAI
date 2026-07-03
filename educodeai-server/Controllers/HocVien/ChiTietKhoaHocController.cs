@@ -1,11 +1,13 @@
-using educodeai_server.Data;
+﻿using educodeai_server.Data;
 using educodeai_server.DTOs.KhoaHoc;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace EduCodeAI.Controllers.HocVien
@@ -21,43 +23,36 @@ namespace EduCodeAI.Controllers.HocVien
             _context = context;
         }
 
-
         [HttpPost("dang-ky")]
         public async Task<IActionResult> DangKyKhoaHoc([FromBody] DangKyKhoaHocRequestDto request)
         {
             try
             {
-                // 1. Lấy ID người dùng từ Token (sử dụng helper của bạn)
                 int maNguoiDung = LayNguoiDungID.LayID(User);
                 if (maNguoiDung == 0)
                 {
                     return Unauthorized(new { message = "Vui lòng đăng nhập để đăng ký khóa học." });
                 }
 
-                // 2. Kiểm tra xem Khóa học này có tồn tại không
-                var khoaHoc = await _context.KhoaHocs.FindAsync(request.MaKhoaHoc);
+                var khoaHoc = await _context.KhoaHocs.AsNoTracking().FirstOrDefaultAsync(k => k.MaKhoaHoc == request.MaKhoaHoc);
                 if (khoaHoc == null)
                 {
                     return NotFound(new { message = "Khóa học không tồn tại." });
                 }
 
-                // 3. Kiểm tra xem người dùng đã đăng ký khóa học này trước đó chưa
-                var daDangKy = await _context.DangKyKhoaHocs
-                    .AnyAsync(dk => dk.MaKhoaHoc == request.MaKhoaHoc && dk.MaNguoiDung == maNguoiDung);
-
+                var daDangKy = await _context.DangKyKhoaHocs.AnyAsync(dk => dk.MaKhoaHoc == request.MaKhoaHoc && dk.MaNguoiDung == maNguoiDung);
                 if (daDangKy)
                 {
                     return BadRequest(new { message = "Bạn đã đăng ký khóa học này rồi." });
                 }
 
-                // 4. Tạo bản ghi Đăng Ký mới
-                var dangKyMoi = new DangKyKhoaHocModel // Lưu ý: Thay tên class này cho đúng với Model EF Core của bạn
+                var dangKyMoi = new DangKyKhoaHocModel
                 {
                     MaKhoaHoc = request.MaKhoaHoc,
                     MaNguoiDung = maNguoiDung,
                     NgayDangKy = DateTime.UtcNow,
-                    TrangThai = "DangHoc", // Giả sử: 0 = Chưa học, 1 = Đang học, 2 = Đã hoàn thành
-                    TienDo = 0     // Mới đăng ký thì tiến độ là 0%
+                    TrangThai = "DangHoc",
+                    TienDo = 0
                 };
 
                 _context.DangKyKhoaHocs.Add(dangKyMoi);
@@ -67,7 +62,6 @@ namespace EduCodeAI.Controllers.HocVien
             }
             catch (Exception ex)
             {
-                // Ghi log lỗi nếu cần thiết
                 return StatusCode(500, new { message = "Đã xảy ra lỗi khi đăng ký khóa học.", error = ex.Message });
             }
         }
@@ -75,7 +69,7 @@ namespace EduCodeAI.Controllers.HocVien
         [HttpGet]
         public async Task<IActionResult> GetAllKhoaHoc()
         {
-            var dsKhoaHoc = await _context.KhoaHocs
+            var dsKhoaHoc = await _context.KhoaHocs.AsNoTracking()
                 .Select(k => new
                 {
                     k.MaKhoaHoc,
@@ -96,70 +90,101 @@ namespace EduCodeAI.Controllers.HocVien
         public async Task<IActionResult> GetKhoaHocById(int id)
         {
             int maNguoiDung = LayNguoiDungID.LayID(User);
-            var khoaHoc = await _context.KhoaHocs
+
+            var khoaHocEntity = await _context.KhoaHocs
+                .AsNoTracking()
                 .Include(k => k.GiangVien)
                 .Include(k => k.ChuongHocs)
                     .ThenInclude(c => c.BaiHocs)
                 .FirstOrDefaultAsync(k => k.MaKhoaHoc == id);
 
-            if (khoaHoc == null)
+            if (khoaHocEntity == null)
             {
                 return NotFound("Không tìm thấy khóa học");
             }
 
-            // Tính điểm đánh giá trung bình
-            var danhGias = await _context.DanhGias.Where(d => d.MaKhoaHoc == id).ToListAsync();
-            double diemTB = danhGias.Any() ? Math.Round(danhGias.Average(d => d.SoSao), 1) : 0;
-            int tongDanhGia = danhGias.Count;
-
-            return Ok(new
+            var banSeHocDuocGi = new List<string>();
+            if (!string.IsNullOrWhiteSpace(khoaHocEntity.BanSeHocDuocGi))
             {
-                maKhoaHoc = khoaHoc.MaKhoaHoc,
-                tenKhoaHoc = khoaHoc.TenKhoaHoc,
-                moTa = khoaHoc.KyNangChinh,
-                videoGioiThieu = khoaHoc.VideoGioiThieu,
-                banSeHocDuocGi = !string.IsNullOrEmpty(khoaHoc.BanSeHocDuocGi) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(khoaHoc.BanSeHocDuocGi) : new List<string>(),
-                tongSoHocVien = await _context.DangKyKhoaHocs.CountAsync(dk => dk.MaKhoaHoc == khoaHoc.MaKhoaHoc),
-                giaKhoaHoc = khoaHoc.GiaKhoaHoc,
-                donViTienTe = khoaHoc.DonViTienTe,
-                khoaHocDaDangKy = maNguoiDung > 0 && await _context.DangKyKhoaHocs.AnyAsync(dk =>
-                    dk.MaKhoaHoc == khoaHoc.MaKhoaHoc && dk.MaNguoiDung == maNguoiDung),
-                hinhAnh = khoaHoc.HinhAnh,
-                linhVuc = khoaHoc.LinhVuc,
-                trinhDo = khoaHoc.TrinhDo,
-                thoiLuongGio = khoaHoc.ThoiLuongGio,
-                diemDanhGiaTB = diemTB,
-                tongDanhGia = tongDanhGia,
-                coChungChi = khoaHoc.CoChungChi,
-                tenChungChi = khoaHoc.TenChungChi,
-                slug = SlugHelper.Generate(khoaHoc.TenKhoaHoc),
-                giangVien = khoaHoc.GiangVien != null ? new {
-                    maGiangVien = khoaHoc.GiangVien.MaNguoiDung,
-                    hoTen = khoaHoc.GiangVien.HoTen,
-                    anhDaiDien = khoaHoc.GiangVien.AnhDaiDien
-                } : null,
-                chuongs = khoaHoc.ChuongHocs.Select(chuong => new
+                try
                 {
-                    maChuong = chuong.MaChuong,
-                    tenChuong = chuong.TenChuong,
+                    banSeHocDuocGi = JsonSerializer.Deserialize<List<string>>(khoaHocEntity.BanSeHocDuocGi) ?? new List<string>();
+                }
+                catch
+                {
+                    banSeHocDuocGi = new List<string>();
+                }
+            }
 
-                    baiHocs = chuong.BaiHocs.Select(bai => new
+            var tongSoHocVien = await _context.DangKyKhoaHocs.AsNoTracking()
+                .CountAsync(dk => dk.MaKhoaHoc == id);
+
+            var khoaHocDaDangKy = maNguoiDung > 0 &&
+                await _context.DangKyKhoaHocs.AsNoTracking()
+                    .AnyAsync(dk => dk.MaKhoaHoc == id && dk.MaNguoiDung == maNguoiDung);
+
+            var diemDanhGiaTB = await _context.DanhGias.AsNoTracking()
+                .Where(d => d.MaKhoaHoc == id)
+                .Select(d => (double?)d.SoSao)
+                .AverageAsync() ?? 0;
+
+            var tongDanhGia = await _context.DanhGias.AsNoTracking()
+                .CountAsync(d => d.MaKhoaHoc == id);
+
+            var khoaHoc = new
+            {
+                khoaHocEntity.MaKhoaHoc,
+                tenKhoaHoc = khoaHocEntity.TenKhoaHoc,
+                moTa = khoaHocEntity.MoTa,
+                videoGioiThieu = khoaHocEntity.VideoGioiThieu,
+                banSeHocDuocGi,
+                tongSoHocVien,
+                giaKhoaHoc = khoaHocEntity.GiaKhoaHoc,
+                donViTienTe = khoaHocEntity.DonViTienTe,
+                khoaHocDaDangKy,
+                hinhAnh = khoaHocEntity.HinhAnh,
+                linhVuc = khoaHocEntity.LinhVuc,
+                trinhDo = khoaHocEntity.TrinhDo,
+                thoiLuongGio = khoaHocEntity.ThoiLuongGio,
+                diemDanhGiaTB,
+                tongDanhGia,
+                coChungChi = khoaHocEntity.CoChungChi,
+                tenChungChi = khoaHocEntity.TenChungChi,
+                slug = SlugHelper.Generate(khoaHocEntity.TenKhoaHoc),
+                giangVien = khoaHocEntity.GiangVien != null ? new
+                {
+                    maGiangVien = khoaHocEntity.GiangVien.MaNguoiDung,
+                    hoTen = khoaHocEntity.GiangVien.HoTen,
+                    anhDaiDien = khoaHocEntity.GiangVien.AnhDaiDien
+                } : null,
+                chuongs = khoaHocEntity.ChuongHocs
+                    .OrderBy(c => c.ThuTu)
+                    .Select(chuong => new
                     {
-                        maBaiHoc = bai.MaBaiHoc,
-                        tenBaiHoc = bai.TieuDe,   
-                        videoUrl = bai.LinkVideo,
-                        thoiLuong = bai.ThoiLuong
-                    }).ToList()
-                }).ToList()
-            });
-        }
+                        maChuong = chuong.MaChuong,
+                        tenChuong = chuong.TenChuong,
+                        baiHocs = chuong.BaiHocs
+                            .OrderBy(b => b.ThuTu)
+                            .Select(bai => new
+                            {
+                                maBaiHoc = bai.MaBaiHoc,
+                                tenBaiHoc = bai.TieuDe,
+                                videoUrl = bai.LinkVideo,
+                                thoiLuong = bai.ThoiLuong
+                            })
+                            .ToList()
+                    })
+                    .ToList()
+            };
 
+            return Ok(khoaHoc);
+        }
         [HttpGet("{id}/danh-gia")]
         public async Task<IActionResult> GetDanhGiaKhoaHoc(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 5, [FromQuery] string filter = "all")
         {
-            var query = _context.DanhGias
+            var query = _context.DanhGias.AsNoTracking()
                 .Include(d => d.NguoiDung)
-                .Where(d => d.MaKhoaHoc == id); // Tạm lấy tất cả để dễ test, có thể thêm: && d.TrangThai == "DaDuyet"
+                .Where(d => d.MaKhoaHoc == id);
 
             if (filter == "positive")
             {
@@ -192,7 +217,7 @@ namespace EduCodeAI.Controllers.HocVien
             return Ok(new
             {
                 items = danhGias,
-                totalCount = totalCount,
+                totalCount,
                 totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
                 currentPage = page
             });
