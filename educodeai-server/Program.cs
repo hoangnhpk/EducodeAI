@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -148,6 +148,7 @@ builder.Services.AddScoped<IQuanLyHocVienService,QuanLyHocVienService>();
 builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocService>();
 builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
 builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
+builder.Services.AddScoped<IQuanLyHoSoGiangVienService, QuanLyHoSoGiangVienService>();
 builder.Services.AddScoped<ILoTrinhAIGvService, LoTrinhAIGvService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
@@ -307,6 +308,16 @@ try
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGiaKhoaHocs_MaKhoaHoc" ON "MaGiamGiaKhoaHocs" ("MaKhoaHoc");""");
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_DonHangKhoaHocs_MaVoucher" ON "DonHangKhoaHocs" ("MaVoucher");""");
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGias_MaNguoiTao" ON "MaGiamGias" ("MaNguoiTao");""");
+        // === SELF-HEALING: HoSoDangKyGiangViens (đăng ký giảng viên) ===
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ALTER COLUMN "MaNguoiDung" TYPE integer USING "MaNguoiDung"::integer;""");
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ALTER COLUMN "MaNguoiDung" DROP NOT NULL;""");
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "TaiKhoan" character varying(50) NOT NULL DEFAULT '';""");
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "MatKhau" character varying(255) NOT NULL DEFAULT '';""");
+
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "BoSungToken" character varying(64) NULL;""");
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "BoSungTokenHetHan" timestamp with time zone NULL;""");
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "DaNopBoSung" boolean NOT NULL DEFAULT false;""");
+        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "NgayNopBoSung" timestamp with time zone NULL;""");
     }
 }
 catch (Exception ex)

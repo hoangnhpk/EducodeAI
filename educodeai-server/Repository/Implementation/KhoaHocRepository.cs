@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Data;
 using educodeai_server.Models;
@@ -17,6 +17,7 @@ namespace educodeai_server.Repository.Implementation
     {
         private readonly EduCodeAIDbContext _context;
         private const int HeSoSinhIdCauHoi = 100000;
+        private const string TrangThaiKhoaHocHoatDong = "Hoạt động";
 
         public KhoaHocRepository(EduCodeAIDbContext context)
         {
@@ -28,7 +29,7 @@ namespace educodeai_server.Repository.Implementation
             try
             {
                 return await _context.KhoaHocs
-                    .Where(x => x.TrangThai == "Hoạt động")
+                    .Where(x => x.TrangThai == TrangThaiKhoaHocHoatDong)
                     .OrderByDescending(x => x.NgayTao)
                     .Select(x => new KhoaHocDto
                     {
@@ -60,7 +61,7 @@ namespace educodeai_server.Repository.Implementation
             try
             {
                 var query = _context.KhoaHocs
-                .Where(x => x.TrangThai == "Hoạt động");
+                    .Where(x => x.TrangThai == TrangThaiKhoaHocHoatDong);
 
                 if (keywords.Any())
                 {
@@ -196,14 +197,28 @@ namespace educodeai_server.Repository.Implementation
         }
 
         // 5. Các hàm hỗ trợ AI
+        // 5. Các hàm hỗ trợ AI
         public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto)
         {
-            var query = _context.KhoaHocs.Where(x => x.TrangThai == "Hoạt động");
+            var query = _context.KhoaHocs
+                .Where(x => x.TrangThai == TrangThaiKhoaHocHoatDong);
+
             if (!string.IsNullOrEmpty(dto.TrinhDoHienTai))
             {
                 query = query.Where(x => x.TrinhDo.Contains(dto.TrinhDoHienTai) || dto.TrinhDoHienTai.Contains(x.TrinhDo));
             }
-            return await query.Select(x => new KhoaHocAISnapshotDto { MaKhoaHoc = x.MaKhoaHoc, TenKhoaHoc = x.TenKhoaHoc, TrinhDo = x.TrinhDo, LinhVuc = x.LinhVuc, KyNangChinh = x.KyNangChinh, ThoiLuongGio = x.ThoiLuongGio }).ToListAsync();
+
+            return await query
+                .Select(x => new KhoaHocAISnapshotDto
+                {
+                    MaKhoaHoc = x.MaKhoaHoc,
+                    TenKhoaHoc = x.TenKhoaHoc,
+                    TrinhDo = x.TrinhDo,
+                    LinhVuc = x.LinhVuc,
+                    KyNangChinh = x.KyNangChinh,
+                    ThoiLuongGio = x.ThoiLuongGio
+                })
+                .ToListAsync();
         }
 
         public async Task<List<DangKyKhoaHocModel>> GetDangKyKhoaHocAsync(int maNguoiDung)
