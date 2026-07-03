@@ -1,4 +1,4 @@
-﻿import { MdSchool, MdBook, MdEditNote, MdQuiz, MdCode, MdPeople, MdDashboard, MdCardGiftcard } from 'react-icons/md';
+﻿import { MdSchool, MdBook, MdEditNote, MdCode, MdPeople, MdDashboard, MdCardGiftcard } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function SidebarGiangVien() {
@@ -21,13 +21,11 @@ export default function SidebarGiangVien() {
         <Link to="/giang-vien/khoa-hoc-cua-toi" className={`gv-nav-link ${isActive('/giang-vien/khoa-hoc-cua-toi') ? 'active' : ''}`}>
           <MdBook /> Khóa Học
         </Link>
-
-        <Link to="/giang-vien/bai-tap-thuc-hanh" className={`gv-nav-link ${isActive('/giang-vien/bai-tap-thuc-hanh') ? 'active' : ''}`}>
-          <MdCode /> Bài tập thực hành (AI)
-        </Link>
-
-        <Link to="/giang-vien/bai-tap" className={`gv-nav-link ${isActive('/giang-vien/bai-tap') ? 'active' : ''}`}>
-          <MdQuiz /> Quản lý bài tập (Quiz)
+        <Link
+          to="/giang-vien/bai-tap"
+          className={`gv-nav-link ${isActive('/giang-vien/bai-tap') || isActive('/giang-vien/bai-tap-thuc-hanh') ? 'active' : ''}`}
+        >
+          <MdCode /> Quản lý bài tập
         </Link>
 
         <Link to="/giang-vien/lop-hoc" className={`gv-nav-link ${isActive('/giang-vien/lop-hoc') ? 'active' : ''}`}>

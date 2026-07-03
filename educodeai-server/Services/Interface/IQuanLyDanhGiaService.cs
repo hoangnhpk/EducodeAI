@@ -9,5 +9,7 @@ namespace educodeai_server.Services.Interface
         Task<bool> CapNhatTrangThaiAsync(int id, string trangThai);
         Task<bool> XoaAsync(int id);
         Task<List<DanhGiaAdminKhoaHocDTO>> LayDanhSachKhoaHocFilterAsync();
+        // AI duyệt hàng loạt: lấy tất cả review đang Chờ Duyệt → nhờ Gemini phán xét → cập nhật DB
+        Task<KetQuaAIDuyetDTO> DuyetHangLoatBangAIAsync();
     }
 }

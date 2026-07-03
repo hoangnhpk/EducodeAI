@@ -27,7 +27,7 @@ interface LoTrinhAI {
 const QuanLyLoTrinh = () => {
     const [danhSach, setDanhSach] = useState<LoTrinhAI[]>([]);
     const [khoaHocCoSan, setKhoaHocCoSan] = useState<IKhoaHocGoc[]>([]);
-    const [, setIsLoading] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -251,7 +251,20 @@ const QuanLyLoTrinh = () => {
             </div>
 
             <div className="lo-trinh-grid">
-                {danhSach.map((item) => {
+                {isLoading ? (
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 0' }}>
+                        <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+                            <span className="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p style={{ marginTop: '16px', color: '#64748b', fontWeight: 600 }}>Đang tải danh sách lộ trình...</p>
+                    </div>
+                ) : danhSach.length === 0 ? (
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 0', background: '#f8fafc', borderRadius: '16px', border: '2px dashed #e2e8f0' }}>
+                        <p style={{ fontSize: '2rem', margin: 0 }}>🗺️</p>
+                        <p style={{ marginTop: '12px', color: '#64748b', fontWeight: 600 }}>Chưa có lộ trình nào. Nhấn "+ THÊM LỘ TRÌNH" để tạo mới.</p>
+                    </div>
+                ) : danhSach.map((item) => {
+
                     const isPrompt = item.yeuCau && item.yeuCau.length > 50;
                     const backupTitle = isPrompt ? "Lộ trình tùy chỉnh" : item.yeuCau;
                     const clean = getCleanContent(item.noiDungJSON, backupTitle);
