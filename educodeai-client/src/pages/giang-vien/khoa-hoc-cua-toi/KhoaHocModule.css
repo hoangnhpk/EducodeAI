@@ -445,6 +445,41 @@
   box-shadow: var(--khm-shadow);
 }
 
+.khm-category-select {
+  padding: 6px 12px;
+  border: 1.5px solid var(--khm-gray-200);
+  border-radius: var(--khm-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--khm-gray-700);
+  background: white;
+  cursor: pointer;
+  transition: border-color var(--khm-transition);
+  outline: none;
+}
+.khm-category-select:hover {
+  border-color: var(--khm-gray-300);
+}
+.khm-category-select:focus {
+  border-color: var(--khm-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+.khm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--khm-gray-100);
+}
+.khm-pagination-info {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--khm-gray-600);
+}
+
 .khm-course-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -740,6 +775,10 @@
   border-radius: 6px;
   background: var(--khm-gray-100);
   flex-shrink: 0;
+  color: transparent;
+  font-size: 0;
+  overflow: hidden;
+  display: block;
 }
 .khm-list-item-thumb-placeholder {
   width: 56px;
@@ -1222,3 +1261,27 @@
   background: var(--khm-warning-light);
   color: var(--khm-warning);
 }
+/* ---------- Utility Classes ---------- */
+.khm-flex { display: flex; }
+.khm-flex-between { display: flex; justify-content: space-between; align-items: center; }
+.khm-items-center { align-items: center; }
+.khm-gap-8 { gap: 8px; }
+.khm-gap-10 { gap: 10px; }
+.khm-gap-16 { gap: 16px; }
+.khm-mb-16 { margin-bottom: 16px; }
+.khm-mb-24 { margin-bottom: 24px; }
+.khm-mt-8 { margin-top: 8px; }
+.khm-text-center { text-align: center; }
+.khm-py-60 { padding-top: 60px; padding-bottom: 60px; }
+.khm-px-24 { padding-left: 24px; padding-right: 24px; }
+.khm-mx-auto { margin-left: auto; margin-right: auto; }
+.khm-text-danger { color: var(--khm-danger); }
+.khm-text-accent { color: var(--khm-accent); }
+.khm-border-bottom { border-bottom: 1px solid var(--khm-gray-100); }
+.khm-text-sm { font-size: 0.85rem; }
+.khm-text-xs { font-size: 12px; }
+.khm-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.khm-text-primary { color: var(--khm-primary); }
+.khm-font-semibold { font-weight: 600; }
+.khm-relative { position: relative; }
+.khm-absolute-inset { position: absolute; inset: 0; }

@@ -156,41 +156,8 @@ namespace educodeai_server.Services.Implementation
             // ĐĂNG NHẬP THÀNH CÔNG -> RESET SỐ LẦN SAI CHO IP NÀY
             _memoryCache.Remove(cacheKey);
 
-            // 6. KIỂM TRA THIẾT BỊ (MỚI / CŨ / ĐẦY PHIÊN)
-            var activeSessions = user!.DanhSachPhienDangNhap.Where(p => p.DangHoatDong).ToList();
-            var currentSession = activeSessions.FirstOrDefault(p => p.MaThietBi == request.MaThietBi);
-
-            // Nếu thiết bị này CHƯA TỪNG đăng nhập (hoặc đã bị đăng xuất/xóa phiên)
-            if (currentSession == null)
-            {
-                // TRƯỜNG HỢP A: Đã đủ 3 thiết bị -> Yêu cầu OTP để thay thế thiết bị cũ nhất
-                if (activeSessions.Count >= 3)
-                {
-                    var oldest = activeSessions.OrderBy(p => p.ThoiGianHoatDongCuoi).First();
-                    string otp = new Random().Next(100000, 999999).ToString();
-                    _memoryCache.Set("OTP_ReplaceDevice_" + user.Email, (Otp: otp, NewMaThietBi: request.MaThietBi, NewTenThietBi: request.TenThietBi, OldMaPhien: oldest.MaPhien), TimeSpan.FromMinutes(5));
-                    
-                    string body = TaoGiaoDienEmail("Xác nhận thay thế thiết bị", $"Bạn đang đăng nhập trên một thiết bị mới. Vì tài khoản đã đạt giới hạn 3 thiết bị, vui lòng nhập mã bên dưới để đăng xuất thiết bị <b>{oldest.TenThietBi}</b> và tiếp tục.", otp);
-                    await EmailHelper.SendEmailAsync(user.Email, "Xác nhận thay thế thiết bị - EduCodeAI", body);
-                    
-                    return new { requiresLogoutOldest = true, oldestDeviceName = oldest.TenThietBi, email = user.Email, message = $"Tài khoản đã đạt giới hạn 3 thiết bị. Hệ thống đã gửi mã xác nhận thay thế thiết bị {oldest.TenThietBi} đến Email của bạn." };
-                }
-                
-                // TRƯỜNG HỢP B: Chưa đủ 3 thiết bị nhưng là THIẾT BỊ MỚI -> Yêu cầu OTP xác minh thiết bị mới
-                else
-                {
-                    string otp = new Random().Next(100000, 999999).ToString();
-                    _memoryCache.Set("OTP_LoginNewDevice_" + user.Email, (Otp: otp, MaThietBi: request.MaThietBi, TenThietBi: request.TenThietBi), TimeSpan.FromMinutes(5));
-                    
-                    string body = TaoGiaoDienEmail("Xác minh thiết bị mới", $"Hệ thống phát hiện bạn đang đăng nhập trên một thiết bị lạ. Để bảo vệ tài khoản, vui lòng nhập mã xác thực bên dưới để hoàn tất đăng nhập.", otp);
-                    await EmailHelper.SendEmailAsync(user.Email, "Xác minh thiết bị mới - EduCodeAI", body);
-                    
-                    return new { requiresOtp = true, email = user.Email, message = "Bạn đang đăng nhập trên thiết bị mới. Vui lòng nhập mã OTP đã được gửi đến Email để xác minh." };
-                }
-            }
-
-            // Nếu là thiết bị cũ đã quen -> Cho vào luôn
-            return await XuLyDangNhapThanhCongAsync(user, request.MaThietBi, request.TenThietBi);
+            // Bỏ qua kiểm tra thiết bị mới và giới hạn thiết bị theo yêu cầu của USER (đăng nhập vào thẳng)
+            return await XuLyDangNhapThanhCongAsync(user!, request.MaThietBi, request.TenThietBi);
         }
 
         // API MỚI: Xác nhận OTP để đá thiết bị cũ và cho thiết bị mới vào

@@ -120,6 +120,5 @@ namespace educodeai_server.Controllers.GiangVien
             var duLieu = await _rutTienGiangVienService.LayLichSuRutTienCuaGiangVienAsync(maGiangVien);
             return Ok(duLieu);
         }
-
     }
 }
