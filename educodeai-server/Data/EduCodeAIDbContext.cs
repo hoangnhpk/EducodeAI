@@ -48,6 +48,11 @@ namespace educodeai_server.Data
         public DbSet<MaQuaTangHocVienModel> MaQuaTangHocViens { get; set; }
         public DbSet<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; }
         public DbSet<HoTroRutTienGiangVienModel> HoTroRutTienGiangViens { get; set; }
+        public DbSet<DanhHieuModel> DanhHieus { get; set; }
+        public DbSet<MauNhiemVuTuanModel> MauNhiemVuTuans { get; set; }
+        public DbSet<NguoiDungGamificationModel> NguoiDungGamifications { get; set; }
+        public DbSet<NguoiDungDanhHieuModel> NguoiDungDanhHieus { get; set; }
+        public DbSet<TienDoNhiemVuTuanModel> TienDoNhiemVuTuans { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -413,6 +418,27 @@ namespace educodeai_server.Data
                 .WithOne(x => x.YeuCauRutTien)
                 .HasForeignKey(x => x.MaYeuCauRutTien)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ====== GAMIFICATION / THỬ THÁCH ======
+            modelBuilder.Entity<TienDoNhiemVuTuanModel>()
+                .HasIndex(t => new { t.MaNguoiDung, t.MaMau, t.DauChuKy })
+                .IsUnique();
+
+            modelBuilder.Entity<NguoiDungDanhHieuModel>()
+                .HasIndex(x => new { x.MaNguoiDung, x.MaDanhHieu })
+                .IsUnique();
+
+            modelBuilder.Entity<NguoiDungGamificationModel>()
+                .HasOne(g => g.NguoiDung)
+                .WithOne()
+                .HasForeignKey<NguoiDungGamificationModel>(g => g.MaNguoiDung)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NguoiDungGamificationModel>()
+                .HasOne(g => g.DanhHieuDangDeo)
+                .WithMany()
+                .HasForeignKey(g => g.MaDanhHieuDangDeo)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // ====== SEED DATA ======
             KhoaHocDuLieu.SeedKhoaHoc(modelBuilder);
