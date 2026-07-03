@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -208,10 +208,6 @@ namespace educodeai_server.Helpers
 
                     string maHoa = await _redisService.LayHashAsync(currentRedisKey, "MaKeyMaHoa");
                     string rawKey = MaHoaHelper.GiaiMa(maHoa, _secretKey);
-
-
-                    string requestUrl = $"v1beta/models/gemini-2.5-flash:generateContent?key={rawKey}";
-
                     string modelSuDung = await _redisService.LayHashAsync(currentRedisKey, "ModelSuDung");
                     if (string.IsNullOrWhiteSpace(modelSuDung)) modelSuDung = _modelName;
                     else if (modelSuDung.StartsWith("models/")) modelSuDung = modelSuDung.Substring(7);
