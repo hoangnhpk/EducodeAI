@@ -53,10 +53,42 @@ namespace educodeai_server.Helpers
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
+
+            // 3. Tìm JSON
+            var match = Regex.Match(
+                text,
+                @"```(?:json)?\s*(\{[\s\S]*?\})\s*```",
+                RegexOptions.IgnoreCase
+            );
+
+            string rawJson;
+            if (match.Success)
+            {
+                rawJson = match.Groups[1].Value;
+            }
+            else
+            {
+                // Fallback: Lấy từ dấu { đầu tiên đến dấu } cuối cùng
+                int startIndex = text.IndexOf('{');
+                int endIndex = text.LastIndexOf('}');
+                if (startIndex >= 0 && endIndex > startIndex)
+                {
+                    rawJson = text.Substring(startIndex, endIndex - startIndex + 1);
+                }
+                else
+                {
+                    throw new Exception("Không tìm thấy JSON trong code block ```json\n\nAI Raw Text: " + text);
+                }
+            }
+
+            // 4. Parse + format JSON kết quả
+            try
+
             var candidates = new List<string>();
 
             // 1. H? tr? ```json ... ``` v? ``` ... ```
             foreach (Match match in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
+
             {
                 var content = match.Groups[1].Value.Trim();
                 if (!string.IsNullOrWhiteSpace(content))
@@ -71,6 +103,9 @@ namespace educodeai_server.Helpers
 
             foreach (var candidate in candidates)
             {
+
+                throw new Exception($"JSON bên trong không hợp lệ. Nguyên bản: {rawJson}", ex);
+
                 var raw = candidate.Trim();
                 if (string.IsNullOrWhiteSpace(raw)) continue;
 
@@ -84,6 +119,7 @@ namespace educodeai_server.Helpers
                 {
                     // Th? candidate ti?p theo.
                 }
+
             }
 
             return false;
@@ -205,7 +241,33 @@ namespace educodeai_server.Helpers
                 throw new Exception("Không tìm thấy nội dung text từ Gemini");
 
             // TRẢ VỀ LUÔN CHUỖI TEXT, KHÔNG TÌM REGEX JSON NỮA
-            return text.Trim();
+            return text;
+        }
+
+        public static string ExtractJson(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            var match = Regex.Match(
+                text,
+                @"```(?:json)?\s*(\{[\s\S]*?\})\s*```",
+                RegexOptions.IgnoreCase
+            );
+
+            if (match.Success)
+            {
+                return match.Groups[1].Value;
+            }
+
+            int startIndex = text.IndexOf('{');
+            int endIndex = text.LastIndexOf('}');
+            if (startIndex >= 0 && endIndex > startIndex)
+            {
+                return text.Substring(startIndex, endIndex - startIndex + 1);
+            }
+
+            return text;
         }
     }
 }

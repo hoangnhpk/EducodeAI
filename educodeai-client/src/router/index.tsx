@@ -28,9 +28,13 @@ import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
 import PhongVanAI from "../pages/hoc-vien/phong-van-ai/PhongVanAI";
 import SinhDoAnAI from "../pages/hoc-vien/sinh-do-an-ai/SinhDoAnAI";
+
+import PhongVanDoAn from "../pages/hoc-vien/phong-van-do-an/PhongVanDoAn";
+
 import NhapMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/NhapMaQuaTang";
 import LichSuMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/LichSuMaQuaTang";
 import ThuThach from "@/pages/hoc-vien/thu-thach/ThuThach";
+
 
 import QuanLyBaiTapPage from "../pages/giang-vien/quan-ly-bai-tap/QuanLyBaiTapPage";
 import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
@@ -113,6 +117,7 @@ export default function AppRouter() {
             <Route path="/kham-pha-lo-trinh" element={<KhamPhaLoTrinh />} />
             <Route path="/phong-van-ai" element={<PhongVanAI />} />
             <Route path="/sinh-do-an-ai" element={<SinhDoAnAI />} />
+            <Route path="/phong-van-do-an/:sessionId" element={<PhongVanDoAn />} />
             <Route path="/hoc-vien/nhap-ma-qua-tang" element={<NhapMaQuaTang />} />
             <Route path="/hoc-vien/lich-su-ma-qua-tang" element={<LichSuMaQuaTang />} />
           </Route>

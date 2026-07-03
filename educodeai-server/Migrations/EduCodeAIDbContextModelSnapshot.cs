@@ -2602,6 +2602,45 @@ namespace educodeai_server.Migrations
                         });
                 });
 
+            modelBuilder.Entity("educodeai_server.Models.ChungChiDoAnModel", b =>
+                {
+                    b.Property<int>("MaChungChiDoAn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaChungChiDoAn"));
+
+                    b.Property<int>("DiemDat")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MaChungChi")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("MaDoAn")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaNguoiDung")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("NgayCap")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("MaChungChiDoAn");
+
+                    b.HasIndex("MaChungChi")
+                        .IsUnique();
+
+                    b.HasIndex("MaDoAn")
+                        .IsUnique();
+
+                    b.HasIndex("MaNguoiDung", "MaDoAn")
+                        .IsUnique();
+
+                    b.ToTable("ChungChiDoAns");
+                });
+
             modelBuilder.Entity("educodeai_server.Models.ChungChiKhoaHocModel", b =>
                 {
                     b.Property<int>("MaChungChiKhoaHoc")
@@ -3022,6 +3061,68 @@ namespace educodeai_server.Migrations
                     b.ToTable("DanhGias");
                 });
 
+
+            modelBuilder.Entity("educodeai_server.Models.DoAnThucChienModel", b =>
+                {
+                    b.Property<int>("MaDoAn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaDoAn"));
+
+                    b.Property<string>("CauTrucDatabaseText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("DiemPhongVan")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LichSuPhongVanJSON")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("MaNguoiDung")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MoTa")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("MucTieuNgheNghiep")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("NgayNop")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NgayPhongVan")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NgonNguCongNghe")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TenDoAn")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int>("TrangThai")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("YeuCauChucNangJSON")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("MaDoAn");
+
+                    b.HasIndex("MaNguoiDung", "NgayNop");
+
+                    b.ToTable("DoAnThucChiens");
+
             modelBuilder.Entity("educodeai_server.Models.DanhHieuModel", b =>
                 {
                     b.Property<int>("MaDanhHieu")
@@ -3053,6 +3154,7 @@ namespace educodeai_server.Migrations
                     b.HasKey("MaDanhHieu");
 
                     b.ToTable("DanhHieus");
+
                 });
 
             modelBuilder.Entity("educodeai_server.Models.DoanhThuGiangVienModel", b =>
@@ -4864,6 +4966,25 @@ namespace educodeai_server.Migrations
                     b.Navigation("KhoaHoc");
                 });
 
+            modelBuilder.Entity("educodeai_server.Models.ChungChiDoAnModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.DoAnThucChienModel", "DoAn")
+                        .WithOne("ChungChiDoAn")
+                        .HasForeignKey("educodeai_server.Models.ChungChiDoAnModel", "MaDoAn")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany()
+                        .HasForeignKey("MaNguoiDung")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("DoAn");
+
+                    b.Navigation("NguoiDung");
+                });
+
             modelBuilder.Entity("educodeai_server.Models.ChungChiKhoaHocModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.KetQuaKiemTraChungChiModel", "KetQuaKiemTraChungChi")
@@ -4935,6 +5056,17 @@ namespace educodeai_server.Migrations
                         .IsRequired();
 
                     b.Navigation("KhoaHoc");
+
+                    b.Navigation("NguoiDung");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.DoAnThucChienModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany()
+                        .HasForeignKey("MaNguoiDung")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.Navigation("NguoiDung");
                 });
@@ -5398,6 +5530,11 @@ namespace educodeai_server.Migrations
             modelBuilder.Entity("educodeai_server.Models.ChuongHocModel", b =>
                 {
                     b.Navigation("BaiHocs");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.DoAnThucChienModel", b =>
+                {
+                    b.Navigation("ChungChiDoAn");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.DonHangKhoaHocModel", b =>

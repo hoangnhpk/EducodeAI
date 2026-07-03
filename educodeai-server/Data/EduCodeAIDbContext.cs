@@ -58,6 +58,10 @@ namespace educodeai_server.Data
         public DbSet<GiangVienQuotaModel> GiangVienQuotas { get; set; }
         public DbSet<AIBalanceHoldModel> AIBalanceHolds { get; set; }
 
+        // === MODULE ĐỒ ÁN THỰC CHIẾN ===
+        public DbSet<DoAnThucChienModel> DoAnThucChiens { get; set; }
+        public DbSet<ChungChiDoAnModel> ChungChiDoAns { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
@@ -426,6 +430,35 @@ namespace educodeai_server.Data
                 .WithOne(x => x.YeuCauRutTien)
                 .HasForeignKey(x => x.MaYeuCauRutTien)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // === RELATIONSHIPS: DoAnThucChien ===
+            modelBuilder.Entity<DoAnThucChienModel>()
+                .HasIndex(d => new { d.MaNguoiDung, d.NgayNop });
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany<DoAnThucChienModel>()
+                .WithOne(d => d.NguoiDung)
+                .HasForeignKey(d => d.MaNguoiDung)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // === RELATIONSHIPS: ChungChiDoAn ===
+            modelBuilder.Entity<ChungChiDoAnModel>()
+                .HasIndex(c => c.MaChungChi).IsUnique();
+
+            modelBuilder.Entity<ChungChiDoAnModel>()
+                .HasIndex(c => new { c.MaNguoiDung, c.MaDoAn }).IsUnique();
+
+            modelBuilder.Entity<DoAnThucChienModel>()
+                .HasOne(d => d.ChungChiDoAn)
+                .WithOne(c => c.DoAn)
+                .HasForeignKey<ChungChiDoAnModel>(c => c.MaDoAn)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany<ChungChiDoAnModel>()
+                .WithOne(c => c.NguoiDung)
+                .HasForeignKey(c => c.MaNguoiDung)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // ====== GAMIFICATION / THỬ THÁCH ======
             modelBuilder.Entity<TienDoNhiemVuTuanModel>()
