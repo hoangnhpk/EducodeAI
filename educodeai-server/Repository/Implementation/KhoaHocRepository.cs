@@ -123,6 +123,8 @@ namespace educodeai_server.Repository.Implementation
                     Slug = SlugHelper.Generate(kh.TenKhoaHoc),
                     CoChungChi = kh.CoChungChi,
                     TenChungChi = kh.TenChungChi,
+                    GiaKhoaHoc = kh.GiaKhoaHoc,
+                    DonViTienTe = kh.DonViTienTe,
                     DanhSachChuongHoc = kh.ChuongHocs
                         .OrderBy(ch => ch.ThuTu)
                         .Select(ch => new ChuongHoc_NoiDungKhoaHocDTO
