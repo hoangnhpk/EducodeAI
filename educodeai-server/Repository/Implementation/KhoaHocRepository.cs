@@ -123,6 +123,8 @@ namespace educodeai_server.Repository.Implementation
                     Slug = SlugHelper.Generate(kh.TenKhoaHoc),
                     CoChungChi = kh.CoChungChi,
                     TenChungChi = kh.TenChungChi,
+                    GiaKhoaHoc = kh.GiaKhoaHoc,
+                    DonViTienTe = kh.DonViTienTe,
                     DanhSachChuongHoc = kh.ChuongHocs
                         .OrderBy(ch => ch.ThuTu)
                         .Select(ch => new ChuongHoc_NoiDungKhoaHocDTO
@@ -141,6 +143,11 @@ namespace educodeai_server.Repository.Implementation
                                     ThoiLuong = bh.ThoiLuong,
                                     ThuTu = bh.ThuTu,
                                     LinkVideo = bh.LinkVideo,
+                                    VideoSource = bh.VideoSource,
+                                    VideoPublicId = bh.VideoPublicId,
+                                    VideoStatus = bh.VideoStatus,
+                                    HasSubtitle = bh.HasSubtitle,
+                                    SubtitleUrl = bh.SubtitleUrl,
                                     DaXem = bh.TienDoBaiHocs.Any(td => td.MaNguoiDung == maNguoiDung && td.DaXem),
                                     ThongTinQuiz = bh.BaiTaps
                                         .Where(bt => bt.BaiTap_Quiz != null)

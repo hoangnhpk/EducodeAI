@@ -1,5 +1,6 @@
 using educodeai_server.Data;
 using educodeai_server.Models;
+using educodeai_server.Constants;
 using educodeai_server.Repository.Interface;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +20,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocModel>> GetKhoaHocByGiangVienAsync(int maGiangVien)
         {
             return await _context.KhoaHocs
-                .Where(k => k.MaGiangVien == maGiangVien && k.TrangThai != "Đã xóa")
+                .Where(k => k.MaGiangVien == maGiangVien)
                 .Include(k => k.DangKyKhoaHocs)
                 .ToListAsync();
         }
@@ -27,7 +28,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<KhoaHocModel?> GetKhoaHocDetailAsync(int maKhoaHoc, int maGiangVien)
         {
             return await _context.KhoaHocs
-                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien && k.TrangThai != "Đã xóa")
+                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien)
                 .Include(k => k.ChuongHocs)
                     .ThenInclude(ch => ch.BaiHocs)
                 .FirstOrDefaultAsync();
@@ -36,7 +37,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<KhoaHocModel?> GetKhoaHocDynamicStatsAsync(int maKhoaHoc, int maGiangVien)
         {
             return await _context.KhoaHocs
-                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien && k.TrangThai != "Đã xóa")
+                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien)
                 .Include(k => k.DangKyKhoaHocs)
                     .ThenInclude(dk => dk.NguoiDung)
                 .FirstOrDefaultAsync();
@@ -45,7 +46,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<KhoaHocModel?> GetKhoaHocForCertificateAsync(int maKhoaHoc, int maGiangVien)
         {
             return await _context.KhoaHocs
-                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien && k.TrangThai != "Đã xóa")
+                .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien)
                 .Include(k => k.ChuongHocs)
                     .ThenInclude(ch => ch.BaiHocs)
                 .FirstOrDefaultAsync();

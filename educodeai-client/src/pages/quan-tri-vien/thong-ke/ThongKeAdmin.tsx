@@ -463,7 +463,7 @@ export default function ThongKeAdmin() {
 
         <div className="adm-top card border-0 shadow-sm">
           <div className="adm-top__header">
-            <h3 className="adm-top__title"><i className="bi bi-person-video3" style={{ color: '#0284c7',marginRight: '8px' }}></i>Top 5 giảng viên nhiều đăng ký</h3>
+            <h3 className="adm-top__title"><i className="bi bi-person-video3" style={{ color: '#0284c7', marginRight: '8px' }}></i>Top 5 giảng viên nhiều đăng ký</h3>
             <span className="adm-top__range">
               {monthInputToLabel(chartFrom)} - {monthInputToLabel(chartTo)}
             </span>

@@ -1,18 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import './QuanLyHocVienKhoaHoc.css';
 import {
-  BsPersonFill, BsSearch, BsChevronLeft, BsChevronRight,
-  BsEyeFill, BsCheckCircleFill, BsX, BsCircle, BsChevronDown, BsGiftFill
+  BsSearch, BsChevronLeft, BsChevronRight,
+  BsEyeFill, BsCheckCircleFill, BsX, BsCircle, BsChevronDown, BsGiftFill,
+  BsEnvelopeFill, BsStarFill, BsClockHistory, BsPersonPlusFill, BsDownload
 } from 'react-icons/bs';
 import { getUserId } from '@/utils/authHelper';
 import Swal from 'sweetalert2';
 import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
+import lopHocService from '@/services/lop-hoc.service';
+import BulkMailModal from './components/BulkMailModal';
+import { layChuCaiAvatar, layMauAvatar } from '@/utils/avatarHelper';
 
 interface KhoaHoc {
   maKhoaHoc: number;
   tenKhoaHoc: string;
   soLuongHocVien: number;
 }
+
+type TagFilter = 'all' | 'xuat_sac' | 'giam_chan' | 'moi_dang_ky';
 
 interface HocVien {
   maNguoiDung: number;
@@ -22,6 +28,12 @@ interface HocVien {
   ngayDangKy: string;
   tenKhoaHoc: string;
   trangThai: string;
+  phanTramTienDo?: number;
+  soBaiDaHoc?: number;
+  tongSoBai?: number;
+  ngayHocCuoi?: string | null;
+  tag?: string | null;
+  tagLabel?: string | null;
 }
 
 interface KhoaHocHocVien {
@@ -64,6 +76,65 @@ const ITEMS_PER_PAGE = 5;
 const normalizeText = (value: string) =>
   value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
+const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+
+const getAnhDaiDienUrl = (path?: string | null): string => {
+  if (!path?.trim()) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return `${API_BASE}${normalized}`;
+};
+
+function HocVienAvatar({ hoTen, anhDaiDien }: { hoTen: string; anhDaiDien: string | null }) {
+  const [loiAnh, setLoiAnh] = useState(false);
+  const url = getAnhDaiDienUrl(anhDaiDien);
+  const initials = layChuCaiAvatar(hoTen);
+  const mau = layMauAvatar(hoTen);
+
+  if (url && !loiAnh) {
+    return (
+      <img
+        src={url}
+        alt=""
+        onError={() => setLoiAnh(true)}
+      />
+    );
+  }
+
+  return (
+    <span
+      className="qllh-avatar-fallback"
+      aria-hidden="true"
+      style={{ backgroundColor: mau.bg, color: mau.color }}
+    >
+      {initials}
+    </span>
+  );
+}
+
+const getSmartTagMeta = (tag?: string | null) => {
+  switch (tag) {
+    case 'xuat_sac':
+      return { className: 'tag-xuat-sac', label: 'Xuất sắc', icon: <BsStarFill size={11} /> };
+    case 'giam_chan':
+      return { className: 'tag-giam-chan', label: 'Cần nhắc', icon: <BsClockHistory size={11} /> };
+    case 'moi_dang_ky':
+      return { className: 'tag-moi-dk', label: 'Mới đăng ký', icon: <BsPersonPlusFill size={11} /> };
+    default:
+      return null;
+  }
+};
+
+const formatNgayHocCuoi = (raw?: string | null) => {
+  if (!raw) return 'Chưa học';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return '—';
+  const diff = Math.floor((Date.now() - d.getTime()) / 86400000);
+  if (diff <= 0) return 'Hôm nay';
+  if (diff === 1) return 'Hôm qua';
+  return `${diff} ngày trước`;
+};
+
 const getTrangThaiMeta = (raw: string) => {
   const normalized = (raw ?? '').trim().toLowerCase();
   if (['hoanthanh', 'hoàn thành', 'hoan thanh', 'completed'].includes(normalized)) {
@@ -76,6 +147,26 @@ const getTrangThaiMeta = (raw: string) => {
     return { className: 'bi-khoa', label: 'Bị khóa' };
   }
   return { className: 'khong-xac-dinh', label: raw || 'Không xác định' };
+};
+
+const getQuaTangTrangThaiMeta = (raw: string) => {
+  const normalized = (raw ?? '').trim().toUpperCase();
+  if (normalized === 'COMPLETED') return { className: 'qllh-gift-badge--done', label: 'Đã tặng' };
+  if (normalized === 'PENDING') return { className: 'qllh-gift-badge--pending', label: 'Đang xử lý' };
+  if (normalized === 'FAILED') return { className: 'qllh-gift-badge--fail', label: 'Thất bại' };
+  return { className: 'qllh-gift-badge--default', label: raw || '—' };
+};
+
+const formatGiftTime = (raw: string) => {
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
 export default function QuanLyHocVienKhoaHoc() {
@@ -103,6 +194,13 @@ export default function QuanLyHocVienKhoaHoc() {
   const [tuKhoaLichSu, setTuKhoaLichSu] = useState<string>('');
   const [trangLichSu, setTrangLichSu] = useState<number>(1);
   const pageSizeLichSu = 10;
+
+  const [filterTag, setFilterTag] = useState<TagFilter>('all');
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [dangGuiMail, setDangGuiMail] = useState(false);
+
+  const daChonKhoaCuThe = selectedKhoaHoc !== ALL_COURSES_VALUE;
 
   const API_URL = import.meta.env.VITE_API_URL;
   const maGiangVien = useMemo(() => getUserId() ?? 1, []);
@@ -161,6 +259,8 @@ export default function QuanLyHocVienKhoaHoc() {
   useEffect(() => {
     fetchHocViens(selectedKhoaHoc);
     setCurrentPage(1);
+    setFilterTag('all');
+    setSelectedIds(new Set());
   }, [fetchHocViens, selectedKhoaHoc]);
 
   useEffect(() => {
@@ -242,13 +342,86 @@ export default function QuanLyHocVienKhoaHoc() {
 
   const filteredHocViens = useMemo(() => {
     const normalizedQuery = normalizeText(searchInput);
-    if (!normalizedQuery) return hocViens;
     return hocViens.filter((hv) => {
+      if (filterTag !== 'all' && hv.tag !== filterTag) return false;
+      if (!normalizedQuery) return true;
       const name = normalizeText(hv.hoTen ?? '');
       const email = normalizeText(hv.email ?? '');
       return name.includes(normalizedQuery) || email.includes(normalizedQuery);
     });
-  }, [hocViens, searchInput]);
+  }, [hocViens, searchInput, filterTag]);
+
+  const soHocVienGiamChan = useMemo(
+    () => hocViens.filter((h) => h.tag === 'giam_chan').length,
+    [hocViens]
+  );
+
+  const tenKhoaHocHienTai = useMemo(
+    () => khoaHocs.find((k) => String(k.maKhoaHoc) === selectedKhoaHoc)?.tenKhoaHoc ?? '',
+    [khoaHocs, selectedKhoaHoc]
+  );
+
+  const selectedHocViens = useMemo(
+    () => hocViens.filter((h) => selectedIds.has(h.maNguoiDung)),
+    [hocViens, selectedIds]
+  );
+
+  const toggleSelect = useCallback((maNguoiDung: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(maNguoiDung)) next.delete(maNguoiDung);
+      else next.add(maNguoiDung);
+      return next;
+    });
+  }, []);
+
+  const chonTatCaGiamChan = useCallback(() => {
+    const ids = filteredHocViens.filter((h) => h.tag === 'giam_chan').map((h) => h.maNguoiDung);
+    setSelectedIds(new Set(ids));
+    setFilterTag('giam_chan');
+  }, [filteredHocViens]);
+
+  const handleGuiMailHangLoat = useCallback(async (tieuDe: string, noiDungHtml: string) => {
+    if (!daChonKhoaCuThe || selectedIds.size === 0) return;
+    const soNguoiGui = selectedIds.size;
+    try {
+      setDangGuiMail(true);
+      await lopHocService.guiMailHangLoat({
+        maKhoaHoc: Number(selectedKhoaHoc),
+        danhSachMaNguoiDung: Array.from(selectedIds),
+        tieuDe,
+        noiDungHtml,
+      });
+      setShowBulkModal(false);
+      setSelectedIds(new Set());
+      await Swal.fire({
+        title: 'Gửi thành công',
+        html: `<p class="qllh-swal-text">Email đang được gửi đến <strong>${soNguoiGui}</strong> học viên.</p>`,
+        icon: 'success',
+        confirmButtonText: 'Đóng',
+        confirmButtonColor: '#f97316',
+        buttonsStyling: true,
+        customClass: {
+          popup: 'qllh-swal-popup',
+          title: 'qllh-swal-title',
+          htmlContainer: 'qllh-swal-html',
+          confirmButton: 'qllh-swal-confirm',
+          icon: 'qllh-swal-icon',
+        },
+      });
+    } catch (error: any) {
+      await Swal.fire({
+        title: 'Không gửi được',
+        text: error?.response?.data?.message || 'Đã có lỗi xảy ra.',
+        icon: 'error',
+        confirmButtonText: 'Đóng',
+        confirmButtonColor: '#f97316',
+        customClass: { popup: 'qllh-swal-popup', confirmButton: 'qllh-swal-confirm' },
+      });
+    } finally {
+      setDangGuiMail(false);
+    }
+  }, [daChonKhoaCuThe, selectedIds, selectedKhoaHoc]);
 
   const totalPages = useMemo(
     () => Math.ceil(filteredHocViens.length / ITEMS_PER_PAGE),
@@ -260,6 +433,19 @@ export default function QuanLyHocVienKhoaHoc() {
     const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
     return filteredHocViens.slice(indexOfFirstItem, indexOfLastItem);
   }, [currentPage, filteredHocViens]);
+
+  const toggleSelectPage = useCallback(() => {
+    const pageIds = currentItems.map((h) => h.maNguoiDung);
+    const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }, [currentItems, selectedIds]);
+
+  const pageAllSelected = currentItems.length > 0 && currentItems.every((h) => selectedIds.has(h.maNguoiDung));
 
   const paginationInfo = useMemo(() => {
     const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
@@ -355,7 +541,9 @@ export default function QuanLyHocVienKhoaHoc() {
     <div className="qllh-container">
       <div className="qllh-header">
         <h1 className="qllh-title">Quản Lý Lớp Học</h1>
-        <p className="qllh-subtitle">Xem và quản lý thông tin các học viên theo học khóa của bạn.</p>
+        <p className="qllh-subtitle">
+          Theo dõi tiến độ, phân loại học viên thông minh và gửi mail nhắc nhở hàng loạt.
+        </p>
       </div>
 
       <div className="qllh-filter-bar">
@@ -387,56 +575,105 @@ export default function QuanLyHocVienKhoaHoc() {
         </select>
       </div>
 
-      {loading && <p style={{ color: '#ea580c', fontWeight: 'bold', marginBottom: '16px' }}>Đang tải dữ liệu học viên...</p>}
+      {daChonKhoaCuThe && !loading && soHocVienGiamChan > 0 && (
+        <div className="qllh-quick-actions">
+          <button type="button" className="qllh-btn-quick-select" onClick={chonTatCaGiamChan}>
+            <BsClockHistory size={14} />
+            Chọn học viên cần nhắc ({soHocVienGiamChan})
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="qllh-skeleton-wrap">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="qllh-skeleton-row" />
+          ))}
+        </div>
+      )}
 
       {!loading && (
         <div className="qllh-table-wrapper">
           <table className="qllh-table">
             <thead>
               <tr>
+                {daChonKhoaCuThe && (
+                  <th className="qllh-col-check">
+                    <input type="checkbox" checked={pageAllSelected} onChange={toggleSelectPage} aria-label="Chọn trang" />
+                  </th>
+                )}
                 <th className="qllh-col-student">Học viên</th>
                 <th>Email</th>
+                {daChonKhoaCuThe && <th>Tiến độ</th>}
+                {daChonKhoaCuThe && <th>Học gần nhất</th>}
+                {daChonKhoaCuThe && <th>Nhãn</th>}
                 <th className="qllh-col-status">Trạng thái</th>
-                {selectedKhoaHoc !== ALL_COURSES_VALUE && (
-                  <>
-                    <th>Khóa học</th>
-                    <th>Ngày tham gia</th>
-                  </>
-                )}
-                <th className="qllh-col-actions">Chi tiết</th>
+                {!daChonKhoaCuThe && <th>Ngày tham gia</th>}
+                <th className="qllh-col-actions">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan={selectedKhoaHoc !== ALL_COURSES_VALUE ? 6 : 4} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                    Không tìm thấy dữ liệu.
+                  <td colSpan={daChonKhoaCuThe ? 8 : 5} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    {filterTag !== 'all' ? 'Không có học viên thuộc nhãn này.' : 'Không tìm thấy dữ liệu.'}
                   </td>
                 </tr>
               ) : (
-                currentItems.map((hv, index) => (
-                  <tr key={`${hv.maNguoiDung}-${index}`}>
+                currentItems.map((hv, index) => {
+                  const pct = hv.phanTramTienDo ?? 0;
+                  const tagMeta = getSmartTagMeta(hv.tag);
+                  return (
+                  <tr key={`${hv.maNguoiDung}-${index}`} className={selectedIds.has(hv.maNguoiDung) ? 'is-selected' : ''}>
+                    {daChonKhoaCuThe && (
+                      <td className="qllh-col-check">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(hv.maNguoiDung)}
+                          onChange={() => toggleSelect(hv.maNguoiDung)}
+                          aria-label={`Chọn ${hv.hoTen}`}
+                        />
+                      </td>
+                    )}
                     <td className="qllh-col-student">
                       <div className="qllh-user-info">
                         <div className="qllh-avatar">
-                          {hv.anhDaiDien ? <img src={`${API_URL}${hv.anhDaiDien}`} alt="avt" /> : <BsPersonFill size={24} color="#f97316" />}
+                          <HocVienAvatar hoTen={hv.hoTen} anhDaiDien={hv.anhDaiDien} />
                         </div>
                         <span className="qllh-user-name">{hv.hoTen}</span>
                       </div>
                     </td>
                     <td style={{ color: '#4b5563' }}>{hv.email}</td>
+                    {daChonKhoaCuThe && (
+                      <td>
+                        <div className="qllh-progress-cell">
+                          <div className="qllh-progress-track">
+                            <div className="qllh-progress-fill" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="qllh-progress-text">{pct}% · {hv.soBaiDaHoc ?? 0}/{hv.tongSoBai ?? 0}</span>
+                        </div>
+                      </td>
+                    )}
+                    {daChonKhoaCuThe && (
+                      <td style={{ color: '#6b7280', fontSize: 13 }}>{formatNgayHocCuoi(hv.ngayHocCuoi)}</td>
+                    )}
+                    {daChonKhoaCuThe && (
+                      <td>
+                        {tagMeta ? (
+                          <span className={`qllh-smart-tag ${tagMeta.className}`} title={`${hv.soBaiDaHoc ?? 0}/${hv.tongSoBai ?? 0} bài`}>
+                            {tagMeta.icon} {tagMeta.label}
+                          </span>
+                        ) : <span className="qllh-smart-tag tag-none">Đang học</span>}
+                      </td>
+                    )}
                     <td className="qllh-col-status">
                       {(() => {
                         const meta = getTrangThaiMeta(hv.trangThai);
                         return <span className={`qllh-badge ${meta.className}`}>{meta.label}</span>;
                       })()}
                     </td>
-
-                    {selectedKhoaHoc !== ALL_COURSES_VALUE && (
-                      <>
-                        <td style={{ color: '#ea580c', fontWeight: '600' }}>{hv.tenKhoaHoc}</td>
-                        <td style={{ color: '#4b5563' }}>{new Date(hv.ngayDangKy).toLocaleDateString('vi-VN')}</td>
-                      </>
+                    {!daChonKhoaCuThe && (
+                      <td style={{ color: '#4b5563' }}>{new Date(hv.ngayDangKy).toLocaleDateString('vi-VN')}</td>
                     )}
 
                     <td className="qllh-col-actions">
@@ -450,14 +687,15 @@ export default function QuanLyHocVienKhoaHoc() {
                       </button>
                       <button
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f97316', padding: '8px' }}
-                        title={selectedKhoaHoc === '0' ? "Xem các khóa đã đăng ký" : "Xem tiến độ chi tiết"}
+                        title={!daChonKhoaCuThe ? "Xem các khóa đã đăng ký" : "Xem tiến độ chi tiết"}
                         onClick={() => handleViewDetailClick(hv)}
                       >
                         <BsEyeFill size={18} />
                       </button>
                     </td>
                   </tr>
-                )))}
+                );})
+              )}
             </tbody>
           </table>
 
@@ -476,37 +714,45 @@ export default function QuanLyHocVienKhoaHoc() {
         </div>
       )}
 
-      <div className="qllh-table-wrapper" style={{ marginTop: 20 }}>
-        <div className="qllh-filter-bar" style={{ marginBottom: 0 }}>
-          <div style={{ minWidth: 260 }}>
-            <h3 style={{ margin: 0, color: '#9a3412' }}>Lịch sử tặng khóa học</h3>
-            <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 13 }}>Theo dõi các lượt tặng học viên gần đây.</p>
+      <section className="qllh-gift-section">
+        <div className="qllh-gift-section__head">
+          <div className="qllh-gift-section__title-wrap">
+            <div className="qllh-gift-section__icon" aria-hidden="true">
+              <BsGiftFill size={18} />
+            </div>
+            <div>
+              <h3 className="qllh-gift-section__title">Lịch sử tặng khóa học</h3>
+              <p className="qllh-gift-section__subtitle">Theo dõi các lượt tặng gần đây</p>
+            </div>
           </div>
+
           <form
+            className="qllh-gift-toolbar"
             onSubmit={(e) => {
               e.preventDefault();
               void fetchLichSuQuaTang(selectedKhoaHoc !== ALL_COURSES_VALUE ? Number(selectedKhoaHoc) : undefined, tuKhoaLichSu || undefined);
             }}
-            className="qllh-search-form"
-            style={{ maxWidth: 520 }}
           >
-            <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-              <BsSearch style={{ position: 'absolute', left: '16px', color: '#9ca3af' }} />
+            <div className="qllh-gift-search">
+              <BsSearch className="qllh-gift-search__icon" />
               <input
                 type="search"
-                placeholder="Tìm mã/tên/email người nhận..."
-                className="qllh-search-input"
+                placeholder="Tìm mã, tên hoặc email người nhận..."
+                className="qllh-gift-search__input"
                 value={tuKhoaLichSu}
                 onChange={(e) => setTuKhoaLichSu(e.target.value)}
               />
             </div>
-            <button type="submit" className="qllh-btn-search">Lọc</button>
-            <button type="button" className="qllh-btn-search" onClick={xuatCsvLichSu}>Xuất CSV</button>
+            <button type="submit" className="qllh-gift-btn qllh-gift-btn--primary">Tìm</button>
+            <button type="button" className="qllh-gift-btn qllh-gift-btn--outline" onClick={xuatCsvLichSu}>
+              <BsDownload size={14} />
+              Xuất CSV
+            </button>
           </form>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table className="qllh-table">
+        <div className="qllh-gift-table-wrap">
+          <table className="qllh-gift-table">
             <thead>
               <tr>
                 <th>Mã</th>
@@ -518,25 +764,64 @@ export default function QuanLyHocVienKhoaHoc() {
             </thead>
             <tbody>
               {dangTaiLichSu ? (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20 }}>Đang tải lịch sử...</td></tr>
-              ) : lichSuQuaTang.length === 0 ? (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20 }}>Chưa có lịch sử tặng khóa học.</td></tr>
-              ) : (
-                lichSuTrangHienTai.map((item) => (
-                  <tr key={item.maQuaTang}>
-                    <td>#{item.maQuaTang}</td>
-                    <td>{item.tenKhoaHoc}</td>
-                    <td>{item.tenNguoiNhan}<br /><small style={{ color: '#6b7280' }}>{item.emailNguoiNhan || '—'}</small></td>
-                    <td>{item.trangThai}</td>
-                    <td>{new Date(item.createdAt).toLocaleString('vi-VN')}</td>
+                Array.from({ length: 3 }).map((_, i) => (
+                  <tr key={`gift-skel-${i}`}>
+                    <td colSpan={5}>
+                      <div className="qllh-gift-skeleton" />
+                    </td>
                   </tr>
                 ))
+              ) : lichSuQuaTang.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <div className="qllh-gift-empty">
+                      <BsGiftFill size={26} />
+                      <p>Chưa có lượt tặng khóa học</p>
+                      <span>Danh sách sẽ hiện khi bạn tặng khóa cho học viên.</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                lichSuTrangHienTai.map((item) => {
+                  const status = getQuaTangTrangThaiMeta(item.trangThai);
+                  const avatarMau = layMauAvatar(item.tenNguoiNhan);
+                  const avatarChu = layChuCaiAvatar(item.tenNguoiNhan);
+                  return (
+                    <tr key={item.maQuaTang}>
+                      <td>
+                        <span className="qllh-gift-code">#{item.maQuaTang}</span>
+                      </td>
+                      <td>
+                        <span className="qllh-gift-course" title={item.tenKhoaHoc}>{item.tenKhoaHoc}</span>
+                      </td>
+                      <td>
+                        <div className="qllh-gift-recipient">
+                          <span
+                            className="qllh-gift-recipient__avatar"
+                            style={{ backgroundColor: avatarMau.bg, color: avatarMau.color }}
+                          >
+                            {avatarChu}
+                          </span>
+                          <span className="qllh-gift-recipient__info">
+                            <strong>{item.tenNguoiNhan}</strong>
+                            <small>{item.emailNguoiNhan || '—'}</small>
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`qllh-gift-badge ${status.className}`}>{status.label}</span>
+                      </td>
+                      <td className="qllh-gift-time">{formatGiftTime(item.createdAt)}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
+
         {!dangTaiLichSu && lichSuQuaTang.length > 0 && (
-          <div className="qllh-pagination">
+          <div className="qllh-gift-pagination">
             <span className="qllh-page-info">
               Trang {trangLichSu} / {tongTrangLichSu}
             </span>
@@ -548,7 +833,47 @@ export default function QuanLyHocVienKhoaHoc() {
             </button>
           </div>
         )}
-      </div>
+      </section>
+
+      {daChonKhoaCuThe && selectedIds.size > 0 && (
+        <div className="qllh-floating-bar">
+          <span className="qllh-floating-bar__count">
+            <b>{selectedIds.size}</b> học viên được chọn
+          </span>
+          <button type="button" className="qllh-floating-bar__clear" onClick={() => setSelectedIds(new Set())}>
+            Huỷ chọn
+          </button>
+          <button
+            type="button"
+            className="qllh-floating-bar__mail"
+            onClick={() => setShowBulkModal(true)}
+          >
+            <BsEnvelopeFill size={15} />
+            Gửi mail
+          </button>
+        </div>
+      )}
+
+      <BulkMailModal
+        open={showBulkModal}
+        tenKhoaHoc={tenKhoaHocHienTai}
+        nguoiNhan={selectedHocViens.map((h) => ({
+          maNguoiDung: h.maNguoiDung,
+          hoTen: h.hoTen,
+          email: h.email,
+          tag: h.tag,
+        }))}
+        dangGui={dangGuiMail}
+        onClose={() => setShowBulkModal(false)}
+        onRemoveNguoiNhan={(ma) =>
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(ma);
+            return next;
+          })
+        }
+        onSend={handleGuiMailHangLoat}
+      />
 
       {/* POPUP LINH HOẠT TÙY CHẾ ĐỘ */}
       {showModal && (
@@ -566,9 +891,15 @@ export default function QuanLyHocVienKhoaHoc() {
                     <p style={{ marginTop: '8px', marginBottom: 0, color: '#f97316', fontSize: '14px', fontWeight: 'bold' }}>
                       Đã học được: {formatTime(tienDoKhoaHoc.tongThoiGianHocPhut)}
                     </p>
-                    <p style={{ marginTop: '6px', color: '#f97316', fontSize: '14px', fontWeight: 'bold' }}>
-                      Tiến độ khóa học: {tienDoPhanTramKhoaHoc}%
-                    </p>
+                    <div className="qllh-modal-progress">
+                      <div className="qllh-modal-progress__label">
+                        <span>Tiến độ khóa học</span>
+                        <span className="qllh-modal-progress__pct">{tienDoPhanTramKhoaHoc}%</span>
+                      </div>
+                      <div className="qllh-progress-track qllh-progress-track--modal">
+                        <div className="qllh-progress-fill" style={{ width: `${tienDoPhanTramKhoaHoc}%` }} />
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
