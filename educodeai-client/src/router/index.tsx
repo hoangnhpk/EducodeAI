@@ -28,6 +28,7 @@ import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
 import PhongVanAI from "../pages/hoc-vien/phong-van-ai/PhongVanAI";
 import SinhDoAnAI from "../pages/hoc-vien/sinh-do-an-ai/SinhDoAnAI";
+import PhongVanDoAn from "../pages/hoc-vien/phong-van-do-an/PhongVanDoAn";
 
 import TaoBaiTap from "../pages/giang-vien/tao-bai-tap-test-case/TaoBaiTap";
 import TaoQuiz from "../pages/giang-vien/tao-bai-tap-test-case/TaoQuizContent";
@@ -110,6 +111,7 @@ export default function AppRouter() {
             <Route path="/kham-pha-lo-trinh" element={<KhamPhaLoTrinh />} />
             <Route path="/phong-van-ai" element={<PhongVanAI />} />
             <Route path="/sinh-do-an-ai" element={<SinhDoAnAI />} />
+            <Route path="/phong-van-do-an/:sessionId" element={<PhongVanDoAn />} />
           </Route>
 
           <Route element={<ProtectedRoute allowRoles={[0, 1, 2]}><LayoutBlank /></ProtectedRoute>}>

@@ -152,13 +152,25 @@ builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
 builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();
 builder.Services.AddScoped<IKeyApiService, KeyApiService>();
-builder.Services.AddScoped<ISinhDoAnAIService, SinhDoAnAIService>();
+builder.Services.AddScoped<ISinhDoAnAIService, SinhDoAnAIService>(); // Trạm Hỏi Cung – inject DbContext tự động qua DI
+builder.Services.AddScoped<IChamDiemDoAnService, ChamDiemDoAnService>();
 
 
 // ==========================================
 // 5. CẤU HÌNH HTTP CLIENT CHO GEMINI (ĐÃ TỐI ƯU)
 // ==========================================
 builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var baseUrl = config["GeminiAI:BaseUrl"];
+
+    if (!string.IsNullOrEmpty(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+});
+
+builder.Services.AddHttpClient<IGeminiToolCallingService, GeminiToolCallingService>((sp, client) =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
     var baseUrl = config["GeminiAI:BaseUrl"];

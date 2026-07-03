@@ -55,7 +55,7 @@ const TrangChu: React.FC = () => {
                     <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&auto=format&fit=crop&w=2072&q=80" alt="Banner" />
                 </div>
                 <div className="hero-overlay"></div>
-                
+
                 <div className="container position-relative z-index-1 h-100">
                     <div className="row align-items-center h-100">
                         <div className="col-lg-8">
@@ -66,17 +66,17 @@ const TrangChu: React.FC = () => {
                                 Học Lập Trình <br />
                                 <span className="text-primary position-relative d-inline-block mt-2">
                                     Dễ Dàng & Hiệu Quả
-                                    <svg className="hero-underline" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="transparent"/></svg>
+                                    <svg className="hero-underline" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="transparent" /></svg>
                                 </span>
                             </h1>
                             <p className="lead text-light mb-5 fs-5 opacity-75 max-w-xl">
                                 Nền tảng e-learning thông minh với lộ trình bài bản, đồ án thực chiến và phòng phỏng vấn ảo được hỗ trợ 100% bởi Trí tuệ nhân tạo.
                             </p>
                             <div className="d-flex flex-wrap gap-3">
-                                <a href="#courses-section" className="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow-lg hero-btn-primary d-flex align-items-center gap-2">
-                                    Khám phá khóa học <i className="fa fa-arrow-right"></i>
+                                <a href="#courses-section" className="btn btn-primary rounded-pill fw-bold shadow-lg" style={{ width: '240px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
+                                    Khám phá khóa học <i className="fa fa-arrow-right ms-2"></i>
                                 </a>
-                                <a href="#features-section" className="btn btn-outline-light btn-lg rounded-pill px-5 py-3 fw-bold hero-btn-outline">
+                                <a href="#features-section" className="btn btn-outline-light rounded-pill fw-bold" style={{ width: '240px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
                                     Tìm hiểu thêm
                                 </a>
                             </div>
@@ -85,17 +85,17 @@ const TrangChu: React.FC = () => {
                 </div>
             </section>
 
-            {/* 2. Search Bar Sticky */}
-            <div className="sticky-top bg-white border-bottom shadow-sm py-3" style={{ zIndex: 40, top: '75px' }}>
+            {/* 2. Search Bar */}
+            <div className="bg-white border-bottom shadow-sm py-3 position-relative" style={{ zIndex: 10 }}>
                 <div className="container">
                     <div className="row justify-content-center">
                         <div className="col-lg-8">
                             <div className="search-bar-modern">
                                 <div className="search-icon"><i className="fa fa-search"></i></div>
-                                <input 
-                                    type="text" 
-                                    className="search-input" 
-                                    placeholder="Bạn muốn học gì hôm nay? (VD: Java, Python...)" 
+                                <input
+                                    type="text"
+                                    className="search-input"
+                                    placeholder="Bạn muốn học gì hôm nay? (VD: Java, Python...)"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -142,7 +142,7 @@ const TrangChu: React.FC = () => {
                         <h2 className="display-6 fw-bold text-dark mb-4">Hệ sinh thái ứng dụng Trí Tuệ Nhân Tạo</h2>
                         <p className="text-muted fs-5 max-w-3xl mx-auto">Không chỉ là xem video, hệ thống cung cấp các công cụ thực chiến độc quyền giúp bạn sẵn sàng cho môi trường doanh nghiệp.</p>
                     </div>
-                    
+
                     <div className="row g-4">
                         <div className="col-md-4">
                             <div className="feature-card bg-white p-5 rounded-4 shadow-sm h-100">
@@ -236,11 +236,11 @@ const TrangChu: React.FC = () => {
                                 <div key={kh.maKhoaHoc} className="col-md-6 col-lg-3">
                                     <div className="course-card card h-100 border-0 rounded-4 shadow-sm overflow-hidden transition-all">
                                         <div className="position-relative overflow-hidden" style={{ height: '200px' }}>
-                                            <img 
-                                                src={`/img/${kh.hinhAnh}`} 
-                                                alt={kh.tenKhoaHoc} 
-                                                className="w-100 h-100 object-fit-cover course-img" 
-                                                onError={(e) => (e.currentTarget.src = 'https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=500&q=80')} 
+                                            <img
+                                                src={`/img/${kh.hinhAnh}`}
+                                                alt={kh.tenKhoaHoc}
+                                                className="w-100 h-100 object-fit-cover course-img"
+                                                onError={(e) => (e.currentTarget.src = 'https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=500&q=80')}
                                             />
                                             <div className="position-absolute top-0 start-0 m-3">
                                                 <span className="badge bg-dark px-3 py-2 text-uppercase tracking-wider rounded-3 opacity-75">
@@ -260,13 +260,17 @@ const TrangChu: React.FC = () => {
                                                     <i className="fa fa-clock text-primary me-2"></i> {kh.thoiLuongGio} giờ học
                                                 </div>
                                                 {kh.khoaHocDaDangKy ? (
-                                                    <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-success w-100 rounded-3 fw-bold py-2">
+                                                    <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-success w-100 rounded-3 fw-bold text-center" style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                         <i className="fa fa-play-circle me-2"></i> Tiếp tục học
                                                     </Link>
                                                 ) : (
-                                                    <div className="d-flex gap-2">
-                                                        <Link to={`/khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-light w-50 rounded-3 fw-bold py-2 border">Chi tiết</Link>
-                                                        <Link to={`/mua-khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-primary text-white w-50 rounded-3 fw-bold py-2 shadow-sm" style={{ background: '#fb873f', borderColor: '#fb873f' }}>Mua ngay</Link>
+                                                    <div className="row g-2 w-100 m-0">
+                                                        <div className="col-6 p-0 pe-1">
+                                                            <Link to={`/khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-light w-100 rounded-3 fw-bold border text-center" style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', padding: '0 4px', fontSize: '0.9rem' }}>Chi tiết</Link>
+                                                        </div>
+                                                        <div className="col-6 p-0 ps-1">
+                                                            <Link to={`/mua-khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-primary text-white w-100 rounded-3 fw-bold shadow-sm text-center" style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap', padding: '0 4px', fontSize: '0.9rem', background: '#fb873f', borderColor: '#fb873f' }}>Mua ngay</Link>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -295,7 +299,7 @@ const TrangChu: React.FC = () => {
                         </div>
                         <a href="#" className="fw-bold text-muted text-decoration-none hover-primary d-none d-md-block">Xem tất cả <i className="fas fa-arrow-right ms-1"></i></a>
                     </div>
-                    
+
                     <div className="row g-4">
                         {[
                             { name: "Nguyễn Quốc Hùng", role: "Senior .NET Developer", bg: "0D8ABC" },
@@ -328,7 +332,7 @@ const TrangChu: React.FC = () => {
                         <h6 className="text-primary fw-bold text-uppercase tracking-widest mb-2">Đánh giá thực tế</h6>
                         <h2 className="display-6 fw-bold m-0">Học viên nói gì về EduCode?</h2>
                     </div>
-                    
+
                     <div className="row g-4">
                         {[
                             { name: "Trần Minh", role: "Fresher Backend", quote: "Nhờ tính năng giả lập phỏng vấn AI, mình đã tự tin hơn rất nhiều khi deal lương thực tế. Các câu hỏi AI đưa ra cực kỳ sát với Technical Interview." },
@@ -532,6 +536,13 @@ const TrangChu: React.FC = () => {
                 /* Colors */
                 .bg-primary-subtle { background-color: rgba(251, 135, 63, 0.1) !important; }
                 .text-primary { color: #fb873f !important; }
+
+                /* Button specific sizing */
+                .hero-btn {
+                    width: 250px !important;
+                    height: 56px !important;
+                    font-size: 1.1rem !important;
+                }
             `}</style>
         </div>
     );

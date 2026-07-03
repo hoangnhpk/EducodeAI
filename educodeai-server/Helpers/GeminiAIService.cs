@@ -153,6 +153,12 @@ namespace educodeai_server.Helpers
                 return sortedKeys;
         }
 
+        public async Task<bool> IsAIAvailableAsync()
+        {
+            var validKeys = await LayDanhSachKeyHopLeTuRedisAsync();
+            return validKeys != null && validKeys.Count > 0;
+        }
+
         private string NextRedisKey(List<string> keys)
         {
             lock (_lock)
@@ -163,14 +169,18 @@ namespace educodeai_server.Helpers
             }
         }
 
-        public async Task<string> GenerateAsync(string prompt)
+        public async Task<string> GenerateAsync(string prompt, bool isJsonMode = false)
         {
             return await AiRequestQueueHelper.EnqueueAsync(async () =>
             {
+                object config = isJsonMode 
+                    ? new { temperature = 0.7, topP = 0.9, maxOutputTokens = 8192, responseMimeType = "application/json" }
+                    : new { temperature = 0.7, topP = 0.9, maxOutputTokens = 8192 };
+
                 var requestBody = new
                 {
                     contents = new[] { new { parts = new[] { new { text = prompt } } } },
-                    generationConfig = new { temperature = 0.7, topP = 0.9 }
+                    generationConfig = config
                 };
 
                 var hopLeKeys = await LayDanhSachKeyHopLeTuRedisAsync();
@@ -188,7 +198,7 @@ namespace educodeai_server.Helpers
                     string maHoa = await _redisService.LayHashAsync(currentRedisKey, "MaKeyMaHoa");
                     string rawKey = MaHoaHelper.GiaiMa(maHoa, _secretKey);
 
-                    string requestUrl = $"v1beta/models/gemma-3-27b-it:generateContent?key={rawKey}";
+                    string requestUrl = $"v1beta/models/gemini-2.5-flash:generateContent?key={rawKey}";
 
                     HttpResponseMessage response = null;
 
@@ -232,9 +242,12 @@ namespace educodeai_server.Helpers
                         return responseBody;
                     }
 
-                    if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
+                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                        response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
                         response.StatusCode == System.Net.HttpStatusCode.Forbidden ||
-                        response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                        response.StatusCode == System.Net.HttpStatusCode.InternalServerError ||
+                        response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable ||
+                        response.StatusCode == System.Net.HttpStatusCode.BadGateway)
                     {
                         Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
 
@@ -247,7 +260,27 @@ namespace educodeai_server.Helpers
                         continue;
                     }
 
-                    response.EnsureSuccessStatusCode();
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        string errorContent = await response.Content.ReadAsStringAsync();
+                        
+                        string msg = "Lỗi kết nối đến máy chủ AI. Vui lòng thử lại.";
+
+                        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                            msg = "Lỗi (401): API Key bị thiếu hoặc sai. Vui lòng kiểm tra lại cấu hình Key trong hệ thống.";
+                        else if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                            msg = "Lỗi (429): API Key đã dùng hết lượt hoặc bị gọi quá nhanh. Vui lòng thử lại sau 1 phút hoặc thêm Key mới.";
+                        else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                            msg = "Lỗi (403): API Key bị từ chối truy cập (có thể do sai quyền hoặc bị khóa).";
+                        else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || response.StatusCode == System.Net.HttpStatusCode.BadGateway)
+                            msg = $"Lỗi ({response.StatusCode}): Máy chủ AI của Google đang bị nghẽn mạng. Vui lòng nhấn Thử lại sau ít phút.";
+                        else
+                            msg = $"Lỗi không xác định từ AI ({response.StatusCode}). Vui lòng báo cho Admin.";
+
+                        // Chỉ in chi tiết lỗi ra Console cho Dev đọc, còn ném ra UI thông báo tiếng Việt
+                        Console.WriteLine($"[Gemini Error] {response.StatusCode} - {errorContent}");
+                        throw new Exception(msg);
+                    }
                 }
 
                 throw new Exception("Tất cả các API Key đều đã vượt quá giới hạn hoặc quá tải. Vui lòng nạp thêm Key.");
