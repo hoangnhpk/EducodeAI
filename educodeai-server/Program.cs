@@ -241,6 +241,13 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Đồng bộ cột thiếu trên Supabase (vd. DeletedAt trên KhoaHocs)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
+    await educodeai_server.Helpers.DatabaseSchemaSync.ApplyAsync(db);
+}
+
 // Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 

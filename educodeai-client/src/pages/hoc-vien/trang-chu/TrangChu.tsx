@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import { encodeId } from "@/utils/id-helper";
+import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
 
 interface IKhoaHoc {
     maKhoaHoc: number;
@@ -18,11 +20,20 @@ interface IKhoaHoc {
     donViTienTe: string;
 }
 
+const parseKyNangTags = (raw?: string): string[] => {
+    if (!raw?.trim()) return [];
+    return raw.split(',').map((item) => item.trim()).filter(Boolean);
+};
+
 const TrangChu: React.FC = () => {
     const navigate = useNavigate();
     const [courses, setCourses] = useState<IKhoaHoc[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState<string>('');
+    const [isSearchPinned, setIsSearchPinned] = useState(false);
+    const [navbarBottom, setNavbarBottom] = useState(0);
+    const searchPlaceholderRef = useRef<HTMLDivElement>(null);
+    const searchBarHeightRef = useRef(0);
 
     const loadData = async (search: string = '') => {
         setIsLoading(true);
@@ -45,6 +56,57 @@ const TrangChu: React.FC = () => {
         }, 500);
         return () => clearTimeout(delay);
     }, [searchTerm]);
+
+    useEffect(() => {
+        const updateSearchBar = () => {
+            const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
+            const bottom = navbar ? Math.max(navbar.getBoundingClientRect().bottom, 0) : 0;
+            setNavbarBottom(bottom);
+
+            const placeholder = searchPlaceholderRef.current;
+            const scrollY = window.scrollY;
+            const placeholderTop = placeholder?.getBoundingClientRect().top ?? Infinity;
+            const shouldPin = scrollY > 300 && placeholderTop <= bottom;
+
+            if (placeholder && !shouldPin && placeholder.offsetHeight > 0) {
+                searchBarHeightRef.current = placeholder.offsetHeight;
+            }
+
+            setIsSearchPinned(shouldPin);
+        };
+
+        updateSearchBar();
+        window.addEventListener('scroll', updateSearchBar, { passive: true });
+        window.addEventListener('resize', updateSearchBar);
+        return () => {
+            window.removeEventListener('scroll', updateSearchBar);
+            window.removeEventListener('resize', updateSearchBar);
+        };
+    }, []);
+
+    const renderSearchBar = () => (
+        <div className="container">
+            <div className="row justify-content-center">
+                <div className="col-lg-8">
+                    <div className="search-bar-modern">
+                        <div className="search-icon"><i className="fa fa-search"></i></div>
+                        <input
+                            type="text"
+                            className="search-input"
+                            placeholder="Bạn muốn học gì hôm nay? (VD: Java, Python...)"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {searchTerm && (
+                            <button type="button" className="clear-btn" onClick={() => setSearchTerm('')}>
+                                <i className="fa fa-times"></i>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 
     // UI elements translated from Tailwind to Bootstrap/CSS
     return (
@@ -72,11 +134,12 @@ const TrangChu: React.FC = () => {
                             <p className="lead text-light mb-5 fs-5 opacity-75 max-w-xl">
                                 Nền tảng e-learning thông minh với lộ trình bài bản, đồ án thực chiến và phòng phỏng vấn ảo được hỗ trợ 100% bởi Trí tuệ nhân tạo.
                             </p>
-                            <div className="d-flex flex-wrap gap-3">
-                                <a href="#courses-section" className="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow-lg hero-btn-primary d-flex align-items-center gap-2">
-                                    Khám phá khóa học <i className="fa fa-arrow-right"></i>
+                            <div className="hero-cta-group">
+                                <a href="#courses-section" className="hero-cta-btn hero-cta-btn--primary">
+                                    <span>Khám phá khóa học</span>
+                                    <i className="fa fa-arrow-right" aria-hidden="true"></i>
                                 </a>
-                                <a href="#features-section" className="btn btn-outline-light btn-lg rounded-pill px-5 py-3 fw-bold hero-btn-outline">
+                                <a href="#features-section" className="hero-cta-btn hero-cta-btn--outline">
                                     Tìm hiểu thêm
                                 </a>
                             </div>
@@ -85,32 +148,7 @@ const TrangChu: React.FC = () => {
                 </div>
             </section>
 
-            {/* 2. Search Bar Sticky */}
-            <div className="sticky-top bg-white border-bottom shadow-sm py-3" style={{ zIndex: 40, top: '75px' }}>
-                <div className="container">
-                    <div className="row justify-content-center">
-                        <div className="col-lg-8">
-                            <div className="search-bar-modern">
-                                <div className="search-icon"><i className="fa fa-search"></i></div>
-                                <input 
-                                    type="text" 
-                                    className="search-input" 
-                                    placeholder="Bạn muốn học gì hôm nay? (VD: Java, Python...)" 
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                                {searchTerm && (
-                                    <button className="clear-btn" onClick={() => setSearchTerm('')}>
-                                        <i className="fa fa-times"></i>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* 3. Stats Section */}
+            {/* 2. Stats Section */}
             <section className="py-5 bg-white border-bottom">
                 <div className="container">
                     <div className="row text-center g-4">
@@ -133,6 +171,29 @@ const TrangChu: React.FC = () => {
                     </div>
                 </div>
             </section>
+
+            {/* 3. Search Bar — ghim ngay dưới navbar khi cuộn */}
+            <div
+                ref={searchPlaceholderRef}
+                className="home-search-wrapper"
+                aria-hidden={isSearchPinned}
+            >
+                {isSearchPinned ? (
+                    <div style={{ height: searchBarHeightRef.current }} />
+                ) : (
+                    <div className="home-search-bar">{renderSearchBar()}</div>
+                )}
+            </div>
+
+            {isSearchPinned && createPortal(
+                <div
+                    className="home-search-bar home-search-bar--pinned"
+                    style={{ top: navbarBottom }}
+                >
+                    {renderSearchBar()}
+                </div>,
+                document.body
+            )}
 
             {/* 4. Features - Hệ sinh thái AI */}
             <section id="features-section" className="py-5 bg-light">
@@ -232,7 +293,12 @@ const TrangChu: React.FC = () => {
                                 <p className="mt-3 text-muted fw-bold">Đang tải khoá học...</p>
                             </div>
                         ) : courses.length > 0 ? (
-                            courses.map((kh) => (
+                            courses.map((kh) => {
+                                const skillTags = parseKyNangTags(kh.kyNangChinh);
+                                const visibleTags = skillTags.slice(0, 3);
+                                const hiddenTagCount = skillTags.length - visibleTags.length;
+
+                                return (
                                 <div key={kh.maKhoaHoc} className="col-md-6 col-lg-3">
                                     <div className="course-card card h-100 border-0 rounded-4 shadow-sm overflow-hidden transition-all">
                                         <div className="position-relative overflow-hidden" style={{ height: '200px' }}>
@@ -253,8 +319,21 @@ const TrangChu: React.FC = () => {
                                                 <span className="badge bg-primary-subtle text-primary fw-bold px-2 py-1"><i className="fa fa-layer-group me-1"></i> {kh.trinhDo}</span>
                                                 <span className="fw-bold text-dark"><i className="fa fa-star text-warning me-1"></i> {kh.diemDanhGiaTB}</span>
                                             </div>
-                                            <h5 className="card-title fw-bold text-dark line-clamp-2 mb-3" style={{ height: '3rem' }}>{kh.tenKhoaHoc}</h5>
-                                            <p className="small text-muted bg-light p-2 rounded-3 mb-4"><i className="fa fa-code me-2"></i>{kh.kyNangChinh || "Đang cập nhật..."}</p>
+                                            <h5 className="card-title fw-bold text-dark line-clamp-2 mb-3">{kh.tenKhoaHoc}</h5>
+                                            <div className="course-skill-tags mb-3">
+                                                {skillTags.length === 0 ? (
+                                                    <span className="course-skill-tag course-skill-tag--empty">Đang cập nhật...</span>
+                                                ) : (
+                                                    <>
+                                                        {visibleTags.map((tag, index) => (
+                                                            <span key={`${kh.maKhoaHoc}-${tag}-${index}`} className="course-skill-tag">{tag}</span>
+                                                        ))}
+                                                        {hiddenTagCount > 0 && (
+                                                            <span className="course-skill-tag course-skill-tag--more">+{hiddenTagCount}</span>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
                                             <div className="mt-auto">
                                                 <div className="d-flex align-items-center text-muted small mb-3">
                                                     <i className="fa fa-clock text-primary me-2"></i> {kh.thoiLuongGio} giờ học
@@ -264,16 +343,32 @@ const TrangChu: React.FC = () => {
                                                         <i className="fa fa-play-circle me-2"></i> Tiếp tục học
                                                     </Link>
                                                 ) : (
-                                                    <div className="d-flex gap-2">
-                                                        <Link to={`/khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-light w-50 rounded-3 fw-bold py-2 border">Chi tiết</Link>
-                                                        <Link to={`/mua-khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-primary text-white w-50 rounded-3 fw-bold py-2 shadow-sm" style={{ background: '#fb873f', borderColor: '#fb873f' }}>Mua ngay</Link>
+                                                    <div className="course-card-actions">
+                                                        <Link to={`/khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-course-detail">
+                                                            Chi tiết
+                                                        </Link>
+                                                        {laKhoaHocMienPhi(kh.donViTienTe) ? (
+                                                            <Link to={`/mua-khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-course-buy btn-course-buy--full">
+                                                                Học ngay
+                                                            </Link>
+                                                        ) : (
+                                                            <>
+                                                                <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-course-trial">
+                                                                    Học thử
+                                                                </Link>
+                                                                <Link to={`/mua-khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-course-buy">
+                                                                    Mua ngay
+                                                                </Link>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            ))
+                                );
+                            })
                         ) : (
                             <div className="text-center w-100 py-5">
                                 <div className="display-1 text-muted mb-3"><i className="fas fa-search-minus"></i></div>
@@ -420,8 +515,71 @@ const TrangChu: React.FC = () => {
                     left: 0;
                     color: rgba(251, 135, 63, 0.4);
                 }
+                .hero-cta-group {
+                    display: flex;
+                    flex-wrap: wrap;
+                    align-items: center;
+                    gap: 1rem;
+                }
+                .hero-cta-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.5rem;
+                    height: 3.25rem;
+                    padding: 0 2rem;
+                    border-radius: 50rem;
+                    font-size: 1.125rem;
+                    font-weight: 700;
+                    line-height: 1;
+                    white-space: nowrap;
+                    text-decoration: none;
+                    box-sizing: border-box;
+                    border: 2px solid transparent;
+                    margin: 0;
+                    transition: all 0.25s ease;
+                }
+                .hero-cta-btn--primary {
+                    background: #0d6efd;
+                    border-color: #0d6efd;
+                    color: #fff;
+                    box-shadow: 0 10px 24px rgba(13, 110, 253, 0.35);
+                }
+                .hero-cta-btn--primary:hover {
+                    background: #0b5ed7;
+                    border-color: #0b5ed7;
+                    color: #fff;
+                    transform: translateY(-1px);
+                }
+                .hero-cta-btn--outline {
+                    background: transparent;
+                    border-color: rgba(255, 255, 255, 0.9);
+                    color: #fff;
+                    box-shadow: none;
+                }
+                .hero-cta-btn--outline:hover {
+                    background: rgba(255, 255, 255, 0.12);
+                    border-color: #fff;
+                    color: #fff;
+                    transform: translateY(-1px);
+                }
 
                 /* Search Bar */
+                .home-search-wrapper {
+                    position: relative;
+                }
+                .home-search-bar {
+                    background: #fff;
+                    border-bottom: 1px solid #e2e8f0;
+                    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+                    padding: 0.85rem 0;
+                }
+                .home-search-bar--pinned {
+                    position: fixed;
+                    left: 0;
+                    right: 0;
+                    z-index: 1030;
+                }
                 .search-bar-modern {
                     display: flex;
                     align-items: center;
@@ -503,17 +661,102 @@ const TrangChu: React.FC = () => {
                 .category-card:hover .icon-wrapper { transform: scale(1.1); }
 
                 /* Course Card */
+                .course-card {
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
+                }
                 .course-card:hover {
                     transform: translateY(-8px);
                     box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1) !important;
                 }
                 .course-img { transition: transform 0.5s ease; }
                 .course-card:hover .course-img { transform: scale(1.05); }
+                .course-skill-tags {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.4rem;
+                    min-height: 1.75rem;
+                }
+                .course-skill-tag {
+                    display: inline-flex;
+                    align-items: center;
+                    max-width: 100%;
+                    padding: 0.25rem 0.65rem;
+                    border-radius: 50rem;
+                    font-size: 0.72rem;
+                    font-weight: 600;
+                    line-height: 1.2;
+                    background: rgba(251, 135, 63, 0.1);
+                    color: #c2410c;
+                    border: 1px solid rgba(251, 135, 63, 0.22);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .course-skill-tag--more {
+                    background: #f1f5f9;
+                    color: #64748b;
+                    border-color: #e2e8f0;
+                }
+                .course-skill-tag--empty {
+                    background: #f8fafc;
+                    color: #94a3b8;
+                    border-color: #e2e8f0;
+                    font-weight: 500;
+                }
                 .line-clamp-2 {
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
                     overflow: hidden;
+                    min-height: 3rem;
+                }
+                .course-card-actions {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 0.5rem;
+                }
+                .course-card-actions .btn {
+                    border-radius: 0.65rem;
+                    font-weight: 700;
+                    font-size: 0.8125rem;
+                    padding: 0.55rem 0.5rem;
+                    white-space: nowrap;
+                    text-align: center;
+                    line-height: 1.2;
+                }
+                .btn-course-detail {
+                    grid-column: 1 / -1;
+                    background: #fff;
+                    border: 1px solid #cbd5e1;
+                    color: #334155;
+                }
+                .btn-course-detail:hover {
+                    background: #f8fafc;
+                    border-color: #94a3b8;
+                    color: #0f172a;
+                }
+                .btn-course-trial {
+                    background: #fff;
+                    border: 1px solid #fb873f;
+                    color: #fb873f;
+                }
+                .btn-course-trial:hover {
+                    background: rgba(251, 135, 63, 0.08);
+                    color: #e86f24;
+                }
+                .btn-course-buy {
+                    background: #fb873f;
+                    border: 1px solid #fb873f;
+                    color: #fff;
+                    box-shadow: 0 4px 10px rgba(251, 135, 63, 0.25);
+                }
+                .btn-course-buy:hover {
+                    background: #e86f24;
+                    border-color: #e86f24;
+                    color: #fff;
+                }
+                .btn-course-buy--full {
+                    grid-column: 1 / -1;
                 }
 
                 /* Instructor Card */
