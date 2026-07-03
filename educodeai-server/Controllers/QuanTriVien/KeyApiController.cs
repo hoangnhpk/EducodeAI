@@ -2,6 +2,7 @@ using educodeai_server.DTOs.AI;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace educodeai_server.Controllers
 {
@@ -11,10 +12,72 @@ namespace educodeai_server.Controllers
     public class KeyApiController : ControllerBase
     {
         private readonly IKeyApiService _keyApiService;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<KeyApiController> _logger;
 
-        public KeyApiController(IKeyApiService keyApiService)
+        public KeyApiController(IKeyApiService keyApiService, IHttpClientFactory httpClientFactory, ILogger<KeyApiController> logger)
         {
             _keyApiService = keyApiService;
+            _httpClientFactory = httpClientFactory;
+            _logger = logger;
+        }
+
+        // POST /api/KeyApi/fetch-models
+        // Backend proxy: nhận key từ client, gọi Google để lấy danh sách model
+        // Mục đích: tránh CORS và không để raw key xuất hiện trên Network Tab trực tiếp
+        [HttpPost("fetch-models")]
+        public async Task<IActionResult> FetchGeminiModels([FromBody] string apiKey)
+        {
+            if (string.IsNullOrWhiteSpace(apiKey))
+                return BadRequest("API Key không được để trống.");
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var url = $"https://generativelanguage.googleapis.com/v1beta/models?key={apiKey}";
+                var response = await client.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errBody = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("[FetchModels] Call to Google API failed. Status: {StatusCode}, Body: {Body}", response.StatusCode, errBody);
+                    return StatusCode((int)response.StatusCode,
+                        new { message = "API Key không hợp lệ hoặc đã bị khóa từ phía Google." });
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+
+                var models = doc.RootElement
+                    .GetProperty("models")
+                    .EnumerateArray()
+                    .Where(m => m.TryGetProperty("name", out _))
+                    .Where(m => 
+                    {
+                        if (m.TryGetProperty("supportedGenerationMethods", out var methods))
+                        {
+                            return methods.EnumerateArray().Any(method => method.GetString() == "generateContent");
+                        }
+                        return false;
+                    })
+                    .Select(m => new GeminiModelItemDto
+                    {
+                        Name = m.GetProperty("name").GetString() ?? "",
+                        DisplayName = m.TryGetProperty("displayName", out var dn)
+                            ? dn.GetString() ?? ""
+                            : m.GetProperty("name").GetString() ?? ""
+                    })
+                    .Where(m => m.Name.StartsWith("models/gemini"))
+                    .OrderBy(m => m.Name)
+                    .ToList();
+
+                return Ok(models);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[FetchModels] Error connecting to Google API");
+                return StatusCode(500, new { message = "Lỗi khi kết nối Google API." });
+            }
         }
 
         [HttpGet]

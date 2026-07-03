@@ -94,12 +94,12 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                   {chuong.danhSachBaiHoc.map((bai) => {
                     const indexBai = tatCaBaiHoc.findIndex((b) => b.id === bai.id);
 
-                    const daHoanThanh = bai.daXem === true; // Tức là đã vượt qua cả lý thuyết & quiz
+                    const daHoanThanh = bai.daXem === true;
 
-                    // Bài Video bị khóa nếu bài TRƯỚC ĐÓ chưa hoàn thành
-                    const biKhoa = indexBai > 0 && !tatCaBaiHoc[indexBai - 1].daXem;
+                    const biKhoaNoiDung = bai.biKhoa === true;
+                    const biKhoaTienDo = indexBai > 0 && !tatCaBaiHoc[indexBai - 1].daXem;
+                    const biKhoa = biKhoaNoiDung || biKhoaTienDo;
 
-                    // Quiz bị khóa nếu Video bị khóa HOẶC (chưa pass quiz VÀ chưa cày xong video)
                     const quizBiKhoa = biKhoa || (!daHoanThanh && !videoDaXongLocal.includes(bai.id));
 
                     // Xác định mục nào đang được chọn để bôi màu Cam
@@ -112,7 +112,16 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                         <div
                           className={`cp-lesson-item ${dangHocVideo ? "cp-lesson-active" : ""} ${biKhoa ? "cp-lesson-locked" : ""}`}
                           onClick={() => {
-                            if (!biKhoa) onChonBaiHoc(bai.id, 'hoc');
+                            if (biKhoaNoiDung) {
+                              void Swal.fire({
+                                title: "Nội dung bị khóa",
+                                text: "Bạn cần mua khóa học để xem tiếp các bài học này.",
+                                icon: "info",
+                                confirmButtonColor: "#f69050"
+                              });
+                              return;
+                            }
+                            if (!biKhoa) onChonBaiHoc(bai.id, "hoc");
                           }}
                         >
                           <div className={`cp-lesson-icon ${bai.loaiBaiHoc.toLowerCase()}`}>
@@ -120,7 +129,14 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                           </div>
 
                           <div className="cp-lesson-main">
-                            <div className="cp-lesson-title">{bai.tieuDe}</div>
+                            <div className="cp-lesson-title">
+                              {bai.tieuDe}
+                              {bai.laHocThu && (
+                                <span className="badge bg-info text-dark ms-2" style={{ fontSize: "0.65rem" }}>
+                                  Học thử
+                                </span>
+                              )}
+                            </div>
                             <div className="cp-lesson-meta">{tinhThoiGian(bai.thoiLuong)}</div>
                           </div>
 

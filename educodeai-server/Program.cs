@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -12,10 +12,12 @@ using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using CloudinaryDotNet;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using educodeai_server.Hubs;
+using educodeai_server.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -136,6 +138,7 @@ builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
 builder.Services.AddScoped<IHocVienService, HocVienService>();
 builder.Services.AddScoped<IKhongGianHocTapService, KhongGianHocTapService>();
+builder.Services.AddScoped<IThuThachService, ThuThachService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
 builder.Services.AddScoped<IThongKeAdminService, ThongKeAdminService>();
 
@@ -145,6 +148,8 @@ builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
 builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
 builder.Services.AddScoped<IQuanLyHocVienService,QuanLyHocVienService>();
+builder.Services.AddSingleton<LopHocEmailQueue>();
+builder.Services.AddHostedService<LopHocEmailWorker>();
 builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocService>();
 builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
 builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
@@ -156,6 +161,10 @@ builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
 builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();
 builder.Services.AddScoped<IKeyApiService, KeyApiService>();
+builder.Services.AddScoped<ISinhDoAnAIService, SinhDoAnAIService>();
+builder.Services.AddScoped<IChamDiemDoAnService, ChamDiemDoAnService>();
+builder.Services.AddScoped<IRateLimitService, RateLimitService>();
+builder.Services.AddScoped<IMediaService, MediaService>();
 
 
 // ==========================================
@@ -172,8 +181,34 @@ builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =
     }
 });
 
+
+builder.Services.AddHttpClient<IGeminiToolCallingService, GeminiToolCallingService>((sp, client) =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var baseUrl = config["GeminiAI:BaseUrl"];
+
+    if (!string.IsNullOrEmpty(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+});
+
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
 builder.Services.Configure<PaymentMailOptions>(builder.Configuration.GetSection("PaymentMail"));
+
+// Cloudinary Configuration
+builder.Services.Configure<CauHinhCloudinary>(builder.Configuration.GetSection("Cloudinary"));
+var cloudinarySettings = builder.Configuration.GetSection("Cloudinary").Get<CauHinhCloudinary>();
+if (cloudinarySettings != null)
+{
+    var account = new Account(
+        cloudinarySettings.CloudName,
+        cloudinarySettings.ApiKey,
+        cloudinarySettings.ApiSecret);
+    var cloudinary = new Cloudinary(account);
+    builder.Services.AddSingleton(cloudinary);
+}
+
 
 // YouTube Service
 builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();

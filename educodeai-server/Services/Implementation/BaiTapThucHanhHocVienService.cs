@@ -1,6 +1,8 @@
+using System.Text;
 using System.Text.Json;
 using educodeai_server.Data;
 using educodeai_server.DTOs.BaiTap;
+using educodeai_server.Helpers;
 using educodeai_server.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,11 +12,13 @@ namespace educodeai_server.Services.Implementation
     {
         private readonly EduCodeAIDbContext _context;
         private readonly BaiTapService _compilerService;
+        private readonly IGeminiAIService _gemini;
 
-        public BaiTapThucHanhHocVienService(EduCodeAIDbContext context, BaiTapService compilerService)
+        public BaiTapThucHanhHocVienService(EduCodeAIDbContext context, BaiTapService compilerService, IGeminiAIService gemini)
         {
             _context = context;
             _compilerService = compilerService;
+            _gemini = gemini;
         }
 
         public async Task<BaiTapThucHanhHocVienRenderDTO?> GetThongTinBaiTapAsync(int maBaiTap)
@@ -88,7 +92,7 @@ namespace educodeai_server.Services.Implementation
                     string cleanExpected = tc.OutputMongDoi.Trim().Replace("\r\n", "\n");
 
                     tr.ActualOutput = tc.LaTestAn ? "???" : actualRaw;
-                    
+
                     if (cleanActual == cleanExpected)
                     {
                         tr.IsPassed = true;
@@ -122,6 +126,66 @@ namespace educodeai_server.Services.Implementation
             await _context.SaveChangesAsync();
 
             return ketQuaOut;
+        }
+
+        /// <summary>
+        /// Gọi Gemini AI để phân tích lỗi code của học viên và đưa ra gợi ý sửa.
+        /// </summary>
+        public async Task<AIPhanTichLoiDTO> PhanTichLoiCodeAIAsync(PhanTichLoiCodeRequestDTO request)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("Bạn là một trợ giảng lập trình chuyên nghiệp tại EduCodeAI.");
+            sb.AppendLine("Học viên vừa nộp bài tập thực hành và code bị sai. Hãy phân tích và đưa ra hướng dẫn.");
+            sb.AppendLine();
+            sb.AppendLine($"**Ngôn ngữ:** {request.NgonNgu}");
+            sb.AppendLine($"**Đề bài:** {request.TieuDeBai}");
+            sb.AppendLine();
+            sb.AppendLine("**Code của học viên:**");
+            sb.AppendLine("```");
+            sb.AppendLine(request.Code);
+            sb.AppendLine("```");
+            sb.AppendLine();
+
+            if (!string.IsNullOrWhiteSpace(request.ThongBaoLoi))
+            {
+                sb.AppendLine($"**Thông báo lỗi biên dịch/runtime:**");
+                sb.AppendLine("```");
+                sb.AppendLine(request.ThongBaoLoi);
+                sb.AppendLine("```");
+                sb.AppendLine();
+            }
+
+            if (request.TestCasesSai != null && request.TestCasesSai.Count > 0)
+            {
+                sb.AppendLine("**Các test case bị sai:**");
+                foreach (var tc in request.TestCasesSai.Take(3))
+                {
+                    sb.AppendLine($"- Input: `{tc.Input}` | Kết quả của bạn: `{tc.KetQuaThucTe}` | Kết quả mong đợi: `{tc.KetQuaMongDoi}`");
+                }
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("**NHIỆM VỤ (QUAN TRỌNG - PHẢI TUÂN THỦ NGHIÊM NGẶT):**");
+            sb.AppendLine("1. **KHÔNG BAO GIỜ** viết code giải pháp hoàn chỉnh. Tuyệt đối cấm.");
+            sb.AppendLine("2. Giải thích ngắn gọn **lỗi sai** là gì (1-2 câu).");
+            sb.AppendLine("3. Đưa ra **gợi ý hướng suy nghĩ** để học viên tự sửa (không quá 3 gạch đầu dòng).");
+            sb.AppendLine("4. Nếu có lỗi cú pháp, chỉ **chỉ ra dòng/vị trí lỗi** chứ không sửa thay.");
+            sb.AppendLine("5. Dùng Markdown, ngắn gọn, thân thiện.");
+
+            try
+            {
+                var rawResult = await _gemini.GenerateAsync(sb.ToString());
+                var noiDung = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResult);
+                return new AIPhanTichLoiDTO { ThanhCong = true, NoiDungPhanTich = noiDung };
+            }
+            catch (Exception ex)
+            {
+                return new AIPhanTichLoiDTO
+                {
+                    ThanhCong = false,
+                    NoiDungPhanTich = $"AI đang bận, vui lòng thử lại sau. ({ex.Message})"
+                };
+            }
         }
     }
 }

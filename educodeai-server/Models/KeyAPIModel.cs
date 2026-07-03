@@ -22,9 +22,22 @@ namespace educodeai_server.Models
 
         public int ThuTuUuTien { get; set; } = 0;
 
-        public int HanMucRequest { get; set; } = 5000;
+        // [DEPRECATED - Phase 7A] Sẽ xóa sau khi migrate xong sang RPMLimit/RPDLimit
+        public int HanMucRequest { get; set; } = 0;
 
-        public int HanMucToken { get; set; } = 2000000;
+        // [DEPRECATED - Phase 7A] Sẽ xóa sau khi migrate xong sang TPMLimit
+        public int HanMucToken { get; set; } = 0;
+
+        // === Phase 7A: Rate Limit mới ===
+        // Gemini free tier thường: 15 RPM, 1,000,000 TPM, 1500 RPD
+        public int RPMLimit { get; set; } = 15;        // Request Per Minute
+
+        public int TPMLimit { get; set; } = 1000000;   // Token Per Minute
+
+        public int RPDLimit { get; set; } = 1500;      // Request Per Day (reset 00:00 UTC)
+
+        // Model AI sẽ sử dụng cho key này (VD: "models/gemini-2.5-pro")
+        public string ModelSuDung { get; set; } = string.Empty;
 
         public DateTime NgayTao { get; set; } = DateTime.UtcNow;
 

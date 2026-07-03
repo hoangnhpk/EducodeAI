@@ -112,7 +112,13 @@ namespace educodeai_server.Services
             {
                 var key = $"course:{maKhoaHoc}:version";
                 var val = await _db.StringGetAsync(key);
-                return val.HasValue && long.TryParse(val, out var v) ? v : 1;
+                if (val.HasValue && long.TryParse(val, out var v))
+                {
+                    return v;
+                }
+                
+                await _db.StringSetAsync(key, 1, TimeSpan.FromDays(30));
+                return 1;
             }
             catch (RedisConnectionException ex)
             {
@@ -133,6 +139,21 @@ namespace educodeai_server.Services
             catch (RedisConnectionException ex)
             {
                 _logger.LogWarning(ex, "Redis unavailable – TangVersionKhoaHocAsync({MaKhoaHoc}) skipped", maKhoaHoc);
+            }
+        }
+
+        public async Task<dynamic> ThucThiLuaScriptAsync(string script, string[] keys, string[] args)
+        {
+            try
+            {
+                var redisKeys = keys.Select(k => (RedisKey)k).ToArray();
+                var redisArgs = args.Select(a => (RedisValue)a).ToArray();
+                return await _db.ScriptEvaluateAsync(script, redisKeys, redisArgs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi thực thi Lua Script trên Redis.");
+                throw;
             }
         }
     }

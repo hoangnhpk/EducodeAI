@@ -51,31 +51,24 @@ const BangApiKey = ({ danhSach, revealedKeys, onSua, onKhoa, onCapMoi, onResetUs
             <table className="table table-borderless table-hover mb-0 akm-tbl">
                 <thead>
                     <tr>
-                        <th>Tên Key</th>
+                        <th>Tên Key & Model</th>
                         <th>Mã Key</th>
                         <th>Loại</th>
                         <th>Trạng Thái</th>
-                        <th style={{ minWidth: 200 }}>Hạn Mức</th>
+                        <th style={{ minWidth: 200 }}>Usage Hôm Nay (RPD)</th>
                         <th className="text-end">Thao Tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     {danhSach.map((key: any) => {
-                        const daReq = key.daSuDungRequest ?? key.DaSuDungRequest ?? 0;
-                        const hmReq = key.hanMucRequest ?? key.HanMucRequest ?? 0;
-                        const daTok = key.daSuDungToken ?? key.DaSuDungToken ?? 0;
-                        const hmTok = key.hanMucToken ?? key.HanMucToken ?? 0;
-                        const maKeyMasked = key.maKeyMasked || key.MaKeyMasked || "sk-...***";
+                        const daReq = key.daSuDungRequestHomNay ?? 0;
+                        const hmReq = key.rpdLimit ?? 0;
+                        const maKeyMasked = key.maKeyMasked || "sk-...***";
+                        const model = key.modelSuDung || "Chưa chọn model";
 
                         const rPct = pct(daReq, hmReq);
-                        const tPct = pct(daTok, hmTok);
-
                         const rPctShow = rPct === 0 && daReq > 0 ? "<1%" : `${rPct}%`;
-                        const tPctShow = tPct === 0 && daTok > 0 ? "<1%" : `${tPct}%`;
-
-                        // Hack cho thanh progress nhú lên 1 tí xíu vạch màu dù % nhỏ bé hơn 1%
                         const rWidth = rPct === 0 && daReq > 0 ? 2 : rPct;
-                        const tWidth = tPct === 0 && daTok > 0 ? 2 : tPct;
 
                         // Xử lý che mã Key
                         const isRevealed = !!revealedKeys[key.id];
@@ -86,7 +79,7 @@ const BangApiKey = ({ danhSach, revealedKeys, onSua, onKhoa, onCapMoi, onResetUs
                                 {/* Tên Key */}
                                 <td>
                                     <div className="akm-key-name">{key.tenKey}</div>
-                                    <div className="akm-key-id">#{key.id}</div>
+                                    <div className="akm-key-id text-primary" style={{ fontSize: "11px" }}>{model}</div>
                                 </td>
 
                                 {/* Mã Key — icons chỉ hiện khi hover (CSS) */}
@@ -134,11 +127,10 @@ const BangApiKey = ({ danhSach, revealedKeys, onSua, onKhoa, onCapMoi, onResetUs
                                     </span>
                                 </td>
 
-                                {/* Hạn Mức — 2 thanh bar gộp 1 ô */}
+                                {/* Hạn Mức — RPD progress bar */}
                                 <td className="akm-limit">
-                                    {/* Request */}
                                     <div className="akm-limit-row">
-                                        <span>Req</span>
+                                        <span>RPD</span>
                                         <div className="akm-limit-bar-wrap" title={`${daReq.toLocaleString()} / ${hmReq.toLocaleString()}`}>
                                             <div
                                                 className={`akm-limit-bar ${mauBar(daReq, hmReq)}`}
@@ -147,16 +139,8 @@ const BangApiKey = ({ danhSach, revealedKeys, onSua, onKhoa, onCapMoi, onResetUs
                                         </div>
                                         <span className="akm-limit-pct">{rPctShow}</span>
                                     </div>
-                                    {/* Token */}
-                                    <div className="akm-limit-row">
-                                        <span>Tok</span>
-                                        <div className="akm-limit-bar-wrap" title={`${daTok.toLocaleString()} / ${hmTok.toLocaleString()}`}>
-                                            <div
-                                                className={`akm-limit-bar ${mauBar(daTok, hmTok)}`}
-                                                style={{ width: `${tWidth}%` }}
-                                            ></div>
-                                        </div>
-                                        <span className="akm-limit-pct">{tPctShow}</span>
+                                    <div className="mt-1" style={{ fontSize: "11px", color: "#8a94a6" }}>
+                                        <i className="bi bi-info-circle me-1"></i> {key.rpmLimit} RPM · {key.tpmLimit >= 1000000 ? (key.tpmLimit/1000000) + "M" : key.tpmLimit} TPM
                                     </div>
                                 </td>
 
