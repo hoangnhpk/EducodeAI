@@ -1,25 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
 import {
   SortableContext, sortableKeyboardCoordinates,
-  useSortable, verticalListSortingStrategy, arrayMove,
+  useSortable, verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ChuongHocDetail, BaiHocDetail } from '../types';
-import * as api from '../api/khoaHocApi';
 import EmptyState from './ui/EmptyState';
 import ConfirmDialog from './ui/ConfirmDialog';
 import { ListItemSkeleton } from './ui/Skeleton';
-import { useToastStandalone } from './ui/Toast';
-
-const getGiangVienId = (): number => {
-  try { const u = JSON.parse(localStorage.getItem('user_info') || '{}'); return u.maNguoiDung ?? u.id ?? 1; }
-  catch { return 1; }
-};
+import { useChapterManagement } from '../hooks/useChapterManagement';
 
 // ---- DnD Chapter Row ----
 interface ChapterRowProps {
@@ -85,16 +78,17 @@ const ChapterRow: React.FC<ChapterRowProps> = ({ chapter, index, onEdit, onDelet
       {expanded && lessonCount > 0 && (
         <div className="khm-chapter-lessons-panel">
           {(chapter.danhSachBaiHoc ?? []).slice(0, 4).map((l: BaiHocDetail) => (
-            <div key={l.maBaiHoc} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--khm-gray-100)', fontSize: '0.82rem', color: 'var(--khm-gray-700)' }}>
-              <span style={{ color: 'var(--khm-gray-300)', fontSize: 12 }}>▷</span>
-              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.tieuDe}</span>
+            <div key={l.maBaiHoc} className="khm-flex khm-items-center khm-gap-10 khm-border-bottom khm-text-sm" style={{ padding: '6px 0', color: 'var(--khm-gray-700)' }}>
+              <span className="khm-text-xs" style={{ color: 'var(--khm-gray-300)' }}>▷</span>
+              <span className="khm-truncate" style={{ flex: 1 }}>{l.tieuDe}</span>
               <span style={{ color: 'var(--khm-gray-400)', flexShrink: 0 }}>{l.thoiLuong}s</span>
             </div>
           ))}
           {lessonCount > 4 && (
             <button
               onClick={() => onViewLessons(chapter.maChuong)}
-              style={{ marginTop: 8, background: 'none', border: 'none', color: 'var(--khm-primary)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}
+              className="khm-mt-8 khm-text-primary khm-font-semibold khm-text-sm"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
             >
               +{lessonCount - 4} bài học khác →
             </button>
@@ -102,8 +96,8 @@ const ChapterRow: React.FC<ChapterRowProps> = ({ chapter, index, onEdit, onDelet
         </div>
       )}
       {expanded && lessonCount === 0 && (
-        <div className="khm-chapter-lessons-panel" style={{ textAlign: 'center', color: 'var(--khm-gray-400)', fontSize: '0.82rem', padding: '14px 16px' }}>
-          Chương này chưa có bài học. <button className="khm-btn-link" style={{ color: 'var(--khm-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }} onClick={() => onViewLessons(chapter.maChuong)}>Thêm bài học</button>
+        <div className="khm-chapter-lessons-panel khm-text-center khm-text-sm" style={{ color: 'var(--khm-gray-400)', padding: '14px 16px' }}>
+          Chương này chưa có bài học. <button className="khm-btn-link khm-text-primary khm-font-semibold" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => onViewLessons(chapter.maChuong)}>Thêm bài học</button>
         </div>
       )}
     </div>
@@ -173,96 +167,17 @@ interface Props {
 }
 
 const ChapterListEditor: React.FC<Props> = ({ maKhoaHoc, initialChapters = [], onSelectChapter, onRefresh }) => {
-  const maGiangVien = getGiangVienId();
-  const { showToast, ToastContainer } = useToastStandalone();
-
-  const [chapters, setChapters] = useState<ChuongHocDetail[]>(
-    [...initialChapters].sort((a, b) => a.thuTu - b.thuTu),
-  );
-  const [loading, setLoading] = useState(!initialChapters.length);
-  const [error, setError] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<ChuongHocDetail | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<ChuongHocDetail | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [highlightId, setHighlightId] = useState<number | null>(null);
+  const {
+    chapters, loading, error, modalOpen, editTarget, saving, deleteTarget, deleting, highlightId,
+    setModalOpen, setEditTarget, setDeleteTarget,
+    loadChapters, handleDragEnd, handleSave, handleConfirmDelete,
+    ToastContainer
+  } = useChapterManagement({ maKhoaHoc, initialChapters, onRefresh });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-
-  // Load (if no initial data)
-  const loadChapters = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const detail = await api.getChiTietKhoaHoc(maGiangVien, maKhoaHoc);
-      setChapters([...detail.danhSachChuong].sort((a, b) => a.thuTu - b.thuTu));
-    } catch {
-      setError('Không thể tải danh sách chương.');
-    } finally { setLoading(false); }
-  }, [maGiangVien, maKhoaHoc]);
-
-  // Drag end → reorder
-  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = chapters.findIndex(c => c.maChuong === active.id);
-    const newIndex = chapters.findIndex(c => c.maChuong === over.id);
-    const reordered = arrayMove(chapters, oldIndex, newIndex).map((c, i) => ({ ...c, thuTu: i + 1 }));
-    setChapters(reordered); // optimistic
-    try {
-      await api.reorderChuong(maGiangVien, maKhoaHoc, {
-        chapterOrders: reordered.map(c => ({ maChuong: c.maChuong, thuTu: c.thuTu })),
-      });
-      showToast('success', 'Sắp xếp chương thành công!');
-    } catch {
-      showToast('error', 'Lỗi sắp xếp chương. Đã khôi phục thứ tự cũ.');
-      setChapters([...chapters]); // rollback
-    }
-  }, [chapters, maGiangVien, maKhoaHoc, showToast]);
-
-  // Add/Edit save
-  const handleSave = async (tenChuong: string) => {
-    try {
-      setSaving(true);
-      const dto = { tenChuong, thuTu: editTarget ? editTarget.thuTu : chapters.length + 1 };
-      if (editTarget) {
-        await api.capNhatChuong(maGiangVien, editTarget.maChuong, dto);
-        setChapters(prev => prev.map(c => c.maChuong === editTarget.maChuong ? { ...c, tenChuong } : c));
-        showToast('success', 'Cập nhật chương thành công!');
-      } else {
-        const res = await api.themChuong(maGiangVien, maKhoaHoc, dto);
-        const newCh: ChuongHocDetail = { maChuong: res.maChuong, tenChuong: res.tenChuong, thuTu: res.thuTu, danhSachBaiHoc: [] };
-        setChapters(prev => [...prev, newCh]);
-        setHighlightId(res.maChuong);
-        setTimeout(() => setHighlightId(null), 2000);
-        showToast('success', 'Thêm chương thành công!');
-      }
-      setModalOpen(false);
-      setEditTarget(null);
-      onRefresh?.();
-    } catch {
-      showToast('error', 'Có lỗi xảy ra. Vui lòng thử lại.');
-    } finally { setSaving(false); }
-  };
-
-  // Delete
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    try {
-      setDeleting(true);
-      await api.xoaChuong(maGiangVien, deleteTarget.maChuong);
-      setChapters(prev => prev.filter(c => c.maChuong !== deleteTarget.maChuong));
-      showToast('success', `Đã xóa chương "${deleteTarget.tenChuong}".`);
-      setDeleteTarget(null);
-      onRefresh?.();
-    } catch {
-      showToast('error', 'Lỗi xóa chương. Vui lòng thử lại.');
-    } finally { setDeleting(false); }
-  };
 
   if (loading) return <div>{[1,2,3].map(i => <ListItemSkeleton key={i} />)}</div>;
   if (error) return (
@@ -275,7 +190,7 @@ const ChapterListEditor: React.FC<Props> = ({ maKhoaHoc, initialChapters = [], o
   return (
     <div>
       <ToastContainer />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div className="khm-flex-between khm-mb-16">
         <p className="khm-text-muted" style={{ margin: 0 }}>
           {chapters.length > 0 ? `${chapters.length} chương · Kéo để sắp xếp` : 'Chưa có chương nào'}
         </p>
