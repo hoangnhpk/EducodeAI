@@ -9,7 +9,13 @@ namespace educodeai_server.DTOs.KhoaHoc
         public int? ThoiLuong { get; set; }
         public int ThuTu { get; set; }
         public string? LinkVideo { get; set; }
-        public bool DaXem { get; set; } = false;
+        public bool DaXem { get; set; }
+
+        public string? VideoSource { get; set; }
+        public string? VideoPublicId { get; set; }
+        public string? VideoStatus { get; set; }
+        public bool HasSubtitle { get; set; }
+        public string? SubtitleUrl { get; set; }
 
         public BaiTapQuizDTO? ThongTinQuiz { get; set; }
         public int? MaBaiTapThucHanh { get; set; }
