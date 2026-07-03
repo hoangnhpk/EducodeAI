@@ -31,17 +31,32 @@ namespace educodeai_server.Helpers
             if (string.IsNullOrWhiteSpace(text))
                 throw new Exception("Không tìm thấy nội dung text từ Gemini");
 
-            // 3. Tìm JSON nằm trong ```json ... ```
+            // 3. Tìm JSON
             var match = Regex.Match(
                 text,
-                @"```json\s*(\{[\s\S]*?\})\s*```",
+                @"```(?:json)?\s*(\{[\s\S]*?\})\s*```",
                 RegexOptions.IgnoreCase
             );
 
-            if (!match.Success)
-                throw new Exception("Không tìm thấy JSON trong code block ```json");
-
-            string rawJson = match.Groups[1].Value;
+            string rawJson;
+            if (match.Success)
+            {
+                rawJson = match.Groups[1].Value;
+            }
+            else
+            {
+                // Fallback: Lấy từ dấu { đầu tiên đến dấu } cuối cùng
+                int startIndex = text.IndexOf('{');
+                int endIndex = text.LastIndexOf('}');
+                if (startIndex >= 0 && endIndex > startIndex)
+                {
+                    rawJson = text.Substring(startIndex, endIndex - startIndex + 1);
+                }
+                else
+                {
+                    throw new Exception("Không tìm thấy JSON trong code block ```json\n\nAI Raw Text: " + text);
+                }
+            }
 
             // 4. Parse + format JSON kết quả
             try
@@ -51,7 +66,7 @@ namespace educodeai_server.Helpers
             }
             catch (Exception ex)
             {
-                throw new Exception("JSON bên trong không hợp lệ", ex);
+                throw new Exception($"JSON bên trong không hợp lệ. Nguyên bản: {rawJson}", ex);
             }
         }
         public static string usageMetadata(string outputAI)
@@ -114,7 +129,33 @@ namespace educodeai_server.Helpers
                 throw new Exception("Không tìm thấy nội dung text từ Gemini");
 
             // TRẢ VỀ LUÔN CHUỖI TEXT, KHÔNG TÌM REGEX JSON NỮA
-            return text.Trim();
+            return text;
+        }
+
+        public static string ExtractJson(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            var match = Regex.Match(
+                text,
+                @"```(?:json)?\s*(\{[\s\S]*?\})\s*```",
+                RegexOptions.IgnoreCase
+            );
+
+            if (match.Success)
+            {
+                return match.Groups[1].Value;
+            }
+
+            int startIndex = text.IndexOf('{');
+            int endIndex = text.LastIndexOf('}');
+            if (startIndex >= 0 && endIndex > startIndex)
+            {
+                return text.Substring(startIndex, endIndex - startIndex + 1);
+            }
+
+            return text;
         }
     }
 }

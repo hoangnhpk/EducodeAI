@@ -3,7 +3,7 @@ import { getDeviceInfo } from "../utils/deviceHelper";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  timeout: 20000,
+  timeout: 60000, // Tăng lên 60s để hỗ trợ AI sinh đồ án/lộ trình
   withCredentials: true,
 });
 

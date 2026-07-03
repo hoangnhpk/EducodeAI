@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { TrangThaiAI, DuLieuYeuCauLoTrinh, KetQuaLoTrinhAI } from "./Components/types";
 import FormYeuCauLoTrinh from "./Components/FormYeuCauLoTrinh";
 import AiPanel from "./Components/AiPanel";
@@ -8,10 +8,25 @@ import TrangThaiKetQua from "./Components/TrangThaiKetQua"
 import Swal from "sweetalert2";
 import { getUserId } from "../../../utils/authHelper";
 
+import axiosInstance from "../../../configs/axios";
+
 export default function YeuCauLoTrinhAI() {
   const [trangThaiAI, setTrangThaiAI] = useState<TrangThaiAI>("cho");
   const [ketQuaAI, setKetQuaAI] = useState<KetQuaLoTrinhAI | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAIAvailable, setIsAIAvailable] = useState<boolean>(true);
+
+  useEffect(() => {
+    const checkAIStatus = async () => {
+        try {
+            const res = await axiosInstance.get<any>('/api/SinhDoAnAI/check-ai-status');
+            setIsAIAvailable((res as any).isAvailable !== false);
+        } catch (err) {
+            console.error('Failed to check AI status:', err);
+        }
+    };
+    checkAIStatus();
+  }, []);
 
   const xuLyGuiForm = async (duLieu: DuLieuYeuCauLoTrinh) => {
     const userId = getUserId();
@@ -76,11 +91,19 @@ export default function YeuCauLoTrinhAI() {
           <p>AI sẽ phân tích thông tin của bạn để tạo lộ trình phù hợp nhất</p>
         </div>
 
+        {!isAIAvailable && (
+            <div style={{ maxWidth: '800px', margin: '0 auto', marginBottom: '20px', padding: '15px 20px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 500 }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Hệ thống AI hiện đang hết lượt sử dụng hoặc đang bận. Vui lòng quay lại sau ít phút!
+            </div>
+        )}
+
         <div className="row align-items-stretch">
           <div className="col-lg-6">
             <FormYeuCauLoTrinh
               onSubmit={xuLyGuiForm}
               isSubmitting={trangThaiAI === "dang_phan_tich"}
+              isAIAvailable={isAIAvailable}
             />
           </div>
 
