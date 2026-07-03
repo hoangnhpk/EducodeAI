@@ -62,5 +62,17 @@ namespace educodeai_server.Controllers.QuanTriVien
                 ? Ok(new { success = true, message = "Da xoa danh gia." })
                 : NotFound(new { success = false, message = "Khong tim thay danh gia." });
         }
+
+        [HttpPost("ai-duyet-hang-loat")]
+        public async Task<IActionResult> AIDuyetHangLoat()
+        {
+            var result = await _service.DuyetHangLoatBangAIAsync();
+            return Ok(new
+            {
+                success = true,
+                message = $"AI đã xử lý {result.TongXuLy} đánh giá: {result.SoDaDuyet} duyệt, {result.SoTuChoi} từ chối.",
+                data = result
+            });
+        }
     }
 }

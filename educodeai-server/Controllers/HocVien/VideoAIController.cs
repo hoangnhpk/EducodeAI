@@ -7,8 +7,10 @@ using Microsoft.EntityFrameworkCore;
 using educodeai_server.Data;
 using educodeai_server.Models;
 using educodeai_server.Helpers;
+using educodeai_server.Helpers;
 using educodeai_server.DTOs.VideoAI;
 using educodeai_server.Services.Interface;
+using Microsoft.Extensions.Configuration;
 
 namespace educodeai_server.Controllers.HocVien
 {
@@ -18,11 +20,13 @@ namespace educodeai_server.Controllers.HocVien
     {
         private readonly EduCodeAIDbContext _context;
         private readonly IChatBotAIService _chatBotAIService;
+        private readonly IConfiguration _cauHinh;
 
-        public VideoAIController(EduCodeAIDbContext context, IChatBotAIService chatBotAIService)
+        public VideoAIController(EduCodeAIDbContext context, IChatBotAIService chatBotAIService, IConfiguration cauHinh)
         {
             _context = context;
             _chatBotAIService = chatBotAIService;
+            _cauHinh = cauHinh;
         }
 
         /// <summary>
@@ -32,6 +36,14 @@ namespace educodeai_server.Controllers.HocVien
         [HttpPost("PhanTichVideo/{maBaiHoc}")]
         public async Task<IActionResult> PhanTichVideo(int maBaiHoc)
         {
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            int soVideoHocThu = _cauHinh.GetValue("HocThu:SoVideoMacDinh", 2);
+            bool coQuyen = await HocThuHelper.CoQuyenTruyCapBaiHocAsync(_context, maBaiHoc, maNguoiDung, soVideoHocThu);
+            if (!coQuyen)
+            {
+                return StatusCode(403, new { thongBao = "Bạn chưa có quyền truy cập bài học này." });
+            }
+
             var baiHoc = await _context.BaiHocs.FirstOrDefaultAsync(b => b.MaBaiHoc == maBaiHoc);
             if (baiHoc == null) return NotFound("Không tìm thấy bài học");
             if (string.IsNullOrEmpty(baiHoc.LinkVideo))

@@ -91,7 +91,7 @@ namespace educodeai_server.Controllers.GiangVien
             }
         }
 
-        [HttpDelete("xoa/{maKhoaHoc}")]
+        [HttpDelete("xoa-mem/{maKhoaHoc}")]
         public async Task<IActionResult> XoaKhoaHoc(int maKhoaHoc)
         {
             var maGiangVien = GetMaGiangVien();
@@ -101,6 +101,18 @@ namespace educodeai_server.Controllers.GiangVien
             if (!result)
                 return BadRequest(new { success = false, message = "Xóa khóa học thất bại" });
             return Ok(new { success = true, message = "Xóa khóa học thành công" });
+        }
+
+        [HttpPut("{maKhoaHoc}/restore")]
+        public async Task<IActionResult> RestoreKhoaHoc(int maKhoaHoc)
+        {
+            var maGiangVien = GetMaGiangVien();
+            if (maGiangVien == 0) return Unauthorized();
+            
+            var result = await _service.KhoiPhucKhoaHocAsync(maKhoaHoc, maGiangVien);
+            if (!result)
+                return BadRequest(new { success = false, message = "Khôi phục khóa học thất bại" });
+            return Ok(new { success = true, message = "Khôi phục khóa học thành công" });
         }
 
         [HttpPost("tao-de-chung-chi-ai/{maKhoaHoc}")]
@@ -119,7 +131,7 @@ namespace educodeai_server.Controllers.GiangVien
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
             
-            var result = await _service.ThemChuongAsync(maKhoaHoc, dto);
+            var result = await _service.ThemChuongAsync(maKhoaHoc, maGiangVien, dto);
             return Ok(new { success = true, data = result });
         }
 

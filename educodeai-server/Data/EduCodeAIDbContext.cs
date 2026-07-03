@@ -36,6 +36,7 @@ namespace educodeai_server.Data
         public DbSet<VideoChapterModel> VideoChapters { get; set; }
         public DbSet<VideoQuizModel> VideoQuizs { get; set; }
         public DbSet<KeyAPIModel> KeyAPIs { get; set; }
+        public DbSet<ApiKeyAuditLog> ApiKeyAuditLogs { get; set; }
         public DbSet<NhatKySuDungModel> NhatKySuDungs { get; set; }
         public DbSet<DonHangKhoaHocModel> DonHangKhoaHocs { get; set; }
         public DbSet<ChiTietDonHangModel> ChiTietDonHangs { get; set; }
@@ -53,6 +54,9 @@ namespace educodeai_server.Data
         public DbSet<NguoiDungGamificationModel> NguoiDungGamifications { get; set; }
         public DbSet<NguoiDungDanhHieuModel> NguoiDungDanhHieus { get; set; }
         public DbSet<TienDoNhiemVuTuanModel> TienDoNhiemVuTuans { get; set; }
+        public DbSet<WebhookLogModel> WebhookLogs { get; set; }
+        public DbSet<GiangVienQuotaModel> GiangVienQuotas { get; set; }
+        public DbSet<AIBalanceHoldModel> AIBalanceHolds { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -298,6 +302,10 @@ namespace educodeai_server.Data
                 .WithOne(b => b.ChuongHoc)
                 .HasForeignKey(b => b.MaChuong)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<BaiHocModel>()
+                .Property(b => b.VideoSource)
+                .HasDefaultValue("youtube");
 
             // BaiHocModel relationships
             modelBuilder.Entity<BaiHocModel>()

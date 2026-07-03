@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { KhoaHocService, type LuuKetQuaQuizDTO, type NopBaiKiemTraChungChiDTO } from '@/services/khoa-hoc.service';
 import type { KhoaHocData } from '@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHocDTO';
 import { decodeId } from '@/utils/id-helper';
@@ -29,6 +29,7 @@ const escapeHtml = (value: string) =>
 
 const NoiDungKhoaHoc = () => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const [khoaHoc, setKhoaHoc] = useState<KhoaHocData | null>(null);
     const [idBaiHoc, setIdBaiHoc] = useState(0);
     const [hienSidebar, setHienSidebar] = useState(false);
@@ -483,6 +484,21 @@ const NoiDungKhoaHoc = () => {
     const renderMainContent = () => {
         switch (baiHocHienTai.loaiBaiHoc) {
             case 'Video':
+                if (baiHocHienTai.biKhoa || !baiHocHienTai.linkVideo) {
+                    return (
+                        <div className="p-5 text-center text-muted">
+                            <i className="fas fa-lock fa-2x mb-3 d-block" />
+                            <p className="mb-3">Bài học này thuộc nội dung trả phí.</p>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => khoaHoc && navigate(`/mua-khoa-hoc/${khoaHoc.maKhoaHoc}`)}
+                            >
+                                Mua khóa học để mở khóa
+                            </button>
+                        </div>
+                    );
+                }
                 return (
                     <NoiDungVideo
                         ref={videoRef}
@@ -537,6 +553,23 @@ const NoiDungKhoaHoc = () => {
                 tongSoBai={tongSoBai}
                 onMoGhiChu={() => setHienSidebar(true)}
             />
+
+            {khoaHoc.laCheDoHocThu && (
+                <div className="container py-2">
+                    <div className="alert alert-info d-flex flex-wrap justify-content-between align-items-center mb-0">
+                        <span>
+                            Bạn đang học thử {khoaHoc.soVideoHocThu ?? 2} video đầu tiên. Mua khóa để mở khóa toàn bộ nội dung.
+                        </span>
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-primary mt-2 mt-md-0"
+                            onClick={() => navigate(`/mua-khoa-hoc/${khoaHoc.maKhoaHoc}`)}
+                        >
+                            Mua khóa học
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <button
                 className="cp-mobile-toggle-sidebar btn btn-sm"

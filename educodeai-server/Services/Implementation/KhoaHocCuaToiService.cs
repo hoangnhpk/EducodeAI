@@ -5,6 +5,7 @@ using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using educodeai_server.Constants;
 
 namespace educodeai_server.Services.Implement
 {
@@ -13,34 +14,145 @@ namespace educodeai_server.Services.Implement
         private readonly IKhoaHocCuaToiRepository _repository;
         private readonly IGeminiAIService _gemini;
         private readonly IYouTubeService _youtubeService;
+        private readonly IRedisService _redisService;
+        private readonly IMediaService _mediaService;
+        private readonly ILogger<KhoaHocCuaToiService> _logger;
 
-        public KhoaHocCuaToiService(IKhoaHocCuaToiRepository repository, IGeminiAIService gemini, IYouTubeService youtubeService)
+        public KhoaHocCuaToiService(
+            IKhoaHocCuaToiRepository repository, 
+            IGeminiAIService gemini, 
+            IYouTubeService youtubeService, 
+            IRedisService redisService,
+            IMediaService mediaService,
+            ILogger<KhoaHocCuaToiService> logger)
         {
             _repository = repository;
             _gemini = gemini;
             _youtubeService = youtubeService;
+            _redisService = redisService;
+            _mediaService = mediaService;
+            _logger = logger;
+        }
+
+        private async Task InvalidateCourseListAsync(int maGiangVien)
+        {
+            var key = $"Instructor:{maGiangVien}:CourseList";
+            await _redisService.XoaKeyAsync(key);
+            _logger.LogInformation("[CACHE INVALIDATE] Xóa danh sách khóa học của Giảng Viên #{Id}", maGiangVien);
         }
 
         // ===== COURSE MANAGEMENT =====
         public async Task<List<KhoaHocGiangVienListDTO>> GetDanhSachKhoaHocAsync(int maGiangVien)
         {
-            var khoaHocs = await _repository.GetKhoaHocByGiangVienAsync(maGiangVien);
-            return khoaHocs.Select(MapToKhoaHocListDTO).ToList();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            string cacheKey = $"Instructor:{maGiangVien}:CourseList";
+            var cached = await _redisService.LayGiaTriAsync(cacheKey);
+            List<KhoaHocGiangVienListDTO>? list = null;
+
+            if (cached != null)
+            {
+                try
+                {
+                    list = JsonSerializer.Deserialize<List<KhoaHocGiangVienListDTO>>(cached);
+                    if (list != null)
+                    {
+                        _logger.LogInformation("[CACHE HIT] GetDanhSachKhoaHocAsync - Giảng viên: {Id} ({Elapsed}ms)", maGiangVien, sw.ElapsedMilliseconds);
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetDanhSachKhoaHocAsync. Fallback sang DB.");
+                    list = null;
+                }
+                catch (NotSupportedException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi kiểu dữ liệu deserialize GetDanhSachKhoaHocAsync. Fallback sang DB.");
+                    list = null;
+                }
+            }
+
+            if (list == null)
+            {
+                _logger.LogInformation("[CACHE MISS] GetDanhSachKhoaHocAsync - Truy vấn DB cho giảng viên {Id}...", maGiangVien);
+                var khoaHocs = await _repository.GetKhoaHocByGiangVienAsync(maGiangVien);
+                list = khoaHocs.Select(MapToKhoaHocListDTO).ToList();
+                
+                await _redisService.LuuGiaTriAsync(cacheKey, JsonSerializer.Serialize(list), TimeSpan.FromMinutes(5));
+                _logger.LogInformation("[DB QUERY] Đã lưu danh sách khóa học giảng viên {Id} vào Cache (TTL: 5m) - ({Elapsed}ms)", maGiangVien, sw.ElapsedMilliseconds);
+            }
+            return list;
         }
 
         public async Task<KhoaHocGiangVienDetailDTO?> GetChiTietKhoaHocAsync(int maKhoaHoc, int maGiangVien)
         {
-            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
-            return khoaHoc != null ? MapToKhoaHocDetailDTO(khoaHoc) : null;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var version = await _redisService.LayVersionKhoaHocAsync(maKhoaHoc);
+            string cacheKey = $"course:{maKhoaHoc}:instructor:{maGiangVien}:detail:v{version}";
+            
+            var cached = await _redisService.LayGiaTriAsync(cacheKey);
+            KhoaHocGiangVienDetailDTO? detail = null;
+
+            if (cached != null)
+            {
+                try
+                {
+                    detail = JsonSerializer.Deserialize<KhoaHocGiangVienDetailDTO>(cached);
+                    if (detail != null)
+                    {
+                        _logger.LogInformation("[CACHE HIT] GetChiTietKhoaHocAsync(Static) - Khóa học {Id} ({Elapsed}ms)", maKhoaHoc, sw.ElapsedMilliseconds);
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi parse JSON GetChiTietKhoaHocAsync. Fallback sang DB.");
+                    detail = null;
+                }
+                catch (NotSupportedException ex)
+                {
+                    _logger.LogWarning(ex, "[CACHE ERROR] Lỗi kiểu dữ liệu deserialize GetChiTietKhoaHocAsync. Fallback sang DB.");
+                    detail = null;
+                }
+            }
+
+            if (detail == null)
+            {
+                _logger.LogInformation("[CACHE MISS] GetChiTietKhoaHocAsync(Static) - Khóa học {Id} truy vấn DB...", maKhoaHoc);
+                var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
+                if (khoaHoc == null) return null;
+                
+                detail = MapToKhoaHocDetailDTO(khoaHoc);
+                
+                // Cache vĩnh viễn (24h) vì version sẽ tự invalid
+                await _redisService.LuuGiaTriAsync(cacheKey, JsonSerializer.Serialize(detail), TimeSpan.FromHours(24));
+                _logger.LogInformation("[DB QUERY] Đã lưu chi tiết tĩnh khóa học {Id} vào Cache (TTL: 24h) - ({Elapsed}ms)", maKhoaHoc, sw.ElapsedMilliseconds);
+            }
+
+            // OVERLAY: Lấy dữ liệu động từ DB mỗi request
+            var dynamicData = await _repository.GetKhoaHocDynamicStatsAsync(maKhoaHoc, maGiangVien);
+            if (dynamicData != null)
+            {
+                detail.SoHocVien = dynamicData.DangKyKhoaHocs?.Count ?? 0;
+                detail.DiemDanhGiaTB = dynamicData.DiemDanhGiaTB;
+                detail.TiLeHoanThanh = CalculateAverageProgress(dynamicData.DangKyKhoaHocs);
+                detail.DanhSachHocVien = MapToHocVienDTOs(dynamicData.DangKyKhoaHocs);
+            }
+            else
+            {
+                return null; // Khóa học đã bị xóa
+            }
+
+            return detail;
         }
 
         public async Task<int> TaoKhoaHocAsync(int maGiangVien, KhoaHocCreateUpdateDTO dto)
         {
             ValidateKhoaHocData(dto);
-
             var khoaHoc = CreateKhoaHocFromDTO(maGiangVien, dto);
             await _repository.AddKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
+            // Xóa cache danh sách công khai khi có khóa học mới
+            await _redisService.XoaKeyAsync("CourseList:Public");
+            await InvalidateCourseListAsync(maGiangVien);
             return khoaHoc.MaKhoaHoc;
         }
 
@@ -48,29 +160,57 @@ namespace educodeai_server.Services.Implement
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
             if (khoaHoc == null) return false;
-
             ValidateKhoaHocData(dto);
             UpdateKhoaHocFromDTO(khoaHoc, dto);
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
+            // Tăng version -> cache cũ tự expire theo TTL
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
+            await _redisService.XoaKeyAsync("CourseList:Public");
             return true;
         }
+
+
 
         // ===== XOÁ KHOÁ HỌC (SOFT DELETE) =====
         public async Task<bool> XoaKhoaHocAsync(int maKhoaHoc, int maGiangVien)
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
             if (khoaHoc == null) return false;
+            khoaHoc.TrangThai = TrangThaiKhoaHoc.DaXoa;
+            khoaHoc.DeletedAt = DateTime.UtcNow;
+            khoaHoc.DeletedBy = maGiangVien;
+            await _repository.UpdateKhoaHocAsync(khoaHoc);
+            await _repository.SaveChangesAsync();
+            // Tăng version + xóa list cache khi khóa học bị xóa
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
+            await _redisService.XoaKeyAsync("CourseList:Public");
+            return true;
+        }
 
-            khoaHoc.TrangThai = "Đã xóa";
+        // ===== KHÔI PHỤC KHOÁ HỌC =====
+        public async Task<bool> KhoiPhucKhoaHocAsync(int maKhoaHoc, int maGiangVien)
+        {
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
+            if (khoaHoc == null) return false;
+
+            khoaHoc.DeletedAt = null;
+            khoaHoc.DeletedBy = null;
+            khoaHoc.TrangThai = TrangThaiKhoaHoc.HoatDong;
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
+
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
+            await _redisService.XoaKeyAsync("CourseList:Public");
             return true;
         }
 
         // ===== THÊM CHƯƠNG =====
-        public async Task<ThemChuongResponseDTO> ThemChuongAsync(int maKhoaHoc, ChuongHocCreateUpdateDTO dto)
+        public async Task<ThemChuongResponseDTO> ThemChuongAsync(int maKhoaHoc, int maGiangVien, ChuongHocCreateUpdateDTO dto)
         {
             var chuong = new ChuongHocModel
             {
@@ -78,9 +218,11 @@ namespace educodeai_server.Services.Implement
                 TenChuong = dto.TenChuong,
                 ThuTu = dto.ThuTu,
             };
-
             await _repository.AddChuongAsync(chuong);
             await _repository.SaveChangesAsync();
+            // Thêm chương -> nội dung khóa học thay đổi
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             return new ThemChuongResponseDTO
             {
                 MaChuong = chuong.MaChuong,
@@ -95,12 +237,12 @@ namespace educodeai_server.Services.Implement
             var chuong = await _repository.GetChuongWithKhoaHocAsync(maChuong);
             if (chuong == null) return false;
             if (chuong.KhoaHoc.MaGiangVien != maGiangVien) return false;
-
             chuong.TenChuong = dto.TenChuong;
             chuong.ThuTu = dto.ThuTu;
-
             await _repository.UpdateChuongAsync(chuong);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(chuong.KhoaHoc.MaKhoaHoc);
             return true;
         }
 
@@ -109,11 +251,11 @@ namespace educodeai_server.Services.Implement
         {
             var chuong = await _repository.GetChuongWithKhoaHocAsync(maChuong);
             if (chuong == null) return false;
-
             if (chuong.KhoaHoc.MaGiangVien != maGiangVien) return false;
-
             await _repository.DeleteChuongAsync(chuong);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(chuong.KhoaHoc.MaKhoaHoc);
             return true;
         }
 
@@ -133,10 +275,16 @@ namespace educodeai_server.Services.Implement
                 ThoiLuong = dto.ThoiLuong,
                 ThuTu = dto.ThuTu,
                 LoaiBaiHoc = "Video",
+                VideoSource = dto.VideoSource ?? "youtube",
+                VideoPublicId = dto.VideoPublicId,
+                VideoSizeMb = dto.VideoSizeMb,
+                VideoStatus = dto.VideoSource == "cloudinary" ? "ready" : null
             };
 
             await _repository.AddBaiHocAsync(baiHoc);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(chuong.KhoaHoc.MaKhoaHoc);
 
             return new ThemVideoResponseDTO
             {
@@ -163,6 +311,8 @@ namespace educodeai_server.Services.Implement
 
             await _repository.UpdateBaiHocAsync(baiHoc);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(baiHoc.ChuongHoc.KhoaHoc.MaKhoaHoc);
             return true;
         }
 
@@ -187,9 +337,16 @@ namespace educodeai_server.Services.Implement
                 }
                 catch { } // Ignore delete fail
             }
+            else if (baiHoc.LoaiBaiHoc == "Video" && baiHoc.VideoSource == "cloudinary" && !string.IsNullOrEmpty(baiHoc.VideoPublicId))
+            {
+                // Delete from Cloudinary
+                await _mediaService.DeleteVideoCloudinaryAsync(baiHoc.VideoPublicId);
+            }
 
             await _repository.DeleteBaiHocAsync(baiHoc);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(baiHoc.ChuongHoc.KhoaHoc.MaKhoaHoc);
             return true;
         }
 
@@ -234,6 +391,9 @@ namespace educodeai_server.Services.Implement
 
             await _repository.AddBaiHocAsync(baiHoc);
             await _repository.SaveChangesAsync();
+            // Thêm bài học File -> invalidate cache
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(chuong.KhoaHoc.MaKhoaHoc);
 
             return new ThemFileResponseDTO
             {
@@ -293,6 +453,9 @@ namespace educodeai_server.Services.Implement
 
             await _repository.UpdateBaiHocAsync(baiHoc);
             await _repository.SaveChangesAsync();
+            // Cập nhật bài học File -> invalidate cache
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(baiHoc.ChuongHoc.KhoaHoc.MaKhoaHoc);
             return true;
         }
 
@@ -387,6 +550,8 @@ namespace educodeai_server.Services.Implement
 
                 await _repository.UpdateKhoaHocAsync(khoaHoc);
                 await _repository.SaveChangesAsync();
+                await InvalidateCourseListAsync(maGiangVien);
+                await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
 
                 Console.WriteLine($"[AI Certificate] Lưu DB thành công cho khóa {maKhoaHoc}");
 
@@ -450,6 +615,8 @@ namespace educodeai_server.Services.Implement
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             return true;
         }
 
@@ -648,6 +815,9 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             }
 
             await _repository.SaveChangesAsync();
+            // Import playlist -> nội dung khóa học thay đổi lớn
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHocId);
 
             return new YouTubePlaylistImportResponseDTO
             {
@@ -689,9 +859,9 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
         }
 
         // ===== REORDER FUNCTIONALITY =====
-        public async Task<bool> ReorderChaptersAsync(int maKiangVien, int maKhoaHoc, List<ChapterReorderDTO> chapters)
+        public async Task<bool> ReorderChaptersAsync(int maGiangVien, int maKhoaHoc, List<ChapterReorderDTO> chapters)
         {
-            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maKiangVien);
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
             if (khoaHoc == null) return false;
 
             foreach (var chapter in chapters)
@@ -705,6 +875,9 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             }
 
             await _repository.SaveChangesAsync();
+            // Sắp xếp lại thứ tự chương -> invalidate cache
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             return true;
         }
 
@@ -724,10 +897,12 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             }
 
             await _repository.SaveChangesAsync();
+            // Sắp xếp lại thứ tự bài học -> invalidate cache
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(chuong.KhoaHoc.MaKhoaHoc);
             return true;
         }
 
-        // ===== CERTIFICATE CONFIG =====
         public async Task<bool> EnableCertificateAsync(int maKhoaHoc, int maGiangVien)
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
@@ -745,6 +920,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             return true;
         }
 
@@ -760,6 +937,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             return true;
         }
 
@@ -809,6 +988,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
 
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             return true;
         }
 
@@ -922,12 +1103,25 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
                 LinkVideo = b.LinkVideo,
                 ThoiLuong = b.ThoiLuong ?? 0,
                 ThuTu = b.ThuTu,
-                LoaiBaiHoc = b.LoaiBaiHoc
+                LoaiBaiHoc = b.LoaiBaiHoc,
+                VideoSource = b.VideoSource,
+                VideoPublicId = b.VideoPublicId,
+                HasSubtitle = b.HasSubtitle,
+                VideoStatus = b.VideoStatus,
+                SubtitleSource = b.SubtitleSource,
+                SubtitleUrl = b.SubtitleUrl
             }).ToList() ?? new();
         }
 
         private static KhoaHocModel CreateKhoaHocFromDTO(int maGiangVien, KhoaHocCreateUpdateDTO dto)
         {
+            var donVi = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe.Trim().ToUpperInvariant();
+            var gia = dto.GiaKhoaHoc;
+            if (KhoaHocPricingHelper.LaKhoaHocMienPhi(donVi))
+            {
+                gia = KhoaHocPricingHelper.GiaKyThuatMienPhi;
+            }
+
             return new KhoaHocModel
             {
                 TenKhoaHoc = dto.TenKhoaHoc,
@@ -937,8 +1131,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
                 TrinhDo = dto.TrinhDo,
                 ThoiLuongGio = dto.ThoiLuongGio,
                 TrangThai = dto.TrangThai,
-                GiaKhoaHoc = dto.GiaKhoaHoc,
-                DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe,
+                GiaKhoaHoc = gia,
+                DonViTienTe = donVi,
                 ChoPhepMua = true,
                 MaGiangVien = maGiangVien,
                 NgayTao = DateTime.Now,
@@ -955,6 +1149,13 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
 
         private static void UpdateKhoaHocFromDTO(KhoaHocModel khoaHoc, KhoaHocCreateUpdateDTO dto)
         {
+            var donVi = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe.Trim().ToUpperInvariant();
+            var gia = dto.GiaKhoaHoc;
+            if (KhoaHocPricingHelper.LaKhoaHocMienPhi(donVi))
+            {
+                gia = KhoaHocPricingHelper.GiaKyThuatMienPhi;
+            }
+
             khoaHoc.TenKhoaHoc = dto.TenKhoaHoc;
             khoaHoc.MoTa = dto.MoTa;
             khoaHoc.HinhAnh = dto.HinhAnh;
@@ -962,8 +1163,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             khoaHoc.TrinhDo = dto.TrinhDo;
             khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;
             khoaHoc.TrangThai = dto.TrangThai;
-            khoaHoc.GiaKhoaHoc = dto.GiaKhoaHoc;
-            khoaHoc.DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe;
+            khoaHoc.GiaKhoaHoc = gia;
+            khoaHoc.DonViTienTe = donVi;
             khoaHoc.ChoPhepMua = true;
             khoaHoc.KyNangChinh = dto.KyNangChinh ?? string.Empty;
             khoaHoc.CoChungChi = dto.CoChungChi;
@@ -1015,11 +1216,12 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             if (dto.ThoiLuongGio <= 0)
                 errors.Add("Thời lượng khóa học phải lớn hơn 0.");
 
-            if (dto.GiaKhoaHoc < 10000 || dto.GiaKhoaHoc > 15000)
+            bool laMienPhi = KhoaHocPricingHelper.LaKhoaHocMienPhi(dto.DonViTienTe);
+            if (!laMienPhi && (dto.GiaKhoaHoc < 10000 || dto.GiaKhoaHoc > 15000))
                 errors.Add("Giá khóa học phải từ 10,000 đến 15,000 VNĐ");
-            
+
             if (string.IsNullOrWhiteSpace(dto.DonViTienTe))
-                errors.Add("Đơn vị tiền tệ không được để trống khi khóa học có phí.");
+                errors.Add("Đơn vị tiền tệ không được để trống.");
 
             if (dto.CoChungChi)
             {
@@ -1043,3 +1245,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
         }
     }
 }
+
+
+
+
+
