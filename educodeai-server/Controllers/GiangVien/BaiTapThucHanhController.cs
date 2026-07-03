@@ -38,16 +38,20 @@ namespace educodeai_server.Controllers.GiangVien
         {
             try
             {
+                Console.WriteLine($"[DEBUG] Generate endpoint called. Request: {System.Text.Json.JsonSerializer.Serialize(request)}");
                 int maGiangVien = LayNguoiDungID.LayID(User);
+                Console.WriteLine($"[DEBUG] MaGiangVien: {maGiangVien}");
                 var result = await _service.GeneratePracticeExerciseAsync(request, maGiangVien);
                 return Ok(new { success = true, message = "Sinh bài tập thành công", data = result });
             }
             catch (UnauthorizedAccessException ex)
             {
+                Console.WriteLine($"[ERROR] Unauthorized: {ex.Message}");
                 return StatusCode(403, new { success = false, message = ex.Message, errors = new List<object>() });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[ERROR] Exception: {ex.Message}");
                 return BadRequest(new { success = false, message = ex.Message, errors = new List<object>() });
             }
         }

@@ -36,13 +36,17 @@ namespace educodeai_server.Data
         public DbSet<VideoChapterModel> VideoChapters { get; set; }
         public DbSet<VideoQuizModel> VideoQuizs { get; set; }
         public DbSet<KeyAPIModel> KeyAPIs { get; set; }
+        public DbSet<ApiKeyAuditLog> ApiKeyAuditLogs { get; set; }
         public DbSet<NhatKySuDungModel> NhatKySuDungs { get; set; }
         public DbSet<DonHangKhoaHocModel> DonHangKhoaHocs { get; set; }
         public DbSet<ChiTietDonHangModel> ChiTietDonHangs { get; set; }
         public DbSet<GiaoDichThanhToanModel> GiaoDichThanhToans { get; set; }
         public DbSet<ThongBaoEmailThanhToanModel> ThongBaoEmailThanhToans { get; set; }
         public DbSet<MaGiamGiaModel> MaGiamGias { get; set; }
+        public DbSet<MaGiamGiaKhoaHocModel> MaGiamGiaKhoaHocs { get; set; }
         public DbSet<DoanhThuGiangVienModel> DoanhThuGiangViens { get; set; }
+        public DbSet<QuaTangKhoaHocModel> QuaTangKhoaHocs { get; set; }
+        public DbSet<MaQuaTangHocVienModel> MaQuaTangHocViens { get; set; }
         public DbSet<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; }
         public DbSet<HoTroRutTienGiangVienModel> HoTroRutTienGiangViens { get; set; }
 
@@ -82,9 +86,14 @@ namespace educodeai_server.Data
             modelBuilder.Entity<ThongBaoEmailThanhToanModel>()
                 .HasIndex(x => new { x.MaDonHang, x.LoaiThongBao, x.EmailNhan }).IsUnique();
             modelBuilder.Entity<MaGiamGiaModel>().HasIndex(v => v.Code).IsUnique();
+            modelBuilder.Entity<MaGiamGiaKhoaHocModel>().HasIndex(x => new { x.MaVoucher, x.MaKhoaHoc }).IsUnique();
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.NoiDungChuyenKhoan).IsUnique();
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>().HasIndex(x => x.MaGiaoDichSePay).IsUnique();
             modelBuilder.Entity<HoTroRutTienGiangVienModel>().HasIndex(x => new { x.MaYeuCauRutTien, x.TrangThaiHoTro });
+            modelBuilder.Entity<QuaTangKhoaHocModel>().HasIndex(x => new { x.MaKhoaHoc, x.MaNguoiNhan, x.TrangThai });
+            modelBuilder.Entity<QuaTangKhoaHocModel>().HasIndex(x => new { x.MaNguoiTang, x.MaKhoaHoc, x.CreatedAt });
+            modelBuilder.Entity<MaQuaTangHocVienModel>().HasIndex(x => x.Code).IsUnique();
+            modelBuilder.Entity<MaQuaTangHocVienModel>().HasIndex(x => new { x.MaNguoiTang, x.TrangThai, x.CreatedAt });
 
 
             // ====== RELATIONSHIPS CONFIGURATION ======
@@ -163,6 +172,36 @@ namespace educodeai_server.Data
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.MaGiamGiaDaTao)
+                .WithOne(v => v.NguoiTao)
+                .HasForeignKey(v => v.MaNguoiTao)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.MaQuaTangDaTao)
+                .WithOne(x => x.NguoiTang)
+                .HasForeignKey(x => x.MaNguoiTang)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.MaQuaTangDaNhan)
+                .WithOne(x => x.NguoiNhan)
+                .HasForeignKey(x => x.MaNguoiNhan)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.QuaTangDaTang)
+                .WithOne(q => q.NguoiTang)
+                .HasForeignKey(q => q.MaNguoiTang)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
+                .HasMany(n => n.QuaTangDaNhan)
+                .WithOne(q => q.NguoiNhan)
+                .HasForeignKey(q => q.MaNguoiNhan)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<NguoiDungModel>()
                 .HasMany(n => n.DoanhThuGiangViens)
                 .WithOne(dt => dt.GiangVien)
                 .HasForeignKey(dt => dt.MaGiangVien)
@@ -229,6 +268,24 @@ namespace educodeai_server.Data
                 .HasMany(k => k.ChiTietDonHangs)
                 .WithOne(c => c.KhoaHoc)
                 .HasForeignKey(c => c.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.QuaTangKhoaHocs)
+                .WithOne(q => q.KhoaHoc)
+                .HasForeignKey(q => q.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.MaGiamGiaKhoaHocs)
+                .WithOne(x => x.KhoaHoc)
+                .HasForeignKey(x => x.MaKhoaHoc)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<KhoaHocModel>()
+                .HasMany(k => k.MaQuaTangHocViens)
+                .WithOne(x => x.KhoaHoc)
+                .HasForeignKey(x => x.MaKhoaHoc)
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<KhoaHocModel>()
@@ -333,6 +390,24 @@ namespace educodeai_server.Data
                 .HasMany(d => d.ThongBaoEmailThanhToans)
                 .WithOne(t => t.DonHang)
                 .HasForeignKey(t => t.MaDonHang)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DonHangKhoaHocModel>()
+                .HasMany(d => d.MaQuaTangHocViens)
+                .WithOne(x => x.DonHang)
+                .HasForeignKey(x => x.MaDonHang)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DonHangKhoaHocModel>()
+                .HasOne(d => d.Voucher)
+                .WithMany(v => v.DonHangSuDung)
+                .HasForeignKey(d => d.MaVoucher)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<MaGiamGiaModel>()
+                .HasMany(v => v.DanhSachKhoaHocApDung)
+                .WithOne(x => x.Voucher)
+                .HasForeignKey(x => x.MaVoucher)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<YeuCauRutTienGiangVienModel>()
