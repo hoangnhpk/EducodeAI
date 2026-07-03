@@ -12,7 +12,7 @@ namespace educodeai_server.Data
         {
         }
 
-        // 16 bảng dữ liệu
+        // 16 báº£ng dá»¯ liá»‡u
         public DbSet<NguoiDungModel> NguoiDungs { get; set; }
         public DbSet<PhienDangNhapModel> PhienDangNhaps { get; set; }
         public DbSet<KhoaHocModel> KhoaHocs { get; set; }
@@ -49,6 +49,7 @@ namespace educodeai_server.Data
         public DbSet<MaQuaTangHocVienModel> MaQuaTangHocViens { get; set; }
         public DbSet<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; }
         public DbSet<HoTroRutTienGiangVienModel> HoTroRutTienGiangViens { get; set; }
+        public DbSet<HoSoDangKyGiangVienModel> HoSoDangKyGiangViens { get; set; }
         public DbSet<DanhHieuModel> DanhHieus { get; set; }
         public DbSet<MauNhiemVuTuanModel> MauNhiemVuTuans { get; set; }
         public DbSet<NguoiDungGamificationModel> NguoiDungGamifications { get; set; }
@@ -58,7 +59,7 @@ namespace educodeai_server.Data
         public DbSet<GiangVienQuotaModel> GiangVienQuotas { get; set; }
         public DbSet<AIBalanceHoldModel> AIBalanceHolds { get; set; }
 
-        // === MODULE ĐỒ ÁN THỰC CHIẾN ===
+        // === MODULE ?? ?N TH?C CHI?N ===
         public DbSet<DoAnThucChienModel> DoAnThucChiens { get; set; }
         public DbSet<ChungChiDoAnModel> ChungChiDoAns { get; set; }
 
@@ -102,6 +103,8 @@ namespace educodeai_server.Data
             modelBuilder.Entity<QuaTangKhoaHocModel>().HasIndex(x => new { x.MaNguoiTang, x.MaKhoaHoc, x.CreatedAt });
             modelBuilder.Entity<MaQuaTangHocVienModel>().HasIndex(x => x.Code).IsUnique();
             modelBuilder.Entity<MaQuaTangHocVienModel>().HasIndex(x => new { x.MaNguoiTang, x.TrangThai, x.CreatedAt });
+            modelBuilder.Entity<HoSoDangKyGiangVienModel>().HasIndex(x => x.Email);
+            modelBuilder.Entity<HoSoDangKyGiangVienModel>().HasIndex(x => x.MaNguoiDung).IsUnique();
 
 
             // ====== RELATIONSHIPS CONFIGURATION ======
@@ -258,7 +261,7 @@ namespace educodeai_server.Data
                 .HasForeignKey(d => d.MaKhoaHoc)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // Cấu hình từ nhánh dev (HEAD)
+            // Cáº¥u hÃ¬nh tá»« nhÃ¡nh dev (HEAD)
             modelBuilder.Entity<KhoaHocModel>()
                 .HasMany(k => k.KetQuaKiemTraChungChis)
                 .WithOne(kq => kq.KhoaHoc)
@@ -271,7 +274,7 @@ namespace educodeai_server.Data
                 .HasForeignKey(c => c.MaKhoaHoc)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // Cấu hình từ nhánh Hoang1
+            // Cáº¥u hÃ¬nh tá»« nhÃ¡nh Hoang1
             modelBuilder.Entity<KhoaHocModel>()
                 .HasMany(k => k.ChiTietDonHangs)
                 .WithOne(c => c.KhoaHoc)
@@ -306,10 +309,6 @@ namespace educodeai_server.Data
                 .WithOne(b => b.ChuongHoc)
                 .HasForeignKey(b => b.MaChuong)
                 .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<BaiHocModel>()
-                .Property(b => b.VideoSource)
-                .HasDefaultValue("youtube");
 
             // BaiHocModel relationships
             modelBuilder.Entity<BaiHocModel>()
@@ -492,3 +491,4 @@ namespace educodeai_server.Data
         }
     }
 }
+
