@@ -7,6 +7,7 @@ namespace educodeai_server.Repository.Interface
     {
         Task<List<DanhSachBaiTapDTO>> LayDanhSachBaiTapCuaGiangVienAsync(int maNguoiDung);
         Task<int> CreateQuizAsync(BaiTapModel baiTap, BaiTap_QuizModel quiz);
+        Task<bool> CapNhatQuizAsync(int maBaiTap, int maGiangVien, CreateQuizDTO dto);
         Task<BaiTap_QuizModel?> GetQuizDetailAsync(int quizId);
 
         Task<string?> GetNoiDungBaiHocAsync(int maBaiHoc);
@@ -15,8 +16,10 @@ namespace educodeai_server.Repository.Interface
         Task<List<ChuongHocModel>> GetChuongHocModelsByKhoaHocAsync(int maKhoaHoc);
         Task<List<BaiHocModel>> GetBaiHocModelsByChuongHocAsync(int maChuongHoc);
 
-        Task<bool> XoaBaiTapAsync(int maBaiTapQuiz);
+        Task<bool> XoaBaiTapAsync(int maBaiTap, int maGiangVien);
+        Task<bool> KiemTraBaiHocThuocGiangVienAsync(int maBaiHoc, int maGiangVien);
+        Task<bool> KiemTraBaiTapThuocGiangVienAsync(int maBaiTap, int maGiangVien);
 
-        Task<object> LayChiTietBaiTapAsync(int maBaiTap);
+        Task<object?> LayChiTietBaiTapAsync(int maBaiTap, int maGiangVien);
     }
 }

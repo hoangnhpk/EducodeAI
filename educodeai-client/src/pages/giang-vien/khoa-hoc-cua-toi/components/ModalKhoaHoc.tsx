@@ -26,6 +26,9 @@ const EMPTY_FORM: KhoaHocCreateUpdateDTO = {
     diemDatChungChi: 80,
     soCauHoiChungChi: 20,
     thoiGianLamBaiChungChi: 30,
+    giaKhoaHoc: 10000,
+    donViTienTe: 'VND',
+    choPhepMua: true,
 };
 
 interface Props {
