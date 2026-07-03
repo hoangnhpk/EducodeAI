@@ -5,6 +5,7 @@ using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using educodeai_server.Constants;
 
 namespace educodeai_server.Services.Implement
 {
@@ -14,6 +15,7 @@ namespace educodeai_server.Services.Implement
         private readonly IGeminiAIService _gemini;
         private readonly IYouTubeService _youtubeService;
         private readonly IRedisService _redisService;
+        private readonly IMediaService _mediaService;
         private readonly ILogger<KhoaHocCuaToiService> _logger;
 
         public KhoaHocCuaToiService(
@@ -21,12 +23,14 @@ namespace educodeai_server.Services.Implement
             IGeminiAIService gemini, 
             IYouTubeService youtubeService, 
             IRedisService redisService,
+            IMediaService mediaService,
             ILogger<KhoaHocCuaToiService> logger)
         {
             _repository = repository;
             _gemini = gemini;
             _youtubeService = youtubeService;
             _redisService = redisService;
+            _mediaService = mediaService;
             _logger = logger;
         }
 
@@ -167,15 +171,38 @@ namespace educodeai_server.Services.Implement
             return true;
         }
 
+
+
         // ===== XOÁ KHOÁ HỌC (SOFT DELETE) =====
         public async Task<bool> XoaKhoaHocAsync(int maKhoaHoc, int maGiangVien)
         {
             var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
             if (khoaHoc == null) return false;
-            khoaHoc.TrangThai = "Đã xóa";
+            khoaHoc.TrangThai = TrangThaiKhoaHoc.DaXoa;
+            khoaHoc.DeletedAt = DateTime.UtcNow;
+            khoaHoc.DeletedBy = maGiangVien;
             await _repository.UpdateKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
             // Tăng version + xóa list cache khi khóa học bị xóa
+            await InvalidateCourseListAsync(maGiangVien);
+            await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
+            await _redisService.XoaKeyAsync("CourseList:Public");
+            return true;
+        }
+
+        // ===== KHÔI PHỤC KHOÁ HỌC =====
+        public async Task<bool> KhoiPhucKhoaHocAsync(int maKhoaHoc, int maGiangVien)
+        {
+            var khoaHoc = await _repository.GetKhoaHocDetailAsync(maKhoaHoc, maGiangVien);
+            if (khoaHoc == null) return false;
+
+            khoaHoc.DeletedAt = null;
+            khoaHoc.DeletedBy = null;
+            khoaHoc.TrangThai = TrangThaiKhoaHoc.HoatDong;
+
+            await _repository.UpdateKhoaHocAsync(khoaHoc);
+            await _repository.SaveChangesAsync();
+
             await InvalidateCourseListAsync(maGiangVien);
             await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             await _redisService.XoaKeyAsync("CourseList:Public");
@@ -248,6 +275,10 @@ namespace educodeai_server.Services.Implement
                 ThoiLuong = dto.ThoiLuong,
                 ThuTu = dto.ThuTu,
                 LoaiBaiHoc = "Video",
+                VideoSource = dto.VideoSource ?? "youtube",
+                VideoPublicId = dto.VideoPublicId,
+                VideoSizeMb = dto.VideoSizeMb,
+                VideoStatus = dto.VideoSource == "cloudinary" ? "ready" : null
             };
 
             await _repository.AddBaiHocAsync(baiHoc);
@@ -305,6 +336,11 @@ namespace educodeai_server.Services.Implement
                     }
                 }
                 catch { } // Ignore delete fail
+            }
+            else if (baiHoc.LoaiBaiHoc == "Video" && baiHoc.VideoSource == "cloudinary" && !string.IsNullOrEmpty(baiHoc.VideoPublicId))
+            {
+                // Delete from Cloudinary
+                await _mediaService.DeleteVideoCloudinaryAsync(baiHoc.VideoPublicId);
             }
 
             await _repository.DeleteBaiHocAsync(baiHoc);
@@ -1067,12 +1103,25 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
                 LinkVideo = b.LinkVideo,
                 ThoiLuong = b.ThoiLuong ?? 0,
                 ThuTu = b.ThuTu,
-                LoaiBaiHoc = b.LoaiBaiHoc
+                LoaiBaiHoc = b.LoaiBaiHoc,
+                VideoSource = b.VideoSource,
+                VideoPublicId = b.VideoPublicId,
+                HasSubtitle = b.HasSubtitle,
+                VideoStatus = b.VideoStatus,
+                SubtitleSource = b.SubtitleSource,
+                SubtitleUrl = b.SubtitleUrl
             }).ToList() ?? new();
         }
 
         private static KhoaHocModel CreateKhoaHocFromDTO(int maGiangVien, KhoaHocCreateUpdateDTO dto)
         {
+            var donVi = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe.Trim().ToUpperInvariant();
+            var gia = dto.GiaKhoaHoc;
+            if (KhoaHocPricingHelper.LaKhoaHocMienPhi(donVi))
+            {
+                gia = KhoaHocPricingHelper.GiaKyThuatMienPhi;
+            }
+
             return new KhoaHocModel
             {
                 TenKhoaHoc = dto.TenKhoaHoc,
@@ -1082,8 +1131,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
                 TrinhDo = dto.TrinhDo,
                 ThoiLuongGio = dto.ThoiLuongGio,
                 TrangThai = dto.TrangThai,
-                GiaKhoaHoc = dto.GiaKhoaHoc,
-                DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe,
+                GiaKhoaHoc = gia,
+                DonViTienTe = donVi,
                 ChoPhepMua = true,
                 MaGiangVien = maGiangVien,
                 NgayTao = DateTime.Now,
@@ -1100,6 +1149,13 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
 
         private static void UpdateKhoaHocFromDTO(KhoaHocModel khoaHoc, KhoaHocCreateUpdateDTO dto)
         {
+            var donVi = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe.Trim().ToUpperInvariant();
+            var gia = dto.GiaKhoaHoc;
+            if (KhoaHocPricingHelper.LaKhoaHocMienPhi(donVi))
+            {
+                gia = KhoaHocPricingHelper.GiaKyThuatMienPhi;
+            }
+
             khoaHoc.TenKhoaHoc = dto.TenKhoaHoc;
             khoaHoc.MoTa = dto.MoTa;
             khoaHoc.HinhAnh = dto.HinhAnh;
@@ -1107,8 +1163,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             khoaHoc.TrinhDo = dto.TrinhDo;
             khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;
             khoaHoc.TrangThai = dto.TrangThai;
-            khoaHoc.GiaKhoaHoc = dto.GiaKhoaHoc;
-            khoaHoc.DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe;
+            khoaHoc.GiaKhoaHoc = gia;
+            khoaHoc.DonViTienTe = donVi;
             khoaHoc.ChoPhepMua = true;
             khoaHoc.KyNangChinh = dto.KyNangChinh ?? string.Empty;
             khoaHoc.CoChungChi = dto.CoChungChi;
@@ -1160,11 +1216,12 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             if (dto.ThoiLuongGio <= 0)
                 errors.Add("Thời lượng khóa học phải lớn hơn 0.");
 
-            if (dto.GiaKhoaHoc < 10000 || dto.GiaKhoaHoc > 15000)
+            bool laMienPhi = KhoaHocPricingHelper.LaKhoaHocMienPhi(dto.DonViTienTe);
+            if (!laMienPhi && (dto.GiaKhoaHoc < 10000 || dto.GiaKhoaHoc > 15000))
                 errors.Add("Giá khóa học phải từ 10,000 đến 15,000 VNĐ");
-            
+
             if (string.IsNullOrWhiteSpace(dto.DonViTienTe))
-                errors.Add("Đơn vị tiền tệ không được để trống khi khóa học có phí.");
+                errors.Add("Đơn vị tiền tệ không được để trống.");
 
             if (dto.CoChungChi)
             {

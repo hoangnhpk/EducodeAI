@@ -10,5 +10,6 @@ namespace educodeai_server.DTOs.ThanhToan
         public string DonViTienTe { get; set; } = "VND";
         public bool DaMua { get; set; }
         public bool ChoPhepMua { get; set; }
+        public bool LaMienPhi { get; set; }
     }
 }

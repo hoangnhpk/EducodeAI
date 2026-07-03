@@ -23,22 +23,22 @@ namespace educodeai_server.Services.Implementation
             {
                 if (key != null && key.TrangThai)
                 {
-                    string redisKey = $"EduCodeAI:KeyPool:{key.ID}";
-                    var reqStr = await _redisService.LayHashAsync(redisKey, "RequestDaDung");
-                    var tokStr = await _redisService.LayHashAsync(redisKey, "TokenDaDung");
+                    string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
+                    var reqStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
+                    var tokStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
 
                     if (int.TryParse(reqStr, out int req))
                     {
-                        key.DaSuDungRequest = req;
+                        key.DaSuDungRequestHomNay = req;
                     }
                     if (int.TryParse(tokStr, out int tok))
                     {
-                        key.DaSuDungToken = tok;
+                        key.DaSuDungTokenHomNay = tok;
                     }
 
-                    // Tính lại phần trăm sử dụng theo số từ Redis
-                    key.PhanTramSuDung = key.HanMucRequest > 0 
-                                         ? Math.Round((double)key.DaSuDungRequest / key.HanMucRequest * 100, 2) 
+                    // Tính lại phần trăm sử dụng theo số từ Redis (áp dụng cho RPD)
+                    key.PhanTramRPD = key.RPDLimit > 0 
+                                         ? Math.Round((double)key.DaSuDungRequestHomNay / key.RPDLimit * 100, 2) 
                                          : 0;
                 }
             }
@@ -53,15 +53,15 @@ namespace educodeai_server.Services.Implementation
 
             if (key != null && key.TrangThai)
             {
-                string redisKey = $"EduCodeAI:KeyPool:{key.ID}";
-                var reqStr = await _redisService.LayHashAsync(redisKey, "RequestDaDung");
-                var tokStr = await _redisService.LayHashAsync(redisKey, "TokenDaDung");
+                string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
+                var reqStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
+                var tokStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
 
-                if (int.TryParse(reqStr, out int req)) key.DaSuDungRequest = req;
-                if (int.TryParse(tokStr, out int tok)) key.DaSuDungToken = tok;
+                if (int.TryParse(reqStr, out int req)) key.DaSuDungRequestHomNay = req;
+                if (int.TryParse(tokStr, out int tok)) key.DaSuDungTokenHomNay = tok;
 
-                key.PhanTramSuDung = key.HanMucRequest > 0 
-                                     ? Math.Round((double)key.DaSuDungRequest / key.HanMucRequest * 100, 2) 
+                key.PhanTramRPD = key.RPDLimit > 0 
+                                     ? Math.Round((double)key.DaSuDungRequestHomNay / key.RPDLimit * 100, 2) 
                                      : 0;
             }
 
@@ -70,10 +70,17 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<bool> CreateNewKeyAsync(KeyAPIManageDto dto, int adminId, string? ipAddress)
         {
-            if (string.IsNullOrWhiteSpace(dto.TenKey) || string.IsNullOrWhiteSpace(dto.MaKeyRaw))
+            if (string.IsNullOrWhiteSpace(dto.TenKey) || string.IsNullOrWhiteSpace(dto.MaKeyRaw) || 
+                string.IsNullOrWhiteSpace(dto.ModelSuDung))
             {
                 return false;
             }
+
+            if (dto.RPMLimit <= 0 || dto.TPMLimit <= 0 || dto.RPDLimit <= 0)
+            {
+                return false;
+            }
+
             int newKeyId = await _keyApiRepo.CreateKeyAsync(dto);
             if (newKeyId > 0)
             {
@@ -85,7 +92,10 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<bool> UpdateKeyAsync(int id, KeyAPIManageDto dto, int adminId, string? ipAddress)
         {
+            if (string.IsNullOrWhiteSpace(dto.ModelSuDung)) dto.ModelSuDung = "gemma-4-31b-it";
             if (id <= 0 || string.IsNullOrWhiteSpace(dto.TenKey)) return false;
+
+            if (dto.RPMLimit <= 0 || dto.TPMLimit <= 0 || dto.RPDLimit <= 0) return false;
 
             var isUpdated = await _keyApiRepo.UpdateKeyAsync(id, dto, adminId, ipAddress);
             if (isUpdated)
@@ -141,9 +151,10 @@ namespace educodeai_server.Services.Implementation
             string redisKey = $"EduCodeAI:KeyPool:{rawKey.ID}";
 
             await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", rawKey.MaKeyMaHoa);
-            await _redisService.LuuHashAsync(redisKey, "HanMucRequest", rawKey.HanMucRequest.ToString());
-            await _redisService.LuuHashAsync(redisKey, "HanMucToken", rawKey.HanMucToken.ToString());
-
+            await _redisService.LuuHashAsync(redisKey, "RPMLimit", rawKey.RPMLimit.ToString());
+            await _redisService.LuuHashAsync(redisKey, "TPMLimit", rawKey.TPMLimit.ToString());
+            await _redisService.LuuHashAsync(redisKey, "RPDLimit", rawKey.RPDLimit.ToString());
+            await _redisService.LuuHashAsync(redisKey, "ModelSuDung", rawKey.ModelSuDung);
             await _redisService.LuuHashAsync(redisKey, "TrangThai", rawKey.TrangThai.ToString());
 
             var auditLog = new educodeai_server.Models.ApiKeyAuditLog
@@ -151,7 +162,7 @@ namespace educodeai_server.Services.Implementation
                 Action = AuditAction.SYNC_CONFIG,
                 AdminId = adminId,
                 KeyApiId = id,
-                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { hanMucRequest = rawKey.HanMucRequest, hanMucToken = rawKey.HanMucToken, trangThai = rawKey.TrangThai, redisKey }),
+                MetadataJson = System.Text.Json.JsonSerializer.Serialize(new { rpmLimit = rawKey.RPMLimit, tpmLimit = rawKey.TPMLimit, rpdLimit = rawKey.RPDLimit, model = rawKey.ModelSuDung, trangThai = rawKey.TrangThai, redisKey }),
                 IpAddress = ipAddress,
                 CreatedAt = DateTime.UtcNow
             };
@@ -171,9 +182,9 @@ namespace educodeai_server.Services.Implementation
                 var rawKey = await _keyApiRepo.GetRawKeyForRedisAsync(id);
                 if (rawKey != null && rawKey.TrangThai)
                 {
-                    string redisKey = $"EduCodeAI:KeyPool:{id}";
-                    await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0");
-                    await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");
+                    string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
+                    await _redisService.XoaKeyAsync($"EduCodeAI:Usage:RPD:{id}:{homNaySuffix}");
+                    await _redisService.XoaKeyAsync($"EduCodeAI:Usage:DailyToken:{id}:{homNaySuffix}");
                 }
             }
 

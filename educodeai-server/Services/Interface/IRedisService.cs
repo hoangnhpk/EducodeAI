@@ -16,5 +16,8 @@ namespace educodeai_server.Services.Interface
         // Course Cache Versioning
         Task<long> LayVersionKhoaHocAsync(int maKhoaHoc);
         Task TangVersionKhoaHocAsync(int maKhoaHoc);
+
+        // Lua Scripting for Rate Limit Atomic Operations
+        Task<dynamic> ThucThiLuaScriptAsync(string script, string[] keys, string[] args);
     }
 }

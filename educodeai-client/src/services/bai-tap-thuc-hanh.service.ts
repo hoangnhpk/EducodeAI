@@ -7,7 +7,7 @@ import type {
   GenerateQuizAIDTO,
   QuizAIData,
   CreateQuizDTO,
-} from '@/pages/giang-vien/bai-tap-thuc-hanh/BaiTapThucHanhDTO';
+} from '@/pages/giang-vien/quan-ly-bai-tap/types';
 
 // Base API cho giảng viên quản lý bài tập thực hành
 const BASE = '/api/lecturer/practice-exercises';

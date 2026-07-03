@@ -1,24 +1,27 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
 import {
   SortableContext, sortableKeyboardCoordinates,
-  useSortable, verticalListSortingStrategy, arrayMove,
+  verticalListSortingStrategy,
+  useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { BaiHocDetail } from '../types';
-import * as api from '../api/khoaHocApi';
 import EmptyState from './ui/EmptyState';
 import ConfirmDialog from './ui/ConfirmDialog';
 import { ListItemSkeleton } from './ui/Skeleton';
-import { useToastStandalone } from './ui/Toast';
+import { useLessonManagement } from '../hooks/useLessonManagement';
+import BulkUploadModal from './BulkUploadModal';
+import SubtitleManagerModal from './SubtitleManagerModal';
 
 const getGiangVienId = (): number => {
-  try { const u = JSON.parse(localStorage.getItem('user_info') || '{}'); return u.maNguoiDung ?? u.id ?? 1; }
-  catch { return 1; }
+  try {
+    const u = JSON.parse(localStorage.getItem('user_info') || '{}');
+    return u.maNguoiDung ?? u.id ?? 1;
+  } catch { return 1; }
 };
 
 const getYTId = (url?: string): string | null => {
@@ -38,13 +41,14 @@ interface LessonModalProps {
   editData?: BaiHocDetail | null;
   currentCount: number;
   isLoading: boolean;
-  onSave: (type: 'Video' | 'File', dto: any) => void;
+  uploadProgress: number | null;
+  onSave: (type: 'Video' | 'File' | 'VideoUpload', dto: any) => void;
   onClose: () => void;
 }
-const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCount, isLoading, onSave, onClose }) => {
+const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCount, isLoading, uploadProgress, onSave, onClose }) => {
   const isEdit = !!editData;
   const initialType = editData?.loaiBaiHoc === 'File' ? 'File' : 'Video';
-  const [loaiBaiHoc, setLoaiBaiHoc] = useState<'Video' | 'File'>(initialType);
+  const [loaiBaiHoc, setLoaiBaiHoc] = useState<'Video' | 'File' | 'VideoUpload'>(initialType);
   const [tieuDe, setTieuDe] = useState(editData?.tieuDe ?? '');
   const [moTa, setMoTa] = useState(editData?.moTa ?? '');
   const [linkVideo, setLinkVideo] = useState(editData?.linkVideo ?? '');
@@ -69,6 +73,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
     if (!tieuDe.trim()) e.tieuDe = 'Tiêu đề bài học không được để trống.';
     if (tieuDe.length > 200) e.tieuDe = 'Tiêu đề tối đa 200 ký tự.';
     if (loaiBaiHoc === 'File' && !isEdit && !file) e.file = 'Vui lòng chọn file tĩnh.';
+    if (loaiBaiHoc === 'VideoUpload' && !isEdit && !file) e.file = 'Vui lòng chọn video để tải lên.';
     setErrors(e);
     return !Object.keys(e).length;
   };
@@ -77,6 +82,8 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
     if (!validate()) return;
     if (loaiBaiHoc === 'Video') {
       onSave('Video', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), linkVideo: linkVideo.trim(), thoiLuong, thuTu: editData?.thuTu ?? currentCount + 1 });
+    } else if (loaiBaiHoc === 'VideoUpload') {
+      onSave('VideoUpload', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), file, thuTu: editData?.thuTu ?? currentCount + 1 });
     } else {
       onSave('File', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), file, thuTu: editData?.thuTu ?? currentCount + 1 });
     }
@@ -91,12 +98,16 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
         </div>
         <div className="khm-modal-body">
           {!isEdit && (
-            <div style={{ marginBottom: 16, display: 'flex', gap: 16 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <div className="khm-flex khm-gap-16 khm-mb-16">
+              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer' }}>
                 <input type="radio" name="loai" checked={loaiBaiHoc === 'Video'} onChange={() => setLoaiBaiHoc('Video')} />
                 Video (YouTube)
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer' }}>
+                <input type="radio" name="loai" checked={loaiBaiHoc === 'VideoUpload'} onChange={() => setLoaiBaiHoc('VideoUpload')} />
+                Video (Tải lên)
+              </label>
+              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer' }}>
                 <input type="radio" name="loai" checked={loaiBaiHoc === 'File'} onChange={() => setLoaiBaiHoc('File')} />
                 Tài liệu (File)
               </label>
@@ -104,7 +115,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
           )}
 
           {isYT && (
-            <div className="khm-alert khm-alert-info" style={{ marginBottom: 16 }}>
+            <div className="khm-alert khm-alert-info khm-mb-16">
               🎬 Bài học này được import từ YouTube. Chỉ có thể chỉnh sửa tiêu đề và mô tả.
             </div>
           )}
@@ -139,6 +150,38 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
                 </div>
               </div>
             )
+          ) : loaiBaiHoc === 'VideoUpload' ? (
+            <div className="khm-form-group">
+              <label className="khm-form-label">Video đính kèm {isEdit && '(Bỏ qua nếu không đổi video)'}</label>
+              <input 
+                type="file" 
+                onChange={e => {
+                  const selectedFile = e.target.files?.[0] || null;
+                  if (selectedFile && selectedFile.size > 2000 * 1024 * 1024) {
+                    alert('Dung lượng file vượt quá 2GB.');
+                    setFile(null);
+                    return;
+                  }
+                  setFile(selectedFile);
+                  setErrors(p => ({ ...p, file: '' }));
+                }} 
+                disabled={isLoading} 
+                accept="video/mp4,video/webm,video/ogg"
+                className={`khm-form-input ${errors.file ? 'error' : ''}`} 
+                style={{ padding: '6px 10px' }} 
+              />
+              {errors.file && <div className="khm-form-error">⚠ {errors.file}</div>}
+              {uploadProgress !== null && (
+                <div className="khm-mt-8">
+                  <div style={{ background: '#e2e8f0', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                    <div style={{ background: 'var(--khm-primary)', height: '100%', width: `${uploadProgress}%`, transition: 'width 0.2s' }} />
+                  </div>
+                  <div className="khm-text-sm khm-text-muted khm-mt-4 khm-flex khm-gap-8 khm-items-center">
+                    <span className="khm-spinner khm-spinner-sm" /> Đang xử lý tải lên: {uploadProgress}% (Vui lòng không đóng cửa sổ)
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="khm-form-group">
               <label className="khm-form-label">Tài liệu đính kèm {isEdit && '(Bỏ qua nếu không đổi file)'}</label>
@@ -152,8 +195,8 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
               />
               {errors.file && <div className="khm-form-error">⚠ {errors.file}</div>}
               {isEdit && linkVideo && !file && (
-                <div style={{ marginTop: 8, fontSize: '0.85rem' }}>
-                  File hiện tại: <a href={linkVideo} target="_blank" rel="noreferrer" style={{ color: 'var(--khm-primary)' }}>{linkVideo.split('/').pop()}</a>
+                <div className="khm-mt-8 khm-text-sm">
+                  File hiện tại: <a href={linkVideo} target="_blank" rel="noreferrer" className="khm-text-primary">{linkVideo.split('/').pop()}</a>
                 </div>
               )}
             </div>
@@ -180,35 +223,48 @@ const VideoPreviewModal: React.FC<{ lesson: BaiHocDetail | null; onClose: () => 
     <div className="khm-modal-backdrop" onClick={onClose}>
       <div className="khm-modal khm-modal-lg" onClick={e => e.stopPropagation()}>
         <div className="khm-modal-header">
-          <h3 className="khm-modal-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lesson.tieuDe}</h3>
+          <h3 className="khm-modal-title khm-truncate">{lesson.tieuDe}</h3>
           <button className="khm-modal-close" onClick={onClose}>×</button>
         </div>
-        <div className="khm-modal-body" style={{ padding: 0 }}>
+        <div className="khm-modal-body khm-p-0">
           {isFile ? (
-            <div style={{ padding: 60, textAlign: 'center', background: 'var(--khm-gray-50)' }}>
-              <div style={{ fontSize: 40, marginBottom: 16 }}>📄</div>
-              <h4 style={{ marginBottom: 16, color: 'var(--khm-gray-800)' }}>Đây là tài liệu đính kèm</h4>
-              <a href={lesson.linkVideo} target="_blank" rel="noreferrer" className="khm-btn khm-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+            <div className="khm-text-center khm-p-60" style={{ background: 'var(--khm-gray-50)' }}>
+              <div className="khm-mb-16" style={{ fontSize: 40 }}>📄</div>
+              <h4 className="khm-mb-16" style={{ color: 'var(--khm-gray-800)' }}>Đây là tài liệu đính kèm</h4>
+              <a href={lesson.linkVideo} target="_blank" rel="noreferrer" className="khm-btn khm-btn-primary khm-flex khm-items-center" style={{ textDecoration: 'none' }}>
                 ⬇ Tải xuống / Mở tài liệu
               </a>
             </div>
           ) : ytId ? (
-            <div style={{ position: 'relative', paddingBottom: '56.25%', background: '#000' }}>
+            <div className="khm-relative" style={{ paddingBottom: '56.25%', background: '#000' }}>
               <iframe
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                className="khm-absolute-inset"
+                style={{ width: '100%', height: '100%', border: 'none' }}
                 src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 title={lesson.tieuDe}
               />
             </div>
+          ) : lesson.videoSource === 'cloudinary' ? (
+            <div className="khm-relative" style={{ background: '#000' }}>
+               <video 
+                 controls 
+                 controlsList="nodownload" 
+                 width="100%" 
+                 src={lesson.linkVideo ? lesson.linkVideo.replace(/\.[^/.]+$/, '.mp4') : ''} 
+                 poster={lesson.linkVideo ? lesson.linkVideo.replace(/\.[^/.]+$/, '.jpg') : undefined}
+               >
+                 Trình duyệt không hỗ trợ phát video.
+               </video>
+            </div>
           ) : (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--khm-gray-400)' }}>
+            <div className="khm-text-center" style={{ padding: 40, color: 'var(--khm-gray-400)' }}>
               Không có video để xem trước.
             </div>
           )}
           {lesson.moTa && (
-            <p style={{ padding: '14px 20px', margin: 0, fontSize: '0.875rem', color: 'var(--khm-gray-600)', borderTop: '1px solid var(--khm-gray-100)' }}>
+            <p className="khm-text-sm" style={{ padding: '14px 20px', margin: 0, color: 'var(--khm-gray-600)', borderTop: '1px solid var(--khm-gray-100)' }}>
               {lesson.moTa}
             </p>
           )}
@@ -224,7 +280,8 @@ const LessonRow: React.FC<{
   onEdit: (l: BaiHocDetail) => void;
   onDelete: (l: BaiHocDetail) => void;
   onPreview: (l: BaiHocDetail) => void;
-}> = ({ lesson, index, onEdit, onDelete, onPreview }) => {
+  onManageSubtitle: (l: BaiHocDetail) => void;
+}> = ({ lesson, index, onEdit, onDelete, onPreview, onManageSubtitle }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: lesson.maBaiHoc });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   const ytId = getYTId(lesson.linkVideo);
@@ -242,18 +299,21 @@ const LessonRow: React.FC<{
         </div>
 
         {/* Thumbnail */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div className="khm-relative" style={{ flexShrink: 0 }}>
           {isFile ? (
-             <div className="khm-list-item-thumb-placeholder" style={{ background: 'var(--khm-gray-100)', color: 'var(--khm-primary)', fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📄</div>
+             <div className="khm-list-item-thumb-placeholder khm-flex khm-items-center" style={{ color: 'var(--khm-primary)', fontSize: 24, justifyContent: 'center' }}>📄</div>
           ) : thumb ? (
             <img src={thumb} alt={lesson.tieuDe} className="khm-list-item-thumb" />
+          ) : lesson.videoSource === 'cloudinary' ? (
+            <img src={lesson.linkVideo?.replace('.mp4', '.jpg').replace('.webm', '.jpg')} alt={lesson.tieuDe} className="khm-list-item-thumb" />
           ) : (
             <div className="khm-list-item-thumb-placeholder">🎥</div>
           )}
-          {((isYT && thumb) || isFile) && (
+          {((isYT && thumb) || isFile || lesson.videoSource === 'cloudinary') && (
             <button
               onClick={() => onPreview(lesson)}
-              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, borderRadius: 6 }}
+              className="khm-absolute-inset khm-flex khm-items-center"
+              style={{ background: 'rgba(0,0,0,0.35)', border: 'none', cursor: 'pointer', justifyContent: 'center', color: 'white', fontSize: 16, borderRadius: 6 }}
               title="Xem"
             >▶</button>
           )}
@@ -265,13 +325,19 @@ const LessonRow: React.FC<{
             <span>#{index + 1}</span>
             {lesson.thoiLuong > 0 && <span>⏱ {formatDur(lesson.thoiLuong)}</span>}
             {isYT && <span className="khm-badge khm-badge-yt" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>YouTube</span>}
+            {lesson.videoSource === 'cloudinary' && <span className="khm-badge" style={{ background: '#e0e7ff', color: '#4338ca', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>Cloudinary</span>}
+            {lesson.hasSubtitle && <span className="khm-badge" style={{ background: '#dcfce7', color: '#166534', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>CC</span>}
+            {lesson.videoStatus === 'Processing_Subtitle' && <span className="khm-badge" style={{ background: '#fef9c3', color: '#854d0e', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>Đang tạo Phụ đề...</span>}
             {isFile && <span className="khm-badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>Tài liệu</span>}
           </div>
         </div>
 
         <div className="khm-list-item-actions">
-          {((isYT && thumb) || isFile) && (
+          {((isYT && thumb) || isFile || lesson.videoSource === 'cloudinary') && (
             <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onPreview(lesson)} title="Xem">▶</button>
+          )}
+          {lesson.videoSource === 'cloudinary' && (
+            <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onManageSubtitle(lesson)} title="Quản lý Phụ đề">CC</button>
           )}
           <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onEdit(lesson)} title="Chỉnh sửa">✏️</button>
           <button className="khm-btn khm-btn-danger-ghost khm-btn-sm khm-btn-icon" onClick={() => onDelete(lesson)} title="Xóa">🗑</button>
@@ -290,96 +356,22 @@ interface Props {
 }
 
 const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons = [], onImportYT }) => {
-  const maGiangVien = getGiangVienId();
-  const { showToast, ToastContainer } = useToastStandalone();
+  const {
+    lessons, loading, error, modalOpen, editTarget, saving, deleteTarget, deleting, previewLesson,
+    uploadProgress, setLessons,
+    setModalOpen, setEditTarget, setDeleteTarget, setPreviewLesson,
+    loadLessons, handleDragEnd, handleSave, handleConfirmDelete,
+    ToastContainer
+  } = useLessonManagement({ maChuong, initialLessons });
 
-  const [lessons, setLessons] = useState<BaiHocDetail[]>(
-    [...initialLessons].sort((a, b) => a.thuTu - b.thuTu)
-  );
-  const [loading, setLoading] = useState(!initialLessons.length && maChuong > 0);
-  const [error, setError] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<BaiHocDetail | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<BaiHocDetail | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [previewLesson, setPreviewLesson] = useState<BaiHocDetail | null>(null);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [subtitleTarget, setSubtitleTarget] = useState<BaiHocDetail | null>(null);
+  const maGiangVien = getGiangVienId();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-
-  const loadLessons = useCallback(async () => {
-    if (!maChuong) return;
-    try {
-      setLoading(true); setError(null);
-      const detail = await api.getChiTietKhoaHoc(maGiangVien, 0); // placeholder
-      // Since we don't have a get-lessons-by-chapter endpoint, use chapter data from detail
-      // This is a fallback; ideally the parent passes lessons
-      void detail;
-    } catch {
-      setError('Không thể tải bài học.');
-    } finally { setLoading(false); }
-  }, [maChuong, maGiangVien]);
-
-  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIdx = lessons.findIndex(l => l.maBaiHoc === active.id);
-    const newIdx = lessons.findIndex(l => l.maBaiHoc === over.id);
-    const reordered = arrayMove(lessons, oldIdx, newIdx).map((l, i) => ({ ...l, thuTu: i + 1 }));
-    setLessons(reordered);
-    try {
-      await api.reorderBaiHoc(maGiangVien, maChuong, {
-        lessonOrders: reordered.map(l => ({ maBaiHoc: l.maBaiHoc, thuTu: l.thuTu })),
-      });
-      showToast('success', 'Sắp xếp bài học thành công!');
-    } catch {
-      showToast('error', 'Lỗi sắp xếp. Đã khôi phục thứ tự cũ.');
-      setLessons([...lessons]);
-    }
-  }, [lessons, maGiangVien, maChuong, showToast]);
-
-  const handleSave = async (type: 'Video' | 'File', dto: any) => {
-    try {
-      setSaving(true);
-      if (editTarget) {
-        if (type === 'Video') {
-          await api.capNhatBaiHoc(maGiangVien, editTarget.maBaiHoc, dto);
-        } else {
-          await api.capNhatBaiHocFile(editTarget.maBaiHoc, dto);
-        }
-        setLessons(prev => prev.map(l => l.maBaiHoc === editTarget.maBaiHoc ? { ...l, tieuDe: dto.tieuDe, moTa: dto.moTa, thoiLuong: dto.thoiLuong || 0, linkVideo: (type === 'Video' ? dto.linkVideo : l.linkVideo) } : l));
-        showToast('success', 'Cập nhật bài học thành công! (Tải lại trang để thấy file mới nhất)');
-      } else {
-        let res: any;
-        if (type === 'Video') {
-           res = await api.themBaiHoc(maGiangVien, maChuong, dto);
-        } else {
-           res = await api.themBaiHocFile(maChuong, dto);
-        }
-        setLessons(prev => [...prev, { maBaiHoc: res.maBaiHoc, tieuDe: res.tieuDe, moTa: res.moTa, linkVideo: res.linkVideo, thoiLuong: res.thoiLuong || 0, thuTu: res.thuTu, loaiBaiHoc: type }]);
-        showToast('success', 'Thêm bài học thành công!');
-      }
-      setModalOpen(false); setEditTarget(null);
-    } catch (err: any) {
-      showToast('error', err?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
-    } finally { setSaving(false); }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    try {
-      setDeleting(true);
-      await api.xoaBaiHoc(maGiangVien, deleteTarget.maBaiHoc);
-      setLessons(prev => prev.filter(l => l.maBaiHoc !== deleteTarget.maBaiHoc));
-      showToast('success', `Đã xóa bài học "${deleteTarget.tieuDe}".`);
-      setDeleteTarget(null);
-    } catch {
-      showToast('error', 'Lỗi xóa bài học.');
-    } finally { setDeleting(false); }
-  };
 
   if (loading) return <div>{[1,2,3,4].map(i => <ListItemSkeleton key={i} />)}</div>;
   if (error) return (
@@ -392,16 +384,19 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
   return (
     <div>
       <ToastContainer />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+      <div className="khm-flex-between khm-mb-16" style={{ flexWrap: 'wrap', gap: 8 }}>
         <p className="khm-text-muted" style={{ margin: 0 }}>
           Chương: <strong>{tenChuong}</strong> · {lessons.length} bài học
         </p>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="khm-flex khm-gap-8">
           {onImportYT && (
             <button className="khm-btn khm-btn-outline khm-btn-sm" onClick={onImportYT}>
               ▶ Import YouTube
             </button>
           )}
+          <button className="khm-btn khm-btn-secondary khm-btn-sm" onClick={() => setBulkModalOpen(true)} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1' }}>
+            📥 Tải lên Hàng loạt
+          </button>
           <button className="khm-btn khm-btn-primary khm-btn-sm" onClick={() => { setEditTarget(null); setModalOpen(true); }}>
             + Thêm bài học
           </button>
@@ -414,7 +409,7 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
           title="Chương này chưa có bài học nào"
           description="Import từ YouTube playlist hoặc thêm bài học thủ công."
           action={
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div className="khm-flex khm-gap-10">
               {onImportYT && (
                 <button className="khm-btn khm-btn-primary" onClick={onImportYT}>▶ Import YouTube</button>
               )}
@@ -431,6 +426,7 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
                 onEdit={lesson => { setEditTarget(lesson); setModalOpen(true); }}
                 onDelete={setDeleteTarget}
                 onPreview={setPreviewLesson}
+                onManageSubtitle={setSubtitleTarget}
               />
             ))}
           </SortableContext>
@@ -442,6 +438,7 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
         editData={editTarget}
         currentCount={lessons.length}
         isLoading={saving}
+        uploadProgress={uploadProgress}
         onSave={(type, dto) => void handleSave(type, dto)}
         onClose={() => { setModalOpen(false); setEditTarget(null); }}
       />
@@ -457,7 +454,31 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
         onCancel={() => setDeleteTarget(null)}
       />
 
+      <BulkUploadModal 
+        dangMo={bulkModalOpen} 
+        dongModal={() => setBulkModalOpen(false)} 
+        maGiangVien={maGiangVien} 
+        maChuong={maChuong} 
+        soLuongHienTai={lessons.length} 
+        khiTaiLenThanhCong={(newLessons) => {
+           setLessons(prev => {
+             const updated = [...prev, ...newLessons];
+             return updated.sort((a, b) => a.thuTu - b.thuTu);
+           });
+           setBulkModalOpen(false);
+        }} 
+      />
+
       <VideoPreviewModal lesson={previewLesson} onClose={() => setPreviewLesson(null)} />
+      
+      <SubtitleManagerModal
+        dangMo={!!subtitleTarget}
+        baiHoc={subtitleTarget}
+        dongModal={() => setSubtitleTarget(null)}
+        khiCapNhat={(updatedLesson) => {
+          setLessons(prev => prev.map(l => l.maBaiHoc === updatedLesson.maBaiHoc ? updatedLesson : l));
+        }}
+      />
     </div>
   );
 };

@@ -3,5 +3,12 @@
   "files.autoGuessEncoding": false,
   "files.eol": "\n",
   "files.insertFinalNewline": true,
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "python-envs.pythonProjects": [
+    {
+      "path": "educodeai-server/bin",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    }
+  ]
 }
