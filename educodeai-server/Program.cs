@@ -17,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using educodeai_server.Hubs;
+using educodeai_server.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -137,6 +138,7 @@ builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
 builder.Services.AddScoped<IHocVienService, HocVienService>();
 builder.Services.AddScoped<IKhongGianHocTapService, KhongGianHocTapService>();
+builder.Services.AddScoped<IThuThachService, ThuThachService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
 builder.Services.AddScoped<IThongKeAdminService, ThongKeAdminService>();
 
@@ -146,6 +148,8 @@ builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
 builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
 builder.Services.AddScoped<IQuanLyHocVienService,QuanLyHocVienService>();
+builder.Services.AddSingleton<LopHocEmailQueue>();
+builder.Services.AddHostedService<LopHocEmailWorker>();
 builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocService>();
 builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
 builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();

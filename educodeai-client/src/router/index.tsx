@@ -30,6 +30,7 @@ import PhongVanAI from "../pages/hoc-vien/phong-van-ai/PhongVanAI";
 import SinhDoAnAI from "../pages/hoc-vien/sinh-do-an-ai/SinhDoAnAI";
 import NhapMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/NhapMaQuaTang";
 import LichSuMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/LichSuMaQuaTang";
+import ThuThach from "@/pages/hoc-vien/thu-thach/ThuThach";
 
 import QuanLyBaiTapPage from "../pages/giang-vien/quan-ly-bai-tap/QuanLyBaiTapPage";
 import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
@@ -100,6 +101,7 @@ export default function AppRouter() {
           <Route element={<ProtectedRoute allowRoles={[0, 1, 2]}><LayoutHocVien /></ProtectedRoute>}>
             <Route path="/yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
             <Route path="/khong-gian-hoc-tap" element={<KhongGianHocTap />} />
+            <Route path="/thu-thach-hoc-tap" element={<ThuThach />} />
             <Route path="/mua-khoa-hoc/:id" element={<MuaKhoaHoc />} />
             <Route path="/ho-so" element={<HoSoHocVienPage />} />
             <Route path="/profile" element={<ProfilePage />} />
