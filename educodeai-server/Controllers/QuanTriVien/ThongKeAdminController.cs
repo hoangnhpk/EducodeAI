@@ -283,5 +283,51 @@ namespace educodeai_server.Controllers.QuanTriVien
                 return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết lượt đăng ký.", details = ex.Message });
             }
         }
+
+        [HttpGet("doanh-thu/tong-quan")]
+        public async Task<IActionResult> LayDoanhThuTongQuan()
+        {
+            try
+            {
+                var data = await _service.LayDoanhThuTongQuanAsync();
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayDoanhThuTongQuan ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy thống kê doanh thu.", details = ex.Message });
+            }
+        }
+
+        [HttpGet("doanh-thu/theo-thoi-gian")]
+        public async Task<IActionResult> LayDoanhThuTheoThoiGian(
+            [FromQuery] string? nhomTheo = "month",
+            [FromQuery] string? from = null,
+            [FromQuery] string? to = null)
+        {
+            try
+            {
+                DateTime? ParseDateOrNull(string? v)
+                {
+                    if (string.IsNullOrWhiteSpace(v)) return null;
+                    if (DateTime.TryParseExact(v.Trim(), "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.AssumeUniversal, out var dt))
+                    {
+                        return DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                    }
+                    return null;
+                }
+
+                var fromUtc = ParseDateOrNull(from);
+                var toUtc = ParseDateOrNull(to);
+
+                var data = await _service.LayDoanhThuTheoThoiGianAsync(nhomTheo, fromUtc, toUtc);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ThongKeAdmin] LayDoanhThuTheoThoiGian ERROR: {ex}");
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy biểu đồ doanh thu.", details = ex.Message });
+            }
+        }
     }
 }
