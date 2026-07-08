@@ -1038,6 +1038,7 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
                 TenKhoaHoc = k.TenKhoaHoc,
                 MoTa = k.MoTa,
                 HinhAnh = k.HinhAnh,
+                VideoGioiThieu = k.VideoGioiThieu,
                 LinhVuc = k.LinhVuc,
                 TrinhDo = k.TrinhDo,
                 ThoiLuongGio = k.ThoiLuongGio,
@@ -1127,6 +1128,7 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
                 TenKhoaHoc = dto.TenKhoaHoc,
                 MoTa = dto.MoTa,
                 HinhAnh = dto.HinhAnh,
+                VideoGioiThieu = dto.VideoGioiThieu,
                 LinhVuc = dto.LinhVuc,
                 TrinhDo = dto.TrinhDo,
                 ThoiLuongGio = dto.ThoiLuongGio,
@@ -1159,6 +1161,7 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             khoaHoc.TenKhoaHoc = dto.TenKhoaHoc;
             khoaHoc.MoTa = dto.MoTa;
             khoaHoc.HinhAnh = dto.HinhAnh;
+            khoaHoc.VideoGioiThieu = dto.VideoGioiThieu;
             khoaHoc.LinhVuc = dto.LinhVuc;
             khoaHoc.TrinhDo = dto.TrinhDo;
             khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;

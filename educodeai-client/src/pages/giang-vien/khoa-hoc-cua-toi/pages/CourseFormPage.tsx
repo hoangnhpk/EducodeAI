@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Swal from 'sweetalert2';
 import type { KhoaHocCreateUpdate, KhoaHocDetail } from '../types';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
 import { FormSkeleton } from '../components/ui/Skeleton';
 import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 const getGiangVienId = (): number => {
   try {
@@ -36,6 +38,50 @@ const LINH_VUC = [
 ];
 const TRINH_DO = ['Người mới', 'Trung cấp', 'Nâng cao'];
 
+const MAX_VIDEO_SIZE_MB = 100;
+const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg'];
+const ALLOWED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg'];
+
+type VideoPreview = { type: 'youtube' | 'direct'; src: string };
+
+const getYouTubeVideoId = (url: URL): string | null => {
+  const host = url.hostname.replace(/^www\./, '').toLowerCase();
+  if (host === 'youtu.be') return url.pathname.split('/').filter(Boolean)[0] ?? null;
+  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
+    if (url.pathname === '/watch') return url.searchParams.get('v');
+    const parts = url.pathname.split('/').filter(Boolean);
+    if ((parts[0] === 'embed' || parts[0] === 'shorts' || parts[0] === 'live') && parts[1]) return parts[1];
+  }
+  return null;
+};
+
+const getVideoPreview = (value?: string): VideoPreview | null => {
+  const input = value?.trim();
+  if (!input) return null;
+  if (input.startsWith('/uploads/')) {
+    return ALLOWED_VIDEO_EXTENSIONS.some(ext => input.toLowerCase().split('?')[0].endsWith(ext)) ? { type: 'direct', src: getMediaUrl(input) } : null;
+  }
+  try {
+    const url = new URL(input);
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    const youtubeId = getYouTubeVideoId(url);
+    if (youtubeId) return { type: 'youtube', src: `https://www.youtube.com/embed/${youtubeId}` };
+    if (ALLOWED_VIDEO_EXTENSIONS.some(ext => url.pathname.toLowerCase().endsWith(ext))) return { type: 'direct', src: getMediaUrl(input) };
+  } catch { return null; }
+  return null;
+};
+
+const normalizeVideoUrl = (value?: string): string => getVideoPreview(value)?.src ?? value?.trim() ?? '';
+
+const validateVideoFile = (file: File): string | null => {
+  const fileName = file.name.toLowerCase();
+  const hasValidExtension = ALLOWED_VIDEO_EXTENSIONS.some(ext => fileName.endsWith(ext));
+  if (!ALLOWED_VIDEO_TYPES.includes(file.type) || !hasValidExtension) return 'Chỉ chấp nhận video định dạng MP4, WebM hoặc OGG.';
+  if (file.size > MAX_VIDEO_SIZE_BYTES) return `Kích thước video không được vượt quá ${MAX_VIDEO_SIZE_MB}MB.`;
+  return null;
+};
+
 interface ValidationErrors {
   tenKhoaHoc?: string;
   linhVuc?: string;
@@ -47,6 +93,7 @@ interface ValidationErrors {
   diemDatChungChi?: string;
   soCauHoiChungChi?: string;
   thoiGianLamBaiChungChi?: string;
+  videoGioiThieu?: string;
 }
 
 interface Props {
@@ -60,6 +107,7 @@ const DEFAULT_FORM: KhoaHocCreateUpdate = {
   tenKhoaHoc: '',
   moTa: '',
   hinhAnh: '',
+  videoGioiThieu: '',
   linhVuc: '',
   trinhDo: 'Cơ bản',
   thoiLuongGio: 1,
@@ -78,7 +126,10 @@ const DEFAULT_FORM: KhoaHocCreateUpdate = {
 const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinue, onCancel }) => {
   const maGiangVien = getGiangVienId();
   const isEdit = maKhoaHoc !== undefined;
-  const { showToast, ToastContainer } = useToastStandalone();
+  const showToast = (icon: 'success' | 'error', title: string) => {
+    void Swal.fire({ icon, title, timer: 1800, showConfirmButton: false });
+  };
+  const ToastContainer = () => null;
 
   const [form, setForm] = useState<KhoaHocCreateUpdate>(DEFAULT_FORM);
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -96,6 +147,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
         tenKhoaHoc: detail.tenKhoaHoc,
         moTa: detail.moTa ?? '',
         hinhAnh: detail.hinhAnh ?? '',
+        videoGioiThieu: detail.videoGioiThieu ?? '',
         linhVuc: detail.linhVuc,
         trinhDo: detail.trinhDo,
         thoiLuongGio: detail.thoiLuongGio,
@@ -124,6 +176,44 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
     setErrors(prev => ({ ...prev, [field]: undefined }));
   };
 
+  const handleVideoUrlChange = (value: string) => {
+    set('videoGioiThieu', value);
+    const trimmed = value.trim();
+    if (!trimmed || getVideoPreview(trimmed)) {
+      setErrors(prev => ({ ...prev, videoGioiThieu: undefined }));
+    } else {
+      setErrors(prev => ({ ...prev, videoGioiThieu: 'Link video không hợp lệ. Hãy dùng YouTube hoặc file .mp4, .webm, .ogg.' }));
+    }
+  };
+
+  const handleVideoUrlBlur = () => {
+    const normalized = normalizeVideoUrl(form.videoGioiThieu);
+    if (normalized !== (form.videoGioiThieu ?? '')) set('videoGioiThieu', normalized);
+  };
+
+  const handleVideoUpload = async (file: File, input: HTMLInputElement) => {
+    const validationError = validateVideoFile(file);
+    if (validationError) {
+      showToast('error', validationError);
+      input.value = '';
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const url = await api.uploadVideoGioiThieuKhoaHoc(file);
+      if (url) {
+        set('videoGioiThieu', url);
+        setErrors(prev => ({ ...prev, videoGioiThieu: undefined }));
+        showToast('success', 'Upload video thành công!');
+      }
+    } catch (err: any) {
+      showToast('error', err?.response?.data?.message || err?.message || 'Lỗi khi upload video.');
+    } finally {
+      setSubmitting(false);
+      input.value = '';
+    }
+  };
+
   const validate = (): boolean => {
     const e: ValidationErrors = {};
     if (!form.tenKhoaHoc.trim()) e.tenKhoaHoc = 'Tên khóa học không được để trống.';
@@ -141,6 +231,9 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
       e.giaKhoaHoc = 'Giá khóa học phải từ 10,000 đến 15,000 VNĐ';
     }
     if (!form.donViTienTe?.trim()) e.donViTienTe = 'Đơn vị tiền tệ không được để trống.';
+    if (form.videoGioiThieu?.trim() && !getVideoPreview(form.videoGioiThieu)) {
+      e.videoGioiThieu = 'Link video không hợp lệ. Hãy dùng YouTube hoặc file .mp4, .webm, .ogg.';
+    }
 
     if (form.coChungChi) {
       if (!form.tenChungChi?.trim()) e.tenChungChi = 'Tên chứng chỉ không được để trống khi bật chứng chỉ.';
@@ -316,6 +409,69 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
                   />
                 </div>
               )}
+            </div>
+
+            <div className="khm-form-group">
+              <label className="khm-form-label">Video giới thiệu khóa học</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  className={`khm-form-input ${errors.videoGioiThieu ? 'error' : ''}`}
+                  placeholder="Dán link YouTube hoặc URL video .mp4/.webm/.ogg"
+                  value={form.videoGioiThieu ?? ''}
+                  onChange={e => handleVideoUrlChange(e.target.value)}
+                  onBlur={handleVideoUrlBlur}
+                  disabled={submitting}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="khm-btn khm-btn-outline khm-btn-sm"
+                  onClick={() => document.getElementById('upload-course-video')?.click()}
+                  disabled={submitting}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  Tải video lên
+                </button>
+                <input
+                  type="file"
+                  id="upload-course-video"
+                  style={{ display: 'none' }}
+                  accept="video/mp4,video/webm,video/ogg,.mp4,.webm,.ogg"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    void handleVideoUpload(file, e.currentTarget);
+                  }}
+                />
+              </div>
+              {errors.videoGioiThieu && <div className="khm-form-error">? {errors.videoGioiThieu}</div>}
+              <div className="khm-form-hint">
+                Có 2 lựa chọn: dán link YouTube/video trực tiếp, hoặc upload file MP4/WebM/OGG tối đa {MAX_VIDEO_SIZE_MB}MB.
+              </div>
+              {(() => {
+                const preview = getVideoPreview(form.videoGioiThieu);
+                if (!preview) return null;
+
+                return (
+                  <div style={{ marginTop: '12px' }}>
+                    {preview.type === 'youtube' ? (
+                      <iframe
+                        src={preview.src}
+                        title="Video giới thiệu khóa học"
+                        style={{ width: '100%', maxWidth: '520px', height: '292px', border: '1px solid #ddd', borderRadius: '8px' }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video
+                        src={preview.src}
+                        controls
+                        style={{ width: '100%', maxWidth: '520px', maxHeight: '292px', border: '1px solid #ddd', borderRadius: '8px', background: '#000' }}
+                      />
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

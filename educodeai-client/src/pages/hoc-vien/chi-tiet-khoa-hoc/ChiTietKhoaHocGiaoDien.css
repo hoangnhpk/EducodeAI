@@ -8,6 +8,9 @@
 /* HEADER BANNER */
 .ctgd-header-banner {
   background-color: #242526;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: #fff;
   padding: 60px 0;
   border-bottom: 1px solid #333;
