@@ -57,7 +57,7 @@ namespace educodeai_server.Data
         public DbSet<WebhookLogModel> WebhookLogs { get; set; }
         public DbSet<GiangVienQuotaModel> GiangVienQuotas { get; set; }
         public DbSet<AIBalanceHoldModel> AIBalanceHolds { get; set; }
-
+        public DbSet<LichSuPhongVanModel> LichSuPhongVans { get; set; }
         // === MODULE ĐỒ ÁN THỰC CHIẾN ===
         public DbSet<DoAnThucChienModel> DoAnThucChiens { get; set; }
         public DbSet<ChungChiDoAnModel> ChungChiDoAns { get; set; }

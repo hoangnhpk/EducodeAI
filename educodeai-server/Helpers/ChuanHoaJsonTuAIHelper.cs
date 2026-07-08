@@ -83,46 +83,15 @@ namespace educodeai_server.Helpers
 
             // 4. Parse + format JSON kết quả
             try
-
-            var candidates = new List<string>();
-
-            // 1. H? tr? ```json ... ``` v? ``` ... ```
-            foreach (Match match in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
-
             {
-                var content = match.Groups[1].Value.Trim();
-                if (!string.IsNullOrWhiteSpace(content))
-                    candidates.Add(content);
+                JToken.Parse(rawJson);
+                json = rawJson;
+                return true;
             }
-
-            // 2. H? tr? AI tr? JSON thu?n kh?ng c? code block.
-            candidates.Add(text.Trim());
-
-            // 3. H? tr? text c? prose + JSON: b?c c?c object/array c?n b?ng ngo?c.
-            candidates.AddRange(TrichXuatJsonCanBang(text));
-
-            foreach (var candidate in candidates)
+            catch (Exception ex)
             {
-
                 throw new Exception($"JSON bên trong không hợp lệ. Nguyên bản: {rawJson}", ex);
-
-                var raw = candidate.Trim();
-                if (string.IsNullOrWhiteSpace(raw)) continue;
-
-                try
-                {
-                    JToken.Parse(raw);
-                    json = raw;
-                    return true;
-                }
-                catch
-                {
-                    // Th? candidate ti?p theo.
-                }
-
             }
-
-            return false;
         }
 
         private static IEnumerable<string> TrichXuatJsonCanBang(string text)

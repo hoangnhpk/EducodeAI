@@ -123,6 +123,7 @@ builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
 builder.Services.AddScoped<IThanhToanKhoaHocService, ThanhToanKhoaHocService>();
 builder.Services.AddScoped<IMaGiamGiaService, MaGiamGiaService>();
 builder.Services.AddScoped<IQuaTangKhoaHocService, QuaTangKhoaHocService>();
+builder.Services.AddScoped<IPhongVanAIDocLapService, PhongVanAIDocLapService>();
 builder.Services.AddScoped<IThanhToanEmailService, ThanhToanEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienEmailService, RutTienGiangVienEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienService, RutTienGiangVienService>();

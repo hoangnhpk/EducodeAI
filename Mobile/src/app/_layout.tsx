@@ -1,5 +1,10 @@
 import { Slot } from 'expo-router';
+import { AuthProvider } from '../context/AuthContext';
 
 export default function TabLayout() {
-  return <Slot />;
+  return (
+    <AuthProvider>
+      <Slot />
+    </AuthProvider>
+  );
 }

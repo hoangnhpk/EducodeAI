@@ -1,4 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+const fs = require('fs');
+const path = require('path');
+
+const bakPath = path.join(__dirname, 'src/app/phong-van.tsx.bak');
+const outPath = path.join(__dirname, 'src/app/phong-van.tsx');
+
+const content = fs.readFileSync(bakPath, 'utf8');
+const styleStartIndex = content.indexOf('const styles = StyleSheet.create({');
+
+if (styleStartIndex === -1) {
+    console.error("Could not find styles");
+    process.exit(1);
+}
+
+const stylesAndEnd = content.substring(styleStartIndex);
+
+const newLogic = `import React, { useState, useEffect, useRef } from 'react';
 import { 
   StyleSheet, Text, View, SafeAreaView, ScrollView, 
   TouchableOpacity, TextInput, StatusBar, Animated, Easing, Alert
@@ -83,7 +99,7 @@ export default function PhongVanScreen() {
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, '0');
     const sec = (s % 60).toString().padStart(2, '0');
-    return `${m}:${sec}`;
+    return \`\${m}:\${sec}\`;
   };
 
   const handleStart = async () => {
@@ -137,7 +153,7 @@ export default function PhongVanScreen() {
         const aiMsg: IMessage = {
           id: 'msg-' + Date.now(),
           role: 'ai',
-          content: res.nhanXetCauTruoc + (res.cauHoiTiepTheo ? '\n\n' + res.cauHoiTiepTheo : ''),
+          content: res.nhanXetCauTruoc + (res.cauHoiTiepTheo ? '\\n\\n' + res.cauHoiTiepTheo : ''),
           timestamp: new Date()
         };
         setMessages(prev => [...prev, aiMsg]);
@@ -225,11 +241,12 @@ export default function PhongVanScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Số lượng câu hỏi (Tạm khóa mặc định)</Text>
+          <Text style={styles.label}>Số lượng câu hỏi</Text>
           <TextInput
-            style={[styles.textInput, { backgroundColor: COLORS.lightGray, color: COLORS.gray }]}
-            value="3"
-            editable={false}
+            style={styles.textInput}
+            value={soLuongCauHoi}
+            onChangeText={setSoLuongCauHoi}
+            keyboardType="numeric"
           />
         </View>
       </View>
@@ -335,50 +352,7 @@ export default function PhongVanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center', ...SHADOWS.small },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.dark },
-  container: { flex: 1, paddingHorizontal: 20 },
-  
-  // Setup UI
-  iconWrapper: { alignItems: 'center', marginTop: 10, marginBottom: 15 },
-  iconGradient: { width: 80, height: 80, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
-  descText: { textAlign: 'center', color: COLORS.gray, fontSize: 15, lineHeight: 22, marginBottom: 30, paddingHorizontal: 10 },
-  formContainer: { backgroundColor: COLORS.white, borderRadius: 24, padding: 20, ...SHADOWS.small, marginBottom: 30 },
-  inputGroup: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '700', color: COLORS.darkLight, marginBottom: 10 },
-  textInput: { borderWidth: 1, borderColor: COLORS.lightGray, borderRadius: 14, height: 50, paddingHorizontal: 15, fontSize: 15, color: COLORS.dark, backgroundColor: COLORS.bg },
-  radioGroup: { flexDirection: 'row', justifyContent: 'space-between' },
-  radioBtn: { flex: 1, alignItems: 'center', padding: 12, borderWidth: 1, borderColor: COLORS.lightGray, borderRadius: 12, marginRight: 8, backgroundColor: COLORS.bg },
-  radioBtnActive: { borderColor: COLORS.success, backgroundColor: '#dcfce7' },
-  radioText: { fontSize: 14, color: COLORS.gray, fontWeight: '600' },
-  radioTextActive: { color: COLORS.success },
-  submitBtnWrapper: { borderRadius: 16, overflow: 'hidden', ...SHADOWS.glow },
-  submitBtn: { height: 56, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  submitBtnText: { color: COLORS.white, fontSize: 16, fontWeight: '800' },
+`;
 
-  // Active Interview UI
-  interviewContainer: { flex: 1, paddingHorizontal: 20, alignItems: 'center' },
-  statusBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fee2e2', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, marginBottom: 40 },
-  recordingDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.danger, marginRight: 8 },
-  statusTime: { color: COLORS.danger, fontWeight: '700', fontSize: 14 },
-  
-  avatarSection: { position: 'relative', width: 140, height: 140, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  waveCircle: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(16, 185, 129, 0.2)' },
-  avatarInner: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#dcfce7', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: COLORS.success },
-  
-  interviewerName: { fontSize: 24, fontWeight: '900', color: COLORS.dark, marginBottom: 5 },
-  interviewerRole: { fontSize: 15, color: COLORS.gray, marginBottom: 30 },
-
-  transcriptBox: { flex: 1, width: '100%', backgroundColor: COLORS.white, borderRadius: 20, padding: 15, ...SHADOWS.small, marginBottom: 20 },
-  chatBubbleAI: { flexDirection: 'row', backgroundColor: '#f1f5f9', padding: 12, borderRadius: 15, borderTopLeftRadius: 5, marginBottom: 15, alignSelf: 'flex-start', maxWidth: '85%' },
-  chatTextAI: { flex: 1, fontSize: 14, color: COLORS.dark, lineHeight: 20 },
-  chatBubbleUser: { flexDirection: 'row', backgroundColor: COLORS.primary, padding: 12, borderRadius: 15, borderTopRightRadius: 5, marginBottom: 15, alignSelf: 'flex-end', maxWidth: '85%' },
-  chatTextUser: { flex: 1, fontSize: 14, color: COLORS.white, lineHeight: 20 },
-  typingIndicator: { fontSize: 13, fontStyle: 'italic', color: COLORS.gray, textAlign: 'center', marginTop: 10 },
-
-  stopBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.danger, width: '100%', height: 56, borderRadius: 16, marginBottom: 20, ...SHADOWS.small },
-  stopBtnText: { color: COLORS.white, fontSize: 16, fontWeight: '800', marginLeft: 10 }
-});
+fs.writeFileSync(outPath, newLogic + stylesAndEnd);
+console.log("Successfully rewrote phong-van.tsx in Mobile!");
