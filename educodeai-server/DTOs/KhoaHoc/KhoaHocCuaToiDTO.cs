@@ -5,6 +5,7 @@ public class KhoaHocGiangVienListDTO
     public int MaKhoaHoc { get; set; }
     public string TenKhoaHoc { get; set; } = null!;
     public string? HinhAnh { get; set; }
+    public string? VideoGioiThieu { get; set; }
 
     public string LinhVuc { get; set; } = null!;
     public string TrinhDo { get; set; } = null!;
@@ -30,6 +31,7 @@ public class KhoaHocGiangVienDetailDTO
     public string TenKhoaHoc { get; set; } = null!;
     public string? MoTa { get; set; }
     public string? HinhAnh { get; set; }
+    public string? VideoGioiThieu { get; set; }
 
     public string LinhVuc { get; set; } = null!;
     public string TrinhDo { get; set; } = null!;
@@ -75,6 +77,7 @@ public class KhoaHocCreateUpdateDTO
     public string TenKhoaHoc { get; set; } = null!;
     public string? MoTa { get; set; }
     public string? HinhAnh { get; set; }
+    public string? VideoGioiThieu { get; set; }
 
     public string LinhVuc { get; set; } = null!;
     public string TrinhDo { get; set; } = null!;

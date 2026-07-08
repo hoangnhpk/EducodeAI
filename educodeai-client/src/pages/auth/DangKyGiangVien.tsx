@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
-import type { ConfirmationResult } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import { DANH_MUC_NGAN_HANG_MAC_DINH } from '../../constants/danh-muc-ngan-hang-mac-dinh';
-import { resetFirebaseRecaptchaVerifier, sendFirebasePhoneOtp } from '../../configs/firebase';
 import './DangKyGiangVien.css';
 
 type PaymentMethod = 'BANK' | 'PAYPAL' | 'PAYONEER';
@@ -16,13 +14,8 @@ type VerificationState = {
   emailStatus: VerificationStatus;
   emailOtpSent: boolean;
   emailOtpCode: string;
-  phoneStatus: VerificationStatus;
-  phoneOtpSent: boolean;
-  phoneOtpCode: string;
   cccdStatus: VerificationStatus;
   cccdInfo: Record<string, string> | null;
-  taxStatus: VerificationStatus;
-  taxInfo: Record<string, string> | null;
   bankStatus: VerificationStatus;
   bankInfo: Record<string, string> | null;
 };
@@ -43,6 +36,7 @@ type FormState = {
   soTaiKhoanNhanTien: string;
   tenChuTaiKhoan: string;
   maSoThue: string;
+  loaiDoiTuongThue: 'CaNhan' | 'DoanhNghiep' | '';
 };
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -57,7 +51,6 @@ const PASSPORT_REGEX = /^[A-Z0-9]{6,12}$/;
 const OTP_REGEX = /^\d{6}$/;
 const ACCOUNT_NUMBER_REGEX = /^\d{6,20}$/;
 const TAX_CODE_REGEX = /^(\d{10}|\d{13})$/;
-const FIREBASE_RECAPTCHA_CONTAINER_ID = 'dkgv-firebase-recaptcha';
 
 const FILE_ERROR = 'Chỉ chấp nhận file ảnh JPG, JPEG, PNG hoặc WEBP. Kích thước tối đa 5MB.';
 
@@ -74,18 +67,12 @@ export default function DangKyGiangVien() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [bankKeyword, setBankKeyword] = useState('');
   const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
-  const [phoneConfirmation, setPhoneConfirmation] = useState<ConfirmationResult | null>(null);
   const [verification, setVerification] = useState<VerificationState>({
     emailStatus: 'idle',
     emailOtpSent: false,
     emailOtpCode: '',
-    phoneStatus: 'idle',
-    phoneOtpSent: false,
-    phoneOtpCode: '',
     cccdStatus: 'idle',
     cccdInfo: null,
-    taxStatus: 'idle',
-    taxInfo: null,
     bankStatus: 'idle',
     bankInfo: null
   });
@@ -109,7 +96,8 @@ export default function DangKyGiangVien() {
     tenNganHang: '',
     soTaiKhoanNhanTien: '',
     tenChuTaiKhoan: '',
-    maSoThue: ''
+    maSoThue: '',
+    loaiDoiTuongThue: ''
   });
 
   const [files, setFiles] = useState({
@@ -169,16 +157,8 @@ export default function DangKyGiangVien() {
     if (key === 'email') {
       setVerification((prev) => ({ ...prev, emailStatus: 'idle', emailOtpSent: false, emailOtpCode: '' }));
     }
-    if (key === 'soDienThoai') {
-      setVerification((prev) => ({ ...prev, phoneStatus: 'idle', phoneOtpSent: false, phoneOtpCode: '' }));
-      setPhoneConfirmation(null);
-      resetFirebaseRecaptchaVerifier();
-    }
     if (key === 'soGiayTo') {
       setVerification((prev) => ({ ...prev, cccdStatus: 'idle', cccdInfo: null }));
-    }
-    if (key === 'maSoThue') {
-      setVerification((prev) => ({ ...prev, taxStatus: 'idle', taxInfo: null }));
     }
     if (key === 'soTaiKhoanNhanTien') {
       setVerification((prev) => ({ ...prev, bankStatus: 'idle', bankInfo: null }));
@@ -195,25 +175,6 @@ export default function DangKyGiangVien() {
     if (status === 'failed') return <span className="dkgv-verify-badge fail"><i className="bi bi-x-circle-fill" /> Chưa hợp lệ</span>;
     if (status === 'pending') return <span className="dkgv-verify-badge wait"><i className="bi bi-hourglass-split" /> Đang chờ OTP</span>;
     return <span className="dkgv-verify-badge idle"><i className="bi bi-shield" /> Chưa xác minh</span>;
-  };
-
-  const formatPhoneForFirebase = (phone: string) => {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.startsWith('84')) return `+${digits}`;
-    if (digits.startsWith('0')) return `+84${digits.slice(1)}`;
-    return `+84${digits}`;
-  };
-
-  const getFirebasePhoneErrorMessage = (error: any) => {
-    const code = error?.code || '';
-    if (code.includes('invalid-phone-number')) return 'Số điện thoại không hợp lệ theo Firebase. Vui lòng kiểm tra lại.';
-    if (code.includes('too-many-requests')) return 'Bạn gửi OTP quá nhiều lần. Vui lòng chờ một lúc rồi thử lại.';
-    if (code.includes('captcha-check-failed')) return 'reCAPTCHA không hợp lệ. Vui lòng tải lại trang và thử lại.';
-    if (code.includes('quota-exceeded')) return 'Firebase SMS quota đã hết. Vui lòng thử lại sau hoặc kiểm tra cấu hình Firebase.';
-    if (code.includes('operation-not-allowed')) return 'Firebase Phone Authentication chưa được bật trong Firebase Console.';
-    if (code.includes('invalid-verification-code')) return 'Mã OTP điện thoại không đúng.';
-    if (code.includes('code-expired')) return 'Mã OTP đã hết hạn. Vui lòng gửi lại mã mới.';
-    return error?.message || 'Không thể xác minh số điện thoại.';
   };
 
   const renderInfoBox = (info: Record<string, string> | null) => {
@@ -307,12 +268,11 @@ export default function DangKyGiangVien() {
 
     if (!phone) nextErrors.soDienThoai = 'Vui lòng nhập số điện thoại.';
     else if (!PHONE_REGEX.test(phone)) nextErrors.soDienThoai = 'Số điện thoại chỉ được chứa 9-15 chữ số.';
-    else if (verification.phoneStatus !== 'verified') nextErrors.soDienThoai = 'Vui lòng xác minh số điện thoại bằng OTP trước khi tiếp tục.';
 
     if (!doc) nextErrors.soGiayTo = 'Vui lòng nhập số giấy tờ.';
     else if (docType === 'cccd' && !CCCD_REGEX.test(doc)) nextErrors.soGiayTo = 'CCCD/CMND phải gồm 9 hoặc 12 chữ số.';
     else if (docType === 'passport' && !PASSPORT_REGEX.test(doc)) nextErrors.soGiayTo = 'Hộ chiếu phải gồm 6-12 ký tự chữ hoặc số.';
-    else if (verification.cccdStatus !== 'verified') nextErrors.soGiayTo = 'Vui lòng xác minh giấy tờ trước khi tiếp tục.';
+    else if (verification.cccdStatus !== 'verified') nextErrors.soGiayTo = 'Vui lòng kiểm tra thông tin giấy tờ trước khi tiếp tục.';
 
     if (!files.anhGiayToMatTruoc) nextErrors.anhGiayToMatTruoc = 'Vui lòng tải ảnh mặt trước giấy tờ.';
     else if (!isValidImage(files.anhGiayToMatTruoc)) nextErrors.anhGiayToMatTruoc = FILE_ERROR;
@@ -321,7 +281,7 @@ export default function DangKyGiangVien() {
     else if (!isValidImage(files.anhGiayToMatSau)) nextErrors.anhGiayToMatSau = FILE_ERROR;
 
     if (form.maSoThue.trim() && !TAX_CODE_REGEX.test(form.maSoThue.trim())) nextErrors.maSoThue = 'Mã số thuế phải gồm 10 hoặc 13 chữ số.';
-    else if (form.maSoThue.trim() && verification.taxStatus !== 'verified') nextErrors.maSoThue = 'Vui lòng tra cứu và xác minh mã số thuế trước khi tiếp tục.';
+    if (!form.loaiDoiTuongThue) nextErrors.loaiDoiTuongThue = 'Vui lòng chọn loại đối tượng nộp thuế.';
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -344,7 +304,7 @@ export default function DangKyGiangVien() {
   const handleSendEmailOtp = async () => {
     const email = form.email.trim();
     if (!EMAIL_REGEX.test(email)) {
-      setErrors((prev) => ({ ...prev, email: 'Vui l?ng nh?p email ??ng ??nh d?ng tr??c.' }));
+      setErrors((prev) => ({ ...prev, email: 'Vui lòng nhập email đúng định dạng trước.' }));
       return;
     }
 
@@ -353,10 +313,10 @@ export default function DangKyGiangVien() {
       await authService.sendInstructorEmailOtp(email);
       setVerification((prev) => ({ ...prev, emailStatus: 'pending', emailOtpSent: true, emailOtpCode: '' }));
       setErrors((prev) => ({ ...prev, email: '', emailOtpCode: '' }));
-      Swal.fire('?? g?i OTP email', 'Vui l?ng ki?m tra email. M? c? hi?u l?c trong 5 ph?t.', 'success');
+      Swal.fire('Đã gửi OTP email', 'Vui lòng kiểm tra email. Mã có hiệu lực trong 5 phút.', 'success');
     } catch (error: any) {
       setVerification((prev) => ({ ...prev, emailStatus: 'failed', emailOtpSent: false }));
-      Swal.fire('L?i', error?.response?.data?.message || 'Kh?ng g?i ???c OTP email.', 'error');
+      Swal.fire('Lỗi', error?.response?.data?.message || 'Không gửi được OTP email.', 'error');
     } finally {
       setVerifyLoading('email', false);
     }
@@ -364,7 +324,7 @@ export default function DangKyGiangVien() {
 
   const handleVerifyEmailOtp = async () => {
     if (!OTP_REGEX.test(verification.emailOtpCode)) {
-      setErrors((prev) => ({ ...prev, emailOtpCode: 'M? OTP email ph?i g?m ??ng 6 ch? s?.' }));
+      setErrors((prev) => ({ ...prev, emailOtpCode: 'Mã OTP email phải gồm đúng 6 chữ số.' }));
       return;
     }
 
@@ -373,60 +333,12 @@ export default function DangKyGiangVien() {
       await authService.verifyInstructorEmailOtp(form.email.trim(), verification.emailOtpCode);
       setVerification((prev) => ({ ...prev, emailStatus: 'verified' }));
       setErrors((prev) => ({ ...prev, email: '', emailOtpCode: '' }));
-      Swal.fire('?? x?c minh', 'Email ?? ???c x?c minh th?nh c?ng.', 'success');
+      Swal.fire('Đã xác minh', 'Email đã được xác minh thành công.', 'success');
     } catch (error: any) {
       setVerification((prev) => ({ ...prev, emailStatus: 'failed' }));
-      setErrors((prev) => ({ ...prev, emailOtpCode: error?.response?.data?.message || 'M? OTP email kh?ng ??ng ho?c ?? h?t h?n.' }));
+      setErrors((prev) => ({ ...prev, emailOtpCode: error?.response?.data?.message || 'Mã OTP email không đúng hoặc đã hết hạn.' }));
     } finally {
       setVerifyLoading('emailVerify', false);
-    }
-  };
-
-  const handleSendPhoneOtp = async () => {
-    const phone = form.soDienThoai.trim();
-    if (!PHONE_REGEX.test(phone)) {
-      setErrors((prev) => ({ ...prev, soDienThoai: 'Vui lòng nhập số điện thoại 9-15 chữ số trước.' }));
-      return;
-    }
-
-    try {
-      setVerifyLoading('phone', true);
-      const confirmation = await sendFirebasePhoneOtp(formatPhoneForFirebase(phone), FIREBASE_RECAPTCHA_CONTAINER_ID);
-      setPhoneConfirmation(confirmation);
-      setVerification((prev) => ({ ...prev, phoneStatus: 'pending', phoneOtpSent: true, phoneOtpCode: '' }));
-      setErrors((prev) => ({ ...prev, soDienThoai: '', phoneOtpCode: '' }));
-      Swal.fire('Đã gửi OTP điện thoại', 'Vui lòng kiểm tra SMS và nhập mã xác nhận.', 'success');
-    } catch (error: any) {
-      resetFirebaseRecaptchaVerifier();
-      setPhoneConfirmation(null);
-      setVerification((prev) => ({ ...prev, phoneStatus: 'failed', phoneOtpSent: false, phoneOtpCode: '' }));
-      Swal.fire('Không gửi được OTP', getFirebasePhoneErrorMessage(error), 'error');
-    } finally {
-      setVerifyLoading('phone', false);
-    }
-  };
-
-  const handleVerifyPhoneOtp = async () => {
-    if (!OTP_REGEX.test(verification.phoneOtpCode)) {
-      setErrors((prev) => ({ ...prev, phoneOtpCode: 'Mã OTP điện thoại phải gồm đúng 6 chữ số.' }));
-      return;
-    }
-    if (!phoneConfirmation) {
-      setErrors((prev) => ({ ...prev, phoneOtpCode: 'Vui lòng gửi OTP điện thoại trước.' }));
-      return;
-    }
-
-    try {
-      setVerifyLoading('phoneVerify', true);
-      await phoneConfirmation.confirm(verification.phoneOtpCode);
-      setVerification((prev) => ({ ...prev, phoneStatus: 'verified' }));
-      setErrors((prev) => ({ ...prev, soDienThoai: '', phoneOtpCode: '' }));
-      Swal.fire('Đã xác minh', 'Số điện thoại đã được xác minh thành công.', 'success');
-    } catch (error: any) {
-      setVerification((prev) => ({ ...prev, phoneStatus: 'failed' }));
-      setErrors((prev) => ({ ...prev, phoneOtpCode: getFirebasePhoneErrorMessage(error) }));
-    } finally {
-      setVerifyLoading('phoneVerify', false);
     }
   };
 
@@ -457,27 +369,6 @@ export default function DangKyGiangVien() {
     }));
     setErrors((prev) => ({ ...prev, soGiayTo: '', anhGiayToMatTruoc: '', anhGiayToMatSau: '' }));
     setVerifyLoading('cccd', false);
-  };
-
-  const handleVerifyTaxCode = async () => {
-    const tax = form.maSoThue.trim();
-    if (!TAX_CODE_REGEX.test(tax)) {
-      setErrors((prev) => ({ ...prev, maSoThue: 'Mã số thuế phải gồm 10 hoặc 13 chữ số.' }));
-      return;
-    }
-    setVerifyLoading('tax', true);
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    setVerification((prev) => ({
-      ...prev,
-      taxStatus: 'verified',
-      taxInfo: {
-        'Mã số thuế': tax,
-        'Tên người nộp thuế': form.hoTen.trim() || 'Tên theo kết quả tra cứu',
-        'Trạng thái': 'Đang hoạt động (demo)'
-      }
-    }));
-    setErrors((prev) => ({ ...prev, maSoThue: '' }));
-    setVerifyLoading('tax', false);
   };
 
   const handleVerifyBankAccount = async () => {
@@ -547,10 +438,9 @@ export default function DangKyGiangVien() {
     fd.append('SoTaiKhoanNhanTien', form.soTaiKhoanNhanTien);
     fd.append('TenChuTaiKhoan', form.tenChuTaiKhoan);
     fd.append('MaSoThue', form.maSoThue);
+    fd.append('LoaiDoiTuongThue', form.loaiDoiTuongThue);
     fd.append('DaXacMinhEmail', String(verification.emailStatus === 'verified'));
-    fd.append('DaXacMinhSoDienThoai', String(verification.phoneStatus === 'verified'));
     fd.append('DaXacMinhCCCD', String(verification.cccdStatus === 'verified'));
-    fd.append('DaXacMinhMaSoThue', String(!form.maSoThue.trim() || verification.taxStatus === 'verified'));
     fd.append('DaXacMinhTaiKhoanNganHang', String(verification.bankStatus === 'verified'));
     if (files.anhDaiDien) fd.append('AnhDaiDien', files.anhDaiDien);
     if (files.anhGiayToMatTruoc) fd.append('AnhGiayToMatTruoc', files.anhGiayToMatTruoc);
@@ -710,16 +600,11 @@ export default function DangKyGiangVien() {
 
           {step === 2 && (
             <>
-              <div className="dkgv-section-title"><i className="bi bi-shield-check" /><span>Xác minh số điện thoại</span></div>
-              <div id={FIREBASE_RECAPTCHA_CONTAINER_ID} />
+              <div className="dkgv-section-title"><i className="bi bi-telephone" /><span>Số điện thoại liên hệ</span></div>
               <div className="dkgv-phone-input-wrap">
                 <div className="dkgv-input-icon"><input className={`dkgv-form-control ${errors.soDienThoai ? 'is-invalid' : ''}`} placeholder="0901234567" maxLength={15} inputMode="numeric" value={form.soDienThoai} onChange={(e) => setField('soDienThoai', e.target.value.replace(/\D/g, ''))} /><i className="bi bi-telephone" /></div>
-                <button className="dkgv-btn-brown" type="button" onClick={handleSendPhoneOtp} disabled={isVerifying.phone || verification.phoneStatus === 'verified'}>{isVerifying.phone ? 'Đang gửi...' : verification.phoneStatus === 'verified' ? 'Đã xác minh' : 'Gửi mã OTP'}</button>
               </div>
               {errors.soDienThoai && <div className="text-danger small mt-1">{errors.soDienThoai}</div>}
-              <p className="dkgv-note-text">Mã xác nhận sẽ được gửi qua SMS bằng Firebase Phone Authentication.</p>
-              {verification.phoneOtpSent && verification.phoneStatus !== 'verified' && <div className="dkgv-form-group mt-3"><label className="dkgv-form-label">Mã xác nhận điện thoại</label><div className="dkgv-inline-verify"><input className={`dkgv-form-control ${errors.phoneOtpCode ? 'is-invalid' : ''}`} placeholder="Nhập OTP điện thoại" maxLength={6} inputMode="numeric" value={verification.phoneOtpCode} onChange={(e) => setVerification((prev) => ({ ...prev, phoneOtpCode: e.target.value.replace(/[^0-9]/g, '').slice(0, 6) }))} /><button className="dkgv-btn-outline" type="button" disabled={isVerifying.phoneVerify} onClick={handleVerifyPhoneOtp}>{isVerifying.phoneVerify ? 'Đang xác minh...' : 'Xác minh'}</button></div>{errors.phoneOtpCode && <div className="text-danger small mt-1">{errors.phoneOtpCode}</div>}</div>}
-              <div className="mt-2">{statusBadge(verification.phoneStatus)}</div>
 
               <div className="dkgv-form-group mt-3"><label className="dkgv-form-label">Số giấy tờ</label><input className={`dkgv-form-control ${errors.soGiayTo ? 'is-invalid' : ''}`} placeholder={docType === 'cccd' ? 'Nhập số CCCD/CMND' : 'Nhập số hộ chiếu'} maxLength={docType === 'cccd' ? 12 : 12} inputMode={docType === 'cccd' ? 'numeric' : 'text'} value={form.soGiayTo} onChange={(e) => setField('soGiayTo', docType === 'cccd' ? e.target.value.replace(/\D/g, '') : e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} />{errors.soGiayTo && <div className="text-danger small mt-1">{errors.soGiayTo}</div>}<div className="mt-2">{statusBadge(verification.cccdStatus)}</div></div>
 
@@ -735,19 +620,30 @@ export default function DangKyGiangVien() {
               </div>
 
               <div className="mt-3 d-flex gap-2 align-items-center flex-wrap">
-                <button className="dkgv-btn-brown" type="button" disabled={isVerifying.cccd || verification.cccdStatus === 'verified'} onClick={handleVerifyIdentity}>{isVerifying.cccd ? 'Đang xác minh...' : 'Xác minh giấy tờ'}</button>
+                <button className="dkgv-btn-brown" type="button" disabled={isVerifying.cccd || verification.cccdStatus === 'verified'} onClick={handleVerifyIdentity}>{isVerifying.cccd ? 'Đang kiểm tra...' : 'Kiểm tra thông tin'}</button>
                 {statusBadge(verification.cccdStatus)}
               </div>
               {renderInfoBox(verification.cccdInfo)}
 
               <div className="dkgv-section-title"><i className="bi bi-receipt" /><span>Mã số thuế</span></div>
-              <div className="dkgv-inline-verify">
-                <input className={`dkgv-form-control ${errors.maSoThue ? 'is-invalid' : ''}`} maxLength={13} inputMode="numeric" placeholder="Nhập mã số thuế 10 hoặc 13 chữ số" value={form.maSoThue} onChange={(e) => setField('maSoThue', e.target.value.replace(/\D/g, ''))} />
-                <button className="dkgv-btn-brown" type="button" disabled={isVerifying.tax || !form.maSoThue || verification.taxStatus === 'verified'} onClick={handleVerifyTaxCode}>{isVerifying.tax ? 'Đang tra cứu...' : 'Tra cứu MST'}</button>
+              <div className="dkgv-form-group">
+                <label className="dkgv-form-label">Loại đối tượng nộp thuế <span className="text-danger">*</span></label>
+                <select
+                  className={`dkgv-form-control ${errors.loaiDoiTuongThue ? 'is-invalid' : ''}`}
+                  value={form.loaiDoiTuongThue}
+                  onChange={(e) => setField('loaiDoiTuongThue', e.target.value as 'CaNhan' | 'DoanhNghiep' | '')}
+                >
+                  <option value="">-- Chọn loại đối tượng --</option>
+                  <option value="CaNhan">Cá nhân</option>
+                  <option value="DoanhNghiep">Doanh nghiệp</option>
+                </select>
+                {errors.loaiDoiTuongThue && <div className="text-danger small mt-1">{errors.loaiDoiTuongThue}</div>}
               </div>
-              {errors.maSoThue && <div className="text-danger small mt-1">{errors.maSoThue}</div>}
-              <div className="mt-2">{statusBadge(verification.taxStatus)}</div>
-              {renderInfoBox(verification.taxInfo)}
+              <div className="dkgv-form-group">
+                <label className="dkgv-form-label">Mã số thuế (nếu có)</label>
+                <input className={`dkgv-form-control ${errors.maSoThue ? 'is-invalid' : ''}`} maxLength={13} inputMode="numeric" placeholder="Nhập mã số thuế 10 hoặc 13 chữ số" value={form.maSoThue} onChange={(e) => setField('maSoThue', e.target.value.replace(/\D/g, ''))} />
+                {errors.maSoThue && <div className="text-danger small mt-1">{errors.maSoThue}</div>}
+              </div>
 
               <div className="dkgv-info-alert"><i className="bi bi-exclamation-triangle" /><span>Lưu ý: Ảnh chụp cần rõ nét, không bị lóa sáng, không mất góc và còn trong thời hạn sử dụng.</span></div>
 

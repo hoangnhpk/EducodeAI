@@ -57,5 +57,7 @@ namespace educodeai_server.DTOs.XacThuc
         public string? TenChuTaiKhoan { get; set; }
 
         public string? MaSoThue { get; set; }
+
+        public string? LoaiDoiTuongThue { get; set; }
     }
 }

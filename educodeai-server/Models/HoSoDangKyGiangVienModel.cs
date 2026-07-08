@@ -61,6 +61,9 @@ namespace educodeai_server.Models
 
         public string? MaSoThue { get; set; }
 
+        [StringLength(20)]
+        public string? LoaiDoiTuongThue { get; set; }
+
         [Required, StringLength(20)]
         public string TrangThaiHoSo { get; set; } = "ChoDuyet";
 
