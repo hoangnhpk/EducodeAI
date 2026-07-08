@@ -9,6 +9,9 @@ import { SystemConfigProvider } from "../contexts/SystemConfigContext";
 
 import DangNhap from "../pages/auth/DangNhap";
 import DangKy from "../pages/auth/DangKy";
+import DangKyGiangVien from "../pages/auth/DangKyGiangVien";
+import TrangThaiHoSoGiangVien from "../pages/auth/TrangThaiHoSoGiangVien";
+import BoSungHoSoGiangVien from "../pages/auth/BoSungHoSoGiangVien";
 import QuenMatKhau from "../pages/auth/QuenMatKhau";
 import NotFound from "../pages/NotFound";
 
@@ -26,8 +29,15 @@ import KhoaHocCuaToiHocVien from "@/pages/hoc-vien/khoa-hoc-cua-toi/KhoaHocCuaTo
 import DoiMatKhau from "../pages/hoc-vien/ho-so-hoc-vien/DoiMatKhau";
 import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
+import PhongVanAI from "../pages/hoc-vien/phong-van-ai/PhongVanAI";
+import SinhDoAnAI from "../pages/hoc-vien/sinh-do-an-ai/SinhDoAnAI";
+
+import PhongVanDoAn from "../pages/hoc-vien/phong-van-do-an/PhongVanDoAn";
+
 import NhapMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/NhapMaQuaTang";
 import LichSuMaQuaTang from "@/pages/hoc-vien/qua-tang-khoa-hoc/LichSuMaQuaTang";
+import ThuThach from "@/pages/hoc-vien/thu-thach/ThuThach";
+
 
 import QuanLyBaiTapPage from "../pages/giang-vien/quan-ly-bai-tap/QuanLyBaiTapPage";
 import ThongKeHocTap from "../pages/giang-vien/thong-ke-hoc-tap/ThongKeHocTap";
@@ -48,6 +58,7 @@ import QuanLyRutTienGiangVien from "../pages/quan-tri-vien/rut-tien-giang-vien/Q
 import QuanLyHoTroThanhToanHocVien from "@/pages/quan-tri-vien/ho-tro-thanh-toan-hoc-vien/QuanLyHoTroThanhToanHocVien";
 import QuanLyMaQuaTang from "@/pages/quan-tri-vien/ma-qua-tang/QuanLyMaQuaTang";
 import QuanLyMaGiamGiaAdmin from "@/pages/quan-tri-vien/ma-giam-gia/QuanLyMaGiamGiaAdmin";
+import DuyetGiangVien from "@/pages/quan-tri-vien/duyet-giang-vien/DuyetGiangVien";
 
 const readUserInfo = (): any | null => {
   const userRaw = localStorage.getItem("user_info");
@@ -87,6 +98,9 @@ export default function AppRouter() {
           <Route element={<PublicAuthRoute />}>
             <Route path="/dang-nhap" element={<DangNhap />} />
             <Route path="/dang-ky" element={<DangKy />} />
+            <Route path="/dang-ky-giang-vien" element={<DangKyGiangVien />} />
+            <Route path="/trang-thai-ho-so-giang-vien" element={<TrangThaiHoSoGiangVien />} />
+            <Route path="/bo-sung-ho-so/:maHoSo" element={<BoSungHoSoGiangVien />} />
             <Route path="/quen-mat-khau" element={<QuenMatKhau />} />
           </Route>
 
@@ -98,6 +112,7 @@ export default function AppRouter() {
           <Route element={<ProtectedRoute allowRoles={[0, 1, 2]}><LayoutHocVien /></ProtectedRoute>}>
             <Route path="/yeu-cau-lo-trinh-ai" element={<YeuCauLoTrinhAI />} />
             <Route path="/khong-gian-hoc-tap" element={<KhongGianHocTap />} />
+            <Route path="/thu-thach-hoc-tap" element={<ThuThach />} />
             <Route path="/mua-khoa-hoc/:id" element={<MuaKhoaHoc />} />
             <Route path="/ho-so" element={<HoSoHocVienPage />} />
             <Route path="/profile" element={<ProfilePage />} />
@@ -107,6 +122,9 @@ export default function AppRouter() {
             <Route path="/khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
             <Route path="/chi-tiet-lo-trinh/:id" element={<ChiTietLoTrinhAI />} />
             <Route path="/kham-pha-lo-trinh" element={<KhamPhaLoTrinh />} />
+            <Route path="/phong-van-ai" element={<PhongVanAI />} />
+            <Route path="/sinh-do-an-ai" element={<SinhDoAnAI />} />
+            <Route path="/phong-van-do-an/:sessionId" element={<PhongVanDoAn />} />
             <Route path="/hoc-vien/nhap-ma-qua-tang" element={<NhapMaQuaTang />} />
             <Route path="/hoc-vien/lich-su-ma-qua-tang" element={<LichSuMaQuaTang />} />
           </Route>
@@ -143,6 +161,7 @@ export default function AppRouter() {
             <Route path="ho-tro-thanh-toan-hoc-vien" element={<QuanLyHoTroThanhToanHocVien />} />
             <Route path="ma-qua-tang" element={<QuanLyMaQuaTang />} />
             <Route path="ma-giam-gia" element={<QuanLyMaGiamGiaAdmin />} />
+            <Route path="duyet-giang-vien" element={<DuyetGiangVien />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
@@ -151,3 +170,7 @@ export default function AppRouter() {
     </SystemConfigProvider>
   );
 }
+
+
+
+

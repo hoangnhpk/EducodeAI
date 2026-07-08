@@ -117,4 +117,21 @@ namespace educodeai_server.DTOs.ThongKeAdmin
         public int SoLuotDangKy { get; set; }
         public decimal TongTien { get; set; } = 0; // Hiện chưa có thanh toán
     }
+
+    public class DoanhThuTongQuanDTO
+    {
+        public decimal TongDoanhThu { get; set; }
+        public decimal TongPhiNenTang { get; set; }
+        public decimal TongThucNhanGV { get; set; }
+        public decimal DoanhThuThangNay { get; set; }
+        public int TongDonHang { get; set; }
+    }
+
+    public class DoanhThuTheoThoiGianDTO
+    {
+        public string Nhan { get; set; } = string.Empty;
+        public decimal TongDoanhThu { get; set; }
+        public decimal PhiNenTang { get; set; }
+        public decimal ThucNhanGV { get; set; }
+    }
 }

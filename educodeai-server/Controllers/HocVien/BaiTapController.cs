@@ -70,13 +70,30 @@ namespace educodeai_server.Controllers.HocVien
             {
                 int maNguoiDung = educodeai_server.Helpers.LayNguoiDungID.LayID(User);
                 if (maNguoiDung <= 0) maNguoiDung = 1; // Temporary mock for dev if needed
-                
+
                 var data = await _thucHanhService.SubmitCodeAsync(maNguoiDung, maBaiTap, request);
                 return Ok(data);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi hệ thống biên dịch hoặc CSDL", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// AI Code Doctor: phân tích lỗi code và đưa ra gợi ý sửa (không viết code giải pháp).
+        /// </summary>
+        [HttpPost("thuc-hanh/{maBaiTap}/ai-goi-y")]
+        public async Task<IActionResult> AiGoiYSuaCode(int maBaiTap, [FromBody] educodeai_server.DTOs.BaiTap.PhanTichLoiCodeRequestDTO request)
+        {
+            try
+            {
+                var ketQua = await _thucHanhService.PhanTichLoiCodeAIAsync(request);
+                return Ok(ketQua);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi gọi AI phân tích.", error = ex.Message });
             }
         }
     }

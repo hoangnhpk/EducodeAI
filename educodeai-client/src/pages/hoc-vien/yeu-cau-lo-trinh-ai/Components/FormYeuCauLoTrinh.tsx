@@ -5,6 +5,7 @@ import "./YeuCauLoTrinhAI.css";
 interface Props {
   onSubmit: (data: DuLieuYeuCauLoTrinh) => void;
   isSubmitting?: boolean; // Thêm prop này để disable nút khi đang gửi
+  isAIAvailable?: boolean; // Check AI status
 }
 
 // Gom state ban đầu cho gọn
@@ -49,7 +50,7 @@ const GOI_Y_MUC_TIEU = [
 ];
 
 
-export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Props) {
+export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false, isAIAvailable = true }: Props) {
   // 1. Dùng 1 state object thay vì 10 cái useState lẻ
   const [formData, setFormData] = useState(INITIAL_STATE);
 
@@ -263,10 +264,13 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false }: Pr
       <button
         type="submit"
         className="btn btn-primary w-100 py-3 fw-bold text-uppercase shadow-sm"
-        disabled={isSubmitting}
+        disabled={isSubmitting || !isAIAvailable}
+        style={!isAIAvailable ? { opacity: 0.6, cursor: 'not-allowed', background: '#94a3b8', borderColor: '#94a3b8' } : {}}
       >
         {isSubmitting ? (
           <span><span className="spinner-border spinner-border-sm me-2" />Đang phân tích...</span>
+        ) : !isAIAvailable ? (
+          <span><i className="fas fa-lock me-2"></i>AI Đang Bận...</span>
         ) : (
           <span><i className="fas fa-magic me-2"></i>Khởi tạo lộ trình AI</span>
         )}

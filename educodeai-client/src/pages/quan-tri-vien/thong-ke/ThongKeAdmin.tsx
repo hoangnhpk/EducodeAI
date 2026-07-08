@@ -12,14 +12,18 @@ import thongKeAdminService, {
   type DangKyItemDTO,
   type DangKyTheoThangDTO,
   type ChatLuongKhoaHocItemDTO,
+  type DoanhThuTheoThoiGianDTO,
+  type DoanhThuTongQuanDTO,
   type GiangVienItemDTO,
   type HocVienItemDTO,
   type KhoaHocItemDTO,
+  type NhomDoanhThuTheoThoiGian,
   type PagedResultDTO,
   type TopGiangVienDangKyDTO,
   type TopKhoaHocDangKyDTO,
   type ThongKeTongQuanDTO,
 } from '@/services/thong-ke-admin.service';
+import DoanhThuSection from './DoanhThuSection';
 import './ThongKeAdmin.css';
 
 type DetailKind = 'hoc-vien' | 'giang-vien' | 'khoa-hoc' | 'dang-ky';
@@ -31,6 +35,10 @@ export default function ThongKeAdmin() {
   const [topKhoaHoc, setTopKhoaHoc] = useState<TopKhoaHocDangKyDTO[]>([]);
   const [topGiangVien, setTopGiangVien] = useState<TopGiangVienDangKyDTO[]>([]);
   const [chatLuong, setChatLuong] = useState<ChatLuongKhoaHocItemDTO[]>([]);
+  const [doanhThuOverview, setDoanhThuOverview] = useState<DoanhThuTongQuanDTO | null>(null);
+  const [doanhThuChart, setDoanhThuChart] = useState<DoanhThuTheoThoiGianDTO[]>([]);
+  const [doanhThuNhomTheo, setDoanhThuNhomTheo] = useState<NhomDoanhThuTheoThoiGian>('month');
+  const [doanhThuLoading, setDoanhThuLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,14 +97,16 @@ export default function ThongKeAdmin() {
       setLoading(true);
       setError(null);
       try {
-        const [ov, chart] = await Promise.all([
+        const [ov, chart, doanhThu] = await Promise.all([
           thongKeAdminService.getTongQuan(),
           thongKeAdminService.getDangKyTheoThang({ from: defaultFrom, to: defaultTo }),
+          thongKeAdminService.getDoanhThuTongQuan(),
         ]);
 
         if (cancelled) return;
         setOverview(ov);
         setDangKyTheoThang(chart);
+        setDoanhThuOverview(doanhThu);
 
         // Load top lists for default range
         const [topCourses, topTeachers] = await Promise.all([
@@ -159,6 +169,24 @@ export default function ThongKeAdmin() {
       cancelled = true;
     };
   }, [chartFrom, chartTo]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setDoanhThuLoading(true);
+      try {
+        const chart = await thongKeAdminService.getDoanhThuTheoThoiGian({ nhomTheo: doanhThuNhomTheo });
+        if (!cancelled) setDoanhThuChart(chart);
+      } finally {
+        if (!cancelled) setDoanhThuLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [doanhThuNhomTheo]);
 
   const closeDetail = () => {
     setDetailOpen(false);
@@ -421,6 +449,14 @@ export default function ThongKeAdmin() {
         )}
       </div>
 
+      <DoanhThuSection
+        tongQuan={doanhThuOverview}
+        theoThoiGian={doanhThuChart}
+        nhomTheo={doanhThuNhomTheo}
+        loading={doanhThuLoading}
+        onNhomTheoChange={setDoanhThuNhomTheo}
+      />
+
       <div className="adm-top-grid">
         <div className="adm-top card border-0 shadow-sm">
           <div className="adm-top__header">
@@ -463,7 +499,7 @@ export default function ThongKeAdmin() {
 
         <div className="adm-top card border-0 shadow-sm">
           <div className="adm-top__header">
-            <h3 className="adm-top__title"><i className="bi bi-person-video3" style={{ color: '#0284c7',marginRight: '8px' }}></i>Top 5 giảng viên nhiều đăng ký</h3>
+            <h3 className="adm-top__title"><i className="bi bi-person-video3" style={{ color: '#0284c7', marginRight: '8px' }}></i>Top 5 giảng viên nhiều đăng ký</h3>
             <span className="adm-top__range">
               {monthInputToLabel(chartFrom)} - {monthInputToLabel(chartTo)}
             </span>

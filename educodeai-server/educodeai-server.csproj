@@ -1,7 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <RollForward>Major</RollForward>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>educodeai_server</RootNamespace>
@@ -27,6 +28,7 @@
     <PackageReference Include="MimeKit" Version="4.9.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="QuestPDF" Version="2026.2.4" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
     <PackageReference Include="SkiaSharp" Version="3.116.1" />
     <PackageReference Include="StackExchange.Redis" Version="2.12.8" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />

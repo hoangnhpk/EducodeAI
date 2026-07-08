@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { KhoaHocCreateUpdate, KhoaHocDetail } from '../types';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
 import { FormSkeleton } from '../components/ui/Skeleton';
-import { useToastStandalone } from '../components/ui/Toast';
+import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
 
 const getGiangVienId = (): number => {
   try {
@@ -133,7 +133,9 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
     if (!form.thoiLuongGio || form.thoiLuongGio <= 0) e.thoiLuongGio = 'Thời lượng phải lớn hơn 0.';
     if (form.thoiLuongGio > 999) e.thoiLuongGio = 'Thời lượng tối đa 999 giờ.';
 
-    if (form.giaKhoaHoc === undefined || form.giaKhoaHoc === null) {
+    if (laKhoaHocMienPhi(form.donViTienTe)) {
+      // Khóa miễn phí: không validate khoảng giá
+    } else if (form.giaKhoaHoc === undefined || form.giaKhoaHoc === null) {
       e.giaKhoaHoc = 'Vui lòng nhập giá khóa học.';
     } else if (form.giaKhoaHoc < 10000 || form.giaKhoaHoc > 15000) {
       e.giaKhoaHoc = 'Giá khóa học phải từ 10,000 đến 15,000 VNĐ';
@@ -381,19 +383,40 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
             </div>
 
             <div className="khm-form-grid-2" style={{ marginTop: 16, marginBottom: 16 }}>
+              <div className="khm-form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="khm-form-label d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={laKhoaHocMienPhi(form.donViTienTe)}
+                    disabled={submitting}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        set('donViTienTe', 'FREE');
+                        set('giaKhoaHoc', 10000);
+                      } else {
+                        set('donViTienTe', 'VND');
+                      }
+                    }}
+                  />
+                  Khóa học miễn phí (hiển thị &quot;Miễn phí&quot; cho học viên)
+                </label>
+              </div>
+
               <div className="khm-form-group">
-                <label className="khm-form-label">Giá khóa học (VNĐ) <span className="req">*</span></label>
+                <label className="khm-form-label">Giá khóa học (VNĐ) {!laKhoaHocMienPhi(form.donViTienTe) && <span className="req">*</span>}</label>
                 <input
                   type="number"
                   className={`khm-form-input ${errors.giaKhoaHoc ? 'error' : ''}`}
                   min={10000} max={15000} step={1000}
                   value={form.giaKhoaHoc}
                   onChange={e => set('giaKhoaHoc', Number(e.target.value))}
-                  disabled={submitting}
+                  disabled={submitting || laKhoaHocMienPhi(form.donViTienTe)}
                   placeholder="Ví dụ: 10000"
                 />
                 {errors.giaKhoaHoc && <div className="khm-form-error">⚠ {errors.giaKhoaHoc}</div>}
-                <div className="khm-form-hint">Giá khóa học phải từ 10,000 đến 15,000 VNĐ</div>
+                {!laKhoaHocMienPhi(form.donViTienTe) && (
+                  <div className="khm-form-hint">Giá khóa học phải từ 10,000 đến 15,000 VNĐ</div>
+                )}
               </div>
 
               <div className="khm-form-group">
@@ -403,7 +426,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
                   className={`khm-form-input ${errors.donViTienTe ? 'error' : ''}`}
                   value={form.donViTienTe}
                   onChange={e => set('donViTienTe', e.target.value)}
-                  disabled={submitting}
+                  disabled={submitting || laKhoaHocMienPhi(form.donViTienTe)}
                 />
                 {errors.donViTienTe && <div className="khm-form-error">⚠ {errors.donViTienTe}</div>}
               </div>

@@ -1,0 +1,420 @@
+// ============================================================
+// EducodeAI – Database Schema (dbdiagram.io DBML format)
+// Import tại: https://dbdiagram.io/d  →  Import → DBML
+// ============================================================
+
+// ─────────────────────────────────────────────
+// NHÓM 1: NGƯỜI DÙNG & XÁC THỰC
+// ─────────────────────────────────────────────
+
+Table NguoiDungs {
+  MaNguoiDung         int           [pk, increment]
+  TaiKhoan            varchar(50)   [not null, unique]
+  MatKhau             varchar(255)  [not null]
+  GoogleID            varchar(100)
+  HoTen               varchar(100)
+  Email               varchar(100)
+  AnhDaiDien          varchar(500)
+  VaiTro              int           [not null, note: '0=Admin 1=GiangVien 2=HocVien']
+  TrangThai           varchar(20)   [default: 'Hoat dong']
+  NgayThamGia         timestamp     [default: `now()`]
+  LyDoKhoa            text
+  ThoiGianMoKhoa      timestamp
+  NgayDangNhapCuoi    timestamp
+  MaOTP               varchar(10)
+  ThoiGianHetHanOTP   timestamp
+  MaNganHangNhanTien  varchar(50)
+  SoTaiKhoanNhanTien  varchar(50)
+  TenTaiKhoanNhanTien varchar(255)
+}
+
+Table PhienDangNhap {
+  MaPhien               int          [pk, increment]
+  MaNguoiDung           int          [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaThietBi             varchar(255) [not null]
+  TenThietBi            varchar(255) [not null]
+  DiaChiIP              varchar(50)
+  ThoiGianDangNhap      timestamp    [not null]
+  ThoiGianHoatDongCuoi  timestamp    [not null]
+  DangHoatDong          boolean      [default: true]
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 2: NỘI DUNG KHÓA HỌC
+// ─────────────────────────────────────────────
+
+Table KhoaHocs {
+  MaKhoaHoc               int           [pk, increment]
+  MaGiangVien             int           [not null, ref: > NguoiDungs.MaNguoiDung]
+  TenKhoaHoc              varchar(200)  [not null]
+  MoTa                    text
+  HinhAnh                 varchar(500)
+  TrangThai               varchar(50)   [default: 'Hoat dong']
+  DiemDanhGiaTB           double        [default: 0]
+  LinhVuc                 varchar(100)  [not null]
+  TrinhDo                 varchar(50)   [not null]
+  ThoiLuongGio            int           [not null]
+  KyNangChinh             varchar(500)  [not null]
+  CoChungChi              boolean       [default: false]
+  TenChungChi             varchar(200)
+  DiemDatChungChi         double        [default: 80]
+  SoCauHoiChungChi        int           [default: 20]
+  ThoiGianLamBaiChungChi  int           [default: 30]
+  DuLieuDeChungChiJSON    text
+  NguonDeChungChi         varchar(50)
+  NgayTaoDeChungChi       timestamp
+  GiaKhoaHoc              decimal(18,2) [not null]
+  DonViTienTe             varchar(10)   [default: 'VND']
+  ChoPhepMua              boolean       [default: true]
+  NgayTao                 timestamp     [default: `now()`]
+}
+
+Table ChuongHocs {
+  MaChuong    int          [pk, increment]
+  MaKhoaHoc  int          [not null, ref: > KhoaHocs.MaKhoaHoc]
+  TenChuong  varchar(200) [not null]
+  ThuTu      int          [not null]
+}
+
+Table BaiHocs {
+  MaBaiHoc   int          [pk, increment]
+  MaChuong   int          [not null, ref: > ChuongHocs.MaChuong]
+  TieuDe     varchar(200) [not null]
+  LoaiBaiHoc varchar(50)  [not null, note: 'Video | VanBan | BaiTap']
+  NoiDung    text
+  ThoiLuong  int
+  LinkVideo  varchar(500)
+  ThuTu      int          [not null]
+  CoQuiz     boolean      [default: true]
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 3: BÀI TẬP
+// ─────────────────────────────────────────────
+
+Table BaiTaps {
+  MaBaiTap  int [pk, increment]
+  MaBaiHoc  int [not null, ref: > BaiHocs.MaBaiHoc]
+}
+
+Table BaiTapThucHanhs {
+  MaBaiTapTH  int          [pk, increment]
+  MaBaiTap    int          [not null, ref: > BaiTaps.MaBaiTap]
+  TieuDe      varchar(255) [not null]
+  MoTaDeBai   text         [not null]
+  NgonNgu     varchar(50)  [not null]
+  MucDo       varchar(50)  [default: 'De']
+  LoiGiaiMau  text
+  GoiY        text
+  NgayTao     timestamp    [default: `now()`]
+  TrangThai   boolean      [default: true]
+}
+
+Table BaiTap_Quizs {
+  MaBaiTapQuiz   int     [pk, increment]
+  MaBaiTap       int     [not null, ref: > BaiTaps.MaBaiTap]
+  ThoiGianLamBai int
+  DiemCanDat     double  [not null]
+  ChoPhepLamLai  boolean [default: false]
+  DaoCauHoi      boolean [default: false]
+  DuLieuCauHoi   text    [not null, note: 'JSON array câu hỏi']
+}
+
+Table TestCaseThucHanhs {
+  MaTestCase       int       [pk, increment]
+  MaBaiTapThucHanh int       [not null, ref: > BaiTapThucHanhs.MaBaiTapTH]
+  InputDuLieu      text      [not null]
+  OutputMongDoi    text      [not null]
+  MoTa             text
+  LaTestAn         boolean   [default: false]
+  ThuTu            int       [default: 0]
+  Diem             int       [default: 10]
+  NgayTao          timestamp [default: `now()`]
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 4: VIDEO TƯƠNG TÁC
+// ─────────────────────────────────────────────
+
+Table VideoChapters {
+  MaChapter       int          [pk, increment]
+  MaBaiHoc        int          [not null, ref: > BaiHocs.MaBaiHoc]
+  ThoiGianBatDau  int          [not null, note: 'giây']
+  ThoiGianKetThuc int          [not null, note: 'giây']
+  KienThucChinh   varchar(500) [not null]
+  BatBuoc         boolean      [default: false]
+}
+
+Table VideoQuizs {
+  MaVideoQuiz  int          [pk, increment]
+  MaChapter    int          [not null, ref: > VideoChapters.MaChapter]
+  CauHoi       varchar(1000) [not null]
+  DapAnA       varchar(500) [not null]
+  DapAnB       varchar(500) [not null]
+  DapAnC       varchar(500)
+  DapAnD       varchar(500)
+  DapAnDung    varchar(5)   [not null, note: 'A | B | C | D']
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 5: TIẾN ĐỘ & KẾT QUẢ
+// ─────────────────────────────────────────────
+
+Table DangKyKhoaHocs {
+  MaDangKy     int       [pk, increment]
+  MaNguoiDung  int       [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaKhoaHoc    int       [not null, ref: > KhoaHocs.MaKhoaHoc]
+  NgayDangKy   timestamp [default: `now()`]
+  TrangThai    varchar(50) [note: 'DangHoc | HoanThanh']
+  TienDo       int       [default: 0]
+}
+
+Table TienDoBaiHocs {
+  MaTienDo     int       [pk, increment]
+  MaNguoiDung  int       [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaBaiHoc     int       [not null, ref: > BaiHocs.MaBaiHoc]
+  DaXem        boolean   [default: false]
+  ThoiGianHoc  int       [default: 0, note: 'giây']
+  NgayCapNhat  timestamp [default: `now()`]
+}
+
+Table KetQuaLamBais {
+  MaKetQuaBaiNop  int       [pk, increment]
+  MaNguoiDung     int       [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaBaiTap        int       [not null, ref: > BaiTaps.MaBaiTap]
+  NoiDungNopJSON  text      [not null]
+  DiemSo          float
+  TrangThai       boolean   [default: false]
+  NgayNop         timestamp [default: `now()`]
+}
+
+Table KetQuaKiemTraChungChis {
+  MaKetQuaKiemTraChungChi int       [pk, increment]
+  MaKhoaHoc               int       [not null, ref: > KhoaHocs.MaKhoaHoc]
+  MaNguoiDung             int       [not null, ref: > NguoiDungs.MaNguoiDung]
+  DiemSo                  double
+  SoCauDung               int
+  TongSoCau               int
+  DaDat                   boolean
+  ChiTietLamBaiJSON       text      [not null]
+  NgayThi                 timestamp [default: `now()`]
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 6: CHỨNG CHỈ
+// ─────────────────────────────────────────────
+
+Table ChungChiKhoaHocs {
+  MaChungChiKhoaHoc          int          [pk, increment]
+  MaChungChi                 varchar(50)  [not null]
+  MaKhoaHoc                  int          [not null, ref: > KhoaHocs.MaKhoaHoc]
+  MaNguoiDung                int          [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaKetQuaKiemTraChungChi    int          [ref: > KetQuaKiemTraChungChis.MaKetQuaKiemTraChungChi]
+  HoTenHienThi               varchar(200)
+  EmailNhan                  varchar(200)
+  DaGuiEmail                 boolean      [not null]
+  NgayGuiEmail               timestamp
+  NgayCap                    timestamp    [default: `now()`]
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 7: TƯƠNG TÁC HỌC TẬP
+// ─────────────────────────────────────────────
+
+Table DanhGias {
+  MaDanhGia    int           [pk, increment]
+  MaNguoiDung  int           [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaKhoaHoc    int           [not null, ref: > KhoaHocs.MaKhoaHoc]
+  SoSao        int           [not null, note: '1-5']
+  NhanXet      varchar(1000)
+  NgayDanhGia  timestamp     [default: `now()`]
+  TrangThai    varchar(20)   [default: 'ChoDuyet']
+}
+
+Table BinhLuans {
+  MaBinhLuan     int       [pk, increment]
+  MaNguoiDung    int       [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaBaiHoc       int       [not null, ref: > BaiHocs.MaBaiHoc]
+  NoiDung        text      [not null]
+  MaBinhLuanCha  int       [ref: > BinhLuans.MaBinhLuan, note: 'self-ref – reply']
+  NgayTao        timestamp [default: `now()`]
+}
+
+Table GhiChuBaiHocs {
+  Id           int           [pk, increment]
+  MaNguoiDung  int           [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaBaiHoc     int           [not null, ref: > BaiHocs.MaBaiHoc]
+  ThoiGianVideo int          [not null, note: 'giây']
+  NoiDung      varchar(2000) [not null]
+  NgayTao      timestamp     [default: `now()`]
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 8: AI
+// ─────────────────────────────────────────────
+
+Table GhiChuAIs {
+  Id           int       [pk, increment]
+  MaNguoiDung  int       [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaBaiHoc     int       [not null, ref: > BaiHocs.MaBaiHoc]
+  NoiDung      text      [not null]
+  NgayTao      timestamp [default: `now()`]
+  NgayCapNhat  timestamp [default: `now()`]
+}
+
+Table LoTrinhAIs {
+  MaLoTrinh    int       [pk, increment]
+  MaNguoiDung  int       [not null, ref: > NguoiDungs.MaNguoiDung]
+  YeuCau       text      [not null]
+  NoiDungJSON  text      [not null, note: 'Lộ trình AI trả về']
+  TrangThai    varchar(50)
+  NgayTao      timestamp [default: `now()`]
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 9: THANH TOÁN & ĐƠN HÀNG
+// ─────────────────────────────────────────────
+
+Table DonHangKhoaHocs {
+  MaDonHang       int           [pk, increment]
+  MaNguoiDung     int           [not null, ref: > NguoiDungs.MaNguoiDung]
+  TongTien        decimal(18,2) [not null]
+  LoaiTien        varchar(10)   [default: 'VND']
+  TrangThaiDonHang varchar(30)  [default: 'CREATED', note: 'CREATED|PAID|CANCELLED']
+  IdempotencyKey  varchar(100)  [not null]
+  CreatedAt       timestamp     [default: `now()`]
+  UpdatedAt       timestamp     [default: `now()`]
+  ExpiredAt       timestamp
+}
+
+Table ChiTietDonHangs {
+  MaChiTiet  int           [pk, increment]
+  MaDonHang  int           [not null, ref: > DonHangKhoaHocs.MaDonHang]
+  MaKhoaHoc  int           [not null, ref: > KhoaHocs.MaKhoaHoc]
+  DonGia     decimal(18,2) [not null]
+  GiamGia    decimal(18,2) [default: 0]
+  ThanhTien  decimal(18,2) [not null]
+}
+
+Table GiaoDichThanhToans {
+  MaGiaoDich       int           [pk, increment]
+  MaDonHang        int           [not null, ref: > DonHangKhoaHocs.MaDonHang]
+  CongThanhToan    varchar(30)   [default: 'PAYOS']
+  MaThamChieuNgoai varchar(100)  [not null]
+  SoTien           decimal(18,2) [not null]
+  TrangThai        varchar(30)   [default: 'INITIATED', note: 'INITIATED|SUCCESS|FAILED']
+  RawWebhook       jsonb
+  PaidAt           timestamp
+  CreatedAt        timestamp     [default: `now()`]
+  UpdatedAt        timestamp     [default: `now()`]
+}
+
+Table ThongBaoEmailThanhToans {
+  MaThongBao   int           [pk, increment]
+  MaDonHang    int           [not null, ref: > DonHangKhoaHocs.MaDonHang]
+  LoaiThongBao varchar(50)   [default: 'PAYMENT_SUCCESS_STUDENT']
+  EmailNhan    varchar(255)  [not null]
+  TrangThai    varchar(20)   [default: 'PENDING', note: 'PENDING|SENT|FAILED']
+  SoLanThu     int           [not null]
+  LoiCuoi      varchar(1000)
+  SentAt       timestamp
+  CreatedAt    timestamp     [default: `now()`]
+  UpdatedAt    timestamp     [default: `now()`]
+}
+
+Table MaGiamGias {
+  MaVoucher       int           [pk, increment]
+  Code            varchar(40)   [not null]
+  TenChuongTrinh  varchar(100)  [not null]
+  LoaiGiamGia     varchar(20)   [default: 'PERCENT', note: 'PERCENT|FIXED']
+  GiaTriGiam      decimal(18,2) [not null]
+  GiamToiDa       decimal(18,2)
+  DonHangToiThieu decimal(18,2) [default: 0]
+  SoLuongToiDa    int           [default: 0]
+  SoLuongDaDung   int           [default: 0]
+  KichHoat        boolean       [default: true]
+  BatDauAt        timestamp     [default: `now()`]
+  KetThucAt       timestamp
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 10: TÀI CHÍNH GIẢNG VIÊN
+// ─────────────────────────────────────────────
+
+Table DoanhThuGiangViens {
+  MaDoanhThu           int           [pk, increment]
+  MaGiangVien          int           [not null, ref: > NguoiDungs.MaNguoiDung]
+  MaDonHang            int           [not null, ref: > DonHangKhoaHocs.MaDonHang]
+  TongTienDonHang      decimal(18,2) [not null]
+  PhiNenTang           decimal(18,2) [not null]
+  ThucNhanGiangVien    decimal(18,2) [not null]
+  TrangThaiDoiSoat     varchar(30)   [default: 'PENDING', note: 'PENDING|CONFIRMED']
+  CreatedAt            timestamp     [default: `now()`]
+}
+
+Table YeuCauRutTienGiangViens {
+  MaYeuCauRutTien              int           [pk, increment]
+  MaGiangVien                  int           [not null, ref: > NguoiDungs.MaNguoiDung]
+  SoTienYeuCau                 decimal(18,2) [not null]
+  TrangThaiYeuCau              varchar(30)   [default: 'CHO_DUYET', note: 'CHO_DUYET|DA_DUYET|TU_CHOI']
+  LoaiTien                     varchar(30)   [default: 'VND']
+  MaNganHangNhan               varchar(50)   [not null]
+  SoTaiKhoanNhan               varchar(50)   [not null]
+  TenTaiKhoanNhan              varchar(255)  [not null]
+  NoiDungChuyenKhoan           varchar(120)
+  DuongDanAnhQr                varchar(500)
+  SoTienDaChuyen               decimal(18,2)
+  MaGiaoDichSePay              bigint
+  CreatedAt                    timestamp     [default: `now()`]
+  DuyetLuc                     timestamp
+  MaQuanTriVienDuyet           int           [ref: > NguoiDungs.MaNguoiDung]
+  ChuyenKhoanThanhCongLuc      timestamp
+  GuiEmailRutTienThanhCongLuc  timestamp
+  GhiChuAdmin                  varchar(500)
+}
+
+Table HoTroRutTienGiangViens {
+  MaHoTroRutTienGiangVien  int          [pk, increment]
+  MaYeuCauRutTien          int          [not null, ref: > YeuCauRutTienGiangViens.MaYeuCauRutTien]
+  MaGiangVien              int          [not null, ref: > NguoiDungs.MaNguoiDung]
+  TrangThaiHoTro           varchar(30)  [default: 'SUPPORT_PENDING']
+  ThongTinLienLac          varchar(200) [not null]
+  NoiDungGiangVien         varchar(500)
+  GhiChuAdmin              varchar(500)
+  MaQuanTriVienXuLy        int          [ref: > NguoiDungs.MaNguoiDung]
+  CreatedAt                timestamp    [default: `now()`]
+  UpdatedAt                timestamp    [default: `now()`]
+  XuLyLuc                  timestamp
+}
+
+// ─────────────────────────────────────────────
+// NHÓM 11: HỆ THỐNG (độc lập)
+// ─────────────────────────────────────────────
+
+Table CauHinhs {
+  MaKhoa       varchar(100) [pk, note: 'PK dạng string – key-value config']
+  GiaTri       text
+  MoTa         varchar(255)
+  NgayCapNhat  timestamp    [default: `now()`]
+}
+
+Table KeyAPIs {
+  ID            int       [pk, increment]
+  TenKey        varchar(100) [not null]
+  MaKeyMaHoa    text      [not null]
+  LoaiKey       varchar(20)  [default: 'Chinh', note: 'Chinh|Phu']
+  TrangThai     boolean   [default: true]
+  ThuTuUuTien   int       [default: 0]
+  HanMucRequest int       [default: 5000]
+  HanMucToken   int       [default: 2000000]
+  NgayTao       timestamp [default: `now()`]
+}
+
+Table NhatKySuDungs {
+  ID              bigint       [pk, increment]
+  ID_Key          int          [not null, ref: > KeyAPIs.ID]
+  SoTokenTieuHao  int          [not null]
+  ThoiGianGoi     timestamp    [default: `now()`]
+  MaTrangThai     int          [not null, note: 'HTTP status: 200|429|500']
+  DuongDanAPI     varchar(255) [not null]
+}

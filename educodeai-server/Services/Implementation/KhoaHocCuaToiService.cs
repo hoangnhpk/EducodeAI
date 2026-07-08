@@ -1115,6 +1115,13 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
 
         private static KhoaHocModel CreateKhoaHocFromDTO(int maGiangVien, KhoaHocCreateUpdateDTO dto)
         {
+            var donVi = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe.Trim().ToUpperInvariant();
+            var gia = dto.GiaKhoaHoc;
+            if (KhoaHocPricingHelper.LaKhoaHocMienPhi(donVi))
+            {
+                gia = KhoaHocPricingHelper.GiaKyThuatMienPhi;
+            }
+
             return new KhoaHocModel
             {
                 TenKhoaHoc = dto.TenKhoaHoc,
@@ -1124,8 +1131,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
                 TrinhDo = dto.TrinhDo,
                 ThoiLuongGio = dto.ThoiLuongGio,
                 TrangThai = dto.TrangThai,
-                GiaKhoaHoc = dto.GiaKhoaHoc,
-                DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe,
+                GiaKhoaHoc = gia,
+                DonViTienTe = donVi,
                 ChoPhepMua = true,
                 MaGiangVien = maGiangVien,
                 NgayTao = DateTime.Now,
@@ -1142,6 +1149,13 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
 
         private static void UpdateKhoaHocFromDTO(KhoaHocModel khoaHoc, KhoaHocCreateUpdateDTO dto)
         {
+            var donVi = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe.Trim().ToUpperInvariant();
+            var gia = dto.GiaKhoaHoc;
+            if (KhoaHocPricingHelper.LaKhoaHocMienPhi(donVi))
+            {
+                gia = KhoaHocPricingHelper.GiaKyThuatMienPhi;
+            }
+
             khoaHoc.TenKhoaHoc = dto.TenKhoaHoc;
             khoaHoc.MoTa = dto.MoTa;
             khoaHoc.HinhAnh = dto.HinhAnh;
@@ -1149,8 +1163,8 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             khoaHoc.TrinhDo = dto.TrinhDo;
             khoaHoc.ThoiLuongGio = dto.ThoiLuongGio;
             khoaHoc.TrangThai = dto.TrangThai;
-            khoaHoc.GiaKhoaHoc = dto.GiaKhoaHoc;
-            khoaHoc.DonViTienTe = string.IsNullOrWhiteSpace(dto.DonViTienTe) ? "VND" : dto.DonViTienTe;
+            khoaHoc.GiaKhoaHoc = gia;
+            khoaHoc.DonViTienTe = donVi;
             khoaHoc.ChoPhepMua = true;
             khoaHoc.KyNangChinh = dto.KyNangChinh ?? string.Empty;
             khoaHoc.CoChungChi = dto.CoChungChi;
@@ -1202,11 +1216,12 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
             if (dto.ThoiLuongGio <= 0)
                 errors.Add("Thời lượng khóa học phải lớn hơn 0.");
 
-            if (dto.GiaKhoaHoc < 10000 || dto.GiaKhoaHoc > 15000)
+            bool laMienPhi = KhoaHocPricingHelper.LaKhoaHocMienPhi(dto.DonViTienTe);
+            if (!laMienPhi && (dto.GiaKhoaHoc < 10000 || dto.GiaKhoaHoc > 15000))
                 errors.Add("Giá khóa học phải từ 10,000 đến 15,000 VNĐ");
-            
+
             if (string.IsNullOrWhiteSpace(dto.DonViTienTe))
-                errors.Add("Đơn vị tiền tệ không được để trống khi khóa học có phí.");
+                errors.Add("Đơn vị tiền tệ không được để trống.");
 
             if (dto.CoChungChi)
             {

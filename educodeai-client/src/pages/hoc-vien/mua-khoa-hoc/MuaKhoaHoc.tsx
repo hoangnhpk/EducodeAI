@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { encodeId } from "@/utils/id-helper";
+import { formatGiaKhoaHoc, laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
 import {
   ThanhToanKhoaHocService,
   type ThongTinMuaKhoaHocDTO,
@@ -19,13 +20,8 @@ const taoSlug = (chuoi: string): string => {
     .replace(/\s+/g, "-");
 };
 
-const dinhDangTien = (soTien: number, donViTienTe: string): string => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: donViTienTe || "VND",
-    maximumFractionDigits: 0
-  }).format(soTien);
-};
+const dinhDangTien = (soTien: number, donViTienTe: string): string =>
+  formatGiaKhoaHoc(soTien, donViTienTe);
 
 const MuaKhoaHoc = () => {
   const { id } = useParams<{ id: string }>();
@@ -117,6 +113,18 @@ const MuaKhoaHoc = () => {
     try {
       setDangMua(true);
       daChuyenTrangRef.current = false;
+
+      if (duLieuKhoaHoc.laMienPhi || laKhoaHocMienPhi(duLieuKhoaHoc.donViTienTe)) {
+        const ketQua = await ThanhToanKhoaHocService.muaNgay(duLieuKhoaHoc.maKhoaHoc);
+        if (ketQua.thanhCong || ketQua.daMua) {
+          await Swal.fire("Thành công", ketQua.thongBao || "Đăng ký khóa học miễn phí thành công.", "success");
+          chuyenSangTrangHoc(duLieuKhoaHoc.maKhoaHoc, duLieuKhoaHoc.tenKhoaHoc);
+        } else {
+          await Swal.fire("Thất bại", ketQua.thongBao, "error");
+        }
+        return;
+      }
+
       const duLieuMaQr = await ThanhToanKhoaHocService.taoMaQrThanhToan(duLieuKhoaHoc.maKhoaHoc, maVoucher);
       setDuLieuQr(duLieuMaQr);
       setHienModalQr(true);
@@ -263,16 +271,20 @@ const MuaKhoaHoc = () => {
               </div>
 
               <div className="mb-3">
-                <label className="form-label fw-semibold">Mã giảm giá (nếu có)</label>
-                <input
-                  className="form-control"
-                  placeholder="Nhập mã giảm giá trước khi tạo QR"
-                  value={maVoucher}
-                  onChange={(e) => setMaVoucher(e.target.value.toUpperCase())}
-                />
-                <div className="form-text">
-                  Mỗi đơn chỉ dùng 1 mã, mã sẽ được đối soát khi thanh toán thành công.
-                </div>
+                {!laKhoaHocMienPhi(duLieuKhoaHoc.donViTienTe) && !duLieuKhoaHoc.laMienPhi && (
+                  <>
+                    <label className="form-label fw-semibold">Mã giảm giá (nếu có)</label>
+                    <input
+                      className="form-control"
+                      placeholder="Nhập mã giảm giá trước khi tạo QR"
+                      value={maVoucher}
+                      onChange={(e) => setMaVoucher(e.target.value.toUpperCase())}
+                    />
+                    <div className="form-text">
+                      Mỗi đơn chỉ dùng 1 mã, mã sẽ được đối soát khi thanh toán thành công.
+                    </div>
+                  </>
+                )}
               </div>
 
               {duLieuKhoaHoc.daMua ? (
@@ -281,6 +293,14 @@ const MuaKhoaHoc = () => {
                   onClick={() => chuyenSangTrangHoc(duLieuKhoaHoc.maKhoaHoc, duLieuKhoaHoc.tenKhoaHoc)}
                 >
                   Bạn đã mua khóa học - Vào học ngay
+                </button>
+              ) : laKhoaHocMienPhi(duLieuKhoaHoc.donViTienTe) || duLieuKhoaHoc.laMienPhi ? (
+                <button
+                  className="btn btn-success w-100 py-2"
+                  disabled={dangMua || !duLieuKhoaHoc.choPhepMua}
+                  onClick={() => void xuLyMuaNgay()}
+                >
+                  {dangMua ? "Đang đăng ký..." : "Học miễn phí ngay"}
                 </button>
               ) : (
                 <div className="d-grid gap-2">
