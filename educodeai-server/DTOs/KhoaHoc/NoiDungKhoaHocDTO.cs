@@ -20,6 +20,8 @@ namespace educodeai_server.DTOs.KhoaHoc
         public BaiTapQuizDTO? ThongTinQuiz { get; set; }
         public int? MaBaiTapThucHanh { get; set; }
 
+        public bool LaHocThu { get; set; }
+        public bool BiKhoa { get; set; }
     }
 
     public class ChuongHoc_NoiDungKhoaHocDTO
@@ -40,6 +42,12 @@ namespace educodeai_server.DTOs.KhoaHoc
         public List<ChuongHoc_NoiDungKhoaHocDTO> DanhSachChuongHoc { get; set; } = new List<ChuongHoc_NoiDungKhoaHocDTO>();
         public BaiKiemTraChungChiDTO? BaiKiemTraChungChi { get; set; }
         public ThongTinChungChiDTO? ThongTinChungChi { get; set; }
+
+        public decimal GiaKhoaHoc { get; set; }
+        public string DonViTienTe { get; set; } = "VND";
+        public bool DaDangKy { get; set; }
+        public bool LaCheDoHocThu { get; set; }
+        public int SoVideoHocThu { get; set; }
     }
 
     public class TienDoBaiHocDTO

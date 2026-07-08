@@ -1,0 +1,3977 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduCodeAI — Học Lập Trình 3D Trải Nghiệm Mới</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icon CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Core CDNs (Three.js & GSAP) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <style>
+        /* === RESET & VARIABLES === */
+        :root {
+            --primary: #FF6B2B;
+            --primary-hover: #E05318;
+            --accent: #00F0FF; /* Bright Neon Cyan */
+            --accent-glow: rgba(0, 240, 255, 0.45);
+            --dark-bg: #1B223F; /* Premium steel-slate-blue */
+            --dark-bg-secondary: #242C4C;
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --card-border: rgba(255, 255, 255, 0.18);
+            --neon-cyan: #00F0FF;
+            --neon-purple: #BD00FF;
+            --text-main: #FFFFFF;
+            --text-muted: #CBD5E1;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition-smooth: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* === SCROLLBAR === */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 43, 0.3);
+            border-radius: var(--radius-sm);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* === SOCIAL PROOF TICKER === */
+        .ticker-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 36px;
+            background: linear-gradient(90deg, #FF6B2B, #FFB347);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #0A0E1A;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .ticker-wrapper {
+            display: flex;
+            white-space: nowrap;
+            animation: ticker-slide 20s linear infinite;
+        }
+
+        .ticker-item {
+            display: flex;
+            align-items: center;
+            margin-right: 50px;
+        }
+
+        .ticker-item i {
+            margin-right: 8px;
+        }
+
+        @keyframes ticker-slide {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        /* === SECTION 1: HERO === */
+        .hero-section {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            min-height: 700px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            padding-top: 36px;
+        }
+
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .cyber-grid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 250px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 107, 43, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 107, 43, 0.08) 1px, transparent 1px);
+            background-size: 60px 60px;
+            transform: perspective(600px) rotateX(70deg) translateZ(0);
+            transform-origin: bottom;
+            animation: grid-scroll 12s linear infinite;
+            mask-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+            -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes grid-scroll {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 60px; }
+        }
+
+        .pulse-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 107, 43, 0.12) 0%, transparent 70%);
+            z-index: 1;
+            pointer-events: none;
+            animation: pulse-heartbeat 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-heartbeat {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+        }
+
+        .hero-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: grid;
+            grid-template-cols: 1.2fr 0.8fr;
+            gap: 40px;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-left {
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .eyebrow {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            display: inline-block;
+            border-right: 2px solid var(--primary);
+            padding-right: 5px;
+            white-space: nowrap;
+            animation: typing-cursor 0.75s step-end infinite;
+        }
+
+        @keyframes typing-cursor {
+            from, to { border-color: transparent }
+            50% { border-color: var(--primary); }
+        }
+
+        .hero-title {
+            font-size: 72px;
+            font-weight: 800;
+            line-height: 1.1;
+            color: var(--text-main);
+            margin-bottom: 15px;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-title-accent {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 72px;
+            font-weight: 800;
+            display: block;
+            transform-style: preserve-3d;
+            transform: rotateX(8deg);
+            margin-bottom: 25px;
+        }
+
+        .hero-subtext {
+            font-size: 18px;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 500px;
+            line-height: 1.6;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn-glow {
+            position: relative;
+            padding: 16px 36px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(255, 107, 43, 0.35);
+            transition: var(--transition-smooth);
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn-glow::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: 0.6s;
+        }
+
+        .btn-glow:hover::after {
+            transform: translateX(100%);
+        }
+
+        .btn-glow:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 12px 35px rgba(255, 107, 43, 0.55);
+        }
+
+        .btn-glow:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .btn-frosted {
+            padding: 16px 36px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            color: #FFFFFF;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn-frosted:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 107, 43, 0.15);
+        }
+
+        /* === PROGRESS ROADMAP TRACKER === */
+        .hero-progress-bar {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-pill);
+            padding: 15px 25px;
+            z-index: 5;
+            backdrop-filter: blur(10px);
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .progress-text span strong {
+            color: var(--primary);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            width: 0%;
+            border-radius: 10px;
+        }
+
+        /* === LAPTOP CSS 3D MODEL === */
+        .hero-right {
+            position: relative;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+            transform-style: preserve-3d;
+        }
+
+        .laptop-container {
+            position: relative;
+            width: 380px;
+            height: 250px;
+            transform-style: preserve-3d;
+            transform: rotateY(-20deg) rotateX(15deg) rotateZ(-2deg);
+            transition: var(--transition-smooth);
+        }
+
+        .laptop-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #12131C;
+            border: 8px solid #232535;
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6),
+                        0 0 40px rgba(255, 107, 43, 0.15);
+            transform-style: preserve-3d;
+            transform: translateZ(5px);
+            overflow: hidden;
+        }
+
+        .screen-header {
+            height: 24px;
+            background: #1B1D2B;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        .dot.r { background: #FF5F56; }
+        .dot.y { background: #FFBD2E; }
+        .dot.g { background: #27C93F; }
+
+        .editor-code {
+            padding: 15px;
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            color: #A9B2C3;
+            line-height: 1.5;
+        }
+
+        .code-line {
+            display: block;
+            margin-bottom: 4px;
+            white-space: nowrap;
+        }
+
+        .code-kw { color: #E5C07B; }
+        .code-fn { color: #61AFEF; }
+        .code-str { color: #98C379; }
+        .code-com { color: #5C6370; font-style: italic; }
+
+        .laptop-base {
+            position: absolute;
+            bottom: -15px;
+            left: -30px;
+            width: 440px;
+            height: 16px;
+            background: #2D3142;
+            border-radius: 0 0 15px 15px;
+            transform: rotateX(85deg) translateZ(-15px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Floating Badge Orbit Container */
+        .orbit-badge {
+            position: absolute;
+            padding: 10px 16px;
+            background: rgba(18, 20, 32, 0.75);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-pill);
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .badge-react { top: 10%; left: -15%; border-color: rgba(97, 218, 251, 0.4); }
+        .badge-python { bottom: 20%; left: -25%; border-color: rgba(55, 115, 169, 0.4); }
+        .badge-node { top: 30%; right: -25%; border-color: rgba(104, 188, 81, 0.4); }
+
+        /* === SECTION 2: SEARCH & BENTO TOPICS === */
+        .topics-section {
+            position: relative;
+            width: 100%;
+            padding: 100px 40px;
+            background-color: var(--dark-bg);
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        /* Search Card Glass */
+        .search-card-wrapper {
+            max-width: 700px;
+            margin: -150px auto 80px auto;
+            position: relative;
+            z-index: 15;
+        }
+
+        .search-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            padding: 6px;
+            backdrop-filter: blur(25px);
+            display: flex;
+            align-items: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            transition: var(--transition-smooth);
+        }
+
+        .search-card:focus-within {
+            transform: scale(1.03);
+            border-color: var(--primary);
+            box-shadow: 0 20px 50px rgba(255, 107, 43, 0.15),
+                        0 0 0 2px rgba(255, 107, 43, 0.1);
+        }
+
+        .search-card i {
+            font-size: 20px;
+            color: var(--primary);
+            margin: 0 20px 0 25px;
+        }
+
+        .search-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: #FFFFFF;
+            font-size: 16px;
+            outline: none;
+            padding: 12px 0;
+            font-family: var(--font-sans);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .search-btn {
+            background: var(--primary);
+            color: #FFFFFF;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .search-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Titles and Underlines */
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .section-title {
+            font-size: 48px;
+            font-weight: 800;
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .title-underline {
+            width: 0%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            border-radius: 2px;
+            transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Bento Grid */
+        .bento-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .topic-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            perspective: 800px;
+            transition: var(--transition-smooth), border-color 0.3s ease;
+        }
+
+        .topic-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .card-inner-glow {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--glow-x, 50%) var(--glow-y, 50%), rgba(255, 107, 43, 0.12) 0%, transparent 60%);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .topic-card:hover .card-inner-glow {
+            opacity: 1;
+        }
+
+        .topic-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 25px;
+            transform: translateZ(25px);
+            transition: var(--transition-smooth);
+        }
+
+        .topic-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            transform: translateZ(15px);
+        }
+
+        .topic-desc {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            transform: translateZ(10px);
+            margin-bottom: 15px;
+        }
+
+        .student-badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary);
+            background: rgba(255, 107, 43, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transform: translateY(20px) translateZ(20px);
+            opacity: 0;
+            transition: var(--transition-smooth);
+        }
+
+        .topic-card:hover .student-badge {
+            opacity: 1;
+            transform: translateY(0) translateZ(20px);
+        }
+
+        /* Bento asymmetric configuration */
+        .bento-col-2 {
+            grid-column: span 2;
+        }
+
+        /* === SECTION 3: COURSE CARDS === */
+        .courses-section {
+            width: 100%;
+            padding: 100px 40px;
+            background-color: #202848;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        #courses-bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.55;
+        }
+
+        .courses-section .container {
+            position: relative;
+            z-index: 5;
+        }
+
+        .course-header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 107, 43, 0.1);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        /* 3D Cylinder Stage & Carousel */
+        .courses-stage-3d {
+            position: relative;
+            width: 100%;
+            max-width: 1100px;
+            height: 520px;
+            margin: 60px auto 0 auto;
+            perspective: 1800px;
+            transform-style: preserve-3d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .courses-ring-3d {
+            position: relative;
+            width: 320px;
+            height: 440px;
+            transform-style: preserve-3d;
+            transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 3D Flip Card Container */
+        .course-card-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            cursor: pointer;
+            transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease, filter 0.8s ease;
+        }
+
+        .course-card-wrapper.inactive {
+            opacity: 0.35;
+            filter: blur(2px) grayscale(40%);
+            pointer-events: none;
+        }
+
+        .course-card-wrapper.active {
+            opacity: 1;
+            filter: none;
+            pointer-events: auto;
+            box-shadow: 0 0 50px rgba(255, 107, 43, 0.15);
+        }
+
+        .course-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .course-card-wrapper.active:hover .course-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* Stage Navigation Buttons */
+        .stage-control-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(18, 20, 32, 0.85);
+            border: 1px solid var(--primary);
+            color: #FFFFFF;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: var(--transition-smooth);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .stage-control-btn:hover {
+            background: var(--primary);
+            box-shadow: 0 0 25px rgba(255, 107, 43, 0.5);
+            color: #0A0E1A;
+            transform: translateY(-50%) scale(1.15);
+        }
+
+        .stage-control-btn.prev {
+            left: 30px;
+        }
+
+        .stage-control-btn.next {
+            right: 30px;
+        }
+
+        /* Front elements translateZ pop-out on hover */
+        .card-front .course-thumb-box,
+        .card-front .course-title,
+        .card-front .rating-stars,
+        .card-front .course-footer {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-style: preserve-3d;
+        }
+        .course-card-wrapper.active:hover .card-front .course-thumb-box {
+            transform: translateZ(40px);
+        }
+        .course-card-wrapper.active:hover .card-front .category-pill {
+            transform: translateZ(60px);
+        }
+        .course-card-wrapper.active:hover .card-front .live-learners {
+            transform: translateZ(65px);
+        }
+        .course-card-wrapper.active:hover .card-front .course-title {
+            transform: translateZ(25px);
+        }
+        .course-card-wrapper.active:hover .card-front .rating-stars {
+            transform: translateZ(30px);
+        }
+        .course-card-wrapper.active:hover .card-front .course-footer {
+            transform: translateZ(35px);
+        }
+        
+        /* Back elements translateZ pop-out on hover */
+        .card-back .back-title,
+        .card-back .back-desc,
+        .card-back .detail-item,
+        .card-back .back-actions {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-style: preserve-3d;
+        }
+        .course-card-wrapper.active:hover .card-back .back-title {
+            transform: translateZ(35px);
+        }
+        .course-card-wrapper.active:hover .card-back .back-desc {
+            transform: translateZ(20px);
+        }
+        .course-card-wrapper.active:hover .card-back .detail-item {
+            transform: translateZ(25px);
+        }
+        .course-card-wrapper.active:hover .card-back .back-actions {
+            transform: translateZ(40px);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--card-border);
+            background: #11131F;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            padding: 30px;
+            justify-content: space-between;
+            background: #151828;
+        }
+
+        /* Front Styling */
+        .course-thumb-box {
+            position: relative;
+            width: 100%;
+            height: 190px;
+            overflow: hidden;
+            background: #1E2235;
+        }
+
+        .course-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease;
+        }
+
+        .course-card-wrapper:hover .course-thumb {
+            transform: scale(1.1);
+        }
+
+        .category-pill {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(10, 14, 26, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--card-border);
+            color: #FFFFFF;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+        }
+
+        .live-learners {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(255, 107, 43, 0.95);
+            color: #FFFFFF;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 4px 10px rgba(255, 107, 43, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .course-info {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-grow: 1;
+        }
+
+        .course-title {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.4;
+            color: #FFFFFF;
+            margin-bottom: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .rating-stars {
+            color: #FFD700;
+            font-size: 13px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 3px;
+        }
+
+        .course-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 15px;
+            margin-top: auto;
+        }
+
+        .price-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .old-price {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: line-through;
+            margin-bottom: 2px;
+        }
+
+        .new-price {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hot-badge {
+            font-size: 9px;
+            background: #FF3B30;
+            color: #FFFFFF;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: 800;
+            animation: wobble 1.5s infinite alternate;
+        }
+
+        @keyframes wobble {
+            0% { transform: rotate(-5deg); }
+            100% { transform: rotate(5deg); }
+        }
+
+        .course-btn-arrow {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-smooth);
+        }
+
+        .course-card-wrapper:hover .course-btn-arrow {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Back Styling */
+        .back-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin-bottom: 15px;
+        }
+
+        .back-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .course-details-list {
+            margin-bottom: auto;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13.5px;
+            color: #D1D5DB;
+            margin-bottom: 12px;
+        }
+
+        .detail-item i {
+            color: var(--primary);
+            width: 16px;
+        }
+
+        .back-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn-buy {
+            flex-grow: 1;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #FFFFFF;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: var(--transition-smooth);
+            font-size: 14px;
+        }
+
+        .btn-buy:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 43, 0.4);
+        }
+
+        .btn-detail {
+            padding: 12px 20px;
+            background: transparent;
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            color: #FFFFFF;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-size: 14px;
+        }
+
+        .btn-detail:hover {
+            border-color: var(--primary);
+        }
+
+        /* Countdown timer box */
+        .countdown-timer-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 179, 71, 0.08);
+            border: 1px dashed rgba(255, 179, 71, 0.3);
+            border-radius: var(--radius-sm);
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-top: 15px;
+        }
+
+        /* === SECTION 4: FOOTER === */
+        footer {
+            width: 100%;
+            background: #0B0E17;
+            border-top: 1px solid var(--card-border);
+            padding: 80px 40px 40px 40px;
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        /* Animated Grid Lines */
+        .footer-grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            animation: grid-shift 15s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes grid-shift {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 40px; }
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-cols: 1fr 1fr 1fr;
+            gap: 60px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .footer-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: #FFFFFF;
+            position: relative;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 15px;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            font-size: 14.5px;
+            position: relative;
+            padding-bottom: 3px;
+        }
+
+        .footer-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: #FFFFFF;
+        }
+
+        .footer-links a:hover::after {
+            width: 100%;
+        }
+
+        .contact-info {
+            font-size: 14.5px;
+            color: var(--text-muted);
+            line-height: 1.8;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .contact-item i {
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        .social-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: var(--transition-smooth);
+            perspective: 200px;
+            cursor: pointer;
+        }
+
+        .social-icon:hover {
+            border-color: var(--primary);
+            color: #FFFFFF;
+            transform: rotateY(360deg);
+            background: rgba(255, 107, 43, 0.05);
+        }
+
+        /* Newsletter Subscription */
+        .subscribe-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .subscribe-desc {
+            font-size: 14.5px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
+            transition: var(--transition-smooth);
+        }
+
+        .input-group:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(255, 107, 43, 0.15);
+        }
+
+        .input-group input {
+            border: none;
+            background: transparent;
+            padding: 14px 20px;
+            color: #FFFFFF;
+            width: 100%;
+            outline: none;
+        }
+
+        .btn-subscribe {
+            background: var(--primary);
+            border: none;
+            color: #FFFFFF;
+            padding: 0 24px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-subscribe:hover {
+            background: var(--primary-hover);
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 60px auto 0 auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.25);
+            position: relative;
+            z-index: 5;
+        }
+
+        /* === FLOATING CONTACT BUBBLES === */
+        .floating-chat {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 900;
+            width: 60px;
+            height: 60px;
+            background: #0084FF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 24px;
+            box-shadow: 0 10px 30px rgba(0, 132, 255, 0.4);
+            cursor: pointer;
+            animation: chat-pulse 2s infinite;
+        }
+
+        @keyframes chat-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 132, 255, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 132, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 132, 255, 0); }
+        }
+
+        /* === EXIT INTENT MODAL === */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .exit-modal {
+            width: 90%;
+            max-width: 550px;
+            background: #111321;
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6),
+                        0 0 40px rgba(255, 107, 43, 0.2);
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .modal-overlay.active .exit-modal {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .modal-close:hover {
+            color: #FFFFFF;
+        }
+
+        .modal-gift-icon {
+            font-size: 60px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            animation: gift-wobble 2s infinite;
+        }
+
+        @keyframes gift-wobble {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(8deg); }
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: #FFFFFF;
+        }
+
+        .modal-desc {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #FFFFFF;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        .modal-btn:hover {
+            box-shadow: 0 10px 25px rgba(255, 107, 43, 0.45);
+        }
+
+        /* === 3D LEARNING ROADMAP STYLE === */
+        .roadmap-section {
+            width: 100%;
+            padding: 100px 40px;
+            background-color: #232C4F;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .roadmap-container {
+            max-width: 1000px;
+            margin: 60px auto 0 auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            perspective: 1500px;
+            transform-style: preserve-3d;
+            height: 900px;
+        }
+
+        .roadmap-path-svg {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .roadmap-line {
+            fill: none;
+            stroke: rgba(255, 107, 43, 0.08);
+            stroke-width: 5;
+            stroke-linecap: round;
+        }
+
+        .roadmap-line-active {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 5;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 8px rgba(255, 107, 43, 0.6));
+            transition: stroke-dashoffset 0.1s ease;
+        }
+
+        .roadmap-node-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 5;
+            transform-style: preserve-3d;
+        }
+
+        .roadmap-node-wrapper:nth-child(even) {
+            justify-content: flex-end;
+        }
+
+        .roadmap-node-card {
+            width: 44%;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 26px;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: var(--transition-smooth), border-color 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .roadmap-node-card:hover {
+            border-color: var(--primary);
+            background: rgba(255, 107, 43, 0.02);
+            box-shadow: 0 15px 35px rgba(255, 107, 43, 0.1);
+        }
+
+        .node-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+            transform-style: preserve-3d;
+        }
+
+        .node-icon-glow {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            background: rgba(255, 107, 43, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            border: 1px solid rgba(255, 107, 43, 0.2);
+            transition: var(--transition-smooth);
+            transform: translateZ(20px);
+        }
+
+        .roadmap-node-card:hover .node-icon-glow {
+            background: var(--primary);
+            color: #0A0E1A;
+            box-shadow: 0 0 20px rgba(255, 107, 43, 0.4);
+            transform: translateZ(40px) scale(1.1);
+        }
+
+        .node-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFFFFF;
+            transform: translateZ(15px);
+        }
+
+        .node-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            transform: translateZ(10px);
+            margin-bottom: 15px;
+        }
+
+        .node-badge-row {
+            display: flex;
+            gap: 10px;
+            transform: translateZ(25px);
+        }
+
+        .node-difficulty {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .node-difficulty.easy { background: rgba(39, 201, 63, 0.1); color: #27C93F; }
+        .node-difficulty.medium { background: rgba(255, 189, 46, 0.1); color: #FFBD2E; }
+        .node-difficulty.hard { background: rgba(255, 95, 86, 0.1); color: #FF5F56; }
+        
+        .node-pin-center {
+            position: absolute;
+            left: 50%;
+            top: 40px;
+            transform: translateX(-50%) translateZ(10px);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #12131F;
+            border: 3px solid var(--card-border);
+            z-index: 10;
+            transition: var(--transition-smooth);
+        }
+
+        .roadmap-node-card:hover + .node-pin-center,
+        .roadmap-node-wrapper.active .node-pin-center {
+            background: var(--primary);
+            border-color: #FFFFFF;
+            box-shadow: 0 0 15px var(--primary);
+            transform: translateX(-50%) scale(1.25) translateZ(20px);
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 991px) {
+            .hero-container {
+                grid-template-cols: 1fr;
+                text-align: center;
+                padding-top: 50px;
+            }
+            .hero-right {
+                display: none;
+            }
+            .hero-subtext {
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .hero-actions {
+                justify-content: center;
+            }
+            .bento-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .courses-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .footer-container {
+                grid-template-cols: 1fr;
+                gap: 40px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .hero-title { font-size: 48px; }
+            .hero-title-accent { font-size: 48px; }
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+            .bento-col-2 {
+                grid-column: span 1;
+            }
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* === SECTION 3.5: AI ASSISTANT & 3D LAB === */
+        .ai-section {
+            width: 100%;
+            padding: 100px 40px;
+            background-color: #1C2340;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .ai-container {
+            max-width: 1200px;
+            margin: 60px auto 0 auto;
+            display: grid;
+            grid-template-cols: 1.1fr 0.9fr;
+            gap: 40px;
+            align-items: stretch;
+        }
+
+        @media (max-width: 991px) {
+            .ai-container {
+                grid-template-cols: 1fr;
+            }
+        }
+
+        /* Chatbot Panel */
+        .ai-chat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .ai-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #27C93F;
+            box-shadow: 0 0 10px #27C93F;
+            animation: status-pulse 1.5s infinite;
+        }
+
+        @keyframes status-pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .chat-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .chat-body {
+            flex-grow: 1;
+            min-height: 220px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+            margin-bottom: 20px;
+            font-size: 14.5px;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-message.bot .message-sender {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 12px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .chat-message.user .message-sender {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 12px;
+            margin-bottom: 4px;
+            text-align: right;
+        }
+
+        .message-content {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            color: #D1D5DB;
+        }
+
+        .chat-message.user .message-content {
+            background: rgba(255, 107, 43, 0.05);
+            border-color: rgba(255, 107, 43, 0.15);
+            color: #FFFFFF;
+            align-self: flex-end;
+            max-width: 85%;
+        }
+
+        .code-snippet-pre {
+            background: #0D1117;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            color: #C9D1D9;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .prompt-chip {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            color: #D1D5DB;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .prompt-chip:hover, .prompt-chip.active {
+            background: rgba(255, 107, 43, 0.1);
+            border-color: var(--primary);
+            color: #FFFFFF;
+            box-shadow: 0 4px 15px rgba(255, 107, 43, 0.15);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+            transition: var(--transition-smooth);
+        }
+
+        .chat-input-wrapper:focus-within {
+            border-color: var(--primary);
+        }
+
+        .chat-input-field {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 14px 18px;
+            color: #FFFFFF;
+            font-family: var(--font-sans);
+            font-size: 14.5px;
+        }
+
+        .chat-send-btn {
+            background: var(--primary);
+            color: #FFFFFF;
+            border: none;
+            padding: 0 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .chat-send-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* 3D Visualizer Lab Canvas */
+        .ai-visualizer-card {
+            background: #0C0F19;
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+        }
+
+        #ai-canvas-3d {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .canvas-overlay-ui {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 5;
+            background: rgba(10, 14, 26, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--card-border);
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .canvas-title-label {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 5;
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            pointer-events: none;
+        }
+
+        /* Floating Code Syntax Tags inside tilted cards */
+        .floating-tag {
+            position: absolute;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+            color: #00F0FF;
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            pointer-events: none;
+            transition: var(--transition-smooth);
+            transform: translateZ(45px);
+            opacity: 0.8;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+        }
+        
+        .topic-card:hover .floating-tag {
+            opacity: 1;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+            border-color: #00F0FF;
+        }
+
+        /* Multi-Tab 3D IDE */
+        .editor-tabs-bar {
+            background: #1B1D2B;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            height: 38px;
+        }
+
+        .tabs-left {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 10px;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            transition: var(--transition-smooth);
+            font-family: var(--font-mono);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tab-btn.active {
+            background: #12131C;
+            color: var(--neon-cyan);
+            border-bottom: 2px solid var(--neon-cyan);
+        }
+
+        .run-code-btn {
+            background: #27C93F;
+            color: #0A0E1A;
+            border: none;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: var(--transition-smooth);
+        }
+
+        .run-code-btn:hover {
+            background: #39e352;
+            box-shadow: 0 0 10px rgba(39, 201, 63, 0.5);
+            transform: scale(1.05);
+        }
+
+        /* Compiling Overlay */
+        .compiling-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+
+        .compiling-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .loader-spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid rgba(0, 240, 255, 0.2);
+            border-top-color: var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin-loader 0.8s linear infinite;
+        }
+
+        @keyframes spin-loader {
+            to { transform: rotate(360deg); }
+        }
+
+        .compiling-text {
+            font-size: 12px;
+            font-family: var(--font-mono);
+            color: var(--neon-cyan);
+            letter-spacing: 1.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SOCIAL PROOF TICKER -->
+    <div class="ticker-bar">
+        <div class="ticker-wrapper" id="ticker-slider">
+            <!-- JS dynamically duplicates items here to construct smooth loop -->
+            <div class="ticker-item"><i class="fa fa-graduation-cap"></i> Nguyễn Văn A vừa đăng ký khóa Lập trình Python AI</div>
+            <div class="ticker-item"><i class="fa fa-graduation-cap"></i> Trần Thị B vừa đăng ký lộ trình Fullstack Javascript</div>
+            <div class="ticker-item"><i class="fa fa-graduation-cap"></i> Phạm Hoàng C vừa đăng ký khóa Web Development Cơ Bản</div>
+            <div class="ticker-item"><i class="fa fa-graduation-cap"></i> Lê Minh D vừa đăng ký lộ trình C# Pro Game Developer</div>
+        </div>
+    </div>
+
+    <!-- SECTION 1: HERO -->
+    <section class="hero-section">
+        <!-- Three.js Canvas Backdrop -->
+        <canvas id="hero-canvas"></canvas>
+        <div class="pulse-overlay"></div>
+        <div class="cyber-grid"></div>
+
+        <div class="hero-container">
+            <!-- Left Info -->
+            <div class="hero-left" id="hero-text-block">
+                <span class="eyebrow" id="eyebrow-text">KHỞI ĐẦU TƯƠNG LAI</span>
+                <h1 class="hero-title">Học Lập Trình</h1>
+                <span class="hero-title-accent">Dễ Dàng & Hiệu Quả</span>
+                <p class="hero-subtext" id="hero-para">Lộ trình bài bản tích hợp trợ lý AI thông minh dẫn dắt bạn từ con số 0 đến khi có việc làm thực tế.</p>
+                <div class="hero-actions">
+                    <a href="#kham-pha" class="btn-glow"><i class="fa fa-rocket"></i> Khám phá ngay</a>
+                    <a href="#xem-them" class="btn-frosted">Xem thêm</a>
+                </div>
+            </div>
+
+            <!-- Right 3D CSS Laptop Mockup -->
+            <div class="hero-right" id="hero-visual-block">
+                <div class="laptop-container" id="laptop-mockup">
+                    <div class="laptop-screen">
+                        <!-- Redesigned IDE Header with Tabs -->
+                        <div class="editor-tabs-bar">
+                            <div class="tabs-left">
+                                <div class="dot r"></div>
+                                <div class="dot y"></div>
+                                <div class="dot g"></div>
+                                <button class="tab-btn active" id="tab-python" onclick="switchIDETab('python')">
+                                    <i class="fab fa-python"></i> main.py
+                                </button>
+                                <button class="tab-btn" id="tab-js" onclick="switchIDETab('js')">
+                                    <i class="fab fa-js"></i> app.js
+                                </button>
+                                <button class="tab-btn" id="tab-html" onclick="switchIDETab('html')">
+                                    <i class="fab fa-html5"></i> index.html
+                                </button>
+                            </div>
+                            <button class="run-code-btn" id="run-code-action">
+                                <i class="fa fa-play"></i> RUN
+                            </button>
+                        </div>
+                        
+                        <!-- Compiler loading overlay -->
+                        <div class="compiling-overlay" id="compiler-overlay">
+                            <div class="loader-spinner"></div>
+                            <div class="compiling-text">COMPILING CODE...</div>
+                        </div>
+
+                        <!-- Code Content Box -->
+                        <div class="editor-code" id="ide-code-screen">
+                            <span class="code-line"><span class="code-kw">import</span> educode_ai <span class="code-kw">as</span> ai</span>
+                            <span class="code-line"><span class="code-com"># Tạo lộ trình học 3D cá nhân</span></span>
+                            <span class="code-line">learner = ai.Learner()</span>
+                            <span class="code-line">roadmap = ai.generate_path(learner)</span>
+                            <span class="code-line">ai.start_learning(roadmap)</span>
+                            <span class="code-line"><span class="code-fn">print</span>(<span class="code-str">"Ready to Code!"</span>)</span>
+                        </div>
+                    </div>
+                    <div class="laptop-base"></div>
+                </div>
+
+                <!-- Floating Badges orbiting in 3D -->
+                <div class="orbit-badge badge-react"><i class="fab fa-react" style="color: #61DAFB;"></i> ReactJS</div>
+                <div class="orbit-badge badge-python"><i class="fab fa-python" style="color: #3773A5;"></i> Python</div>
+                <div class="orbit-badge badge-node"><i class="fab fa-node-js" style="color: #68BC51;"></i> Node.js</div>
+            </div>
+        </div>
+
+        <!-- Conversion booster: Progress Bar -->
+        <div class="hero-progress-bar">
+            <div class="progress-text">
+                <span>⚡ Lượng đăng ký ưu đãi AI Copilot tuần này:</span>
+                <span><strong id="registered-slots">4,820</strong> / 5,000 chỗ</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-indicator"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: SEARCH & BENTO POPULAR TOPICS -->
+    <section class="topics-section" id="kham-pha">
+        
+        <!-- Interactive Search Card -->
+        <div class="search-card-wrapper">
+            <div class="search-card">
+                <i class="fa fa-search"></i>
+                <input type="text" class="search-input" placeholder="Bạn muốn học gì hôm nay? (VD: Java, Python...)">
+                <button class="search-btn">Tìm kiếm</button>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="section-header">
+            <span class="section-subtitle">Chủ đề học</span>
+            <h2 class="section-title">
+                Chủ Đề Phổ Biến
+                <div class="title-underline" id="underline-topics"></div>
+            </h2>
+        </div>
+
+        <!-- Bento Grid Cards -->
+        <div class="bento-grid" id="bento-container">
+            
+            <!-- Card 1 -->
+            <div class="topic-card bento-col-2" style="--glow-color: rgba(255, 107, 43, 0.3);">
+                <div class="card-inner-glow"></div>
+                <div class="topic-icon" style="background: rgba(255, 107, 43, 0.1); color: var(--primary);">
+                    <i class="fa fa-code"></i>
+                </div>
+                <h3 class="topic-name">Web Development</h3>
+                <p class="topic-desc">Xây dựng ứng dụng web tương tác, tích hợp cơ sở dữ liệu và AI Copilot.</p>
+                <div class="student-badge"><i class="fa fa-user-friends"></i> 14,820 học viên</div>
+                <div class="floating-tag" style="bottom: 25px; right: 25px;">&lt;div class="hero"&gt;</div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="topic-card" style="--glow-color: rgba(55, 115, 169, 0.3);">
+                <div class="card-inner-glow"></div>
+                <div class="topic-icon" style="background: rgba(55, 115, 169, 0.1); color: #3773A5;">
+                    <i class="fab fa-python"></i>
+                </div>
+                <h3 class="topic-name">Python AI</h3>
+                <p class="topic-desc">Phân tích dữ liệu lớn và thiết lập mạng thần kinh.</p>
+                <div class="student-badge"><i class="fa fa-user-friends"></i> 8,340 học viên</div>
+                <div class="floating-tag" style="bottom: 25px; right: 25px;">import tensorflow as tf</div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="topic-card" style="--glow-color: rgba(104, 188, 81, 0.3);">
+                <div class="card-inner-glow"></div>
+                <div class="topic-icon" style="background: rgba(104, 188, 81, 0.1); color: #68BC51;">
+                    <i class="fab fa-node-js"></i>
+                </div>
+                <h3 class="topic-name">Node.js Back-End</h3>
+                <p class="topic-desc">Thiết kế API rest, bảo mật hệ thống vi dịch vụ.</p>
+                <div class="student-badge"><i class="fa fa-user-friends"></i> 6,190 học viên</div>
+                <div class="floating-tag" style="bottom: 25px; right: 25px;">express()</div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="topic-card" style="--glow-color: rgba(0, 132, 255, 0.3);">
+                <div class="card-inner-glow"></div>
+                <div class="topic-icon" style="background: rgba(0, 132, 255, 0.1); color: #0084FF;">
+                    <i class="fab fa-react"></i>
+                </div>
+                <h3 class="topic-name">ReactJS Framework</h3>
+                <p class="topic-desc">Lập trình UI phản hồi cao, quản lý state chuyên sâu.</p>
+                <div class="student-badge"><i class="fa fa-user-friends"></i> 9,820 học viên</div>
+                <div class="floating-tag" style="bottom: 25px; right: 25px;">&lt;Component /&gt;</div>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="topic-card bento-col-2" style="--glow-color: rgba(139, 92, 246, 0.3);">
+                <div class="card-inner-glow"></div>
+                <div class="topic-icon" style="background: rgba(139, 92, 246, 0.1); color: #8B5CF6;">
+                    <i class="fa fa-brain"></i>
+                </div>
+                <h3 class="topic-name">Artificial Intelligence</h3>
+                <p class="topic-desc">Huấn luyện mô hình Deep Learning từ lý thuyết đến triển khai ứng dụng thực tế.</p>
+                <div class="student-badge"><i class="fa fa-user-friends"></i> 12,410 học viên</div>
+                <div class="floating-tag" style="bottom: 25px; right: 25px;">model.predict()</div>
+            </div>
+
+            <!-- Card 6 -->
+            <div class="topic-card" style="--glow-color: rgba(239, 68, 68, 0.3);">
+                <div class="card-inner-glow"></div>
+                <div class="topic-icon" style="background: rgba(239, 68, 68, 0.1); color: #EF4444;">
+                    <i class="fa fa-database"></i>
+                </div>
+                <h3 class="topic-name">SQL Database</h3>
+                <p class="topic-desc">Tối ưu truy vấn phức tạp dữ liệu lớn.</p>
+                <div class="student-badge"><i class="fa fa-user-friends"></i> 5,830 học viên</div>
+                <div class="floating-tag" style="bottom: 25px; right: 25px;">SELECT * FROM users</div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SECTION 2.5: 3D LEARNING ROADMAP -->
+    <section class="roadmap-section" id="lo-trinh">
+        <div class="section-header">
+            <span class="section-subtitle">Hành trình tri thức</span>
+            <h2 class="section-title">
+                Lộ Trình Học Tích Hợp AI 3D
+                <div class="title-underline" id="underline-roadmap"></div>
+            </h2>
+        </div>
+
+        <div class="roadmap-container">
+            <!-- Central connecting SVG wireframe path -->
+            <svg class="roadmap-path-svg" viewBox="0 0 100 800" preserveAspectRatio="none">
+                <path d="M 50 0 C 80 150, 20 250, 50 400 C 80 550, 20 650, 50 800" class="roadmap-line" />
+                <path id="roadmap-svg-line-active" d="M 50 0 C 80 150, 20 250, 50 400 C 80 550, 20 650, 50 800" class="roadmap-line-active" />
+            </svg>
+
+            <!-- Node 1 -->
+            <div class="roadmap-node-wrapper">
+                <div class="roadmap-node-card" style="--glow-color: rgba(39, 201, 63, 0.35);">
+                    <div class="card-inner-glow"></div>
+                    <div class="node-header">
+                        <div class="node-icon-glow" style="background: rgba(39, 201, 63, 0.1); color: #27C93F; border-color: rgba(39, 201, 63, 0.2)">
+                            <i class="fa fa-code-branch"></i>
+                        </div>
+                        <h3 class="node-title">Cốt lõi Tư Duy Logic</h3>
+                    </div>
+                    <p class="node-desc">Nhập môn thuật toán cơ bản, làm quen biến số, cấu trúc lặp và kiểm soát nhánh rẽ điều kiện.</p>
+                    <div class="node-badge-row">
+                        <span class="node-difficulty easy">Cơ bản</span>
+                    </div>
+                </div>
+                <div class="node-pin-center"></div>
+            </div>
+
+            <!-- Node 2 -->
+            <div class="roadmap-node-wrapper">
+                <div class="roadmap-node-card" style="--glow-color: rgba(255, 189, 46, 0.35);">
+                    <div class="card-inner-glow"></div>
+                    <div class="node-header">
+                        <div class="node-icon-glow" style="background: rgba(255, 189, 46, 0.1); color: #FFBD2E; border-color: rgba(255, 189, 46, 0.2)">
+                            <i class="fa fa-project-diagram"></i>
+                        </div>
+                        <h3 class="node-title">Cấu Trúc Dữ Liệu & Giải Thuật</h3>
+                    </div>
+                    <p class="node-desc">Tối ưu hóa bộ nhớ và hiệu năng chạy code với cấu trúc mảng, danh sách liên kết, cây nhị phân, giải thuật sắp xếp.</p>
+                    <div class="node-badge-row">
+                        <span class="node-difficulty medium">Trung cấp</span>
+                    </div>
+                </div>
+                <div class="node-pin-center"></div>
+            </div>
+
+            <!-- Node 3 -->
+            <div class="roadmap-node-wrapper">
+                <div class="roadmap-node-card" style="--glow-color: rgba(255, 95, 86, 0.35);">
+                    <div class="card-inner-glow"></div>
+                    <div class="node-header">
+                        <div class="node-icon-glow" style="background: rgba(255, 95, 86, 0.1); color: #FF5F56; border-color: rgba(255, 95, 86, 0.2)">
+                            <i class="fa fa-cubes"></i>
+                        </div>
+                        <h3 class="node-title">Lập Trình Hướng Đối Tượng (OOP)</h3>
+                    </div>
+                    <p class="node-desc">Xây nguồn mã chuyên nghiệp chuẩn dự án Enterprise với 4 đặc tính OOP cốt lõi và các Design Patterns phổ biến.</p>
+                    <div class="node-badge-row">
+                        <span class="node-difficulty hard">Nâng cao</span>
+                    </div>
+                </div>
+                <div class="node-pin-center"></div>
+            </div>
+
+            <!-- Node 4 -->
+            <div class="roadmap-node-wrapper">
+                <div class="roadmap-node-card" style="--glow-color: rgba(0, 132, 255, 0.35);">
+                    <div class="card-inner-glow"></div>
+                    <div class="node-header">
+                        <div class="node-icon-glow" style="background: rgba(0, 132, 255, 0.1); color: #0084FF; border-color: rgba(0, 132, 255, 0.2)">
+                            <i class="fa fa-network-wired"></i>
+                        </div>
+                        <h3 class="node-title">Fullstack System & Database</h3>
+                    </div>
+                    <p class="node-desc">Thiết kế APIs RESTful toàn diện, đồng bộ cơ sở dữ liệu quan hệ/phi quan hệ, phân quyền bảo mật chuyên sâu.</p>
+                    <div class="node-badge-row">
+                        <span class="node-difficulty medium">Trung cấp</span>
+                    </div>
+                </div>
+                <div class="node-pin-center"></div>
+            </div>
+
+            <!-- Node 5 -->
+            <div class="roadmap-node-wrapper">
+                <div class="roadmap-node-card" style="--glow-color: rgba(255, 107, 43, 0.35);">
+                    <div class="card-inner-glow"></div>
+                    <div class="node-header">
+                        <div class="node-icon-glow" style="background: rgba(255, 107, 43, 0.1); color: var(--primary); border-color: rgba(255, 107, 43, 0.2)">
+                            <i class="fa fa-brain"></i>
+                        </div>
+                        <h3 class="node-title">AI Agent Integration</h3>
+                    </div>
+                    <p class="node-desc">Huấn luyện mô hình, tích hợp trợ lý AI Copilot hỗ trợ học viên giải lỗi và review code tức thời.</p>
+                    <div class="node-badge-row">
+                        <span class="node-difficulty hard">Nâng cao</span>
+                    </div>
+                </div>
+                <div class="node-pin-center"></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SECTION 3: COURSE CARDS -->
+    <section class="courses-section">
+        <!-- 3D WebGL background shape elements -->
+        <canvas id="courses-bg-canvas"></canvas>
+        <div class="container" style="max-width: 1200px; margin: 0 auto;">
+            
+            <div class="course-header-badge">
+                <i class="fa fa-fire"></i> Lộ trình tối ưu
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 50px;">
+                <h2 class="section-title" style="margin-bottom: 0; text-align: left;">
+                    Khám Phá Các Khóa Học
+                    <div class="title-underline" id="underline-courses"></div>
+                </h2>
+            </div>
+            
+            <!-- Course Card 3D Flip Cylinder Stage -->
+            <div class="courses-stage-3d" id="courses-stage">
+                <button class="stage-control-btn prev" id="stage-prev-btn"><i class="fa fa-chevron-left"></i></button>
+                <button class="stage-control-btn next" id="stage-next-btn"><i class="fa fa-chevron-right"></i></button>
+                
+                <div class="courses-ring-3d" id="courses-ring">
+                    <!-- Card 1 -->
+                    <div class="course-card-wrapper active" data-index="0">
+                        <div class="course-card-inner">
+                            <!-- Front -->
+                            <div class="card-front">
+                                <div class="course-thumb-box">
+                                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop" alt="ReactJS" class="course-thumb">
+                                    <div class="category-pill">Front-End</div>
+                                    <div class="live-learners"><i class="fa fa-eye"></i> <span class="viewer-count">142</span> học</div>
+                                </div>
+                                <div class="course-info">
+                                    <h3 class="course-title">Lộ trình Web Front-End ReactJS & Next.js chuyên sâu</h3>
+                                    <div class="rating-stars">
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                    </div>
+                                    <div class="course-footer">
+                                        <div class="price-box">
+                                            <span class="old-price">1,999,000đ</span>
+                                            <span class="new-price">999,000đ <span class="hot-badge">50%</span></span>
+                                        </div>
+                                        <div class="course-btn-arrow">
+                                            <i class="fa fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Back -->
+                            <div class="card-back">
+                                <h3 class="back-title">Lộ Trình ReactJS</h3>
+                                <p class="back-desc">Học từ cơ bản về HTML/CSS/JS đến xây dựng các cấu trúc website phức tạp với React và Next.js. Thực hành dự án thật.</p>
+                                <div class="course-details-list">
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> 140+ bài học video chất lượng cao</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> 12 Dự án thực hành danh mục đầu tư</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> AI sửa bài và trợ giúp trực tuyến 24/7</div>
+                                </div>
+                                <div class="back-actions">
+                                    <button class="btn-buy">Mua ngay</button>
+                                    <button class="btn-detail">Chi tiết</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="course-card-wrapper inactive" data-index="1">
+                        <div class="course-card-inner">
+                            <!-- Front -->
+                            <div class="card-front">
+                                <div class="course-thumb-box">
+                                    <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop" alt="Python" class="course-thumb">
+                                    <div class="category-pill">AI & Machine Learning</div>
+                                    <div class="live-learners"><i class="fa fa-eye"></i> <span class="viewer-count">210</span> học</div>
+                                </div>
+                                <div class="course-info">
+                                    <h3 class="course-title">Master Python & Xây dựng Trợ lý AI Thông Minh</h3>
+                                    <div class="rating-stars">
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star-half-alt"></i>
+                                    </div>
+                                    <div class="course-footer">
+                                        <div class="price-box">
+                                            <span class="old-price">2,499,000đ</span>
+                                            <span class="new-price">1,290,000đ <span class="hot-badge">HOT</span></span>
+                                        </div>
+                                        <div class="course-btn-arrow">
+                                            <i class="fa fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Back -->
+                            <div class="card-back">
+                                <h3 class="back-title">Python & AI Master</h3>
+                                <p class="back-desc">Huấn luyện mạng nơ-ron nhân tạo, tích hợp API OpenAI và xử lý dữ liệu tự động hóa quy mô lớn.</p>
+                                <div class="course-details-list">
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Cốt lõi Python hướng đối tượng nâng cao</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Triển khai 5 mô hình học máy thực tế</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Chứng chỉ lập trình AI quốc tế</div>
+                                </div>
+                                <div class="back-actions">
+                                    <button class="btn-buy">Mua ngay</button>
+                                    <button class="btn-detail">Chi tiết</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="course-card-wrapper inactive" data-index="2">
+                        <div class="course-card-inner">
+                            <!-- Front -->
+                            <div class="card-front">
+                                <div class="course-thumb-box">
+                                    <img src="https://images.unsplash.com/photo-1510915228340-29c85a43dcfe?w=600&auto=format&fit=crop" alt="Back-End" class="course-thumb">
+                                    <div class="category-pill">Back-End</div>
+                                    <div class="live-learners"><i class="fa fa-eye"></i> <span class="viewer-count">98</span> học</div>
+                                </div>
+                                <div class="course-info">
+                                    <h3 class="course-title">Thiết kế Kiến Trúc Cơ Sở Dữ Liệu Node.js & Express</h3>
+                                    <div class="rating-stars">
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                    </div>
+                                    <div class="course-footer">
+                                        <div class="price-box">
+                                            <span class="old-price">1,899,000đ</span>
+                                            <span class="new-price">899,000đ <span class="hot-badge">53%</span></span>
+                                        </div>
+                                        <div class="course-btn-arrow">
+                                            <i class="fa fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Back -->
+                            <div class="card-back">
+                                <h3 class="back-title">Node.js Back-End</h3>
+                                <p class="back-desc">Thiết kế RESTful APIs vững chắc, phân quyền người dùng, lưu trữ dữ liệu MongoDB, SQL tối ưu.</p>
+                                <div class="course-details-list">
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Kiến trúc Clean Architecture cho Node.js</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Triển khai Docker, CI/CD lên đám mây</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Tối ưu hóa truy vấn SQL/NoSQL</div>
+                                </div>
+                                <div class="back-actions">
+                                    <button class="btn-buy">Mua ngay</button>
+                                    <button class="btn-detail">Chi tiết</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div class="course-card-wrapper inactive" data-index="3">
+                        <div class="course-card-inner">
+                            <!-- Front -->
+                            <div class="card-front">
+                                <div class="course-thumb-box">
+                                    <img src="https://images.unsplash.com/photo-1607799279861-4dd421887fb3?w=600&auto=format&fit=crop" alt="Java" class="course-thumb">
+                                    <div class="category-pill">Java & C#</div>
+                                    <div class="live-learners"><i class="fa fa-eye"></i> <span class="viewer-count">165</span> học</div>
+                                </div>
+                                <div class="course-info">
+                                    <h3 class="course-title">Lập trình hướng đối tượng Java & C# Cơ Bản Đến Nâng Cao</h3>
+                                    <div class="rating-stars">
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                    </div>
+                                    <div class="course-footer">
+                                        <div class="price-box">
+                                            <span class="old-price">2,199,000đ</span>
+                                            <span class="new-price">1,090,000đ <span class="hot-badge">50%</span></span>
+                                        </div>
+                                        <div class="course-btn-arrow">
+                                            <i class="fa fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Back -->
+                            <div class="card-back">
+                                <h3 class="back-title">OOP Java & C#</h3>
+                                <p class="back-desc">Hiểu sâu các tính chất của hướng đối tượng, cấu trúc giải thuật phổ biến và thiết kế ứng dụng Enterprise.</p>
+                                <div class="course-details-list">
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Đóng gói, kế thừa, đa hình chi tiết</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Thiết kế Cơ sở dữ liệu và kết nối ADO.NET / JDBC</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Hỗ trợ phỏng vấn xin việc cuối khóa</div>
+                                </div>
+                                <div class="back-actions">
+                                    <button class="btn-buy">Mua ngay</button>
+                                    <button class="btn-detail">Chi tiết</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 5 -->
+                    <div class="course-card-wrapper inactive" data-index="4">
+                        <div class="course-card-inner">
+                            <!-- Front -->
+                            <div class="card-front">
+                                <div class="course-thumb-box">
+                                    <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600&auto=format&fit=crop" alt="Back-End" class="course-thumb">
+                                    <div class="category-pill">Back-End</div>
+                                    <div class="live-learners"><i class="fa fa-eye"></i> <span class="viewer-count">118</span> học</div>
+                                </div>
+                                <div class="course-info">
+                                    <h3 class="course-title">Lập trình Web Back-End ASP.NET Core & C# Pro</h3>
+                                    <div class="rating-stars">
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                    </div>
+                                    <div class="course-footer">
+                                        <div class="price-box">
+                                            <span class="old-price">2,290,000đ</span>
+                                            <span class="new-price">1,190,000đ <span class="hot-badge">NEW</span></span>
+                                        </div>
+                                        <div class="course-btn-arrow">
+                                            <i class="fa fa-arrow-right"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Back -->
+                            <div class="card-back">
+                                <h3 class="back-title">ASP.NET Core & C#</h3>
+                                <p class="back-desc">Xây dựng hệ thống web APIs RESTful chuyên nghiệp, phân quyền hệ thống JWT token và deploy thực tế.</p>
+                                <div class="course-details-list">
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Kiến trúc Clean Architecture vững chãi</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Làm việc Entity Framework Core & SQL Server</div>
+                                    <div class="detail-item"><i class="fa fa-check-circle"></i> Đóng gói dự án Docker và DevOps cơ bản</div>
+                                </div>
+                                <div class="back-actions">
+                                    <button class="btn-buy">Mua ngay</button>
+                                    <button class="btn-detail">Chi tiết</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3.5: AI ASSISTANT & 3D LAB -->
+    <section class="ai-section" id="ai-assistant">
+        <div class="container" style="max-width: 1200px; margin: 0 auto;">
+            
+            <div class="course-header-badge">
+                <i class="fa fa-robot"></i> Trợ lý thông minh
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 50px;">
+                <h2 class="section-title" style="margin-bottom: 0; text-align: left;">
+                    Trợ Lý AI & Phòng Lab 3D
+                    <div class="title-underline" id="underline-ai"></div>
+                </h2>
+            </div>
+
+            <div class="ai-container">
+                <!-- Left panel: chat console -->
+                <div class="ai-chat-card">
+                    <div class="chat-header">
+                        <div class="ai-status-dot"></div>
+                        <div class="chat-title">EduCode AI Copilot Console</div>
+                    </div>
+
+                    <div class="chip-container">
+                        <button class="prompt-chip active" onclick="triggerAICopilot('sort')">
+                            <i class="fa fa-chart-bar"></i> ⚡ Thuật toán Sắp xếp (Sort)
+                        </button>
+                        <button class="prompt-chip" onclick="triggerAICopilot('tree')">
+                            <i class="fa fa-tree"></i> 🌳 Cấu trúc Cây (Binary Tree)
+                        </button>
+                        <button class="prompt-chip" onclick="triggerAICopilot('scan')">
+                            <i class="fa fa-shield-alt"></i> 🔒 AI Code Review & Security
+                        </button>
+                    </div>
+
+                    <div class="chat-body" id="ai-chat-body">
+                        <div class="chat-message bot">
+                            <div class="message-sender"><i class="fa fa-robot"></i> AI Assistant</div>
+                            <div class="message-content">
+                                Xin chào! Tôi là Trợ lý AI của EduCode. Chọn một chủ đề ở trên hoặc gõ câu hỏi để trực quan hóa thuật toán và cấu trúc dữ liệu trong không gian 3D thời gian thực.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-wrapper">
+                        <input type="text" class="chat-input-field" id="ai-chat-input" placeholder="Hỏi AI hoặc gõ lệnh để chạy phòng Lab 3D...">
+                        <button class="chat-send-btn" id="ai-send-btn"><i class="fa fa-paper-plane"></i></button>
+                    </div>
+                </div>
+
+                <!-- Right panel: Three.js render canvas -->
+                <div class="ai-visualizer-card">
+                    <div class="canvas-title-label" id="lab-state-label">Trực quan hóa Sắp xếp</div>
+                    <canvas id="ai-canvas-3d"></canvas>
+                    <div class="canvas-overlay-ui">
+                        <i class="fa fa-satellite-dish"></i> Trạng thái Lab: <span id="lab-status-text">Đang chạy...</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SECTION 4: FOOTER -->
+    <footer>
+        <div class="footer-grid-overlay"></div>
+        <div class="footer-container">
+            
+            <!-- Col 1 -->
+            <div>
+                <h3 class="footer-title">Liên kết nhanh</h3>
+                <ul class="footer-links">
+                    <li><a href="#kham-pha">Trang chủ</a></li>
+                    <li><a href="#lo-trinh">Lộ trình học tập</a></li>
+                    <li><a href="#ai-assistant">Trợ lý AI hỏi đáp</a></li>
+                    <li><a href="#khoa-hoc">Khóa học của tôi</a></li>
+                    <li><a href="#chinh-sach">Chính sách bảo mật</a></li>
+                </ul>
+            </div>
+
+            <!-- Col 2 -->
+            <div>
+                <h3 class="footer-title">Liên hệ</h3>
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <i class="fa fa-map-marker-alt"></i>
+                        <span>123 Đường Ba Tháng Hai, Quận 10, TP. Hồ Chí Minh</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fa fa-phone"></i>
+                        <span>+84 (028) 3864 7284</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fa fa-envelope"></i>
+                        <span>support@educodeai.vn</span>
+                    </div>
+                </div>
+                <div class="social-row">
+                    <div class="social-icon"><i class="fab fa-facebook-f"></i></div>
+                    <div class="social-icon"><i class="fab fa-youtube"></i></div>
+                    <div class="social-icon"><i class="fab fa-github"></i></div>
+                    <div class="social-icon"><i class="fab fa-linkedin-in"></i></div>
+                </div>
+            </div>
+
+            <!-- Col 3 -->
+            <div>
+                <h3 class="footer-title">Đăng ký nhận bản tin</h3>
+                <p class="subscribe-desc">Đăng ký để nhận các bài viết lập trình mới nhất và các mã giảm giá khóa học độc quyền lên đến 60%.</p>
+                <div class="subscribe-form">
+                    <div class="input-group">
+                        <input type="email" placeholder="Nhập email của bạn...">
+                        <button class="btn-subscribe">Đăng ký</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer-bottom">
+            <span>&copy; 2026 EduCodeAI. Toàn bộ bản quyền được bảo lưu.</span>
+            <span>Thiết kế bởi Đội ngũ Công nghệ EduCodeAI</span>
+        </div>
+    </footer>
+
+    <!-- EXIT INTENT MODAL -->
+    <div class="modal-overlay" id="exit-modal-overlay">
+        <div class="exit-modal">
+            <button class="modal-close" id="close-modal-btn">&times;</button>
+            <i class="fa fa-gift modal-gift-icon"></i>
+            <h3 class="modal-title">Đừng Rời Đi Tay Trắng!</h3>
+            <p class="modal-desc">Nhận ngay ưu đãi giảm giá <strong>60%</strong> cho khóa học lập trình đầu tiên của bạn + Bộ tài liệu cấu trúc dữ liệu và giải thuật độc quyền.</p>
+            <button class="modal-btn" id="claim-gift-btn">Nhận Ưu Đãi Ngay</button>
+        </div>
+    </div>
+
+    <!-- FLOATING CONTACT BUBBLES -->
+    <div class="floating-chat" title="Trợ giúp qua Messenger/Zalo">
+        <i class="fab fa-facebook-messenger"></i>
+    </div>
+
+    <!-- MAIN JAVASCRIPT BLOCK -->
+    <script>
+        // === REGISTRATION DATA TICKER LOOP ===
+        const ticker = document.getElementById('ticker-slider');
+        // Duplicate content to allow seamless loop
+        ticker.innerHTML += ticker.innerHTML;
+
+        // === COUNTDOWN TIMER ===
+        let totalSeconds = 9257; // 2 giờ 34 phút 17 giây
+        const timerElement = document.getElementById('countdown-timer');
+
+        function updateTimer() {
+            if(totalSeconds <= 0) {
+                totalSeconds = 9257; // Reset
+            }
+            totalSeconds--;
+            
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            timerElement.textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        setInterval(updateTimer, 1000);
+
+        // === PROGRESS BAR FILLING ANIMATION ===
+        setTimeout(() => {
+            const progressIndicator = document.getElementById('progress-indicator');
+            if(progressIndicator) {
+                progressIndicator.style.transition = 'width 2.5s cubic-bezier(0.16, 1, 0.3, 1)';
+                progressIndicator.style.width = '96.4%'; // 4,820 / 5,000 slots
+            }
+        }, 500);
+
+        // === THREE.JS PARTICLES BACKGROUND ===
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+        camera.position.z = 50;
+
+        const renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('hero-canvas'),
+            alpha: true,
+            antialias: true
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Function to create glowing text symbol textures
+        function createSymbolTexture(char) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+            ctx.fillRect(0, 0, 64, 64);
+            
+            ctx.font = 'bold 38px "Fira Code", monospace';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Text glow shadow
+            ctx.shadowColor = '#FF6B2B';
+            ctx.shadowBlur = 12;
+            ctx.fillText(char, 32, 32);
+            
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- 3D CODE CONSTELLATION SPHERE ---
+        const constellationGroup = new THREE.Group();
+        const nodesData = [];
+        const nodeCount = 50;
+        const sphereRadius = 18;
+
+        const symList = ['<', '>', '/', '{', '}', '[', ']'];
+        const symTextures = symList.map(s => createSymbolTexture(s));
+
+        for (let i = 0; i < nodeCount; i++) {
+            const phi = Math.acos(-1 + (2 * i) / nodeCount);
+            const theta = Math.sqrt(nodeCount * Math.PI) * phi;
+
+            const x = sphereRadius * Math.sin(phi) * Math.cos(theta);
+            const y = sphereRadius * Math.sin(phi) * Math.sin(theta);
+            const z = sphereRadius * Math.cos(phi);
+
+            const tex = symTextures[i % symTextures.length];
+            const spriteMat = new THREE.SpriteMaterial({
+                map: tex,
+                color: 0x00F0FF,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending
+            });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.position.set(x, y, z);
+            sprite.scale.set(2.4, 2.4, 1);
+            
+            const dir = new THREE.Vector3(x, y, z).normalize();
+            sprite.userData = {
+                originPos: new THREE.Vector3(x, y, z),
+                direction: dir,
+                origScale: 2.4
+            };
+
+            constellationGroup.add(sprite);
+            nodesData.push(sprite);
+        }
+
+        const lineConnections = [];
+        const maxLinkDist = 12;
+        const lineMaterial = new THREE.LineBasicMaterial({
+            color: 0x00F0FF,
+            transparent: true,
+            opacity: 0.18,
+            blending: THREE.AdditiveBlending
+        });
+
+        for (let i = 0; i < nodeCount; i++) {
+            for (let j = i + 1; j < nodeCount; j++) {
+                const dist = nodesData[i].position.distanceTo(nodesData[j].position);
+                if (dist < maxLinkDist) {
+                    const geom = new THREE.BufferGeometry().setFromPoints([
+                        nodesData[i].position,
+                        nodesData[j].position
+                    ]);
+                    const line = new THREE.Line(geom, lineMaterial.clone());
+                    constellationGroup.add(line);
+                    lineConnections.push({
+                        line: line,
+                        nodeA: nodesData[i],
+                        nodeB: nodesData[j],
+                        origOpacity: 0.18
+                    });
+                }
+            }
+        }
+
+        scene.add(constellationGroup);
+
+        let shockwaveActive = false;
+        let shockwaveTime = 0;
+        const shockwaveDuration = 1.2;
+
+        function triggerCompilerShockwave() {
+            shockwaveActive = true;
+            shockwaveTime = 0;
+        }
+
+        // --- MORPHING 3D AI CORE GEOMETRY ---
+        const coreGeometry = new THREE.IcosahedronGeometry(9, 3);
+        const originalPositions = coreGeometry.attributes.position.clone();
+        
+        const coreMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF6B2B,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.35,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const aiCoreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
+        scene.add(aiCoreMesh);
+
+        // Orbiting glowing electron rings
+        const ringsGroup = new THREE.Group();
+        const ringMaterial = new THREE.LineBasicMaterial({
+            color: 0xFFB347,
+            transparent: true,
+            opacity: 0.45,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const ringGeom1 = new THREE.RingGeometry(13, 13.1, 64);
+        const ring1 = new THREE.LineLoop(ringGeom1, ringMaterial);
+        ring1.rotation.x = Math.PI / 3;
+        ringsGroup.add(ring1);
+
+        const ringGeom2 = new THREE.RingGeometry(15, 15.1, 64);
+        const ring2 = new THREE.LineLoop(ringGeom2, ringMaterial);
+        ring2.rotation.y = Math.PI / 4;
+        ringsGroup.add(ring2);
+
+        scene.add(ringsGroup);
+
+        // Light setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xff6b2b, 2, 100);
+        pointLight.position.set(0, 0, 10);
+        scene.add(pointLight);
+
+        // === MOUSE POSITION FOR PARALLAX ===
+        let mouseX = 0, mouseY = 0;
+        let targetX = 0, targetY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) - 0.5;
+            mouseY = (e.clientY / window.innerHeight) - 0.5;
+            
+            // Spotlight glow coordinates on background
+            document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+            document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+        });
+
+        // Loop animation frame
+        const clock = new THREE.Clock();
+
+        function tick() {
+            const elapsedTime = clock.getElapsedTime();
+
+            // Morph AI Core vertices using noise-like wave formula
+            if (aiCoreMesh && originalPositions) {
+                const positions = aiCoreMesh.geometry.attributes.position.array;
+                const origPositions = originalPositions.array;
+                
+                for(let i = 0; i < positions.length; i += 3) {
+                    const vx = origPositions[i];
+                    const vy = origPositions[i+1];
+                    const vz = origPositions[i+2];
+                    
+                    const len = Math.sqrt(vx*vx + vy*vy + vz*vz);
+                    const nx = vx / len;
+                    const ny = vy / len;
+                    const nz = vz / len;
+                    
+                    const wave = Math.sin(nx * 4.5 + elapsedTime * 1.6) * 
+                                 Math.cos(ny * 4.5 + elapsedTime * 1.9) * 
+                                 Math.sin(nz * 4.5 + elapsedTime * 1.3) * 1.5;
+                    
+                    positions[i] = vx + nx * wave;
+                    positions[i+1] = vy + ny * wave;
+                    positions[i+2] = vz + nz * wave;
+                }
+                aiCoreMesh.geometry.attributes.position.needsUpdate = true;
+                
+                // Slow rotation
+                aiCoreMesh.rotation.y = elapsedTime * 0.12;
+                aiCoreMesh.rotation.x = elapsedTime * 0.06;
+            }
+
+            if (ring1 && ring2) {
+                ring1.rotation.z = elapsedTime * 0.22;
+                ring2.rotation.x = elapsedTime * -0.28;
+                ringsGroup.rotation.y = elapsedTime * 0.05;
+            }
+
+            // Parallax interpolation
+            targetX += (mouseX - targetX) * 0.05;
+            targetY += (mouseY - targetY) * 0.05;
+
+            // Camera shift parallax
+            camera.position.x = targetX * 15;
+            camera.position.y = -targetY * 15;
+            camera.lookAt(scene.position);
+
+            // Rotate overall constellation
+            if (constellationGroup) {
+                constellationGroup.rotation.y = elapsedTime * 0.05;
+                constellationGroup.rotation.x = elapsedTime * 0.02;
+            }
+
+            // Shockwave logic
+            if (shockwaveActive && nodesData && lineConnections) {
+                shockwaveTime += 0.026;
+                const progress = shockwaveTime / shockwaveDuration;
+
+                if (progress >= 1) {
+                    shockwaveActive = false;
+                    nodesData.forEach(node => {
+                        node.position.copy(node.userData.originPos);
+                        node.scale.setScalar(node.userData.origScale);
+                        node.material.color.setHex(0x00F0FF);
+                    });
+                    lineConnections.forEach(conn => {
+                        conn.line.material.opacity = conn.origOpacity;
+                        conn.line.material.color.setHex(0x00F0FF);
+                    });
+                } else {
+                    const waveFront = progress * 32;
+                    const waveWidth = 5;
+
+                    nodesData.forEach(node => {
+                        const dist = node.userData.originPos.length();
+                        const diff = Math.abs(dist - waveFront);
+
+                        if (diff < waveWidth) {
+                            const strength = (1 - diff / waveWidth) * (1 - progress);
+                            const disp = strength * 6.5;
+                            node.position.copy(node.userData.originPos).addScaledVector(node.userData.direction, disp);
+                            node.material.color.setHex(0xFF6B2B);
+                            node.scale.setScalar(node.userData.origScale * (1 + strength * 1.5));
+                        } else {
+                            node.position.lerp(node.userData.originPos, 0.1);
+                            node.material.color.setHex(0x00F0FF);
+                            node.scale.setScalar(node.userData.origScale);
+                        }
+                    });
+
+                    lineConnections.forEach(conn => {
+                        const posA = conn.nodeA.position;
+                        const posB = conn.nodeB.position;
+
+                        const positions = conn.line.geometry.attributes.position.array;
+                        positions[0] = posA.x;
+                        positions[1] = posA.y;
+                        positions[2] = posA.z;
+                        positions[3] = posB.x;
+                        positions[4] = posB.y;
+                        positions[5] = posB.z;
+                        conn.line.geometry.attributes.position.needsUpdate = true;
+
+                        const midDist = (posA.length() + posB.length()) / 2;
+                        const diff = Math.abs(midDist - waveFront);
+                        if (diff < waveWidth) {
+                            const strength = (1 - diff / waveWidth) * (1 - progress);
+                            conn.line.material.opacity = 0.18 + strength * 0.72;
+                            conn.line.material.color.setHex(0xFF6B2B);
+                        } else {
+                            conn.line.material.opacity = conn.origOpacity;
+                            conn.line.material.color.setHex(0x00F0FF);
+                        }
+                    });
+                }
+            } else if (lineConnections) {
+                lineConnections.forEach(conn => {
+                    const posA = conn.nodeA.position;
+                    const posB = conn.nodeB.position;
+                    const positions = conn.line.geometry.attributes.position.array;
+                    positions[0] = posA.x;
+                    positions[1] = posA.y;
+                    positions[2] = posA.z;
+                    positions[3] = posB.x;
+                    positions[4] = posB.y;
+                    positions[5] = posB.z;
+                    conn.line.geometry.attributes.position.needsUpdate = true;
+                });
+            }
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(tick);
+        }
+        tick();
+
+        // === GSAP ENTRANCE ANIMATIONS ===
+        window.addEventListener('DOMContentLoaded', () => {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Stagger hero text and visual components
+            const tl = gsap.timeline();
+            tl.from("#eyebrow-text", { duration: 0.8, x: -50, opacity: 0, ease: "power3.out" })
+              .from(".hero-title", { duration: 0.8, y: 50, opacity: 0, ease: "power3.out" }, "-=0.5")
+              .from(".hero-title-accent", { duration: 0.8, y: 50, opacity: 0, ease: "power3.out" }, "-=0.6")
+              .to("#hero-subtext, #hero-para", { duration: 0.8, y: 0, opacity: 1, ease: "power3.out" }, "-=0.5")
+              .from(".hero-actions .btn-glow, .hero-actions .btn-frosted", { duration: 0.6, scale: 0.8, opacity: 0, stagger: 0.15, ease: "back.out(1.7)" }, "-=0.4")
+              .from("#laptop-mockup", { duration: 1.2, scale: 0.7, rotationY: 40, rotationX: -30, opacity: 0, ease: "power4.out" }, "-=0.8");
+
+            // Orbit badges layout
+            const badgeReact = document.querySelector('.badge-react');
+            const badgePython = document.querySelector('.badge-python');
+            const badgeNode = document.querySelector('.badge-node');
+
+            gsap.to(badgeReact, { y: -15, duration: 2.2, repeat: -1, yoyo: true, ease: "sine.inOut" });
+            gsap.to(badgePython, { y: 15, duration: 2.5, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 0.3 });
+            gsap.to(badgeNode, { y: -20, duration: 2.8, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 0.6 });
+
+            // Hero content explosive scroll-out
+            gsap.to("#hero-text-block", {
+                scrollTrigger: {
+                    trigger: ".hero-section",
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: true
+                },
+                x: -120,
+                opacity: 0,
+                scale: 0.9
+            });
+
+            gsap.to("#hero-visual-block", {
+                scrollTrigger: {
+                    trigger: ".hero-section",
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: true
+                },
+                x: 120,
+                opacity: 0,
+                scale: 0.85
+            });
+
+            // Underlines drawing triggers
+            gsap.to("#underline-topics", {
+                scrollTrigger: {
+                    trigger: "#underline-topics",
+                    start: "top 85%"
+                },
+                width: "100%",
+                duration: 1.2,
+                ease: "power3.out"
+            });
+
+            gsap.to("#underline-roadmap", {
+                scrollTrigger: {
+                    trigger: "#underline-roadmap",
+                    start: "top 85%"
+                },
+                width: "100%",
+                duration: 1.2,
+                ease: "power3.out"
+            });
+
+            gsap.to("#underline-courses", {
+                scrollTrigger: {
+                    trigger: "#underline-courses",
+                    start: "top 85%"
+                },
+                width: "100%",
+                duration: 1.2,
+                ease: "power3.out"
+            });
+
+            // Bento categories staggered flight
+            gsap.from(".topic-card", {
+                scrollTrigger: {
+                    trigger: "#bento-container",
+                    start: "top 80%"
+                },
+                y: 100,
+                opacity: 0,
+                stagger: 0.1,
+                duration: 0.8,
+                ease: "power3.out"
+            });
+
+            // Course cards flip staggered entrance
+            gsap.from("#courses-stage", {
+                scrollTrigger: {
+                    trigger: "#courses-stage",
+                    start: "top 85%"
+                },
+                rotationX: 25,
+                y: 100,
+                opacity: 0,
+                duration: 1.2,
+                ease: "power3.out"
+            });
+        });
+
+        // === 3D CYLINDER CAROUSEL CONTROL ===
+        const ring = document.getElementById('courses-ring');
+        const cards = document.querySelectorAll('.course-card-wrapper');
+        const prevBtn = document.getElementById('stage-prev-btn');
+        const nextBtn = document.getElementById('stage-next-btn');
+
+        let activeIndex = 0;
+        const cardCount = cards.length;
+        const angleStep = 360 / cardCount;
+
+        function updateCylinder() {
+            const isMobile = window.innerWidth < 768;
+            const isTablet = window.innerWidth >= 768 && window.innerWidth < 992;
+            let tz = 360; // default translateZ depth
+            if (isMobile) tz = 140;
+            else if (isTablet) tz = 260;
+
+            cards.forEach((card, idx) => {
+                // Fixed card angle rotation around cylinder center
+                const angle = idx * angleStep;
+                card.style.transform = `rotateY(${angle}deg) translateZ(${tz}px)`;
+                
+                // Handle active/inactive classes and visibility
+                const diff = Math.min(
+                    Math.abs(idx - activeIndex),
+                    cardCount - Math.abs(idx - activeIndex)
+                );
+                
+                if (diff === 0) {
+                    card.classList.add('active');
+                    card.classList.remove('inactive');
+                    card.style.opacity = '1';
+                    card.style.visibility = 'visible';
+                } else if (diff === 1) {
+                    card.classList.remove('active');
+                    card.classList.add('inactive');
+                    card.style.opacity = '0.35';
+                    card.style.visibility = 'visible';
+                } else {
+                    card.classList.remove('active');
+                    card.classList.add('inactive');
+                    card.style.opacity = '0';
+                    card.style.visibility = 'hidden'; // Hide back cards completely to avoid overlapping
+                }
+            });
+
+            // Adjust ring base transform to show active card
+            ring.style.transform = `rotateY(${activeIndex * -angleStep}deg)`;
+        }
+
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activeIndex = (activeIndex - 1 + cardCount) % cardCount;
+            updateCylinder();
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activeIndex = (activeIndex + 1) % cardCount;
+            updateCylinder();
+        });
+
+        // Cylinder mouse tilt interactive parallax
+        const stage = document.getElementById('courses-stage');
+        stage.addEventListener('mousemove', (e) => {
+            const rect = stage.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width - 0.5;
+            const y = (e.clientY - rect.top) / rect.height - 0.5;
+            ring.style.transform = `rotateY(${activeIndex * -angleStep + x * 24}deg) rotateX(${y * -18}deg)`;
+        });
+
+        stage.addEventListener('mouseleave', () => {
+            ring.style.transform = `rotateY(${activeIndex * -angleStep}deg) rotateX(0deg)`;
+        });
+
+        // Run initially
+        updateCylinder();
+        window.addEventListener('resize', updateCylinder);
+
+        // === HERO PARALLAX TRACKER ===
+        const textBlock = document.getElementById('hero-text-block');
+        const laptopMockup = document.getElementById('laptop-mockup');
+
+        window.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth) - 0.5;
+            const y = (e.clientY / window.innerHeight) - 0.5;
+
+            // Parallax displacement shifts
+            if(textBlock) {
+                textBlock.style.transform = `translate3d(${x * 12}px, ${y * 12}px, 0)`;
+            }
+            if(laptopMockup) {
+                laptopMockup.style.transform = `rotateY(${x * 20 - 20}deg) rotateX(${y * 15 + 15}deg) translate3d(${x * 25}px, ${y * 25}px, 0)`;
+            }
+        });
+
+        // === 3D TILT EFFECT FOR CARDS ===
+        document.querySelectorAll('.topic-card, .roadmap-node-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // Center position percentage offsets
+                const xPct = (x / rect.width) - 0.5;
+                const yPct = (y / rect.height) - 0.5;
+
+                // Rotate tilt calculations
+                const tiltX = -yPct * 20; // Max 20 degrees
+                const tiltY = xPct * 20;
+
+                card.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
+                card.style.setProperty('--glow-x', `${x}px`);
+                card.style.setProperty('--glow-y', `${y}px`);
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+            });
+        });
+
+        // === RANDOMIZED LIVE VIEWER INCREMENT ===
+        setInterval(() => {
+            document.querySelectorAll('.viewer-count').forEach(counter => {
+                const current = parseInt(counter.textContent);
+                const shift = Math.floor(Math.random() * 5) - 2; // -2 to +2
+                counter.textContent = Math.max(20, current + shift).toString();
+            });
+        }, 3000);
+
+        // === ROADMAP SVG PATH DRAWING & PIN OBSERVER ===
+        const roadmapLineActive = document.getElementById('roadmap-svg-line-active');
+        const roadmapNodeWrappers = document.querySelectorAll('.roadmap-node-wrapper');
+
+        if (roadmapLineActive) {
+            const pathLength = roadmapLineActive.getTotalLength();
+            roadmapLineActive.style.strokeDasharray = pathLength;
+            roadmapLineActive.style.strokeDashoffset = pathLength;
+
+            window.addEventListener('scroll', () => {
+                const roadmapSec = document.getElementById('lo-trinh');
+                if (!roadmapSec) return;
+
+                const rect = roadmapSec.getBoundingClientRect();
+                const viewHeight = window.innerHeight;
+
+                const startPoint = viewHeight * 0.75;
+                const endPoint = viewHeight * 0.25;
+                const totalHeight = rect.height;
+
+                const scrolled = -(rect.top - startPoint);
+                const scrollRange = totalHeight - (endPoint - startPoint);
+                let progress = scrolled / scrollRange;
+                progress = Math.max(0, Math.min(1, progress));
+
+                roadmapLineActive.style.strokeDashoffset = pathLength - (progress * pathLength);
+
+                roadmapNodeWrappers.forEach(node => {
+                    const nodeRect = node.getBoundingClientRect();
+                    const nodeCenter = nodeRect.top + nodeRect.height / 2;
+                    if (nodeCenter < viewHeight * 0.65) {
+                        node.classList.add('active');
+                    } else {
+                        node.classList.remove('active');
+                    }
+                });
+            });
+        }
+
+        // === EXIT INTENT MODAL DETECTION ===
+        const modal = document.getElementById('exit-modal-overlay');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        let exitTriggered = false;
+
+        document.addEventListener('mouseleave', (e) => {
+            // Trigger exit intent when cursor goes above viewport top boundary
+            if (e.clientY < 0 && !exitTriggered) {
+                modal.classList.add('active');
+                exitTriggered = true;
+            }
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+
+        document.getElementById('claim-gift-btn').addEventListener('click', () => {
+            alert('🎉 Chúc mừng! Bạn đã nhận voucher giảm giá 60%! Vui lòng hoàn tất đăng ký tài khoản.');
+            modal.classList.remove('active');
+        });
+
+        // === 3D CONCEPT LAB VISUALIZER (Three.js) ===
+        let aiScene, aiCamera, aiRenderer;
+        let activeLabState = 'sort';
+        let labGroup = new THREE.Group();
+        let sortingBars = [];
+        let treeNodes = [];
+        let treeLines = [];
+        let scanMesh, scanPlane;
+        let labClock = new THREE.Clock();
+
+        function initAILab() {
+            const canvas = document.getElementById('ai-canvas-3d');
+            if(!canvas) return;
+
+            const rect = canvas.parentNode.getBoundingClientRect();
+            aiScene = new THREE.Scene();
+            aiCamera = new THREE.PerspectiveCamera(45, rect.width / 400, 1, 1000);
+            aiCamera.position.set(0, 15, 30);
+            aiCamera.lookAt(0, 0, 0);
+
+            aiRenderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                alpha: true,
+                antialias: true
+            });
+            aiRenderer.setSize(rect.width, 400);
+            aiRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+            aiScene.add(ambient);
+
+            const direct = new THREE.DirectionalLight(0xffffff, 0.8);
+            direct.position.set(10, 20, 10);
+            aiScene.add(direct);
+
+            aiScene.add(labGroup);
+
+            switchLabState('sort');
+            animateAILab();
+
+            window.addEventListener('resize', () => {
+                const newRect = canvas.parentNode.getBoundingClientRect();
+                aiCamera.aspect = newRect.width / 400;
+                aiCamera.updateProjectionMatrix();
+                aiRenderer.setSize(newRect.width, 400);
+            });
+        }
+
+        function clearLabGroup() {
+            while(labGroup.children.length > 0) {
+                const obj = labGroup.children[0];
+                labGroup.remove(obj);
+            }
+            sortingBars = [];
+            treeNodes = [];
+            treeLines = [];
+            scanMesh = null;
+            scanPlane = null;
+        }
+
+        function switchLabState(state) {
+            activeLabState = state;
+            clearLabGroup();
+
+            const statusText = document.getElementById('lab-status-text');
+            const labelText = document.getElementById('lab-state-label');
+
+            if (state === 'sort') {
+                if (labelText) labelText.textContent = "Trực quan hóa Sắp xếp (Sort)";
+                if (statusText) statusText.textContent = "Đang mô phỏng Bubble Sort...";
+                setupSortingLab();
+            } else if (state === 'tree') {
+                if (labelText) labelText.textContent = "Trực quan hóa Cấu trúc Cây (Binary Tree)";
+                if (statusText) statusText.textContent = "Đang duyệt cây BST (DFS/BFS)...";
+                setupTreeLab();
+            } else if (state === 'scan') {
+                if (labelText) labelText.textContent = "AI Code Review & Security Scanning";
+                if (statusText) statusText.textContent = "Đang quét bảo mật lỗ hổng...";
+                setupScanLab();
+            }
+            
+            gsap.from(aiCamera.position, {
+                x: 5,
+                y: 20,
+                z: 40,
+                duration: 1.2,
+                ease: "power2.out"
+            });
+        }
+
+        function setupSortingLab() {
+            const count = 10;
+            const barWidth = 1.2;
+            const spacing = 1.6;
+            const startX = -((count - 1) * spacing) / 2;
+            const heights = [5, 2, 8, 4, 11, 7, 3, 10, 6, 9];
+
+            for (let i = 0; i < count; i++) {
+                const h = heights[i];
+                const geom = new THREE.BoxGeometry(barWidth, h, barWidth);
+                const mat = new THREE.MeshPhongMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.85,
+                    shininess: 80
+                });
+                
+                const mesh = new THREE.Mesh(geom, mat);
+                mesh.position.set(startX + i * spacing, h / 2 - 5, 0);
+                
+                labGroup.add(mesh);
+                sortingBars.push({
+                    mesh: mesh,
+                    height: h,
+                    index: i
+                });
+            }
+        }
+
+        let sortTimer = 0;
+        let currentSortIdx = 0;
+        let isSorted = false;
+
+        function runSortingStep() {
+            if (isSorted) {
+                const heights = [5, 2, 8, 4, 11, 7, 3, 10, 6, 9];
+                sortingBars.forEach((bar, i) => {
+                    bar.height = heights[i];
+                    gsap.to(bar.mesh.scale, { y: 1, duration: 0.5 });
+                    gsap.to(bar.mesh.position, { y: heights[i]/2 - 5, duration: 0.5 });
+                    bar.mesh.material.color.setHex(0xffffff);
+                });
+                isSorted = false;
+                currentSortIdx = 0;
+                return;
+            }
+
+            const count = sortingBars.length;
+            if (currentSortIdx >= count - 1) {
+                let sorted = true;
+                for (let i = 0; i < count - 1; i++) {
+                    if (sortingBars[i].height > sortingBars[i+1].height) {
+                        sorted = false;
+                        break;
+                    }
+                }
+                if (sorted) {
+                    isSorted = true;
+                    sortingBars.forEach(bar => bar.mesh.material.color.setHex(0x27C93F));
+                    return;
+                }
+                currentSortIdx = 0;
+            }
+
+            const i = currentSortIdx;
+            const barA = sortingBars[i];
+            const barB = sortingBars[i+1];
+
+            sortingBars.forEach(b => b.mesh.material.color.setHex(0xffffff));
+            barA.mesh.material.color.setHex(0xFF6B2B);
+            barB.mesh.material.color.setHex(0xFFB347);
+
+            if (barA.height > barB.height) {
+                const tempH = barA.height;
+                barA.height = barB.height;
+                barB.height = tempH;
+
+                const posAX = barA.mesh.position.x;
+                const posBX = barB.mesh.position.x;
+
+                gsap.to(barA.mesh.position, { x: posBX, y: barA.height/2 - 5, duration: 0.4 });
+                gsap.to(barB.mesh.position, { x: posAX, y: barB.height/2 - 5, duration: 0.4 });
+
+                sortingBars[i] = barB;
+                sortingBars[i+1] = barA;
+            }
+
+            currentSortIdx++;
+        }
+
+        function setupTreeLab() {
+            const nodes = [
+                { id: 0, x: 0, y: 5, z: 0, label: 'Root' },
+                { id: 1, x: -6, y: 1, z: 0, label: 'Left' },
+                { id: 2, x: 6, y: 1, z: 0, label: 'Right' },
+                { id: 3, x: -9, y: -3, z: 0, label: 'L-L' },
+                { id: 4, x: -3, y: -3, z: 0, label: 'L-R' },
+                { id: 5, x: 3, y: -3, z: 0, label: 'R-L' },
+                { id: 6, x: 9, y: -3, z: 0, label: 'R-R' }
+            ];
+
+            const nodeGeom = new THREE.SphereGeometry(1.2, 32, 32);
+            
+            nodes.forEach(n => {
+                const nodeMat = new THREE.MeshPhongMaterial({
+                    color: 0x0084FF,
+                    emissive: 0x002b5c,
+                    shininess: 100
+                });
+                const mesh = new THREE.Mesh(nodeGeom, nodeMat);
+                mesh.position.set(n.x, n.y, n.z);
+                labGroup.add(mesh);
+                treeNodes.push({
+                    mesh: mesh,
+                    info: n
+                });
+            });
+
+            const lineMat = new THREE.LineBasicMaterial({
+                color: 0x5C6370,
+                linewidth: 2
+            });
+
+            const links = [
+                [0, 1], [0, 2],
+                [1, 3], [1, 4],
+                [2, 5], [2, 6]
+            ];
+
+            links.forEach(link => {
+                const p1 = nodes[link[0]];
+                const p2 = nodes[link[1]];
+
+                const points = [
+                    new THREE.Vector3(p1.x, p1.y, p1.z),
+                    new THREE.Vector3(p2.x, p2.y, p2.z)
+                ];
+
+                const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(lineGeom, lineMat);
+                labGroup.add(line);
+                treeLines.push(line);
+            });
+        }
+
+        function animateTreeLab(elapsed) {
+            treeNodes.forEach(node => {
+                const depth = 5 - node.info.y;
+                const pulse = Math.sin(elapsed * 3 - depth * 0.8) * 0.5 + 0.5;
+                node.mesh.material.color.setHSL(0.55 + pulse * 0.1, 1, 0.5);
+                node.mesh.material.emissive.setHex(pulse > 0.7 ? 0x0084FF : 0x002b5c);
+            });
+        }
+
+        function setupScanLab() {
+            const geom = new THREE.OctahedronGeometry(6, 1);
+            const mat = new THREE.MeshPhongMaterial({
+                color: 0xFF6B2B,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.4,
+                shininess: 90
+            });
+            scanMesh = new THREE.Mesh(geom, mat);
+            scanMesh.position.set(0, 0, 0);
+            labGroup.add(scanMesh);
+
+            const innerGeom = new THREE.IcosahedronGeometry(2.5, 1);
+            const innerMat = new THREE.MeshBasicMaterial({
+                color: 0xFFB347,
+                transparent: true,
+                opacity: 0.8
+            });
+            const innerMesh = new THREE.Mesh(innerGeom, innerMat);
+            scanMesh.add(innerMesh);
+
+            const planeGeom = new THREE.BoxGeometry(16, 0.1, 16);
+            const planeMat = new THREE.MeshBasicMaterial({
+                color: 0xFF6B2B,
+                transparent: true,
+                opacity: 0.3,
+                blending: THREE.AdditiveBlending
+            });
+            scanPlane = new THREE.Mesh(planeGeom, planeMat);
+            scanPlane.position.set(0, 0, 0);
+            labGroup.add(scanPlane);
+        }
+
+        function animateScanLab(elapsed) {
+            if (scanMesh) {
+                scanMesh.rotation.y = elapsed * 0.5;
+                scanMesh.rotation.x = elapsed * 0.3;
+            }
+            if (scanPlane) {
+                scanPlane.position.y = Math.sin(elapsed * 2) * 5;
+                const hue = (Math.sin(elapsed) * 0.05 + 0.05);
+                scanPlane.material.color.setHSL(hue, 1, 0.5);
+            }
+        }
+
+        function animateAILab() {
+            requestAnimationFrame(animateAILab);
+            if (!aiRenderer) return;
+
+            const elapsed = labClock.getElapsedTime();
+
+            if (activeLabState === 'sort') {
+                sortTimer++;
+                if (sortTimer > 50) {
+                    runSortingStep();
+                    sortTimer = 0;
+                }
+            } else if (activeLabState === 'tree') {
+                animateTreeLab(elapsed);
+            } else if (activeLabState === 'scan') {
+                animateScanLab(elapsed);
+            }
+
+            labGroup.rotation.y = Math.sin(elapsed * 0.1) * 0.3;
+
+            aiRenderer.render(aiScene, aiCamera);
+        }
+
+        function triggerAICopilot(concept) {
+            const chips = document.querySelectorAll('.prompt-chip');
+            chips.forEach(chip => {
+                if(chip.getAttribute('onclick').includes(concept)) {
+                    chip.classList.add('active');
+                } else {
+                    chip.classList.remove('active');
+                }
+            });
+
+            const chatBody = document.getElementById('ai-chat-body');
+            
+            let userText = "";
+            let botText = "";
+            let codePre = "";
+            
+            if (concept === 'sort') {
+                userText = "⚡ Trực quan hóa Thuật toán Sắp xếp (Sort)";
+                botText = "Đang chạy mô phỏng Bubble Sort trên mô hình 3D. Bubble Sort hoạt động bằng cách liên tục hoán đổi các phần tử lân cận nếu chúng sai thứ tự. Độ phức tạp thời gian trung bình là O(N²).";
+                codePre = `void bubbleSort(int arr[], int n) {\n    for (int i = 0; i < n-1; i++)      \n        for (int j = 0; j < n-i-1; j++)\n            if (arr[j] > arr[j+1])\n                swap(&arr[j], &arr[j+1]);\n}`;
+            } else if (concept === 'tree') {
+                userText = "🌳 Trực quan hóa Cấu trúc Cây (Binary Tree)";
+                botText = "Đang kết xuất Cây Tìm kiếm Nhị phân (BST) trong không gian 3D. Mỗi node bên trái có giá trị nhỏ hơn node cha, và node bên phải lớn hơn node cha. AI đang quét duyệt cây theo chiều sâu (DFS).";
+                codePre = `struct Node {\n    int data;\n    Node* left;\n    Node* right;\n};\nvoid inorder(Node* root) {\n    if (!root) return;\n    inorder(root->left);\n    cout << root->data << " ";\n    inorder(root->right);\n}`;
+            } else if (concept === 'scan') {
+                userText = "🔒 AI Code Review & Security Scanning";
+                botText = "AI Agent đang quét cấu trúc mã nguồn để phát hiện các lỗ hổng bảo mật. Cảm biến laser đang phân tích dữ liệu, kiểm tra các lỗ hổng tràn bộ đệm (Buffer Overflow) hoặc SQL Injection.";
+                codePre = `// AI Security Review Warning:\n// Đã phát hiện truy vấn SQL thô không an toàn:\n// query = "SELECT * FROM users WHERE id = '" + input + "'";\n// KHUYẾN NGHỊ: Sử dụng Parameterized Queries!`;
+            }
+
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-message user';
+            userMsg.innerHTML = `
+                <div class="message-sender">Học viên</div>
+                <div class="message-content">${userText}</div>
+            `;
+            chatBody.appendChild(userMsg);
+
+            const botMsg = document.createElement('div');
+            botMsg.className = 'chat-message bot';
+            botMsg.innerHTML = `
+                <div class="message-sender"><i class="fa fa-robot"></i> AI Assistant</div>
+                <div class="message-content">
+                    <span class="typing-text"></span>
+                    <pre class="code-snippet-pre"><code>${codePre}</code></pre>
+                </div>
+            `;
+            chatBody.appendChild(botMsg);
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            const textSpan = botMsg.querySelector('.typing-text');
+            let txtIdx = 0;
+            function typeChar() {
+                if (txtIdx < botText.length) {
+                    textSpan.textContent += botText.charAt(txtIdx);
+                    txtIdx++;
+                    setTimeout(typeChar, 10);
+                }
+            }
+            typeChar();
+
+            switchLabState(concept);
+        }
+
+        const sendBtn = document.getElementById('ai-send-btn');
+        const inputField = document.getElementById('ai-chat-input');
+
+        if(sendBtn && inputField) {
+            const handleSend = () => {
+                const text = inputField.value.trim();
+                if(!text) return;
+                inputField.value = "";
+
+                const chatBody = document.getElementById('ai-chat-body');
+                const userMsg = document.createElement('div');
+                userMsg.className = 'chat-message user';
+                userMsg.innerHTML = `
+                    <div class="message-sender">Học viên</div>
+                    <div class="message-content">${text}</div>
+                `;
+                chatBody.appendChild(userMsg);
+
+                const botMsg = document.createElement('div');
+                const botText = `Tôi đã nhận được câu hỏi: "${text}". Hãy để tôi phân tích cú pháp và trực quan hóa luồng dữ liệu 3D tương ứng cho bạn.`;
+                
+                botMsg.className = 'chat-message bot';
+                botMsg.innerHTML = `
+                    <div class="message-sender"><i class="fa fa-robot"></i> AI Assistant</div>
+                    <div class="message-content">
+                        <span class="typing-text"></span>
+                    </div>
+                `;
+                chatBody.appendChild(botMsg);
+                chatBody.scrollTop = chatBody.scrollHeight;
+
+                let txtIdx = 0;
+                const textSpan = botMsg.querySelector('.typing-text');
+                function typeChar() {
+                    if (txtIdx < botText.length) {
+                        textSpan.textContent += botText.charAt(txtIdx);
+                        txtIdx++;
+                        setTimeout(typeChar, 10);
+                    }
+                }
+                typeChar();
+
+                switchLabState('scan');
+            };
+
+            sendBtn.addEventListener('click', handleSend);
+            inputField.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') handleSend();
+            });
+        }
+
+        // === 3D IDE INTERACTION LOGIC ===
+        const ideCodeScreen = document.getElementById('ide-code-screen');
+        const codeTemplates = {
+            python: `
+<span class="code-line"><span class="code-kw">import</span> educode_ai <span class="code-kw">as</span> ai</span>
+<span class="code-line"><span class="code-com"># Tạo lộ trình học 3D cá nhân</span></span>
+<span class="code-line">learner = ai.Learner()</span>
+<span class="code-line">roadmap = ai.generate_path(learner)</span>
+<span class="code-line">ai.start_learning(roadmap)</span>
+<span class="code-line"><span class="code-fn">print</span>(<span class="code-str">"Ready to Code!"</span>)</span>
+            `,
+            js: `
+<span class="code-line"><span class="code-kw">import</span> { AIHelper } <span class="code-kw">from</span> <span class="code-str">'educode-ai'</span>;</span>
+<span class="code-line"><span class="code-com">// Khởi tạo lộ trình 3D động</span></span>
+<span class="code-line"><span class="code-kw">const</span> student = <span class="code-kw">new</span> <span class="code-fn">AIHelper.Student</span>();</span>
+<span class="code-line"><span class="code-kw">const</span> path = <span class="code-fn">AIHelper.createLearningPath</span>(student);</span>
+<span class="code-line">path.<span class="code-fn">renderInteractive3D</span>(<span class="code-str">'#lo-trinh'</span>);</span>
+<span class="code-line">console.<span class="code-fn">log</span>(<span class="code-str">'Class started!'</span>);</span>
+            `,
+            html: `
+<span class="code-line">&lt;<span class="code-kw">section</span> <span class="code-kw">class</span>=<span class="code-str">"code-sandbox"</span>&gt;</span>
+<span class="code-line">    &lt;<span class="code-kw">h1</span>&gt;Học Lập Trình 3D Thực Tế&lt;/<span class="code-kw">h1</span>&gt;</span>
+<span class="code-line">    &lt;<span class="code-kw">div</span> <span class="code-kw">id</span>=<span class="code-str">"ai-lab-3d"</span>&gt;&lt;/<span class="code-kw">div</span>&gt;</span>
+<span class="code-line">&lt;/<span class="code-kw">section</span>&gt;</span>
+<span class="code-line">&lt;<span class="code-kw">style</span>&gt;</span>
+<span class="code-line">    #ai-lab-3d { <span class="code-kw">filter</span>: drop-shadow(<span class="code-str">0 0 10px #00f0ff</span>); }</span>
+<span class="code-line">&lt;/<span class="code-kw">style</span>&gt;
+            `
+        };
+
+        window.switchIDETab = function(lang) {
+            const tabs = ['python', 'js', 'html'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) {
+                    if (t === lang) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            });
+
+            if (!ideCodeScreen) return;
+            ideCodeScreen.innerHTML = codeTemplates[lang].trim();
+        };
+
+        const ideRunBtn = document.getElementById('run-code-action');
+        const ideCompilerOverlay = document.getElementById('compiler-overlay');
+
+        if(ideRunBtn && ideCompilerOverlay) {
+            ideRunBtn.addEventListener('click', () => {
+                ideCompilerOverlay.classList.add('active');
+                triggerCompilerShockwave();
+
+                setTimeout(() => {
+                    ideCompilerOverlay.classList.remove('active');
+                    alert('🚀 Mã nguồn đã biên dịch thành công! Shockwave lan truyền qua mạng nơ-ron 3D.');
+                }, 1300);
+            });
+        }
+
+        // === 3D FLOATING BG SHAPES FOR COURSES SECTION ===
+        let coursesBgScene, coursesBgCamera, coursesBgRenderer;
+        let floatingMeshes = [];
+        let coursesClock = new THREE.Clock();
+
+        function initCoursesBg() {
+            const canvas = document.getElementById('courses-bg-canvas');
+            if (!canvas) return;
+
+            const rect = canvas.parentNode.getBoundingClientRect();
+            coursesBgScene = new THREE.Scene();
+            
+            coursesBgCamera = new THREE.PerspectiveCamera(50, rect.width / rect.height, 1, 1000);
+            coursesBgCamera.position.z = 60;
+
+            coursesBgRenderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                alpha: true,
+                antialias: true
+            });
+            coursesBgRenderer.setSize(rect.width, rect.height);
+            coursesBgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            coursesBgScene.add(ambient);
+
+            const light1 = new THREE.PointLight(0x00F0FF, 2.5, 120);
+            light1.position.set(-30, 20, 20);
+            coursesBgScene.add(light1);
+
+            const light2 = new THREE.PointLight(0xFF6B2B, 2.5, 120);
+            light2.position.set(30, -20, 20);
+            coursesBgScene.add(light2);
+
+            const geometries = [
+                new THREE.TorusKnotGeometry(6, 1.8, 100, 16),
+                new THREE.IcosahedronGeometry(7, 1),
+                new THREE.OctahedronGeometry(6, 1),
+                new THREE.TorusGeometry(6, 2, 16, 100),
+                new THREE.TetrahedronGeometry(6, 1)
+            ];
+
+            const colors = [0x00F0FF, 0xFF6B2B, 0xBD00FF, 0x00F0FF, 0xFFB347];
+
+            for (let i = 0; i < geometries.length; i++) {
+                const mat = new THREE.MeshPhongMaterial({
+                    color: colors[i],
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.35,
+                    shininess: 100
+                });
+
+                const mesh = new THREE.Mesh(geometries[i], mat);
+                
+                const x = (Math.random() - 0.5) * 80;
+                const y = (Math.random() - 0.5) * 40;
+                const z = -20 - Math.random() * 20;
+
+                mesh.position.set(x, y, z);
+                
+                mesh.userData = {
+                    rotX: Math.random() * 0.01 + 0.005,
+                    rotY: Math.random() * 0.01 + 0.005,
+                    floatSpeed: Math.random() * 0.8 + 0.4,
+                    floatOffset: Math.random() * Math.PI * 2,
+                    originY: y
+                };
+
+                coursesBgScene.add(mesh);
+                floatingMeshes.push(mesh);
+            }
+
+            animateCoursesBg();
+
+            window.addEventListener('resize', () => {
+                const parent = canvas.parentNode;
+                if(!parent) return;
+                const newRect = parent.getBoundingClientRect();
+                coursesBgCamera.aspect = newRect.width / newRect.height;
+                coursesBgCamera.updateProjectionMatrix();
+                coursesBgRenderer.setSize(newRect.width, newRect.height);
+            });
+        }
+
+        let coursesBgMouseX = 0, coursesBgMouseY = 0;
+        let coursesBgTargetX = 0, coursesBgTargetY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            coursesBgMouseX = (e.clientX / window.innerWidth) - 0.5;
+            coursesBgMouseY = (e.clientY / window.innerHeight) - 0.5;
+        });
+
+        function animateCoursesBg() {
+            requestAnimationFrame(animateCoursesBg);
+            if (!coursesBgRenderer) return;
+
+            const elapsedTime = coursesClock.getElapsedTime();
+
+            coursesBgTargetX += (coursesBgMouseX - coursesBgTargetX) * 0.05;
+            coursesBgTargetY += (coursesBgMouseY - coursesBgTargetY) * 0.05;
+
+            coursesBgCamera.position.x = coursesBgTargetX * 20;
+            coursesBgCamera.position.y = -coursesBgTargetY * 20;
+            coursesBgCamera.lookAt(0, 0, 0);
+
+            floatingMeshes.forEach(mesh => {
+                mesh.rotation.x += mesh.userData.rotX;
+                mesh.rotation.y += mesh.userData.rotY;
+                mesh.position.y = mesh.userData.originY + Math.sin(elapsedTime * mesh.userData.floatSpeed + mesh.userData.floatOffset) * 4;
+            });
+
+            coursesBgRenderer.render(coursesBgScene, coursesBgCamera);
+        }
+
+        // Initialize AI and Courses backgrounds
+        initAILab();
+        initCoursesBg();
+    </script>
+</body>
+</html>

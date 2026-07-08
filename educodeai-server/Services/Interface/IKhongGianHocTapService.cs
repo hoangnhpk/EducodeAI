@@ -5,5 +5,6 @@ namespace educodeai_server.Services.Interface
     public interface IKhongGianHocTapService
     {
         Task<List<KhongGianHocTapItemDTO>> LayDanhSachTheoNguoiDungAsync(int maNguoiDung);
+        Task<SkillTreeResponseDTO> LaySkillTreeAsync(int maNguoiDung, int? maLoTrinh);
     }
 }
