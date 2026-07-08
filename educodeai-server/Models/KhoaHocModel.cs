@@ -27,6 +27,12 @@ namespace educodeai_server.Models
 
         public double DiemDanhGiaTB { get; set; } = 0;
 
+        // ====== CỘT MỚI THÊM CHO CHI TIẾT KHÓA HỌC ======
+        [StringLength(500)]
+        public string? VideoGioiThieu { get; set; }
+        
+        public string? BanSeHocDuocGi { get; set; } // JSONB trong DB, map string trong C#
+
         // ====== CỘT MỚI ======
 
         [StringLength(100)]

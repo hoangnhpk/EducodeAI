@@ -22,79 +22,6 @@ namespace educodeai_server.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("educodeai_server.Models.AIBalanceHoldModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("AmountUsd")
-                        .HasColumnType("decimal(10,4)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("MaBaiHoc")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaGiangVien")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("SettledAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AIBalanceHolds");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.ApiKeyAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("AdminId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("AfterJson")
-                        .HasColumnType("text");
-
-                    b.Property<string>("BeforeJson")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("KeyApiId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("MetadataJson")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ApiKeyAuditLogs");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.BaiHocModel", b =>
                 {
                     b.Property<int>("MaBaiHoc")
@@ -103,13 +30,7 @@ namespace educodeai_server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaBaiHoc"));
 
-                    b.Property<bool>("AiFeaturesEnabled")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("CoQuiz")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasSubtitle")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LinkVideo")
@@ -127,13 +48,6 @@ namespace educodeai_server.Migrations
                     b.Property<string>("NoiDung")
                         .HasColumnType("text");
 
-                    b.Property<string>("SubtitleSource")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("SubtitleUrl")
-                        .HasColumnType("text");
-
                     b.Property<int?>("ThoiLuong")
                         .HasColumnType("integer");
 
@@ -145,27 +59,6 @@ namespace educodeai_server.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int?>("VideoDurationS")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("VideoPublicId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<int?>("VideoSizeMb")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("VideoSource")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("youtube");
-
-                    b.Property<string>("VideoStatus")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
                     b.HasKey("MaBaiHoc");
 
                     b.HasIndex("MaChuong");
@@ -176,2207 +69,1766 @@ namespace educodeai_server.Migrations
                         new
                         {
                             MaBaiHoc = 1,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/Da1tpV9TMU0?si=DZQWIaQdB5haoEIy",
                             LoaiBaiHoc = "Video",
                             MaChuong = 1,
                             NoiDung = "<p>Khóa học Lập trình C++ toàn diện từ cơ bản đến nâng cao</p>",
                             ThoiLuong = 600,
                             ThuTu = 1,
-                            TieuDe = "Giới thiệu khóa học",
-                            VideoSource = "youtube"
+                            TieuDe = "Giới thiệu khóa học"
                         },
                         new
                         {
                             MaBaiHoc = 2,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/9_uoKY0AwqE?si=Zdl_y8quu8_H8eC7",
                             LoaiBaiHoc = "Video",
                             MaChuong = 1,
                             NoiDung = "<p>Hướng dẫn cài đặt môi trường Dev-C++ để lập trình C++</p>",
                             ThoiLuong = 900,
                             ThuTu = 2,
-                            TieuDe = "Cài đặt Dev-C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt Dev-C++"
                         },
                         new
                         {
                             MaBaiHoc = 3,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/vFhKEYRBmVY?si=QWnbQ2d8wljLojBr",
                             LoaiBaiHoc = "Video",
                             MaChuong = 1,
                             NoiDung = "<p>Hướng dẫn chi tiết cách sử dụng Dev-C++ cho người mới bắt đầu</p>",
                             ThoiLuong = 1200,
                             ThuTu = 3,
-                            TieuDe = "Hướng dẫn sử dụng Dev-C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Hướng dẫn sử dụng Dev-C++"
                         },
                         new
                         {
                             MaBaiHoc = 4,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/Z5O6pxQm6II?si=9dAM9MTkz7h34Uqh",
                             LoaiBaiHoc = "Video",
                             MaChuong = 2,
                             NoiDung = "<p>Học về biến, cách khai báo và nhập xuất dữ liệu trong C++</p>",
                             ThoiLuong = 1800,
                             ThuTu = 1,
-                            TieuDe = "Biến và nhập xuất dữ liệu",
-                            VideoSource = "youtube"
+                            TieuDe = "Biến và nhập xuất dữ liệu"
                         },
                         new
                         {
                             MaBaiHoc = 5,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/qpIautEyv2s?si=9ZjnVDDARUaHjH3j",
                             LoaiBaiHoc = "Video",
                             MaChuong = 2,
                             NoiDung = "<p>Các kiểu dữ liệu cơ bản trong C++: int, float, double, char, bool</p>",
                             ThoiLuong = 1500,
                             ThuTu = 2,
-                            TieuDe = "Kiểu dữ liệu thường gặp",
-                            VideoSource = "youtube"
+                            TieuDe = "Kiểu dữ liệu thường gặp"
                         },
                         new
                         {
                             MaBaiHoc = 6,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/79mzaFPLEz8?si=pF0GCz_JwF_cyTnL",
                             LoaiBaiHoc = "Video",
                             MaChuong = 2,
                             NoiDung = "<p>Phân biệt và sử dụng biến cục bộ và biến toàn cục</p>",
                             ThoiLuong = 1200,
                             ThuTu = 3,
-                            TieuDe = "Biến cục bộ và biến toàn cục",
-                            VideoSource = "youtube"
+                            TieuDe = "Biến cục bộ và biến toàn cục"
                         },
                         new
                         {
                             MaBaiHoc = 7,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/MTbZLshZg0U?si=4-nsRX2u-cFLI2Kg",
                             LoaiBaiHoc = "Video",
                             MaChuong = 2,
                             NoiDung = "<p>Hướng dẫn ép kiểu dữ liệu và sử dụng bảng mã ASCII</p>",
                             ThoiLuong = 1500,
                             ThuTu = 4,
-                            TieuDe = "Ép kiểu dữ liệu và bảng mã ASCII trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Ép kiểu dữ liệu và bảng mã ASCII trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 8,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/1ppDCzoB03k?si=2VLBI7_Q43CtcijA",
                             LoaiBaiHoc = "Video",
                             MaChuong = 3,
                             NoiDung = "<p>Cấu trúc điều kiện if, else if, else trong C++</p>",
                             ThoiLuong = 1800,
                             ThuTu = 1,
-                            TieuDe = "Cấu trúc if else",
-                            VideoSource = "youtube"
+                            TieuDe = "Cấu trúc if else"
                         },
                         new
                         {
                             MaBaiHoc = 9,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/W3k6lrN0qG4?si=ZAqIKkrzKXmb0Ex5",
                             LoaiBaiHoc = "Video",
                             MaChuong = 3,
                             NoiDung = "<p>Cấu trúc rẽ nhành switch case trong C++</p>",
                             ThoiLuong = 1500,
                             ThuTu = 2,
-                            TieuDe = "Cấu trúc switch case",
-                            VideoSource = "youtube"
+                            TieuDe = "Cấu trúc switch case"
                         },
                         new
                         {
                             MaBaiHoc = 10,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/7uHfTAj3Vao?si=AdEMERWT9I7Rp7bp",
                             LoaiBaiHoc = "Video",
                             MaChuong = 3,
                             NoiDung = "<p>Các loại vòng lặp: for, while, do-while trong C++</p>",
                             ThoiLuong = 2400,
                             ThuTu = 3,
-                            TieuDe = "Vòng lặp trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Vòng lặp trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 11,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/YKeKmpcMcQY?si=eqBwPvJWKayWWPgI",
                             LoaiBaiHoc = "Video",
                             MaChuong = 3,
                             NoiDung = "<p>Sử dụng toán tử 3 ngôi (ternary operator) trong C++</p>",
                             ThoiLuong = 900,
                             ThuTu = 4,
-                            TieuDe = "Toán tử 3 ngôi trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Toán tử 3 ngôi trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 12,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/Oe27IJSOUUM?si=KWUdCh-o9PWAYKYL",
                             LoaiBaiHoc = "VanBan",
                             MaChuong = 3,
                             NoiDung = "<p>Bài tập thực hành về vòng lặp trong C++</p>",
                             ThoiLuong = 1800,
                             ThuTu = 5,
-                            TieuDe = "Bài tập về vòng lặp trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Bài tập về vòng lặp trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 13,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/r2FMycOy_2Y?si=NHI3xlLdZch1tV4P",
                             LoaiBaiHoc = "Video",
                             MaChuong = 3,
                             NoiDung = "<p>Các câu lệnh điều khiển vòng lặp: break, continue, goto</p>",
                             ThoiLuong = 1200,
                             ThuTu = 6,
-                            TieuDe = "Câu lệnh break, continue, goto",
-                            VideoSource = "youtube"
+                            TieuDe = "Câu lệnh break, continue, goto"
                         },
                         new
                         {
                             MaBaiHoc = 14,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/89W1oyXfqgo?si=c6LV4UohjZpp5t4l",
                             LoaiBaiHoc = "Video",
                             MaChuong = 4,
                             NoiDung = "<p>Khái niệm và cách sử dụng mảng một chiều trong C++</p>",
                             ThoiLuong = 2100,
                             ThuTu = 1,
-                            TieuDe = "Mảng một chiều",
-                            VideoSource = "youtube"
+                            TieuDe = "Mảng một chiều"
                         },
                         new
                         {
                             MaBaiHoc = 15,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/xGpB07JzrQ8?si=shAT_gnDvzcx-uwZ",
                             LoaiBaiHoc = "Video",
                             MaChuong = 4,
                             NoiDung = "<p>Khái niệm và cách sử dụng mảng 2 chiều (ma trận) trong C++</p>",
                             ThoiLuong = 2400,
                             ThuTu = 2,
-                            TieuDe = "Mảng 2 chiều",
-                            VideoSource = "youtube"
+                            TieuDe = "Mảng 2 chiều"
                         },
                         new
                         {
                             MaBaiHoc = 16,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/bt4m6VlYQO4?si=rwn3oCMr67ehu9wC",
                             LoaiBaiHoc = "Video",
                             MaChuong = 4,
                             NoiDung = "<p>Giới thiệu và cài đặt thuật toán sắp xếp bubble sort</p>",
                             ThoiLuong = 1800,
                             ThuTu = 3,
-                            TieuDe = "Thuật toán sắp xếp bubble sort",
-                            VideoSource = "youtube"
+                            TieuDe = "Thuật toán sắp xếp bubble sort"
                         },
                         new
                         {
                             MaBaiHoc = 17,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/Q06peb_sH6k?si=dU3_XU_U2oNwRv50",
                             LoaiBaiHoc = "Video",
                             MaChuong = 5,
                             NoiDung = "<p>Làm việc với chuỗi (string) trong C++</p>",
                             ThoiLuong = 2100,
                             ThuTu = 1,
-                            TieuDe = "String C++",
-                            VideoSource = "youtube"
+                            TieuDe = "String C++"
                         },
                         new
                         {
                             MaBaiHoc = 18,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/duJoNkUE-MA?si=GZssMFpMndfnanPD",
                             LoaiBaiHoc = "Video",
                             MaChuong = 5,
                             NoiDung = "<p>Các phương thức xử lý chuỗi thường dùng trong C++</p>",
                             ThoiLuong = 2400,
                             ThuTu = 2,
-                            TieuDe = "Các phương thức làm việc với String trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Các phương thức làm việc với String trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 19,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ay8PEiiP5tU?si=8OCanlJOMHEIM8lW",
                             LoaiBaiHoc = "Video",
                             MaChuong = 6,
                             NoiDung = "<p>Khái niệm về hàm và lợi ích của việc sử dụng hàm</p>",
                             ThoiLuong = 1800,
                             ThuTu = 1,
-                            TieuDe = "Hàm là gì?",
-                            VideoSource = "youtube"
+                            TieuDe = "Hàm là gì?"
                         },
                         new
                         {
                             MaBaiHoc = 20,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ATAoEb-ZXKI?si=XRjVv3m-wX8H60gk",
                             LoaiBaiHoc = "Video",
                             MaChuong = 6,
                             NoiDung = "<p>Phân biệt tham số và đối số trong hàm C++</p>",
                             ThoiLuong = 1500,
                             ThuTu = 2,
-                            TieuDe = "Tham số và đối số trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Tham số và đối số trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 21,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/NU0joSR66Ag?si=NUrZRiROo23txowt",
                             LoaiBaiHoc = "Video",
                             MaChuong = 6,
                             NoiDung = "<p>Cách sử dụng đối số mặc định trong hàm C++</p>",
                             ThoiLuong = 1200,
                             ThuTu = 3,
-                            TieuDe = "Đối số mặc định trong hàm",
-                            VideoSource = "youtube"
+                            TieuDe = "Đối số mặc định trong hàm"
                         },
                         new
                         {
                             MaBaiHoc = 22,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/OQfEPrsWYlY?si=yZwSGw-hbMB-fzC2",
                             LoaiBaiHoc = "Video",
                             MaChuong = 6,
                             NoiDung = "<p>Phân biệt truyền tham trị và tham chiếu trong C++</p>",
                             ThoiLuong = 2100,
                             ThuTu = 4,
-                            TieuDe = "Tham trị và tham chiếu trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Tham trị và tham chiếu trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 23,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/uBfsM5RJWSI?si=kR-e9npBkrRgpdqp",
                             LoaiBaiHoc = "Video",
                             MaChuong = 7,
                             NoiDung = "<p>Khái niệm con trỏ và cách sử dụng con trỏ trong C++</p>",
                             ThoiLuong = 2700,
                             ThuTu = 1,
-                            TieuDe = "Con trỏ trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Con trỏ trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 24,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/OIU55ogb26M?si=m6eBIwKQ3wXiGVEw",
                             LoaiBaiHoc = "Video",
                             MaChuong = 7,
                             NoiDung = "<p>Cấp phát và giải phóng bộ nhớ động trong C++</p>",
                             ThoiLuong = 1800,
                             ThuTu = 2,
-                            TieuDe = "Cấp phát động",
-                            VideoSource = "youtube"
+                            TieuDe = "Cấp phát động"
                         },
                         new
                         {
                             MaBaiHoc = 25,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/anbncsNUSSk?si=2Y0Ing7hqcLwmqte",
                             LoaiBaiHoc = "Video",
                             MaChuong = 7,
                             NoiDung = "<p>Cấp phát động cho mảng trong C++</p>",
                             ThoiLuong = 1500,
                             ThuTu = 3,
-                            TieuDe = "Cấp phát mảng động",
-                            VideoSource = "youtube"
+                            TieuDe = "Cấp phát mảng động"
                         },
                         new
                         {
                             MaBaiHoc = 26,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ZbVO_4jH60k?si=148T-Elsog_pCFbe",
                             LoaiBaiHoc = "Video",
                             MaChuong = 8,
                             NoiDung = "<p>Khái niệm về struct (cấu trúc) trong C++</p>",
                             ThoiLuong = 1800,
                             ThuTu = 1,
-                            TieuDe = "Struct là gì?",
-                            VideoSource = "youtube"
+                            TieuDe = "Struct là gì?"
                         },
                         new
                         {
                             MaBaiHoc = 27,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/T39JnItSmJU?si=RKXNgsgM9Ml8lvig",
                             LoaiBaiHoc = "Video",
                             MaChuong = 8,
                             NoiDung = "<p>Kết hợp con trỏ và struct trong C++</p>",
                             ThoiLuong = 1500,
                             ThuTu = 2,
-                            TieuDe = "Con trỏ và struct trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Con trỏ và struct trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 28,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/tNlCid6mQ3E?si=mf4tD034MUK6pyE3",
                             LoaiBaiHoc = "Video",
                             MaChuong = 8,
                             NoiDung = "<p>Kỹ thuật nạp chồng toán tử (operator overloading) trong C++</p>",
                             ThoiLuong = 2400,
                             ThuTu = 3,
-                            TieuDe = "Nạp chồng toán tử trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Nạp chồng toán tử trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 29,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/LekUWlASyMY?si=R2n6_pvdZZcSBYLg",
                             LoaiBaiHoc = "Video",
                             MaChuong = 9,
                             NoiDung = "<p>Đọc và ghi file text trong C++</p>",
                             ThoiLuong = 2100,
                             ThuTu = 1,
-                            TieuDe = "Làm việc với file text trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Làm việc với file text trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 30,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/_wdQU8GrJcY?si=0VjONumO-H39XFR5",
                             LoaiBaiHoc = "Video",
                             MaChuong = 9,
                             NoiDung = "<p>Các chế độ mở file và xử lý file trong C++</p>",
                             ThoiLuong = 1800,
                             ThuTu = 2,
-                            TieuDe = "Các chế độ làm việc với file trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Các chế độ làm việc với file trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 31,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/jwvmfp3Kp8U?si=dgOSFcQnsYOv7eD1",
                             LoaiBaiHoc = "Video",
                             MaChuong = 10,
                             NoiDung = "<p>Khái niệm class và object trong lập trình hướng đối tượng</p>",
                             ThoiLuong = 2400,
                             ThuTu = 1,
-                            TieuDe = "Class & object",
-                            VideoSource = "youtube"
+                            TieuDe = "Class & object"
                         },
                         new
                         {
                             MaBaiHoc = 32,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ab2TALCZruo?si=9RfAUdhirOwyzFEV",
                             LoaiBaiHoc = "Video",
                             MaChuong = 10,
                             NoiDung = "<p>Nguyên lý đóng gói (encapsulation) trong lập trình hướng đối tượng</p>",
                             ThoiLuong = 1800,
                             ThuTu = 2,
-                            TieuDe = "Tính đóng gói trong C++",
-                            VideoSource = "youtube"
+                            TieuDe = "Tính đóng gói trong C++"
                         },
                         new
                         {
                             MaBaiHoc = 33,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/zoELAirXMJY?si=ilbFjG9jF8MHnoen",
                             LoaiBaiHoc = "Video",
                             MaChuong = 11,
                             NoiDung = "<p>Giới thiệu về mô hình Client-Server, cách thức hoạt động và ứng dụng trong thực tế</p>",
                             ThoiLuong = 900,
                             ThuTu = 1,
-                            TieuDe = "Mô hình Client - Server là gì?",
-                            VideoSource = "youtube"
+                            TieuDe = "Mô hình Client - Server là gì?"
                         },
                         new
                         {
                             MaBaiHoc = 34,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/M62l1xA5Eu8?si=rv1NF3Pcsk4PfNw3",
                             LoaiBaiHoc = "Video",
                             MaChuong = 11,
                             NoiDung = "<p>Tìm hiểu về domain, cách đăng ký domain và tầm quan trọng của domain trong công nghệ thông tin</p>",
                             ThoiLuong = 720,
                             ThuTu = 2,
-                            TieuDe = "Domain là gì?",
-                            VideoSource = "youtube"
+                            TieuDe = "Domain là gì?"
                         },
                         new
                         {
                             MaBaiHoc = 35,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/CyZ_O7v62h4?si=yXL1NUelDTjI1581",
                             LoaiBaiHoc = "Video",
                             MaChuong = 12,
                             NoiDung = "<p>Những tố chất cần có để thành công trong ngành IT và các kỹ năng cần rèn luyện</p>",
                             ThoiLuong = 1200,
                             ThuTu = 1,
-                            TieuDe = "Làm IT cần tố chất gì? | Kĩ năng cần rèn luyện?",
-                            VideoSource = "youtube"
+                            TieuDe = "Làm IT cần tố chất gì? | Kĩ năng cần rèn luyện?"
                         },
                         new
                         {
                             MaBaiHoc = 36,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/YH-E4Y3EaT4?si=2iCpcacbC2GultDZ",
                             LoaiBaiHoc = "Video",
                             MaChuong = 12,
                             NoiDung = "<p>Chia sẻ kinh nghiệm và những điều sinh viên IT cần chuẩn bị khi đi thực tập</p>",
                             ThoiLuong = 1080,
                             ThuTu = 2,
-                            TieuDe = "Sinh viên IT đi thực tập cần biết những gì?",
-                            VideoSource = "youtube"
+                            TieuDe = "Sinh viên IT đi thực tập cần biết những gì?"
                         },
                         new
                         {
                             MaBaiHoc = 37,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/DpvYHLUiZpc?si=WG6Va34BAY43v0R4",
                             LoaiBaiHoc = "Video",
                             MaChuong = 13,
                             NoiDung = "<p>Phương pháp học lập trình hiệu quả cho người mới bắt đầu</p>",
                             ThoiLuong = 960,
                             ThuTu = 1,
-                            TieuDe = "Phương pháp HỌC LẬP TRÌNH",
-                            VideoSource = "youtube"
+                            TieuDe = "Phương pháp HỌC LẬP TRÌNH"
                         },
                         new
                         {
                             MaBaiHoc = 38,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/f5hbmw7Ba7c?si=tVfTyKmWhw62Hb6E",
                             LoaiBaiHoc = "Video",
                             MaChuong = 13,
                             NoiDung = "<p>Lợi ích của việc học lập trình qua các nền tảng web và cách tận dụng tài nguyên online</p>",
                             ThoiLuong = 840,
                             ThuTu = 2,
-                            TieuDe = "Tại Sao Nên Học Lập Trình Tại Trang Web",
-                            VideoSource = "youtube"
+                            TieuDe = "Tại Sao Nên Học Lập Trình Tại Trang Web"
                         },
                         new
                         {
                             MaBaiHoc = 39,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/MGhw6XliFgo?si=0flovkzN1KtgCC7h",
                             LoaiBaiHoc = "Video",
                             MaChuong = 14,
                             NoiDung = "<p>Giới thiệu tổng quan về khóa học JavaScript nâng cao</p>",
                             ThoiLuong = 600,
                             ThuTu = 1,
-                            TieuDe = "Giới thiệu",
-                            VideoSource = "youtube"
+                            TieuDe = "Giới thiệu"
                         },
                         new
                         {
                             MaBaiHoc = 40,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/N-3GU1F1UBY?si=rQFaM72APj6FLpmT",
                             LoaiBaiHoc = "Video",
                             MaChuong = 14,
                             NoiDung = "<p>Tìm hiểu về Immediately Invoked Function Expression (IIFE) trong JavaScript</p>",
                             ThoiLuong = 900,
                             ThuTu = 2,
-                            TieuDe = "Khái niệm IIFE trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Khái niệm IIFE trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 41,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/5N8vz_VmszE?si=52bTwY4Ydo_7k3kl",
                             LoaiBaiHoc = "Video",
                             MaChuong = 14,
                             NoiDung = "<p>Hiểu về scope (phạm vi) trong JavaScript: global scope, function scope, block scope</p>",
                             ThoiLuong = 1200,
                             ThuTu = 3,
-                            TieuDe = "Scope trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Scope trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 42,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/xtQtGKL0NCI?si=xpOReqdkc_RKQfvS",
                             LoaiBaiHoc = "Video",
                             MaChuong = 14,
                             NoiDung = "<p>Khái niệm và ứng dụng của closure trong lập trình JavaScript</p>",
                             ThoiLuong = 1500,
                             ThuTu = 4,
-                            TieuDe = "Closure trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Closure trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 43,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/3MLhU1DrUxM?si=012HnDBIDVk3WvpX",
                             LoaiBaiHoc = "Video",
                             MaChuong = 15,
                             NoiDung = "<p>Tìm hiểu về hoisting: cách JavaScript xử lý khai báo biến và hàm</p>",
                             ThoiLuong = 1080,
                             ThuTu = 1,
-                            TieuDe = "Hoisting trong Javascript",
-                            VideoSource = "youtube"
+                            TieuDe = "Hoisting trong Javascript"
                         },
                         new
                         {
                             MaBaiHoc = 44,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/w1W-j4cSPF0?si=1ukan44t_iqSgzjC",
                             LoaiBaiHoc = "Video",
                             MaChuong = 15,
                             NoiDung = "<p>Sử dụng strict mode để viết code JavaScript an toàn và hiệu quả hơn</p>",
                             ThoiLuong = 960,
                             ThuTu = 2,
-                            TieuDe = "\"use strict\" hay strict mode trong Javascript",
-                            VideoSource = "youtube"
+                            TieuDe = "\"use strict\" hay strict mode trong Javascript"
                         },
                         new
                         {
                             MaBaiHoc = 45,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/n4tS1Q5-EzY?si=GjTfbWhSAxqgCIFa",
                             LoaiBaiHoc = "Video",
                             MaChuong = 15,
                             NoiDung = "<p>Phân biệt giữa primitive types và reference types trong JavaScript</p>",
                             ThoiLuong = 1320,
                             ThuTu = 3,
-                            TieuDe = "Primitive Types & Reference Types trong Javascript",
-                            VideoSource = "youtube"
+                            TieuDe = "Primitive Types & Reference Types trong Javascript"
                         },
                         new
                         {
                             MaBaiHoc = 46,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ii1Ra_zLDIo?si=ZMzRga4QranVogUM",
                             LoaiBaiHoc = "Video",
                             MaChuong = 16,
                             NoiDung = "<p>Hiểu về từ khóa 'this' và cách nó hoạt động trong các ngữ cảnh khác nhau</p>",
                             ThoiLuong = 1800,
                             ThuTu = 1,
-                            TieuDe = "This keyword trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "This keyword trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 47,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/F5z6YoR8of0?si=EJvumQ5VEV6VIZlN",
                             LoaiBaiHoc = "Video",
                             MaChuong = 16,
                             NoiDung = "<p>Phần 1: Tìm hiểu về phương thức bind() trong JavaScript</p>",
                             ThoiLuong = 1200,
                             ThuTu = 2,
-                            TieuDe = "Fn.bind() method trong JavaScript phần 1",
-                            VideoSource = "youtube"
+                            TieuDe = "Fn.bind() method trong JavaScript phần 1"
                         },
                         new
                         {
                             MaBaiHoc = 48,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/6j9b2_E34JM?si=rs38tq046byAA6i5",
                             LoaiBaiHoc = "Video",
                             MaChuong = 16,
                             NoiDung = "<p>Phần 2: Ứng dụng thực tế của phương thức bind()</p>",
                             ThoiLuong = 1080,
                             ThuTu = 3,
-                            TieuDe = "Fn.bind() method trong JavaScript phần 2",
-                            VideoSource = "youtube"
+                            TieuDe = "Fn.bind() method trong JavaScript phần 2"
                         },
                         new
                         {
                             MaBaiHoc = 49,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/QxLTSdTJDXY?si=KWT36QTPVuEXDM3K",
                             LoaiBaiHoc = "Video",
                             MaChuong = 16,
                             NoiDung = "<p>Sử dụng phương thức call() để gọi hàm với giá trị 'this' cụ thể</p>",
                             ThoiLuong = 900,
                             ThuTu = 4,
-                            TieuDe = "Fn.call() method trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Fn.call() method trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 50,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/a4FjX4Z-9Rs?si=wuCZqUzeuaLNACqP",
                             LoaiBaiHoc = "Video",
                             MaChuong = 16,
                             NoiDung = "<p>Sử dụng phương thức apply() để gọi hàm với mảng đối số</p>",
                             ThoiLuong = 960,
                             ThuTu = 5,
-                            TieuDe = "Fn.apply() method trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Fn.apply() method trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 51,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/GQ-toR8F7rc?si=gef3E7tTAtlP2Gij",
                             LoaiBaiHoc = "Video",
                             MaChuong = 17,
                             NoiDung = "<p>Thực hành với Redux - State management cho JavaScript applications</p>",
                             ThoiLuong = 2400,
                             ThuTu = 1,
-                            TieuDe = "Học Redux",
-                            VideoSource = "youtube"
+                            TieuDe = "Học Redux"
                         },
                         new
                         {
                             MaBaiHoc = 52,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/0SJE9dYdpps?si=pUECkazKOu2V5fJ2",
                             LoaiBaiHoc = "Video",
                             MaChuong = 18,
                             NoiDung = "<p>Khám phá khả năng và ứng dụng của JavaScript trong phát triển web</p>",
                             ThoiLuong = 900,
                             ThuTu = 1,
-                            TieuDe = "Javascript có thể làm được gì?",
-                            VideoSource = "youtube"
+                            TieuDe = "Javascript có thể làm được gì?"
                         },
                         new
                         {
                             MaBaiHoc = 53,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/-jV06pqjUUc?si=4TITZ8jtPnMdnwDK",
                             LoaiBaiHoc = "Video",
                             MaChuong = 18,
                             NoiDung = "<p>Những lời khuyên hữu ích trước khi bắt đầu học lập trình JavaScript</p>",
                             ThoiLuong = 600,
                             ThuTu = 2,
-                            TieuDe = "Lời khuyên trước khóa học",
-                            VideoSource = "youtube"
+                            TieuDe = "Lời khuyên trước khóa học"
                         },
                         new
                         {
                             MaBaiHoc = 54,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/efI98nT8Ffo?si=SGT7VQZOTwecjLFy",
                             LoaiBaiHoc = "Video",
                             MaChuong = 18,
                             NoiDung = "<p>Hướng dẫn cài đặt môi trường và công cụ cần thiết để học JavaScript</p>",
                             ThoiLuong = 1200,
                             ThuTu = 3,
-                            TieuDe = "Cài đặt môi trường, công cụ phù hợp để học JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt môi trường, công cụ phù hợp để học JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 55,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/W0vEUmyvthQ?si=uIquuLkihmo70A8f",
                             LoaiBaiHoc = "Video",
                             MaChuong = 19,
                             NoiDung = "<p>Hướng dẫn nhúng JavaScript vào file HTML</p>",
                             ThoiLuong = 1080,
                             ThuTu = 1,
-                            TieuDe = "Cách sử dụng JS trong file HTML",
-                            VideoSource = "youtube"
+                            TieuDe = "Cách sử dụng JS trong file HTML"
                         },
                         new
                         {
                             MaBaiHoc = 56,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/CLbx37dqYEI?si=LV2teP0FA98jrLzd",
                             LoaiBaiHoc = "Video",
                             MaChuong = 19,
                             NoiDung = "<p>Học cách khai báo và sử dụng biến trong JavaScript</p>",
                             ThoiLuong = 960,
                             ThuTu = 2,
-                            TieuDe = "Khai báo biến",
-                            VideoSource = "youtube"
+                            TieuDe = "Khai báo biến"
                         },
                         new
                         {
                             MaBaiHoc = 57,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/xRpXBEq6TOY?si=BVdMwpKjyKjkNCe5",
                             LoaiBaiHoc = "Video",
                             MaChuong = 19,
                             NoiDung = "<p>Cách sử dụng comments để ghi chú code trong JavaScript</p>",
                             ThoiLuong = 720,
                             ThuTu = 3,
-                            TieuDe = "Sử dụng Comments trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Sử dụng Comments trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 58,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/rSV33HGotgE?si=yswlNLENjUQH6-qJ",
                             LoaiBaiHoc = "Video",
                             MaChuong = 19,
                             NoiDung = "<p>Giới thiệu các hàm built-in thông dụng trong JavaScript</p>",
                             ThoiLuong = 1320,
                             ThuTu = 4,
-                            TieuDe = "Một số hàm built-in trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Một số hàm built-in trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 59,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/SZb-N7TfPlw?si=o5H_GPV-40w8JFkB",
                             LoaiBaiHoc = "Video",
                             MaChuong = 20,
                             NoiDung = "<p>Giới thiệu các loại toán tử cơ bản trong JavaScript</p>",
                             ThoiLuong = 900,
                             ThuTu = 1,
-                            TieuDe = "Làm quen với toán tử trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Làm quen với toán tử trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 60,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/m_h7-dgKnMU?si=5I_SRNZmvCV9JQIy",
                             LoaiBaiHoc = "Video",
                             MaChuong = 20,
                             NoiDung = "<p>Tìm hiểu các toán tử số học: cộng, trừ, nhân, chia, mod</p>",
                             ThoiLuong = 1080,
                             ThuTu = 2,
-                            TieuDe = "Toán tử số học trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Toán tử số học trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 61,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/aM-DUx6Qnc8?si=kwcVVpz2z17YAsk8",
                             LoaiBaiHoc = "Video",
                             MaChuong = 20,
                             NoiDung = "<p>Phân biệt toán tử ++ và -- khi đặt trước hoặc sau biến</p>",
                             ThoiLuong = 960,
                             ThuTu = 3,
-                            TieuDe = "Toán tử ++ -- với tiền tố & hậu tố",
-                            VideoSource = "youtube"
+                            TieuDe = "Toán tử ++ -- với tiền tố & hậu tố"
                         },
                         new
                         {
                             MaBaiHoc = 62,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ncRmjazgsE8?si=v7uHTTa80Ju-xcYc",
                             LoaiBaiHoc = "Video",
                             MaChuong = 20,
                             NoiDung = "<p>Các toán tử gán: =, +=, -=, *=, /=, %=</p>",
                             ThoiLuong = 840,
                             ThuTu = 4,
-                            TieuDe = "Toán tử gán trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Toán tử gán trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 63,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/QCLVU6cZU_E?si=TpVpQyVmAWGR78Zx",
                             LoaiBaiHoc = "Video",
                             MaChuong = 20,
                             NoiDung = "<p>Toán tử nối chuỗi và xử lý chuỗi trong JavaScript</p>",
                             ThoiLuong = 720,
                             ThuTu = 5,
-                            TieuDe = "Toán tử chuỗi (String Operator)",
-                            VideoSource = "youtube"
+                            TieuDe = "Toán tử chuỗi (String Operator)"
                         },
                         new
                         {
                             MaBaiHoc = 64,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/rWM2lXtS-d8?si=1ZP4ZSId0h3Zb0Uw",
                             LoaiBaiHoc = "Video",
                             MaChuong = 20,
                             NoiDung = "<p>Phần 1: Các toán tử so sánh cơ bản</p>",
                             ThoiLuong = 900,
                             ThuTu = 6,
-                            TieuDe = "Toán tử so sánh trong Javascript (phần 1)",
-                            VideoSource = "youtube"
+                            TieuDe = "Toán tử so sánh trong Javascript (phần 1)"
                         },
                         new
                         {
                             MaBaiHoc = 65,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/9cZEG1SSSQc?si=Eohx5LEBldikCsgv",
                             LoaiBaiHoc = "Video",
                             MaChuong = 20,
                             NoiDung = "<p>Tìm hiểu về kiểu dữ liệu Boolean và giá trị true/false</p>",
                             ThoiLuong = 780,
                             ThuTu = 7,
-                            TieuDe = "Kiểu dữ liệu Boolean",
-                            VideoSource = "youtube"
+                            TieuDe = "Kiểu dữ liệu Boolean"
                         },
                         new
                         {
                             MaBaiHoc = 66,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/9MpHrdWBdxg?si=Ctyh_tmLGGJ71Rov",
                             LoaiBaiHoc = "Video",
                             MaChuong = 20,
                             NoiDung = "<p>Sử dụng câu lệnh điều kiện if-else để điều khiển luồng chương trình</p>",
                             ThoiLuong = 1200,
                             ThuTu = 8,
-                            TieuDe = "Câu lệnh điều kiện If - Else",
-                            VideoSource = "youtube"
+                            TieuDe = "Câu lệnh điều kiện If - Else"
                         },
                         new
                         {
                             MaBaiHoc = 67,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/meCXeMeyFdE?si=axuLDkpaE6apxulc",
                             LoaiBaiHoc = "Video",
                             MaChuong = 20,
                             NoiDung = "<p>Phần 2: Toán tử so sánh nâng cao và type coercion</p>",
                             ThoiLuong = 960,
                             ThuTu = 9,
-                            TieuDe = "Toán tử so sánh trong JavaScript (phần 2)",
-                            VideoSource = "youtube"
+                            TieuDe = "Toán tử so sánh trong JavaScript (phần 2)"
                         },
                         new
                         {
                             MaBaiHoc = 68,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/4g9ENVc2KLA?si=tFujXiYPhAfK2TSJ",
                             LoaiBaiHoc = "Video",
                             MaChuong = 21,
                             NoiDung = "<p>Khái niệm và cách tạo hàm trong JavaScript</p>",
                             ThoiLuong = 1080,
                             ThuTu = 1,
-                            TieuDe = "Hàm trong JavaScript",
-                            VideoSource = "youtube"
+                            TieuDe = "Hàm trong JavaScript"
                         },
                         new
                         {
                             MaBaiHoc = 69,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/jE6UPl17Nvo?si=yN9WL4koZqObb9za",
                             LoaiBaiHoc = "Video",
                             MaChuong = 21,
                             NoiDung = "<p>Cách truyền và sử dụng tham số trong hàm JavaScript</p>",
                             ThoiLuong = 900,
                             ThuTu = 2,
-                            TieuDe = "Tham số trong hàm",
-                            VideoSource = "youtube"
+                            TieuDe = "Tham số trong hàm"
                         },
                         new
                         {
                             MaBaiHoc = 70,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/OOoeAIrn69M?si=kp3j4L6lFtjC9e4a",
                             LoaiBaiHoc = "Video",
                             MaChuong = 21,
                             NoiDung = "<p>Sử dụng từ khóa return để trả về giá trị từ hàm</p>",
                             ThoiLuong = 840,
                             ThuTu = 3,
-                            TieuDe = "Return trong hàm JS",
-                            VideoSource = "youtube"
+                            TieuDe = "Return trong hàm JS"
                         },
                         new
                         {
                             MaBaiHoc = 71,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/aTQojRq0N4c?si=zMY3mJOOWp63DsI0",
                             LoaiBaiHoc = "Video",
                             MaChuong = 21,
                             NoiDung = "<p>Khái niệm nâng cao về function trong JavaScript</p>",
                             ThoiLuong = 960,
                             ThuTu = 4,
-                            TieuDe = "Hiểu hơn về function",
-                            VideoSource = "youtube"
+                            TieuDe = "Hiểu hơn về function"
                         },
                         new
                         {
                             MaBaiHoc = 72,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/scwab9DMNtM?si=Ug3LbHXMcbpeVrA6",
                             LoaiBaiHoc = "Video",
                             MaChuong = 21,
                             NoiDung = "<p>Giới thiệu các loại function: declaration, expression, arrow function</p>",
                             ThoiLuong = 1200,
                             ThuTu = 5,
-                            TieuDe = "Các loại function",
-                            VideoSource = "youtube"
+                            TieuDe = "Các loại function"
                         },
                         new
                         {
                             MaBaiHoc = 73,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/AT-yhX26_Ao?si=e54QJFdLBMSstjFN",
                             LoaiBaiHoc = "Video",
                             MaChuong = 22,
                             NoiDung = "<p>Khái niệm và cách làm việc với mảng trong JavaScript</p>",
                             ThoiLuong = 1320,
                             ThuTu = 1,
-                            TieuDe = "Làm việc với mảng",
-                            VideoSource = "youtube"
+                            TieuDe = "Làm việc với mảng"
                         },
                         new
                         {
                             MaBaiHoc = 74,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/-xZkVmkDwbU?si=fsIbO2aWeVht40pj",
                             LoaiBaiHoc = "Video",
                             MaChuong = 22,
                             NoiDung = "<p>Sử dụng phương thức map() để biến đổi các phần tử trong mảng</p>",
                             ThoiLuong = 1080,
                             ThuTu = 2,
-                            TieuDe = "Array map method",
-                            VideoSource = "youtube"
+                            TieuDe = "Array map method"
                         },
                         new
                         {
                             MaBaiHoc = 75,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/-JMh3A556cw?si=zePj4wqdRznZlvH4",
                             LoaiBaiHoc = "Video",
                             MaChuong = 22,
                             NoiDung = "<p>Sử dụng phương thức reduce() để tính toán tổng hợp trên mảng</p>",
                             ThoiLuong = 1200,
                             ThuTu = 3,
-                            TieuDe = "Phương thức reduce",
-                            VideoSource = "youtube"
+                            TieuDe = "Phương thức reduce"
                         },
                         new
                         {
                             MaBaiHoc = 76,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ZdvRm1bfGAk?si=XDnh_xokoGRI5SeD",
                             LoaiBaiHoc = "Video",
                             MaChuong = 23,
                             NoiDung = "<p>Phần 1: Giới thiệu về form validation với JavaScript</p>",
                             ThoiLuong = 960,
                             ThuTu = 1,
-                            TieuDe = "Form validation - Phần 1",
-                            VideoSource = "youtube"
+                            TieuDe = "Form validation - Phần 1"
                         },
                         new
                         {
                             MaBaiHoc = 77,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/scybnB9vYVQ?si=kzfvyuuj9ja9KtG2",
                             LoaiBaiHoc = "Video",
                             MaChuong = 23,
                             NoiDung = "<p>Phần 2: Validate các trường input cơ bản</p>",
                             ThoiLuong = 1080,
                             ThuTu = 2,
-                            TieuDe = "Form validation - Phần 2",
-                            VideoSource = "youtube"
+                            TieuDe = "Form validation - Phần 2"
                         },
                         new
                         {
                             MaBaiHoc = 78,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/LpgoBaULw30?si=DynUjTHSMZoCwtdA",
                             LoaiBaiHoc = "Video",
                             MaChuong = 23,
                             NoiDung = "<p>Phần 3: Validate email và password</p>",
                             ThoiLuong = 900,
                             ThuTu = 3,
-                            TieuDe = "Form validation - Phần 3",
-                            VideoSource = "youtube"
+                            TieuDe = "Form validation - Phần 3"
                         },
                         new
                         {
                             MaBaiHoc = 79,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/jRnBvlMUvK0?si=XoBWKyhwtSaG2Afk",
                             LoaiBaiHoc = "Video",
                             MaChuong = 23,
                             NoiDung = "<p>Phần 4: Hiển thị thông báo lỗi và hoàn thiện form validation</p>",
                             ThoiLuong = 1200,
                             ThuTu = 4,
-                            TieuDe = "Form validation - Phần 4",
-                            VideoSource = "youtube"
+                            TieuDe = "Form validation - Phần 4"
                         },
                         new
                         {
                             MaBaiHoc = 80,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/r6GWbQL-qwA?si=QbPo3dUWrf_Gqetr",
                             LoaiBaiHoc = "Video",
                             MaChuong = 24,
                             NoiDung = "<p>Giới thiệu về ứng dụng AI phát hiện hành vi chạm tay lên mặt và ứng dụng trong phòng chống dịch bệnh</p>",
                             ThoiLuong = 900,
                             ThuTu = 1,
-                            TieuDe = "Ứng Dụng Cảnh Báo Khi Chạm Tay Lên Mặt",
-                            VideoSource = "youtube"
+                            TieuDe = "Ứng Dụng Cảnh Báo Khi Chạm Tay Lên Mặt"
                         },
                         new
                         {
                             MaBaiHoc = 81,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/WIyfBMdtNTE?si=I3XlU3YXgMSVDmwN",
                             LoaiBaiHoc = "Video",
                             MaChuong = 24,
                             NoiDung = "<p>Demo ứng dụng hoàn chỉnh và cách thức hoạt động</p>",
                             ThoiLuong = 600,
                             ThuTu = 2,
-                            TieuDe = "Demo",
-                            VideoSource = "youtube"
+                            TieuDe = "Demo"
                         },
                         new
                         {
                             MaBaiHoc = 82,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/bqXyrCjT7V4?si=Jt2REUtdOdQn8FA4",
                             LoaiBaiHoc = "Video",
                             MaChuong = 25,
                             NoiDung = "<p>Hướng dẫn cài đặt Node.js và npm cho dự án React</p>",
                             ThoiLuong = 720,
                             ThuTu = 1,
-                            TieuDe = "Cài đặt NodeJS",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt NodeJS"
                         },
                         new
                         {
                             MaBaiHoc = 83,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/3IWNmXKmRqo?si=I0tuf0MDLFOvKbB3",
                             LoaiBaiHoc = "Video",
                             MaChuong = 25,
                             NoiDung = "<p>Tạo dự án React mới với Create React App</p>",
                             ThoiLuong = 600,
                             ThuTu = 2,
-                            TieuDe = "Create react app",
-                            VideoSource = "youtube"
+                            TieuDe = "Create react app"
                         },
                         new
                         {
                             MaBaiHoc = 84,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/3klHfl2fOb0?si=LiXerT1JPdy96eRh",
                             LoaiBaiHoc = "Video",
                             MaChuong = 25,
                             NoiDung = "<p>Cài đặt các thư viện cần thiết: TensorFlow.js, react-webcam, và các dependency khác</p>",
                             ThoiLuong = 900,
                             ThuTu = 3,
-                            TieuDe = "Cài đặt thư viện cho ứng dụng",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt thư viện cho ứng dụng"
                         },
                         new
                         {
                             MaBaiHoc = 85,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/b5NEWtDwc_0?si=QtMx5Ub2HWEy6BBm",
                             LoaiBaiHoc = "Video",
                             MaChuong = 25,
                             NoiDung = "<p>Xây dựng giao diện cơ bản cho ứng dụng với React components</p>",
                             ThoiLuong = 1080,
                             ThuTu = 4,
-                            TieuDe = "Dựng giao diện khung",
-                            VideoSource = "youtube"
+                            TieuDe = "Dựng giao diện khung"
                         },
                         new
                         {
                             MaBaiHoc = 86,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/jjZGa8foO0s?si=nhKVXj2Mgexn0WFp",
                             LoaiBaiHoc = "Video",
                             MaChuong = 25,
                             NoiDung = "<p>Import và cấu hình các thư viện đã cài đặt vào dự án</p>",
                             ThoiLuong = 780,
                             ThuTu = 5,
-                            TieuDe = "Import thư viện cần thiết",
-                            VideoSource = "youtube"
+                            TieuDe = "Import thư viện cần thiết"
                         },
                         new
                         {
                             MaBaiHoc = 87,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/uXvZyCnaZ7Y?si=ATry-U-5uD1xvuwH",
                             LoaiBaiHoc = "Video",
                             MaChuong = 25,
                             NoiDung = "<p>Triển khai chức năng stream video từ webcam với react-webcam</p>",
                             ThoiLuong = 1200,
                             ThuTu = 6,
-                            TieuDe = "Xây dựng phần Video Stream",
-                            VideoSource = "youtube"
+                            TieuDe = "Xây dựng phần Video Stream"
                         },
                         new
                         {
                             MaBaiHoc = 88,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/KuDJjRU8XfY?si=UK8g8kDBZSTwyr2k",
                             LoaiBaiHoc = "Video",
                             MaChuong = 26,
                             NoiDung = "<p>Cấu hình TensorFlow.js và model machine learning cho ứng dụng</p>",
                             ThoiLuong = 960,
                             ThuTu = 1,
-                            TieuDe = "Setup thư viện TensorFlow",
-                            VideoSource = "youtube"
+                            TieuDe = "Setup thư viện TensorFlow"
                         },
                         new
                         {
                             MaBaiHoc = 89,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/xjXoFX3X2yg?si=O8iZFjdXPyln_FIT",
                             LoaiBaiHoc = "Video",
                             MaChuong = 26,
                             NoiDung = "<p>Viết hàm training model để phát hiện hành vi chạm tay lên mặt</p>",
                             ThoiLuong = 1500,
                             ThuTu = 2,
-                            TieuDe = "Viết function training",
-                            VideoSource = "youtube"
+                            TieuDe = "Viết function training"
                         },
                         new
                         {
                             MaBaiHoc = 90,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/C4jm3RWSw10?si=dRccDX_CFe6VpfeL",
                             LoaiBaiHoc = "Video",
                             MaChuong = 26,
                             NoiDung = "<p>Giải thích cơ chế hoạt động của model machine learning trong ứng dụng</p>",
                             ThoiLuong = 1080,
                             ThuTu = 3,
-                            TieuDe = "Giải thích cách hoạt động",
-                            VideoSource = "youtube"
+                            TieuDe = "Giải thích cách hoạt động"
                         },
                         new
                         {
                             MaBaiHoc = 91,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/pwWS_VcR9Ks?si=Z38-HOt_QchT-t0i",
                             LoaiBaiHoc = "Video",
                             MaChuong = 26,
                             NoiDung = "<p>Thêm chức năng cảnh báo bằng âm thanh và thông báo khi phát hiện chạm tay lên mặt</p>",
                             ThoiLuong = 1320,
                             ThuTu = 4,
-                            TieuDe = "Triển khai phần âm thanh và thông báo",
-                            VideoSource = "youtube"
+                            TieuDe = "Triển khai phần âm thanh và thông báo"
                         },
                         new
                         {
                             MaBaiHoc = 92,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/D5Xd9FByKXc?si=ISfXlB2hgjruCYGf",
                             LoaiBaiHoc = "Video",
                             MaChuong = 26,
                             NoiDung = "<p>Hướng dẫn cách training model hiệu quả và tối ưu độ chính xác</p>",
                             ThoiLuong = 1800,
                             ThuTu = 5,
-                            TieuDe = "Hướng dẫn Training hiệu quả",
-                            VideoSource = "youtube"
+                            TieuDe = "Hướng dẫn Training hiệu quả"
                         },
                         new
                         {
                             MaBaiHoc = 93,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/z2f7RHgvddc?si=jkZ2cKsYrIwrndS7",
                             LoaiBaiHoc = "Video",
                             MaChuong = 27,
                             NoiDung = "<p>Những lời khuyên hữu ích trước khi bắt đầu học Node.js và ExpressJS</p>",
                             ThoiLuong = 600,
                             ThuTu = 1,
-                            TieuDe = "Lời khuyên trước khóa học",
-                            VideoSource = "youtube"
+                            TieuDe = "Lời khuyên trước khóa học"
                         },
                         new
                         {
                             MaBaiHoc = 94,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/SdcdneSdoV4?si=IwwaJJjfdpDQea9d",
                             LoaiBaiHoc = "Video",
                             MaChuong = 27,
                             NoiDung = "<p>Tìm hiểu về giao thức HTTP, phương thức và trạng thái response</p>",
                             ThoiLuong = 900,
                             ThuTu = 2,
-                            TieuDe = "Giao thức HTTP",
-                            VideoSource = "youtube"
+                            TieuDe = "Giao thức HTTP"
                         },
                         new
                         {
                             MaBaiHoc = 95,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/HLEu57iLrRo?si=sQt0ZQ9HG4rQEmay",
                             LoaiBaiHoc = "Video",
                             MaChuong = 27,
                             NoiDung = "<p>Phân biệt Server-Side Rendering (SSR) và Client-Side Rendering (CSR)</p>",
                             ThoiLuong = 1080,
                             ThuTu = 3,
-                            TieuDe = "SSR & CSR",
-                            VideoSource = "youtube"
+                            TieuDe = "SSR & CSR"
                         },
                         new
                         {
                             MaBaiHoc = 96,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/CcSuYLjKW3g?si=NKAcYepnILR1ViUA",
                             LoaiBaiHoc = "Video",
                             MaChuong = 27,
                             NoiDung = "<p>Hướng dẫn cài đặt Node.js và npm trên các hệ điều hành</p>",
                             ThoiLuong = 720,
                             ThuTu = 4,
-                            TieuDe = "Cài đặt NodeJS",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt NodeJS"
                         },
                         new
                         {
                             MaBaiHoc = 97,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/tfQXZ8jES6A?si=xRlgIvNei37_j0bk",
                             LoaiBaiHoc = "Video",
                             MaChuong = 27,
                             NoiDung = "<p>Hướng dẫn cài đặt ExpressJS framework và tạo dự án đầu tiên</p>",
                             ThoiLuong = 840,
                             ThuTu = 5,
-                            TieuDe = "Cài đặt Express framework",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt Express framework"
                         },
                         new
                         {
                             MaBaiHoc = 98,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/zCFOn4YXr00?si=20MxnAHBHsfcKvjz",
                             LoaiBaiHoc = "Video",
                             MaChuong = 27,
                             NoiDung = "<p>Cài đặt và sử dụng Nodemon để tự động restart server khi code thay đổi</p>",
                             ThoiLuong = 600,
                             ThuTu = 6,
-                            TieuDe = "Sử dụng thư viện Nodemon",
-                            VideoSource = "youtube"
+                            TieuDe = "Sử dụng thư viện Nodemon"
                         },
                         new
                         {
                             MaBaiHoc = 99,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/f0C9kTOf6IY?si=Dp4AZSxSV1-jN9w2",
                             LoaiBaiHoc = "Video",
                             MaChuong = 27,
                             NoiDung = "<p>Hướng dẫn quản lý source code với Git và đẩy code lên Github</p>",
                             ThoiLuong = 900,
                             ThuTu = 7,
-                            TieuDe = "Add source code lên Github",
-                            VideoSource = "youtube"
+                            TieuDe = "Add source code lên Github"
                         },
                         new
                         {
                             MaBaiHoc = 100,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/seI--u0hSeg?si=1c9-HMYFSBSNxIVJ",
                             LoaiBaiHoc = "Video",
                             MaChuong = 27,
                             NoiDung = "<p>Sử dụng Morgan middleware để log HTTP requests trong ExpressJS</p>",
                             ThoiLuong = 660,
                             ThuTu = 8,
-                            TieuDe = "Cài đặt thư viện Morgan",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt thư viện Morgan"
                         },
                         new
                         {
                             MaBaiHoc = 101,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/lpbl2qQXbDo?si=fbhZmFuRf_Z1nSbC",
                             LoaiBaiHoc = "Video",
                             MaChuong = 28,
                             NoiDung = "<p>Giới thiệu về Template Engine và cách sử dụng trong ExpressJS</p>",
                             ThoiLuong = 960,
                             ThuTu = 1,
-                            TieuDe = "Khái niệm Template Engine",
-                            VideoSource = "youtube"
+                            TieuDe = "Khái niệm Template Engine"
                         },
                         new
                         {
                             MaBaiHoc = 102,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/BxZNiLo-OA0?si=9YrQE5TkoQo87idU",
                             LoaiBaiHoc = "Video",
                             MaChuong = 28,
                             NoiDung = "<p>Cấu hình ExpressJS để phục vụ các file tĩnh (CSS, JavaScript, images)</p>",
                             ThoiLuong = 780,
                             ThuTu = 2,
-                            TieuDe = "Cấu hình sử dụng file tĩnh",
-                            VideoSource = "youtube"
+                            TieuDe = "Cấu hình sử dụng file tĩnh"
                         },
                         new
                         {
                             MaBaiHoc = 103,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/zNLXsTu_kUA?si=IWXvEf4MJgF0C5_Y",
                             LoaiBaiHoc = "Video",
                             MaChuong = 28,
                             NoiDung = "<p>Tích hợp Bootstrap framework vào dự án ExpressJS</p>",
                             ThoiLuong = 720,
                             ThuTu = 3,
-                            TieuDe = "Tích hợp Bootstrap",
-                            VideoSource = "youtube"
+                            TieuDe = "Tích hợp Bootstrap"
                         },
                         new
                         {
                             MaBaiHoc = 104,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/Wz6WghmEmFk?si=ppmhAov6Wi0f-LG2",
                             LoaiBaiHoc = "Video",
                             MaChuong = 28,
                             NoiDung = "<p>Tạo các route cơ bản trong ExpressJS</p>",
                             ThoiLuong = 900,
                             ThuTu = 4,
-                            TieuDe = "Basic routing",
-                            VideoSource = "youtube"
+                            TieuDe = "Basic routing"
                         },
                         new
                         {
                             MaBaiHoc = 105,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/BbBagzvrSto?si=y3ySiHHMnmwbQay9",
                             LoaiBaiHoc = "Video",
                             MaChuong = 28,
                             NoiDung = "<p>Sử dụng phương thức GET để xử lý các request lấy dữ liệu</p>",
                             ThoiLuong = 840,
                             ThuTu = 5,
-                            TieuDe = "Phương thức GET",
-                            VideoSource = "youtube"
+                            TieuDe = "Phương thức GET"
                         },
                         new
                         {
                             MaBaiHoc = 106,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/6LdwSrTCmo4?si=Oc9ZK6a3gNioq_8e",
                             LoaiBaiHoc = "Video",
                             MaChuong = 28,
                             NoiDung = "<p>Xử lý query string trong URL với ExpressJS</p>",
                             ThoiLuong = 720,
                             ThuTu = 6,
-                            TieuDe = "Chuỗi truy vấn",
-                            VideoSource = "youtube"
+                            TieuDe = "Chuỗi truy vấn"
                         },
                         new
                         {
                             MaBaiHoc = 107,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/wCF8pIbOOpo?si=lnpa3zXNO56irhkh",
                             LoaiBaiHoc = "Video",
                             MaChuong = 28,
                             NoiDung = "<p>Tìm hiểu về hành vi mặc định của HTML form</p>",
                             ThoiLuong = 660,
                             ThuTu = 7,
-                            TieuDe = "Form default behavior",
-                            VideoSource = "youtube"
+                            TieuDe = "Form default behavior"
                         },
                         new
                         {
                             MaBaiHoc = 108,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/LlfdqnK28Cg?si=fFr6ofi7s3LucQ-N",
                             LoaiBaiHoc = "Video",
                             MaChuong = 28,
                             NoiDung = "<p>Sử dụng phương thức POST để xử lý form submission</p>",
                             ThoiLuong = 960,
                             ThuTu = 8,
-                            TieuDe = "Phương thức POST",
-                            VideoSource = "youtube"
+                            TieuDe = "Phương thức POST"
                         },
                         new
                         {
                             MaBaiHoc = 109,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/N8GhaR7K3tI?si=ChVEACoPm57PsbWU",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Giới thiệu về mô hình MVC (Model-View-Controller) trong ExpressJS</p>",
                             ThoiLuong = 1080,
                             ThuTu = 1,
-                            TieuDe = "Mô hình MVC",
-                            VideoSource = "youtube"
+                            TieuDe = "Mô hình MVC"
                         },
                         new
                         {
                             MaBaiHoc = 110,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/Pd_ZIpCVZPc?si=3uYoOu86VehDbpnt",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Xây dựng routes và controllers theo mô hình MVC</p>",
                             ThoiLuong = 1200,
                             ThuTu = 2,
-                            TieuDe = "MVC Routes & Controllers",
-                            VideoSource = "youtube"
+                            TieuDe = "MVC Routes & Controllers"
                         },
                         new
                         {
                             MaBaiHoc = 111,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/5Odp8lcAvyA?si=9bORfXTxWX-p4z-m",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Hướng dẫn cài đặt và cấu hình MongoDB cho dự án</p>",
                             ThoiLuong = 900,
                             ThuTu = 3,
-                            TieuDe = "Cài đặt Mongodb",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt Mongodb"
                         },
                         new
                         {
                             MaBaiHoc = 112,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/kyNyMfRCavg?si=9X5dfSg9fLgNDVzk",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Cài đặt và cấu hình Prettier để format code tự động</p>",
                             ThoiLuong = 660,
                             ThuTu = 4,
-                            TieuDe = "Thư viện Prettier",
-                            VideoSource = "youtube"
+                            TieuDe = "Thư viện Prettier"
                         },
                         new
                         {
                             MaBaiHoc = 113,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/uAXpEmTZhfA?si=9fd8m315tvTZHUDm",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Tạo Model để tương tác với database MongoDB</p>",
                             ThoiLuong = 1080,
                             ThuTu = 5,
-                            TieuDe = "Xây dựng thành phần Model trong mô hình MVC",
-                            VideoSource = "youtube"
+                            TieuDe = "Xây dựng thành phần Model trong mô hình MVC"
                         },
                         new
                         {
                             MaBaiHoc = 114,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/PYjZV9HPLRs?si=aE3E3kf0Amt6X-73",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Cài đặt công cụ để xem JSON data dễ dàng hơn</p>",
                             ThoiLuong = 600,
                             ThuTu = 6,
-                            TieuDe = "Cài đặt JSON Viewer",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt JSON Viewer"
                         },
                         new
                         {
                             MaBaiHoc = 115,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/nqLXmpEgU2w?si=ejJ8kLsnxDBtHE4b",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Viết code để đọc dữ liệu từ MongoDB database</p>",
                             ThoiLuong = 960,
                             ThuTu = 7,
-                            TieuDe = "Đọc Database",
-                            VideoSource = "youtube"
+                            TieuDe = "Đọc Database"
                         },
                         new
                         {
                             MaBaiHoc = 116,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/LnTPJcUQdNU?si=NeAQFq8KlvzaP7zX",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Tạo trang hiển thị chi tiết một item từ database</p>",
                             ThoiLuong = 1080,
                             ThuTu = 8,
-                            TieuDe = "Xây dựng trang chi tiết",
-                            VideoSource = "youtube"
+                            TieuDe = "Xây dựng trang chi tiết"
                         },
                         new
                         {
                             MaBaiHoc = 117,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/bvZ1_P9eCpw?si=Kq5NwkNFxPTbpj4M",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Xây dựng form và logic để tạo mới khóa học</p>",
                             ThoiLuong = 1200,
                             ThuTu = 9,
-                            TieuDe = "Dựng trang tạo mới khóa học",
-                            VideoSource = "youtube"
+                            TieuDe = "Dựng trang tạo mới khóa học"
                         },
                         new
                         {
                             MaBaiHoc = 118,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/HdVOT7Neh18?si=6qIbTAoX4FEwmoJS",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Tạo trang và chức năng chỉnh sửa thông tin khóa học</p>",
                             ThoiLuong = 1320,
                             ThuTu = 10,
-                            TieuDe = "Dựng trang chỉnh sửa",
-                            VideoSource = "youtube"
+                            TieuDe = "Dựng trang chỉnh sửa"
                         },
                         new
                         {
                             MaBaiHoc = 119,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/-10W8ZmNlcg?si=fys6OyTO5NB_0jiP",
                             LoaiBaiHoc = "Video",
                             MaChuong = 29,
                             NoiDung = "<p>Triển khai chức năng sắp xếp (sort) dữ liệu</p>",
                             ThoiLuong = 960,
                             ThuTu = 11,
-                            TieuDe = "Hoàn thiện logic chức năng Sort",
-                            VideoSource = "youtube"
+                            TieuDe = "Hoàn thiện logic chức năng Sort"
                         },
                         new
                         {
                             MaBaiHoc = 120,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/uz5LIP85J5Y?si=Ff8E3BwYC4Qc0phk",
                             LoaiBaiHoc = "Video",
                             MaChuong = 30,
                             NoiDung = "<p>Giới thiệu về responsive web design và tầm quan trọng trong thiết kế hiện đại</p>",
                             ThoiLuong = 720,
                             ThuTu = 1,
-                            TieuDe = "Khái niệm responsive",
-                            VideoSource = "youtube"
+                            TieuDe = "Khái niệm responsive"
                         },
                         new
                         {
                             MaBaiHoc = 121,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/5QT0aeovTTY?si=bGlPkMN6NNPo9ZUI",
                             LoaiBaiHoc = "Video",
                             MaChuong = 30,
                             NoiDung = "<p>Các bước và kỹ thuật cần thiết để thiết kế website responsive</p>",
                             ThoiLuong = 840,
                             ThuTu = 2,
-                            TieuDe = "Cần làm gì để thực hiện responsive khi thiết kế website",
-                            VideoSource = "youtube"
+                            TieuDe = "Cần làm gì để thực hiện responsive khi thiết kế website"
                         },
                         new
                         {
                             MaBaiHoc = 122,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/CIIYogDrGto?si=L-duzdQHVlF1opO-",
                             LoaiBaiHoc = "Video",
                             MaChuong = 30,
                             NoiDung = "<p>Giới thiệu các công cụ và extension hỗ trợ responsive design</p>",
                             ThoiLuong = 660,
                             ThuTu = 3,
-                            TieuDe = "Cài đặt và sử dụng công cụ responsive web",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt và sử dụng công cụ responsive web"
                         },
                         new
                         {
                             MaBaiHoc = 123,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/XJiq_d0vGCQ?si=WHwUTJ--ANrYNRem",
                             LoaiBaiHoc = "Video",
                             MaChuong = 31,
                             NoiDung = "<p>Tìm hiểu về viewport meta tag và vai trò trong responsive design</p>",
                             ThoiLuong = 600,
                             ThuTu = 1,
-                            TieuDe = "Khái niệm Viewport",
-                            VideoSource = "youtube"
+                            TieuDe = "Khái niệm Viewport"
                         },
                         new
                         {
                             MaBaiHoc = 124,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/YgkzJkmDP3U?si=82oswyIzYnqV4S9V",
                             LoaiBaiHoc = "Video",
                             MaChuong = 31,
                             NoiDung = "<p>Sử dụng CSS media queries để áp dụng styles cho các thiết bị khác nhau</p>",
                             ThoiLuong = 900,
                             ThuTu = 2,
-                            TieuDe = "Thuộc tính Media query (@media)",
-                            VideoSource = "youtube"
+                            TieuDe = "Thuộc tính Media query (@media)"
                         },
                         new
                         {
                             MaBaiHoc = 125,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/0i37IU0wjlI?si=S692S7nLRwDoIPHy",
                             LoaiBaiHoc = "Video",
                             MaChuong = 31,
                             NoiDung = "<p>Hiểu về breakpoints và cách chọn breakpoints phù hợp cho thiết kế</p>",
                             ThoiLuong = 780,
                             ThuTu = 3,
-                            TieuDe = "Khái niệm Breakpoints trong responsive",
-                            VideoSource = "youtube"
+                            TieuDe = "Khái niệm Breakpoints trong responsive"
                         },
                         new
                         {
                             MaBaiHoc = 126,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/aywAr27pkWE?si=WBoVYOgwUz-pCmi2",
                             LoaiBaiHoc = "Video",
                             MaChuong = 31,
                             NoiDung = "<p>Lựa chọn đơn vị đo lường phù hợp (px, em, rem, %, vw, vh) cho media queries</p>",
                             ThoiLuong = 720,
                             ThuTu = 4,
-                            TieuDe = "Sử dụng đơn vị nào khi dùng Media queries",
-                            VideoSource = "youtube"
+                            TieuDe = "Sử dụng đơn vị nào khi dùng Media queries"
                         },
                         new
                         {
                             MaBaiHoc = 127,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/-NK4jLekauw?si=3NbBMO3ybHMY3l5P",
                             LoaiBaiHoc = "Video",
                             MaChuong = 32,
                             NoiDung = "<p>Thực hành tạo layout responsive cơ bản với media queries</p>",
                             ThoiLuong = 1080,
                             ThuTu = 1,
-                            TieuDe = "Thực hành responsive",
-                            VideoSource = "youtube"
+                            TieuDe = "Thực hành responsive"
                         },
                         new
                         {
                             MaBaiHoc = 128,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/HYy4c6lcOlM?si=FsYXsiP07J6aZ_7c",
                             LoaiBaiHoc = "Video",
                             MaChuong = 32,
                             NoiDung = "<p>Tạo navigation bar responsive với hamburger menu cho mobile</p>",
                             ThoiLuong = 960,
                             ThuTu = 2,
-                            TieuDe = "Responsive cho navigation bar",
-                            VideoSource = "youtube"
+                            TieuDe = "Responsive cho navigation bar"
                         },
                         new
                         {
                             MaBaiHoc = 129,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/lvD5K50TZPk?si=YWld4DwlpIwRMPEO",
                             LoaiBaiHoc = "Video",
                             MaChuong = 33,
                             NoiDung = "<p>Giới thiệu về CSS Grid Layout và các khái niệm cơ bản</p>",
                             ThoiLuong = 900,
                             ThuTu = 1,
-                            TieuDe = "Khái niệm Grid system",
-                            VideoSource = "youtube"
+                            TieuDe = "Khái niệm Grid system"
                         },
                         new
                         {
                             MaBaiHoc = 130,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/iKlMB01w47g?si=xhLnegsjgfEPBKic",
                             LoaiBaiHoc = "Video",
                             MaChuong = 33,
                             NoiDung = "<p>Các thuộc tính nâng cao của CSS Grid: grid-template-areas, grid-auto-flow, justify-items, align-items</p>",
                             ThoiLuong = 960,
                             ThuTu = 2,
-                            TieuDe = "Khái niệm Grid system phần 2",
-                            VideoSource = "youtube"
+                            TieuDe = "Khái niệm Grid system phần 2"
                         },
                         new
                         {
                             MaBaiHoc = 131,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ScZaj1eG7DQ?si=8aPgvKNracyn4weX",
                             LoaiBaiHoc = "Video",
                             MaChuong = 33,
                             NoiDung = "<p>Xây dựng thư viện CSS custom sử dụng Grid System để tái sử dụng</p>",
                             ThoiLuong = 1200,
                             ThuTu = 3,
-                            TieuDe = "Tạo thư viện CSS ứng dụng Grid system",
-                            VideoSource = "youtube"
+                            TieuDe = "Tạo thư viện CSS ứng dụng Grid system"
                         },
                         new
                         {
                             MaBaiHoc = 132,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/7ppRSaGT1uw?si=jW7RVXUlpcXVAc4w",
                             LoaiBaiHoc = "Video",
                             MaChuong = 34,
                             NoiDung = "<p>Giới thiệu tổng quan về Windows Terminal và Windows Subsystem for Linux (WSL)</p>",
                             ThoiLuong = 600,
                             ThuTu = 1,
-                            TieuDe = "Giới thiệu Windows Terminal & WSL",
-                            VideoSource = "youtube"
+                            TieuDe = "Giới thiệu Windows Terminal & WSL"
                         },
                         new
                         {
                             MaBaiHoc = 133,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/egSxAF-Sak4?si=MFZbkp7kXiuFKL6t",
                             LoaiBaiHoc = "Video",
                             MaChuong = 35,
                             NoiDung = "<p>Hướng dẫn cài đặt Windows Terminal từ Microsoft Store và cấu hình cơ bản</p>",
                             ThoiLuong = 720,
                             ThuTu = 1,
-                            TieuDe = "Window Terminal install",
-                            VideoSource = "youtube"
+                            TieuDe = "Window Terminal install"
                         },
                         new
                         {
                             MaBaiHoc = 134,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ypvjxw5qBK0?si=7Pg70wbWgb0H785u",
                             LoaiBaiHoc = "Video",
                             MaChuong = 35,
                             NoiDung = "<p>Hướng dẫn cài đặt Ubuntu trên Windows thông qua WSL (Windows Subsystem for Linux)</p>",
                             ThoiLuong = 900,
                             ThuTu = 2,
-                            TieuDe = "Cài đặt Ubuntu với WSL 1",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt Ubuntu với WSL 1"
                         },
                         new
                         {
                             MaBaiHoc = 135,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/1jsHfX2WomA?si=h30pQNipb3m8AOW6",
                             LoaiBaiHoc = "Video",
                             MaChuong = 35,
                             NoiDung = "<p>Cách cập nhật packages và hệ thống Ubuntu sau khi cài đặt</p>",
                             ThoiLuong = 600,
                             ThuTu = 3,
-                            TieuDe = "Update Packages Ubuntu",
-                            VideoSource = "youtube"
+                            TieuDe = "Update Packages Ubuntu"
                         },
                         new
                         {
                             MaBaiHoc = 136,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/1UIe8sHXN5c?si=U3IQfm_H2UCbsRTt",
                             LoaiBaiHoc = "Video",
                             MaChuong = 35,
                             NoiDung = "<p>Giới thiệu các lệnh cơ bản trong Ubuntu/Linux terminal</p>",
                             ThoiLuong = 780,
                             ThuTu = 4,
-                            TieuDe = "Các lệnh trong Ubuntu",
-                            VideoSource = "youtube"
+                            TieuDe = "Các lệnh trong Ubuntu"
                         },
                         new
                         {
                             MaBaiHoc = 137,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/1UIe8sHXN5c?si=xFojRSQx27MQJbw1",
                             LoaiBaiHoc = "Video",
                             MaChuong = 36,
                             NoiDung = "<p>Hướng dẫn sử dụng các lệnh cơ bản: ls (liệt kê file), cd (di chuyển), clear (xóa màn hình)</p>",
                             ThoiLuong = 840,
                             ThuTu = 1,
-                            TieuDe = "Lệnh ls, cd, clear trong Ubuntu/Linux",
-                            VideoSource = "youtube"
+                            TieuDe = "Lệnh ls, cd, clear trong Ubuntu/Linux"
                         },
                         new
                         {
                             MaBaiHoc = 138,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ozBhz7il5Ts?si=HlrGNoLwNygz4bmu",
                             LoaiBaiHoc = "Video",
                             MaChuong = 36,
                             NoiDung = "<p>Hướng dẫn sử dụng lệnh tạo thư mục (mkdir), tạo file (touch) và editor vi</p>",
                             ThoiLuong = 900,
                             ThuTu = 2,
-                            TieuDe = "Lệnh mkdir, touch, vi trong Ubuntu/Linux",
-                            VideoSource = "youtube"
+                            TieuDe = "Lệnh mkdir, touch, vi trong Ubuntu/Linux"
                         },
                         new
                         {
                             MaBaiHoc = 139,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/l5mLKwWjSe8?si=Vz27TDiC5f_U-qAk",
                             LoaiBaiHoc = "Video",
                             MaChuong = 36,
                             NoiDung = "<p>Hướng dẫn sử dụng lệnh xem file (cat), in text (echo), xem cuối file (tail), tìm kiếm (grep)</p>",
                             ThoiLuong = 1080,
                             ThuTu = 3,
-                            TieuDe = "Lệnh cat, echo, tail, grep trong Ubuntu/Linux",
-                            VideoSource = "youtube"
+                            TieuDe = "Lệnh cat, echo, tail, grep trong Ubuntu/Linux"
                         },
                         new
                         {
                             MaBaiHoc = 140,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/9rddrjDkmWo?si=IV_P1behSManoGLz",
                             LoaiBaiHoc = "Video",
                             MaChuong = 37,
                             NoiDung = "<p>Hướng dẫn cài đặt Node.js và npm trên WSL/Ubuntu</p>",
                             ThoiLuong = 720,
                             ThuTu = 1,
-                            TieuDe = "Cài đặt NodeJS trên WSL",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt NodeJS trên WSL"
                         },
                         new
                         {
                             MaBaiHoc = 141,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/aj3HXDfrM2Q?si=razVM3G1PB2FJ5Sa",
                             LoaiBaiHoc = "Video",
                             MaChuong = 37,
                             NoiDung = "<p>Tạo và chạy dự án React.js trên môi trường WSL/Ubuntu</p>",
                             ThoiLuong = 780,
                             ThuTu = 2,
-                            TieuDe = "Tạo dự án ReactJS trên WSL",
-                            VideoSource = "youtube"
+                            TieuDe = "Tạo dự án ReactJS trên WSL"
                         },
                         new
                         {
                             MaBaiHoc = 142,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/MpYEUtbbFSg?si=vC2KMpr6WcYVuyWh",
                             LoaiBaiHoc = "Video",
                             MaChuong = 37,
                             NoiDung = "<p>Tạo dự án Express.js backend và chạy trên WSL/Ubuntu</p>",
                             ThoiLuong = 900,
                             ThuTu = 3,
-                            TieuDe = "Tạo và chạy dự án ExpressJS trên WSL",
-                            VideoSource = "youtube"
+                            TieuDe = "Tạo và chạy dự án ExpressJS trên WSL"
                         },
                         new
                         {
                             MaBaiHoc = 143,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/ScLOfVwezKU?si=Xx3iU0ddzdjAfsMR",
                             LoaiBaiHoc = "Video",
                             MaChuong = 38,
                             NoiDung = "<p>Giới thiệu quy trình deploy ứng dụng web lên server thật</p>",
                             ThoiLuong = 600,
                             ThuTu = 1,
-                            TieuDe = "Deploy dự án với Server thật",
-                            VideoSource = "youtube"
+                            TieuDe = "Deploy dự án với Server thật"
                         },
                         new
                         {
                             MaBaiHoc = 144,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/7RjjF8Ee7Ws?si=Qe3vEJXncfyrlmcb",
                             LoaiBaiHoc = "Video",
                             MaChuong = 38,
                             NoiDung = "<p>Hướng dẫn mua và cấu hình domain name cho website</p>",
                             ThoiLuong = 720,
                             ThuTu = 2,
-                            TieuDe = "Mua tên miền website",
-                            VideoSource = "youtube"
+                            TieuDe = "Mua tên miền website"
                         },
                         new
                         {
                             MaBaiHoc = 145,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/CLJSI2xO1Mo?si=5Mp01POpJtJ3g-DT",
                             LoaiBaiHoc = "Video",
                             MaChuong = 38,
                             NoiDung = "<p>Hướng dẫn tạo user và phân quyền trên server Linux/Ubuntu</p>",
                             ThoiLuong = 660,
                             ThuTu = 3,
-                            TieuDe = "Tạo User trên máy chủ Linux/Ubuntu",
-                            VideoSource = "youtube"
+                            TieuDe = "Tạo User trên máy chủ Linux/Ubuntu"
                         },
                         new
                         {
                             MaBaiHoc = 146,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/1sdaPoXWQrw?si=1p8toXNCTx7h1Jrb",
                             LoaiBaiHoc = "Video",
                             MaChuong = 38,
                             NoiDung = "<p>Hướng dẫn cài đặt và cấu hình Nginx web server trên Ubuntu</p>",
                             ThoiLuong = 1080,
                             ThuTu = 4,
-                            TieuDe = "Cài đặt và cấu hình Nginx cơ bản trên Ubuntu",
-                            VideoSource = "youtube"
+                            TieuDe = "Cài đặt và cấu hình Nginx cơ bản trên Ubuntu"
                         },
                         new
                         {
                             MaBaiHoc = 147,
-                            AiFeaturesEnabled = true,
                             CoQuiz = true,
-                            HasSubtitle = false,
                             LinkVideo = "https://www.youtube.com/embed/fvs_wjEd0Ks?si=bCRTTR1ORZTjV3B6",
                             LoaiBaiHoc = "Video",
                             MaChuong = 38,
                             NoiDung = "<p>Hướng dẫn upload source code lên server sử dụng Filezilla FTP client</p>",
                             ThoiLuong = 840,
                             ThuTu = 5,
-                            TieuDe = "Upload Source Code lên máy chủ với Filezilla",
-                            VideoSource = "youtube"
+                            TieuDe = "Upload Source Code lên máy chủ với Filezilla"
                         });
                 });
 
@@ -2600,45 +2052,6 @@ namespace educodeai_server.Migrations
                             MaKhoaHoc = 5,
                             ThanhTien = 14900m
                         });
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.ChungChiDoAnModel", b =>
-                {
-                    b.Property<int>("MaChungChiDoAn")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaChungChiDoAn"));
-
-                    b.Property<int>("DiemDat")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("MaChungChi")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("MaDoAn")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaNguoiDung")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("NgayCap")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("MaChungChiDoAn");
-
-                    b.HasIndex("MaChungChi")
-                        .IsUnique();
-
-                    b.HasIndex("MaDoAn")
-                        .IsUnique();
-
-                    b.HasIndex("MaNguoiDung", "MaDoAn")
-                        .IsUnique();
-
-                    b.ToTable("ChungChiDoAns");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.ChungChiKhoaHocModel", b =>
@@ -3061,6 +2474,7 @@ namespace educodeai_server.Migrations
                     b.ToTable("DanhGias");
                 });
 
+
             modelBuilder.Entity("educodeai_server.Models.DanhHieuModel", b =>
                 {
                     b.Property<int>("MaDanhHieu")
@@ -3217,10 +2631,6 @@ namespace educodeai_server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaDonHang"));
 
-                    b.Property<string>("CodeVoucher")
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -3245,16 +2655,7 @@ namespace educodeai_server.Migrations
                     b.Property<int>("MaNguoiDung")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("MaVoucher")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("SoTienGiam")
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<decimal>("TongTien")
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("TongTienGoc")
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("TrangThaiDonHang")
@@ -3272,8 +2673,6 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.HasIndex("MaVoucher");
-
                     b.ToTable("DonHangKhoaHocs");
 
                     b.HasData(
@@ -3286,9 +2685,7 @@ namespace educodeai_server.Migrations
                             LoaiDonHang = "COURSE_PURCHASE",
                             LoaiTien = "VND",
                             MaNguoiDung = 3,
-                            SoTienGiam = 0m,
                             TongTien = 21000m,
-                            TongTienGoc = 0m,
                             TrangThaiDonHang = "PAID",
                             UpdatedAt = new DateTime(2026, 4, 1, 9, 10, 0, 0, DateTimeKind.Utc)
                         },
@@ -3301,9 +2698,7 @@ namespace educodeai_server.Migrations
                             LoaiDonHang = "COURSE_PURCHASE",
                             LoaiTien = "VND",
                             MaNguoiDung = 3,
-                            SoTienGiam = 0m,
                             TongTien = 14900m,
-                            TongTienGoc = 0m,
                             TrangThaiDonHang = "PENDING",
                             UpdatedAt = new DateTime(2026, 4, 2, 10, 0, 0, 0, DateTimeKind.Utc)
                         });
@@ -3374,31 +2769,6 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiDung");
 
                     b.ToTable("GhiChuBaiHocs");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.GiangVienQuotaModel", b =>
-                {
-                    b.Property<int>("MaGiangVien")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaGiangVien"));
-
-                    b.Property<decimal>("AiBalanceUsd")
-                        .HasColumnType("decimal(10,4)");
-
-                    b.Property<long>("StorageLimitMb")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("StorageUsedMb")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("MaGiangVien");
-
-                    b.ToTable("GiangVienQuotas");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.GiaoDichThanhToanModel", b =>
@@ -3619,20 +2989,11 @@ namespace educodeai_server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ID"));
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("DeletedBy")
-                        .HasColumnType("integer");
-
                     b.Property<int>("HanMucRequest")
                         .HasColumnType("integer");
 
                     b.Property<int>("HanMucToken")
                         .HasColumnType("integer");
-
-                    b.Property<DateTime?>("LastUsageResetAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("LoaiKey")
                         .IsRequired()
@@ -3643,21 +3004,8 @@ namespace educodeai_server.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("ModelSuDung")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("NgayTao")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RPDLimit")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RPMLimit")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TPMLimit")
-                        .HasColumnType("integer");
 
                     b.Property<string>("TenKey")
                         .IsRequired()
@@ -3688,12 +3036,6 @@ namespace educodeai_server.Migrations
 
                     b.Property<bool>("CoChungChi")
                         .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("DeletedBy")
-                        .HasColumnType("integer");
 
                     b.Property<double>("DiemDanhGiaTB")
                         .HasColumnType("double precision");
@@ -4041,30 +3383,6 @@ namespace educodeai_server.Migrations
                     b.ToTable("LoTrinhAIs");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.MaGiamGiaKhoaHocModel", b =>
-                {
-                    b.Property<int>("MaLienKet")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaLienKet"));
-
-                    b.Property<int>("MaKhoaHoc")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaVoucher")
-                        .HasColumnType("integer");
-
-                    b.HasKey("MaLienKet");
-
-                    b.HasIndex("MaKhoaHoc");
-
-                    b.HasIndex("MaVoucher", "MaKhoaHoc")
-                        .IsUnique();
-
-                    b.ToTable("MaGiamGiaKhoaHocs");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.MaGiamGiaModel", b =>
                 {
                     b.Property<int>("MaVoucher")
@@ -4075,9 +3393,6 @@ namespace educodeai_server.Migrations
 
                     b.Property<DateTime>("BatDauAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("ChoPhepApDungChoQuaTang")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -4104,19 +3419,6 @@ namespace educodeai_server.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("LoaiNguoiTao")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<int>("MaNguoiTao")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PhamViApDung")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
                     b.Property<int>("SoLuongDaDung")
                         .HasColumnType("integer");
 
@@ -4133,8 +3435,6 @@ namespace educodeai_server.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.HasIndex("MaNguoiTao");
-
                     b.ToTable("MaGiamGias");
 
                     b.HasData(
@@ -4142,7 +3442,6 @@ namespace educodeai_server.Migrations
                         {
                             MaVoucher = 1,
                             BatDauAt = new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc),
-                            ChoPhepApDungChoQuaTang = true,
                             Code = "WELCOME10",
                             DonHangToiThieu = 10000m,
                             GiaTriGiam = 10m,
@@ -4150,9 +3449,6 @@ namespace educodeai_server.Migrations
                             KetThucAt = new DateTime(2026, 12, 30, 17, 0, 0, 0, DateTimeKind.Utc),
                             KichHoat = true,
                             LoaiGiamGia = "PERCENT",
-                            LoaiNguoiTao = "ADMIN",
-                            MaNguoiTao = 2,
-                            PhamViApDung = "SPECIFIC_COURSES",
                             SoLuongDaDung = 1,
                             SoLuongToiDa = 1000,
                             TenChuongTrinh = "Giảm giá chào mừng"
@@ -4161,16 +3457,12 @@ namespace educodeai_server.Migrations
                         {
                             MaVoucher = 2,
                             BatDauAt = new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc),
-                            ChoPhepApDungChoQuaTang = true,
                             Code = "MARKET500",
                             DonHangToiThieu = 10000m,
                             GiaTriGiam = 500m,
                             KetThucAt = new DateTime(2026, 12, 30, 17, 0, 0, 0, DateTimeKind.Utc),
                             KichHoat = true,
                             LoaiGiamGia = "FIXED",
-                            LoaiNguoiTao = "ADMIN",
-                            MaNguoiTao = 2,
-                            PhamViApDung = "SPECIFIC_COURSES",
                             SoLuongDaDung = 0,
                             SoLuongToiDa = 500,
                             TenChuongTrinh = "Giảm thẳng marketplace"
@@ -4233,101 +3525,6 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiTang", "TrangThai", "CreatedAt");
 
                     b.ToTable("MaQuaTangHocViens");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.MauNhiemVuTuanModel", b =>
-                {
-                    b.Property<int>("MaMau")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaMau"));
-
-                    b.Property<int>("ChiTieu")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("DangHoatDong")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("ExpThuong")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Icon")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<string>("LoaiDem")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<string>("MaCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("MoTa")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<int>("ThuTu")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("TieuDe")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.HasKey("MaMau");
-
-                    b.ToTable("MauNhiemVuTuans");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.NguoiDungDanhHieuModel", b =>
-                {
-                    b.Property<int>("MaMoKhoa")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaMoKhoa"));
-
-                    b.Property<int>("MaDanhHieu")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaNguoiDung")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("NgayMoKhoa")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("MaMoKhoa");
-
-                    b.HasIndex("MaDanhHieu");
-
-                    b.HasIndex("MaNguoiDung", "MaDanhHieu")
-                        .IsUnique();
-
-                    b.ToTable("NguoiDungDanhHieus");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.NguoiDungGamificationModel", b =>
-                {
-                    b.Property<int>("MaNguoiDung")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("MaDanhHieuDangDeo")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TongExp")
-                        .HasColumnType("integer");
-
-                    b.HasKey("MaNguoiDung");
-
-                    b.HasIndex("MaDanhHieuDangDeo");
-
-                    b.ToTable("NguoiDungGamifications");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.NguoiDungModel", b =>
@@ -4698,44 +3895,6 @@ namespace educodeai_server.Migrations
                     b.ToTable("TienDoBaiHocs");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.TienDoNhiemVuTuanModel", b =>
-                {
-                    b.Property<int>("MaTienDo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaTienDo"));
-
-                    b.Property<DateTime>("DauChuKy")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("GiaTriHienTai")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaMau")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaNguoiDung")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("NgayNhanThuong")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("TrangThai")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.HasKey("MaTienDo");
-
-                    b.HasIndex("MaMau");
-
-                    b.HasIndex("MaNguoiDung", "MaMau", "DauChuKy")
-                        .IsUnique();
-
-                    b.ToTable("TienDoNhiemVuTuans");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.VideoChapterModel", b =>
                 {
                     b.Property<int>("MaChapter")
@@ -4812,29 +3971,6 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaChapter");
 
                     b.ToTable("VideoQuizs");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.WebhookLogModel", b =>
-                {
-                    b.Property<string>("NotificationId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("NotificationType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTime>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("NotificationId");
-
-                    b.ToTable("WebhookLogs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.YeuCauRutTienGiangVienModel", b =>
@@ -5016,25 +4152,6 @@ namespace educodeai_server.Migrations
                     b.Navigation("KhoaHoc");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.ChungChiDoAnModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.DoAnThucChienModel", "DoAn")
-                        .WithOne("ChungChiDoAn")
-                        .HasForeignKey("educodeai_server.Models.ChungChiDoAnModel", "MaDoAn")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
-                        .HasForeignKey("MaNguoiDung")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("DoAn");
-
-                    b.Navigation("NguoiDung");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.ChungChiKhoaHocModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.KetQuaKiemTraChungChiModel", "KetQuaKiemTraChungChi")
@@ -5110,17 +4227,6 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.DoAnThucChienModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
-                        .HasForeignKey("MaNguoiDung")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("NguoiDung");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.DoanhThuGiangVienModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.DonHangKhoaHocModel", "DonHang")
@@ -5148,14 +4254,7 @@ namespace educodeai_server.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("educodeai_server.Models.MaGiamGiaModel", "Voucher")
-                        .WithMany("DonHangSuDung")
-                        .HasForeignKey("MaVoucher")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("NguoiDung");
-
-                    b.Navigation("Voucher");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.GhiChuAIModel", b =>
@@ -5304,36 +4403,6 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.MaGiamGiaKhoaHocModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.KhoaHocModel", "KhoaHoc")
-                        .WithMany("MaGiamGiaKhoaHocs")
-                        .HasForeignKey("MaKhoaHoc")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("educodeai_server.Models.MaGiamGiaModel", "Voucher")
-                        .WithMany("DanhSachKhoaHocApDung")
-                        .HasForeignKey("MaVoucher")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("KhoaHoc");
-
-                    b.Navigation("Voucher");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.MaGiamGiaModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiTao")
-                        .WithMany("MaGiamGiaDaTao")
-                        .HasForeignKey("MaNguoiTao")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("NguoiTao");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.MaQuaTangHocVienModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.DonHangKhoaHocModel", "DonHang")
@@ -5366,43 +4435,6 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiNhan");
 
                     b.Navigation("NguoiTang");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.NguoiDungDanhHieuModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.DanhHieuModel", "DanhHieu")
-                        .WithMany()
-                        .HasForeignKey("MaDanhHieu")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
-                        .HasForeignKey("MaNguoiDung")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DanhHieu");
-
-                    b.Navigation("NguoiDung");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.NguoiDungGamificationModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.DanhHieuModel", "DanhHieuDangDeo")
-                        .WithMany()
-                        .HasForeignKey("MaDanhHieuDangDeo")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithOne()
-                        .HasForeignKey("educodeai_server.Models.NguoiDungGamificationModel", "MaNguoiDung")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DanhHieuDangDeo");
-
-                    b.Navigation("NguoiDung");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.NhatKySuDungModel", b =>
@@ -5495,25 +4527,6 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiDung");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.TienDoNhiemVuTuanModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.MauNhiemVuTuanModel", "Mau")
-                        .WithMany()
-                        .HasForeignKey("MaMau")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
-                        .HasForeignKey("MaNguoiDung")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Mau");
-
-                    b.Navigation("NguoiDung");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.VideoChapterModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.BaiHocModel", "BaiHoc")
@@ -5593,11 +4606,6 @@ namespace educodeai_server.Migrations
                     b.Navigation("BaiHocs");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.DoAnThucChienModel", b =>
-                {
-                    b.Navigation("ChungChiDoAn");
-                });
-
             modelBuilder.Entity("educodeai_server.Models.DonHangKhoaHocModel", b =>
                 {
                     b.Navigation("ChiTietDonHangs");
@@ -5628,18 +4636,9 @@ namespace educodeai_server.Migrations
 
                     b.Navigation("KetQuaKiemTraChungChis");
 
-                    b.Navigation("MaGiamGiaKhoaHocs");
-
                     b.Navigation("MaQuaTangHocViens");
 
                     b.Navigation("QuaTangKhoaHocs");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.MaGiamGiaModel", b =>
-                {
-                    b.Navigation("DanhSachKhoaHocApDung");
-
-                    b.Navigation("DonHangSuDung");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.NguoiDungModel", b =>
@@ -5671,8 +4670,6 @@ namespace educodeai_server.Migrations
                     b.Navigation("KhoaHocs");
 
                     b.Navigation("LoTrinhAIs");
-
-                    b.Navigation("MaGiamGiaDaTao");
 
                     b.Navigation("MaQuaTangDaNhan");
 

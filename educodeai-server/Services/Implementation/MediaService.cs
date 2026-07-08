@@ -244,8 +244,11 @@ namespace educodeai_server.Services.Implementation
                 return (false, "Bài học chưa có video trên Cloudinary.");
 
             // Tính toán chi phí (Ví dụ: 0.06$ / phút)
-            var durationS = baiHoc.VideoDurationS ?? 0;
-            var minutes = Math.Ceiling((double)durationS / 60);
+            // Lấy VideoDurationS, nếu null thì thử lấy ThoiLuong, nếu vẫn null thì mặc định 0
+            var durationS = baiHoc.VideoDurationS ?? baiHoc.ThoiLuong ?? 0;
+            
+            // Tính số phút (làm tròn lên), TỐI THIỂU là 1 phút
+            var minutes = Math.Max(1, Math.Ceiling((double)durationS / 60));
             var costUsd = (decimal)minutes * 0.06m;
 
             var quota = await _context.GiangVienQuotas.FirstOrDefaultAsync(q => q.MaGiangVien == maGiangVien);
