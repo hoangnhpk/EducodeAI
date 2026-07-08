@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, Image, Dimensions, TextInput, Alert, StatusBar, Platform } from 'react-native';
+const fs = require('fs');
+const path = require('path');
+
+const content = `import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, Image, Dimensions, TextInput, Alert, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -61,7 +64,7 @@ export default function App() {
         <View style={styles.userInfo}>
           <View style={styles.avatarGlow}>
             <Image 
-              source={{ uri: user?.anhDaiDien || `https://ui-avatars.com/api/?name=${user?.hoTen || 'Khach'}&background=fb873f&color=fff` }} 
+              source={{ uri: user?.anhDaiDien || \`https://ui-avatars.com/api/?name=\${user?.hoTen || 'Khach'}&background=fb873f&color=fff\` }} 
               style={styles.avatar} 
             />
           </View>
@@ -99,7 +102,7 @@ export default function App() {
             <View style={styles.bannerTagWrapper}>
               <Text style={styles.bannerTag}>✨ AI POWERED</Text>
             </View>
-            <Text style={styles.bannerTitle}>Định hướng{'\n'}tương lai IT</Text>
+            <Text style={styles.bannerTitle}>Định hướng{'\\n'}tương lai IT</Text>
             <View style={styles.bannerBtn}>
               <LinearGradient colors={COLORS.primaryGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.bannerBtnInner}>
                 <Text style={styles.bannerBtnText}>Khám phá ngay</Text>
@@ -210,7 +213,7 @@ export default function App() {
       <View style={styles.profileHeader}>
         <View style={[styles.avatarWrapper, SHADOWS.glow]}>
           <Image 
-            source={{ uri: user?.anhDaiDien || `https://ui-avatars.com/api/?name=${user?.hoTen || 'Khach'}&background=fb873f&color=fff` }} 
+            source={{ uri: user?.anhDaiDien || \`https://ui-avatars.com/api/?name=\${user?.hoTen || 'Khach'}&background=fb873f&color=fff\` }} 
             style={styles.profileAvatarLarge} 
           />
         </View>
@@ -383,3 +386,7 @@ const styles = StyleSheet.create({
   aiFloatingBtn: { position: 'absolute', top: -30, width: 74, height: 74, borderRadius: 37, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center', padding: 6, zIndex: 101 },
   aiBtnGradient: { width: '100%', height: '100%', borderRadius: 32, justifyContent: 'center', alignItems: 'center' }
 });
+`;
+
+fs.writeFileSync(path.join(__dirname, 'Mobile', 'src', 'app', 'index.tsx'), content);
+console.log('Done rewriting index.tsx for V2 UI');

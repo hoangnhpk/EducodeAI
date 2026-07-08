@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+const fs = require('fs');
+const path = require('path');
+
+const content = `import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, SafeAreaView, ScrollView, 
   TouchableOpacity, Image, StatusBar, Dimensions, Alert, ActivityIndicator, Platform
@@ -51,7 +54,7 @@ export default function CourseDetailScreen() {
 
   const fetchCourseDetail = async () => {
     try {
-      const response = await api.get(`/hocvien/chitietkhoahoc/${id}`);
+      const response = await api.get(\`/hocvien/chitietkhoahoc/\${id}\`);
       setCourse(response.data);
     } catch (error) {
       console.error('Lỗi khi lấy chi tiết khóa học:', error);
@@ -65,7 +68,7 @@ export default function CourseDetailScreen() {
     if (course.giaTien > 0) {
       Alert.alert(
         'Thanh toán qua ZaloPay',
-        `Số tiền: ${(course.giaTien - (course.giamGia || 0)).toLocaleString('vi-VN')}đ\nBạn có chắc chắn muốn thanh toán?`,
+        \`Số tiền: \${(course.giaTien - (course.giamGia || 0)).toLocaleString('vi-VN')}đ\\nBạn có chắc chắn muốn thanh toán?\`,
         [
           { text: 'Hủy', style: 'cancel' },
           { 
@@ -308,3 +311,7 @@ const styles = StyleSheet.create({
   enrollBtn: { height: 60, justifyContent: 'center', alignItems: 'center' },
   enrollBtnText: { color: COLORS.white, fontSize: 18, fontWeight: '900' }
 });
+`;
+
+fs.writeFileSync(path.join(__dirname, 'Mobile', 'src', 'app', 'course-detail.tsx'), content);
+console.log('Done rewriting course-detail.tsx for V2 UI');

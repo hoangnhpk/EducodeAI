@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, SafeAreaView, ScrollView, 
-  TouchableOpacity, Image, StatusBar 
+  TouchableOpacity, Image, StatusBar, ActivityIndicator 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import api from '../configs/api';
 
 const COLORS = {
   primary: '#fb873f',
@@ -21,16 +22,36 @@ const SHADOWS = {
   small: { shadowColor: COLORS.dark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
 };
 
-const MOCK_COURSES = [
-  { id: 1, title: 'Lập trình C# ASP.NET Core API', author: 'Quốc Hùng', img: 'https://images.unsplash.com/photo-1550439062-609e1531270e?w=500&q=80', price: '799.000đ', rating: '4.8', badge: 'Best Seller' },
-  { id: 2, title: 'Thực chiến ReactJS từ Zero', author: 'Huy Hoàng', img: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=500&q=80', price: '599.000đ', rating: '4.9', badge: 'Hot' },
-  { id: 3, title: 'Python Cơ bản & Nâng cao', author: 'Minh Tuấn', img: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&q=80', price: '499.000đ', rating: '4.7', badge: null },
-  { id: 4, title: 'AWS Cloud Practitioner', author: 'Lê Nam', img: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&q=80', price: '899.000đ', rating: '5.0', badge: 'New' },
-];
-
 export default function CoursesScreen() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState('Tất cả');
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/KhoaHoc/all');
+      setCourses(response.data);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const filteredCourses = activeFilter === 'Tất cả' 
+    ? courses 
+    : courses.filter(c => c.linhVuc?.includes(activeFilter) || c.kyNangChinh?.includes(activeFilter));
+
+  const formatPrice = (price: number) => {
+    if (!price || price === 0) return 'Miễn phí';
+    return price.toLocaleString('vi-VN') + 'đ';
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -48,7 +69,7 @@ export default function CoursesScreen() {
 
       <View style={styles.filterScrollWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {['Tất cả', 'C# .NET', 'ReactJS', 'Python', 'AWS', 'DevOps'].map((filter, index) => {
+          {['Tất cả', 'BackEnd', 'FrontEnd', 'Database', 'Mobile', 'AI'].map((filter, index) => {
             const isActive = activeFilter === filter;
             return (
               <TouchableOpacity key={index} onPress={() => setActiveFilter(filter)}>
@@ -67,33 +88,42 @@ export default function CoursesScreen() {
         </ScrollView>
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-        {MOCK_COURSES.map((c) => (
-          <TouchableOpacity key={c.id} style={[styles.courseCard, SHADOWS.small]} onPress={() => router.push('/course-detail')}>
-            <View style={styles.imgWrapper}>
-              <Image source={{ uri: c.img }} style={styles.courseImg} />
-              {c.badge && (
-                <View style={styles.badgeLabel}>
-                  <Text style={styles.badgeText}>{c.badge}</Text>
-                </View>
-              )}
-            </View>
-            <View style={styles.courseInfo}>
-              <View>
-                <Text style={styles.courseTitle} numberOfLines={2}>{c.title}</Text>
-                <Text style={styles.courseAuthor}>{c.author}</Text>
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : (
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+          {filteredCourses.map((c) => (
+            <TouchableOpacity key={c.maKhoaHoc} style={[styles.courseCard, SHADOWS.small]} onPress={() => router.push({ pathname: '/course-detail', params: { id: c.maKhoaHoc } })}>
+              <View style={styles.imgWrapper}>
+                <Image source={{ uri: c.hinhAnh || 'https://via.placeholder.com/500x300' }} style={styles.courseImg} />
+                {c.laKhoaHocMoi && (
+                  <View style={styles.badgeLabel}>
+                    <Text style={styles.badgeText}>New</Text>
+                  </View>
+                )}
               </View>
-              <View style={styles.courseStats}>
-                <View style={styles.ratingBox}>
-                  <Ionicons name="star" size={14} color="#f59e0b" />
-                  <Text style={styles.ratingText}>{c.rating}</Text>
+              <View style={styles.courseInfo}>
+                <View>
+                  <Text style={styles.courseTitle} numberOfLines={2}>{c.tenKhoaHoc}</Text>
+                  <Text style={styles.courseAuthor}>{c.giangVien?.hoTen || 'EducodeAI'}</Text>
                 </View>
-                <Text style={styles.priceText}>{c.price}</Text>
+                <View style={styles.courseStats}>
+                  <View style={styles.ratingBox}>
+                    <Ionicons name="star" size={14} color="#f59e0b" />
+                    <Text style={styles.ratingText}>{c.diemDanhGiaTB?.toFixed(1) || '0.0'}</Text>
+                  </View>
+                  <Text style={styles.priceText}>{formatPrice(c.giaTien)}</Text>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            </TouchableOpacity>
+          ))}
+          {filteredCourses.length === 0 && (
+            <Text style={{ textAlign: 'center', color: COLORS.gray, marginTop: 40 }}>Không tìm thấy khoá học nào.</Text>
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

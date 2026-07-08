@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+const fs = require('fs');
+const path = require('path');
+
+const content = `import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, SafeAreaView, ScrollView, 
   TouchableOpacity, Image, StatusBar, Alert, ActivityIndicator 
@@ -42,7 +45,7 @@ export default function LearningScreen() {
 
   const fetchLearningContent = async () => {
     try {
-      const response = await api.get(`/NoiDungKhoaHoc/${id}`);
+      const response = await api.get(\`/NoiDungKhoaHoc/\${id}\`);
       setCourseData(response.data);
       if (response.data?.chuongHocs?.length > 0 && response.data.chuongHocs[0].baiHocs?.length > 0) {
          setCurrentVideo(response.data.chuongHocs[0].baiHocs[0].duongDanVideo);
@@ -244,3 +247,7 @@ const styles = StyleSheet.create({
   docTitle: { fontSize: 16, fontWeight: '700', color: COLORS.white, marginBottom: 4 },
   docSize: { fontSize: 13, color: COLORS.gray }
 });
+`;
+
+fs.writeFileSync(path.join(__dirname, 'Mobile', 'src', 'app', 'learning.tsx'), content);
+console.log('Done rewriting learning.tsx for V2 UI (Dark Mode Cinematic)');
