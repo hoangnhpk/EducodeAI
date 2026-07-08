@@ -264,8 +264,8 @@ const TrangChu: React.FC = () => {
                                 </div>
                                 <h3 className="h4 fw-bold text-dark mb-3">Phỏng Vấn Giả Lập</h3>
                                 <p className="text-muted mb-4 leading-relaxed">Luyện tập trực tiếp với Tech Lead AI. Trả lời bằng giọng nói và nhận review điểm ngay lập tức.</p>
-                                <Link to="/phong-van-ai" className="text-primary fw-bold text-decoration-none feature-link">
-                                    Vào phòng ngay <i className="fas fa-arrow-right"></i>
+                                <Link to="/hoc-vien/phong-van-ai" className="text-primary fw-bold text-decoration-none feature-link">
+                                    Luyện tập ngay <i className="fas fa-arrow-right"></i>
                                 </Link>
                             </div>
                         </div>

@@ -1,198 +1,160 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, Text, View, SafeAreaView, ScrollView, 
-  TouchableOpacity, StatusBar 
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, Alert, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { aiRoadmapService, LoTrinhAICuaToiDTO, KetQuaLoTrinhAI } from '../services/ai-roadmap.service';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedPressable } from '../components/animated-pressable';
 
 const COLORS = {
-  primary: '#fb873f',
-  primaryLight: '#fff3ed',
-  primaryGradient: ['#ff9955', '#fb873f'] as const,
-  dark: '#0f172a',
-  bg: '#f8fafc',
-  white: '#ffffff',
-  gray: '#64748b',
-  lightGray: '#e2e8f0',
-  success: '#10b981',
+  primary: '#fb873f', primaryGradient: ['#ff9955', '#fb873f'] as const,
+  dark: '#0f172a', bg: '#f8fafc', white: '#ffffff', gray: '#64748b',
+  success: '#10b981', lightGray: '#e2e8f0', primaryLight: '#fff3ed'
 };
-
 const SHADOWS = {
-  small: { shadowColor: COLORS.dark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  glow: { shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 }
+  small: { shadowColor: '#0f172a', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  medium: { shadowColor: '#0f172a', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 4 },
+  glow: { shadowColor: '#fb873f', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 14, elevation: 8 }
 };
-
-const MOCK_ROADMAP = [
-  { id: 1, title: 'Cơ bản về JavaScript', desc: 'ES6+, Async/Await, Array Methods', status: 'done', icon: 'logo-javascript' },
-  { id: 2, title: 'React Native Cơ Bản', desc: 'View, Text, StyleSheet, Flexbox', status: 'done', icon: 'logo-react' },
-  { id: 3, title: 'Quản lý Trạng thái (State)', desc: 'Hooks, Context API, Redux Toolkit', status: 'active', icon: 'layers' },
-  { id: 4, title: 'Điều hướng (Navigation)', desc: 'Expo Router, React Navigation', status: 'todo', icon: 'map' },
-  { id: 5, title: 'Gọi API & Lưu trữ', desc: 'Axios, Async Storage, SQLite', status: 'todo', icon: 'cloud-download' },
-  { id: 6, title: 'Đồ án Thực tế & Tối ưu', desc: 'Publish App Store/Google Play', status: 'todo', icon: 'rocket' },
-];
 
 export default function LoTrinhScreen() {
   const router = useRouter();
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [hasRoadmap, setHasRoadmap] = useState(false);
+  const [activeTab, setActiveTab] = useState<'my-roadmap' | 'create'>('my-roadmap');
+  const [roadmaps, setRoadmaps] = useState<LoTrinhAICuaToiDTO[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      setHasRoadmap(true);
-    }, 1500);
+  const [mucTieu, setMucTieu] = useState('');
+  const [kinhNghiem, setKinhNghiem] = useState('');
+  const [khoKhan, setKhoKhan] = useState('');
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'my-roadmap') fetchRoadmaps();
+  }, [activeTab]);
+
+  const fetchRoadmaps = async () => {
+    setLoading(true);
+    try {
+      const res = await aiRoadmapService.getAllLoTrinh();
+      setRoadmaps(res.data);
+    } catch (e) { Alert.alert('Lỗi', 'Không thể lấy danh sách lộ trình'); }
+    finally { setLoading(false); }
   };
 
-  const renderSetup = () => (
-    <View style={styles.setupContainer}>
-      <View style={styles.iconWrapper}>
-        <LinearGradient colors={['#ffedd5', '#fed7aa']} style={styles.iconGradient}>
-          <Ionicons name="git-network" size={40} color={COLORS.primary} />
-        </LinearGradient>
-      </View>
-      <Text style={styles.setupTitle}>Vẽ Lộ Trình Học Tập</Text>
-      <Text style={styles.setupDesc}>AI sẽ phân tích kinh nghiệm hiện tại của bạn và tạo ra một lộ trình học tập tối ưu nhất để đạt được mục tiêu.</Text>
-      
-      <TouchableOpacity activeOpacity={0.8} onPress={handleGenerate} style={[styles.submitBtnWrapper, SHADOWS.glow]}>
-        <LinearGradient colors={COLORS.primaryGradient} style={styles.submitBtn}>
-          {isGenerating ? (
-             <Text style={styles.submitBtnText}>AI đang phân tích...</Text>
-          ) : (
-             <Text style={styles.submitBtnText}>Tạo Lộ Trình Của Tôi</Text>
-          )}
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
+  const handleCreate = async () => {
+    if (!mucTieu || !kinhNghiem) { Alert.alert('Thiếu thông tin', 'Vui lòng nhập mục tiêu và kinh nghiệm!'); return; }
+    setGenerating(true);
+    try {
+      await aiRoadmapService.taoLoTrinh({
+        mucTieuNgheNghiep: mucTieu, kinhNghiem: kinhNghiem, khoKhan: khoKhan || 'Không',
+        trinhDo: 'Cơ bản', phongCachHoc: 'Thực hành nhiều', kienThucHienCo: 'Chưa có nhiều',
+      });
+      Alert.alert('Thành công', 'Lộ trình AI đã được tạo!');
+      setActiveTab('my-roadmap');
+    } catch (e: any) { Alert.alert('Lỗi', e.message || 'Không thể tạo lộ trình'); }
+    finally { setGenerating(false); }
+  };
 
-  const renderTimeline = () => (
-    <ScrollView style={styles.timelineContainer} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Banner */}
-      <View style={[styles.banner, SHADOWS.small]}>
-        <View style={styles.bannerBadge}>
-          <Ionicons name="star" size={14} color={COLORS.primary} />
-          <Text style={styles.bannerBadgeText}>MỤC TIÊU</Text>
+  const renderMyRoadmaps = () => {
+    if (loading) return <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />;
+    if (roadmaps.length === 0) {
+      return (
+        <View style={{ alignItems: 'center', marginTop: 50 }}>
+          <Ionicons name="map-outline" size={64} color={COLORS.lightGray} />
+          <Text style={{ color: COLORS.gray, marginTop: 10, marginBottom: 20 }}>Bạn chưa có lộ trình nào.</Text>
+          <AnimatedPressable style={styles.btnPrimary} onPress={() => setActiveTab('create')}>
+            <LinearGradient colors={COLORS.primaryGradient} style={styles.btnGradient}>
+              <Text style={styles.btnPrimaryText}>Tạo lộ trình AI ngay</Text>
+            </LinearGradient>
+          </AnimatedPressable>
         </View>
-        <Text style={styles.bannerTitle}>React Native Developer</Text>
-        <Text style={styles.bannerDesc}>Thời gian dự kiến: 4.5 tháng</Text>
-        
-        <View style={styles.progressSection}>
-          <View style={styles.progressBarBg}>
-            <LinearGradient colors={COLORS.primaryGradient} style={[styles.progressBarFill, { width: '33%' }]} />
-          </View>
-          <Text style={styles.progressText}>Hoàn thành 2/6 chặng</Text>
-        </View>
-      </View>
-
-      {/* Timeline List */}
-      <View style={styles.timelineList}>
-        {MOCK_ROADMAP.map((item, index) => {
-          const isLast = index === MOCK_ROADMAP.length - 1;
-          const isDone = item.status === 'done';
-          const isActive = item.status === 'active';
-
+      );
+    }
+    return (
+      <View>
+        {roadmaps.map((rm) => {
+          let data: KetQuaLoTrinhAI | null = null;
+          try { data = JSON.parse(rm.noiDungJSON); } catch (e) {}
           return (
-            <View key={item.id} style={styles.timelineItem}>
-              {/* Cột trái: Line & Node */}
-              <View style={styles.timelineLeft}>
-                <View style={[
-                  styles.timelineNode, 
-                  isDone && styles.nodeDone,
-                  isActive && styles.nodeActive,
-                  isActive && SHADOWS.glow
-                ]}>
-                  <Ionicons 
-                    name={isDone ? 'checkmark' : isActive ? 'play' : 'lock-closed'} 
-                    size={16} 
-                    color={isDone || isActive ? COLORS.white : COLORS.gray} 
-                  />
-                </View>
-                {!isLast && <View style={[styles.timelineLine, isDone && styles.lineDone]} />}
+            <AnimatedPressable key={rm.maLoTrinh} style={[styles.card, SHADOWS.small]} onPress={() => Alert.alert('Lộ trình', 'Chi tiết trên Mobile đang phát triển.')}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                <View style={styles.iconBox}><Ionicons name="school" size={20} color={COLORS.primary} /></View>
+                <Text style={styles.cardTitle}>{rm.mucTieuNgheNghiep}</Text>
               </View>
-
-              {/* Cột phải: Content */}
-              <View style={[
-                styles.timelineContent, 
-                SHADOWS.small,
-                isActive && styles.contentActive
-              ]}>
-                <View style={[styles.contentIconBox, { backgroundColor: isDone ? '#dcfce7' : isActive ? COLORS.primaryLight : COLORS.bg }]}>
-                  <Ionicons name={item.icon as any} size={20} color={isDone ? COLORS.success : isActive ? COLORS.primary : COLORS.gray} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.itemTitle, isActive && { color: COLORS.primary }]}>Chặng {item.id}: {item.title}</Text>
-                  <Text style={styles.itemDesc}>{item.desc}</Text>
-                </View>
-              </View>
-            </View>
+              <Text style={{ color: COLORS.gray, marginBottom: 5 }}>Tạo ngày: {new Date(rm.ngayTao).toLocaleDateString('vi-VN')}</Text>
+              <Text style={{ color: COLORS.dark }}>Trạng thái: <Text style={{fontWeight: 'bold', color: COLORS.success}}>{rm.trangThai}</Text></Text>
+            </AnimatedPressable>
           );
         })}
       </View>
-    </ScrollView>
+    );
+  };
+
+  const renderCreateForm = () => (
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={[styles.card, SHADOWS.small]}>
+        <Text style={styles.label}>Mục tiêu nghề nghiệp (VD: Frontend Dev):</Text>
+        <TextInput style={styles.input} value={mucTieu} onChangeText={setMucTieu} placeholder="Nhập mục tiêu của bạn..." />
+
+        <Text style={styles.label}>Kinh nghiệm hiện tại:</Text>
+        <TextInput style={[styles.input, {height: 80}]} value={kinhNghiem} onChangeText={setKinhNghiem} placeholder="VD: Đã biết HTML, CSS cơ bản..." multiline />
+
+        <Text style={styles.label}>Khó khăn đang gặp phải:</Text>
+        <TextInput style={[styles.input, {height: 80}]} value={khoKhan} onChangeText={setKhoKhan} placeholder="VD: Khó nhớ cú pháp..." multiline />
+
+        <AnimatedPressable style={[styles.btnPrimary, generating && { opacity: 0.7 }]} onPress={handleCreate} disabled={generating}>
+          <LinearGradient colors={COLORS.primaryGradient} style={styles.btnGradient}>
+            {generating ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.btnPrimaryText}>✨ Sinh Lộ Trình AI</Text>}
+          </LinearGradient>
+        </AnimatedPressable>
+      </View>
+    </KeyboardAvoidingView>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bg} />
-      
+    <View style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <AnimatedPressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Lộ Trình Cá Nhân</Text>
-        <View style={{ width: 40 }} />
+        </AnimatedPressable>
+        <Text style={styles.headerTitle}>Lộ Trình AI</Text>
+        <View style={{ width: 44 }} />
       </View>
 
-      {hasRoadmap ? renderTimeline() : renderSetup()}
+      <View style={styles.tabContainer}>
+        <AnimatedPressable style={[styles.tabBtn, activeTab === 'my-roadmap' && styles.tabBtnActive]} onPress={() => setActiveTab('my-roadmap')}>
+          <Text style={[styles.tabText, activeTab === 'my-roadmap' && styles.tabTextActive]}>Lộ trình của tôi</Text>
+        </AnimatedPressable>
+        <AnimatedPressable style={[styles.tabBtn, activeTab === 'create' && styles.tabBtnActive]} onPress={() => setActiveTab('create')}>
+          <Text style={[styles.tabText, activeTab === 'create' && styles.tabTextActive]}>Tạo mới AI</Text>
+        </AnimatedPressable>
+      </View>
 
-    </SafeAreaView>
+      <ScrollView style={styles.contentContainer} contentContainerStyle={{ paddingBottom: 40 }}>
+        {activeTab === 'my-roadmap' ? renderMyRoadmaps() : renderCreateForm()}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center', ...SHADOWS.small },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.dark },
-  
-  // Setup
-  setupContainer: { flex: 1, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center', paddingBottom: 50 },
-  iconWrapper: { alignItems: 'center', marginBottom: 20 },
-  iconGradient: { width: 90, height: 90, borderRadius: 30, justifyContent: 'center', alignItems: 'center' },
-  setupTitle: { fontSize: 24, fontWeight: '900', color: COLORS.dark, marginBottom: 10 },
-  setupDesc: { textAlign: 'center', color: COLORS.gray, fontSize: 15, lineHeight: 22, marginBottom: 40, paddingHorizontal: 10 },
-  submitBtnWrapper: { borderRadius: 16, overflow: 'hidden', width: '100%' },
-  submitBtn: { height: 56, justifyContent: 'center', alignItems: 'center' },
-  submitBtnText: { color: COLORS.white, fontSize: 16, fontWeight: '800' },
-
-  // Timeline
-  timelineContainer: { flex: 1, paddingHorizontal: 20 },
-  banner: { backgroundColor: COLORS.white, borderRadius: 20, padding: 20, marginBottom: 30 },
-  bannerBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.primaryLight, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, marginBottom: 10 },
-  bannerBadgeText: { color: COLORS.primary, fontSize: 12, fontWeight: '800', marginLeft: 4 },
-  bannerTitle: { fontSize: 22, fontWeight: '900', color: COLORS.dark, marginBottom: 5 },
-  bannerDesc: { fontSize: 14, color: COLORS.gray, marginBottom: 15 },
-  progressSection: { marginTop: 5 },
-  progressBarBg: { height: 8, backgroundColor: COLORS.bg, borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
-  progressBarFill: { height: '100%', borderRadius: 4 },
-  progressText: { fontSize: 13, color: COLORS.gray, fontWeight: '600', textAlign: 'right' },
-
-  timelineList: { paddingLeft: 10 },
-  timelineItem: { flexDirection: 'row', marginBottom: 20 },
-  
-  timelineLeft: { width: 30, alignItems: 'center' },
-  timelineNode: { width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.lightGray, justifyContent: 'center', alignItems: 'center', zIndex: 2 },
-  nodeDone: { backgroundColor: COLORS.success },
-  nodeActive: { backgroundColor: COLORS.primary },
-  timelineLine: { width: 2, flex: 1, backgroundColor: COLORS.lightGray, marginVertical: -5, zIndex: 1 },
-  lineDone: { backgroundColor: COLORS.success },
-
-  timelineContent: { flex: 1, backgroundColor: COLORS.white, borderRadius: 16, padding: 15, marginLeft: 15, flexDirection: 'row', alignItems: 'center' },
-  contentActive: { borderWidth: 1, borderColor: COLORS.primaryLight, backgroundColor: '#fffbfa' },
-  contentIconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  itemTitle: { fontSize: 16, fontWeight: '800', color: COLORS.dark, marginBottom: 4 },
-  itemDesc: { fontSize: 13, color: COLORS.gray, lineHeight: 18 },
+  safeArea: { flex: 1, backgroundColor: COLORS.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: 'rgba(248, 250, 252, 0.9)' },
+  backBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center', ...SHADOWS.small },
+  headerTitle: { fontSize: 20, fontWeight: '900', color: COLORS.dark, letterSpacing: -0.5 },
+  tabContainer: { flexDirection: 'row', backgroundColor: COLORS.white, paddingHorizontal: 20, ...SHADOWS.small, zIndex: 10 },
+  tabBtn: { flex: 1, paddingVertical: 16, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: 'transparent' },
+  tabBtnActive: { borderBottomColor: COLORS.primary },
+  tabText: { fontSize: 15, fontWeight: '700', color: COLORS.gray },
+  tabTextActive: { color: COLORS.primary, fontWeight: '900' },
+  contentContainer: { flex: 1, padding: 20 },
+  card: { backgroundColor: COLORS.white, padding: 24, borderRadius: 24, marginBottom: 15 },
+  iconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.primaryLight, justifyContent: 'center', alignItems: 'center' },
+  cardTitle: { fontSize: 18, fontWeight: '900', color: COLORS.dark, marginLeft: 12, flex: 1 },
+  btnPrimary: { borderRadius: 20, overflow: 'hidden', marginTop: 15, ...SHADOWS.glow },
+  btnGradient: { height: 56, justifyContent: 'center', alignItems: 'center' },
+  btnPrimaryText: { color: COLORS.white, fontWeight: '900', fontSize: 16 },
+  label: { fontSize: 15, fontWeight: '800', color: COLORS.dark, marginBottom: 8, marginTop: 15 },
+  input: { backgroundColor: COLORS.bg, borderRadius: 16, padding: 16, fontSize: 16, color: COLORS.dark, borderWidth: 1, borderColor: COLORS.lightGray, minHeight: 56 },
 });

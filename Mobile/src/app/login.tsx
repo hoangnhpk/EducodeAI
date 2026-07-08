@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { 
   StyleSheet, Text, View, SafeAreaView, ScrollView, 
-  TouchableOpacity, TextInput, StatusBar, ImageBackground, KeyboardAvoidingView, Platform 
+  TouchableOpacity, TextInput, StatusBar, ImageBackground, KeyboardAvoidingView, Platform, Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { AuthContext } from '../context/AuthContext';
+import api from '../configs/api';
 
 const COLORS = {
   primary: '#fb873f',
@@ -21,9 +23,42 @@ const SHADOWS = {
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login } = React.useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Lỗi', 'Vui lòng nhập tài khoản và mật khẩu!');
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.post('/XacThuc/dang-nhap', {
+        TaiKhoan: email,
+        MatKhau: password,
+        CaptchaToken: "SKIP_CAPTCHA", // Bypass captcha in mobile
+        MaThietBi: `Mobile_${Platform.OS}_${Date.now()}`,
+        TenThietBi: `Mobile App ${Platform.OS}`
+      });
+
+      if (response.data.requiresCaptcha) {
+        Alert.alert('Lỗi', response.data.message);
+        setLoading(false);
+        return;
+      }
+
+      await login(response.data.token, response.data.thongTinNguoiDung);
+      Alert.alert('Thành công', 'Đăng nhập thành công!');
+      router.replace('/');
+    } catch (error: any) {
+      Alert.alert('Lỗi', error.response?.data?.message || 'Không thể kết nối đến máy chủ.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ImageBackground 
@@ -87,8 +122,8 @@ export default function LoginScreen() {
                   <Text style={styles.forgotText}>Quên mật khẩu?</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.loginBtn} onPress={() => router.push('/')}>
-                  <Text style={styles.loginBtnText}>Tiếp theo</Text>
+                <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={loading}>
+                  <Text style={styles.loginBtnText}>{loading ? 'Đang đăng nhập...' : 'Đăng nhập'}</Text>
                 </TouchableOpacity>
               </View>
 
