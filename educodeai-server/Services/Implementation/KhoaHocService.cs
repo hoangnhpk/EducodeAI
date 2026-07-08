@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using educodeai_server.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,7 +42,7 @@ namespace educodeai_server.Services.Implementation
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            const string publicKey = "CourseList:Public";
+            const string publicKey = "CourseList:Public:v2";
 
             // 1. Đọc Public Cache
             var cached = await _redisService.LayGiaTriAsync(publicKey);

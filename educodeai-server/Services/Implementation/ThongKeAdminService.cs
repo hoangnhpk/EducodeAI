@@ -2,6 +2,7 @@ using educodeai_server.Data;
 using educodeai_server.DTOs.ThongKeAdmin;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -543,6 +544,182 @@ namespace educodeai_server.Services.Implementation
                 TotalPages = totalPages,
                 Items = items
             };
+        }
+
+        public async Task<DoanhThuTongQuanDTO> LayDoanhThuTongQuanAsync()
+        {
+            var query = _context.DoanhThuGiangViens.AsNoTracking();
+
+            var tongDoanhThu = await query.SumAsync(x => (decimal?)x.TongTienDonHang) ?? 0m;
+            var tongPhiNenTang = await query.SumAsync(x => (decimal?)x.PhiNenTang) ?? 0m;
+            var tongThucNhanGV = await query.SumAsync(x => (decimal?)x.ThucNhanGiangVien) ?? 0m;
+            var tongDonHang = await query.Select(x => x.MaDonHang).Distinct().CountAsync();
+
+            var thangNay = DateTime.UtcNow;
+            var doanhThuThangNay = await query
+                .Where(x => x.CreatedAt.Year == thangNay.Year && x.CreatedAt.Month == thangNay.Month)
+                .SumAsync(x => (decimal?)x.TongTienDonHang) ?? 0m;
+
+            return new DoanhThuTongQuanDTO
+            {
+                TongDoanhThu = tongDoanhThu,
+                TongPhiNenTang = tongPhiNenTang,
+                TongThucNhanGV = tongThucNhanGV,
+                DoanhThuThangNay = doanhThuThangNay,
+                TongDonHang = tongDonHang
+            };
+        }
+
+        public async Task<List<DoanhThuTheoThoiGianDTO>> LayDoanhThuTheoThoiGianAsync(
+            string? nhomTheo,
+            DateTime? fromUtc,
+            DateTime? toUtcExclusive)
+        {
+            string mode = (nhomTheo ?? "month").Trim().ToLowerInvariant();
+            if (mode is not ("day" or "week" or "month" or "year"))
+            {
+                mode = "month";
+            }
+
+            var now = DateTime.UtcNow;
+            var today = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc);
+
+            DateTime start;
+            DateTime endExclusive;
+
+            if (fromUtc.HasValue && toUtcExclusive.HasValue)
+            {
+                start = StartOfDayUtc(fromUtc.Value);
+                endExclusive = StartOfDayUtc(toUtcExclusive.Value).AddDays(1);
+                if (endExclusive <= start) endExclusive = start.AddDays(1);
+            }
+            else
+            {
+                endExclusive = today.AddDays(1);
+                start = mode switch
+                {
+                    "day" => today.AddDays(-29),
+                    "week" => today.AddDays(-(12 * 7 - 1)),
+                    "year" => new DateTime(today.Year - 4, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    _ => new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-11)
+                };
+            }
+
+            var data = await _context.DoanhThuGiangViens
+                .AsNoTracking()
+                .Where(x => x.CreatedAt >= start && x.CreatedAt < endExclusive)
+                .Select(x => new
+                {
+                    x.CreatedAt,
+                    x.TongTienDonHang,
+                    x.PhiNenTang,
+                    x.ThucNhanGiangVien
+                })
+                .ToListAsync();
+
+            var map = mode switch
+            {
+                "day" => data
+                    .GroupBy(x => x.CreatedAt.Date)
+                    .ToDictionary(
+                        g => g.Key.ToString("yyyy-MM-dd"),
+                        g => new DoanhThuTheoThoiGianDTO
+                        {
+                            Nhan = g.Key.ToString("dd/MM", CultureInfo.InvariantCulture),
+                            TongDoanhThu = g.Sum(x => x.TongTienDonHang),
+                            PhiNenTang = g.Sum(x => x.PhiNenTang),
+                            ThucNhanGV = g.Sum(x => x.ThucNhanGiangVien)
+                        }),
+                "week" => data
+                    .GroupBy(x => new { Year = ISOWeek.GetYear(x.CreatedAt.Date), Week = ISOWeek.GetWeekOfYear(x.CreatedAt.Date) })
+                    .ToDictionary(
+                        g => $"{g.Key.Year}-W{g.Key.Week:D2}",
+                        g => new DoanhThuTheoThoiGianDTO
+                        {
+                            Nhan = $"T{g.Key.Week}/{g.Key.Year}",
+                            TongDoanhThu = g.Sum(x => x.TongTienDonHang),
+                            PhiNenTang = g.Sum(x => x.PhiNenTang),
+                            ThucNhanGV = g.Sum(x => x.ThucNhanGiangVien)
+                        }),
+                "year" => data
+                    .GroupBy(x => x.CreatedAt.Year)
+                    .ToDictionary(
+                        g => g.Key.ToString(),
+                        g => new DoanhThuTheoThoiGianDTO
+                        {
+                            Nhan = g.Key.ToString(),
+                            TongDoanhThu = g.Sum(x => x.TongTienDonHang),
+                            PhiNenTang = g.Sum(x => x.PhiNenTang),
+                            ThucNhanGV = g.Sum(x => x.ThucNhanGiangVien)
+                        }),
+                _ => data
+                    .GroupBy(x => new { x.CreatedAt.Year, x.CreatedAt.Month })
+                    .ToDictionary(
+                        g => $"{g.Key.Year}-{g.Key.Month:D2}",
+                        g => new DoanhThuTheoThoiGianDTO
+                        {
+                            Nhan = $"{g.Key.Month:D2}/{g.Key.Year}",
+                            TongDoanhThu = g.Sum(x => x.TongTienDonHang),
+                            PhiNenTang = g.Sum(x => x.PhiNenTang),
+                            ThucNhanGV = g.Sum(x => x.ThucNhanGiangVien)
+                        })
+            };
+
+            var result = new List<DoanhThuTheoThoiGianDTO>();
+
+            if (mode == "day")
+            {
+                for (var dt = start; dt < endExclusive; dt = dt.AddDays(1))
+                {
+                    var key = dt.ToString("yyyy-MM-dd");
+                    result.Add(map.TryGetValue(key, out var v) ? v : new DoanhThuTheoThoiGianDTO
+                    {
+                        Nhan = dt.ToString("dd/MM", CultureInfo.InvariantCulture)
+                    });
+                }
+            }
+            else if (mode == "week")
+            {
+                var cursor = start;
+                while (cursor < endExclusive)
+                {
+                    var year = ISOWeek.GetYear(cursor);
+                    var week = ISOWeek.GetWeekOfYear(cursor);
+                    var key = $"{year}-W{week:D2}";
+                    result.Add(map.TryGetValue(key, out var v) ? v : new DoanhThuTheoThoiGianDTO
+                    {
+                        Nhan = $"T{week}/{year}"
+                    });
+                    cursor = cursor.AddDays(7);
+                }
+            }
+            else if (mode == "year")
+            {
+                for (int y = start.Year; y < endExclusive.Year; y++)
+                {
+                    var key = y.ToString();
+                    result.Add(map.TryGetValue(key, out var v) ? v : new DoanhThuTheoThoiGianDTO
+                    {
+                        Nhan = key
+                    });
+                }
+            }
+            else
+            {
+                var cursor = new DateTime(start.Year, start.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endMonth = new DateTime(endExclusive.AddDays(-1).Year, endExclusive.AddDays(-1).Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                while (cursor <= endMonth)
+                {
+                    var key = $"{cursor.Year}-{cursor.Month:D2}";
+                    result.Add(map.TryGetValue(key, out var v) ? v : new DoanhThuTheoThoiGianDTO
+                    {
+                        Nhan = $"{cursor.Month:D2}/{cursor.Year}"
+                    });
+                    cursor = cursor.AddMonths(1);
+                }
+            }
+
+            return result;
         }
     }
 }
