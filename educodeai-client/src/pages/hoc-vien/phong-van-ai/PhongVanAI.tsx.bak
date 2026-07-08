@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { StartPhongVanRequest } from '../../../services/phong-van-ai.service';
-import {
-    PhongVanAIService,
-    TinhCachAI
-} from '../../../services/phong-van-ai.service';
 
 interface IMessage {
     id: string;
     role: 'ai' | 'user';
     content: string;
+    isTyping?: boolean;
     feedback?: {
         level: 'excellent' | 'good' | 'average' | 'poor';
         text: string;
@@ -17,49 +13,52 @@ interface IMessage {
     timestamp: Date;
 }
 
+const FEEDBACK_CONFIG = {
+    excellent: { label: 'Xuất sắc', color: '#10b981', bg: 'rgba(16,185,129,0.08)', icon: '🌟' },
+    good:      { label: 'Tốt',      color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', icon: '👍' },
+    average:   { label: 'Khá',      color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', icon: '💬' },
+    poor:      { label: 'Cần cải thiện', color: '#ef4444', bg: 'rgba(239,68,68,0.08)', icon: '📝' },
+};
+
 const INTERVIEWER = {
-    name: 'EduCode AI',
+    name: 'Nguyễn Văn Minh',
     title: 'Senior Technical Lead',
     company: 'EduCode Technologies',
-    initials: 'AI',
+    initials: 'NM',
 };
 
 const PhongVanAI: React.FC = () => {
     const navigate = useNavigate();
-    
-    // --- SETUP STATE ---
-    const [setupMode, setSetupMode] = useState(true);
-    const [viTri, setViTri] = useState('Backend Developer');
-    const [capDo, setCapDo] = useState('Junior');
-    const [tinhCach, setTinhCach] = useState<TinhCachAI>(TinhCachAI.Normal);
-    const [soLuongCauHoi] = useState(3);
-    const [isStarting, setIsStarting] = useState(false);
-    
-    // --- INTERVIEW STATE ---
-    const [maPhongVan, setMaPhongVan] = useState<number | null>(null);
     const chatBoxRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
-    
     const [isRecording, setIsRecording] = useState(false);
     const [inputText, setInputText] = useState('');
-    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(true); // interviewer is "speaking"
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [isInterviewerTyping, setIsInterviewerTyping] = useState(false);
     const [showEndModal, setShowEndModal] = useState(false);
     const [questionCount, setQuestionCount] = useState(1);
-    
-    const [messages, setMessages] = useState<IMessage[]>([]);
-    
-    const [finalResult, setFinalResult] = useState<{diemSo: number, danhGiaChung: string} | null>(null);
+
+    const [messages, setMessages] = useState<IMessage[]>([
+        {
+            id: 'msg-1',
+            role: 'ai',
+            content: 'Chào em, anh là Minh – Technical Lead của team Backend. Hôm nay mình sẽ có khoảng 30 phút để nói chuyện về kỹ thuật nhé. Em cứ thoải mái, đây chỉ là buổi trao đổi thân thiện thôi. Để bắt đầu, em hãy giới thiệu qua về bản thân và những gì em đã làm được trong dự án vừa rồi nhé!',
+            timestamp: new Date(),
+        }
+    ]);
 
     // Timer
     useEffect(() => {
-        let timer: any;
-        if (!setupMode && !showEndModal && !finalResult) {
-            timer = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
-        }
+        const timer = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
         return () => clearInterval(timer);
-    }, [setupMode, showEndModal, finalResult]);
+    }, []);
+
+    // Initial "speaking" animation then idle
+    useEffect(() => {
+        const t = setTimeout(() => setIsSpeaking(false), 5000);
+        return () => clearTimeout(t);
+    }, []);
 
     // Auto-scroll
     useEffect(() => {
@@ -74,41 +73,23 @@ const PhongVanAI: React.FC = () => {
         return `${m}:${sec}`;
     };
 
-    const handleStart = async () => {
-        setIsStarting(true);
-        try {
-            const req: StartPhongVanRequest = {
-                viTriUngTuyen: viTri,
-                capDo,
-                tinhCachAI: tinhCach,
-                soLuongCauHoi
-            };
-            const res = await PhongVanAIService.startInterview(req);
-            if (res && res.data) {
-                setMaPhongVan(res.data.maPhongVan);
-                setMessages([
-                    {
-                        id: 'msg-first',
-                        role: 'ai',
-                        content: res.data.cauHoiDauTien,
-                        timestamp: new Date()
-                    }
-                ]);
-                setSetupMode(false);
-                setIsSpeaking(true);
-                setTimeout(() => setIsSpeaking(false), 4000);
-            }
-        } catch (error: any) {
-            window.alert('Lỗi: ' + (error.message || 'Không thể bắt đầu phiên phỏng vấn.'));
-        } finally {
-            setIsStarting(false);
+    const formatMsgTime = (d: Date) =>
+        d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+    const handleToggleMic = () => {
+        if (!isRecording) {
+            setIsRecording(true);
+            setInputText('');
+        } else {
+            setIsRecording(false);
+            setInputText('Interface chỉ chứa khai báo phương thức, còn Abstract Class có thể chứa cả code thực thi bên trong ạ.');
+            inputRef.current?.focus();
         }
     };
 
-    const handleSendMessage = async () => {
+    const handleSendMessage = () => {
         const trimmed = inputText.trim();
         if (!trimmed) return;
-        if (!maPhongVan) return;
 
         const newUserMsg: IMessage = {
             id: 'msg-' + Date.now(),
@@ -122,58 +103,23 @@ const PhongVanAI: React.FC = () => {
         setIsInterviewerTyping(true);
         setIsSpeaking(false);
 
-        try {
-            const res = await PhongVanAIService.answerQuestion({
-                maPhongVan,
-                cauTraLoi: trimmed
-            });
-            
-            if (res && res.data) {
-                setIsInterviewerTyping(false);
-                setIsSpeaking(true);
-                setQuestionCount(c => c + 1);
-                
-                const data = res.data;
-                const aiResponse: IMessage = {
-                    id: 'msg-' + Date.now(),
-                    role: 'ai',
-                    content: data.nhanXetCauTruoc + (data.cauHoiTiepTheo ? '\n\n' + data.cauHoiTiepTheo : ''),
-                    timestamp: new Date(),
-                };
-                
-                setMessages(prev => [...prev, aiResponse]);
-                setTimeout(() => setIsSpeaking(false), 5000);
-                
-                if (data.isFinished) {
-                    setTimeout(() => setShowEndModal(true), 6000);
-                }
-            }
-        } catch (error: any) {
-            window.alert('Lỗi: ' + (error.message || 'Lỗi khi gửi câu trả lời.'));
+        setTimeout(() => {
             setIsInterviewerTyping(false);
-        }
-    };
+            setIsSpeaking(true);
+            setQuestionCount(c => c + 1);
 
-    const handleEndInterview = async () => {
-        if (!maPhongVan) {
-            navigate('/hoc-vien/');
-            return;
-        }
-        setShowEndModal(false);
-        setIsInterviewerTyping(true);
-        try {
-            const res = await PhongVanAIService.endInterview(maPhongVan);
-            if (res && res.data) {
-                setFinalResult({
-                    diemSo: res.data.diemSo,
-                    danhGiaChung: res.data.danhGiaChung
-                });
-            }
-        } catch (error: any) {
-            window.alert('Lỗi: ' + (error.message || 'Lỗi khi kết thúc phỏng vấn.'));
-        } finally {
-            setIsInterviewerTyping(false);
-        }
+            const aiResponse: IMessage = {
+                id: 'msg-' + Date.now(),
+                role: 'ai',
+                content: 'Chính xác! Anh thấy em nắm khá rõ điểm này. Vậy thực tế trong dự án vừa rồi, em đã áp dụng Abstract Class hay Interface ở đâu không? Em kể thêm về trường hợp đó cho anh nghe với nhé.',
+                feedback: { level: 'excellent', text: 'Câu trả lời đi thẳng vào trọng tâm, phân biệt rõ bản chất của 2 khái niệm.' },
+                timestamp: new Date(),
+            };
+
+            setMessages(prev => [...prev, aiResponse]);
+
+            setTimeout(() => setIsSpeaking(false), 5000);
+        }, 2500);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -183,75 +129,6 @@ const PhongVanAI: React.FC = () => {
         }
     };
 
-    if (setupMode) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#0f172a' }}>
-                <div style={{ background: '#1e293b', padding: '40px', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-                    <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>🚀 Thiết lập phỏng vấn AI</h2>
-                    <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: '32px' }}>Tùy chỉnh thông số phiên phỏng vấn của bạn</p>
-                    
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Vị trí ứng tuyển</label>
-                        <input type="text" value={viTri} onChange={e => setViTri(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }} placeholder="VD: Backend Developer" />
-                    </div>
-                    
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Cấp độ</label>
-                        <select value={capDo} onChange={e => setCapDo(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
-                            <option value="Intern">Intern</option>
-                            <option value="Fresher">Fresher</option>
-                            <option value="Junior">Junior</option>
-                            <option value="Mid-level">Mid-level</option>
-                            <option value="Senior">Senior</option>
-                        </select>
-                    </div>
-
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
-                        <select value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value))} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
-                            <option value={TinhCachAI.Friendly}>Thân thiện (Hướng dẫn)</option>
-                            <option value={TinhCachAI.Normal}>Bình thường (Tiêu chuẩn)</option>
-                            <option value={TinhCachAI.Strict}>Khó tính (Xoáy sâu vào lỗi sai)</option>
-                        </select>
-                    </div>
-
-                    <div style={{ marginBottom: '32px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
-                        <input type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#64748b', outline: 'none', cursor: 'not-allowed' }} />
-                    </div>
-
-                    <button onClick={handleStart} disabled={isStarting} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: isStarting ? 'not-allowed' : 'pointer', opacity: isStarting ? 0.7 : 1 }}>
-                        {isStarting ? 'Đang khởi tạo...' : 'Bắt Đầu Phỏng Vấn'}
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    if (finalResult) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#0f172a' }}>
-                <div style={{ background: '#1e293b', padding: '40px', borderRadius: '16px', width: '100%', maxWidth: '600px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                        <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, #10b981, #059669)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '32px', color: 'white', fontWeight: 'bold' }}>
-                            {finalResult.diemSo}
-                        </div>
-                        <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>Buổi phỏng vấn kết thúc!</h2>
-                        <p style={{ color: '#94a3b8' }}>Dưới đây là đánh giá tổng quan từ AI</p>
-                    </div>
-                    
-                    <div style={{ background: '#0f172a', padding: '20px', borderRadius: '8px', color: '#e2e8f0', lineHeight: '1.6', marginBottom: '30px', whiteSpace: 'pre-wrap' }}>
-                        {finalResult.danhGiaChung}
-                    </div>
-
-                    <button onClick={() => navigate('/hoc-vien/')} style={{ width: '100%', padding: '14px', background: '#334155', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
-                        Trở về trang chủ
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <>
             <div id="interview-room-root">
@@ -260,8 +137,8 @@ const PhongVanAI: React.FC = () => {
                     <div className="iv-header-left">
                         <div className="iv-logo-dot" />
                         <div>
-                            <span className="iv-header-title">Phỏng Vấn Kỹ Thuật AI</span>
-                            <span className="iv-header-sub">Vị trí: {viTri} · Cấp độ: {capDo} · Câu hỏi {questionCount}/{soLuongCauHoi}</span>
+                            <span className="iv-header-title">Phỏng Vấn Kỹ Thuật</span>
+                            <span className="iv-header-sub">Vị trí: .NET Backend Developer · Câu hỏi {questionCount}</span>
                         </div>
                     </div>
                     <div className="iv-header-center">
@@ -280,13 +157,18 @@ const PhongVanAI: React.FC = () => {
 
                 {/* ─── MAIN CONTENT ─── */}
                 <main id="interview-main">
+
                     {/* LEFT: Interviewer Video + Chat */}
                     <div id="interview-left">
+
                         {/* Interviewer "Camera" Card */}
                         <div className={`iv-cam-card ${isSpeaking ? 'is-speaking' : ''}`}>
                             <div className="iv-cam-bg">
+                                {/* Ambient blobs */}
                                 <div className="iv-blob iv-blob-1" />
                                 <div className="iv-blob iv-blob-2" />
+
+                                {/* Avatar */}
                                 <div className={`iv-avatar-wrap ${isSpeaking ? 'speaking' : ''}`}>
                                     <div className="iv-avatar-ring" />
                                     <div className="iv-avatar-ring iv-ring-2" />
@@ -294,6 +176,8 @@ const PhongVanAI: React.FC = () => {
                                         <span>{INTERVIEWER.initials}</span>
                                     </div>
                                 </div>
+
+                                {/* Interviewer Info */}
                                 <div className="iv-cam-info">
                                     <div className="iv-cam-status">
                                         {isSpeaking ? (
@@ -312,105 +196,169 @@ const PhongVanAI: React.FC = () => {
                                     </div>
                                     <div className="iv-cam-name">
                                         <strong>{INTERVIEWER.name}</strong>
-                                        <small>{INTERVIEWER.title} · Tính cách: {tinhCach === TinhCachAI.Friendly ? 'Thân thiện' : tinhCach === TinhCachAI.Strict ? 'Khó tính' : 'Bình thường'}</small>
+                                        <small>{INTERVIEWER.title} · {INTERVIEWER.company}</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Conversation Transcript */}
+                        <div id="iv-transcript-box" ref={chatBoxRef}>
+                            {messages.map(msg => (
+                                <div key={msg.id} className={`iv-msg-row ${msg.role}`}>
+                                    {msg.role === 'ai' && (
+                                        <div className="iv-msg-avatar ai">
+                                            {INTERVIEWER.initials}
+                                        </div>
+                                    )}
+                                    <div className="iv-msg-group">
+                                        <div className="iv-msg-meta">
+                                            {msg.role === 'ai' ? INTERVIEWER.name : 'Bạn'}
+                                            <span className="iv-msg-time">{formatMsgTime(msg.timestamp)}</span>
+                                        </div>
+                                        <div className={`iv-msg-bubble ${msg.role}`}>
+                                            {msg.content}
+                                        </div>
+                                        {msg.feedback && (() => {
+                                            const cfg = FEEDBACK_CONFIG[msg.feedback.level];
+                                            return (
+                                                <div className="iv-feedback" style={{ '--fb-color': cfg.color, '--fb-bg': cfg.bg } as React.CSSProperties}>
+                                                    <span className="iv-fb-icon">{cfg.icon}</span>
+                                                    <div>
+                                                        <span className="iv-fb-label">{cfg.label}</span>
+                                                        <span className="iv-fb-text">{msg.feedback.text}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                    {msg.role === 'user' && (
+                                        <div className="iv-msg-avatar user">Bạn</div>
+                                    )}
+                                </div>
+                            ))}
+
+                            {/* Typing indicator */}
+                            {isInterviewerTyping && (
+                                <div className="iv-msg-row ai">
+                                    <div className="iv-msg-avatar ai">{INTERVIEWER.initials}</div>
+                                    <div className="iv-msg-group">
+                                        <div className="iv-msg-meta">{INTERVIEWER.name}</div>
+                                        <div className="iv-msg-bubble ai iv-typing-bubble">
+                                            <span/><span/><span/>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* RIGHT: Chat & Transcript */}
+                    {/* RIGHT: User Self-View + Input */}
                     <div id="interview-right">
-                        <div className="iv-chat-container">
-                            <div className="iv-chat-header">
-                                <div className="iv-ch-title">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                    Bản ghi trao đổi
+
+                        {/* User Self-View */}
+                        <div className={`iv-self-cam ${isRecording ? 'recording' : ''}`}>
+                            <div className="iv-self-inner">
+                                <div className="iv-self-avatar">
+                                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
                                 </div>
-                            </div>
-                            <div className="iv-chat-messages" ref={chatBoxRef}>
-                                {messages.map(msg => (
-                                    <div key={msg.id} className={`iv-msg-row ${msg.role === 'user' ? 'iv-msg-user' : 'iv-msg-ai'}`}>
-                                        {msg.role === 'ai' && (
-                                            <div className="iv-msg-avatar ai">{INTERVIEWER.initials}</div>
-                                        )}
-                                        <div className="iv-msg-bubble-wrap">
-                                            <div className="iv-msg-info">
-                                                <span className="iv-msg-name">{msg.role === 'ai' ? INTERVIEWER.name : 'Bạn'}</span>
-                                                <span className="iv-msg-time">{msg.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
-                                            </div>
-                                            <div className="iv-msg-content">{msg.content}</div>
-                                        </div>
-                                    </div>
-                                ))}
-                                {isInterviewerTyping && (
-                                    <div className="iv-msg-row iv-msg-ai">
-                                        <div className="iv-msg-avatar ai">{INTERVIEWER.initials}</div>
-                                        <div className="iv-msg-bubble-wrap">
-                                            <div className="iv-msg-content typing">
-                                                <div className="iv-typing-dot"></div>
-                                                <div className="iv-typing-dot"></div>
-                                                <div className="iv-typing-dot"></div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                {isRecording && (
+                                    <div className="iv-rec-ring" />
                                 )}
                             </div>
-                            
-                            <div className="iv-chat-input-area">
-                                <div className="iv-input-wrapper">
-                                    <textarea 
-                                        ref={inputRef}
-                                        value={inputText}
-                                        onChange={e => setInputText(e.target.value)}
-                                        onKeyDown={handleKeyDown}
-                                        placeholder="Nhập câu trả lời của bạn (hoặc dùng mic)..."
-                                        rows={1}
-                                        disabled={isInterviewerTyping || isSpeaking}
-                                    />
-                                    <button 
-                                        className={`iv-btn-mic ${isRecording ? 'recording' : ''}`} 
-                                        onClick={() => setIsRecording(!isRecording)}
-                                        disabled={isInterviewerTyping || isSpeaking}
-                                    >
-                                        {isRecording ? (
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-                                        ) : (
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
-                                        )}
-                                    </button>
-                                    <button 
-                                        className="iv-btn-send" 
-                                        onClick={handleSendMessage}
-                                        disabled={!inputText.trim() || isInterviewerTyping || isSpeaking}
-                                    >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                                    </button>
-                                </div>
+                            <div className="iv-self-label">
+                                <span className={`iv-self-dot ${isRecording ? 'active' : ''}`} />
+                                {isRecording ? 'Đang ghi âm...' : 'Camera của bạn'}
                             </div>
+                        </div>
+
+                        {/* Info Panel */}
+                        <div className="iv-info-panel">
+                            <div className="iv-info-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                                <span>Thời gian đã qua: <strong>{formatTime(elapsedSeconds)}</strong></span>
+                            </div>
+                            <div className="iv-info-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                <span>Câu hỏi: <strong>{questionCount}</strong></span>
+                            </div>
+                            <div className="iv-info-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <span>Trạng thái: <strong className="text-ok">Đang diễn ra</strong></span>
+                            </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="iv-divider">
+                            <span>Câu trả lời của bạn</span>
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="iv-input-area">
+                            <textarea
+                                ref={inputRef}
+                                className="iv-textarea"
+                                placeholder={isRecording ? '🎙 Đang nhận diện giọng nói...' : 'Nhập câu trả lời của bạn ở đây...'}
+                                value={inputText}
+                                onChange={e => setInputText(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                disabled={isRecording}
+                                rows={5}
+                            />
+
+                            <div className="iv-actions">
+                                <button
+                                    className={`iv-btn-mic ${isRecording ? 'active' : ''}`}
+                                    onClick={handleToggleMic}
+                                    title={isRecording ? 'Dừng ghi âm' : 'Bật microphone'}
+                                >
+                                    {isRecording ? (
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                                    ) : (
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                                    )}
+                                    {isRecording ? 'Dừng' : 'Mic'}
+                                </button>
+
+                                <button
+                                    className="iv-btn-send"
+                                    onClick={handleSendMessage}
+                                    disabled={!inputText.trim() || isInterviewerTyping}
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                    Gửi câu trả lời
+                                </button>
+                            </div>
+
+                            <p className="iv-hint">
+                                <kbd>Enter</kbd> để gửi · <kbd>Shift+Enter</kbd> để xuống dòng
+                            </p>
                         </div>
                     </div>
                 </main>
             </div>
 
-            {/* END MODAL */}
+            {/* ─── END MODAL ─── */}
             {showEndModal && (
-                <div className="iv-modal-overlay">
-                    <div className="iv-modal">
+                <div className="iv-modal-overlay" onClick={() => setShowEndModal(false)}>
+                    <div className="iv-modal" onClick={e => e.stopPropagation()}>
                         <div className="iv-modal-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                         </div>
                         <h3>Kết thúc phỏng vấn?</h3>
-                        <p>Bạn có chắc chắn muốn kết thúc buổi phỏng vấn sớm? AI sẽ tổng hợp điểm dựa trên những câu hỏi đã hoàn thành.</p>
+                        <p>Bạn đã trả lời <strong>{questionCount}</strong> câu hỏi trong <strong>{formatTime(elapsedSeconds)}</strong>. Kết quả sẽ được lưu và phân tích.</p>
                         <div className="iv-modal-actions">
-                            <button className="iv-modal-btn cancel" onClick={() => setShowEndModal(false)}>Tiếp tục phỏng vấn</button>
-                            <button className="iv-modal-btn confirm" onClick={handleEndInterview}>Kết thúc ngay</button>
+                            <button className="iv-modal-btn cancel" onClick={() => setShowEndModal(false)}>Tiếp tục</button>
+                            <button className="iv-modal-btn confirm" onClick={() => navigate(-1)}>Kết thúc</button>
                         </div>
                     </div>
                 </div>
             )}
 
-<style>{`
+            <style>{`
                 /* ── RESET & BASE ── */
                 #interview-room-root {
                     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
