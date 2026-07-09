@@ -46,6 +46,12 @@ namespace EduCodeAI.Controllers.HocVien
                     return BadRequest(new { message = "Bạn đã đăng ký khóa học này rồi." });
                 }
 
+                var laKhoaHocMienPhi = string.Equals(khoaHoc.DonViTienTe, "FREE", StringComparison.OrdinalIgnoreCase) || khoaHoc.GiaKhoaHoc <= 0;
+                if (!laKhoaHocMienPhi)
+                {
+                    return BadRequest(new { message = "Khóa học trả phí cần được mua qua trang thanh toán." });
+                }
+
                 var dangKyMoi = new DangKyKhoaHocModel
                 {
                     MaKhoaHoc = request.MaKhoaHoc,

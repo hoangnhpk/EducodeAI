@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using educodeai_server.Data;
@@ -11,9 +12,11 @@ using educodeai_server.Data;
 namespace educodeai_server.Migrations
 {
     [DbContext(typeof(EduCodeAIDbContext))]
-    partial class EduCodeAIDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260703131616_SyncPendingChanges")]
+    partial class SyncPendingChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3059,7 +3062,6 @@ namespace educodeai_server.Migrations
                     b.ToTable("DanhGias");
                 });
 
-
             modelBuilder.Entity("educodeai_server.Models.DanhHieuModel", b =>
                 {
                     b.Property<int>("MaDanhHieu")
@@ -3522,10 +3524,6 @@ namespace educodeai_server.Migrations
 
                     b.Property<string>("LinkedInUrl")
                         .HasColumnType("text");
-
-                    b.Property<string>("LoaiDoiTuongThue")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("LoaiGiayTo")
                         .IsRequired()
@@ -4095,57 +4093,6 @@ namespace educodeai_server.Migrations
                             TrangThai = "Hoạt động",
                             TrinhDo = "Người mới"
                         });
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.LichSuPhongVanModel", b =>
-                {
-                    b.Property<int>("MaPhongVan")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MaPhongVan"));
-
-                    b.Property<string>("CapDo")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("ChiTietChatJSON")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DanhGiaChung")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("DiemSo")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaNguoiDung")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("NgayPhongVan")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("SoLuongCauHoi")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TinhCachAI")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TrangThai")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ViTriUngTuyen")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.HasKey("MaPhongVan");
-
-                    b.HasIndex("MaNguoiDung");
-
-                    b.ToTable("LichSuPhongVans");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.LoTrinhAIModel", b =>
@@ -5420,17 +5367,6 @@ namespace educodeai_server.Migrations
                         .IsRequired();
 
                     b.Navigation("GiangVien");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.LichSuPhongVanModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
-                        .WithMany()
-                        .HasForeignKey("MaNguoiDung")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("NguoiDung");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.LoTrinhAIModel", b =>
