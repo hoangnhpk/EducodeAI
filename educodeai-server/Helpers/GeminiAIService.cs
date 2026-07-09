@@ -208,6 +208,7 @@ namespace educodeai_server.Helpers
 
                     string maHoa = await _redisService.LayHashAsync(currentRedisKey, "MaKeyMaHoa");
                     string rawKey = MaHoaHelper.GiaiMa(maHoa, _secretKey);
+
                     string modelSuDung = await _redisService.LayHashAsync(currentRedisKey, "ModelSuDung");
                     if (string.IsNullOrWhiteSpace(modelSuDung)) modelSuDung = _modelName;
                     else if (modelSuDung.StartsWith("models/")) modelSuDung = modelSuDung.Substring(7);

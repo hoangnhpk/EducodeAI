@@ -16,5 +16,8 @@ namespace educodeai_server.Services.Interface
         Task<PagedResultDTO<GiangVienItemDTO>> LayDanhSachGiangVienAsync(int page, int pageSize, string? search);
         Task<PagedResultDTO<KhoaHocItemDTO>> LayDanhSachKhoaHocAsync(int page, int pageSize, string? search);
         Task<PagedResultDTO<DangKyItemDTO>> LayDanhSachDangKyAsync(int page, int pageSize, string? search);
+
+        Task<DoanhThuTongQuanDTO> LayDoanhThuTongQuanAsync();
+        Task<List<DoanhThuTheoThoiGianDTO>> LayDoanhThuTheoThoiGianAsync(string? nhomTheo, DateTime? fromUtc, DateTime? toUtcExclusive);
     }
 }
