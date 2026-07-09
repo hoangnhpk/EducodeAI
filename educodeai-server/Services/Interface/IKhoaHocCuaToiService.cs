@@ -10,6 +10,7 @@ namespace educodeai_server.Services.Interface
         Task<int> TaoKhoaHocAsync(int maGiangVien, KhoaHocCreateUpdateDTO dto);
         Task<bool> CapNhatKhoaHocAsync(int maKhoaHoc, int maGiangVien, KhoaHocCreateUpdateDTO dto);
         Task<bool> XoaKhoaHocAsync(int maKhoaHoc, int maGiangVien);
+        Task<bool> KhoiPhucKhoaHocAsync(int maKhoaHoc, int maGiangVien);
         Task<ThemChuongResponseDTO> ThemChuongAsync(int maKhoaHoc, int maGiangVien, ChuongHocCreateUpdateDTO dto);
         Task<bool> CapNhatChuongAsync(int maChuong, int maGiangVien, ChuongHocCreateUpdateDTO dto);
         Task<bool> XoaChuongAsync(int maChuong, int maGiangVien);

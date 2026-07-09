@@ -1,7 +1,27 @@
-﻿import { MdPeople, MdRateReview, MdSettings, MdDashboard, MdCardGiftcard } from 'react-icons/md';
+﻿import { useEffect, useState } from 'react';
+import { MdPeople, MdRateReview, MdSettings, MdDashboard, MdCardGiftcard, MdSchool } from 'react-icons/md';
 import { NavLink } from 'react-router-dom';
+import { HoSoGiangVienAdminService } from '@/services/ho-so-giang-vien-admin.service';
 
 export default function SidebarQuanTriVienMoi() {
+  const [choDuyetCount, setChoDuyetCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const fetchCount = async () => {
+      try {
+        const count = await HoSoGiangVienAdminService.demChoDuyet();
+        if (active) setChoDuyetCount(count);
+      } catch {
+        // bỏ qua lỗi (ví dụ chưa đăng nhập admin)
+      }
+    };
+    fetchCount();
+    // Cập nhật mỗi 30 giây để badge luôn mới
+    const interval = setInterval(fetchCount, 30000);
+    return () => { active = false; clearInterval(interval); };
+  }, []);
+
   return (
     <aside className="qtv-sidebar">
       <div className="qtv-sidebar-header">
@@ -21,6 +41,25 @@ export default function SidebarQuanTriVienMoi() {
         <NavLink to="/quan-tri-vien/nguoi-dung" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><MdPeople /></div>
           <span>Người Dùng</span>
+        </NavLink>
+
+        <NavLink to="/quan-tri-vien/duyet-giang-vien" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+          <div className="link-icon"><MdSchool /></div>
+          <span>Duyệt giảng viên</span>
+          {choDuyetCount > 0 && (
+            <span style={{
+              marginLeft: 'auto',
+              backgroundColor: '#fb873f',
+              color: '#fff',
+              borderRadius: '999px',
+              padding: '0 8px',
+              fontSize: '12px',
+              fontWeight: 700,
+              minWidth: '22px',
+              textAlign: 'center',
+              lineHeight: '20px'
+            }}>{choDuyetCount}</span>
+          )}
         </NavLink>
 
         <NavLink to="/quan-tri-vien/quan-ly-api-key" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
