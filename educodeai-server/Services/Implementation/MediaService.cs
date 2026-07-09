@@ -17,12 +17,14 @@ namespace educodeai_server.Services.Implementation
         private readonly Cloudinary _cloudinary;
         private readonly CauHinhCloudinary _cloudinaryConfig;
         private readonly EduCodeAIDbContext _context;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public MediaService(Cloudinary cloudinary, IOptions<CauHinhCloudinary> cloudinaryConfig, EduCodeAIDbContext context)
+        public MediaService(Cloudinary cloudinary, IOptions<CauHinhCloudinary> cloudinaryConfig, EduCodeAIDbContext context, IServiceScopeFactory serviceScopeFactory)
         {
             _cloudinary = cloudinary;
             _cloudinaryConfig = cloudinaryConfig.Value;
             _context = context;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public Task<ChuKyUploadVideoDTO> LayChuKyUploadVideoAsync(string maGiangVien, string folder)
@@ -115,54 +117,6 @@ namespace educodeai_server.Services.Implementation
                             return (true, "Already processed");
 
                         var notifType = root.TryGetProperty("notification_type", out var typeProp) ? typeProp.GetString() : "unknown";
-                        
-                        // Xử lý tạo phụ đề AI
-                        if (root.TryGetProperty("info", out var infoProp))
-                        {
-                            if (infoProp.TryGetProperty("raw_convert", out var rcProp))
-                            {
-                                if (rcProp.TryGetProperty("google_speech", out var gsProp))
-                                {
-                                    var status = gsProp.TryGetProperty("status", out var sProp) ? sProp.GetString() : "";
-                                    if (status == "complete" || status == "pending") // pending could mean it's starting
-                                    {
-                                        if (status == "complete")
-                                        {
-                                            var publicId = root.TryGetProperty("public_id", out var pProp) ? pProp.GetString() : "";
-                                            var url = gsProp.TryGetProperty("url", out var uProp) ? uProp.GetString() : "";
-                                            
-                                            var baiHoc = await _context.BaiHocs.FirstOrDefaultAsync(b => b.VideoPublicId == publicId);
-                                            if (baiHoc != null && !string.IsNullOrEmpty(url))
-                                            {
-                                                baiHoc.SubtitleUrl = url;
-                                                baiHoc.HasSubtitle = true;
-                                                baiHoc.VideoStatus = "Ready";
-
-                                                // Release hold
-                                                var hold = await _context.AIBalanceHolds
-                                                    .Where(h => h.MaBaiHoc == baiHoc.MaBaiHoc && h.Status == "holding")
-                                                    .FirstOrDefaultAsync();
-                                                
-                                                if (hold != null)
-                                                {
-                                                    hold.Status = "committed";
-                                                    hold.SettledAt = DateTime.UtcNow;
-
-                                                    var quota = await _context.GiangVienQuotas.FirstOrDefaultAsync(q => q.MaGiangVien == hold.MaGiangVien);
-                                                    if (quota != null)
-                                                    {
-                                                        quota.AiBalanceUsd -= hold.AmountUsd;
-                                                        if (quota.AiBalanceUsd < 0) quota.AiBalanceUsd = 0;
-                                                    }
-                                                }
-                                                await _context.SaveChangesAsync();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         await DanhDauWebhookDaXuLyAsync(notificationId, notifType ?? "unknown", body);
                     }
                 }
@@ -243,13 +197,9 @@ namespace educodeai_server.Services.Implementation
             if (string.IsNullOrEmpty(baiHoc.VideoPublicId))
                 return (false, "Bài học chưa có video trên Cloudinary.");
 
-            // Tính toán chi phí (Ví dụ: 0.06$ / phút)
-            // Lấy VideoDurationS, nếu null thì thử lấy ThoiLuong, nếu vẫn null thì mặc định 0
             var durationS = baiHoc.VideoDurationS ?? baiHoc.ThoiLuong ?? 0;
-            
-            // Tính số phút (làm tròn lên), TỐI THIỂU là 1 phút
             var minutes = Math.Max(1, Math.Ceiling((double)durationS / 60));
-            var costUsd = (decimal)minutes * 0.06m;
+            var costUsd = (decimal)minutes * 0.024m; // Google Speech price
 
             var quota = await _context.GiangVienQuotas.FirstOrDefaultAsync(q => q.MaGiangVien == maGiangVien);
             if (quota == null)
@@ -259,7 +209,7 @@ namespace educodeai_server.Services.Implementation
             }
 
             if (quota.AiBalanceUsd < costUsd)
-                return (false, $"Số dư không đủ. Yêu cầu ${costUsd}, hiện có ${quota.AiBalanceUsd}");
+                return new(false, $"Số dư không đủ. Yêu cầu ${costUsd}, hiện có ${quota.AiBalanceUsd}");
 
             // Hold tiền
             var hold = new AIBalanceHoldModel
@@ -274,24 +224,18 @@ namespace educodeai_server.Services.Implementation
             // Cập nhật trạng thái
             baiHoc.SubtitleSource = "ai";
             baiHoc.VideoStatus = "Processing_Subtitle";
-            
-            // Gọi Cloudinary Addon (Nếu chạy báo lỗi UpdateResourceParams thì có thể do version SDK)
-            try
-            {
-                var updParams = new UpdateParams(baiHoc.VideoPublicId)
-                {
-                    ResourceType = ResourceType.Video,
-                    RawConvert = "google_speech:vi"
-                };
-                await _cloudinary.UpdateResourceAsync(updParams);
-            }
-            catch (Exception ex)
-            {
-                return (false, "Lỗi khi gọi Cloudinary: " + ex.Message);
-            }
 
             await _context.SaveChangesAsync();
-            return (true, "Yêu cầu tạo phụ đề đã được gửi thành công");
+
+            // Enqueue background job (dùng Task.Run + IHostedService queue, không cần Hangfire)
+            _ = Task.Run(async () =>
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var worker = scope.ServiceProvider.GetRequiredService<IAiSubtitleWorker>();
+                await worker.ProcessAsync(maBaiHoc, hold.Id);
+            });
+
+            return new(true, "Yêu cầu tạo phụ đề đã được gửi thành công. Vui lòng chờ xử lý.");
         }
 
         public async Task<bool> DeleteVideoCloudinaryAsync(string publicId)
