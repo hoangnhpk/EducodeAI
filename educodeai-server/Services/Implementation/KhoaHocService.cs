@@ -1,7 +1,9 @@
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using educodeai_server.Helpers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using educodeai_server.Data;
 using educodeai_server.DTOs.AI;
 using educodeai_server.DTOs.KhoaHoc;
 using educodeai_server.Models;
@@ -16,24 +18,31 @@ namespace educodeai_server.Services.Implementation
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IRedisService _redisService;
         private readonly ILogger<KhoaHocService> _logger;
+        private readonly IConfiguration _cauHinh;
 
         // TTL constants
         private static readonly TimeSpan _ttlDanhSachKhoaHoc = TimeSpan.FromMinutes(15);
         private static readonly TimeSpan _ttlChiTietKhoaHoc  = TimeSpan.FromMinutes(30);
 
-        public KhoaHocService(IKhoaHocRepository khoaHocRepository, IServiceScopeFactory scopeFactory, IRedisService redisService, ILogger<KhoaHocService> logger)
+        public KhoaHocService(
+            IKhoaHocRepository khoaHocRepository,
+            IServiceScopeFactory scopeFactory,
+            IRedisService redisService,
+            ILogger<KhoaHocService> logger,
+            IConfiguration cauHinh)
         {
             _khoaHocRepository = khoaHocRepository;
             _scopeFactory = scopeFactory;
             _redisService = redisService;
             _logger = logger;
+            _cauHinh = cauHinh;
         }
 
         // ------- Cache-Aside: Danh sách khóa học -------
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            const string publicKey = "CourseList:Public";
+            const string publicKey = "CourseList:Public:v2";
 
             // 1. Đọc Public Cache
             var cached = await _redisService.LayGiaTriAsync(publicKey);
@@ -160,11 +169,24 @@ namespace educodeai_server.Services.Implementation
                 }
             }
 
+            if (detail != null)
+            {
+                int soVideoHocThu = _cauHinh.GetValue("HocThu:SoVideoMacDinh", 2);
+                bool daDangKy = maNguoiDung > 0
+                    && (await _khoaHocRepository.GetMaKhoaHocDaDangKyAsync(maNguoiDung, new List<int> { maKhoaHoc })).Contains(maKhoaHoc);
+                HocThuHelper.ApDungPhanQuyenNoiDung(detail, detail.DonViTienTe, daDangKy, soVideoHocThu);
+            }
+
             return detail;
         }
 
         public async Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto)
         {
+            if (!await CoQuyenGhiTienDoAsync(dto.MaBaiHoc, dto.MaNguoiDung))
+            {
+                throw new ApplicationException("Bạn cần mua khóa học hoặc chỉ được học thử video giới thiệu.");
+            }
+
             return await _khoaHocRepository.LuuTienDoBaiHoc(dto);
         }
 
@@ -180,6 +202,11 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<bool> LuuKetQuaBaiTap(KetQuaQuizSubmitDTO dto)
         {
+            if (!await CoQuyenGhiTienDoAsync(dto.MaBaiHoc, dto.MaNguoiDung))
+            {
+                throw new ApplicationException("Bạn cần mua khóa học để làm bài tập này.");
+            }
+
             return await _khoaHocRepository.LuuKetQuaBaiTap(dto);
         }
 
@@ -475,6 +502,19 @@ namespace educodeai_server.Services.Implementation
                   </div>
                 </div>
                 """;
+        }
+
+        private async Task<bool> CoQuyenGhiTienDoAsync(int maBaiHoc, int maNguoiDung)
+        {
+            if (maNguoiDung <= 0)
+            {
+                return false;
+            }
+
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
+            int soVideoHocThu = _cauHinh.GetValue("HocThu:SoVideoMacDinh", 2);
+            return await HocThuHelper.CoQuyenTruyCapBaiHocAsync(db, maBaiHoc, maNguoiDung, soVideoHocThu);
         }
 
         private static string TaoTenFileChungChi(string tenKhoaHoc, string hoTenHienThi)

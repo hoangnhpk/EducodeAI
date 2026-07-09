@@ -27,5 +27,23 @@ namespace educodeai_server.Controllers.HocVien
             var data = await _service.LayDanhSachTheoNguoiDungAsync(maNguoiDung);
             return Ok(new { success = true, data });
         }
+
+        [HttpGet("skill-tree")]
+        public async Task<IActionResult> LaySkillTree([FromQuery] int? maLoTrinh)
+        {
+            int maNguoiDung = LayNguoiDungID.LayID(User);
+            if (maNguoiDung <= 0)
+                return Unauthorized(new { success = false, message = "Chưa đăng nhập hoặc token không hợp lệ." });
+
+            try
+            {
+                var data = await _service.LaySkillTreeAsync(maNguoiDung, maLoTrinh);
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
     }
 }

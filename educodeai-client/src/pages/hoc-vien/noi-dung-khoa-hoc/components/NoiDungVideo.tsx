@@ -323,15 +323,44 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
 
   return (
     <div className="cp-tab-pane active" style={{ display: 'block', height: '100%' }}>
-      <YouTube
-        videoId={videoId}
-        opts={tuyChinh}
-        onReady={khiSanSang}
-        onStateChange={khiTrangThaiThayDoi}
-        className="cp-video-frame w-100 h-100"
-        iframeClassName="w-100 h-100"
-        style={{ aspectRatio: '16/9', borderRadius: '8px 8px 0 0' }}
-      />
+      {videoId ? (
+        <YouTube
+          videoId={videoId}
+          opts={tuyChinh}
+          onReady={khiSanSang}
+          onStateChange={khiTrangThaiThayDoi}
+          className="cp-video-frame w-100 h-100"
+          iframeClassName="w-100 h-100"
+          style={{ aspectRatio: '16/9', borderRadius: '8px 8px 0 0' }}
+        />
+      ) : (
+        <video
+          ref={playerRef}
+          controls
+          controlsList="nodownload"
+          className="cp-video-frame w-100 h-100"
+          style={{ aspectRatio: '16/9', borderRadius: '8px 8px 0 0', background: '#000' }}
+          src={videoUrl ? videoUrl.replace(/\.[^/.]+$/, '.mp4') : ''}
+          poster={videoUrl ? videoUrl.replace(/\.[^/.]+$/, '.jpg') : undefined}
+          onLoadedMetadata={(e) => {
+            setThoiLuongVideo(e.currentTarget.duration);
+            setDaSanSang(true);
+            // mock YouTube player functions
+            playerRef.current.getCurrentTime = () => playerRef.current?.currentTime || 0;
+            playerRef.current.getDuration = () => playerRef.current?.duration || 0;
+            playerRef.current.playVideo = () => playerRef.current?.play();
+            playerRef.current.pauseVideo = () => playerRef.current?.pause();
+            playerRef.current.seekTo = (time: number) => { if (playerRef.current) playerRef.current.currentTime = time; };
+          }}
+          onTimeUpdate={(e) => {
+            setThoiGianHienTai(e.currentTarget.currentTime);
+          }}
+          onPlay={() => {
+            if (dangCanhBaoRef.current) return;
+            lastRealTimeRef.current = Date.now();
+          }}
+        />
+      )}
 
       {daSanSang && (
         <div style={{

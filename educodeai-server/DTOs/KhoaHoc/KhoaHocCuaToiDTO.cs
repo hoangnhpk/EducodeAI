@@ -5,6 +5,7 @@ public class KhoaHocGiangVienListDTO
     public int MaKhoaHoc { get; set; }
     public string TenKhoaHoc { get; set; } = null!;
     public string? HinhAnh { get; set; }
+    public string? VideoGioiThieu { get; set; }
 
     public string LinhVuc { get; set; } = null!;
     public string TrinhDo { get; set; } = null!;
@@ -30,6 +31,7 @@ public class KhoaHocGiangVienDetailDTO
     public string TenKhoaHoc { get; set; } = null!;
     public string? MoTa { get; set; }
     public string? HinhAnh { get; set; }
+    public string? VideoGioiThieu { get; set; }
 
     public string LinhVuc { get; set; } = null!;
     public string TrinhDo { get; set; } = null!;
@@ -75,6 +77,7 @@ public class KhoaHocCreateUpdateDTO
     public string TenKhoaHoc { get; set; } = null!;
     public string? MoTa { get; set; }
     public string? HinhAnh { get; set; }
+    public string? VideoGioiThieu { get; set; }
 
     public string LinhVuc { get; set; } = null!;
     public string TrinhDo { get; set; } = null!;
@@ -149,6 +152,12 @@ public class BaiHocVideoDetailDTO
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
     public string LoaiBaiHoc { get; set; } = "Video";
+    public string? VideoSource { get; set; }
+    public string? VideoPublicId { get; set; }
+    public bool HasSubtitle { get; set; }
+    public string? VideoStatus { get; set; }
+    public string? SubtitleSource { get; set; }
+    public string? SubtitleUrl { get; set; }
 }
 
 public class BaiHocVideoCreateUpdateDTO
@@ -158,6 +167,9 @@ public class BaiHocVideoCreateUpdateDTO
     public string? LinkVideo { get; set; }
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
+    public string? VideoSource { get; set; }
+    public string? VideoPublicId { get; set; }
+    public int? VideoSizeMb { get; set; }
 }
 public class ThemVideoResponseDTO
 {

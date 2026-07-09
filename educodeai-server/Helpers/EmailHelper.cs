@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 using System.Linq;
 
@@ -58,7 +58,9 @@ namespace educodeai_server.Helpers
                 message.From = new MailAddress(senderEmail!, senderName);
                 message.To.Add(toEmail);
                 message.Subject = subject;
+                message.SubjectEncoding = System.Text.Encoding.UTF8;
                 message.Body = body;
+                message.BodyEncoding = System.Text.Encoding.UTF8;
                 message.IsBodyHtml = true;
 
                 if (attachments != null)
