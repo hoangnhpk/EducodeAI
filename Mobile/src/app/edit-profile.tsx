@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, SafeAreaView, ScrollView, 
   TouchableOpacity, TextInput, StatusBar, Image, Alert
@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { AuthContext } from '../context/AuthContext';
 
 const COLORS = {
   primary: '#fb873f',
@@ -24,9 +25,25 @@ const SHADOWS = {
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const [name, setName] = useState('Đinh Lưu Lai');
-  const [email, setEmail] = useState('luulai@example.com');
-  const [phone, setPhone] = useState('0987654321');
+  const { user } = useContext(AuthContext);
+  
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setName(user.hoTen || '');
+      setEmail(user.email || '');
+      setPhone((user as any).soDienThoai || '');
+    }
+  }, [user]);
+
+  const handleSave = () => {
+    // Gọi API update user info tại đây
+    Alert.alert('Thành công', 'Đã lưu thay đổi hồ sơ.');
+    router.back();
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -46,7 +63,7 @@ export default function EditProfileScreen() {
         <View style={styles.avatarSection}>
           <View style={styles.avatarWrapper}>
             <Image 
-              source={{ uri: 'https://ui-avatars.com/api/?name=Luu+Lai&background=fb873f&color=fff&size=120' }} 
+              source={{ uri: user?.anhDaiDien || `https://ui-avatars.com/api/?name=${user?.hoTen || 'Khach'}&background=fb873f&color=fff&size=120` }} 
               style={styles.avatar} 
             />
             <TouchableOpacity style={[styles.cameraBtn, SHADOWS.small]} onPress={() => Alert.alert('Đổi Ảnh', 'Tính năng chọn ảnh từ thư viện đang phát triển.')}>
@@ -91,7 +108,7 @@ export default function EditProfileScreen() {
 
       {/* Save Button */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity activeOpacity={0.8} style={[styles.saveBtnWrapper, SHADOWS.glow]} onPress={() => Alert.alert('Thành công', 'Đã lưu thay đổi hồ sơ.')}>
+        <TouchableOpacity activeOpacity={0.8} style={[styles.saveBtnWrapper, SHADOWS.glow]} onPress={handleSave}>
           <LinearGradient colors={COLORS.primaryGradient} style={styles.saveBtn}>
             <Text style={styles.saveBtnText}>Lưu thay đổi</Text>
           </LinearGradient>

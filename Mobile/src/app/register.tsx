@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
   StyleSheet, Text, View, SafeAreaView, ScrollView, 
-  TouchableOpacity, TextInput, StatusBar, ImageBackground, KeyboardAvoidingView, Platform 
+  TouchableOpacity, TextInput, StatusBar, ImageBackground, KeyboardAvoidingView, Platform, Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import api from '../configs/api';
 
 const COLORS = {
   primary: '#fb873f',
@@ -27,6 +28,34 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async () => {
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert('Lỗi', 'Vui lòng điền đủ thông tin bắt buộc!');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp!');
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.post('/XacThuc/dang-ky', {
+        HoTen: name,
+        Email: email,
+        MatKhau: password,
+        CaptchaToken: "SKIP_CAPTCHA", // Bypass for mobile or implement logic
+      });
+      Alert.alert('Thành công', 'Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác nhận.');
+      // Có thể chuyển hướng sang trang OTP nếu có, tạm thời về Login
+      router.back();
+    } catch (error: any) {
+      Alert.alert('Lỗi', error.response?.data?.message || 'Không thể đăng ký. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ImageBackground 
@@ -126,7 +155,7 @@ export default function RegisterScreen() {
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Xác nhận mật khẩu</Text>
                   <View style={styles.inputBox}>
-                    <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.gray} style={styles.icon} />
+                    <Ionicons name="lock-closed-outline" size={20} color={COLORS.gray} style={styles.icon} />
                     <TextInput 
                       style={styles.input} 
                       placeholder="Nhập lại mật khẩu" 
@@ -138,8 +167,8 @@ export default function RegisterScreen() {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.loginBtn} onPress={() => router.push('/login')}>
-                  <Text style={styles.loginBtnText}>Đăng ký ngay</Text>
+                <TouchableOpacity style={styles.loginBtn} onPress={handleRegister} disabled={loading}>
+                  <Text style={styles.loginBtnText}>{loading ? 'Đang xử lý...' : 'Tạo tài khoản'}</Text>
                 </TouchableOpacity>
               </View>
 

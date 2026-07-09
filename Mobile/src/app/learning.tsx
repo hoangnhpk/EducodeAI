@@ -1,200 +1,246 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, SafeAreaView, ScrollView, 
-  TouchableOpacity, Image, StatusBar, Alert 
+  TouchableOpacity, Image, StatusBar, Alert, ActivityIndicator 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import api from '../configs/api';
+import { ChatBot } from '../components/chat-bot';
+import { AnimatedPressable } from '../components/animated-pressable';
 
 const COLORS = {
   primary: '#fb873f',
   primaryLight: '#fff3ed',
-  dark: '#0f172a',
+  dark: '#020617', // Sâu hơn nữa cho player
+  darkBg: '#0f172a',
   bg: '#f8fafc',
   white: '#ffffff',
-  gray: '#64748b',
-  lightGray: '#e2e8f0',
+  gray: '#94a3b8', // Gray sáng hơn trên nền tối
+  lightGray: '#334155', // Viền tối
   success: '#10b981',
+  blue: '#3b82f6'
 };
-
-const SHADOWS = {
-  small: { shadowColor: COLORS.dark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-};
-
-const MOCK_LESSONS = [
-  { id: 1, title: 'Bài 1: Giới thiệu khóa học', duration: '05:30', status: 'completed' },
-  { id: 2, title: 'Bài 2: Cài đặt môi trường lập trình', duration: '12:45', status: 'playing' },
-  { id: 3, title: 'Bài 3: Cấu trúc thư mục chuẩn', duration: '08:20', status: 'locked' },
-  { id: 4, title: 'Bài 4: Thành phần cơ bản (Components)', duration: '15:10', status: 'locked' },
-  { id: 5, title: 'Bài 5: Quản lý trạng thái (State)', duration: '22:00', status: 'locked' },
-];
 
 export default function LearningScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { id } = params;
   const [activeTab, setActiveTab] = useState<'lessons' | 'docs'>('lessons');
+  const [courseData, setCourseData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentVideo, setCurrentVideo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (id) {
+      fetchLearningContent();
+    } else {
+      setLoading(false);
+    }
+  }, [id]);
+
+  const fetchLearningContent = async () => {
+    try {
+      const response = await api.get(`/NoiDungKhoaHoc/${id}`);
+      setCourseData(response.data);
+      if (response.data?.chuongHocs?.length > 0 && response.data.chuongHocs[0].baiHocs?.length > 0) {
+         setCurrentVideo(response.data.chuongHocs[0].baiHocs[0].duongDanVideo);
+      }
+    } catch (error: any) {
+      console.error('Error fetching course content:', error);
+      Alert.alert('Lỗi', error.response?.data?.message || 'Không thể tải nội dung khóa học.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (!courseData) {
+    return (
+      <View style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: COLORS.white }}>Không có dữ liệu khóa học hoặc bạn chưa đăng ký.</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+          <Text style={{ color: COLORS.primary }}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+    <View style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.dark} translucent={false} />
       
-      {/* Video Player Mock */}
+      {/* Video Player (Cinematic Dark Vibe) */}
       <View style={styles.videoContainer}>
         <Image 
-          source={{ uri: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80' }} 
+          source={{ uri: courseData.hinhAnh || 'https://via.placeholder.com/800x450' }} 
           style={styles.videoImg} 
         />
-        <View style={styles.videoOverlay}>
-          {/* Top Bar inside Video */}
+        <LinearGradient 
+          colors={['rgba(2,6,23,0.8)', 'rgba(2,6,23,0.1)', 'rgba(2,6,23,0.9)']} 
+          style={styles.videoOverlay}
+        >
+          {/* Top Bar */}
           <View style={styles.videoTopBar}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
-              <Ionicons name="chevron-down" size={28} color={COLORS.white} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => Alert.alert('Cài đặt', 'Chỉnh chất lượng video & Tốc độ phát')}>
-              <Ionicons name="settings-outline" size={24} color={COLORS.white} />
-            </TouchableOpacity>
+            <AnimatedPressable style={styles.iconBtn} onPress={() => router.back()}>
+              <Ionicons name="chevron-down" size={32} color={COLORS.white} />
+            </AnimatedPressable>
+            <AnimatedPressable style={styles.iconBtn} onPress={() => Alert.alert('Cài đặt', 'Chỉnh chất lượng & Tốc độ')}>
+              <Ionicons name="settings" size={24} color={COLORS.white} />
+            </AnimatedPressable>
           </View>
           
           {/* Play Button */}
-          <TouchableOpacity style={styles.playBtn} onPress={() => Alert.alert('Phát', 'Video đang tạm dừng. (Mock)')}>
-            <Ionicons name="play" size={32} color={COLORS.white} style={{ marginLeft: 5 }} />
-          </TouchableOpacity>
+          <AnimatedPressable style={styles.playBtn} scaleTo={0.9} onPress={() => Alert.alert('Phát', 'Video URL: ' + currentVideo)}>
+            <LinearGradient colors={['#ff9955', '#fb873f']} style={styles.playGradient}>
+              <Ionicons name="play" size={36} color={COLORS.white} style={{ marginLeft: 5 }} />
+            </LinearGradient>
+          </AnimatedPressable>
           
-          {/* Bottom Control Bar */}
+          {/* Bottom Control */}
           <View style={styles.videoBottomBar}>
-            <Text style={styles.videoTime}>02:15 / 12:45</Text>
+            <Text style={styles.videoTime}>00:00 / 00:00</Text>
             <View style={styles.progressBarBg}>
               <View style={styles.progressBarFill} />
               <View style={styles.progressDot} />
             </View>
-            <Ionicons name="expand" size={20} color={COLORS.white} />
+            <AnimatedPressable>
+              <Ionicons name="expand" size={22} color={COLORS.white} />
+            </AnimatedPressable>
           </View>
-        </View>
+        </LinearGradient>
       </View>
 
-      <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
+      <View style={styles.contentContainer}>
         <View style={styles.headerInfo}>
-          <Text style={styles.lessonTitle}>Bài 2: Cài đặt môi trường lập trình</Text>
-          <Text style={styles.courseTitle}>Lập trình C# ASP.NET Core API</Text>
+          <Text style={styles.lessonTitle}>{courseData.tenKhoaHoc}</Text>
+          <Text style={styles.courseTitle}>Giảng viên: {courseData.giangVien?.hoTen || 'EducodeAI'}</Text>
         </View>
 
-        {/* Custom Tabs */}
+        {/* Custom Tabs (Dark Mode) */}
         <View style={styles.tabContainer}>
-          <TouchableOpacity 
-            style={[styles.tabBtn, activeTab === 'lessons' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('lessons')}
-          >
-            <Text style={[styles.tabText, activeTab === 'lessons' && styles.tabTextActive]}>Bài giảng (5)</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tabBtn, activeTab === 'docs' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('docs')}
-          >
-            <Text style={[styles.tabText, activeTab === 'docs' && styles.tabTextActive]}>Tài liệu</Text>
-          </TouchableOpacity>
+          <AnimatedPressable style={[styles.tabBtn, activeTab === 'lessons' && styles.tabBtnActive]} onPress={() => setActiveTab('lessons')}>
+            <Text style={[styles.tabText, activeTab === 'lessons' && styles.tabTextActive]}>Bài giảng</Text>
+          </AnimatedPressable>
+          <AnimatedPressable style={[styles.tabBtn, activeTab === 'docs' && styles.tabBtnActive]} onPress={() => setActiveTab('docs')}>
+            <Text style={[styles.tabText, activeTab === 'docs' && styles.tabTextActive]}>Tài liệu & Hỏi đáp</Text>
+          </AnimatedPressable>
         </View>
 
         {activeTab === 'lessons' ? (
-          <View style={styles.listContainer}>
-            {MOCK_LESSONS.map((lesson) => (
-              <TouchableOpacity key={lesson.id} activeOpacity={lesson.status === 'locked' ? 1 : 0.7} style={[styles.lessonCard, lesson.status === 'playing' && styles.lessonPlaying]}>
-                <View style={styles.lessonIconBox}>
-                  {lesson.status === 'completed' ? (
-                    <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
-                  ) : lesson.status === 'playing' ? (
-                    <View style={styles.playingBars}>
-                      <View style={[styles.bar, { height: 12 }]} />
-                      <View style={[styles.bar, { height: 18 }]} />
-                      <View style={[styles.bar, { height: 10 }]} />
-                    </View>
-                  ) : (
-                    <Text style={styles.lessonIndex}>{lesson.id}</Text>
-                  )}
-                </View>
-                
-                <View style={styles.lessonInfo}>
-                  <Text style={[styles.lessonName, lesson.status === 'playing' && { color: COLORS.primary }, lesson.status === 'locked' && { color: COLORS.gray }]}>
-                    {lesson.title}
-                  </Text>
-                  <Text style={styles.lessonDuration}>{lesson.duration}</Text>
-                </View>
-                
-                {lesson.status === 'locked' && (
-                  <Ionicons name="lock-closed" size={18} color={COLORS.lightGray} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.docsContainer}>
-            <View style={[styles.docCard, SHADOWS.small]}>
-              <View style={styles.docIconBox}>
-                <Ionicons name="document-text" size={24} color={COLORS.primary} />
+          <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+            {courseData.chuongHocs?.map((chuong: any, idx: number) => (
+              <View key={chuong.maChuongHoc} style={{ marginBottom: 25 }}>
+                <Text style={styles.sectionTitle}>Chương {idx + 1}: {chuong.tenChuong}</Text>
+                {chuong.baiHocs?.map((lesson: any, bIdx: number) => {
+                  const isPlaying = currentVideo === lesson.duongDanVideo;
+                  return (
+                    <AnimatedPressable 
+                      key={lesson.maBaiHoc} 
+                      style={[styles.lessonCard, isPlaying && styles.lessonPlaying]}
+                      onPress={() => setCurrentVideo(lesson.duongDanVideo)}
+                    >
+                      <View style={styles.lessonLeft}>
+                        <Text style={[styles.lessonIndex, isPlaying && { color: COLORS.primary }]}>{String(bIdx + 1).padStart(2, '0')}</Text>
+                        <View>
+                          <Text style={[styles.lessonName, isPlaying && { color: COLORS.white }]}>{lesson.tenBaiHoc}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                            <Ionicons name="time-outline" size={14} color={isPlaying ? COLORS.primary : COLORS.gray} />
+                            <Text style={[styles.lessonDuration, isPlaying && { color: COLORS.primary }]}>15:00</Text>
+                          </View>
+                        </View>
+                      </View>
+                      {isPlaying ? (
+                        <View style={styles.playingIndicator}>
+                          <Ionicons name="stats-chart" size={16} color={COLORS.primary} />
+                        </View>
+                      ) : (
+                        <Ionicons name="play-circle-outline" size={26} color={COLORS.gray} />
+                      )}
+                    </AnimatedPressable>
+                  );
+                })}
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.docTitle}>Slide_Bai2_CaiDat.pdf</Text>
+            ))}
+          </ScrollView>
+        ) : (
+          <ScrollView style={styles.listContainer}>
+            <View style={styles.docCard}>
+              <Ionicons name="document-text" size={32} color={COLORS.primary} />
+              <View style={{ marginLeft: 15, flex: 1 }}>
+                <Text style={styles.docTitle}>Slide Bài Giảng.pdf</Text>
                 <Text style={styles.docSize}>2.4 MB</Text>
               </View>
-              <Ionicons name="download-outline" size={24} color={COLORS.dark} />
+              <Ionicons name="download-outline" size={24} color={COLORS.white} />
             </View>
-            <View style={[styles.docCard, SHADOWS.small]}>
-              <View style={styles.docIconBox}>
-                <Ionicons name="logo-github" size={24} color={COLORS.dark} />
+            <View style={styles.docCard}>
+              <Ionicons name="logo-github" size={32} color={COLORS.white} />
+              <View style={{ marginLeft: 15, flex: 1 }}>
+                <Text style={styles.docTitle}>Source Code GitHub</Text>
+                <Text style={styles.docSize}>Link ngoài</Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.docTitle}>Source Code (Github)</Text>
-                <Text style={styles.docSize}>Link truy cập</Text>
-              </View>
-              <Ionicons name="open-outline" size={24} color={COLORS.dark} />
+              <Ionicons name="open-outline" size={24} color={COLORS.white} />
             </View>
-          </View>
+          </ScrollView>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+
+      {/* Tích hợp ChatBot Component bên dưới */}
+      <ChatBot courseId={Number(id) || 0} courseName={courseData?.tenKhoaHoc || ''} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.bg },
+  safeArea: { flex: 1, backgroundColor: COLORS.dark },
   
-  // Video Player
-  videoContainer: { width: '100%', height: 230, backgroundColor: '#000', position: 'relative' },
-  videoImg: { width: '100%', height: '100%', opacity: 0.6 },
+  // Video Player (Cinematic)
+  videoContainer: { width: '100%', aspectRatio: 16/9, backgroundColor: '#000', position: 'relative' },
+  videoImg: { width: '100%', height: '100%', resizeMode: 'cover' },
   videoOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between' },
-  videoTopBar: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 15, paddingTop: 15 },
-  iconBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  playBtn: { alignSelf: 'center', width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(251, 135, 63, 0.9)', justifyContent: 'center', alignItems: 'center' },
-  videoBottomBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingBottom: 15 },
-  videoTime: { color: COLORS.white, fontSize: 12, fontWeight: '600', marginRight: 10 },
+  videoTopBar: { flexDirection: 'row', justifyContent: 'space-between', padding: 15, alignItems: 'center' },
+  iconBtn: { padding: 5 },
+  playBtn: { alignSelf: 'center' },
+  playGradient: { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', shadowColor: COLORS.primary, shadowOffset: {width:0,height:0}, shadowOpacity: 0.8, shadowRadius: 20, elevation: 10 },
+  videoBottomBar: { flexDirection: 'row', alignItems: 'center', padding: 15, paddingBottom: 20 },
+  videoTime: { color: COLORS.white, fontSize: 13, marginRight: 15, fontWeight: '600', fontVariant: ['tabular-nums'] },
   progressBarBg: { flex: 1, height: 4, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, marginRight: 15, position: 'relative' },
-  progressBarFill: { width: '25%', height: '100%', backgroundColor: COLORS.primary, borderRadius: 2 },
-  progressDot: { position: 'absolute', left: '25%', top: -4, width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.primary, marginLeft: -6 },
+  progressBarFill: { width: '35%', height: '100%', backgroundColor: COLORS.primary, borderRadius: 2 },
+  progressDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: COLORS.primary, position: 'absolute', left: '35%', top: -5, marginLeft: -7, borderWidth: 2, borderColor: COLORS.white },
 
-  // Content
-  contentContainer: { flex: 1 },
-  headerInfo: { padding: 20, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.lightGray },
-  lessonTitle: { fontSize: 18, fontWeight: '800', color: COLORS.dark, marginBottom: 5 },
-  courseTitle: { fontSize: 14, color: COLORS.gray },
-
-  tabContainer: { flexDirection: 'row', backgroundColor: COLORS.white, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: COLORS.lightGray },
-  tabBtn: { flex: 1, paddingVertical: 15, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  // Content (Dark Mode)
+  contentContainer: { flex: 1, backgroundColor: COLORS.darkBg },
+  headerInfo: { padding: 20, paddingBottom: 15 },
+  lessonTitle: { fontSize: 24, fontWeight: '900', color: COLORS.white, marginBottom: 8, letterSpacing: -0.5 },
+  courseTitle: { fontSize: 15, color: COLORS.gray, fontWeight: '500' },
+  
+  tabContainer: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: COLORS.lightGray },
+  tabBtn: { flex: 1, paddingVertical: 16, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: 'transparent' },
   tabBtnActive: { borderBottomColor: COLORS.primary },
-  tabText: { fontSize: 15, fontWeight: '600', color: COLORS.gray },
-  tabTextActive: { color: COLORS.primary, fontWeight: '800' },
-
+  tabText: { fontSize: 16, fontWeight: '700', color: COLORS.gray },
+  tabTextActive: { color: COLORS.white, fontWeight: '900' },
+  
   listContainer: { padding: 20 },
-  lessonCard: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  lessonPlaying: { backgroundColor: COLORS.primaryLight, padding: 12, borderRadius: 12, marginHorizontal: -12 },
-  lessonIconBox: { width: 30, alignItems: 'center', marginRight: 10 },
-  lessonIndex: { fontSize: 16, fontWeight: '700', color: COLORS.gray },
-  playingBars: { flexDirection: 'row', alignItems: 'flex-end', height: 20 },
-  bar: { width: 4, backgroundColor: COLORS.primary, marginHorizontal: 2, borderRadius: 2 },
-  lessonInfo: { flex: 1 },
-  lessonName: { fontSize: 15, fontWeight: '700', color: COLORS.dark, marginBottom: 4, lineHeight: 20 },
-  lessonDuration: { fontSize: 13, color: COLORS.gray },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: COLORS.white, marginBottom: 16, letterSpacing: -0.5 },
+  
+  lessonCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: COLORS.dark, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: COLORS.lightGray },
+  lessonPlaying: { borderColor: COLORS.primary, backgroundColor: 'rgba(251, 135, 63, 0.1)' },
+  lessonLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  lessonIndex: { fontSize: 20, fontWeight: '900', color: COLORS.lightGray, marginRight: 16, fontVariant: ['tabular-nums'] },
+  lessonName: { fontSize: 16, fontWeight: '700', color: '#cbd5e1', lineHeight: 22 },
+  lessonDuration: { marginLeft: 6, fontSize: 13, color: COLORS.gray, fontWeight: '600' },
+  playingIndicator: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(251, 135, 63, 0.2)', justifyContent: 'center', alignItems: 'center' },
 
-  docsContainer: { padding: 20 },
-  docCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, padding: 15, borderRadius: 16, marginBottom: 15 },
-  docIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: COLORS.primaryLight, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  docTitle: { fontSize: 15, fontWeight: '700', color: COLORS.dark, marginBottom: 4 },
-  docSize: { fontSize: 13, color: COLORS.gray },
+  // Docs
+  docCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.dark, padding: 18, borderRadius: 16, marginBottom: 15, borderWidth: 1, borderColor: COLORS.lightGray },
+  docTitle: { fontSize: 16, fontWeight: '700', color: COLORS.white, marginBottom: 4 },
+  docSize: { fontSize: 13, color: COLORS.gray }
 });
