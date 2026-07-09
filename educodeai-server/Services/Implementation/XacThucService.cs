@@ -271,30 +271,39 @@ namespace educodeai_server.Services.Implementation
         private string TaoGiaoDienEmail(string tieuDe, string noiDung, string otp)
         {
             return $@"
-            <div style='font-family: ""Segoe UI"", Roboto, ""Helvetica Neue"", Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea;'>
-                <div style='background-color: #fcfcfc; padding: 25px 0; text-align: center; border-bottom: 1px solid #f0f0f0;'>
-                    <h1 style='margin: 0; font-size: 28px; font-weight: 800; color: #333; letter-spacing: 1px;'>
-                        EDUCODE<span style='color: #fb873f;'>AI</span>
-                    </h1>
-                </div>
-                <div style='padding: 40px 30px;'>
-                    <h2 style='color: #2c3e50; font-size: 22px; margin-top: 0; margin-bottom: 20px; text-align: center;'>{tieuDe}</h2>
-                    <p style='color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px; text-align: center;'>
-                        {noiDung}
-                    </p>
-                    <div style='background-color: #fff8f3; border: 2px dashed #fb873f; border-radius: 12px; padding: 20px; text-align: center; margin: 0 auto; max-width: 300px;'>
-                        <div style='font-size: 13px; color: #fb873f; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;'>MÃƒ XÃC THá»°C Cá»¦A Báº N</div>
-                        <h1 style='color: #fb873f; font-size: 42px; font-weight: 800; letter-spacing: 8px; margin: 0; padding-left: 8px;'>{otp}</h1>
+            <!doctype html>
+            <html lang='vi'>
+            <head>
+                <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+                <meta charset='utf-8'>
+            </head>
+            <body style='margin:0; padding:0; background-color:#f5f5f5;'>
+                <div style='font-family: ""Segoe UI"", Roboto, ""Helvetica Neue"", Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea;'>
+                    <div style='background-color: #fcfcfc; padding: 25px 0; text-align: center; border-bottom: 1px solid #f0f0f0;'>
+                        <h1 style='margin: 0; font-size: 28px; font-weight: 800; color: #333; letter-spacing: 1px;'>
+                            EDUCODE<span style='color: #fb873f;'>AI</span>
+                        </h1>
                     </div>
-                    <p style='color: #888; font-size: 14px; text-align: center; margin-top: 30px;'>
-                        MÃ£ xÃ¡c thá»±c nÃ y cÃ³ hiá»‡u lá»±c trong <b style='color: #555;'>5 phÃºt</b>.<br>Vui lÃ²ng khÃ´ng chia sáº» mÃ£ nÃ y cho báº¥t ká»³ ai Ä‘á»ƒ Ä‘áº£m báº£o an toÃ n.
-                    </p>
+                    <div style='padding: 40px 30px;'>
+                        <h2 style='color: #2c3e50; font-size: 22px; margin-top: 0; margin-bottom: 20px; text-align: center;'>{tieuDe}</h2>
+                        <p style='color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px; text-align: center;'>
+                            {noiDung}
+                        </p>
+                        <div style='background-color: #fff8f3; border: 2px dashed #fb873f; border-radius: 12px; padding: 20px; text-align: center; margin: 0 auto; max-width: 300px;'>
+                            <div style='font-size: 13px; color: #fb873f; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;'>M&#227; x&#225;c th&#7921;c c&#7911;a b&#7841;n</div>
+                            <h1 style='color: #fb873f; font-size: 42px; font-weight: 800; letter-spacing: 8px; margin: 0; padding-left: 8px;'>{otp}</h1>
+                        </div>
+                        <p style='color: #888; font-size: 14px; text-align: center; margin-top: 30px;'>
+                            M&#227; x&#225;c th&#7921;c n&#224;y c&#243; hi&#7879;u l&#7921;c trong <b style='color: #555;'>5 ph&#250;t</b>.<br>Vui l&#242;ng kh&#244;ng chia s&#7867; m&#227; n&#224;y cho b&#7845;t k&#7923; ai &#273;&#7875; &#273;&#7843;m b&#7843;o an to&#224;n.
+                        </p>
+                    </div>
+                    <div style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eee;'>
+                        <p style='color: #999; font-size: 13px; margin: 0 0 10px 0;'>N&#7871;u b&#7841;n kh&#244;ng y&#234;u c&#7847;u m&#227; n&#224;y, vui l&#242;ng b&#7887; qua email ho&#7863;c li&#234;n h&#7879; v&#7899;i b&#7897; ph&#7853;n h&#7895; tr&#7907;.</p>
+                        <p style='color: #bbb; font-size: 12px; margin: 0;'>© {DateTime.Now.Year} EduCodeAI. All rights reserved.</p>
+                    </div>
                 </div>
-                <div style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eee;'>
-                    <p style='color: #999; font-size: 13px; margin: 0 0 10px 0;'>Náº¿u báº¡n khÃ´ng yÃªu cáº§u mÃ£ nÃ y, vui lÃ²ng bá» qua email hoáº·c liÃªn há»‡ vá»›i bá»™ pháº­n há»— trá»£.</p>
-                    <p style='color: #bbb; font-size: 12px; margin: 0;'>© {DateTime.Now.Year} EduCodeAI. All rights reserved.</p>
-                </div>
-            </div>";
+            </body>
+            </html>";
         }
 
         private async Task<NguoiDungModel?> LayNguoiDungKemThietBiAsync(string t) => 
@@ -420,7 +429,7 @@ namespace educodeai_server.Services.Implementation
             _memoryCache.Set("OTP_Register_" + r.Email, (Otp: otp, Data: r), TimeSpan.FromMinutes(5));
 
             string subject = "Mã xác thực đăng ký EduCodeAI";
-            string body = $"Mã OTP của bạn là: <h1 style='color: #fb873f;'>{otp}</h1> Mã có hiệu lực trong 5 phút.";
+            string body = $"Mã OTP của bạn là: <h1 style='color: #fb873f;'>{otp}</h1> Mã có hiệu lực trong 5 ph&#250;t.";
             return await EmailHelper.SendEmailAsync(r.Email, subject, body);
         }
 
