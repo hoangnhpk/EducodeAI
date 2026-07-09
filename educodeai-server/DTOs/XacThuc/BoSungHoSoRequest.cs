@@ -23,6 +23,7 @@ namespace educodeai_server.DTOs.XacThuc
         public string? SoTaiKhoanNhanTien { get; set; }
         public string? TenChuTaiKhoan { get; set; }
         public string? MaSoThue { get; set; }
+        public string? LoaiDoiTuongThue { get; set; }
 
         public IFormFile? AnhDaiDien { get; set; }
         public IFormFile? AnhGiayToMatTruoc { get; set; }

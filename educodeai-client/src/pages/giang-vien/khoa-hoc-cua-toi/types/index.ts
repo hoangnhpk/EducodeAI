@@ -8,6 +8,7 @@ export interface KhoaHocListItem {
   maKhoaHoc: number;
   tenKhoaHoc: string;
   hinhAnh?: string;
+  videoGioiThieu?: string;
   linhVuc: string;
   trinhDo: string;
   thoiLuongGio: number;
@@ -30,6 +31,7 @@ export interface KhoaHocDetail {
   tenKhoaHoc: string;
   moTa?: string;
   hinhAnh?: string;
+  videoGioiThieu?: string;
   linhVuc: string;
   trinhDo: string;
   thoiLuongGio: number;
@@ -58,6 +60,7 @@ export interface KhoaHocCreateUpdate {
   tenKhoaHoc: string;
   moTa?: string;
   hinhAnh?: string;
+  videoGioiThieu?: string;
   linhVuc: string;
   trinhDo: string;
   thoiLuongGio: number;

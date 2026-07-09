@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs.XacThuc;
+﻿﻿using educodeai_server.DTOs.XacThuc;
 using educodeai_server.DTOs.NguoiDung;
 using EduCodeAI.DTOs;
 using educodeai_server.Services.Interface;
@@ -148,12 +148,12 @@ namespace educodeai_server.Controllers
         [HttpPost("giang-vien/gui-otp-email")]
         public async Task<IActionResult> GuiOtpEmailGiangVien([FromBody] EmailOtpGiangVienRequest request)
         {
-            if (!ModelState.IsValid) return BadRequest(new { message = "Email khong hop le." });
+            if (!ModelState.IsValid) return BadRequest(new { message = "Email không hợp lệ." });
             try
             {
                 var sent = await _xacThucService.GuiOtpEmailGiangVienAsync(request.Email);
-                if (!sent) return BadRequest(new { message = "Khong gui duoc OTP email. Kiem tra cau hinh SMTP/Gmail." });
-                return Ok(new { message = "Da gui OTP email. Ma co hieu luc trong 5 phut." });
+                if (!sent) return BadRequest(new { message = "Không gửi được OTP email. Kiểm tra cấu hình SMTP/Gmail." });
+                return Ok(new { message = "Đã gửi OTP email. Mã có hiệu lực trong 5 phút." });
             }
             catch (Exception ex)
             {
@@ -164,11 +164,11 @@ namespace educodeai_server.Controllers
         [HttpPost("giang-vien/xac-minh-otp-email")]
         public async Task<IActionResult> XacMinhOtpEmailGiangVien([FromBody] EmailOtpGiangVienRequest request)
         {
-            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(request.OtpCode)) return BadRequest(new { message = "OTP khong hop le." });
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(request.OtpCode)) return BadRequest(new { message = "OTP không hợp lệ." });
             try
             {
                 await _xacThucService.XacMinhOtpEmailGiangVienAsync(request.Email, request.OtpCode);
-                return Ok(new { message = "Email da duoc xac minh." });
+                return Ok(new { message = "Email đã được xác minh." });
             }
             catch (Exception ex)
             {
