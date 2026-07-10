@@ -18,13 +18,15 @@ namespace educodeai_server.Services.Implementation
         private readonly CauHinhCloudinary _cloudinaryConfig;
         private readonly EduCodeAIDbContext _context;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly double _speechPricePerMinuteUsd;
 
-        public MediaService(Cloudinary cloudinary, IOptions<CauHinhCloudinary> cloudinaryConfig, EduCodeAIDbContext context, IServiceScopeFactory serviceScopeFactory)
+        public MediaService(Cloudinary cloudinary, IOptions<CauHinhCloudinary> cloudinaryConfig, EduCodeAIDbContext context, IServiceScopeFactory serviceScopeFactory, IOptions<CauHinhGoogleCloud> gcpConfig)
         {
             _cloudinary = cloudinary;
             _cloudinaryConfig = cloudinaryConfig.Value;
             _context = context;
             _serviceScopeFactory = serviceScopeFactory;
+            _speechPricePerMinuteUsd = gcpConfig.Value.SpeechToText.PricePerMinuteUsd;
         }
 
         public Task<ChuKyUploadVideoDTO> LayChuKyUploadVideoAsync(string maGiangVien, string folder)
@@ -104,29 +106,69 @@ namespace educodeai_server.Services.Implementation
             if (!isValid)
                 return (false, "Invalid webhook signature");
 
+            System.Text.Json.JsonDocument payloadDoc;
             try
             {
-                var payloadDoc = System.Text.Json.JsonDocument.Parse(body);
-                var root = payloadDoc.RootElement;
-                if (root.TryGetProperty("notification_id", out var idProp))
-                {
-                    var notificationId = idProp.GetString();
-                    if (!string.IsNullOrEmpty(notificationId))
-                    {
-                        if (await KiemTraWebhookDaXuLyAsync(notificationId))
-                            return (true, "Already processed");
-
-                        var notifType = root.TryGetProperty("notification_type", out var typeProp) ? typeProp.GetString() : "unknown";
-                        await DanhDauWebhookDaXuLyAsync(notificationId, notifType ?? "unknown", body);
-                    }
-                }
+                payloadDoc = System.Text.Json.JsonDocument.Parse(body);
             }
             catch
             {
                 return (false, "Invalid payload");
             }
 
+            using (payloadDoc)
+            {
+                var root = payloadDoc.RootElement;
+                if (!root.TryGetProperty("notification_id", out var idProp))
+                    return (true, "Success"); // không có id thì bỏ qua an toàn
+
+                var notificationId = idProp.GetString();
+                if (string.IsNullOrEmpty(notificationId))
+                    return (true, "Success");
+
+                if (await KiemTraWebhookDaXuLyAsync(notificationId))
+                    return (true, "Already processed");
+
+                var notifType = root.TryGetProperty("notification_type", out var typeProp) ? typeProp.GetString() : "unknown";
+
+                // Đánh dấu đã xử lý TRƯỚC để chốt idempotency. Nếu 2 webhook cùng id tới
+                // song song, request thứ 2 sẽ dính lỗi unique key → coi như đã xử lý.
+                try
+                {
+                    await DanhDauWebhookDaXuLyAsync(notificationId, notifType ?? "unknown", body);
+                }
+                catch (DbUpdateException)
+                {
+                    return (true, "Already processed");
+                }
+
+                // Phân nhánh xử lý theo loại thông báo.
+                await XuLyTheoLoaiThongBaoAsync(notifType, root);
+            }
+
             return (true, "Success");
+        }
+
+        // Cập nhật DB theo loại webhook. Cloudinary gửi public_id trong payload.
+        private async Task XuLyTheoLoaiThongBaoAsync(string? notifType, System.Text.Json.JsonElement root)
+        {
+            var publicId = root.TryGetProperty("public_id", out var pidProp) ? pidProp.GetString() : null;
+            if (string.IsNullOrEmpty(publicId)) return;
+
+            var baiHoc = await _context.BaiHocs.FirstOrDefaultAsync(b => b.VideoPublicId == publicId);
+            if (baiHoc == null) return;
+
+            switch (notifType)
+            {
+                case "upload":
+                case "eager":
+                    // Transcode/upload xong → video sẵn sàng phát (nếu chưa ở bước phụ đề).
+                    if (baiHoc.VideoStatus != "Processing_Subtitle")
+                        baiHoc.VideoStatus = "Ready";
+                    await _context.SaveChangesAsync();
+                    break;
+                // Các loại khác (raw_convert, delete...) chưa cần xử lý ở MVP.
+            }
         }
 
         public async Task<bool> LuuThongTinVideoAsync(int maGiangVien, LuuThongTinVideoDTO dto)
@@ -143,7 +185,7 @@ namespace educodeai_server.Services.Implementation
             baiHoc.VideoSource = "cloudinary";
             baiHoc.LinkVideo = dto.SecureUrl; 
             baiHoc.VideoDurationS = dto.ThoiLuong;
-            baiHoc.VideoSizeMb = dto.DungLuong / (1024 * 1024); 
+            baiHoc.VideoSizeMb = (int)(dto.DungLuong / (1024L * 1024L)); // MB, luôn <= ~2048 nên int đủ chứa
             baiHoc.VideoStatus = dto.TrangThaiVideo;
 
             await _context.SaveChangesAsync();
@@ -152,16 +194,27 @@ namespace educodeai_server.Services.Implementation
 
         public string LayTokenPhatVideo(string publicId)
         {
+            // Scope token đúng public_id được yêu cầu, KHÔNG dùng wildcard "*"
+            // (wildcard cấp quyền xem toàn bộ video của hệ thống — lỗ hổng bảo mật).
             var expiration = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 7200;
-            var acl = $"/video/upload/*";
+            var acl = $"/video/upload/{publicId}";
             var toSign = $"acl={acl}~exp={expiration}";
-            
+
             var keyBytes = Encoding.UTF8.GetBytes(_cloudinaryConfig.ApiSecret);
             using var hmac = new System.Security.Cryptography.HMACSHA256(keyBytes);
             var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(toSign));
             var hmacHex = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-            
+
             return $"{toSign}~hmac={hmacHex}";
+        }
+
+        public async Task<bool> GiangVienSoHuuVideoAsync(int maGiangVien, string publicId)
+        {
+            if (string.IsNullOrEmpty(publicId)) return false;
+            return await _context.BaiHocs
+                .Include(b => b.ChuongHoc).ThenInclude(c => c.KhoaHoc)
+                .AnyAsync(b => b.VideoPublicId == publicId
+                            && b.ChuongHoc.KhoaHoc.MaGiangVien == maGiangVien);
         }
 
         public async Task<string?> TaiLenPhuDeAsync(IFormFile file, string folder)
@@ -197,9 +250,13 @@ namespace educodeai_server.Services.Implementation
             if (string.IsNullOrEmpty(baiHoc.VideoPublicId))
                 return (false, "Bài học chưa có video trên Cloudinary.");
 
+            // Chặn tạo trùng khi đang xử lý dở (tránh nhiều hold cho cùng 1 bài học).
+            if (baiHoc.VideoStatus == "Processing_Subtitle")
+                return (false, "Bài học đang trong quá trình tạo phụ đề. Vui lòng chờ.");
+
             var durationS = baiHoc.VideoDurationS ?? baiHoc.ThoiLuong ?? 0;
             var minutes = Math.Max(1, Math.Ceiling((double)durationS / 60));
-            var costUsd = (decimal)minutes * 0.024m; // Google Speech price
+            var costUsd = (decimal)minutes * (decimal)_speechPricePerMinuteUsd;
 
             var quota = await _context.GiangVienQuotas.FirstOrDefaultAsync(q => q.MaGiangVien == maGiangVien);
             if (quota == null)
@@ -211,7 +268,11 @@ namespace educodeai_server.Services.Implementation
             if (quota.AiBalanceUsd < costUsd)
                 return new(false, $"Số dư không đủ. Yêu cầu ${costUsd}, hiện có ${quota.AiBalanceUsd}");
 
-            // Hold tiền
+            // Trừ tiền NGAY khi tạo hold (không đợi commit) để tránh xài lố khi
+            // nhiều request đồng thời cùng vượt qua check số dư. Worker sẽ hoàn tiền nếu job fail.
+            quota.AiBalanceUsd -= costUsd;
+            quota.UpdatedAt = DateTime.UtcNow;
+
             var hold = new AIBalanceHoldModel
             {
                 MaGiangVien = maGiangVien,

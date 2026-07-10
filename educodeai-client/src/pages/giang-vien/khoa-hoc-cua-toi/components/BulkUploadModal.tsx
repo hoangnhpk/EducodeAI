@@ -199,7 +199,6 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
 
     const dangThucThi = new Set<Promise<void>>();
     const danhSachThanhCong: any[] = [];
-    let coLoi = false;
 
     // Snapshot the queue to get fixed indices for thuTu
     const qSnapshot = [...hangDoi];
@@ -253,7 +252,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
       const item = qSnapshot[i];
       if (item.trangThai === 'thanh_cong') continue; // Skip already successful (from retry)
 
-      const p = taiLenFile(item, i).catch(() => { coLoi = true; });
+      const p = taiLenFile(item, i).catch(() => { /* lỗi mỗi file đã hiển thị status + Retry riêng */ });
       dangThucThi.add(p);
       p.finally(() => dangThucThi.delete(p));
 

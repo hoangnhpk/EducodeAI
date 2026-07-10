@@ -167,6 +167,7 @@ builder.Services.AddScoped<IChamDiemDoAnService, ChamDiemDoAnService>();
 builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddTransient<IAiSubtitleWorker, AiSubtitleWorker>();
+builder.Services.AddHostedService<educodeai_server.Services.Implementation.StaleHoldCleanupService>();
 
 
 // ==========================================
@@ -380,6 +381,24 @@ try
 catch (Exception ex)
 {
     Console.WriteLine($"Schema bootstrap (gift-code) bỏ qua: {ex.Message}");
+}
+
+// === SELF-HEALING: cột video/phụ đề + bảng phụ trợ của phase upload video cloud ===
+// Tách riêng khỏi khối gift-code ở trên: nếu 1 lệnh ALTER của gift-code ném lỗi (VD bảng
+// chưa tồn tại trên DB restore từ backup), khối try đó sẽ abort giữa chừng và KHÔNG chạy
+// tới đây. ApplyAsync idempotent (ADD COLUMN / CREATE TABLE IF NOT EXISTS) nên an toàn.
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
+    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
+    {
+        DatabaseSchemaSync.ApplyAsync(db).GetAwaiter().GetResult();
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Schema sync (video upload) bỏ qua: {ex.Message}");
 }
 
 // PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
