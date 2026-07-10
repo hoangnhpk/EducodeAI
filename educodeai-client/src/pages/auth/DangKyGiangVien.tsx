@@ -32,6 +32,7 @@ type FormState = {
   linkedInUrl: string;
   websiteUrl: string;
   soGiayTo: string;
+  noiCap: string;
   tenNganHang: string;
   soTaiKhoanNhanTien: string;
   tenChuTaiKhoan: string;
@@ -93,6 +94,7 @@ export default function DangKyGiangVien() {
     linkedInUrl: '',
     websiteUrl: '',
     soGiayTo: '',
+    noiCap: '',
     tenNganHang: '',
     soTaiKhoanNhanTien: '',
     tenChuTaiKhoan: '',
@@ -170,10 +172,14 @@ export default function DangKyGiangVien() {
     setIsVerifying((prev) => ({ ...prev, [key]: value }));
   };
 
-  const statusBadge = (status: VerificationStatus) => {
+  const statusBadge = (status: VerificationStatus, kind: 'email' | 'cccd' | 'bank' = 'email') => {
     if (status === 'verified') return <span className="dkgv-verify-badge ok"><i className="bi bi-check-circle-fill" /> Đã xác minh</span>;
     if (status === 'failed') return <span className="dkgv-verify-badge fail"><i className="bi bi-x-circle-fill" /> Chưa hợp lệ</span>;
-    if (status === 'pending') return <span className="dkgv-verify-badge wait"><i className="bi bi-hourglass-split" /> Đang chờ OTP</span>;
+    if (status === 'pending') {
+      if (kind === 'email') return <span className="dkgv-verify-badge wait"><i className="bi bi-hourglass-split" /> Đang chờ OTP</span>;
+      if (kind === 'cccd') return null; // khong hien badge cho buoc cho xac nhan CCCD
+      return <span className="dkgv-verify-badge wait"><i className="bi bi-hourglass-split" /> Đang kiểm tra</span>;
+    }
     return <span className="dkgv-verify-badge idle"><i className="bi bi-shield" /> Chưa xác minh</span>;
   };
 
@@ -181,13 +187,21 @@ export default function DangKyGiangVien() {
     if (!info) return null;
     return (
       <div className="dkgv-verify-result">
-        {Object.entries(info).map(([label, value]) => (
+        {Object.entries(info).filter(([label]) => !label.startsWith('__')).map(([label, value]) => (
           <div key={label}><strong>{label}:</strong> <span>{value}</span></div>
         ))}
       </div>
     );
   };
 
+  const normalizeDocNumber = (value: string) => value.replace(/\D/g, '');
+  const isUnreadableValue = (value?: string) => {
+    if (!value) return true;
+    const cleaned = value.trim();
+    if (!cleaned) return true;
+    if (/^[\W_\d]+$/.test(cleaned)) return true;
+    return cleaned.replace(/[^\p{L}\p{N}]/gu, '').length < 4;
+  };
   const isValidImage = (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
     if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) return false;
@@ -215,6 +229,9 @@ export default function DangKyGiangVien() {
     }
     setFiles((prev) => ({ ...prev, [key]: file }));
     setErrors((prev) => ({ ...prev, [errorKey]: '' }));
+    if (key === 'anhGiayToMatTruoc' || key === 'anhGiayToMatSau') {
+      setVerification((prev) => ({ ...prev, cccdStatus: 'idle', cccdInfo: null }));
+    }
   };
 
   const selectBank = (bankName: string) => {
@@ -345,30 +362,111 @@ export default function DangKyGiangVien() {
   const handleVerifyIdentity = async () => {
     const doc = form.soGiayTo.trim().toUpperCase();
     const nextErrors: Record<string, string> = {};
-    if (!doc) nextErrors.soGiayTo = 'Vui lòng nhập số giấy tờ.';
+    if (!doc) nextErrors.soGiayTo = 'Vui lòng nhập số giấy tờ trước khi quét để đối chiếu.';
     else if (docType === 'cccd' && !CCCD_REGEX.test(doc)) nextErrors.soGiayTo = 'CCCD/CMND phải gồm 9 hoặc 12 chữ số.';
     else if (docType === 'passport' && !PASSPORT_REGEX.test(doc)) nextErrors.soGiayTo = 'Hộ chiếu phải gồm 6-12 ký tự chữ hoặc số.';
+    if (!form.noiCap.trim()) nextErrors.noiCap = 'Vui lòng nhập nơi cấp giấy tờ.';
     if (!files.anhGiayToMatTruoc) nextErrors.anhGiayToMatTruoc = 'Vui lòng tải ảnh mặt trước giấy tờ.';
+    else if (!isValidImage(files.anhGiayToMatTruoc)) nextErrors.anhGiayToMatTruoc = FILE_ERROR;
     if (!files.anhGiayToMatSau) nextErrors.anhGiayToMatSau = 'Vui lòng tải ảnh mặt sau giấy tờ.';
+    else if (!isValidImage(files.anhGiayToMatSau)) nextErrors.anhGiayToMatSau = FILE_ERROR;
     if (Object.keys(nextErrors).length) {
       setErrors((prev) => ({ ...prev, ...nextErrors }));
       return;
     }
 
     setVerifyLoading('cccd', true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setVerification((prev) => ({
-      ...prev,
-      cccdStatus: 'verified',
-      cccdInfo: {
-        'Loại giấy tờ': docType === 'cccd' ? 'CCCD/CMND' : 'Hộ chiếu',
-        'Số giấy tờ': doc,
-        'Họ tên đối chiếu': form.hoTen.trim() || 'Chưa nhập họ tên',
-        'Trạng thái': 'Hợp lệ ở chế độ demo/OCR sandbox'
+    try {
+      const fd = new FormData();
+      fd.append('LoaiGiayTo', docType === 'cccd' ? 'CCCD' : 'Passport');
+      fd.append('AnhMatTruoc', files.anhGiayToMatTruoc as File);
+      fd.append('AnhMatSau', files.anhGiayToMatSau as File);
+
+      // axios interceptor da tra ve response.data
+      const data: any = await authService.scanIdentityDocument(fd);
+      const payload = data?.data && (data.data.soGiayTo || data.data.hoTen || data.data.SoGiayTo || data.data.HoTen) ? data.data : data;
+
+      const soGiayTo = payload?.soGiayTo || payload?.SoGiayTo || '';
+      const hoTen = payload?.hoTen || payload?.HoTen || '';
+      const ngaySinh = payload?.ngaySinh || payload?.NgaySinh || '';
+      const gioiTinh = payload?.gioiTinh || payload?.GioiTinh || '';
+      const ngayCap = payload?.ngayCap || payload?.NgayCap || '';
+      const diaChi = payload?.diaChi || payload?.DiaChi || '';
+      const quocTich = payload?.quocTich || payload?.QuocTich || '';
+      const nguyenQuan = payload?.nguyenQuan || payload?.NguyenQuan || '';
+      const thanhCong = payload?.thanhCong ?? payload?.ThanhCong ?? true;
+
+      if (!thanhCong) {
+        throw { response: { data: payload } };
       }
-    }));
+
+      const docMismatch = Boolean(soGiayTo && doc && normalizeDocNumber(soGiayTo) !== normalizeDocNumber(doc));
+      const scannedInfo: Record<string, string> = {
+        'Loại giấy tờ': docType === 'cccd' ? 'CCCD/CMND' : 'Hộ chiếu',
+        'Họ tên': hoTen || 'Không đọc được',
+        'Ngày sinh': ngaySinh || 'Không đọc được',
+        'Giới tính': gioiTinh || 'Không đọc được',
+        'Ngày cấp': ngayCap || 'Không đọc được',
+        'Nơi cấp': form.noiCap.trim() || 'Chưa nhập',
+        'Địa chỉ': diaChi || 'Không đọc được',
+        'Quốc tịch': quocTich || 'Không đọc được'
+      };
+      if (!isUnreadableValue(nguyenQuan)) scannedInfo['Quê quán'] = nguyenQuan;
+      // keep scanned number for mismatch check only
+      if (soGiayTo) scannedInfo['__soGiayToQuet'] = soGiayTo;
+
+      setVerification((prev) => ({
+        ...prev,
+        cccdStatus: 'pending',
+        cccdInfo: scannedInfo
+      }));
+
+      if (docMismatch) {
+        setErrors((prev) => ({
+          ...prev,
+          soGiayTo: 'Số giấy tờ không khớp với ảnh tải lên.',
+          anhGiayToMatTruoc: '',
+          anhGiayToMatSau: ''
+        }));
+      } else {
+        setErrors((prev) => ({ ...prev, soGiayTo: '', anhGiayToMatTruoc: '', anhGiayToMatSau: '' }));
+      }
+
+      Swal.fire('Đã quét xong', 'Vui lòng kiểm tra lại thông tin. Nếu đúng hãy bấm Xác nhận thông tin.', 'success');
+    } catch (err: any) {
+      const message = err?.response?.data?.thongBao || err?.response?.data?.ThongBao || err?.response?.data?.message || err?.thongBao || err?.message || 'Ảnh bị mờ, không phải giấy tờ hợp lệ hoặc không thể quét. Vui lòng tải lại ảnh rõ hơn.';
+      setVerification((prev) => ({ ...prev, cccdStatus: 'failed', cccdInfo: null }));
+      if (String(message).toLowerCase().includes('số giấy tờ')) {
+        setErrors((prev) => ({ ...prev, soGiayTo: message }));
+      }
+      Swal.fire('Không quét được giấy tờ', message, 'warning');
+    } finally {
+      setVerifyLoading('cccd', false);
+    }
+  };
+
+  const handleConfirmIdentity = () => {
+    if (!verification.cccdInfo) return;
+    const soGiayTo = (verification.cccdInfo['__soGiayToQuet'] || '').trim();
+    if (!soGiayTo || soGiayTo === 'Không đọc được') {
+      Swal.fire('Thiếu số giấy tờ', 'Không thể xác nhận vì hệ thống chưa đọc được số giấy tờ.', 'warning');
+      return;
+    }
+    if (normalizeDocNumber(soGiayTo) !== normalizeDocNumber(form.soGiayTo)) {
+      setErrors((prev) => ({ ...prev, soGiayTo: 'Số giấy tờ không khớp với ảnh tải lên.' }));
+      Swal.fire('Số giấy tờ không khớp', 'Vui lòng kiểm tra lại số giấy tờ đã nhập hoặc tải lại đúng ảnh CCCD.', 'warning');
+      return;
+    }
+    setVerification((prev) => ({ ...prev, cccdStatus: 'verified' }));
+    Swal.fire('Đã xác nhận', 'Thông tin giấy tờ đã được xác nhận.', 'success');
+  };
+
+  const handleResetIdentityUpload = () => {
+    setFiles((prev) => ({ ...prev, anhGiayToMatTruoc: null, anhGiayToMatSau: null }));
+    setVerification((prev) => ({ ...prev, cccdStatus: 'idle', cccdInfo: null }));
     setErrors((prev) => ({ ...prev, soGiayTo: '', anhGiayToMatTruoc: '', anhGiayToMatSau: '' }));
-    setVerifyLoading('cccd', false);
+    if (frontInputRef.current) frontInputRef.current.value = '';
+    if (backInputRef.current) backInputRef.current.value = '';
   };
 
   const handleVerifyBankAccount = async () => {
@@ -571,7 +669,7 @@ export default function DangKyGiangVien() {
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Mật khẩu</label><input type="password" className={`dkgv-form-control ${errors.matKhau ? 'is-invalid' : ''}`} placeholder="Mật khẩu tối thiểu 8 ký tự" maxLength={50} value={form.matKhau} onChange={(e) => setField('matKhau', e.target.value)} />{errors.matKhau && <div className="text-danger small mt-1">{errors.matKhau}</div>}</div></div>
                 <div className="col-md-6">
                   <div className="dkgv-form-group">
-                    <label className="dkgv-form-label">Email {statusBadge(verification.emailStatus)}</label>
+                    <label className="dkgv-form-label">Email {statusBadge(verification.emailStatus, 'email')}</label>
                     <div className="dkgv-inline-verify">
                       <input className={`dkgv-form-control ${errors.email ? 'is-invalid' : ''}`} placeholder="name@example.com" maxLength={255} value={form.email} onChange={(e) => setField('email', e.target.value.trim())} />
                       <button className="dkgv-btn-brown" type="button" disabled={isVerifying.email || verification.emailStatus === 'verified'} onClick={handleSendEmailOtp}>{isVerifying.email ? 'Đang kiểm tra...' : 'Gửi OTP'}</button>
@@ -606,7 +704,8 @@ export default function DangKyGiangVien() {
               </div>
               {errors.soDienThoai && <div className="text-danger small mt-1">{errors.soDienThoai}</div>}
 
-              <div className="dkgv-form-group mt-3"><label className="dkgv-form-label">Số giấy tờ</label><input className={`dkgv-form-control ${errors.soGiayTo ? 'is-invalid' : ''}`} placeholder={docType === 'cccd' ? 'Nhập số CCCD/CMND' : 'Nhập số hộ chiếu'} maxLength={docType === 'cccd' ? 12 : 12} inputMode={docType === 'cccd' ? 'numeric' : 'text'} value={form.soGiayTo} onChange={(e) => setField('soGiayTo', docType === 'cccd' ? e.target.value.replace(/\D/g, '') : e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} />{errors.soGiayTo && <div className="text-danger small mt-1">{errors.soGiayTo}</div>}<div className="mt-2">{statusBadge(verification.cccdStatus)}</div></div>
+              <div className="dkgv-form-group mt-3"><label className="dkgv-form-label">Số giấy tờ</label><input className={`dkgv-form-control ${errors.soGiayTo ? 'is-invalid' : ''}`} placeholder={docType === 'cccd' ? 'Nhập số CCCD/CMND' : 'Nhập số hộ chiếu'} maxLength={docType === 'cccd' ? 12 : 12} inputMode={docType === 'cccd' ? 'numeric' : 'text'} value={form.soGiayTo} onChange={(e) => setField('soGiayTo', docType === 'cccd' ? e.target.value.replace(/\D/g, '') : e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} />{errors.soGiayTo && <div className="text-danger small mt-1">{errors.soGiayTo}</div>}</div>
+              <div className="dkgv-form-group mt-3"><label className="dkgv-form-label">Nơi cấp</label><input className={`dkgv-form-control ${errors.noiCap ? 'is-invalid' : ''}`} placeholder="Ví dụ: Cục Cảnh sát QLHC về TTXH / Công an tỉnh..." maxLength={255} value={form.noiCap} onChange={(e) => setField('noiCap', e.target.value)} />{errors.noiCap && <div className="text-danger small mt-1">{errors.noiCap}</div>}</div>
 
               <div className="dkgv-section-title"><i className="bi bi-card-text" /><span>Tải lên giấy tờ tùy thân</span></div>
               <div className="dkgv-doc-type-toggle">
@@ -620,8 +719,9 @@ export default function DangKyGiangVien() {
               </div>
 
               <div className="mt-3 d-flex gap-2 align-items-center flex-wrap">
-                <button className="dkgv-btn-brown" type="button" disabled={isVerifying.cccd || verification.cccdStatus === 'verified'} onClick={handleVerifyIdentity}>{isVerifying.cccd ? 'Đang kiểm tra...' : 'Kiểm tra thông tin'}</button>
-                {statusBadge(verification.cccdStatus)}
+                <button className="dkgv-btn-brown" type="button" disabled={isVerifying.cccd || verification.cccdStatus === 'verified'} onClick={handleVerifyIdentity}>{isVerifying.cccd ? 'Đang quét...' : 'Kiểm tra thông tin'}</button>
+                {verification.cccdStatus === 'pending' && <button className="dkgv-btn-next" type="button" onClick={handleConfirmIdentity}>Xác nhận thông tin</button>}
+                {(verification.cccdStatus === 'pending' || verification.cccdStatus === 'failed' || verification.cccdStatus === 'verified') && <button className="dkgv-btn-outline" type="button" onClick={handleResetIdentityUpload}>Tải lại ảnh</button>}
               </div>
               {renderInfoBox(verification.cccdInfo)}
 
@@ -701,7 +801,7 @@ export default function DangKyGiangVien() {
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Chi nhánh</label><input className="dkgv-form-control" placeholder="Ví dụ: Chi nhánh Ba Đình" maxLength={100} /></div></div>
                 <div className="col-md-6">
                   <div className="dkgv-form-group">
-                    <label className="dkgv-form-label">Số tài khoản {statusBadge(verification.bankStatus)}</label>
+                    <label className="dkgv-form-label">Số tài khoản {statusBadge(verification.bankStatus, 'bank')}</label>
                     <div className="dkgv-inline-verify">
                       <input className={`dkgv-form-control ${errors.soTaiKhoanNhanTien ? 'is-invalid' : ''}`} maxLength={20} inputMode="numeric" placeholder="Nhập số tài khoản của bạn" value={form.soTaiKhoanNhanTien} onChange={(e) => setField('soTaiKhoanNhanTien', e.target.value.replace(/\D/g, ''))} />
                       <button className="dkgv-btn-brown" type="button" disabled={isVerifying.bank || verification.bankStatus === 'verified'} onClick={handleVerifyBankAccount}>{isVerifying.bank ? 'Đang kiểm tra...' : 'Kiểm tra STK'}</button>
@@ -726,3 +826,5 @@ export default function DangKyGiangVien() {
     </div>
   );
 }
+
+

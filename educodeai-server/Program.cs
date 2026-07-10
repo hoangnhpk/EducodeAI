@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -27,12 +27,12 @@ builder.Configuration
 
 builder.Configuration.AddUserSecrets<Program>();
 // ==========================================
-// THÊM: ĐĂNG KÝ SIGNALR
+// THÃŠM: ÄÄ‚NG KÃ SIGNALR
 // ==========================================
 builder.Services.AddSignalR();
 
 // ==========================================
-// 2. CẤU HÌNH XÁC THỰC (JWT)
+// 2. Cáº¤U HÃŒNH XÃC THá»°C (JWT)
 // ==========================================
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -53,13 +53,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // ==========================================
-// 3. CẤU HÌNH KẾT NỐI CƠ SỞ DỮ LIỆU
+// 3. Cáº¤U HÃŒNH Káº¾T Ná»I CÆ  Sá»ž Dá»® LIá»†U
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseNpgsql(connectionString, sqlOptions =>
     {
-        // Tự động thử lại khi gặp lỗi kết nối gián đoạn (như lỗi DNS 'No such host is known' khi treo lâu)
+        // Tá»± Ä‘á»™ng thá»­ láº¡i khi gáº·p lá»—i káº¿t ná»‘i giÃ¡n Ä‘oáº¡n (nhÆ° lá»—i DNS 'No such host is known' khi treo lÃ¢u)
         sqlOptions.EnableRetryOnFailure(
             maxRetryCount: 3,
             maxRetryDelay: TimeSpan.FromSeconds(10),
@@ -80,7 +80,7 @@ try
         configOptions.ReconnectRetryPolicy = new ExponentialRetry(500);
 
         var redis = ConnectionMultiplexer.Connect(configOptions);
-        // 🔥 Check trạng thái ngay lúc start
+        // ðŸ”¥ Check tráº¡ng thÃ¡i ngay lÃºc start
         if (redis.IsConnected)
         {
             Console.WriteLine("Redis CONNECTED successfully");
@@ -96,7 +96,7 @@ try
     else
     {
         var reason = !isRedisActive ? "turned OFF in appsettings" : "empty connection string";
-        Console.WriteLine($"Redis is {reason} – using MemoryCache fallback");
+        Console.WriteLine($"Redis is {reason} â€“ using MemoryCache fallback");
         builder.Services.AddScoped<IRedisService, FallbackRedisService>();
     }
 }
@@ -108,15 +108,15 @@ catch (Exception ex)
 
 
 // ==========================================
-// 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
+// 4. ÄÄ‚NG KÃ DEPENDENCY INJECTION (DI)
 // ==========================================
 builder.Services.AddHttpContextAccessor();
-// Thêm bộ nhớ tạm để lưu OTP mà không cần dùng Database
+// ThÃªm bá»™ nhá»› táº¡m Ä‘á»ƒ lÆ°u OTP mÃ  khÃ´ng cáº§n dÃ¹ng Database
 builder.Services.AddMemoryCache();
-// Dịch vụ Xác thực và Captcha mới
+// Dá»‹ch vá»¥ XÃ¡c thá»±c vÃ  Captcha má»›i
 builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddScoped<IXacThucService, XacThucService>();
-// Khóa học & Bài tập
+// KhÃ³a há»c & BÃ i táº­p
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
@@ -133,7 +133,7 @@ builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
 builder.Services.AddScoped<BaiTapThucHanhHocVienService>();
 builder.Services.AddHttpClient<BaiTapService>();
 
-// Người dùng & Thống kê
+// NgÆ°á»i dÃ¹ng & Thá»‘ng kÃª
 
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
@@ -143,7 +143,7 @@ builder.Services.AddScoped<IThuThachService, ThuThachService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
 builder.Services.AddScoped<IThongKeAdminService, ThongKeAdminService>();
 
-// AI & Lộ trình
+// AI & Lá»™ trÃ¬nh
 builder.Services.AddScoped<IKhoaHocCuaToiRepository, KhoaHocCuaToiRepository>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
@@ -156,7 +156,7 @@ builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
 builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
 builder.Services.AddScoped<IQuanLyHoSoGiangVienService, QuanLyHoSoGiangVienService>();
 builder.Services.AddScoped<ILoTrinhAIGvService, LoTrinhAIGvService>();
-// C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
+// C. Cáº¥u hÃ¬nh CORS (Cho phÃ©p React/Giao diá»‡n gá»i API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
@@ -166,10 +166,11 @@ builder.Services.AddScoped<ISinhDoAnAIService, SinhDoAnAIService>();
 builder.Services.AddScoped<IChamDiemDoAnService, ChamDiemDoAnService>();
 builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
+builder.Services.AddScoped<IGiayToScanningService, GiayToScanningService>();
 
 
 // ==========================================
-// 5. CẤU HÌNH HTTP CLIENT CHO GEMINI (ĐÃ TỐI ƯU)
+// 5. Cáº¤U HÃŒNH HTTP CLIENT CHO GEMINI (ÄÃƒ Tá»I Æ¯U)
 // ==========================================
 builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =>
 {
@@ -215,7 +216,7 @@ if (cloudinarySettings != null)
 builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();
 
 // ==========================================
-// 6. CẤU HÌNH CORS & SWAGGER
+// 6. Cáº¤U HÃŒNH CORS & SWAGGER
 // ==========================================
 builder.Services.AddCors(options =>
 {
@@ -244,7 +245,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,  
-        Description = "Nhập theo format: Bearer {token}"
+        Description = "Nháº­p theo format: Bearer {token}"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -261,10 +262,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
+// Khá»Ÿi táº¡o cáº¥u hÃ¬nh cho EmailHelper Ä‘á»ƒ cÃ³ thá»ƒ Ä‘á»c appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 
-// Tự vá các cột/bảng mới của phase gift-code để tránh lỗi 500 khi DB chưa chạy migration kịp.
+// Tá»± vÃ¡ cÃ¡c cá»™t/báº£ng má»›i cá»§a phase gift-code Ä‘á»ƒ trÃ¡nh lá»—i 500 khi DB chÆ°a cháº¡y migration ká»‹p.
 try
 {
     using var scope = app.Services.CreateScope();
@@ -344,7 +345,7 @@ try
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGiaKhoaHocs_MaKhoaHoc" ON "MaGiamGiaKhoaHocs" ("MaKhoaHoc");""");
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_DonHangKhoaHocs_MaVoucher" ON "DonHangKhoaHocs" ("MaVoucher");""");
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGias_MaNguoiTao" ON "MaGiamGias" ("MaNguoiTao");""");
-        // === SELF-HEALING: HoSoDangKyGiangViens (đăng ký giảng viên) ===
+        // === SELF-HEALING: HoSoDangKyGiangViens (Ä‘Äƒng kÃ½ giáº£ng viÃªn) ===
         db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ALTER COLUMN "MaNguoiDung" TYPE integer USING "MaNguoiDung"::integer;""");
         db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ALTER COLUMN "MaNguoiDung" DROP NOT NULL;""");
         db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "TaiKhoan" character varying(50) NOT NULL DEFAULT '';""");
@@ -358,11 +359,11 @@ try
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Schema bootstrap (gift-code) bỏ qua: {ex.Message}");
+    Console.WriteLine($"Schema bootstrap (gift-code) bá» qua: {ex.Message}");
 }
 
-// PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
-// Nếu setval không chạy → trùng PK → 500 khi tạo mã QR.
+// PostgreSQL: seed InsertData gÃ¡n PK cá»‘ Ä‘á»‹nh; cá»™t identity dÃ¹ng pg_get_identity_sequence (serial_sequence thÆ°á»ng NULL).
+// Náº¿u setval khÃ´ng cháº¡y â†’ trÃ¹ng PK â†’ 500 khi táº¡o mÃ£ QR.
 //try
 //{
 //    using var scope = app.Services.CreateScope();
@@ -395,14 +396,14 @@ catch (Exception ex)
 //            }
 //            catch (Exception exBang)
 //            {
-//                Console.WriteLine($"Đồng bộ sequence {bang}.{cot}: {exBang.Message}");
+//                Console.WriteLine($"Äá»“ng bá»™ sequence {bang}.{cot}: {exBang.Message}");
 //            }
 //        }
 //    }
 //}
 //catch (Exception ex)
 //{
-//    Console.WriteLine($"Không đồng bộ sequence PostgreSQL (bỏ qua nếu DB chưa migrate): {ex.Message}");
+//    Console.WriteLine($"KhÃ´ng Ä‘á»“ng bá»™ sequence PostgreSQL (bá» qua náº¿u DB chÆ°a migrate): {ex.Message}");
 //}
 
 // ==========================================
@@ -418,7 +419,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// CORS: phải đặt sau UseRouting và trước UseAuthentication/UseAuthorization
+// CORS: pháº£i Ä‘áº·t sau UseRouting vÃ  trÆ°á»›c UseAuthentication/UseAuthorization
 // (https://learn.microsoft.com/en-us/aspnet/core/security/cors)
 app.UseRouting();
 app.UseCors("AllowReactApp");
@@ -432,3 +433,5 @@ app.MapHub<SystemConfigHub>("/systemConfigHub").RequireCors("AllowReactApp");
 app.MapControllers();
 
 app.Run();
+
+

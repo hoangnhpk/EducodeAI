@@ -13,10 +13,12 @@ namespace educodeai_server.Controllers
     public class XacThucController : ControllerBase
     {
         private readonly IXacThucService _xacThucService;
+        private readonly IGiayToScanningService _giayToScanningService;
 
-        public XacThucController(IXacThucService xacThucService)
+        public XacThucController(IXacThucService xacThucService, IGiayToScanningService giayToScanningService)
         {
             _xacThucService = xacThucService;
+            _giayToScanningService = giayToScanningService;
         }
 
         #region 1. API ĐĂNG NHẬP
@@ -377,5 +379,50 @@ namespace educodeai_server.Controllers
         }
 
         #endregion
+        #region 6. API QUÉT CCCD/GIẤY TỜ
+
+        [HttpPost("quet-giay-to")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> QuetGiayTo([FromForm] GiayToScanningRequest request, [FromServices] educodeai_server.Data.EduCodeAIDbContext dbContext)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)));
+                return BadRequest(new { thanhCong = false, thongBao = "Dữ liệu không hợp lệ", errors });
+            }
+
+            try
+            {
+                var result = await _giayToScanningService.QuetGiayToAsync(request);
+                if (!result.ThanhCong)
+                    return BadRequest(result);
+
+                // Kiểm tra xem số giấy tờ này đã được sử dụng chưa
+                if (!string.IsNullOrWhiteSpace(result.SoGiayTo))
+                {
+                    var so = result.SoGiayTo.Trim();
+                    // Cùng một CCCD không được tạo nhiều hồ sơ
+                    var daTonTai = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.AnyAsync(
+                        dbContext.HoSoDangKyGiangViens,
+                        x => x.SoGiayTo == so && x.TrangThaiHoSo != "TuChoi"
+                    );
+                    if (daTonTai)
+                    {
+                        return BadRequest(new { thanhCong = false, thongBao = "Số giấy tờ này đã được sử dụng để đăng ký tài khoản khác." });
+                    }
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { thanhCong = false, thongBao = ex.Message });
+            }
+        }
+
+        #endregion
     }
 }
+
+
+
