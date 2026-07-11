@@ -1,410 +1,429 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // THÊM useNavigate
-import axios, { AxiosError } from "axios";
-import "../../../layouts/hoc-vien/ChiTietKhoaHoc.css";
-import { encodeId } from '@/utils/id-helper';
-import { formatGiaKhoaHoc, laKhoaHocMienPhi } from '@/utils/format-gia-khoa-hoc';
-type BaiHoc = {
-  maBaiHoc: number;
-  tenBaiHoc?: string;
-  tenBai?: string;
-  TenBaiHoc?: string;
-  videoUrl?: string;
-  thoiLuong?: string;
-  thoi_luong?: string;
-};
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import { ChiTietKhoaHocService } from "../../../services/chi-tiet-khoa-hoc.service";
+import type { ChiTietKhoaHocDTO, DanhGiaDTO } from "../../../services/chi-tiet-khoa-hoc.service";
+import "./ChiTietKhoaHocGiaoDien.css";
+import { getMediaUrl } from "../../../utils/mediaUrl";
 
-type Chuong = {
-  maChuong: number;
-  tenChuong: string;
-  baiHocs?: BaiHoc[];
-};
+type VideoPreview = { type: 'youtube' | 'direct'; src: string };
 
-type GiangVien = {
-  maGiangVien: number;
-  hoTen: string;
-  anhDaiDien?: string;
-};
+const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg'];
 
-type KhoaHoc = {
-  maKhoaHoc: number;
-  tenKhoaHoc: string;
-  moTa?: string;
-  kyNangChinh?: string;
-  giaKhoaHoc?: number;
-  donViTienTe?: string;
-  chuongs?: Chuong[];
-  khoaHocDaDangKy?: boolean;
-  slug?: string; 
-  diemDanhGiaTB?: number;
-  tongDanhGia?: number;
-  coChungChi?: boolean;
-  tenChungChi?: string;
-  thoiLuongGio?: number;
-  giangVien?: GiangVien;
-};
-
-type DanhGia = {
-  maDanhGia: number;
-  soSao: number;
-  nhanXet: string;
-  ngayDanhGia: string;
-  nguoiDung: {
-    hoTen: string;
-    anhDaiDien?: string;
+const getYouTubeVideoId = (url: URL): string | null => {
+  const host = url.hostname.replace(/^www\./, '').toLowerCase();
+  if (host === 'youtu.be') return url.pathname.split('/').filter(Boolean)[0] ?? null;
+  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
+    if (url.pathname === '/watch') return url.searchParams.get('v');
+    const parts = url.pathname.split('/').filter(Boolean);
+    if ((parts[0] === 'embed' || parts[0] === 'shorts' || parts[0] === 'live') && parts[1]) return parts[1];
   }
+  return null;
 };
 
-type DanhGiaResponse = {
-  items: DanhGia[];
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
+const getVideoPreview = (value?: string | null): VideoPreview | null => {
+  const input = value?.trim();
+  if (!input) return null;
+  if (input.startsWith('/uploads/')) {
+    return VIDEO_EXTENSIONS.some(ext => input.toLowerCase().split('?')[0].endsWith(ext)) ? { type: 'direct', src: getMediaUrl(input) } : null;
+  }
+  try {
+    const url = new URL(input);
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    const youtubeId = getYouTubeVideoId(url);
+    if (youtubeId) return { type: 'youtube', src: `https://www.youtube.com/embed/${youtubeId}` };
+    if (VIDEO_EXTENSIONS.some(ext => url.pathname.toLowerCase().endsWith(ext))) return { type: 'direct', src: getMediaUrl(input) };
+  } catch { return null; }
+  return null;
 };
 
 const ChiTietKhoaHoc = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate(); // Khởi tạo điều hướng
+  const navigate = useNavigate();
 
-  const [course, setCourse] = useState<KhoaHoc | null>(null);
-  const [openChapter, setOpenChapter] = useState<number | null>(0);
+  const [expandedSections, setExpandedSections] = useState<number[]>([]);
+  const [khoaHoc, setKhoaHoc] = useState<ChiTietKhoaHocDTO | null>(null);
+  const [danhGias, setDanhGias] = useState<DanhGiaDTO[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
- 
-  // State cho Đánh giá (Reviews)
-  const [reviews, setReviews] = useState<DanhGiaResponse | null>(null);
-  const [reviewPage, setReviewPage] = useState(1);
-  const [reviewFilter, setReviewFilter] = useState("all"); // "all", "positive", "negative"
+
   useEffect(() => {
-    if (!id) return;
-
-    const fetchCourse = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Lấy token để check xem user đăng nhập chưa (nếu API chi tiết có kiểm tra trạng thái)
-        const token = localStorage.getItem("user_token"); 
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-        const res = await axios.get<KhoaHoc>(
-          `https://localhost:7284/api/hocvien/chitietkhoahoc/${id}`,
-          { headers }
-        );
-
-        setCourse(res.data);
-      } catch (err) {
-        const error = err as AxiosError;
-        if (error.response) {
-          setError(`Lỗi server: ${error.response.status}`);
-        } else if (error.request) {
-          setError("Không kết nối được tới server.");
-        } else {
-          setError("Có lỗi xảy ra.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCourse();
+    if (id) {
+      fetchData(Number(id));
+    }
   }, [id]);
 
-  // Fetch Đánh giá khi đổi Trang hoặc Filter
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchReviews = async () => {
-      try {
-        const res = await axios.get<DanhGiaResponse>(
-          `https://localhost:7284/api/hocvien/chitietkhoahoc/${id}/danh-gia?page=${reviewPage}&pageSize=5&filter=${reviewFilter}`
-        );
-        setReviews(res.data);
-      } catch (err) {
-        console.error("Lỗi lấy đánh giá:", err);
+  const fetchData = async (courseId: number) => {
+    try {
+      setLoading(true);
+      const data = await ChiTietKhoaHocService.getChiTietKhoaHoc(courseId);
+      setKhoaHoc(data);
+      
+      // Expand the first chapter by default
+      if (data.chuongs && data.chuongs.length > 0) {
+        setExpandedSections([data.chuongs[0].maChuong]);
       }
-    };
-
-    fetchReviews();
-  }, [id, reviewPage, reviewFilter]);
-
-  const toggleChapter = (index: number) => {
-    setOpenChapter(openChapter === index ? null : index);
+      
+      const danhGiaRes = await ChiTietKhoaHocService.getDanhGiaKhoaHoc(courseId);
+      setDanhGias(danhGiaRes.items || []);
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Lỗi', 'Không thể tải dữ liệu khóa học', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const dinhDangTien = (soTien?: number, donViTienTe?: string) =>
-    formatGiaKhoaHoc(soTien ?? 0, donViTienTe ?? "VND");
+  const toggleSection = (sectionId: number) => {
+    if (expandedSections.includes(sectionId)) {
+      setExpandedSections(expandedSections.filter(s => s !== sectionId));
+    } else {
+      setExpandedSections([...expandedSections, sectionId]);
+    }
+  };
 
-  // ==========================================
-  // HÀM XỬ LÝ CHUYỂN HƯỚNG ĐẾN MUA KHÓA HỌC
-  // ==========================================
+  const expandAll = () => {
+    if (khoaHoc?.chuongs) {
+      setExpandedSections(khoaHoc.chuongs.map(c => c.maChuong));
+    }
+  };
+
   const handleDangKy = async () => {
-    if (!course) return;
+    if (!id || !khoaHoc) return;
 
-    if (course.khoaHocDaDangKy) {
-      navigate(`/khoa-hoc/${course.slug}/${encodeId(course.maKhoaHoc)}`);
+    if (khoaHoc.khoaHocDaDangKy) {
+      navigate(`/khoa-hoc/${khoaHoc.slug}/${id}`);
       return;
     }
 
-    if (laKhoaHocMienPhi(course.donViTienTe)) {
-      navigate(`/mua-khoa-hoc/${course.maKhoaHoc}`);
+    const token = localStorage.getItem('user_token');
+    if (!token) {
+      Swal.fire({
+        title: 'Cần đăng nhập',
+        text: 'Bạn cần đăng nhập để đăng ký khóa học',
+        icon: 'warning',
+        confirmButtonText: 'Đăng nhập ngay'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate('/dang-nhap');
+        }
+      });
       return;
     }
 
-    navigate(`/mua-khoa-hoc/${course.maKhoaHoc}`);
+    if (khoaHoc.giaKhoaHoc > 0 && khoaHoc.donViTienTe?.toUpperCase() !== 'FREE') {
+      navigate(`/mua-khoa-hoc/${id}`);
+      return;
+    }
+
+    try {
+      await ChiTietKhoaHocService.dangKyKhoaHoc(Number(id));
+      Swal.fire('Thành công', 'Đăng ký khóa học thành công!', 'success');
+      fetchData(Number(id)); // Reload data to get updated status
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || 'Đã xảy ra lỗi khi đăng ký.';
+      Swal.fire('Lỗi', msg, 'error');
+    }
   };
 
-  const handleHocThu = () => {
-    if (!course?.slug) return;
-    navigate(`/khoa-hoc/${course.slug}/${encodeId(course.maKhoaHoc)}`);
-  };
+  if (loading) {
+    return <div className="text-center p-5">Đang tải chi tiết khóa học...</div>;
+  }
 
-  if (loading) return <h3 style={{ padding: 40 }}>Đang tải dữ liệu...</h3>;
-  if (error) return <h3 style={{ padding: 40, color: "red" }}>{error}</h3>;
-  if (!course) return <h3 style={{ padding: 40 }}>Không tìm thấy khóa học</h3>;
+  if (!khoaHoc) {
+    return <div className="text-center p-5">Không tìm thấy khóa học</div>;
+  }
+
+  // Calculate total lessons
+  const totalLessons = khoaHoc.chuongs.reduce((acc, chuong) => acc + chuong.baiHocs.length, 0);
+  const videoPreview = getVideoPreview(khoaHoc.videoGioiThieu);
+  const bannerImageUrl = getMediaUrl(khoaHoc.hinhAnh);
 
   return (
-    <>
-      {/* ===== COURSE HEADER ===== */}
-      <div className="course-header">
-        <div className="course-header-content">
-          <h1 className="course-title">{course.tenKhoaHoc}</h1>
-          <p className="course-subtitle">
-            {course.moTa || "Chưa có mô tả cho khóa học này."}
-          </p>
+    <div className="chi-tiet-giao-dien-container">
+      {/* HEADER BANNER */}
+      <div
+        className="ctgd-header-banner"
+        style={bannerImageUrl ? { backgroundImage: `linear-gradient(90deg, rgba(20, 20, 20, 0.88), rgba(20, 20, 20, 0.72)), url(${bannerImageUrl})` } : undefined}
+      >
+        <div className="ctgd-header-inner">
+          <div className="ctgd-header-content">
+            <div className="ctgd-badges">
+              {khoaHoc.diemDanhGiaTB >= 4.5 && (
+                <span className="ctgd-badge ctgd-badge-popular">Phổ biến nhất</span>
+              )}
+              <span className="ctgd-badge ctgd-badge-category">{khoaHoc.linhVuc || "Chung"}</span>
+            </div>
+            
+            <h1 className="ctgd-title">{khoaHoc.tenKhoaHoc}</h1>
+            <p className="ctgd-subtitle">
+              {khoaHoc.moTa || "Làm chủ ngôn ngữ lập trình mạnh mẽ nhất hiện nay thông qua các dự án thực tế."}
+            </p>
+
+            <div className="ctgd-stats">
+              <div className="ctgd-rating">
+                <span className="ctgd-rating-score">{khoaHoc.diemDanhGiaTB.toFixed(1)}</span>
+                <span className="ctgd-stars">
+                  {[...Array(5)].map((_, i) => (
+                    <i key={i} className={`fas fa-star ${i < Math.floor(khoaHoc.diemDanhGiaTB) ? '' : (i < khoaHoc.diemDanhGiaTB ? 'fa-star-half-alt' : 'text-muted')}`}></i>
+                  ))}
+                </span>
+                <span className="ctgd-rating-count">({khoaHoc.tongDanhGia} đánh giá)</span>
+              </div>
+              <div className="ctgd-students">
+                <i className="fas fa-user-friends"></i>
+                <span>{khoaHoc.tongSoHocVien.toLocaleString()} học viên • Trình độ: {khoaHoc.trinhDo}</span>
+              </div>
+            </div>
+
+            <div className="ctgd-instructor-top">
+              <img 
+                src={khoaHoc.giangVien?.anhDaiDien || "https://ui-avatars.com/api/?name=" + (khoaHoc.giangVien?.hoTen || "GV")} 
+                alt="Instructor" 
+                className="ctgd-instructor-avatar"
+              />
+              <div className="ctgd-instructor-info-top">
+                <span className="ctgd-instructor-label">Giảng viên bởi</span>
+                <span className="ctgd-instructor-name-top">{khoaHoc.giangVien?.hoTen || "Đang cập nhật"}</span>
+              </div>
+            </div>
+          </div>
+          {/* Empty spacer for the right side where sidebar will overlap */}
+          <div style={{ width: '360px', flexShrink: 0 }} className="d-none d-lg-block"></div>
         </div>
       </div>
 
-      {/* ===== MAIN CONTENT ===== */}
-      <div className="course-main-container">
-        <div className="course-content-wrapper">
-
-          {/* ===== LEFT ===== */}
-          <div className="course-main-content">
-            <div className="course-curriculum">
-              <h2 className="section-title">Nội dung khóa học</h2>
-
-              {course.chuongs && course.chuongs.length > 0 ? (
-                course.chuongs.map((chuong, index) => (
-                  <div key={chuong.maChuong} className="chapter-accordion">
-                    <div
-                      className={`chapter-header ${
-                        openChapter === index ? "active" : ""
-                      }`}
-                      onClick={() => toggleChapter(index)}
-                    >
-                      <div>
-                        <h3>{chuong.tenChuong}</h3>
-                        <span>
-                          {chuong.baiHocs?.length || 0} bài
-                        </span>
-                      </div>
-                      <i className="fas fa-chevron-down"></i>
-                    </div>
-
-                    {openChapter === index && (
-                      <div className="chapter-content">
-                        {chuong.baiHocs && chuong.baiHocs.length > 0 ? (
-                          chuong.baiHocs.map((bai) => (
-                            <div key={bai.maBaiHoc} className="lesson-item">
-                              {
-                                bai.tenBaiHoc ||
-                                bai.tenBai ||
-                                bai.TenBaiHoc ||
-                                "Không có tên bài"
-                              }
-                              <span>
-                                {bai.thoiLuong ||
-                                  bai.thoi_luong ||
-                                  ""}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="lesson-item">
-                            Chưa có bài học
-                          </div>
-                        )}
-                      </div>
-                    )}
+      {/* MAIN CONTENT */}
+      <div className="ctgd-main">
+        <div className="ctgd-content">
+          
+          {/* WHAT YOU'LL LEARN (Lấy dữ liệu từ API) */}
+          {khoaHoc.banSeHocDuocGi && khoaHoc.banSeHocDuocGi.length > 0 && (
+            <section className="ctgd-section-learn">
+              <h2 className="ctgd-section-title">Bạn sẽ học được gì?</h2>
+              <div className="ctgd-learn-list">
+                {khoaHoc.banSeHocDuocGi.map((item, index) => (
+                  <div className="ctgd-learn-item" key={index}>
+                    <i className="fas fa-check-circle ctgd-learn-icon"></i>
+                    <span>{item}</span>
                   </div>
-                ))
-              ) : (
-                <p>Chưa có chương nào</p>
-              )}
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* CURRICULUM (Lấy dữ liệu API) */}
+          <section className="ctgd-curriculum">
+            <h2 className="ctgd-section-title">Nội dung khóa học</h2>
+            <div className="ctgd-curriculum-header">
+              <div className="ctgd-curriculum-stats">
+                {khoaHoc.chuongs.length} phần • {totalLessons} bài giảng • {khoaHoc.thoiLuongGio} giờ tổng thời lượng
+              </div>
+              <button className="ctgd-expand-btn" onClick={expandAll}>Mở rộng tất cả</button>
             </div>
 
-            {/* NHẬN XÉT ĐÁNH GIÁ */}
-            <div className="course-reviews mt-5" style={{ padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-                <h2 className="section-title mb-0" style={{ borderBottom: 'none', paddingBottom: 0 }}>Đánh giá học viên ({course.tongDanhGia || 0})</h2>
-                <div>
-                  <select 
-                    className="form-select form-select-sm" 
-                    value={reviewFilter} 
-                    onChange={(e) => { setReviewFilter(e.target.value); setReviewPage(1); }}
-                    style={{ width: 'auto', display: 'inline-block', borderRadius: '8px', cursor: 'pointer' }}
-                  >
-                    <option value="all">Tất cả đánh giá</option>
-                    <option value="positive">Tích cực (4-5 sao)</option>
-                    <option value="negative">Tiêu cực (1-3 sao)</option>
-                  </select>
+            {khoaHoc.chuongs.map((chuong, index) => (
+              <div className="ctgd-chapter" key={chuong.maChuong}>
+                <div className="ctgd-chapter-header" onClick={() => toggleSection(chuong.maChuong)}>
+                  <div className="ctgd-chapter-title-wrap">
+                    <i className={`fas fa-chevron-${expandedSections.includes(chuong.maChuong) ? 'up' : 'down'} ctgd-chapter-icon`}></i>
+                    <span className="ctgd-chapter-title">Phần {index + 1}: {chuong.tenChuong}</span>
+                  </div>
+                  <span className="ctgd-chapter-meta">{chuong.baiHocs.length} bài giảng</span>
+                </div>
+                {expandedSections.includes(chuong.maChuong) && (
+                  <div className="ctgd-chapter-body">
+                    {chuong.baiHocs.map(bai => (
+                      <div className="ctgd-lesson" key={bai.maBaiHoc}>
+                        <div className="ctgd-lesson-left">
+                          <i className="fas fa-play-circle ctgd-lesson-icon"></i>
+                          <span>{bai.tenBaiHoc}</span>
+                        </div>
+                        <div className="ctgd-lesson-right">
+                          {/* <a href="#" className="ctgd-preview-link">Xem thử</a> */}
+                          <span className="ctgd-lesson-duration">{Math.floor(bai.thoiLuong / 60)}:{(bai.thoiLuong % 60).toString().padStart(2, '0')}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </section>
+
+          {/* DESCRIPTION */}
+          <section className="ctgd-description">
+            <h2 className="ctgd-section-title">Mô tả khóa học</h2>
+            <p>Chào mừng bạn đến với khóa học <strong>{khoaHoc.tenKhoaHoc}</strong>.</p>
+            <p>Khóa học này sẽ giúp bạn trang bị đầy đủ kỹ năng: {khoaHoc.moTa}</p>
+            <ul>
+              <li>Bài giảng video chất lượng cao.</li>
+              <li>Hệ thống bài tập tự động chấm điểm trên nền tảng EducodeAI.</li>
+              {khoaHoc.coChungChi && <li>Chứng chỉ hoàn thành: {khoaHoc.tenChungChi || khoaHoc.tenKhoaHoc}.</li>}
+            </ul>
+          </section>
+
+          {/* INSTRUCTOR INFO */}
+          <section className="ctgd-instructor-box">
+            <h2 className="ctgd-section-title" style={{ fontSize: '20px', marginBottom: '20px' }}>Thông tin giảng viên</h2>
+            <div className="ctgd-instructor-profile">
+              <img 
+                src={khoaHoc.giangVien?.anhDaiDien || "https://ui-avatars.com/api/?name=" + (khoaHoc.giangVien?.hoTen || "GV")} 
+                alt={khoaHoc.giangVien?.hoTen || "Giảng viên"} 
+                className="ctgd-instructor-avatar-large" 
+              />
+              <div className="ctgd-instructor-details">
+                <h3 className="ctgd-instructor-name">{khoaHoc.giangVien?.hoTen || "Đang cập nhật"}</h3>
+                <div className="ctgd-instructor-headline">Giảng viên tại EducodeAI</div>
+                <div className="ctgd-instructor-stats">
+                  <div className="ctgd-instructor-stats-item">
+                    <i className="fas fa-star" style={{color: '#f69050'}}></i>
+                    <span>Giảng viên uy tín</span>
+                  </div>
                 </div>
               </div>
+            </div>
+            <div className="ctgd-instructor-bio">
+              Luôn đồng hành cùng học viên trong hành trình chinh phục kiến thức công nghệ.
+            </div>
+          </section>
 
-              {reviews && reviews.items.length > 0 ? (
-                <div className="reviews-list">
-                  {reviews.items.map(r => (
-                    <div key={r.maDanhGia} className="review-item" style={{ padding: '15px 0', borderBottom: '1px solid #eee' }}>
-                      <div style={{ display: 'flex', gap: '15px' }}>
-                        {r.nguoiDung.anhDaiDien && r.nguoiDung.anhDaiDien.trim() !== '' && r.nguoiDung.anhDaiDien !== 'null' ? (
-                          <img 
-                            src={r.nguoiDung.anhDaiDien} 
-                            alt="avatar" 
-                            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #f1f5f9' }} 
-                          />
-                        ) : (
-                          <div style={{
-                              width: '40px', height: '40px', borderRadius: '50%',
-                              background: '#f1f5f9', color: '#64748b', 
-                              display: 'flex', alignItems: 'center',
-                              justifyContent: 'center', fontWeight: 700, fontSize: 16
-                          }}>
-                              {r.nguoiDung.hoTen ? r.nguoiDung.hoTen[0].toUpperCase() : '?'}
-                          </div>
-                        )}
-                        <div style={{ flex: 1 }}>
-                          <h6 style={{ margin: 0, fontWeight: 'bold' }}>{r.nguoiDung.hoTen}</h6>
-                          <div style={{ color: '#ffc107', fontSize: '14px', margin: '5px 0' }}>
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <i key={i} className={i < r.soSao ? "fas fa-star" : "far fa-star"}></i>
+          {/* REVIEWS */}
+          <section className="ctgd-reviews">
+            <h2 className="ctgd-section-title">Đánh giá từ học viên</h2>
+            <div className="ctgd-reviews-summary">
+              <div className="ctgd-reviews-overall">
+                <div className="ctgd-reviews-score">{khoaHoc.diemDanhGiaTB.toFixed(1)}</div>
+                <div className="ctgd-reviews-stars">
+                  {[...Array(5)].map((_, i) => (
+                    <i key={i} className={`fas fa-star ${i < Math.floor(khoaHoc.diemDanhGiaTB) ? '' : (i < khoaHoc.diemDanhGiaTB ? 'fa-star-half-alt' : 'text-muted')}`}></i>
+                  ))}
+                </div>
+                <div className="ctgd-reviews-label">Xếp hạng khóa học</div>
+              </div>
+            </div>
+
+            <div className="ctgd-review-list">
+              {danhGias.length === 0 ? (
+                <div className="text-muted">Chưa có đánh giá nào cho khóa học này.</div>
+              ) : (
+                danhGias.map(dg => (
+                  <div className="ctgd-review-item" key={dg.maDanhGia}>
+                    <div className="ctgd-review-header">
+                      <img 
+                        src={dg.nguoiDung.anhDaiDien || "https://ui-avatars.com/api/?name=" + dg.nguoiDung.hoTen} 
+                        alt="Avatar" 
+                        style={{width: '40px', height: '40px', borderRadius: '50%', marginRight: '15px'}}
+                      />
+                      <div className="ctgd-reviewer-info">
+                        <div className="ctgd-reviewer-name">{dg.nguoiDung.hoTen}</div>
+                        <div className="ctgd-review-meta">
+                          <div className="ctgd-stars" style={{ fontSize: '12px' }}>
+                            {[...Array(5)].map((_, i) => (
+                              <i key={i} className={i < dg.soSao ? "fas fa-star" : "far fa-star"}></i>
                             ))}
-                            <span style={{ color: '#666', marginLeft: '10px', fontSize: '12px' }}>
-                              {new Date(r.ngayDanhGia).toLocaleDateString('vi-VN')}
-                            </span>
                           </div>
-                          <p style={{ margin: 0, color: '#444' }}>{r.nhanXet}</p>
+                          <span>{new Date(dg.ngayDanhGia).toLocaleDateString('vi-VN')}</span>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    <div className="ctgd-review-text">
+                      {dg.nhanXet}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
 
-                  {/* Phân trang */}
-                  {reviews.totalPages > 1 && (
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
-                      <button 
-                        className="btn btn-sm btn-outline-primary" 
-                        disabled={reviewPage === 1}
-                        onClick={() => setReviewPage(p => p - 1)}
-                        style={{ borderRadius: '6px' }}
-                      >
-                        Trước
-                      </button>
-                      <span style={{ lineHeight: '30px', fontWeight: '500' }}>{reviewPage} / {reviews.totalPages}</span>
-                      <button 
-                        className="btn btn-sm btn-outline-primary" 
-                        disabled={reviewPage === reviews.totalPages}
-                        onClick={() => setReviewPage(p => p + 1)}
-                        style={{ borderRadius: '6px' }}
-                      >
-                        Sau
-                      </button>
+        </div>
+
+        {/* SIDEBAR */}
+        <div className="ctgd-sidebar-wrapper">
+          <div className="ctgd-sidebar-card">
+            <div className="ctgd-video-preview" style={{ padding: 0 }}>
+              {videoPreview ? (
+                videoPreview.type === 'youtube' ? (
+                  <iframe
+                    src={videoPreview.src}
+                    title="Video gioi thieu khoa hoc"
+                    style={{ width: '100%', height: '200px', border: 0, borderRadius: '12px 12px 0 0' }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={videoPreview.src}
+                    controls
+                    poster={khoaHoc.hinhAnh}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px 12px 0 0', maxHeight: '200px' }}
+                  >
+                    Trinh duyet cua ban khong ho tro the video.
+                  </video>
+                )
+              ) : (
+                <>
+                  <img 
+                    src={khoaHoc.hinhAnh || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800&h=450"} 
+                    alt="Video Preview" 
+                    className="ctgd-video-thumb"
+                  />
+                  <div className="ctgd-play-btn">
+                    <i className="fas fa-play"></i>
+                  </div>
+                  <div className="ctgd-video-label">Chưa có video giới thiệu</div>
+                </>
+              )}
+            </div>
+            
+            <div className="ctgd-card-body">
+              <div className="ctgd-price-section">
+                <div className="ctgd-price-current">
+                  {khoaHoc.giaKhoaHoc > 0 ? `${khoaHoc.giaKhoaHoc.toLocaleString()} ${khoaHoc.donViTienTe}` : 'Miễn phí'}
+                </div>
+              </div>
+
+              <div className="ctgd-action-buttons">
+                {khoaHoc.khoaHocDaDangKy ? (
+                  <button className="ctgd-btn-primary" onClick={handleDangKy}>
+                    Tiếp tục học
+                  </button>
+                ) : (
+                  <button className="ctgd-btn-primary" onClick={handleDangKy}>
+                    Đăng ký ngay
+                  </button>
+                )}
+                
+                {!khoaHoc.khoaHocDaDangKy && <button className="ctgd-btn-secondary">Thêm vào giỏ hàng</button>}
+              </div>
+
+              <div className="ctgd-includes">
+                <h4 className="ctgd-includes-title">Khóa học bao gồm:</h4>
+                <div className="ctgd-includes-list">
+                  <div className="ctgd-includes-item">
+                    <i className="fas fa-video ctgd-includes-icon"></i>
+                    <span>{khoaHoc.thoiLuongGio} giờ video HD</span>
+                  </div>
+                  <div className="ctgd-includes-item">
+                    <i className="fas fa-laptop-code ctgd-includes-icon"></i>
+                    <span>Hệ thống bài tập tích hợp</span>
+                  </div>
+                  <div className="ctgd-includes-item">
+                    <i className="fas fa-mobile-alt ctgd-includes-icon"></i>
+                    <span>Học trên mọi thiết bị</span>
+                  </div>
+                  {khoaHoc.coChungChi && (
+                    <div className="ctgd-includes-item">
+                      <i className="fas fa-certificate ctgd-includes-icon"></i>
+                      <span>Chứng chỉ: {khoaHoc.tenChungChi || "Có chứng chỉ"}</span>
                     </div>
                   )}
                 </div>
-              ) : (
-                <p style={{ color: '#666', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>Chưa có đánh giá nào phù hợp.</p>
-              )}
-            </div>
-
-          </div>
-
-          {/* ===== SIDEBAR ===== */}
-          <div className="course-sidebar">
-            <div className="sidebar-card">
-              <div className="course-price">
-                {dinhDangTien(course.giaKhoaHoc, course.donViTienTe)}
-                {!laKhoaHocMienPhi(course.donViTienTe) && (
-                  <span className="free-badge"> VND</span>
-                )}
               </div>
-
-              {course.khoaHocDaDangKy ? (
-                <button
-                  className="enroll-btn"
-                  onClick={handleDangKy}
-                  style={{ backgroundColor: "#28a745", opacity: 1, cursor: "pointer" }}
-                >
-                  Tiếp tục học
-                </button>
-              ) : laKhoaHocMienPhi(course.donViTienTe) ? (
-                <button className="enroll-btn" onClick={handleDangKy}>
-                  Học miễn phí
-                </button>
-              ) : (
-                <div className="d-grid gap-2">
-                  <button className="enroll-btn" onClick={handleHocThu} style={{ backgroundColor: "#17a2b8" }}>
-                    Học thử miễn phí
-                  </button>
-                  <button className="enroll-btn" onClick={handleDangKy}>
-                    Mua khóa học
-                  </button>
-                </div>
-              )}
-
-              <ul className="sidebar-list mt-3">
-                <li>
-                  <i className="fas fa-play-circle text-primary me-2"></i>{" "}
-                  {course.chuongs?.reduce(
-                    (total, c) => total + (c.baiHocs?.length || 0),
-                    0
-                  ) || 0}{" "}
-                  bài học
-                </li>
-                <li>
-                  <i className="fas fa-clock text-primary me-2"></i> {course.thoiLuongGio || 0} giờ học
-                </li>
-                {course.coChungChi && (
-                  <li>
-                    <i className="fas fa-certificate text-warning me-2"></i> Chứng chỉ: <span style={{fontWeight: 600}}>{course.tenChungChi || "Hoàn thành khóa học"}</span>
-                  </li>
-                )}
-              </ul>
-
-              {/* THÔNG TIN GIẢNG VIÊN */}
-              {course.giangVien && (
-                <div className="instructor-info mt-4" style={{ paddingTop: '15px', borderTop: '1px solid #eee' }}>
-                  <h6 style={{ marginBottom: '12px', fontWeight: 'bold', fontSize: '14px', color: '#555' }}>Giảng viên hướng dẫn</h6>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {course.giangVien.anhDaiDien && course.giangVien.anhDaiDien.trim() !== '' && course.giangVien.anhDaiDien !== 'null' ? (
-                      <img 
-                        src={course.giangVien.anhDaiDien} 
-                        alt="avatar" 
-                        style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f69050' }} 
-                      />
-                    ) : (
-                      <div style={{
-                          width: '45px', height: '45px', borderRadius: '50%',
-                          background: '#f1f5f9', color: '#64748b',
-                          display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', fontWeight: 700, fontSize: 18
-                      }}>
-                          {course.giangVien.hoTen ? course.giangVien.hoTen[0].toUpperCase() : '?'}
-                      </div>
-                    )}
-                    <div>
-                      <div style={{ fontWeight: '600', fontSize: '15px' }}>{course.giangVien.hoTen}</div>
-                      <div style={{ fontSize: '12px', color: '#666' }}>Giảng viên EduCodeAI</div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
-
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
