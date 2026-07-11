@@ -5,7 +5,9 @@ using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Hosting;
 using educodeai_server.Config;
+using educodeai_server.Common;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -13,11 +15,13 @@ namespace educodeai_server.Services.Implementation
     {
         private readonly EduCodeAIDbContext _context;
         private readonly PaymentMailOptions _mailOptions;
+        private readonly IWebHostEnvironment _env;
 
-        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions)
+        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env)
         {
             _context = context;
             _mailOptions = mailOptions.Value;
+            _env = env;
         }
 
         public async Task<object> LayDanhSachHoSoAsync(string? trangThai = null)
@@ -79,6 +83,7 @@ namespace educodeai_server.Services.Implementation
                     SoTaiKhoanNhanTien = h.SoTaiKhoanNhanTien,
                     TenChuTaiKhoan = h.TenChuTaiKhoan,
                     MaSoThue = h.MaSoThue,
+                    LoaiDoiTuongThue = h.LoaiDoiTuongThue,
                     TrangThaiHoSo = h.TrangThaiHoSo,
                     LyDoTuChoi = h.LyDoTuChoi,
                     MaQuanTriVienDuyet = h.MaQuanTriVienDuyet,
@@ -129,6 +134,12 @@ namespace educodeai_server.Services.Implementation
                 try
                 {
                     // Tạo tài khoản giảng viên (VaiTro = 1)
+                    // Lưu mã VietQR vào NguoiDung.MaNganHangNhanTien để dùng chung với ví/rút tiền.
+                    var nganHang = DanhMucNganHangLienKet.LayDanhSach().FirstOrDefault(x =>
+                        string.Equals(x.TenHienThi, hoSo.TenNganHang, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(x.Ma, hoSo.TenNganHang, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(x.MaVietQr, hoSo.TenNganHang, StringComparison.OrdinalIgnoreCase));
+
                     var nguoiDungMoi = new NguoiDungModel
                     {
                         TaiKhoan = taiKhoan,
@@ -139,7 +150,7 @@ namespace educodeai_server.Services.Implementation
                         VaiTro = 1,
                         TrangThai = "Hoạt động",
                         NgayThamGia = DateTime.UtcNow,
-                        MaNganHangNhanTien = hoSo.TenNganHang,
+                        MaNganHangNhanTien = nganHang?.MaVietQr ?? hoSo.TenNganHang,
                         SoTaiKhoanNhanTien = hoSo.SoTaiKhoanNhanTien,
                         TenTaiKhoanNhanTien = hoSo.TenChuTaiKhoan
                     };
@@ -325,5 +336,51 @@ namespace educodeai_server.Services.Implementation
 
             return new { success = true, message = "Đã yêu cầu bổ sung hồ sơ và gửi email hướng dẫn." };
         }
+        public async Task<(Stream Stream, string ContentType, string FileName)?> LayAnhGiayToAsync(long maHoSo, string mat)
+        {
+            var hoSo = await _context.HoSoDangKyGiangViens
+                .AsNoTracking()
+                .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
+            if (hoSo == null) return null;
+
+            var token = string.Equals(mat, "sau", StringComparison.OrdinalIgnoreCase)
+                ? hoSo.AnhGiayToMatSauUrl
+                : hoSo.AnhGiayToMatTruocUrl;
+
+            if (string.IsNullOrWhiteSpace(token)) return null;
+
+            string? physicalPath = null;
+            string fileName;
+
+            // New private token format: private://giay-to/{file}
+            if (token.StartsWith("private://giay-to/", StringComparison.OrdinalIgnoreCase))
+            {
+                fileName = Path.GetFileName(token.Replace("private://giay-to/", string.Empty));
+                physicalPath = Path.Combine(_env.ContentRootPath, "private_uploads", "dang-ky-giang-vien", "giay-to", fileName);
+            }
+            else
+            {
+                // Backward compatible: old public /uploads/... path
+                var relative = token.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                physicalPath = Path.Combine(_env.WebRootPath, relative);
+                fileName = Path.GetFileName(physicalPath);
+            }
+
+            if (string.IsNullOrWhiteSpace(physicalPath) || !File.Exists(physicalPath))
+                return null;
+
+            var ext = Path.GetExtension(physicalPath).ToLowerInvariant();
+            var contentType = ext switch
+            {
+                ".png" => "image/png",
+                ".webp" => "image/webp",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                _ => "application/octet-stream"
+            };
+
+            Stream stream = new FileStream(physicalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return (stream, contentType, fileName);
+        }
+
     }
 }

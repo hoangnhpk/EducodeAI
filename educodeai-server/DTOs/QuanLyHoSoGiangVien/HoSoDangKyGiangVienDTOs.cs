@@ -27,6 +27,7 @@ namespace educodeai_server.DTOs.QuanLyHoSoGiangVien
         public string? SoTaiKhoanNhanTien { get; set; }
         public string? TenChuTaiKhoan { get; set; }
         public string? MaSoThue { get; set; }
+        public string? LoaiDoiTuongThue { get; set; }
         public string TrangThaiHoSo { get; set; } = "ChoDuyet";
         public string? LyDoTuChoi { get; set; }
         public int? MaQuanTriVienDuyet { get; set; }

@@ -164,7 +164,9 @@ export default function DangKyGiangVien() {
     }
     if (key === 'soTaiKhoanNhanTien') {
       setVerification((prev) => ({ ...prev, bankStatus: 'idle', bankInfo: null }));
-      setForm((prev) => ({ ...prev, tenChuTaiKhoan: '' }));
+    }
+    if (key === 'tenChuTaiKhoan') {
+      setVerification((prev) => ({ ...prev, bankStatus: 'idle', bankInfo: null }));
     }
   };
 
@@ -312,7 +314,9 @@ export default function DangKyGiangVien() {
     if (!form.soTaiKhoanNhanTien.trim()) nextErrors.soTaiKhoanNhanTien = 'Vui lòng nhập số tài khoản nhận tiền.';
     else if (!ACCOUNT_NUMBER_REGEX.test(form.soTaiKhoanNhanTien.trim())) nextErrors.soTaiKhoanNhanTien = 'Số tài khoản phải gồm 6-20 chữ số.';
 
-    if (verification.bankStatus !== 'verified') nextErrors.soTaiKhoanNhanTien = 'Vui lòng xác minh số tài khoản với ngân hàng đã chọn.';
+    if (!form.tenChuTaiKhoan.trim()) nextErrors.tenChuTaiKhoan = 'Vui lòng nhập tên chủ tài khoản.';
+
+    if (verification.bankStatus !== 'verified') nextErrors.soTaiKhoanNhanTien = 'Vui lòng bấm Xác nhận TK sau khi chọn ngân hàng và nhập STK.';
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -472,30 +476,35 @@ export default function DangKyGiangVien() {
   const handleVerifyBankAccount = async () => {
     const bank = DANH_MUC_NGAN_HANG_MAC_DINH.find((item) => item.tenHienThi === form.tenNganHang);
     const account = form.soTaiKhoanNhanTien.trim();
+    const holderName = form.tenChuTaiKhoan.trim().replace(/\s+/g, ' ');
     const nextErrors: Record<string, string> = {};
     if (!bank) nextErrors.tenNganHang = 'Vui lòng chọn một ngân hàng từ danh sách.';
     if (!ACCOUNT_NUMBER_REGEX.test(account)) nextErrors.soTaiKhoanNhanTien = 'Số tài khoản phải gồm 6-20 chữ số.';
+    if (!holderName) nextErrors.tenChuTaiKhoan = 'Vui lòng nhập tên chủ tài khoản đúng như trên app ngân hàng.';
+    else if (holderName.length < 3) nextErrors.tenChuTaiKhoan = 'Tên chủ tài khoản quá ngắn.';
     if (Object.keys(nextErrors).length) {
       setErrors((prev) => ({ ...prev, ...nextErrors }));
       return;
     }
 
+    // Không có API ngân hàng thật trong dự án: chỉ xác nhận thông tin đã khai báo.
+    // (Xác minh tên chủ TK thật cần BankHub/VietQR Lookup trả phí.)
     setVerifyLoading('bank', true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const holderName = form.hoTen.trim().toUpperCase() || 'NGUYEN VAN A';
-    setForm((prev) => ({ ...prev, tenChuTaiKhoan: holderName }));
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    setForm((prev) => ({ ...prev, tenChuTaiKhoan: holderName.toUpperCase() }));
     setVerification((prev) => ({
       ...prev,
       bankStatus: 'verified',
       bankInfo: {
         'Ngân hàng': `${bank!.tenHienThi} (${bank!.ma})`,
         'Số tài khoản': account,
-        'Tên chủ tài khoản': holderName,
-        'Trạng thái': 'Hợp lệ ở chế độ demo/BankHub sandbox'
+        'Tên chủ tài khoản': holderName.toUpperCase(),
+        'Trạng thái': 'Đã xác nhận thông tin nhận tiền (chưa xác minh qua API ngân hàng)'
       }
     }));
-    setErrors((prev) => ({ ...prev, tenNganHang: '', soTaiKhoanNhanTien: '' }));
+    setErrors((prev) => ({ ...prev, tenNganHang: '', soTaiKhoanNhanTien: '', tenChuTaiKhoan: '' }));
     setVerifyLoading('bank', false);
+    Swal.fire('Đã xác nhận', 'Thông tin ngân hàng/STK đã được ghi nhận để admin đối chiếu khi duyệt hồ sơ.', 'success');
   };
 
   const goNext = () => {
@@ -804,12 +813,12 @@ export default function DangKyGiangVien() {
                     <label className="dkgv-form-label">Số tài khoản {statusBadge(verification.bankStatus, 'bank')}</label>
                     <div className="dkgv-inline-verify">
                       <input className={`dkgv-form-control ${errors.soTaiKhoanNhanTien ? 'is-invalid' : ''}`} maxLength={20} inputMode="numeric" placeholder="Nhập số tài khoản của bạn" value={form.soTaiKhoanNhanTien} onChange={(e) => setField('soTaiKhoanNhanTien', e.target.value.replace(/\D/g, ''))} />
-                      <button className="dkgv-btn-brown" type="button" disabled={isVerifying.bank || verification.bankStatus === 'verified'} onClick={handleVerifyBankAccount}>{isVerifying.bank ? 'Đang kiểm tra...' : 'Kiểm tra STK'}</button>
+                      <button className="dkgv-btn-brown" type="button" disabled={isVerifying.bank || verification.bankStatus === 'verified'} onClick={handleVerifyBankAccount}>{isVerifying.bank ? 'Đang xác nhận...' : 'Xác nhận TK'}</button>
                     </div>
                     {errors.soTaiKhoanNhanTien && <div className="text-danger small mt-1">{errors.soTaiKhoanNhanTien}</div>}
                   </div>
                 </div>
-                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tên chủ tài khoản</label><input className="dkgv-form-control dkgv-form-control-readonly" placeholder="Sẽ tự động hiển thị sau khi xác thực tài khoản" value={form.tenChuTaiKhoan} disabled readOnly /></div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tên chủ tài khoản</label><input className={`dkgv-form-control ${errors.tenChuTaiKhoan ? 'is-invalid' : ''}`} placeholder="Nhập đúng tên chủ TK trên app ngân hàng" maxLength={150} value={form.tenChuTaiKhoan} onChange={(e) => setField('tenChuTaiKhoan', e.target.value.toUpperCase())} />{errors.tenChuTaiKhoan && <div className="text-danger small mt-1">{errors.tenChuTaiKhoan}</div>}</div></div>
                 <div className="col-12">{renderInfoBox(verification.bankInfo)}</div>
               </div>
 

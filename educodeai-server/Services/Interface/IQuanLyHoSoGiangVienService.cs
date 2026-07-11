@@ -24,5 +24,8 @@ namespace educodeai_server.Services.Interface
 
         /// <summary>Yêu cầu bổ sung hồ sơ, gửi email hướng dẫn bổ sung.</summary>
         Task<object> YeuCauBoSungHoSoAsync(long maHoSo, int maQuanTriVien, YeuCauBoSungHoSoRequest request);
+
+        /// <summary>Lấy file ảnh CCCD private để admin xem (stream + content-type).</summary>
+        Task<(Stream Stream, string ContentType, string FileName)?> LayAnhGiayToAsync(long maHoSo, string mat);
     }
 }
