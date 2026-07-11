@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import { encodeId } from "@/utils/id-helper";
 import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
@@ -26,7 +26,6 @@ const parseKyNangTags = (raw?: string): string[] => {
 };
 
 const TrangChu: React.FC = () => {
-    const navigate = useNavigate();
     const [courses, setCourses] = useState<IKhoaHoc[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -264,8 +263,8 @@ const TrangChu: React.FC = () => {
                                 </div>
                                 <h3 className="h4 fw-bold text-dark mb-3">Phỏng Vấn Giả Lập</h3>
                                 <p className="text-muted mb-4 leading-relaxed">Luyện tập trực tiếp với Tech Lead AI. Trả lời bằng giọng nói và nhận review điểm ngay lập tức.</p>
-                                <Link to="/phong-van-ai" className="text-primary fw-bold text-decoration-none feature-link">
-                                    Vào phòng ngay <i className="fas fa-arrow-right"></i>
+                                <Link to="/hoc-vien/phong-van-ai" className="text-primary fw-bold text-decoration-none feature-link">
+                                    Luyện tập ngay <i className="fas fa-arrow-right"></i>
                                 </Link>
                             </div>
                         </div>
@@ -367,9 +366,14 @@ const TrangChu: React.FC = () => {
                                                     <i className="fa fa-clock text-primary me-2"></i> {kh.thoiLuongGio} giờ học
                                                 </div>
                                                 {kh.khoaHocDaDangKy ? (
-                                                    <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-success w-100 rounded-3 fw-bold text-center" style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        <i className="fa fa-play-circle me-2"></i> Tiếp tục học
-                                                    </Link>
+                                                    <div className="course-card-actions">
+                                                        <Link to={`/khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-course-detail">
+                                                            Chi tiết
+                                                        </Link>
+                                                        <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-success rounded-3 fw-bold text-center flex-grow-1" style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <i className="fa fa-play-circle me-2"></i> Tiếp tục học
+                                                        </Link>
+                                                    </div>
                                                 ) : (
 
                                                     <div className="course-card-actions">

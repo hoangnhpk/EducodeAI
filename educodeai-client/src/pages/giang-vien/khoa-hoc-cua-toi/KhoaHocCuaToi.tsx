@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import './KhoaHocModule.css';
 
 import CourseListPage from './pages/CourseListPage';
@@ -17,8 +18,33 @@ type View =
   | { type: 'import'; maKhoaHoc: number }
   | { type: 'manage'; maKhoaHoc: number };
 
+const parseView = (searchParams: URLSearchParams): View => {
+  const view = searchParams.get('view');
+  const maKhoaHoc = Number(searchParams.get('maKhoaHoc'));
+
+  if (view === 'create') return { type: 'create' };
+  if ((view === 'edit' || view === 'import' || view === 'manage') && Number.isInteger(maKhoaHoc) && maKhoaHoc > 0) {
+    return { type: view, maKhoaHoc };
+  }
+
+  return { type: 'list' };
+};
+
 const KhoaHocCuaToi: React.FC = () => {
-  const [view, setView] = useState<View>({ type: 'list' });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [view, setViewState] = useState<View>(() => parseView(searchParams));
+
+  const setView = (nextView: View) => {
+    setViewState(nextView);
+
+    if (nextView.type === 'list') {
+      setSearchParams({});
+    } else if (nextView.type === 'create') {
+      setSearchParams({ view: 'create' });
+    } else {
+      setSearchParams({ view: nextView.type, maKhoaHoc: String(nextView.maKhoaHoc) });
+    }
+  };
 
   const goList = () => setView({ type: 'list' });
   const goCreate = () => setView({ type: 'create' });

@@ -77,11 +77,11 @@ namespace educodeai_server.Services.Implementation
 
         private async Task KiemTraTrangThaiKhoaAsync(NguoiDungModel user)
         {
-            if (string.Equals(user.TrangThai, "Bá»‹ khÃ³a", StringComparison.OrdinalIgnoreCase) && user.ThoiGianMoKhoa.HasValue)
+            if (string.Equals(user.TrangThai, "Bị khóa", StringComparison.OrdinalIgnoreCase) && user.ThoiGianMoKhoa.HasValue)
             {
                 if (user.ThoiGianMoKhoa.Value <= DateTime.UtcNow)
                 {
-                    user.TrangThai = "Hoáº¡t Ä‘á»™ng";
+                    user.TrangThai = "Hoạt động";
                     user.LyDoKhoa = null;
                     user.ThoiGianMoKhoa = null;
                     await _context.SaveChangesAsync();
@@ -89,17 +89,17 @@ namespace educodeai_server.Services.Implementation
                 else
                 {
                     var remaining = user.ThoiGianMoKhoa.Value - DateTime.UtcNow;
-                    string timeStr = remaining.TotalDays >= 1 ? $"{(int)remaining.TotalDays} ngÃ y" :
+                    string timeStr = remaining.TotalDays >= 1 ? $"{(int)remaining.TotalDays} ngày" :
                                    remaining.TotalHours >= 1 ? $"{(int)remaining.TotalHours} giá»" :
-                                   remaining.TotalMinutes >= 1 ? $"{(int)remaining.TotalMinutes} phÃºt" :
-                                   $"{(int)remaining.TotalSeconds} giÃ¢y";
-                    throw new Exception($"TÃ i khoáº£n bá»‹ khÃ³a. LÃ½ do: {user.LyDoKhoa}. CÃ²n láº¡i: {timeStr}");
+                                   remaining.TotalMinutes >= 1 ? $"{(int)remaining.TotalMinutes} phút" :
+                                   $"{(int)remaining.TotalSeconds} giây";
+                    throw new Exception($"Tài khoản bị khóa. Lý do: {user.LyDoKhoa}. Còn lại: {timeStr}");
                 }
             }
-            else if (string.Equals(user.TrangThai, "KhÃ³a vÄ©nh viá»…n", StringComparison.OrdinalIgnoreCase) || 
-                     string.Equals(user.TrangThai, "Bá»‹ khÃ³a", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(user.TrangThai, "Khóa vĩnh viễn", StringComparison.OrdinalIgnoreCase) || 
+                     string.Equals(user.TrangThai, "Bị khóa", StringComparison.OrdinalIgnoreCase))
             {
-                throw new Exception($"TÃ i khoáº£n bá»‹ khÃ³a vÄ©nh viá»…n. LÃ½ do: {user.LyDoKhoa}");
+                throw new Exception($"Tài khoản bị khóa vĩnh viễn. Lý do: {user.LyDoKhoa}");
             }
         }
 
@@ -117,13 +117,13 @@ namespace educodeai_server.Services.Implementation
                 {
                     return new { 
                         requiresCaptcha = true, 
-                        message = "Báº¡n Ä‘Ã£ nháº­p sai quÃ¡ 3 láº§n. Vui lÃ²ng xÃ¡c thá»±c CAPTCHA." 
+                        message = "Bạn đã nhập sai quá 3 lần. Vui lòng xác thực CAPTCHA." 
                     };
                 }
 
                 // XÃ¡c thá»±c Captcha tháº­t vá»›i Google
                 bool isCaptchaValid = await _captchaService.XacNhanCaptchaAsync(request.CaptchaToken);
-                if (!isCaptchaValid) throw new Exception("MÃ£ CAPTCHA khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n.");
+                if (!isCaptchaValid) throw new Exception("Mã CAPTCHA không hợp lệ hoặc đã hết hạn.");
                 
                 // GIáº¢I ÄÃšNG CAPTCHA -> XÃ“A Sáº CH Sá» Láº¦N SAI Vá»€ 0
                 _memoryCache.Remove(cacheKey);
@@ -144,14 +144,14 @@ namespace educodeai_server.Services.Implementation
                 // Náº¿u Ä‘Ã¢y lÃ  láº§n thá»­ ngay sau khi giáº£i Captcha (failedAttempts vá»«a reset vá» 0 vÃ  tÄƒng lÃªn 1)
                 if (failedAttempts == 1 && !string.IsNullOrEmpty(request.CaptchaToken) && request.CaptchaToken != "SKIP_CAPTCHA")
                 {
-                    throw new Exception("XÃ¡c minh thÃ nh cÃ´ng! Vui lÃ²ng kiá»ƒm tra vÃ  nháº­p láº¡i chÃ­nh xÃ¡c tÃ i khoáº£n, máº­t kháº©u.");
+                    throw new Exception("Xác minh thành công! Vui lòng kiểm tra và nhập lại chính xác tài khoản, mật khẩu.");
                 }
 
                 if (failedAttempts >= 3) {
-                    return new { requiresCaptcha = true, message = "Báº¡n Ä‘Ã£ nháº­p sai quÃ¡ 3 láº§n. Vui lÃ²ng xÃ¡c thá»±c CAPTCHA." };
+                    return new { requiresCaptcha = true, message = "Bạn đã nhập sai quá 3 lần. Vui lòng xác thực CAPTCHA." };
                 }
 
-                throw new Exception($"TÃ i khoáº£n hoáº·c máº­t kháº©u khÃ´ng chÃ­nh xÃ¡c. (Láº§n {failedAttempts}/3)");
+                throw new Exception($"Tài khoản hoặc mật khẩu không chính xác. (Lần {failedAttempts}/3)");
             }
 
             // 5. Náº¿u Ä‘Äƒng nháº­p Ä‘Ãºng thÃ´ng tin -> Kiá»ƒm tra tÃ i khoáº£n cÃ³ bá»‹ Admin khÃ³a khÃ´ng
@@ -174,10 +174,10 @@ namespace educodeai_server.Services.Implementation
                     string otp = new Random().Next(100000, 999999).ToString();
                     _memoryCache.Set("OTP_ReplaceDevice_" + user.Email, (Otp: otp, NewMaThietBi: request.MaThietBi, NewTenThietBi: request.TenThietBi, OldMaPhien: oldest.MaPhien), TimeSpan.FromMinutes(5));
                     
-                    string body = TaoGiaoDienEmail("XÃ¡c nháº­n thay tháº¿ thiáº¿t bá»‹", $"Báº¡n Ä‘ang Ä‘Äƒng nháº­p trÃªn má»™t thiáº¿t bá»‹ má»›i. VÃ¬ tÃ i khoáº£n Ä‘Ã£ Ä‘áº¡t giá»›i háº¡n 3 thiáº¿t bá»‹, vui lÃ²ng nháº­p mÃ£ bÃªn dÆ°á»›i Ä‘á»ƒ Ä‘Äƒng xuáº¥t thiáº¿t bá»‹ <b>{oldest.TenThietBi}</b> vÃ  tiáº¿p tá»¥c.", otp);
-                    await EmailHelper.SendEmailAsync(user.Email, "XÃ¡c nháº­n thay tháº¿ thiáº¿t bá»‹ - EduCodeAI", body);
+                    string body = TaoGiaoDienEmail("Xác nhận thay thế thiết bị", $"Bạn đang đăng nhập trên một thiết bị mới. Vì tài khoản đã đạt giới hạn 3 thiết bị, vui lòng nhập mã bên dưới để đăng xuất thiết bị <b>{oldest.TenThietBi}</b> và tiếp tục.", otp);
+                    await EmailHelper.SendEmailAsync(user.Email, "Xác nhận thay thế thiết bị - EduCodeAI", body);
                     
-                    return new { requiresLogoutOldest = true, oldestDeviceName = oldest.TenThietBi, email = user.Email, message = $"TÃ i khoáº£n Ä‘Ã£ Ä‘áº¡t giá»›i háº¡n 3 thiáº¿t bá»‹. Há»‡ thá»‘ng Ä‘Ã£ gá»­i mÃ£ xÃ¡c nháº­n thay tháº¿ thiáº¿t bá»‹ {oldest.TenThietBi} Ä‘áº¿n Email cá»§a báº¡n." };
+                    return new { requiresLogoutOldest = true, oldestDeviceName = oldest.TenThietBi, email = user.Email, message = $"Tài khoản đã đạt giới hạn 3 thiết bị. Hệ thống đã gửi mã xác nhận thay thế thiết bị {oldest.TenThietBi} đến Email của bạn." };
                 }
                 
                 // TRÆ¯á»œNG Há»¢P B: ChÆ°a Ä‘á»§ 3 thiáº¿t bá»‹ nhÆ°ng lÃ  THIáº¾T Bá»Š Má»šI -> YÃªu cáº§u OTP xÃ¡c minh thiáº¿t bá»‹ má»›i
@@ -186,10 +186,10 @@ namespace educodeai_server.Services.Implementation
                     string otp = new Random().Next(100000, 999999).ToString();
                     _memoryCache.Set("OTP_LoginNewDevice_" + user.Email, (Otp: otp, MaThietBi: request.MaThietBi, TenThietBi: request.TenThietBi), TimeSpan.FromMinutes(5));
                     
-                    string body = TaoGiaoDienEmail("XÃ¡c minh thiáº¿t bá»‹ má»›i", $"Há»‡ thá»‘ng phÃ¡t hiá»‡n báº¡n Ä‘ang Ä‘Äƒng nháº­p trÃªn má»™t thiáº¿t bá»‹ láº¡. Äá»ƒ báº£o vá»‡ tÃ i khoáº£n, vui lÃ²ng nháº­p mÃ£ xÃ¡c thá»±c bÃªn dÆ°á»›i Ä‘á»ƒ hoÃ n táº¥t Ä‘Äƒng nháº­p.", otp);
-                    await EmailHelper.SendEmailAsync(user.Email, "XÃ¡c minh thiáº¿t bá»‹ má»›i - EduCodeAI", body);
+                    string body = TaoGiaoDienEmail("Xác minh thiết bị mới", $"Hệ thống phát hiện bạn đang đăng nhập trên một thiết bị lạ. Để bảo vệ tài khoản, vui lòng nhập mã xác thực bên dưới để hoàn tất đăng nhập.", otp);
+                    await EmailHelper.SendEmailAsync(user.Email, "Xác minh thiết bị mới - EduCodeAI", body);
                     
-                    return new { requiresOtp = true, email = user.Email, message = "Báº¡n Ä‘ang Ä‘Äƒng nháº­p trÃªn thiáº¿t bá»‹ má»›i. Vui lÃ²ng nháº­p mÃ£ OTP Ä‘Ã£ Ä‘Æ°á»£c gá»­i Ä‘áº¿n Email Ä‘á»ƒ xÃ¡c minh." };
+                    return new { requiresOtp = true, email = user.Email, message = "Bạn đang đăng nhập trên thiết bị mới. Vui lòng nhập mã OTP đã được gửi đến Email để xác minh." };
                 }
             }
 
@@ -203,10 +203,10 @@ namespace educodeai_server.Services.Implementation
             if (user == null) throw new Exception("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
             if (!_memoryCache.TryGetValue("OTP_ReplaceDevice_" + user.Email, out (string Otp, string NewMaThietBi, string NewTenThietBi, int OldMaPhien) cached))
-                throw new Exception("MÃ£ OTP Ä‘Ã£ háº¿t háº¡n hoáº·c khÃ´ng há»£p lá»‡.");
+                throw new Exception("Mã OTP đã hết hạn hoặc không hợp lệ.");
 
             if (cached.Otp != r.OtpCode)
-                throw new Exception("MÃ£ OTP khÃ´ng chÃ­nh xÃ¡c.");
+                throw new Exception("Mã OTP không chính xác.");
 
             // 1. ÄÄƒng xuáº¥t thiáº¿t bá»‹ cÅ© nháº¥t
             var oldestSession = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaPhien == cached.OldMaPhien);
@@ -222,7 +222,7 @@ namespace educodeai_server.Services.Implementation
             var user = await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
             {
-                user = new NguoiDungModel { Email = request.Email, HoTen = request.Name, AnhDaiDien = request.Picture, TaiKhoan = request.Email, MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), VaiTro = 2, TrangThai = "Hoáº¡t Ä‘á»™ng", NgayThamGia = DateTime.UtcNow };
+                user = new NguoiDungModel { Email = request.Email, HoTen = request.Name, AnhDaiDien = request.Picture, TaiKhoan = request.Email, MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), VaiTro = 2, TrangThai = "Hoạt động", NgayThamGia = DateTime.UtcNow };
                 _context.NguoiDungs.Add(user);
                 await _context.SaveChangesAsync();
             }
@@ -236,7 +236,7 @@ namespace educodeai_server.Services.Implementation
             var user = await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
             {
-                user = new NguoiDungModel { Email = request.Email, HoTen = request.Name, AnhDaiDien = request.Picture, TaiKhoan = request.Email, MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), VaiTro = 2, TrangThai = "Hoáº¡t Ä‘á»™ng", NgayThamGia = DateTime.UtcNow };
+                user = new NguoiDungModel { Email = request.Email, HoTen = request.Name, AnhDaiDien = request.Picture, TaiKhoan = request.Email, MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), VaiTro = 2, TrangThai = "Hoạt động", NgayThamGia = DateTime.UtcNow };
                 _context.NguoiDungs.Add(user);
                 await _context.SaveChangesAsync();
             }
@@ -247,10 +247,10 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<object> LamMoiTokenAsync(string refreshToken, string maThietBi)
         {
-            if (!_memoryCache.TryGetValue("RefreshToken_" + refreshToken, out (int MaNguoiDung, string MaThietBi) data)) throw new Exception("Háº¿t háº¡n.");
+            if (!_memoryCache.TryGetValue("RefreshToken_" + refreshToken, out (int MaNguoiDung, string MaThietBi) data)) throw new Exception("Hết hạn.");
             var user = await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.MaNguoiDung == data.MaNguoiDung);
             
-            if (user == null) throw new Exception("KhÃ´ng tá»“n táº¡i.");
+            if (user == null) throw new Exception("Không tồn tại.");
             
             // QUAN TRá»ŒNG: Kiá»ƒm tra tráº¡ng thÃ¡i khÃ³a khi Refresh Token
             try {
@@ -261,9 +261,9 @@ namespace educodeai_server.Services.Implementation
             }
 
             var phien = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == maThietBi);
-            if (phien == null || !phien.DangHoatDong) throw new Exception("PhiÃªn lÃ m viá»‡c Ä‘Ã£ háº¿t háº¡n hoáº·c bá»‹ Ä‘Äƒng xuáº¥t tá»« xa.");
+            if (phien == null || !phien.DangHoatDong) throw new Exception("Phiên làm việc đã hết hạn hoặc bị đăng xuất từ xa.");
 
-            return await XuLyDangNhapThanhCongAsync(user, maThietBi, "Thiáº¿t bá»‹ hiá»‡n táº¡i");
+            return await XuLyDangNhapThanhCongAsync(user, maThietBi, "Thiết bị hiện tại");
         }
         #endregion
 
@@ -292,7 +292,7 @@ namespace educodeai_server.Services.Implementation
                 </div>
                 <div style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eee;'>
                     <p style='color: #999; font-size: 13px; margin: 0 0 10px 0;'>Náº¿u báº¡n khÃ´ng yÃªu cáº§u mÃ£ nÃ y, vui lÃ²ng bá» qua email hoáº·c liÃªn há»‡ vá»›i bá»™ pháº­n há»— trá»£.</p>
-                    <p style='color: #bbb; font-size: 12px; margin: 0;'>Â© {DateTime.Now.Year} EduCodeAI. All rights reserved.</p>
+                    <p style='color: #bbb; font-size: 12px; margin: 0;'>© {DateTime.Now.Year} EduCodeAI. All rights reserved.</p>
                 </div>
             </div>";
         }
@@ -303,7 +303,7 @@ namespace educodeai_server.Services.Implementation
         private async Task<object> XuLyDangNhapThanhCongAsync(NguoiDungModel u, string? maThietBi, string? tenThietBi) { 
             // maThietBi lÃºc nÃ y lÃ  Fingerprint gá»­i tá»« FE
             string devId = string.IsNullOrEmpty(maThietBi) ? "FP-UNKNOWN-" + Guid.NewGuid().ToString("N").Substring(0, 8) : maThietBi;
-            string deviceName = string.IsNullOrEmpty(tenThietBi) ? "Thiáº¿t bá»‹ khÃ´ng xÃ¡c Ä‘á»‹nh" : tenThietBi;
+            string deviceName = string.IsNullOrEmpty(tenThietBi) ? "Thiết bị không xác định" : tenThietBi;
             
             // TÃ¬m phiÃªn Ä‘Äƒng nháº­p cÅ© dá»±a trÃªn Fingerprint cá»§a User nÃ y
             var phien = u.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == devId);
@@ -368,7 +368,7 @@ namespace educodeai_server.Services.Implementation
             if (u.DanhSachPhienDangNhap.Count(p => p.DangHoatDong) >= 3 && 
                 !u.DanhSachPhienDangNhap.Any(p => p.MaThietBi == d && p.DangHoatDong)) 
             {
-                throw new Exception("TÃ i khoáº£n cá»§a báº¡n Ä‘Ã£ Ä‘áº¡t giá»›i háº¡n Ä‘Äƒng nháº­p trÃªn 3 thiáº¿t bá»‹. Vui lÃ²ng Ä‘Äƒng xuáº¥t bá»›t thiáº¿t bá»‹ cÅ©.");
+                throw new Exception("Tài khoản của bạn đã đạt giới hạn đăng nhập trên 3 thiết bị. Vui lòng đăng xuất bớt thiết bị cũ.");
             }
         }
 
@@ -378,19 +378,22 @@ namespace educodeai_server.Services.Implementation
         public async Task<bool> GuiOtpEmailGiangVienAsync(string email)
         {
             email = (email ?? string.Empty).Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(email)) throw new Exception("Vui l?ng nh?p email.");
+            if (string.IsNullOrWhiteSpace(email)) throw new Exception("Vui lòng nhập email.");
 
             if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
-                throw new Exception("Email n?y ?? ???c s? d?ng.");
+                throw new Exception("Email này đã được sử dụng.");
 
             if (await _context.HoSoDangKyGiangViens.AnyAsync(h => h.Email.ToLower() == email.ToLower() && h.TrangThaiHoSo != "TuChoi"))
-                throw new Exception("Email n?y ?? c? h? s? gi?ng vi?n ?ang ch? x? l? ho?c ?? ???c duy?t.");
+                throw new Exception("Email này đã có hồ sơ giảng viên đang chờ xử lý hoặc đã được duyệt.");
 
-            string otp = new Random().Next(100000, 999999).ToString();
-            _memoryCache.Set("OTP_InstructorEmail_" + email, otp, TimeSpan.FromMinutes(5));
+            if (!_memoryCache.TryGetValue("OTP_InstructorEmail_" + email, out string otp))
+            {
+                otp = new Random().Next(100000, 999999).ToString();
+                _memoryCache.Set("OTP_InstructorEmail_" + email, otp, TimeSpan.FromMinutes(5));
+            }
 
-            string subject = "M? x?c th?c email ??ng k? gi?ng vi?n EduCodeAI";
-            string body = TaoGiaoDienEmail("X?c th?c email ??ng k? gi?ng vi?n", "B?n ?ang ??ng k? tr? th?nh gi?ng vi?n EduCodeAI. Vui l?ng nh?p m? x?c th?c d??i ??y ?? ti?p t?c.", otp);
+            string subject = "Mã xác thực email đăng ký giảng viên EduCodeAI";
+            string body = TaoGiaoDienEmail("Xác thực email đăng ký giảng viên", "Bạn đang đăng ký trở thành giảng viên EduCodeAI. Vui lòng nhập mã xác thực dưới đây để tiếp tục.", otp);
             return await EmailHelper.SendEmailAsync(email, subject, body);
         }
 
@@ -400,7 +403,7 @@ namespace educodeai_server.Services.Implementation
             otpCode = (otpCode ?? string.Empty).Trim();
 
             if (!_memoryCache.TryGetValue("OTP_InstructorEmail_" + email, out string cachedOtp) || cachedOtp != otpCode)
-                throw new Exception("M? OTP kh?ng ch?nh x?c ho?c ?? h?t h?n.");
+                throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
 
             _memoryCache.Set("VERIFIED_InstructorEmail_" + email, true, TimeSpan.FromMinutes(30));
             _memoryCache.Remove("OTP_InstructorEmail_" + email);
@@ -410,14 +413,14 @@ namespace educodeai_server.Services.Implementation
         public async Task<bool> YeuCauDangKyAsync(DangKyRequest r, string i) {
             // Kiá»ƒm tra email tá»“n táº¡i
             if (await _context.NguoiDungs.AnyAsync(u => u.Email == r.Email))
-                throw new Exception("Email nÃ y Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng.");
+                throw new Exception("Email này đã được sử dụng.");
 
             string otp = new Random().Next(100000, 999999).ToString();
             // LÆ°u vÃ o Cache 5 phÃºt, Key lÃ  Email
             _memoryCache.Set("OTP_Register_" + r.Email, (Otp: otp, Data: r), TimeSpan.FromMinutes(5));
 
-            string subject = "MÃ£ xÃ¡c thá»±c Ä‘Äƒng kÃ½ EduCodeAI";
-            string body = $"MÃ£ OTP cá»§a báº¡n lÃ : <h1 style='color: #fb873f;'>{otp}</h1> MÃ£ cÃ³ hiá»‡u lá»±c trong 5 phÃºt.";
+            string subject = "Mã xác thực đăng ký EduCodeAI";
+            string body = $"Mã OTP của bạn là: <h1 style='color: #fb873f;'>{otp}</h1> Mã có hiệu lực trong 5 phút.";
             return await EmailHelper.SendEmailAsync(r.Email, subject, body);
         }
 
@@ -426,10 +429,10 @@ namespace educodeai_server.Services.Implementation
             Console.WriteLine($"[Register Confirm] Device: {r.MaThietBi}, Name: {r.TenThietBi}");
 
             if (!_memoryCache.TryGetValue("OTP_Register_" + r.TaiKhoan, out (string Otp, DangKyRequest Data) cached))
-                throw new Exception("MÃ£ OTP Ä‘Ã£ háº¿t háº¡n hoáº·c khÃ´ng tá»“n táº¡i.");
+                throw new Exception("Mã OTP đã hết hạn hoặc không tồn tại.");
 
             if (cached.Otp != r.OtpCode)
-                throw new Exception("MÃ£ OTP khÃ´ng chÃ­nh xÃ¡c.");
+                throw new Exception("Mã OTP không chính xác.");
 
             var user = new NguoiDungModel {
                 TaiKhoan = cached.Data.Email, 
@@ -437,7 +440,7 @@ namespace educodeai_server.Services.Implementation
                 HoTen = cached.Data.HoTen,
                 MatKhau = BCrypt.Net.BCrypt.HashPassword(cached.Data.MatKhau),
                 VaiTro = 2, 
-                TrangThai = "Hoáº¡t Ä‘á»™ng",
+                TrangThai = "Hoạt động",
                 NgayThamGia = DateTime.UtcNow
             };
 
@@ -460,14 +463,14 @@ namespace educodeai_server.Services.Implementation
             string otp = new Random().Next(100000, 999999).ToString();
             _memoryCache.Set($"OTP_LogoutRemote_{userId}", otp, TimeSpan.FromMinutes(5));
 
-            string emailBody = TaoGiaoDienEmail("ÄÄƒng xuáº¥t tá»« xa", "Báº¡n vá»«a gá»­i yÃªu cáº§u Ä‘Äƒng xuáº¥t tÃ i khoáº£n khá»i cÃ¡c thiáº¿t bá»‹ khÃ¡c. Äá»ƒ Ä‘áº£m báº£o an toÃ n, vui lÃ²ng nháº­p mÃ£ xÃ¡c thá»±c dÆ°á»›i Ä‘Ã¢y Ä‘á»ƒ xÃ¡c nháº­n hÃ nh Ä‘á»™ng nÃ y.", otp);
-            await EmailHelper.SendEmailAsync(user.Email, "XÃ¡c nháº­n Ä‘Äƒng xuáº¥t tá»« xa", emailBody);
+            string emailBody = TaoGiaoDienEmail("Đăng xuất từ xa", "Bạn vừa gửi yêu cầu đăng xuất tài khoản khỏi các thiết bị khác. Để đảm bảo an toàn, vui lòng nhập mã xác thực dưới đây để xác nhận hành động này.", otp);
+            await EmailHelper.SendEmailAsync(user.Email, "Xác nhận đăng xuất từ xa", emailBody);
             return true;
         }
 
         public async Task<bool> XacNhanDangXuatTuXaAsync(int userId, DangXuatTuXaRequest r) {
             if (!_memoryCache.TryGetValue($"OTP_LogoutRemote_{userId}", out string cachedOtp) || cachedOtp != r.OtpCode)
-                throw new Exception("MÃ£ OTP khÃ´ng chÃ­nh xÃ¡c hoáº·c Ä‘Ã£ háº¿t háº¡n.");
+                throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
 
             if (r.DangXuatTatCa) {
                 var allSessions = await _context.PhienDangNhaps
@@ -492,10 +495,10 @@ namespace educodeai_server.Services.Implementation
 
             // HÃ m nÃ y dÃ¹ng cho luá»“ng Ä‘Äƒng nháº­p thiáº¿t bá»‹ má»›i yÃªu cáº§u OTP
             if (!_memoryCache.TryGetValue("OTP_LoginNewDevice_" + user.Email, out (string Otp, string MaThietBi, string TenThietBi) cached))
-                throw new Exception("MÃ£ OTP Ä‘Ã£ háº¿t háº¡n.");
+                throw new Exception("Mã OTP đã hết hạn.");
 
             if (cached.Otp != r.OtpCode)
-                throw new Exception("MÃ£ OTP khÃ´ng chÃ­nh xÃ¡c.");
+                throw new Exception("Mã OTP không chính xác.");
 
             _memoryCache.Remove("OTP_LoginNewDevice_" + user.Email);
             return await XuLyDangNhapThanhCongAsync(user, cached.MaThietBi, cached.TenThietBi);
@@ -503,19 +506,19 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest r, string i) {
             var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == r.Email);
-            if (user == null) throw new Exception("Email khÃ´ng tá»“n táº¡i trÃªn há»‡ thá»‘ng.");
+            if (user == null) throw new Exception("Email không tồn tại trên hệ thống.");
 
             string otp = new Random().Next(100000, 999999).ToString();
             _memoryCache.Set("OTP_Forgot_" + r.Email, otp, TimeSpan.FromMinutes(5));
 
-            string emailBody = TaoGiaoDienEmail("Äáº·t láº¡i máº­t kháº©u", "ChÃºng tÃ´i nháº­n Ä‘Æ°á»£c yÃªu cáº§u Ä‘áº·t láº¡i máº­t kháº©u cho tÃ i khoáº£n cá»§a báº¡n. Vui lÃ²ng nháº­p mÃ£ xÃ¡c thá»±c dÆ°á»›i Ä‘Ã¢y Ä‘á»ƒ tiáº¿n hÃ nh thiáº¿t láº­p máº­t kháº©u má»›i.", otp);
-            await EmailHelper.SendEmailAsync(r.Email, "MÃ£ xÃ¡c nháº­n Ä‘áº·t láº¡i máº­t kháº©u", emailBody);
-            return new { message = "MÃ£ OTP Ä‘Ã£ Ä‘Æ°á»£c gá»­i." };
+            string emailBody = TaoGiaoDienEmail("Đặt lại mật khẩu", "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng nhập mã xác thực dưới đây để tiến hành thiết lập mật khẩu mới.", otp);
+            await EmailHelper.SendEmailAsync(r.Email, "Mã xác nhận đặt lại mật khẩu", emailBody);
+            return new { message = "Mã OTP đã được gửi." };
         }
 
         public async Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest r) {
             if (!_memoryCache.TryGetValue("OTP_Forgot_" + r.Email, out string cachedOtp) || cachedOtp != r.OtpCode)
-                throw new Exception("MÃ£ OTP khÃ´ng chÃ­nh xÃ¡c hoáº·c Ä‘Ã£ háº¿t háº¡n.");
+                throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
 
             var user = await LayNguoiDungKemThietBiAsync(r.Email);
             if (user == null) throw new Exception("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
@@ -541,8 +544,8 @@ namespace educodeai_server.Services.Implementation
                     (Otp: otp, NewMaThietBi: r.MaThietBi, NewTenThietBi: r.TenThietBi, OldMaPhien: oldest.MaPhien), 
                     TimeSpan.FromMinutes(5));
 
-                await EmailHelper.SendEmailAsync(user.Email, "XÃ¡c nháº­n thay tháº¿ thiáº¿t bá»‹ sau khi Ä‘á»•i máº­t kháº©u", 
-                    $"Báº¡n vá»«a Ä‘áº·t láº¡i máº­t kháº©u vÃ  Ä‘ang Ä‘Äƒng nháº­p trÃªn thiáº¿t bá»‹ má»›i. Vui lÃ²ng nháº­p mÃ£ <b>{otp}</b> Ä‘á»ƒ Ä‘Äƒng xuáº¥t thiáº¿t bá»‹ <b>{oldest.TenThietBi}</b> vÃ  tiáº¿p tá»¥c vÃ o há»‡ thá»‘ng.");
+                await EmailHelper.SendEmailAsync(user.Email, "Xác nhận thay thế thiết bị sau khi đổi mật khẩu", 
+                    $"Bạn vừa đặt lại mật khẩu và đang đăng nhập trên thiết bị mới. Vui lòng nhập mã <b>{otp}</b> để đăng xuất thiết bị <b>{oldest.TenThietBi}</b> và tiếp tục vào hệ thống.");
 
                 return new { 
                     requiresLogoutOldest = true, 
@@ -567,7 +570,7 @@ namespace educodeai_server.Services.Implementation
             if (user == null) throw new Exception("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
             if (!BCrypt.Net.BCrypt.Verify(r.MatKhauCu, user.MatKhau))
-                throw new Exception("Máº­t kháº©u hiá»‡n táº¡i khÃ´ng chÃ­nh xÃ¡c.");
+                throw new Exception("Mật khẩu hiện tại không chính xác.");
 
             user.MatKhau = BCrypt.Net.BCrypt.HashPassword(r.MatKhauMoi);
             await _context.SaveChangesAsync();
@@ -695,6 +698,7 @@ namespace educodeai_server.Services.Implementation
                             SoTaiKhoanNhanTien = request.SoTaiKhoanNhanTien?.Trim(),
                             TenChuTaiKhoan = request.TenChuTaiKhoan?.Trim(),
                             MaSoThue = request.MaSoThue?.Trim(),
+                            LoaiDoiTuongThue = request.LoaiDoiTuongThue?.Trim(),
                             TrangThaiHoSo = "ChoDuyet",
                             NgayTao = DateTime.UtcNow,
                             NgayCapNhat = DateTime.UtcNow
@@ -870,6 +874,7 @@ namespace educodeai_server.Services.Implementation
             if (!string.IsNullOrWhiteSpace(request.SoTaiKhoanNhanTien)) hoSo.SoTaiKhoanNhanTien = request.SoTaiKhoanNhanTien.Trim();
             if (!string.IsNullOrWhiteSpace(request.TenChuTaiKhoan)) hoSo.TenChuTaiKhoan = request.TenChuTaiKhoan.Trim();
             if (request.MaSoThue != null) hoSo.MaSoThue = request.MaSoThue.Trim();
+            if (!string.IsNullOrWhiteSpace(request.LoaiDoiTuongThue)) hoSo.LoaiDoiTuongThue = request.LoaiDoiTuongThue.Trim();
 
             // Cập nhật file mới nếu có
             var uploadRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien");

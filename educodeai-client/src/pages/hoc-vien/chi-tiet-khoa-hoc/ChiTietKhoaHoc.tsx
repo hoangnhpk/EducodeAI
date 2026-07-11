@@ -4,6 +4,38 @@ import Swal from "sweetalert2";
 import { ChiTietKhoaHocService } from "../../../services/chi-tiet-khoa-hoc.service";
 import type { ChiTietKhoaHocDTO, DanhGiaDTO } from "../../../services/chi-tiet-khoa-hoc.service";
 import "./ChiTietKhoaHocGiaoDien.css";
+import { getMediaUrl } from "../../../utils/mediaUrl";
+
+type VideoPreview = { type: 'youtube' | 'direct'; src: string };
+
+const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg'];
+
+const getYouTubeVideoId = (url: URL): string | null => {
+  const host = url.hostname.replace(/^www\./, '').toLowerCase();
+  if (host === 'youtu.be') return url.pathname.split('/').filter(Boolean)[0] ?? null;
+  if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
+    if (url.pathname === '/watch') return url.searchParams.get('v');
+    const parts = url.pathname.split('/').filter(Boolean);
+    if ((parts[0] === 'embed' || parts[0] === 'shorts' || parts[0] === 'live') && parts[1]) return parts[1];
+  }
+  return null;
+};
+
+const getVideoPreview = (value?: string | null): VideoPreview | null => {
+  const input = value?.trim();
+  if (!input) return null;
+  if (input.startsWith('/uploads/')) {
+    return VIDEO_EXTENSIONS.some(ext => input.toLowerCase().split('?')[0].endsWith(ext)) ? { type: 'direct', src: getMediaUrl(input) } : null;
+  }
+  try {
+    const url = new URL(input);
+    if (!['http:', 'https:'].includes(url.protocol)) return null;
+    const youtubeId = getYouTubeVideoId(url);
+    if (youtubeId) return { type: 'youtube', src: `https://www.youtube.com/embed/${youtubeId}` };
+    if (VIDEO_EXTENSIONS.some(ext => url.pathname.toLowerCase().endsWith(ext))) return { type: 'direct', src: getMediaUrl(input) };
+  } catch { return null; }
+  return null;
+};
 
 const ChiTietKhoaHoc = () => {
   const { id } = useParams<{ id: string }>();
@@ -57,13 +89,13 @@ const ChiTietKhoaHoc = () => {
 
   const handleDangKy = async () => {
     if (!id || !khoaHoc) return;
-    
+
     if (khoaHoc.khoaHocDaDangKy) {
-      navigate(`/hoc-vien/noi-dung-khoa-hoc/${id}`);
+      navigate(`/khoa-hoc/${khoaHoc.slug}/${id}`);
       return;
     }
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('user_token');
     if (!token) {
       Swal.fire({
         title: 'Cần đăng nhập',
@@ -75,6 +107,11 @@ const ChiTietKhoaHoc = () => {
           navigate('/dang-nhap');
         }
       });
+      return;
+    }
+
+    if (khoaHoc.giaKhoaHoc > 0 && khoaHoc.donViTienTe?.toUpperCase() !== 'FREE') {
+      navigate(`/mua-khoa-hoc/${id}`);
       return;
     }
 
@@ -98,11 +135,16 @@ const ChiTietKhoaHoc = () => {
 
   // Calculate total lessons
   const totalLessons = khoaHoc.chuongs.reduce((acc, chuong) => acc + chuong.baiHocs.length, 0);
+  const videoPreview = getVideoPreview(khoaHoc.videoGioiThieu);
+  const bannerImageUrl = getMediaUrl(khoaHoc.hinhAnh);
 
   return (
     <div className="chi-tiet-giao-dien-container">
       {/* HEADER BANNER */}
-      <div className="ctgd-header-banner">
+      <div
+        className="ctgd-header-banner"
+        style={bannerImageUrl ? { backgroundImage: `linear-gradient(90deg, rgba(20, 20, 20, 0.88), rgba(20, 20, 20, 0.72)), url(${bannerImageUrl})` } : undefined}
+      >
         <div className="ctgd-header-inner">
           <div className="ctgd-header-content">
             <div className="ctgd-badges">
@@ -299,15 +341,25 @@ const ChiTietKhoaHoc = () => {
         <div className="ctgd-sidebar-wrapper">
           <div className="ctgd-sidebar-card">
             <div className="ctgd-video-preview" style={{ padding: 0 }}>
-              {khoaHoc.videoGioiThieu ? (
-                <video 
-                  src={khoaHoc.videoGioiThieu} 
-                  controls 
-                  poster={khoaHoc.hinhAnh}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px 12px 0 0', maxHeight: '200px' }}
-                >
-                  Trình duyệt của bạn không hỗ trợ thẻ video.
-                </video>
+              {videoPreview ? (
+                videoPreview.type === 'youtube' ? (
+                  <iframe
+                    src={videoPreview.src}
+                    title="Video gioi thieu khoa hoc"
+                    style={{ width: '100%', height: '200px', border: 0, borderRadius: '12px 12px 0 0' }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={videoPreview.src}
+                    controls
+                    poster={khoaHoc.hinhAnh}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px 12px 0 0', maxHeight: '200px' }}
+                  >
+                    Trinh duyet cua ban khong ho tro the video.
+                  </video>
+                )
               ) : (
                 <>
                   <img 
