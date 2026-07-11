@@ -8,7 +8,7 @@ namespace educodeai_server.Controllers.GiangVien
 {
     [ApiController]
     [Route("api/giang-vien/qua-tang-khoa-hoc")]
-    [Authorize(Roles = "GiangVien")]
+    [Authorize(Roles = "GiangVien,Admin")]
     public class QuaTangKhoaHocGiangVienController : ControllerBase
     {
         private readonly IQuaTangKhoaHocService _quaTangKhoaHocService;
