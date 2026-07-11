@@ -382,8 +382,10 @@ export default function QuanLyReviewMoi() {
               {draftSettings.enabled && (
                 <div className="qtrv-settings-preview">
                   <Bot size={13} />
-                  AI sẽ tự động duyệt khi có <strong>≥{draftSettings.nguongSoLuong}</strong> review chờ,
-                  hoặc mỗi <strong>{draftSettings.khoangCachPhut} phút</strong> nếu có bất kỳ review nào chờ.
+                  <span>
+                    AI sẽ tự động duyệt khi có <strong>≥{draftSettings.nguongSoLuong}</strong> review chờ,
+                    hoặc mỗi <strong>{draftSettings.khoangCachPhut} phút</strong> nếu có bất kỳ review nào chờ.
+                  </span>
                 </div>
               )}
             </div>

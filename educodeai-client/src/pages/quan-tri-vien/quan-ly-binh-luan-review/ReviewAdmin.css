@@ -769,8 +769,26 @@
 }
 
 /* Linked Cell */
-.qtrv-linked-cell strong { font-size: 13px; font-weight: 600; color: var(--rc-text); }
-.qtrv-linked-cell span { font-size: 11.5px; color: var(--rc-muted); }
+.qtrv-linked-cell {
+  max-width: 200px;
+}
+.qtrv-linked-cell strong { 
+  font-size: 13px; 
+  font-weight: 600; 
+  color: var(--rc-text); 
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qtrv-linked-cell span { 
+  font-size: 11.5px; 
+  color: var(--rc-muted); 
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Content Cell */
 .qtrv-content-cell p {
