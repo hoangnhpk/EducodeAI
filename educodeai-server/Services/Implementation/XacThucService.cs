@@ -616,6 +616,9 @@ namespace educodeai_server.Services.Implementation
             var taiKhoan = request.TaiKhoan.Trim();
             var soGiayTo = request.SoGiayTo.Trim();
 
+            if (request.LoaiDoiTuongThue is not ("CaNhan" or "DoanhNghiep"))
+                throw new Exception("Vui lòng chọn loại đối tượng nộp thuế.");
+
             // 1. Kiểm tra trùng với tài khoản đã hoạt động (NguoiDungs)
             if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
                 throw new Exception("Email này đã được sử dụng bởi một tài khoản khác.");
