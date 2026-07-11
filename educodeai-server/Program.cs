@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CloudinaryDotNet;
+using Google.Cloud.Speech.V1;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
@@ -27,12 +28,12 @@ builder.Configuration
 
 builder.Configuration.AddUserSecrets<Program>();
 // ==========================================
-// THÃŠM: ÄÄ‚NG KÃ SIGNALR
+// THÊM: ĐĂNG KÝ SIGNALR
 // ==========================================
 builder.Services.AddSignalR();
 
 // ==========================================
-// 2. Cáº¤U HÃŒNH XÃC THá»°C (JWT)
+// 2. CẤU HÌNH XÁC THỰC (JWT)
 // ==========================================
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -53,13 +54,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // ==========================================
-// 3. Cáº¤U HÃŒNH Káº¾T Ná»I CÆ  Sá»ž Dá»® LIá»†U
+// 3. CẤU HÌNH KẾT NỐI CƠ SỞ DỮ LIỆU
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseNpgsql(connectionString, sqlOptions =>
     {
-        // Tá»± Ä‘á»™ng thá»­ láº¡i khi gáº·p lá»—i káº¿t ná»‘i giÃ¡n Ä‘oáº¡n (nhÆ° lá»—i DNS 'No such host is known' khi treo lÃ¢u)
+        // Tự động thử lại khi gặp lỗi kết nối gián đoạn (như lỗi DNS 'No such host is known' khi treo lâu)
         sqlOptions.EnableRetryOnFailure(
             maxRetryCount: 3,
             maxRetryDelay: TimeSpan.FromSeconds(10),
@@ -80,7 +81,7 @@ try
         configOptions.ReconnectRetryPolicy = new ExponentialRetry(500);
 
         var redis = ConnectionMultiplexer.Connect(configOptions);
-        // ðŸ”¥ Check tráº¡ng thÃ¡i ngay lÃºc start
+        // 🔥 Check trạng thái ngay lúc start
         if (redis.IsConnected)
         {
             Console.WriteLine("Redis CONNECTED successfully");
@@ -96,7 +97,7 @@ try
     else
     {
         var reason = !isRedisActive ? "turned OFF in appsettings" : "empty connection string";
-        Console.WriteLine($"Redis is {reason} â€“ using MemoryCache fallback");
+        Console.WriteLine($"Redis is {reason} – using MemoryCache fallback");
         builder.Services.AddScoped<IRedisService, FallbackRedisService>();
     }
 }
@@ -108,15 +109,15 @@ catch (Exception ex)
 
 
 // ==========================================
-// 4. ÄÄ‚NG KÃ DEPENDENCY INJECTION (DI)
+// 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI)
 // ==========================================
 builder.Services.AddHttpContextAccessor();
-// ThÃªm bá»™ nhá»› táº¡m Ä‘á»ƒ lÆ°u OTP mÃ  khÃ´ng cáº§n dÃ¹ng Database
+// Thêm bộ nhớ tạm để lưu OTP mà không cần dùng Database
 builder.Services.AddMemoryCache();
-// Dá»‹ch vá»¥ XÃ¡c thá»±c vÃ  Captcha má»›i
+// Dịch vụ Xác thực và Captcha mới
 builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddScoped<IXacThucService, XacThucService>();
-// KhÃ³a há»c & BÃ i táº­p
+// Khóa học & Bài tập
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
@@ -133,7 +134,7 @@ builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
 builder.Services.AddScoped<BaiTapThucHanhHocVienService>();
 builder.Services.AddHttpClient<BaiTapService>();
 
-// NgÆ°á»i dÃ¹ng & Thá»‘ng kÃª
+// Người dùng & Thống kê
 
 builder.Services.AddScoped<INguoiDungRepository, NguoiDungRepository>();
 builder.Services.AddScoped<INguoiDungService, NguoiDungService>();
@@ -143,7 +144,7 @@ builder.Services.AddScoped<IThuThachService, ThuThachService>();
 builder.Services.AddScoped<IThongKeHocTapService, ThongKeHocTapService>();
 builder.Services.AddScoped<IThongKeAdminService, ThongKeAdminService>();
 
-// AI & Lá»™ trÃ¬nh
+// AI & Lộ trình
 builder.Services.AddScoped<IKhoaHocCuaToiRepository, KhoaHocCuaToiRepository>();
 builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
@@ -156,7 +157,7 @@ builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
 builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
 builder.Services.AddScoped<IQuanLyHoSoGiangVienService, QuanLyHoSoGiangVienService>();
 builder.Services.AddScoped<ILoTrinhAIGvService, LoTrinhAIGvService>();
-// C. Cáº¥u hÃ¬nh CORS (Cho phÃ©p React/Giao diá»‡n gá»i API)
+// C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
@@ -167,10 +168,12 @@ builder.Services.AddScoped<IChamDiemDoAnService, ChamDiemDoAnService>();
 builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IGiayToScanningService, GiayToScanningService>();
+builder.Services.AddTransient<IAiSubtitleWorker, AiSubtitleWorker>();
+builder.Services.AddHostedService<educodeai_server.Services.Implementation.StaleHoldCleanupService>();
 
 
 // ==========================================
-// 5. Cáº¤U HÃŒNH HTTP CLIENT CHO GEMINI (ÄÃƒ Tá»I Æ¯U)
+// 5. CẤU HÌNH HTTP CLIENT CHO GEMINI (ĐÃ TỐI ƯU)
 // ==========================================
 builder.Services.AddHttpClient<IGeminiAIService, GeminiAIService>((sp, client) =>
 {
@@ -200,6 +203,26 @@ builder.Services.Configure<PaymentMailOptions>(builder.Configuration.GetSection(
 
 // Cloudinary Configuration
 builder.Services.Configure<CauHinhCloudinary>(builder.Configuration.GetSection("Cloudinary"));
+
+// Google Cloud Configuration
+builder.Services.Configure<CauHinhGoogleCloud>(builder.Configuration.GetSection("GoogleCloud"));
+
+// Set GOOGLE_APPLICATION_CREDENTIALS env var + register SpeechClient singleton
+var gcpConfig = builder.Configuration.GetSection("GoogleCloud").Get<CauHinhGoogleCloud>();
+if (gcpConfig != null && !string.IsNullOrEmpty(gcpConfig.ServiceAccountJsonPath))
+{
+    var fullPath = Path.Combine(AppContext.BaseDirectory, gcpConfig.ServiceAccountJsonPath);
+    if (!File.Exists(fullPath))
+    {
+        fullPath = Path.Combine(Directory.GetCurrentDirectory(), gcpConfig.ServiceAccountJsonPath);
+    }
+    if (File.Exists(fullPath))
+    {
+        Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", fullPath);
+        Console.WriteLine($"GOOGLE_APPLICATION_CREDENTIALS set to: {fullPath}");
+    }
+}
+builder.Services.AddSingleton(_ => SpeechClient.Create());
 var cloudinarySettings = builder.Configuration.GetSection("Cloudinary").Get<CauHinhCloudinary>();
 if (cloudinarySettings != null)
 {
@@ -216,7 +239,7 @@ if (cloudinarySettings != null)
 builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();
 
 // ==========================================
-// 6. Cáº¤U HÃŒNH CORS & SWAGGER
+// 6. CẤU HÌNH CORS & SWAGGER
 // ==========================================
 builder.Services.AddCors(options =>
 {
@@ -245,7 +268,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,  
-        Description = "Nháº­p theo format: Bearer {token}"
+        Description = "Nhập theo format: Bearer {token}"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -262,10 +285,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Khá»Ÿi táº¡o cáº¥u hÃ¬nh cho EmailHelper Ä‘á»ƒ cÃ³ thá»ƒ Ä‘á»c appsettings.json
+// Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 
-// Tá»± vÃ¡ cÃ¡c cá»™t/báº£ng má»›i cá»§a phase gift-code Ä‘á»ƒ trÃ¡nh lá»—i 500 khi DB chÆ°a cháº¡y migration ká»‹p.
+// Tự vá các cột/bảng mới của phase gift-code để tránh lỗi 500 khi DB chưa chạy migration kịp.
 try
 {
     using var scope = app.Services.CreateScope();
@@ -345,7 +368,7 @@ try
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGiaKhoaHocs_MaKhoaHoc" ON "MaGiamGiaKhoaHocs" ("MaKhoaHoc");""");
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_DonHangKhoaHocs_MaVoucher" ON "DonHangKhoaHocs" ("MaVoucher");""");
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGias_MaNguoiTao" ON "MaGiamGias" ("MaNguoiTao");""");
-        // === SELF-HEALING: HoSoDangKyGiangViens (Ä‘Äƒng kÃ½ giáº£ng viÃªn) ===
+        // === SELF-HEALING: HoSoDangKyGiangViens (đăng ký giảng viên) ===
         db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ALTER COLUMN "MaNguoiDung" TYPE integer USING "MaNguoiDung"::integer;""");
         db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ALTER COLUMN "MaNguoiDung" DROP NOT NULL;""");
         db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "TaiKhoan" character varying(50) NOT NULL DEFAULT '';""");
@@ -359,11 +382,29 @@ try
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Schema bootstrap (gift-code) bá» qua: {ex.Message}");
+    Console.WriteLine($"Schema bootstrap (gift-code) bỏ qua: {ex.Message}");
 }
 
-// PostgreSQL: seed InsertData gÃ¡n PK cá»‘ Ä‘á»‹nh; cá»™t identity dÃ¹ng pg_get_identity_sequence (serial_sequence thÆ°á»ng NULL).
-// Náº¿u setval khÃ´ng cháº¡y â†’ trÃ¹ng PK â†’ 500 khi táº¡o mÃ£ QR.
+// === SELF-HEALING: cột video/phụ đề + bảng phụ trợ của phase upload video cloud ===
+// Tách riêng khỏi khối gift-code ở trên: nếu 1 lệnh ALTER của gift-code ném lỗi (VD bảng
+// chưa tồn tại trên DB restore từ backup), khối try đó sẽ abort giữa chừng và KHÔNG chạy
+// tới đây. ApplyAsync idempotent (ADD COLUMN / CREATE TABLE IF NOT EXISTS) nên an toàn.
+try
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
+    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
+    {
+        DatabaseSchemaSync.ApplyAsync(db).GetAwaiter().GetResult();
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Schema sync (video upload) bỏ qua: {ex.Message}");
+}
+
+// PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
+// Nếu setval không chạy → trùng PK → 500 khi tạo mã QR.
 //try
 //{
 //    using var scope = app.Services.CreateScope();
@@ -396,14 +437,14 @@ catch (Exception ex)
 //            }
 //            catch (Exception exBang)
 //            {
-//                Console.WriteLine($"Äá»“ng bá»™ sequence {bang}.{cot}: {exBang.Message}");
+//                Console.WriteLine($"Đồng bộ sequence {bang}.{cot}: {exBang.Message}");
 //            }
 //        }
 //    }
 //}
 //catch (Exception ex)
 //{
-//    Console.WriteLine($"KhÃ´ng Ä‘á»“ng bá»™ sequence PostgreSQL (bá» qua náº¿u DB chÆ°a migrate): {ex.Message}");
+//    Console.WriteLine($"Không đồng bộ sequence PostgreSQL (bỏ qua nếu DB chưa migrate): {ex.Message}");
 //}
 
 // ==========================================
@@ -419,7 +460,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// CORS: pháº£i Ä‘áº·t sau UseRouting vÃ  trÆ°á»›c UseAuthentication/UseAuthorization
+// CORS: phải đặt sau UseRouting và trước UseAuthentication/UseAuthorization
 // (https://learn.microsoft.com/en-us/aspnet/core/security/cors)
 app.UseRouting();
 app.UseCors("AllowReactApp");
@@ -433,5 +474,3 @@ app.MapHub<SystemConfigHub>("/systemConfigHub").RequireCors("AllowReactApp");
 app.MapControllers();
 
 app.Run();
-
-

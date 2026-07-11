@@ -199,7 +199,7 @@ namespace educodeai_server.Services.Implementation
 
                 Return ONLY valid JSON array with the exact input ids.
                 Schema:
-                [{"id":123,"ketQua":"DaDuyet","lyDo":"short reason"}]
+                [{{ "id":123, "ketQua":"DaDuyet", "lyDo":"short reason" }}]
 
                 Input:
                 {0}
@@ -209,7 +209,8 @@ namespace educodeai_server.Services.Implementation
             string rawResponse;
             try
             {
-                rawResponse = await _gemini.GenerateAsync(prompt);
+                var aiResult = await _gemini.GenerateAsync(prompt);
+                rawResponse = educodeai_server.Helpers.ChuanHoaJsonTuAIHelper.LayTextChatTuAI(aiResult);
             }
             catch (Exception ex)
             {
