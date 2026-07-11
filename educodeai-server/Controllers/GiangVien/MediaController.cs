@@ -27,6 +27,26 @@ namespace educodeai_server.Controllers.GiangVien
             return LayNguoiDungID.LayID(User);
         }
 
+        // Fixed-window rate limit: cửa sổ neo theo lần request đầu, KHÔNG trượt mỗi request.
+        // Trả về true nếu ĐÃ vượt giới hạn (nên chặn).
+        private bool VuotGioiHan(string key, int limit, TimeSpan window)
+        {
+            // Lưu (count, thời điểm hết hạn tuyệt đối). Expiration của cache entry cũng
+            // neo cố định vào windowEnd nên không bị đẩy dài ra khi tăng count.
+            if (_cache.TryGetValue<(int Count, DateTimeOffset WindowEnd)>(key, out var entry))
+            {
+                if (entry.Count >= limit) return true;
+                _cache.Set(key, (entry.Count + 1, entry.WindowEnd),
+                    new MemoryCacheEntryOptions { AbsoluteExpiration = entry.WindowEnd });
+                return false;
+            }
+
+            var windowEnd = DateTimeOffset.UtcNow.Add(window);
+            _cache.Set(key, (1, windowEnd),
+                new MemoryCacheEntryOptions { AbsoluteExpiration = windowEnd });
+            return false;
+        }
+
         [HttpGet("lay-chu-ky-upload")]
         [Authorize(Roles = "GiangVien,Admin")] 
         public async Task<IActionResult> LayChuKyUpload()
@@ -35,16 +55,8 @@ namespace educodeai_server.Controllers.GiangVien
             if (maGiangVien == 0) return Unauthorized();
 
             // Áp dụng Rate Limiting chống Spam: 60 requests / 5 minutes
-            var cacheKey = $"RateLimit_UploadSig_{maGiangVien}";
-            if (_cache.TryGetValue(cacheKey, out int count))
-            {
-                if (count >= 60) return StatusCode(429, new { success = false, message = "Bạn đã vượt quá giới hạn lấy chữ ký. Vui lòng thử lại sau 5 phút." });
-                _cache.Set(cacheKey, count + 1, TimeSpan.FromMinutes(5));
-            }
-            else
-            {
-                _cache.Set(cacheKey, 1, TimeSpan.FromMinutes(5));
-            }
+            if (VuotGioiHan($"RateLimit_UploadSig_{maGiangVien}", 60, TimeSpan.FromMinutes(5)))
+                return StatusCode(429, new { success = false, message = "Bạn đã vượt quá giới hạn lấy chữ ký. Vui lòng thử lại sau 5 phút." });
 
             var folder = $"courses/{maGiangVien}";
             var signatureData = await _mediaService.LayChuKyUploadVideoAsync(maGiangVien.ToString(), folder);
@@ -68,10 +80,17 @@ namespace educodeai_server.Controllers.GiangVien
 
         [HttpGet("lay-token-phat-video")]
         [Authorize(Roles = "GiangVien,Admin")]
-        public IActionResult LayTokenPhatVideo([FromQuery] string publicId)
+        public async Task<IActionResult> LayTokenPhatVideo([FromQuery] string publicId)
         {
+            var maGiangVien = GetMaGiangVien();
+            if (maGiangVien == 0) return Unauthorized();
+
             if (string.IsNullOrEmpty(publicId))
                 return BadRequest(new { success = false, message = "Public ID là bắt buộc" });
+
+            // Chỉ cấp token cho video mà giảng viên sở hữu (tránh xem video của người khác).
+            if (!await _mediaService.GiangVienSoHuuVideoAsync(maGiangVien, publicId))
+                return StatusCode(403, new { success = false, message = "Bạn không có quyền truy cập video này." });
 
             var token = _mediaService.LayTokenPhatVideo(publicId);
             return Ok(new { success = true, data = new { token } });
@@ -84,16 +103,8 @@ namespace educodeai_server.Controllers.GiangVien
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
 
-            var cacheKey = $"RateLimit_TaiLenPhuDe_{maGiangVien}";
-            if (_cache.TryGetValue(cacheKey, out int count))
-            {
-                if (count >= 30) return StatusCode(429, new { success = false, message = "Bạn đã tải lên quá nhiều phụ đề. Vui lòng thử lại sau 5 phút." });
-                _cache.Set(cacheKey, count + 1, TimeSpan.FromMinutes(5));
-            }
-            else
-            {
-                _cache.Set(cacheKey, 1, TimeSpan.FromMinutes(5));
-            }
+            if (VuotGioiHan($"RateLimit_TaiLenPhuDe_{maGiangVien}", 30, TimeSpan.FromMinutes(5)))
+                return StatusCode(429, new { success = false, message = "Bạn đã tải lên quá nhiều phụ đề. Vui lòng thử lại sau 5 phút." });
 
             var folder = $"subtitles/{maGiangVien}";
             var secureUrl = await _mediaService.TaiLenPhuDeAsync(file, folder);
@@ -111,16 +122,8 @@ namespace educodeai_server.Controllers.GiangVien
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
 
-            var cacheKey = $"RateLimit_TaoPhuDeAI_{maGiangVien}";
-            if (_cache.TryGetValue(cacheKey, out int aiCount))
-            {
-                if (aiCount >= 10) return StatusCode(429, new { success = false, message = "Bạn đã gửi quá nhiều yêu cầu AI. Vui lòng thử lại sau 10 phút." });
-                _cache.Set(cacheKey, aiCount + 1, TimeSpan.FromMinutes(10));
-            }
-            else
-            {
-                _cache.Set(cacheKey, 1, TimeSpan.FromMinutes(10));
-            }
+            if (VuotGioiHan($"RateLimit_TaoPhuDeAI_{maGiangVien}", 10, TimeSpan.FromMinutes(10)))
+                return StatusCode(429, new { success = false, message = "Bạn đã gửi quá nhiều yêu cầu AI. Vui lòng thử lại sau 10 phút." });
 
             var (success, message) = await _mediaService.YeuCauTaoPhuDeAIAsync(maGiangVien, maBaiHoc);
             

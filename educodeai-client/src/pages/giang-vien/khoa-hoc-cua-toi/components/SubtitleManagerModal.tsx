@@ -64,7 +64,8 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
       setThanhCong('Đã gửi yêu cầu AI thành công. Phụ đề sẽ có sẵn sau vài phút.');
       khiCapNhat({ ...baiHoc, videoStatus: 'Processing_Subtitle', subtitleSource: 'ai' });
     } catch (err: any) {
-      setLoi(err.message || 'Lỗi khi yêu cầu tạo phụ đề AI.');
+      const errorMsg = err.response?.data?.message || err.message || 'Lỗi khi yêu cầu tạo phụ đề AI.';
+      setLoi(errorMsg);
     } finally {
       setDangXuLy(false);
     }
@@ -87,17 +88,17 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
           {loi && <div className="khm-alert khm-alert-danger khm-mb-16">{loi}</div>}
           {thanhCong && <div className="khm-alert khm-alert-success khm-mb-16">{thanhCong}</div>}
 
-          <div className="khm-flex khm-flex-col khm-gap-16">
-            <label className="khm-flex khm-items-start khm-gap-8" style={{ cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'none' ? 'var(--khm-gray-50)' : '#fff' }}>
-              <input type="radio" name="subtitleOpt" checked={luaChon === 'none'} onChange={() => setLuaChon('none')} style={{ marginTop: 4 }} disabled={dangXuLy} />
+          <div className="khm-flex khm-gap-16" style={{ flexDirection: 'column' }}>
+            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'none' ? 'var(--khm-gray-50)' : '#fff' }}>
+              <input type="radio" name="subtitleOpt" checked={luaChon === 'none'} onChange={() => setLuaChon('none')} style={{ marginTop: 4, width: 'auto', flexShrink: 0 }} disabled={dangXuLy} />
               <div>
                 <strong style={{ display: 'block', marginBottom: 4 }}>Không có phụ đề</strong>
                 <span className="khm-text-sm khm-text-muted">Các tính năng AI (như hỏi đáp, trắc nghiệm AI) có thể bị hạn chế đối với học viên.</span>
               </div>
             </label>
 
-            <label className="khm-flex khm-items-start khm-gap-8" style={{ cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'manual' ? '#eff6ff' : '#fff' }}>
-              <input type="radio" name="subtitleOpt" checked={luaChon === 'manual'} onChange={() => setLuaChon('manual')} style={{ marginTop: 4 }} disabled={dangXuLy} />
+            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'manual' ? '#eff6ff' : '#fff' }}>
+              <input type="radio" name="subtitleOpt" checked={luaChon === 'manual'} onChange={() => setLuaChon('manual')} style={{ marginTop: 4, width: 'auto', flexShrink: 0 }} disabled={dangXuLy} />
               <div style={{ flex: 1 }}>
                 <strong style={{ display: 'block', marginBottom: 4 }}>Tự upload file (Miễn phí)</strong>
                 <span className="khm-text-sm khm-text-muted">Tải lên file phụ đề định dạng .srt hoặc .vtt.</span>
@@ -124,8 +125,8 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
               </div>
             </label>
 
-            <label className="khm-flex khm-items-start khm-gap-8" style={{ cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'ai' ? '#fdf4ff' : '#fff' }}>
-              <input type="radio" name="subtitleOpt" checked={luaChon === 'ai'} onChange={() => setLuaChon('ai')} style={{ marginTop: 4 }} disabled={dangXuLy} />
+            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'ai' ? '#fdf4ff' : '#fff' }}>
+              <input type="radio" name="subtitleOpt" checked={luaChon === 'ai'} onChange={() => setLuaChon('ai')} style={{ marginTop: 4, width: 'auto', flexShrink: 0 }} disabled={dangXuLy} />
               <div>
                 <strong style={{ display: 'block', marginBottom: 4, color: '#a21caf' }}>Dùng AI Transcription (Có phí) ✨</strong>
                 <span className="khm-text-sm khm-text-muted">Tự động nhận diện giọng nói và tạo phụ đề (Hỗ trợ tiếng Việt).</span>

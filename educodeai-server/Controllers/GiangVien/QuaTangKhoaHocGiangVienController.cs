@@ -3,6 +3,7 @@ using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Npgsql;
 
 namespace educodeai_server.Controllers.GiangVien
 {
@@ -52,8 +53,15 @@ namespace educodeai_server.Controllers.GiangVien
                 return Unauthorized(new { thongBao = "Bạn cần đăng nhập để thực hiện chức năng này." });
             }
 
-            var duLieu = await _quaTangKhoaHocService.LayLichSuQuaTangCuaGiangVienAsync(maGiangVien, maKhoaHoc, tuKhoa);
-            return Ok(duLieu);
+            try
+            {
+                var duLieu = await _quaTangKhoaHocService.LayLichSuQuaTangCuaGiangVienAsync(maGiangVien, maKhoaHoc, tuKhoa);
+                return Ok(duLieu);
+            }
+            catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UndefinedTable)
+            {
+                return Ok(Array.Empty<QuaTangKhoaHocItemDTO>());
+            }
         }
 
         [HttpGet("khoa-hoc-cua-toi")]
