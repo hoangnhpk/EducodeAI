@@ -8,6 +8,7 @@ export interface KhoaHocListItem {
   maKhoaHoc: number;
   tenKhoaHoc: string;
   hinhAnh?: string;
+  videoGioiThieu?: string;
   linhVuc: string;
   trinhDo: string;
   thoiLuongGio: number;
@@ -30,6 +31,7 @@ export interface KhoaHocDetail {
   tenKhoaHoc: string;
   moTa?: string;
   hinhAnh?: string;
+  videoGioiThieu?: string;
   linhVuc: string;
   trinhDo: string;
   thoiLuongGio: number;
@@ -58,6 +60,7 @@ export interface KhoaHocCreateUpdate {
   tenKhoaHoc: string;
   moTa?: string;
   hinhAnh?: string;
+  videoGioiThieu?: string;
   linhVuc: string;
   trinhDo: string;
   thoiLuongGio: number;
@@ -130,6 +133,12 @@ export interface BaiHocDetail {
   thoiLuong: number;
   thuTu: number;
   loaiBaiHoc?: string;
+  videoSource?: string;
+  videoPublicId?: string;
+  hasSubtitle?: boolean;
+  videoStatus?: string;
+  subtitleSource?: string;
+  subtitleUrl?: string;
 }
 
 export interface BaiHocCreateUpdate {
@@ -138,6 +147,9 @@ export interface BaiHocCreateUpdate {
   linkVideo?: string;
   thoiLuong: number;
   thuTu: number;
+  videoSource?: string;
+  videoPublicId?: string;
+  videoSizeMb?: number;
 }
 
 export interface BaiHocFileCreateUpdate {
@@ -155,6 +167,8 @@ export interface BaiHocResponse {
   thoiLuong: number;
   thuTu: number;
   loaiBaiHoc?: string;
+  videoSource?: string;
+  videoPublicId?: string;
 }
 
 export interface ReorderBaiHocItem {

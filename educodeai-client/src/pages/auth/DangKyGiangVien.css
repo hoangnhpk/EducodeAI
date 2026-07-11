@@ -1,0 +1,895 @@
+﻿.dkgv-container {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 40px 20px;
+  color: #333;
+}
+
+.dkgv-main-card {
+  max-width: 860px;
+  margin: 0 auto;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1px solid #eaeaea;
+}
+
+/* Progress Header */
+.dkgv-progress-header {
+  background-color: #323438;
+  padding: 30px 40px;
+  color: #fff;
+}
+
+.dkgv-progress-header.step2-header {
+  padding: 40px 40px;
+}
+
+.dkgv-progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.dkgv-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  position: relative;
+}
+
+.dkgv-step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #4a4d52;
+  color: #a0a3a8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 12px;
+  transition: all 0.3s;
+}
+
+.dkgv-step.active .dkgv-step-circle {
+  background-color: #f69050;
+  color: #fff;
+}
+
+.dkgv-step.completed .dkgv-step-circle {
+  background-color: #f69050;
+  color: #fff;
+}
+
+.dkgv-step-label {
+  font-size: 13px;
+  color: #a0a3a8;
+  font-weight: 500;
+}
+
+.dkgv-step.active .dkgv-step-label {
+  color: #fff;
+}
+
+.dkgv-progress-line {
+  position: absolute;
+  top: 20px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background-color: #4a4d52;
+  z-index: 1;
+}
+
+.dkgv-progress-line-fill {
+  height: 100%;
+  background-color: #f69050;
+  transition: width 0.3s ease;
+}
+
+/* Step 2 alternative header */
+.dkgv-progress-alt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+  padding-top: 20px;
+}
+
+.dkgv-progress-alt .dkgv-progress-line {
+  top: 40px;
+  background-color: #e4e6eb;
+}
+
+.dkgv-progress-alt .dkgv-step-circle {
+  background-color: #f0f2f5;
+  color: #65676b;
+}
+
+.dkgv-progress-alt .dkgv-step.active .dkgv-step-circle,
+.dkgv-progress-alt .dkgv-step.completed .dkgv-step-circle {
+  background-color: #b75d16;
+  color: #fff;
+}
+
+.dkgv-progress-alt .dkgv-step-label {
+  color: #65676b;
+}
+
+.dkgv-progress-alt .dkgv-step.active .dkgv-step-label {
+  color: #b75d16;
+  font-weight: 600;
+}
+
+
+/* Body */
+.dkgv-body {
+  padding: 40px;
+}
+
+.dkgv-title-section {
+  text-align: left;
+  margin-bottom: 30px;
+}
+
+.dkgv-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1c1e21;
+}
+
+.dkgv-page-subtitle {
+  color: #65676b;
+  font-size: 15px;
+}
+
+/* Avatar Upload */
+.dkgv-avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  margin-bottom: 40px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid #e4e6eb;
+}
+
+.dkgv-avatar-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px dashed #b0b3b8;
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
+
+.dkgv-avatar-icon {
+  font-size: 30px;
+  color: #8a8d91;
+}
+
+.dkgv-avatar-edit {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 28px;
+  height: 28px;
+  background-color: #b75d16;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border: 2px solid #fff;
+}
+
+.dkgv-avatar-info h5 {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.dkgv-avatar-info p {
+  color: #65676b;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.dkgv-btn-outline {
+  background-color: #fff;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dkgv-btn-outline:hover {
+  background-color: #f3f4f6;
+}
+
+/* Forms */
+.dkgv-form-group {
+  margin-bottom: 25px;
+}
+
+.dkgv-form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #1c1e21;
+}
+
+.dkgv-form-control {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1c1e21;
+  transition: border-color 0.2s;
+}
+
+.dkgv-form-control:focus {
+  outline: none;
+  border-color: #f69050;
+  box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.1);
+}
+
+.dkgv-form-control::placeholder {
+  color: #9ca3af;
+}
+
+.dkgv-char-count {
+  text-align: right;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+/* Step 2 KYC */
+.dkgv-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  margin-top: 40px;
+  color: #1c1e21;
+}
+
+.dkgv-section-title i {
+  color: #b75d16;
+}
+
+.dkgv-section-title:first-child {
+  margin-top: 0;
+}
+
+.dkgv-phone-input-wrap {
+  display: flex;
+  gap: 15px;
+}
+
+.dkgv-phone-input-wrap .dkgv-input-icon {
+  position: relative;
+  flex: 1;
+}
+
+.dkgv-phone-input-wrap .dkgv-input-icon i {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+}
+
+.dkgv-btn-brown {
+  background-color: #a04b0c;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dkgv-btn-brown:hover {
+  background-color: #8c4109;
+}
+
+.dkgv-note-text {
+  font-size: 13px;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.dkgv-doc-type-toggle {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.dkgv-doc-btn {
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #4b5563;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.dkgv-doc-btn.active {
+  background-color: #fdf1e8;
+  border-color: #f69050;
+  color: #b75d16;
+}
+
+.dkgv-upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.dkgv-upload-box-wrap {
+  text-align: left;
+}
+
+.dkgv-upload-box-label {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #374151;
+}
+
+.dkgv-upload-box {
+  border: 2px dashed #d1d5db;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dkgv-upload-box:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.dkgv-upload-box-icon {
+  font-size: 28px;
+  color: #b75d16;
+  margin-bottom: 15px;
+}
+
+.dkgv-upload-box-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 5px;
+}
+
+.dkgv-upload-box-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.dkgv-info-alert {
+  background-color: #f3f4f6;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 30px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.dkgv-info-alert i {
+  color: #6b7280;
+  font-size: 16px;
+}
+
+/* Step 3 Payment */
+.dkgv-payment-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.dkgv-payment-methods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+  margin-top: 20px;
+}
+
+.dkgv-method-card {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 20px 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dkgv-method-card.active {
+  background-color: #fdf1e8;
+  border-color: #f69050;
+}
+
+.dkgv-method-icon {
+  font-size: 24px;
+  color: #a04b0c;
+  margin-bottom: 10px;
+}
+
+.dkgv-method-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.dkgv-method-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.dkgv-method-card.active .dkgv-method-title,
+.dkgv-method-card.active .dkgv-method-desc {
+  color: #a04b0c;
+}
+
+.dkgv-optional-text {
+  font-weight: normal;
+  color: #6b7280;
+  float: right;
+  font-size: 12px;
+}
+
+.dkgv-security-note {
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dkgv-security-note i {
+  color: #3b82f6;
+}
+
+/* Footer Buttons */
+.dkgv-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 40px;
+  padding-top: 25px;
+  border-top: 1px solid #e4e6eb;
+}
+
+.dkgv-btn-back {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.dkgv-btn-back:hover {
+  background-color: #f3f4f6;
+}
+
+.dkgv-btn-next {
+  background-color: #f69050;
+  color: #fff;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dkgv-btn-next:hover {
+  background-color: #e57d3c;
+}
+
+.dkgv-btn-next.brown {
+  background-color: #a04b0c;
+}
+
+.dkgv-btn-next.brown:hover {
+  background-color: #8c4109;
+}
+
+
+
+.dkgv-upload-box:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Container cho ảnh preview */
+.dkgv-preview-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Ảnh preview - giới hạn trong khung */
+.dkgv-preview-img {
+  max-width: 100%;
+  max-height: 180px; /* Nhỏ hơn khung 220px để có padding */
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Khi có ảnh, ẩn text */
+.dkgv-upload-box:has(.dkgv-preview-container) .dkgv-upload-box-icon,
+.dkgv-upload-box:has(.dkgv-preview-container) .dkgv-upload-box-title,
+.dkgv-upload-box:has(.dkgv-preview-container) .dkgv-upload-box-desc {
+  display: none !important;
+}
+
+/* Responsive - trên mobile giảm xuống */
+@media (max-width: 768px) {
+  .dkgv-upload-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .dkgv-upload-box {
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
+  }
+  
+  .dkgv-preview-img {
+    max-height: 160px;
+  }
+}
+
+
+
+/* Đảm bảo preview container chiếm toàn bộ khung */
+.dkgv-upload-has-preview {
+  padding: 8px !important;
+}
+
+/* ===== ERROR STYLING ===== */
+.dkgv-form-control.is-invalid {
+  border-color: #dc3545 !important;
+  background-color: #fff8f8;
+}
+
+.dkgv-form-control.is-invalid:focus {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+
+
+.dkgv-preview-container {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.dkgv-preview-img {
+  max-width: 100% !important;
+  max-height: 180px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block;
+}
+
+/* Giới hạn text "Đã chọn" */
+.small.text-success,
+.text-danger.small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Upload grid responsive */
+@media (max-width: 768px) {
+  .dkgv-upload-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dkgv-upload-box {
+    height: 200px;
+  }
+  
+  .dkgv-preview-img {
+    max-height: 160px;
+  }
+}
+
+/* ===== UPLOAD BOX FIX - SINGLE SOURCE OF TRUTH ===== */
+.dkgv-upload-box-wrap {
+  text-align: left;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dkgv-upload-box {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  min-height: 220px;
+  max-height: 220px;
+  max-width: 100%;
+  border: 2px dashed #d1d5db;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.dkgv-upload-box:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.dkgv-preview-container {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.dkgv-preview-img {
+  max-width: 100% !important;
+  max-height: 180px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block;
+}
+
+.dkgv-upload-has-preview {
+  padding: 8px !important;
+}
+
+.dkgv-upload-has-preview .dkgv-upload-box-icon,
+.dkgv-upload-has-preview .dkgv-upload-box-title,
+.dkgv-upload-has-preview .dkgv-upload-box-desc {
+  display: none !important;
+}
+
+/* Giới hạn text */
+.small.text-success,
+.text-danger.small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .dkgv-upload-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dkgv-upload-box {
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
+  }
+  
+  .dkgv-preview-img {
+    max-height: 160px !important;
+  }
+}
+
+/* ===== TRA CỨU TRẠNG THÁI HỒ SƠ ===== */
+.dkgv-status-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+.dkgv-status-icon {
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+}
+.dkgv-status-pending { background: #fff8e6; border-left-color: #f6c343; color: #8a6d00; }
+.dkgv-status-need    { background: #fff3e6; border-left-color: #fb873f; color: #b35a00; }
+.dkgv-status-success { background: #e8f9ee; border-left-color: #2eb872; color: #1a7a4a; }
+.dkgv-status-reject  { background: #fdecea; border-left-color: #e0392b; color: #a32418; }
+
+
+.dkgv-form-control-readonly {
+  background: #f8f9fa;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.dkgv-bank-select {
+  position: relative;
+}
+
+.dkgv-bank-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+}
+
+.dkgv-bank-option {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dkgv-bank-option:hover,
+.dkgv-bank-option.active {
+  background: #fdf1e8;
+}
+
+.dkgv-bank-option span {
+  font-weight: 600;
+  color: #111827;
+}
+
+.dkgv-bank-option small {
+  color: #6b7280;
+}
+
+.dkgv-bank-empty {
+  padding: 12px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.dkgv-selected-bank {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ===== VERIFICATION FLOW ===== */
+.dkgv-inline-verify {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.dkgv-inline-verify .dkgv-form-control {
+  flex: 1;
+  min-width: 0;
+}
+
+.dkgv-verify-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.dkgv-verify-badge.ok {
+  background: #e8f9ee;
+  color: #1a7a4a;
+}
+
+.dkgv-verify-badge.fail {
+  background: #fdecea;
+  color: #a32418;
+}
+
+.dkgv-verify-badge.wait {
+  background: #fff8e6;
+  color: #8a6d00;
+}
+
+.dkgv-verify-badge.idle {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.dkgv-verify-result {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 13px;
+  display: grid;
+  gap: 5px;
+}
+
+.dkgv-verify-result strong {
+  color: #111827;
+}
+
+@media (max-width: 768px) {
+  .dkgv-inline-verify {
+    flex-direction: column;
+  }
+}

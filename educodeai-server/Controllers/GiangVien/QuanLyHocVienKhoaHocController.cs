@@ -1,4 +1,5 @@
-﻿using educodeai_server.DTOs;
+using educodeai_server.DTOs;
+using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,6 +43,20 @@ namespace educodeai_server.Controllers
         {
             var result = await _service.LayCacKhoaHocCuaHocVienAsync(maNguoiDung, maGiangVien);
             return Ok(new { success = true, data = result });
+        }
+
+        [HttpPost("gui-mail-hang-loat")]
+        public async Task<IActionResult> GuiMailHangLoat([FromBody] GuiMailHangLoatDTO dto)
+        {
+            var maGiangVien = LayNguoiDungID.LayID(User);
+            if (maGiangVien == 0)
+                return Unauthorized(new { success = false, message = "Bạn cần đăng nhập." });
+
+            var result = await _service.GuiMailHangLoatAsync(maGiangVien, dto);
+            if (!result.Success)
+                return BadRequest(new { success = false, message = result.Message });
+
+            return Accepted(new { success = true, message = result.Message, soLuongDaXepHang = result.SoLuongDaXepHang });
         }
     }
 }

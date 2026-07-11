@@ -1,20 +1,23 @@
-﻿using educodeai_server.Data;
+using educodeai_server.Data;
 using educodeai_server.DTOs;
+using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
+using educodeai_server.Workers;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace educodeai_server.Services
 {
     public class QuanLyHocVienKhoaHocService : IQuanLyHocVienKhoaHocService
     {
-        private readonly EduCodeAIDbContext _context;
+        private const int MaxBulkEmail = 30;
 
-        public QuanLyHocVienKhoaHocService(EduCodeAIDbContext context)
+        private readonly EduCodeAIDbContext _context;
+        private readonly LopHocEmailQueue _emailQueue;
+
+        public QuanLyHocVienKhoaHocService(EduCodeAIDbContext context, LopHocEmailQueue emailQueue)
         {
             _context = context;
+            _emailQueue = emailQueue;
         }
 
         public async Task<List<KhoaHocCuaGiangVienDTO>> LayDanhSachKhoaHocAsync(int maGiangVien)
@@ -47,10 +50,12 @@ namespace educodeai_server.Services
                 );
             }
 
+            List<ChiTietHocVienTrongKhoaDTO> result;
+
             if (maKhoaHoc.HasValue && maKhoaHoc.Value > 0)
             {
                 query = query.Where(dk => dk.MaKhoaHoc == maKhoaHoc.Value);
-                return await query
+                result = await query
                     .Select(dk => new ChiTietHocVienTrongKhoaDTO
                     {
                         MaNguoiDung = dk.NguoiDung.MaNguoiDung,
@@ -63,10 +68,12 @@ namespace educodeai_server.Services
                     })
                     .OrderByDescending(x => x.NgayDangKy)
                     .ToListAsync();
+
+                await GanTienDoVaTagAsync(result, maKhoaHoc.Value);
             }
             else
             {
-                return await query
+                result = await query
                     .GroupBy(dk => new { dk.NguoiDung.MaNguoiDung, dk.NguoiDung.HoTen, dk.NguoiDung.Email, dk.NguoiDung.AnhDaiDien })
                     .Select(g => new ChiTietHocVienTrongKhoaDTO
                     {
@@ -76,10 +83,65 @@ namespace educodeai_server.Services
                         AnhDaiDien = g.Key.AnhDaiDien,
                         NgayDangKy = g.Min(x => x.NgayDangKy),
                         TenKhoaHoc = "",
-                        TrangThai = g.OrderByDescending(x => x.NgayDangKy).FirstOrDefault().TrangThai ?? "Đang học"
+                        TrangThai = g.OrderByDescending(x => x.NgayDangKy).FirstOrDefault()!.TrangThai ?? "Đang học"
                     })
                     .OrderByDescending(x => x.NgayDangKy)
                     .ToListAsync();
+            }
+
+            return result;
+        }
+
+        private async Task GanTienDoVaTagAsync(List<ChiTietHocVienTrongKhoaDTO> hocViens, int maKhoaHoc)
+        {
+            if (hocViens.Count == 0) return;
+
+            var maBaiHocIds = await _context.BaiHocs
+                .Where(b => b.ChuongHoc.MaKhoaHoc == maKhoaHoc)
+                .Select(b => b.MaBaiHoc)
+                .ToListAsync();
+
+            var tongSoBai = maBaiHocIds.Count;
+            var hocVienIds = hocViens.Select(h => h.MaNguoiDung).ToList();
+            var utcNow = DateTime.UtcNow;
+
+            Dictionary<int, (int SoBaiDaXem, DateTime? NgayHocCuoi)> tienDoDict;
+
+            if (maBaiHocIds.Count == 0)
+            {
+                tienDoDict = new Dictionary<int, (int, DateTime?)>();
+            }
+            else
+            {
+                tienDoDict = await _context.TienDoBaiHocs
+                    .Where(t => maBaiHocIds.Contains(t.MaBaiHoc) && hocVienIds.Contains(t.MaNguoiDung))
+                    .GroupBy(t => t.MaNguoiDung)
+                    .Select(g => new
+                    {
+                        MaNguoiDung = g.Key,
+                        SoBaiDaXem = g.Count(x => x.DaXem),
+                        NgayHocCuoi = g.Max(x => (DateTime?)x.NgayCapNhat)
+                    })
+                    .ToDictionaryAsync(x => x.MaNguoiDung, x => (x.SoBaiDaXem, x.NgayHocCuoi));
+            }
+
+            foreach (var hv in hocViens)
+            {
+                tienDoDict.TryGetValue(hv.MaNguoiDung, out var td);
+                var soBaiDaXem = td.SoBaiDaXem;
+                var ngayHocCuoi = td.NgayHocCuoi;
+
+                hv.SoBaiDaHoc = soBaiDaXem;
+                hv.TongSoBai = tongSoBai;
+                hv.PhanTramTienDo = tongSoBai == 0
+                    ? 0
+                    : Math.Min(100, (int)Math.Round(soBaiDaXem * 100.0 / tongSoBai));
+                hv.NgayHocCuoi = ngayHocCuoi;
+
+                var (tag, tagLabel) = HocVienTagHelper.ResolveTag(
+                    hv.PhanTramTienDo, hv.NgayDangKy, ngayHocCuoi, utcNow);
+                hv.Tag = tag;
+                hv.TagLabel = tagLabel;
             }
         }
 
@@ -102,7 +164,7 @@ namespace educodeai_server.Services
                 .ToListAsync();
 
             var baiDaHocIDs = await _context.TienDoBaiHocs
-                .Where(t => t.MaNguoiDung == maNguoiDung)
+                .Where(t => t.MaNguoiDung == maNguoiDung && t.DaXem)
                 .Select(t => t.MaBaiHoc)
                 .ToListAsync();
 
@@ -143,5 +205,67 @@ namespace educodeai_server.Services
                 .OrderByDescending(x => x.NgayDangKy)
                 .ToListAsync();
         }
+
+        public async Task<GuiMailHangLoatResultDTO> GuiMailHangLoatAsync(int maGiangVien, GuiMailHangLoatDTO dto)
+        {
+            if (dto.MaKhoaHoc <= 0)
+                return Fail("Vui lòng chọn khóa học cụ thể.");
+
+            if (dto.DanhSachMaNguoiDung == null || dto.DanhSachMaNguoiDung.Count == 0)
+                return Fail("Chưa chọn học viên nào.");
+
+            if (dto.DanhSachMaNguoiDung.Count > MaxBulkEmail)
+                return Fail($"Chỉ được gửi tối đa {MaxBulkEmail} email mỗi lần.");
+
+            if (string.IsNullOrWhiteSpace(dto.TieuDe) || string.IsNullOrWhiteSpace(dto.NoiDungHtml))
+                return Fail("Tiêu đề và nội dung email không được để trống.");
+
+            var khoaHoc = await _context.KhoaHocs
+                .FirstOrDefaultAsync(k => k.MaKhoaHoc == dto.MaKhoaHoc && k.MaGiangVien == maGiangVien);
+
+            if (khoaHoc == null)
+                return Fail("Khóa học không thuộc quyền quản lý của bạn.");
+
+            var maHocVienHopLe = await _context.DangKyKhoaHocs
+                .Where(dk => dk.MaKhoaHoc == dto.MaKhoaHoc && dto.DanhSachMaNguoiDung.Contains(dk.MaNguoiDung))
+                .Select(dk => dk.MaNguoiDung)
+                .Distinct()
+                .ToListAsync();
+
+            if (maHocVienHopLe.Count == 0)
+                return Fail("Không có học viên hợp lệ trong danh sách đã chọn.");
+
+            var hocViens = await LayDanhSachHocVienAsync(maGiangVien, dto.MaKhoaHoc, null);
+            var mapHocVien = hocViens
+                .Where(h => maHocVienHopLe.Contains(h.MaNguoiDung))
+                .ToList();
+
+            var nguoiNhan = mapHocVien
+                .Where(h => !string.IsNullOrWhiteSpace(h.Email))
+                .Select(h => new LopHocEmailRecipient(h.Email, h.HoTen, h.PhanTramTienDo))
+                .ToList();
+
+            if (nguoiNhan.Count == 0)
+                return Fail("Các học viên đã chọn không có email hợp lệ.");
+
+            var job = new LopHocEmailJob(
+                maGiangVien,
+                khoaHoc.TenKhoaHoc,
+                nguoiNhan,
+                dto.TieuDe.Trim(),
+                dto.NoiDungHtml);
+
+            await _emailQueue.EnqueueAsync(job);
+
+            return new GuiMailHangLoatResultDTO
+            {
+                Success = true,
+                Message = $"Đã xếp hàng gửi {nguoiNhan.Count} email.",
+                SoLuongDaXepHang = nguoiNhan.Count
+            };
+        }
+
+        private static GuiMailHangLoatResultDTO Fail(string message) =>
+            new() { Success = false, Message = message };
     }
 }

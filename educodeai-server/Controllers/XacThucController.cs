@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs.XacThuc;
+﻿﻿using educodeai_server.DTOs.XacThuc;
 using educodeai_server.DTOs.NguoiDung;
 using EduCodeAI.DTOs;
 using educodeai_server.Services.Interface;
@@ -145,7 +145,118 @@ namespace educodeai_server.Controllers
             }
         }
 
+        [HttpPost("giang-vien/gui-otp-email")]
+        public async Task<IActionResult> GuiOtpEmailGiangVien([FromBody] EmailOtpGiangVienRequest request)
+        {
+            if (!ModelState.IsValid) return BadRequest(new { message = "Email không hợp lệ." });
+            try
+            {
+                var sent = await _xacThucService.GuiOtpEmailGiangVienAsync(request.Email);
+                if (!sent) return BadRequest(new { message = "Không gửi được OTP email. Kiểm tra cấu hình SMTP/Gmail." });
+                return Ok(new { message = "Đã gửi OTP email. Mã có hiệu lực trong 5 phút." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("giang-vien/xac-minh-otp-email")]
+        public async Task<IActionResult> XacMinhOtpEmailGiangVien([FromBody] EmailOtpGiangVienRequest request)
+        {
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(request.OtpCode)) return BadRequest(new { message = "OTP không hợp lệ." });
+            try
+            {
+                await _xacThucService.XacMinhOtpEmailGiangVienAsync(request.Email, request.OtpCode);
+                return Ok(new { message = "Email đã được xác minh." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("dang-ky-giang-vien")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> DangKyGiangVien([FromForm] DangKyGiangVienRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)));
+                Console.WriteLine($"[MODELSTATE ERRORS]: {errors}");
+                return BadRequest(new { message = "Dữ liệu không hợp lệ", errors });
+            }
+
+            try
+            {
+                var result = await _xacThucService.DangKyGiangVienAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"Lỗi: {ex.Message}";
+                Console.WriteLine($"[ERROR] {errorMsg}");
+                Console.WriteLine($"[STACK] {ex.StackTrace}");
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         #endregion
+        /// <summary>Giảng viên tra cứu trạng thái hồ sơ đăng ký theo email (public).</summary>
+        [HttpGet("trang-thai-ho-so")]
+        public async Task<IActionResult> TraCuuTrangThaiHoSo([FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest(new { message = "Vui lòng nhập email." });
+            try
+            {
+                var result = await _xacThucService.TraCuuTrangThaiHoSoAsync(email);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>Giảng viên kiểm tra quyền bổ sung hồ sơ (public, xác thực bằng token từ email).</summary>
+        [HttpGet("kiem-tra-quyen-bo-sung/{maHoSo}")]
+        public async Task<IActionResult> KiemTraQuyenBoSungHoSo(long maHoSo, [FromQuery] string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return BadRequest(new { message = "Thiếu mã xác thực bổ sung." });
+            try
+            {
+                var result = await _xacThucService.KiemTraQuyenBoSungHoSoAsync(maHoSo, token);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>Giảng viên nộp lại hồ sơ bổ sung (public, xác thực bằng token từ email).</summary>
+        [HttpPut("bo-sung-ho-so/{maHoSo}")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> BoSungHoSo(long maHoSo, [FromForm] BoSungHoSoRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)));
+                return BadRequest(new { message = "Dữ liệu không hợp lệ", errors });
+            }
+            try
+            {
+                var result = await _xacThucService.BoSungHoSoAsync(maHoSo, request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
 
         #region 3. API QUẢN LÝ THIẾT BỊ (Yêu cầu phải có Token)
 

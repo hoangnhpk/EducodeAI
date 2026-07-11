@@ -112,7 +112,13 @@ namespace educodeai_server.Services
             {
                 var key = $"course:{maKhoaHoc}:version";
                 var val = await _db.StringGetAsync(key);
-                return val.HasValue && long.TryParse(val, out var v) ? v : 1;
+                if (val.HasValue && long.TryParse(val, out var v))
+                {
+                    return v;
+                }
+                
+                await _db.StringSetAsync(key, 1, TimeSpan.FromDays(30));
+                return 1;
             }
             catch (RedisConnectionException ex)
             {
