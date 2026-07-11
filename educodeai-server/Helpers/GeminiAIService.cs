@@ -176,6 +176,22 @@ namespace educodeai_server.Helpers
 
         public async Task<string> GenerateAsync(string prompt)
         {
+            // --- HACK TEST: Bỏ qua DB/Redis, dùng key tĩnh ---
+            string testApiKey = "AQ.Ab8RN6LLmDenKxTr0x-BDpRwKCIzs8WS-0TwUCYsmWy34V6GHw"; 
+            if (true) // Đã ép cứng để luôn chạy khối lệnh này
+            {
+                var reqBody = new
+                {
+                    contents = new[] { new { parts = new[] { new { text = prompt } } } },
+                    generationConfig = new { temperature = 0.7, topP = 0.9 }
+                };
+                string reqUrl = $"v1beta/models/gemini-3.1-flash-lite:generateContent?key={testApiKey}";
+                var res = await _http.PostAsJsonAsync(reqUrl, reqBody);
+                res.EnsureSuccessStatusCode();
+                return await res.Content.ReadAsStringAsync();
+            }
+            // --------------------------------------------
+
             return await AiRequestQueueHelper.EnqueueAsync(async () =>
             {
                 var requestBody = new
