@@ -1,4 +1,4 @@
-namespace educodeai_server.Config
+﻿namespace educodeai_server.Config
 {
     public class PaymentMailOptions
     {
@@ -15,5 +15,10 @@ namespace educodeai_server.Config
         /// Ví dụ: http://localhost:3000/giang-vien/rut-tien
         /// </summary>
         public string FrontendGiangVienRutTienUrl { get; set; } = "http://localhost:3000/giang-vien/rut-tien";
+
+        /// <summary>
+        /// Link trang bổ sung hồ sơ giảng viên trong email.
+        /// </summary>
+        public string FrontendGiangVienBoSungUrl { get; set; } = "http://localhost:3000/bo-sung-ho-so";
     }
 }

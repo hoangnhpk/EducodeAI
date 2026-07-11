@@ -27,6 +27,12 @@ namespace educodeai_server.Models
 
         public double DiemDanhGiaTB { get; set; } = 0;
 
+        // ====== CỘT MỚI THÊM CHO CHI TIẾT KHÓA HỌC ======
+        [StringLength(500)]
+        public string? VideoGioiThieu { get; set; }
+        
+        public string? BanSeHocDuocGi { get; set; } // JSONB trong DB, map string trong C#
+
         // ====== CỘT MỚI ======
 
         [StringLength(100)]
@@ -68,6 +74,10 @@ namespace educodeai_server.Models
 
 
         public DateTime NgayTao { get; set; } = DateTime.UtcNow;
+
+        public DateTime? DeletedAt { get; set; }
+        
+        public int? DeletedBy { get; set; }
 
         // Navigation
         public virtual ICollection<ChuongHocModel> ChuongHocs { get; set; } = null!;

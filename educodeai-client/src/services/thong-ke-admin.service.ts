@@ -102,6 +102,23 @@ export interface ChatLuongKhoaHocItemDTO {
   diemChatLuong: number;
 }
 
+export type NhomDoanhThuTheoThoiGian = 'day' | 'week' | 'month' | 'year';
+
+export interface DoanhThuTongQuanDTO {
+  tongDoanhThu: number;
+  tongPhiNenTang: number;
+  tongThucNhanGV: number;
+  doanhThuThangNay: number;
+  tongDonHang: number;
+}
+
+export interface DoanhThuTheoThoiGianDTO {
+  nhan: string;
+  tongDoanhThu: number;
+  phiNenTang: number;
+  thucNhanGV: number;
+}
+
 export const thongKeAdminService = {
   getTongQuan: async (): Promise<ThongKeTongQuanDTO> => {
     const body = await axiosClient.get<{ success: boolean; data: ThongKeTongQuanDTO }>(
@@ -210,6 +227,25 @@ export const thongKeAdminService = {
       { params }
     );
     return body.data;
+  },
+
+  getDoanhThuTongQuan: async (): Promise<DoanhThuTongQuanDTO> => {
+    const body = await axiosClient.get<{ success: boolean; data: DoanhThuTongQuanDTO }>(
+      '/api/admin/thong-ke/doanh-thu/tong-quan'
+    );
+    return body.data;
+  },
+
+  getDoanhThuTheoThoiGian: async (params: {
+    nhomTheo?: NhomDoanhThuTheoThoiGian;
+    from?: string;
+    to?: string;
+  }): Promise<DoanhThuTheoThoiGianDTO[]> => {
+    const body = await axiosClient.get<{ success: boolean; data: DoanhThuTheoThoiGianDTO[] }>(
+      '/api/admin/thong-ke/doanh-thu/theo-thoi-gian',
+      { params }
+    );
+    return body.data ?? [];
   },
 };
 
