@@ -3059,7 +3059,6 @@ namespace educodeai_server.Migrations
                     b.ToTable("DanhGias");
                 });
 
-
             modelBuilder.Entity("educodeai_server.Models.DanhHieuModel", b =>
                 {
                     b.Property<int>("MaDanhHieu")

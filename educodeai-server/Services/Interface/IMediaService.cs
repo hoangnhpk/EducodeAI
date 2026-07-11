@@ -12,6 +12,7 @@ namespace educodeai_server.Services.Interface
         Task<bool> DeleteVideoCloudinaryAsync(string publicId);
         Task<bool> LuuThongTinVideoAsync(int maGiangVien, LuuThongTinVideoDTO dto);
         string LayTokenPhatVideo(string publicId);
+        Task<bool> GiangVienSoHuuVideoAsync(int maGiangVien, string publicId);
         
         Task<string?> TaiLenPhuDeAsync(Microsoft.AspNetCore.Http.IFormFile file, string folder);
         Task<(bool IsSuccess, string Message)> YeuCauTaoPhuDeAIAsync(int maGiangVien, int maBaiHoc);
