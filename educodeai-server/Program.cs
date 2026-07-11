@@ -93,18 +93,31 @@ try
 
         builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
         builder.Services.AddScoped<IRedisService, RedisService>();
+
+        // Đăng ký Distributed Cache cho Redis
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = redisConnectionString;
+            options.ConfigurationOptions = configOptions;
+        });
     }
     else
     {
         var reason = !isRedisActive ? "turned OFF in appsettings" : "empty connection string";
         Console.WriteLine($"Redis is {reason} – using MemoryCache fallback");
         builder.Services.AddScoped<IRedisService, FallbackRedisService>();
+
+        // Đăng ký Distributed Memory Cache khi Redis không khả dụng
+        builder.Services.AddDistributedMemoryCache();
     }
 }
 catch (Exception ex)
 {
     Console.WriteLine($"Redis setup failed, using MemoryCache fallback: {ex.Message}");
     builder.Services.AddScoped<IRedisService, FallbackRedisService>();
+
+    // Đăng ký Distributed Memory Cache khi Redis fail
+    builder.Services.AddDistributedMemoryCache();
 }
 
 
@@ -197,6 +210,9 @@ builder.Services.AddHttpClient<IGeminiToolCallingService, GeminiToolCallingServi
     }
 });
 
+// Currency Exchange Service
+builder.Services.AddHttpClient<ICurrencyExchangeService, CurrencyExchangeService>();
+
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
 builder.Services.Configure<PaymentMailOptions>(builder.Configuration.GetSection("PaymentMail"));
 
@@ -205,6 +221,9 @@ builder.Services.Configure<CauHinhCloudinary>(builder.Configuration.GetSection("
 
 // Google Cloud Configuration
 builder.Services.Configure<CauHinhGoogleCloud>(builder.Configuration.GetSection("GoogleCloud"));
+
+// Currency Exchange Configuration
+builder.Services.Configure<CurrencyExchangeConfig>(builder.Configuration.GetSection("CurrencyExchange"));
 
 // Set GOOGLE_APPLICATION_CREDENTIALS env var + register SpeechClient singleton
 var gcpConfig = builder.Configuration.GetSection("GoogleCloud").Get<CauHinhGoogleCloud>();
