@@ -315,7 +315,7 @@ export default function DuyetGiangVien() {
                     <p><b>Số TK nhận tiền:</b> {chiTiet.soTaiKhoanNhanTien || "—"}</p>
                     <p><b>Tên chủ TK:</b> {chiTiet.tenChuTaiKhoan || "—"}</p>
                     <p><b>Mã số thuế:</b> {chiTiet.maSoThue || "—"}</p>
-                    <p><b>Loại đối tượng thuế:</b> {chiTiet.loaiDoiTuongThue === "DoanhNghiep" ? "Doanh nghiệp" : chiTiet.loaiDoiTuongThue === "CaNhan" ? "Cá nhân" : "—"}</p>
+                    <p><b>Loại đối tượng thuế:</b> {chiTiet.loaiDoiTuongThue === "DoanhNghiep" ? "Doanh nghiệp" : chiTiet.loaiDoiTuongThue === "CaNhan" ? "Cá nhân" : chiTiet.loaiDoiTuongThue?.trim() || "Chưa khai báo"}</p>
                   </div>
                   <div className="col-12">
                     <p><b>Tiểu sử:</b></p>
