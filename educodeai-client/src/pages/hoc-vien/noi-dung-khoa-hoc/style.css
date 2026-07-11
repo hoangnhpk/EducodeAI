@@ -729,6 +729,9 @@ a.cp-back:hover {
 .cp-ide-wrapper {
     display: flex;
     height: 100%;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
     border: 1px solid var(--cp-border);
     border-radius: var(--cp-radius-md);
     overflow: hidden;
@@ -880,6 +883,7 @@ a.cp-back:hover {
     overflow-y: auto;
     position: relative;
     background: #fff;
+    min-height: 0;
 }
 
 .cp-test-pane {
