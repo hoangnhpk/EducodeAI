@@ -19,14 +19,16 @@ namespace educodeai_server.Services.Implementation
         private readonly EduCodeAIDbContext _context;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly double _speechPricePerMinuteUsd;
+        private readonly ICurrencyExchangeService _currencyExchange;
 
-        public MediaService(Cloudinary cloudinary, IOptions<CauHinhCloudinary> cloudinaryConfig, EduCodeAIDbContext context, IServiceScopeFactory serviceScopeFactory, IOptions<CauHinhGoogleCloud> gcpConfig)
+        public MediaService(Cloudinary cloudinary, IOptions<CauHinhCloudinary> cloudinaryConfig, EduCodeAIDbContext context, IServiceScopeFactory serviceScopeFactory, IOptions<CauHinhGoogleCloud> gcpConfig, ICurrencyExchangeService currencyExchange)
         {
             _cloudinary = cloudinary;
             _cloudinaryConfig = cloudinaryConfig.Value;
             _context = context;
             _serviceScopeFactory = serviceScopeFactory;
             _speechPricePerMinuteUsd = gcpConfig.Value.SpeechToText.PricePerMinuteUsd;
+            _currencyExchange = currencyExchange;
         }
 
         public Task<ChuKyUploadVideoDTO> LayChuKyUploadVideoAsync(string maGiangVien, string folder)
@@ -258,6 +260,9 @@ namespace educodeai_server.Services.Implementation
             var minutes = Math.Max(1, Math.Ceiling((double)durationS / 60));
             var costUsd = (decimal)minutes * (decimal)_speechPricePerMinuteUsd;
 
+            // Quy đổi chi phí USD sang VND theo tỷ giá thị trường
+            var costVnd = await _currencyExchange.ConvertUsdToVndAsync(costUsd);
+
             var quota = await _context.GiangVienQuotas.FirstOrDefaultAsync(q => q.MaGiangVien == maGiangVien);
             if (quota == null)
             {
@@ -266,7 +271,7 @@ namespace educodeai_server.Services.Implementation
             }
 
             if (quota.AiBalanceUsd < costUsd)
-                return new(false, $"Số dư không đủ. Yêu cầu ${costUsd}, hiện có ${quota.AiBalanceUsd}");
+                return new(false, $"Số dư không đủ. Yêu cầu ${costUsd:F2} (~{costVnd:N0} VND), hiện có ${quota.AiBalanceUsd:F2}");
 
             // Trừ tiền NGAY khi tạo hold (không đợi commit) để tránh xài lố khi
             // nhiều request đồng thời cùng vượt qua check số dư. Worker sẽ hoàn tiền nếu job fail.
