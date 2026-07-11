@@ -11,9 +11,9 @@ namespace educodeai_server.Services.Implementation
     public class PhongVanAIDocLapService : IPhongVanAIDocLapService
     {
         private readonly EduCodeAIDbContext _context;
-        private readonly GeminiAIService _geminiService;
+        private readonly IGeminiAIService _geminiService;
 
-        public PhongVanAIDocLapService(EduCodeAIDbContext context, GeminiAIService geminiService)
+        public PhongVanAIDocLapService(EduCodeAIDbContext context, IGeminiAIService geminiService)
         {
             _context = context;
             _geminiService = geminiService;
