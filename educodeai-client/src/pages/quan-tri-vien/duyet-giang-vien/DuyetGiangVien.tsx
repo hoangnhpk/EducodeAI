@@ -41,6 +41,9 @@ export default function DuyetGiangVien() {
   const [danhSach, setDanhSach] = useState<HoSoGiangVienListItem[]>([]);
   const [chiTiet, setChiTiet] = useState<HoSoGiangVienDetail | null>(null);
   const [moModal, setMoModal] = useState(false);
+  const [frontDocUrl, setFrontDocUrl] = useState<string | null>(null);
+  const [backDocUrl, setBackDocUrl] = useState<string | null>(null);
+  const [hienGiayTo, setHienGiayTo] = useState(false);
 
   const taiDanhSach = async (tt?: string) => {
     try {
@@ -63,11 +66,44 @@ export default function DuyetGiangVien() {
     void taiDanhSach(tt);
   };
 
+  const revokeDocUrls = () => {
+    if (frontDocUrl) URL.revokeObjectURL(frontDocUrl);
+    if (backDocUrl) URL.revokeObjectURL(backDocUrl);
+    setFrontDocUrl(null);
+    setBackDocUrl(null);
+  };
+
+  const loadPrivateDoc = async (maHoSo: number, mat: "truoc" | "sau") => {
+    const token = localStorage.getItem("user_token");
+    const url = HoSoGiangVienAdminService.layAnhGiayToUrl(maHoSo, mat);
+    const res = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token.trim()}` } : {},
+      credentials: "include"
+    });
+    if (!res.ok) throw new Error("Không tải được ảnh giấy tờ.");
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  };
+
   const xemChiTiet = async (maHoSo: number) => {
     try {
+      revokeDocUrls();
       const ct = await HoSoGiangVienAdminService.layChiTiet(maHoSo);
       setChiTiet(ct);
       setMoModal(true);
+      setHienGiayTo(false);
+      // Ảnh CCCD chỉ load qua API private (có token admin)
+      try {
+        const [front, back] = await Promise.all([
+          loadPrivateDoc(maHoSo, "truoc"),
+          loadPrivateDoc(maHoSo, "sau")
+        ]);
+        setFrontDocUrl(front);
+        setBackDocUrl(back);
+      } catch {
+        setFrontDocUrl(null);
+        setBackDocUrl(null);
+      }
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không tải được chi tiết hồ sơ.", "error");
     }
@@ -261,7 +297,7 @@ export default function DuyetGiangVien() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Chi tiết hồ sơ: {chiTiet.hoTen}</h5>
-                <button type="button" className="btn-close" onClick={() => setMoModal(false)} />
+                <button type="button" className="btn-close" onClick={() => { revokeDocUrls(); setMoModal(false); }} />
               </div>
               <div className="modal-body">
                 <div className="row g-3">
@@ -274,16 +310,16 @@ export default function DuyetGiangVien() {
                     <p><b>Website:</b> {chiTiet.websiteUrl ? <a href={chiTiet.websiteUrl} target="_blank" rel="noreferrer">Xem</a> : "—"}</p>
                   </div>
                   <div className="col-md-6">
-                    <p><b>Loại giấy tờ:</b> {chiTiet.loaiGiayTo}</p>
-                    <p><b>Số giấy tờ:</b> {chiTiet.soGiayTo}</p>
+                    <p><b>Phương thức thanh toán:</b> {chiTiet.phuongThucThanhToan || "—"}</p>
                     <p><b>Ngân hàng:</b> {chiTiet.tenNganHang || "—"}</p>
                     <p><b>Số TK nhận tiền:</b> {chiTiet.soTaiKhoanNhanTien || "—"}</p>
                     <p><b>Tên chủ TK:</b> {chiTiet.tenChuTaiKhoan || "—"}</p>
                     <p><b>Mã số thuế:</b> {chiTiet.maSoThue || "—"}</p>
+                    <p><b>Loại đối tượng thuế:</b> {chiTiet.loaiDoiTuongThue === "DoanhNghiep" ? "Doanh nghiệp" : chiTiet.loaiDoiTuongThue === "CaNhan" ? "Cá nhân" : "—"}</p>
                   </div>
                   <div className="col-12">
                     <p><b>Tiểu sử:</b></p>
-                    <p className="text-muted">{chiTiet.tieuSu}</p>
+                    <p className="text-muted" style={{ whiteSpace: 'pre-wrap' }}>{chiTiet.tieuSu || "—"}</p>
                   </div>
                   <div className="col-12">
                     <p><b>Ảnh đại diện:</b></p>
@@ -291,13 +327,38 @@ export default function DuyetGiangVien() {
                       <img src={`${baseUrl}${chiTiet.anhDaiDienUrl}`} alt="Avatar" style={{ maxWidth: 120, borderRadius: 8 }} />
                     ) : <span className="text-muted">Không có</span>}
                   </div>
-                  <div className="col-md-6">
-                    <p><b>Ảnh giấy tờ mặt trước:</b></p>
-                    <img src={`${baseUrl}${chiTiet.anhGiayToMatTruocUrl}`} alt="Mặt trước" style={{ maxWidth: "100%", borderRadius: 8 }} />
-                  </div>
-                  <div className="col-md-6">
-                    <p><b>Ảnh giấy tờ mặt sau:</b></p>
-                    <img src={`${baseUrl}${chiTiet.anhGiayToMatSauUrl}`} alt="Mặt sau" style={{ maxWidth: "100%", borderRadius: 8 }} />
+                  <div className="col-12 mt-4">
+                    <div className="d-flex align-items-center mb-3">
+                      <h6 className="mb-0 me-2 fw-bold">Giấy tờ tùy thân</h6>
+                      <button 
+                        type="button" 
+                        className="btn btn-sm btn-outline-secondary border-0" 
+                        onClick={() => setHienGiayTo(!hienGiayTo)}
+                        title={hienGiayTo ? "Ẩn" : "Hiện"}
+                      >
+                        <i className={`bi ${hienGiayTo ? 'bi-eye-fill' : 'bi-eye-slash-fill'}`}></i>
+                      </button>
+                    </div>
+                    {hienGiayTo ? (
+                      <div className="row g-3 p-3 bg-light rounded border">
+                        <div className="col-md-6">
+                          <p><b>Loại giấy tờ:</b> {chiTiet.loaiGiayTo}</p>
+                        </div>
+                        <div className="col-md-6">
+                          <p><b>Số giấy tờ:</b> {chiTiet.soGiayTo}</p>
+                        </div>
+                        <div className="col-md-6">
+                          <p><b>Ảnh mặt trước:</b></p>
+                          {frontDocUrl ? <img src={frontDocUrl} alt="Mặt trước" style={{ maxWidth: "100%", borderRadius: 8, border: '1px solid #ddd' }} /> : <span className="text-muted">Không tải được ảnh</span>}
+                        </div>
+                        <div className="col-md-6">
+                          <p><b>Ảnh mặt sau:</b></p>
+                          {backDocUrl ? <img src={backDocUrl} alt="Mặt sau" style={{ maxWidth: "100%", borderRadius: 8, border: '1px solid #ddd' }} /> : <span className="text-muted">Không tải được ảnh</span>}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-muted fst-italic">Thông tin đã bị ẩn để bảo mật. Bấm vào biểu tượng mắt để xem.</p>
+                    )}
                   </div>
                   {chiTiet.lyDoTuChoi && chiTiet.trangThaiHoSo === "CanBoSung" && (
                     <div className="col-12">

@@ -652,9 +652,11 @@ namespace educodeai_server.Services.Implementation
                 ValidateFile(request.AnhDaiDien, "ảnh đại diện");
 
             // 4. Lưu file upload ( GUID + ext, chống path traversal)
+            // Avatar vẫn public (chỉ ảnh hồ sơ). Ảnh CCCD lưu private ngoài wwwroot để không bị mở thẳng bằng URL.
             var uploadRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien");
             var avatarRoot = Path.Combine(uploadRoot, "avatars");
-            var docRoot = Path.Combine(uploadRoot, "giay-to");
+            var privateRoot = Path.Combine(_env.ContentRootPath, "private_uploads", "dang-ky-giang-vien");
+            var docRoot = Path.Combine(privateRoot, "giay-to");
             Directory.CreateDirectory(avatarRoot);
             Directory.CreateDirectory(docRoot);
 
@@ -669,11 +671,11 @@ namespace educodeai_server.Services.Implementation
                     savedFiles.Add(Path.Combine(avatarRoot, Path.GetFileName(avatarPath)));
                 }
 
-                var frontPath = await LuuFileAsync(request.AnhGiayToMatTruoc, docRoot, "/uploads/dang-ky-giang-vien/giay-to");
-                savedFiles.Add(Path.Combine(docRoot, Path.GetFileName(frontPath)));
+                var frontPath = await LuuFilePrivateAsync(request.AnhGiayToMatTruoc, docRoot);
+                savedFiles.Add(Path.Combine(docRoot, Path.GetFileName(frontPath.Replace("private://giay-to/", string.Empty))));
 
-                var backPath = await LuuFileAsync(request.AnhGiayToMatSau, docRoot, "/uploads/dang-ky-giang-vien/giay-to");
-                savedFiles.Add(Path.Combine(docRoot, Path.GetFileName(backPath)));
+                var backPath = await LuuFilePrivateAsync(request.AnhGiayToMatSau, docRoot);
+                savedFiles.Add(Path.Combine(docRoot, Path.GetFileName(backPath.Replace("private://giay-to/", string.Empty))));
 
                 // 5. Tạo hồ sơ đăng ký trong transaction (bọc trong execution strategy vì Npgsql retry không cho BeginTransaction trực tiếp)
                 var strategy = _context.Database.CreateExecutionStrategy();
@@ -770,6 +772,26 @@ namespace educodeai_server.Services.Implementation
             await file.CopyToAsync(stream);
             return $"{publicPrefix}/{fileName}";
         }
+
+        /// <summary>
+        /// Lưu ảnh CCCD/private vào thư mục ngoài wwwroot.
+        /// Trả về token nội bộ: private://giay-to/{fileName}
+        /// </summary>
+        private static async Task<string> LuuFilePrivateAsync(IFormFile file, string folderPath)
+        {
+            var ext = Path.GetExtension(file.FileName);
+            if (!_allowedImgExtensions.Contains(ext) || file.Length > _maxFileSize)
+                throw new Exception("File không hợp lệ.");
+
+            var fileName = $"{Guid.NewGuid()}{ext.ToLowerInvariant()}";
+            var fullPath = Path.Combine(folderPath, fileName);
+            await using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            return $"private://giay-to/{fileName}";
+        }
+
 
 
         /// <summary>
@@ -888,7 +910,8 @@ namespace educodeai_server.Services.Implementation
             // Cập nhật file mới nếu có
             var uploadRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien");
             var avatarRoot = Path.Combine(uploadRoot, "avatars");
-            var docRoot = Path.Combine(uploadRoot, "giay-to");
+            var privateRoot = Path.Combine(_env.ContentRootPath, "private_uploads", "dang-ky-giang-vien");
+            var docRoot = Path.Combine(privateRoot, "giay-to");
             Directory.CreateDirectory(avatarRoot);
             Directory.CreateDirectory(docRoot);
 
@@ -901,12 +924,12 @@ namespace educodeai_server.Services.Implementation
             }
             if (request.AnhGiayToMatTruoc != null && request.AnhGiayToMatTruoc.Length > 0)
             {
-                var p = await LuuFileAsync(request.AnhGiayToMatTruoc, docRoot, "/uploads/dang-ky-giang-vien/giay-to");
+                var p = await LuuFilePrivateAsync(request.AnhGiayToMatTruoc, docRoot);
                 hoSo.AnhGiayToMatTruocUrl = p;
             }
             if (request.AnhGiayToMatSau != null && request.AnhGiayToMatSau.Length > 0)
             {
-                var p = await LuuFileAsync(request.AnhGiayToMatSau, docRoot, "/uploads/dang-ky-giang-vien/giay-to");
+                var p = await LuuFilePrivateAsync(request.AnhGiayToMatSau, docRoot);
                 hoSo.AnhGiayToMatSauUrl = p;
             }
 
@@ -921,21 +944,30 @@ namespace educodeai_server.Services.Implementation
             hoSo.BoSungTokenHetHan = null;
             await _context.SaveChangesAsync();
 
-            // Dọn file cũ đã thay (tránh rác ổ đĩa)
-            static void XoaFileCu(string? url, string webRoot)
+                        // Dọn file cũ đã thay (tránh rác ổ đĩa)
+            void XoaFileCu(string? url)
             {
                 if (string.IsNullOrWhiteSpace(url)) return;
                 try
                 {
-                    var rel = url.TrimStart('/');
-                    var full = Path.Combine(webRoot, rel.Replace('/', Path.DirectorySeparatorChar));
+                    string full;
+                    if (url.StartsWith("private://giay-to/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var fileName = Path.GetFileName(url.Replace("private://giay-to/", string.Empty));
+                        full = Path.Combine(_env.ContentRootPath, "private_uploads", "dang-ky-giang-vien", "giay-to", fileName);
+                    }
+                    else
+                    {
+                        var rel = url.TrimStart('/');
+                        full = Path.Combine(_env.WebRootPath, rel.Replace('/', Path.DirectorySeparatorChar));
+                    }
                     if (File.Exists(full)) File.Delete(full);
                 }
-                catch { }
+                catch { /* ignore */ }
             }
-            if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0) XoaFileCu(oldAvatar, _env.WebRootPath);
-            if (request.AnhGiayToMatTruoc != null && request.AnhGiayToMatTruoc.Length > 0) XoaFileCu(oldFront, _env.WebRootPath);
-            if (request.AnhGiayToMatSau != null && request.AnhGiayToMatSau.Length > 0) XoaFileCu(oldBack, _env.WebRootPath);
+            if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0) XoaFileCu(oldAvatar);
+            if (request.AnhGiayToMatTruoc != null && request.AnhGiayToMatTruoc.Length > 0) XoaFileCu(oldFront);
+            if (request.AnhGiayToMatSau != null && request.AnhGiayToMatSau.Length > 0) XoaFileCu(oldBack);
 
             return new
             {

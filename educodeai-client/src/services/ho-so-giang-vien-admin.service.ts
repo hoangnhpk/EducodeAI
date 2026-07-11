@@ -28,6 +28,7 @@ export interface HoSoGiangVienDetail extends HoSoGiangVienListItem {
   soTaiKhoanNhanTien?: string;
   tenChuTaiKhoan?: string;
   maSoThue?: string;
+  loaiDoiTuongThue?: string;
   maQuanTriVienDuyet?: number;
   ngayCapNhat: string;
 }
@@ -73,5 +74,11 @@ export const HoSoGiangVienAdminService = {
       `/api/QuanTriVien/quan-ly-ho-so-giang-vien/yeu-cau-bo-sung/${maHoSo}`,
       { noiDungBoSung }
     );
+  },
+
+  /** URL ảnh CCCD private (chỉ admin + bearer token). */
+  layAnhGiayToUrl: (maHoSo: number, mat: "truoc" | "sau" = "truoc") => {
+    const base = import.meta.env.VITE_API_URL || "";
+    return `${base}/api/QuanTriVien/quan-ly-ho-so-giang-vien/anh-giay-to/${maHoSo}?mat=${mat}`;
   }
 };
