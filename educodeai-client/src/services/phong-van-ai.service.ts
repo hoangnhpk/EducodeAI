@@ -55,19 +55,19 @@ export interface LichSuPhongVan {
 
 export const PhongVanAIService = {
     startInterview: async (request: StartPhongVanRequest) => {
-        const response = await api.post('/PhongVanAI/start', request);
+        const response = await axiosClient.post('/PhongVanAI/start', request);
         return response.data;
     },
     answerQuestion: async (request: AnswerPhongVanRequest) => {
-        const response = await api.post('/PhongVanAI/answer', request);
+        const response = await axiosClient.post('/PhongVanAI/answer', request);
         return response.data;
     },
     endInterview: async (maPhongVan: number) => {
-        const response = await api.post(`/PhongVanAI/end/${maPhongVan}`);
+        const response = await axiosClient.post(`/PhongVanAI/end/${maPhongVan}`);
         return response.data;
     },
     getHistory: async () => {
-        const response = await api.get('/PhongVanAI/history');
+        const response = await axiosClient.get('/PhongVanAI/history');
         return response.data;
     }
 };
