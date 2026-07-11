@@ -16,28 +16,48 @@ export const firebaseAuth = getAuth(app);
 firebaseAuth.languageCode = 'vi';
 
 let recaptchaVerifier: RecaptchaVerifier | null = null;
-
-export const getFirebaseRecaptchaVerifier = (containerId: string) => {
-  if (!recaptchaVerifier) {
-    recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, containerId, {
-      size: 'invisible',
-      callback: () => undefined,
-      'expired-callback': () => {
-        recaptchaVerifier?.clear();
-        recaptchaVerifier = null;
-      }
-    });
-  }
-
-  return recaptchaVerifier;
-};
+let recaptchaWidgetId: string | null = null;
 
 export const resetFirebaseRecaptchaVerifier = () => {
-  recaptchaVerifier?.clear();
+  try {
+    recaptchaVerifier?.clear();
+  } catch {
+    // ignore clear errors on an already-detached verifier
+  }
   recaptchaVerifier = null;
+  if (recaptchaWidgetId) {
+    const widget = document.getElementById(recaptchaWidgetId);
+    widget?.remove();
+  }
+  recaptchaWidgetId = null;
 };
 
-export const sendFirebasePhoneOtp = async (phoneNumber: string, recaptchaContainerId: string): Promise<ConfirmationResult> => {
-  const verifier = getFirebaseRecaptchaVerifier(recaptchaContainerId);
-  return signInWithPhoneNumber(firebaseAuth, phoneNumber, verifier);
+export const sendFirebasePhoneOtp = async (phoneNumber: string, containerId: string): Promise<ConfirmationResult> => {
+  resetFirebaseRecaptchaVerifier();
+
+  const container = document.getElementById(containerId);
+  if (!container) {
+    throw new Error(`reCAPTCHA container "${containerId}" không tồn tại.`);
+  }
+  container.innerHTML = '';
+
+  const widget = document.createElement('div');
+  recaptchaWidgetId = `${containerId}-widget-${Date.now()}`;
+  widget.id = recaptchaWidgetId;
+  container.appendChild(widget);
+
+  recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, widget, {
+    size: 'invisible',
+    callback: () => undefined,
+    'expired-callback': () => {
+      resetFirebaseRecaptchaVerifier();
+    }
+  });
+
+  try {
+    return await signInWithPhoneNumber(firebaseAuth, phoneNumber, recaptchaVerifier);
+  } catch (error) {
+    resetFirebaseRecaptchaVerifier();
+    throw error;
+  }
 };

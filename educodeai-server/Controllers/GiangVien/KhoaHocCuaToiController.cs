@@ -241,6 +241,37 @@ namespace educodeai_server.Controllers.GiangVien
             return Ok(new { url = $"/uploads/khoa-hoc/{fileName}" });
         }
 
+        [HttpPost("upload-video-gioi-thieu")]
+        public async Task<IActionResult> UploadVideoGioiThieu(
+            IFormFile file,
+            [FromServices] IWebHostEnvironment env)
+        {
+            if (file is null || file.Length == 0)
+                return BadRequest(new { message = "Vui l?ng ch?n file video." });
+
+            const long maxSize = 100L * 1024 * 1024;
+            var allowedTypes = new[] { "video/mp4", "video/webm", "video/ogg" };
+            var allowedExtensions = new[] { ".mp4", ".webm", ".ogg" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (!allowedTypes.Contains(file.ContentType) || !allowedExtensions.Contains(extension))
+                return BadRequest(new { message = "Ch? ch?p nh?n video ??nh d?ng MP4, WebM ho?c OGG." });
+
+            if (file.Length > maxSize)
+                return BadRequest(new { message = "K?ch th??c video kh?ng ???c v??t qu? 100MB." });
+
+            var folder = Path.Combine(env.WebRootPath, "uploads", "khoa-hoc", "videos");
+            Directory.CreateDirectory(folder);
+
+            var fileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(folder, fileName);
+
+            await using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+
+            return Ok(new { url = $"/uploads/khoa-hoc/videos/{fileName}" });
+        }
+
         // ===== YOUTUBE PLAYLIST IMPORT =====
         [HttpPost("youtube/playlist/analyze")]
         public async Task<IActionResult> AnalyzePlaylist([FromBody] YouTubePlaylistAnalyzeRequestDTO request)
