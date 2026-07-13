@@ -74,6 +74,16 @@ export const uploadHinhAnhKhoaHoc = async (file: File) => {
   return res?.url as string;
 };
 
+// [HttpPost("upload-video-gioi-thieu")]
+export const uploadVideoGioiThieuKhoaHoc = async (file: File) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res: any = await axiosClient.post(`${BASE}/upload-video-gioi-thieu`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return res?.url as string;
+};
+
 // [HttpPut("cap-nhat/{maKhoaHoc}")] -> [FromForm]
 export const capNhatKhoaHoc = async (_maGiangVien: number, maKhoaHoc: number, dto: KhoaHocCreateUpdate) => {
   const res: any = await axiosClient.put(`${BASE}/cap-nhat/${maKhoaHoc}`, toFormData(dto));

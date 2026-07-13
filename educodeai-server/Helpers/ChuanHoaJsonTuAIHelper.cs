@@ -50,23 +50,16 @@ namespace educodeai_server.Helpers
         {
             json = string.Empty;
 
-
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
+            var candidates = new List<string>();
 
-            // 3. Tìm JSON
-            var match = Regex.Match(
-                text,
-                @"```(?:json)?\s*(\{[\s\S]*?\})\s*```",
-                RegexOptions.IgnoreCase
-            );
-
-            string rawJson;
-            if (match.Success)
+            foreach (Match match in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
             {
-                rawJson = match.Groups[1].Value;
+                candidates.Add(match.Groups[1].Value);
             }
+
             else
             {
                 // Fallback: Lấy từ dấu { đầu tiên đến dấu } cuối cùng
@@ -120,6 +113,8 @@ namespace educodeai_server.Helpers
                 }
 
             }
+
+            return false;
         }
 
         private static IEnumerable<string> TrichXuatJsonCanBang(string text)

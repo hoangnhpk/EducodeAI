@@ -1,4 +1,4 @@
-import api from './api';
+import axiosClient from '@/configs/axios';
 
 export enum TinhCachAI {
     Friendly = 0,
