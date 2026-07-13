@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import { encodeId } from "@/utils/id-helper";
 import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
@@ -26,7 +26,6 @@ const parseKyNangTags = (raw?: string): string[] => {
 };
 
 const TrangChu: React.FC = () => {
-    const navigate = useNavigate();
     const [courses, setCourses] = useState<IKhoaHoc[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -367,9 +366,14 @@ const TrangChu: React.FC = () => {
                                                     <i className="fa fa-clock text-primary me-2"></i> {kh.thoiLuongGio} giờ học
                                                 </div>
                                                 {kh.khoaHocDaDangKy ? (
-                                                    <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-success w-100 rounded-3 fw-bold text-center" style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        <i className="fa fa-play-circle me-2"></i> Tiếp tục học
-                                                    </Link>
+                                                    <div className="course-card-actions">
+                                                        <Link to={`/khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-course-detail">
+                                                            Chi tiết
+                                                        </Link>
+                                                        <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-success rounded-3 fw-bold text-center flex-grow-1" style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <i className="fa fa-play-circle me-2"></i> Tiếp tục học
+                                                        </Link>
+                                                    </div>
                                                 ) : (
 
                                                     <div className="course-card-actions">

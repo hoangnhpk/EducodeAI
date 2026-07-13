@@ -339,7 +339,7 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                     </div>
 
                     {/* Monaco Editor */}
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minHeight: 0 }}>
                         <Editor
                             height="100%"
                             language={duLieu.ngonNgu === 'c++' || duLieu.ngonNgu === 'c' ? 'cpp' : (duLieu.ngonNgu === 'c#' ? 'csharp' : duLieu.ngonNgu)}
