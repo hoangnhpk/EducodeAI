@@ -1,0 +1,20 @@
+﻿              <div className="dkgv-upload-grid">
+                <div className="dkgv-upload-box-wrap">
+                  <div className="dkgv-upload-box-label">Mặt trước giấy tờ</div>
+                  <input ref={frontInputRef} type="file" accept="image/*" hidden onChange={(e) => setFiles((prev) => ({ ...prev, anhGiayToMatTruoc: e.target.files?.[0] || null }))} />
+                  <div className={previewFront ? "dkgv-upload-box dkgv-upload-has-preview" : "dkgv-upload-box"} onClick={() => frontInputRef.current?.click()} role="button" tabIndex={0}>
+                    {previewFront ? <div className="dkgv-preview-container"><img src={previewFront} alt="Mặt trước giấy tờ" className="dkgv-preview-img" /></div> : (<><div className="dkgv-upload-box-icon"><i className="bi bi-image" /></div><div className="dkgv-upload-box-title">Kéo thả hoặc Nhấp để tải lên</div><div className="dkgv-upload-box-desc">Hỗ trợ JPG, PNG (Tối đa 5MB)</div></>)}
+                  </div>
+                  {files.anhGiayToMatTruoc && <div className="small text-success mt-2">Đã chọn: {files.anhGiayToMatTruoc.name}</div>}
+                  {errors.anhGiayToMatTruoc && <div className="text-danger small mt-1">{errors.anhGiayToMatTruoc}</div>}
+                </div>
+                <div className="dkgv-upload-box-wrap">
+                  <div className="dkgv-upload-box-label">Mặt sau giấy tờ</div>
+                  <input ref={backInputRef} type="file" accept="image/*" hidden onChange={(e) => setFiles((prev) => ({ ...prev, anhGiayToMatSau: e.target.files?.[0] || null }))} />
+                  <div className={previewBack ? "dkgv-upload-box dkgv-upload-has-preview" : "dkgv-upload-box"} onClick={() => backInputRef.current?.click()} role="button" tabIndex={0}>
+                    {previewBack ? <div className="dkgv-preview-container"><img src={previewBack} alt="Mặt sau giấy tờ" className="dkgv-preview-img" /></div> : (<><div className="dkgv-upload-box-icon"><i className="bi bi-image" /></div><div className="dkgv-upload-box-title">Kéo thả hoặc Nhấp để tải lên</div><div className="dkgv-upload-box-desc">Hỗ trợ JPG, PNG (Tối đa 5MB)</div></>)}
+                  </div>
+                  {files.anhGiayToMatSau && <div className="small text-success mt-2">Đã chọn: {files.anhGiayToMatSau.name}</div>}
+                  {errors.anhGiayToMatSau && <div className="text-danger small mt-1">{errors.anhGiayToMatSau}</div>}
+                </div>
+              </div>

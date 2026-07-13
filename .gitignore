@@ -368,3 +368,8 @@ appsettings.json
 appsettings.Development.json
 educodeai-server/appsettings.json
 educodeai-server/appsettings.Development.json
+
+gcp-service-account.json
+*-service-account.json
+
+./gcp-service-account.json

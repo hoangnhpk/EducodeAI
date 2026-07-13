@@ -655,3 +655,106 @@
 .adm-table tr:hover td {
   background: #fafafa;
 }
+
+/* ====== DOANH THU ====== */
+.adm-revenue {
+  margin-top: 16px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #fff;
+}
+
+.adm-revenue__header {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.adm-revenue__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-dark);
+}
+
+.adm-revenue__kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+  background: #fafbfc;
+}
+
+@media (max-width: 1200px) {
+  .adm-revenue__kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .adm-revenue__kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adm-revenue-kpi {
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.adm-revenue-kpi__label {
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+
+.adm-revenue-kpi__value {
+  font-size: 22px;
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-dark);
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+}
+
+.adm-revenue-kpi__value--amber {
+  color: #d97706;
+}
+
+.adm-revenue-kpi__value--green {
+  color: #059669;
+}
+
+.adm-revenue-kpi__hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.adm-revenue__chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.adm-revenue__chart-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-dark);
+  text-transform: uppercase;
+  letter-spacing: -0.2px;
+}
+
+.adm-revenue__chart-body {
+  padding: 12px 12px 18px;
+  background: #fff;
+}

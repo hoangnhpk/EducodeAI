@@ -17,6 +17,13 @@ namespace educodeai_server.Services.Interface
         // --- CÁC HÀM ĐĂNG KÝ MỚI (Dùng Bộ nhớ tạm RAM) ---
         Task<bool> YeuCauDangKyAsync(DangKyRequest request, string ipAddress);
         Task<object> XacNhanDangKyVaLuuDbAsync(XacNhanOtpRequest request);
+        Task<object> DangKyGiangVienAsync(DangKyGiangVienRequest request);
+        Task<bool> GuiOtpEmailGiangVienAsync(string email);
+        Task<bool> XacMinhOtpEmailGiangVienAsync(string email, string otpCode);
+        // --- GIẢNG VIÊN: TRA CỨU & BỔ SUNG HỒ SƠ ---
+        Task<object> TraCuuTrangThaiHoSoAsync(string email);
+        Task<object> KiemTraQuyenBoSungHoSoAsync(long maHoSo, string token);
+        Task<object> BoSungHoSoAsync(long maHoSo, BoSungHoSoRequest request);
 
         // --- CÁC HÀM QUÊN MK ---
         Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest request, string ipAddress);
