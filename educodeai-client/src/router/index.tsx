@@ -46,6 +46,7 @@ import QuanLyHocVienKhoaHoc from "../pages/giang-vien/quan-ly-hoc-vien/QuanLyHoc
 import TangKhoaHocGiangVien from "../pages/giang-vien/tang-khoa-hoc/TangKhoaHocGiangVien";
 import TaoLoTrinhAI from "../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI";
 import RutTienGiangVien from "../pages/giang-vien/rut-tien/RutTienGiangVien";
+import NapTienAI from "../pages/giang-vien/nap-tien-ai/NapTienAI";
 import QuanLyMaGiamGiaGiangVien from "@/pages/giang-vien/ma-giam-gia/QuanLyMaGiamGiaGiangVien";
 
 import QuanLyReviewMoi from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReviewMoi";
@@ -136,6 +137,7 @@ export default function AppRouter() {
           <Route path="/giang-vien" element={<ProtectedRoute allowRoles={[0, 1]}><LayoutGiangVien /></ProtectedRoute>}>
             <Route index element={<ThongKeHocTap />} />
             <Route path="thong-ke" element={<ThongKeHocTap />} />
+            <Route path="nap-tien-ai" element={<NapTienAI />} />
             <Route path="bai-tap" element={<QuanLyBaiTapPage />} />
             <Route path="quiz" element={<Navigate to="/giang-vien/bai-tap" replace />} />
             <Route path="preview-quiz" element={<Navigate to="/giang-vien/bai-tap" replace />} />

@@ -219,6 +219,15 @@ const VideoPreviewModal: React.FC<{ lesson: BaiHocDetail | null; onClose: () => 
   const ytId = getYTId(lesson.linkVideo);
   const isFile = lesson.loaiBaiHoc === 'File';
 
+  // Debug: Log subtitle info
+  console.log('VideoPreviewModal - lesson:', {
+    maBaiHoc: lesson.maBaiHoc,
+    tieuDe: lesson.tieuDe,
+    hasSubtitle: lesson.hasSubtitle,
+    subtitleUrl: lesson.subtitleUrl,
+    videoSource: lesson.videoSource
+  });
+
   return (
     <div className="khm-modal-backdrop" onClick={onClose}>
       <div className="khm-modal khm-modal-lg" onClick={e => e.stopPropagation()}>
@@ -248,13 +257,23 @@ const VideoPreviewModal: React.FC<{ lesson: BaiHocDetail | null; onClose: () => 
             </div>
           ) : lesson.videoSource === 'cloudinary' ? (
             <div className="khm-relative" style={{ background: '#000' }}>
-               <video 
-                 controls 
-                 controlsList="nodownload" 
-                 width="100%" 
-                 src={lesson.linkVideo ? lesson.linkVideo.replace(/\.[^/.]+$/, '.mp4') : ''} 
+               <video
+                 controls
+                 controlsList="nodownload"
+                 width="100%"
+                 src={lesson.linkVideo ? lesson.linkVideo.replace(/\.[^/.]+$/, '.mp4') : ''}
                  poster={lesson.linkVideo ? lesson.linkVideo.replace(/\.[^/.]+$/, '.jpg') : undefined}
+                 crossOrigin="anonymous"
                >
+                 {lesson.subtitleUrl && (
+                   <track
+                     kind="subtitles"
+                     src={lesson.subtitleUrl}
+                     srcLang="vi"
+                     label="Tiếng Việt"
+                     default
+                   />
+                 )}
                  Trình duyệt không hỗ trợ phát video.
                </video>
             </div>
@@ -337,7 +356,13 @@ const LessonRow: React.FC<{
             <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onPreview(lesson)} title="Xem">▶</button>
           )}
           {lesson.videoSource === 'cloudinary' && (
-            <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onManageSubtitle(lesson)} title="Quản lý Phụ đề">CC</button>
+            lesson.hasSubtitle ? (
+              <span className="khm-btn khm-btn-sm khm-btn-icon" style={{ color: '#166534', cursor: 'default' }} title="Đã có phụ đề">✓ CC</span>
+            ) : lesson.videoStatus === 'Processing_Subtitle' ? (
+              <span className="khm-btn khm-btn-sm khm-btn-icon" style={{ color: '#854d0e', cursor: 'default' }} title="Đang tạo phụ đề">⏳</span>
+            ) : (
+              <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onManageSubtitle(lesson)} title="Quản lý Phụ đề">CC</button>
+            )
           )}
           <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onEdit(lesson)} title="Chỉnh sửa">✏️</button>
           <button className="khm-btn khm-btn-danger-ghost khm-btn-sm khm-btn-icon" onClick={() => onDelete(lesson)} title="Xóa">🗑</button>

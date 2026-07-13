@@ -61,6 +61,7 @@ namespace educodeai_server.Data
         public DbSet<LichSuPhongVanModel> LichSuPhongVans { get; set; }
         public DbSet<DoAnThucChienModel> DoAnThucChiens { get; set; }
         public DbSet<ChungChiDoAnModel> ChungChiDoAns { get; set; }
+        public DbSet<LichSuNapTienAIModel> LichSuNapTienAIs { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             foreach (var entity in modelBuilder.Model.GetEntityTypes())

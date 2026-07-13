@@ -14,13 +14,24 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CloudinaryDotNet;
 using Google.Cloud.Speech.V1;
+using Google.Cloud.Storage.V1;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using educodeai_server.Hubs;
 using educodeai_server.Workers;
+using FFMpegCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure FFMpegCore to use ffmpeg from project directory
+var ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg");
+GlobalFFOptions.Configure(options =>
+{
+    options.BinaryFolder = ffmpegPath;
+    options.TemporaryFilesFolder = Path.GetTempPath();
+});
+Console.WriteLine($"FFMpegCore configured to use ffmpeg from: {ffmpegPath}");
 
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true)
@@ -141,6 +152,7 @@ builder.Services.AddScoped<IPhongVanAIDocLapService, PhongVanAIDocLapService>();
 builder.Services.AddScoped<IThanhToanEmailService, ThanhToanEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienEmailService, RutTienGiangVienEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienService, RutTienGiangVienService>();
+builder.Services.AddScoped<INapTienAIService, NapTienAIService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
@@ -241,6 +253,7 @@ if (gcpConfig != null && !string.IsNullOrEmpty(gcpConfig.ServiceAccountJsonPath)
     }
 }
 builder.Services.AddSingleton(_ => SpeechClient.Create());
+builder.Services.AddSingleton(_ => StorageClient.Create());
 var cloudinarySettings = builder.Configuration.GetSection("Cloudinary").Get<CauHinhCloudinary>();
 if (cloudinarySettings != null)
 {

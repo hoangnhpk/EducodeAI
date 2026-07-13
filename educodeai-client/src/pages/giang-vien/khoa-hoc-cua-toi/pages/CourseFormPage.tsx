@@ -716,7 +716,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
             onClick={() => void handleSubmit(true)}
             disabled={submitting}
           >
-            {submitting ? <><span className="khm-spinner khm-spinner-sm" /> Đang lưu...</> : '▶ Lưu & Tiếp tục'}
+            {submitting ? <><span className="khm-spinner khm-spinner-sm" /> Đang lưu...</> : '📁 Lưu & Thêm nội dung'}
           </button>
         </div>
       </div>

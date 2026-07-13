@@ -27,16 +27,17 @@ interface Props {
   onBack: () => void;
   onEdit: () => void;
   onImportPlaylist: () => void;
+  initialTab?: Tab;
 }
 
-const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImportPlaylist }) => {
+const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImportPlaylist, initialTab = 'overview' }) => {
   const maGiangVien = getGiangVienId();
   const { showToast, ToastContainer } = useToastStandalone();
 
   const [detail, setDetail] = useState<KhoaHocDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('overview');
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [selectedChapter, setSelectedChapter] = useState<{ maChuong: number; tenChuong: string } | null>(null);
 
   // Certificate state

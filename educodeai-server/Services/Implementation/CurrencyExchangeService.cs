@@ -38,7 +38,11 @@ namespace educodeai_server.Services.Implementation
                 }
 
                 var response = await _httpClient.GetStringAsync(_config.ApiUrl);
-                var data = JsonSerializer.Deserialize<ExchangeRateResponse>(response);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                var data = JsonSerializer.Deserialize<ExchangeRateResponse>(response, options);
 
                 if (data?.Rates?.ContainsKey("VND") == true)
                 {

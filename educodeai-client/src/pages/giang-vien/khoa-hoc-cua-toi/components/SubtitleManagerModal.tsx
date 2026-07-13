@@ -71,7 +71,7 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
     }
   };
 
-  const chiPhiDuKien = baiHoc.thoiLuong > 0 ? (Math.ceil(baiHoc.thoiLuong / 60) * 0.06).toFixed(2) : "0.06";
+  const chiPhiDuKien = baiHoc.thoiLuong > 0 ? (Math.ceil(baiHoc.thoiLuong / 60) * 0.024).toFixed(2) : "0.024";
 
   return (
     <div className="khm-modal-backdrop" onClick={dongModal}>
