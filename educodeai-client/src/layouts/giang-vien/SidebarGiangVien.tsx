@@ -1,4 +1,4 @@
-﻿import { MdSchool, MdBook, MdEditNote, MdCode, MdPeople, MdDashboard, MdCardGiftcard } from 'react-icons/md';
+﻿import { MdSchool, MdBook, MdEditNote, MdCode, MdPeople, MdDashboard, MdCardGiftcard, MdAccountBalanceWallet } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function SidebarGiangVien() {
@@ -46,6 +46,10 @@ export default function SidebarGiangVien() {
 
         <Link to="/giang-vien/rut-tien" className={`gv-nav-link ${isActive('/giang-vien/rut-tien') ? 'active' : ''}`}>
           <MdEditNote /> Rút Tiền
+        </Link>
+
+        <Link to="/giang-vien/nap-tien-ai" className={`gv-nav-link ${isActive('/giang-vien/nap-tien-ai') ? 'active' : ''}`}>
+          <MdAccountBalanceWallet /> Nạp tiền AI
         </Link>
       </nav>
     </aside>

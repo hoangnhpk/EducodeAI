@@ -11,6 +11,7 @@ export interface NoiDungVideoRef {
 
 interface Props {
   videoUrl?: string | null;
+  subtitleUrl?: string | null;
   maBaiHoc: number;
   maNguoiDung: number;
   daXem?: boolean;

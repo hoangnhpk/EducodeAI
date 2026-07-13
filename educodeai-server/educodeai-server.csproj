@@ -14,6 +14,7 @@
     <PackageReference Include="CloudinaryDotNet" Version="1.29.2" />
     <PackageReference Include="FFMpegCore" Version="5.4.0" />
     <PackageReference Include="Google.Cloud.Speech.V1" Version="3.9.0" />
+    <PackageReference Include="Google.Cloud.Storage.V1" Version="4.10.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.12" />
@@ -42,6 +43,10 @@
   <ItemGroup>
     <Folder Include="Migrations\" />
     <Folder Include="wwwroot\uploads\bai-hoc\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="ffmpeg\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
