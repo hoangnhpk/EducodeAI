@@ -9,6 +9,9 @@ import { SystemConfigProvider } from "../contexts/SystemConfigContext";
 
 import DangNhap from "../pages/auth/DangNhap";
 import DangKy from "../pages/auth/DangKy";
+import DangKyGiangVien from "../pages/auth/DangKyGiangVien";
+import TrangThaiHoSoGiangVien from "../pages/auth/TrangThaiHoSoGiangVien";
+import BoSungHoSoGiangVien from "../pages/auth/BoSungHoSoGiangVien";
 import QuenMatKhau from "../pages/auth/QuenMatKhau";
 import NotFound from "../pages/NotFound";
 
@@ -55,6 +58,7 @@ import QuanLyRutTienGiangVien from "../pages/quan-tri-vien/rut-tien-giang-vien/Q
 import QuanLyHoTroThanhToanHocVien from "@/pages/quan-tri-vien/ho-tro-thanh-toan-hoc-vien/QuanLyHoTroThanhToanHocVien";
 import QuanLyMaQuaTang from "@/pages/quan-tri-vien/ma-qua-tang/QuanLyMaQuaTang";
 import QuanLyMaGiamGiaAdmin from "@/pages/quan-tri-vien/ma-giam-gia/QuanLyMaGiamGiaAdmin";
+import DuyetGiangVien from "@/pages/quan-tri-vien/duyet-giang-vien/DuyetGiangVien";
 
 const readUserInfo = (): any | null => {
   const userRaw = localStorage.getItem("user_info");
@@ -94,6 +98,9 @@ export default function AppRouter() {
           <Route element={<PublicAuthRoute />}>
             <Route path="/dang-nhap" element={<DangNhap />} />
             <Route path="/dang-ky" element={<DangKy />} />
+            <Route path="/dang-ky-giang-vien" element={<DangKyGiangVien />} />
+            <Route path="/trang-thai-ho-so-giang-vien" element={<TrangThaiHoSoGiangVien />} />
+            <Route path="/bo-sung-ho-so/:maHoSo" element={<BoSungHoSoGiangVien />} />
             <Route path="/quen-mat-khau" element={<QuenMatKhau />} />
           </Route>
 
@@ -154,6 +161,7 @@ export default function AppRouter() {
             <Route path="ho-tro-thanh-toan-hoc-vien" element={<QuanLyHoTroThanhToanHocVien />} />
             <Route path="ma-qua-tang" element={<QuanLyMaQuaTang />} />
             <Route path="ma-giam-gia" element={<QuanLyMaGiamGiaAdmin />} />
+            <Route path="duyet-giang-vien" element={<DuyetGiangVien />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
@@ -162,3 +170,7 @@ export default function AppRouter() {
     </SystemConfigProvider>
   );
 }
+
+
+
+

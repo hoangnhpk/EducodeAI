@@ -1,0 +1,386 @@
+﻿import { useEffect, useRef, useState } from 'react';
+import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../../services/auth.service';
+import './DangKyGiangVien.css';
+
+type PaymentMethod = 'BANK' | 'PAYPAL' | 'PAYONEER';
+
+type FormState = {
+  hoTen: string;
+  email: string;
+  taiKhoan: string;
+  matKhau: string;
+  soDienThoai: string;
+  linhVucGiangDay: string;
+  tieuSu: string;
+  linkedInUrl: string;
+  websiteUrl: string;
+  soGiayTo: string;
+  tenNganHang: string;
+  soTaiKhoanNhanTien: string;
+  tenChuTaiKhoan: string;
+  maSoThue: string;
+};
+
+const DangKyGiangVien = () => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [docType, setDocType] = useState<'cccd' | 'passport'>('cccd');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('BANK');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
+  const [previewFront, setPreviewFront] = useState<string | null>(null);
+  const [previewBack, setPreviewBack] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const frontInputRef = useRef<HTMLInputElement | null>(null);
+  const backInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [form, setForm] = useState<FormState>({
+    hoTen: '',
+    email: '',
+    taiKhoan: '',
+    matKhau: '',
+    soDienThoai: '',
+    linhVucGiangDay: '',
+    tieuSu: '',
+    linkedInUrl: '',
+    websiteUrl: '',
+    soGiayTo: '',
+    tenNganHang: '',
+    soTaiKhoanNhanTien: '',
+    tenChuTaiKhoan: '',
+    maSoThue: ''
+  });
+
+  const [files, setFiles] = useState({
+    anhDaiDien: null as File | null,
+    anhGiayToMatTruoc: null as File | null,
+    anhGiayToMatSau: null as File | null
+  });
+
+  useEffect(() => {
+    if (!files.anhDaiDien) {
+      setPreviewAvatar(null);
+      return;
+    }
+    const url = URL.createObjectURL(files.anhDaiDien);
+    setPreviewAvatar(url);
+    return () => URL.revokeObjectURL(url);
+  }, [files.anhDaiDien]);
+
+  useEffect(() => {
+    if (!files.anhGiayToMatTruoc) {
+      setPreviewFront(null);
+      return;
+    }
+    const url = URL.createObjectURL(files.anhGiayToMatTruoc);
+    setPreviewFront(url);
+    return () => URL.revokeObjectURL(url);
+  }, [files.anhGiayToMatTruoc]);
+
+  useEffect(() => {
+    if (!files.anhGiayToMatSau) {
+      setPreviewBack(null);
+      return;
+    }
+    const url = URL.createObjectURL(files.anhGiayToMatSau);
+    setPreviewBack(url);
+    return () => URL.revokeObjectURL(url);
+  }, [files.anhGiayToMatSau]);
+
+  const setField = (key: keyof FormState, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) {
+      setErrors((prev) => ({ ...prev, [key]: '' }));
+    }
+  };
+
+  const validateStep1 = () => {
+    const nextErrors: Record<string, string> = {};
+    if (!form.hoTen.trim()) nextErrors.hoTen = 'Vui lòng nhập họ và tên.';
+    if (!form.email.trim()) nextErrors.email = 'Vui lòng nhập email.';
+    if (!form.taiKhoan.trim()) nextErrors.taiKhoan = 'Vui lòng nhập tài khoản.';
+    if (!form.matKhau.trim() || form.matKhau.length < 8) nextErrors.matKhau = 'Mật khẩu phải có ít nhất 8 ký tự.';
+    if (!form.linhVucGiangDay.trim()) nextErrors.linhVucGiangDay = 'Vui lòng chọn hoặc nhập lĩnh vực giảng dạy.';
+    if (!form.tieuSu.trim()) nextErrors.tieuSu = 'Vui lòng nhập tiểu sử ngắn.';
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const nextErrors: Record<string, string> = {};
+    if (!form.soDienThoai.trim()) nextErrors.soDienThoai = 'Vui lòng nhập số điện thoại.';
+    if (!form.soGiayTo.trim()) nextErrors.soGiayTo = 'Vui lòng nhập số giấy tờ.';
+    if (!files.anhDaiDien) nextErrors.anhDaiDien = 'Vui lòng tải ảnh đại diện.';
+    if (!files.anhGiayToMatTruoc) nextErrors.anhGiayToMatTruoc = 'Vui lòng tải ảnh mặt trước giấy tờ.';
+    if (!files.anhGiayToMatSau) nextErrors.anhGiayToMatSau = 'Vui lòng tải ảnh mặt sau giấy tờ.';
+    if (otpSent && otpCode.length < 4) nextErrors.otpCode = 'Mã xác minh chưa hợp lệ.';
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const validateStep3 = () => {
+    const nextErrors: Record<string, string> = {};
+    if (!form.tenNganHang.trim()) nextErrors.tenNganHang = 'Vui lòng nhập tên ngân hàng.';
+    if (!form.soTaiKhoanNhanTien.trim()) nextErrors.soTaiKhoanNhanTien = 'Vui lòng nhập số tài khoản nhận tiền.';
+    if (!form.tenChuTaiKhoan.trim()) nextErrors.tenChuTaiKhoan = 'Vui lòng nhập tên chủ tài khoản.';
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSendOtp = () => {
+    if (!form.soDienThoai.trim()) {
+      setErrors((prev) => ({ ...prev, soDienThoai: 'Vui lòng nhập số điện thoại trước.' }));
+      return;
+    }
+    setOtpSent(true);
+    Swal.fire({
+      icon: 'success',
+      title: 'Đã gửi mã OTP',
+      text: 'Đây là giao diện xác minh. Bạn có thể tích hợp SMS OTP ở backend sau.',
+      timer: 1800,
+      showConfirmButton: false
+    });
+  };
+
+  const goNext = () => {
+    if (step === 1 && validateStep1()) {
+      setStep(2);
+      return;
+    }
+    if (step === 2 && validateStep2()) {
+      setStep(3);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateStep1() || !validateStep2() || !validateStep3()) {
+      setStep(1);
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('HoTen', form.hoTen);
+    fd.append('Email', form.email);
+    fd.append('TaiKhoan', form.taiKhoan);
+    fd.append('MatKhau', form.matKhau);
+    fd.append('SoDienThoai', form.soDienThoai);
+    fd.append('LinhVucGiangDay', form.linhVucGiangDay);
+    fd.append('TieuSu', form.tieuSu);
+    fd.append('LinkedInUrl', form.linkedInUrl);
+    fd.append('WebsiteUrl', form.websiteUrl);
+    fd.append('LoaiGiayTo', docType === 'cccd' ? 'CCCD' : 'Passport');
+    fd.append('SoGiayTo', form.soGiayTo);
+    fd.append('PhuongThucThanhToan', paymentMethod);
+    fd.append('TenNganHang', form.tenNganHang);
+    fd.append('SoTaiKhoanNhanTien', form.soTaiKhoanNhanTien);
+    fd.append('TenChuTaiKhoan', form.tenChuTaiKhoan);
+    fd.append('MaSoThue', form.maSoThue);
+    if (files.anhDaiDien) fd.append('AnhDaiDien', files.anhDaiDien);
+    if (files.anhGiayToMatTruoc) fd.append('AnhGiayToMatTruoc', files.anhGiayToMatTruoc);
+    if (files.anhGiayToMatSau) fd.append('AnhGiayToMatSau', files.anhGiayToMatSau);
+
+    try {
+      setIsSubmitting(true);
+      const result: any = await authService.registerGiangVien(fd);
+      Swal.fire('Thành công', result?.message || 'Hồ sơ đã được gửi để duyệt.', 'success').then(() => navigate('/dang-nhap'));
+    } catch (error: any) {
+      Swal.fire('Lỗi', error?.response?.data?.message || 'Không thể gửi hồ sơ.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="dkgv-container">
+      <div style={{ maxWidth: '860px', margin: '0 auto 20px auto' }}>
+        <h1 className="fw-bold mb-2" style={{ color: '#1c1e21', fontSize: '32px' }}>Trở thành Giảng viên EducodeAI</h1>
+        <p style={{ color: '#65676b', fontSize: '16px' }}>Chia sẻ kiến thức và nhận thu nhập thụ động</p>
+      </div>
+
+      <div className="dkgv-main-card animate__animated animate__fadeIn">
+        {step === 1 && (
+          <div className="dkgv-progress-header">
+            <div className="dkgv-progress-bar">
+              <div className="dkgv-step active"><div className="dkgv-step-circle">1</div><div className="dkgv-step-label">Hồ sơ chuyên môn</div></div>
+              <div className="dkgv-progress-line"><div className="dkgv-progress-line-fill" style={{ width: '0%' }} /></div>
+              <div className="dkgv-step"><div className="dkgv-step-circle">2</div><div className="dkgv-step-label">Xác minh danh tính</div></div>
+              <div className="dkgv-progress-line"><div className="dkgv-progress-line-fill" style={{ width: '0%' }} /></div>
+              <div className="dkgv-step"><div className="dkgv-step-circle">3</div><div className="dkgv-step-label">Thanh toán</div></div>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="dkgv-progress-alt">
+            <div className="dkgv-step completed"><div className="dkgv-step-circle">✓</div><div className="dkgv-step-label">Hồ sơ chuyên môn</div></div>
+            <div className="dkgv-progress-line" aria-hidden="true" />
+            <div className="dkgv-step active"><div className="dkgv-step-circle">2</div><div className="dkgv-step-label">Xác minh danh tính (KYC)</div></div>
+            <div className="dkgv-progress-line" aria-hidden="true" />
+            <div className="dkgv-step"><div className="dkgv-step-circle">3</div><div className="dkgv-step-label">Thanh toán</div></div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="dkgv-progress-header">
+            <div className="dkgv-progress-bar">
+              <div className="dkgv-step completed"><div className="dkgv-step-circle">1</div><div className="dkgv-step-label">Hồ sơ chuyên môn</div></div>
+              <div className="dkgv-progress-line"><div className="dkgv-progress-line-fill" style={{ width: '100%' }} /></div>
+              <div className="dkgv-step completed"><div className="dkgv-step-circle">2</div><div className="dkgv-step-label">Xác minh danh tính</div></div>
+              <div className="dkgv-progress-line"><div className="dkgv-progress-line-fill" style={{ width: '100%' }} /></div>
+              <div className="dkgv-step active"><div className="dkgv-step-circle">3</div><div className="dkgv-step-label">Thanh toán</div></div>
+            </div>
+          </div>
+        )}
+
+        <div className="dkgv-body">
+          {step === 1 && (
+            <>
+              <div className="dkgv-avatar-upload">
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setFiles((prev) => ({ ...prev, anhDaiDien: file }));
+                    if (errors.anhDaiDien) setErrors((prev) => ({ ...prev, anhDaiDien: '' }));
+                  }}
+                />
+                <div className="dkgv-avatar-circle" onClick={() => avatarInputRef.current?.click()} role="button" tabIndex={0}>
+                  {previewAvatar ? <img src={previewAvatar} alt="Ảnh đại diện" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : <i className="bi bi-camera dkgv-avatar-icon" />}
+                  <div className="dkgv-avatar-edit"><i className="bi bi-pencil-fill" /></div>
+                </div>
+                <div className="dkgv-avatar-info">
+                  <h5>Ảnh đại diện</h5>
+                  <p>Sử dụng ảnh chân dung rõ nét. Định dạng JPG, PNG, tối đa 5MB.</p>
+                  <button className="dkgv-btn-outline" type="button" onClick={() => avatarInputRef.current?.click()}>Tải ảnh lên</button>
+                  {errors.anhDaiDien && <div className="text-danger small mt-2">{errors.anhDaiDien}</div>}
+                </div>
+              </div>
+
+              <div className="row g-3">
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Họ và tên</label><input className="dkgv-form-control" placeholder="Nhập họ và tên đầy đủ" value={form.hoTen} onChange={(e) => setField('hoTen', e.target.value)} />{errors.hoTen && <div className="text-danger small mt-1">{errors.hoTen}</div>}</div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Lĩnh vực giảng dạy chính</label><select className="dkgv-form-control" value={form.linhVucGiangDay} onChange={(e) => setField('linhVucGiangDay', e.target.value)}><option value="">Chọn lĩnh vực</option><option value="Lập trình Web">Lập trình Web</option><option value="Mobile">Mobile</option><option value="Data / AI">Data / AI</option><option value="DevOps / Cloud">DevOps / Cloud</option><option value="UI/UX Design">UI/UX Design</option><option value="Kiểm thử phần mềm">Kiểm thử phần mềm</option></select>{errors.linhVucGiangDay && <div className="text-danger small mt-1">{errors.linhVucGiangDay}</div>}</div></div>
+                <div className="col-12"><div className="dkgv-form-group"><label className="dkgv-form-label">Tiểu sử ngắn</label><textarea className="dkgv-form-control" rows={5} maxLength={500} placeholder="Giới thiệu ngắn về kinh nghiệm và chuyên môn của bạn..." value={form.tieuSu} onChange={(e) => setField('tieuSu', e.target.value)} /><div className="dkgv-char-count">{form.tieuSu.length} / 500 ký tự</div>{errors.tieuSu && <div className="text-danger small mt-1">{errors.tieuSu}</div>}</div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label"><i className="bi bi-link-45deg me-2" />Link LinkedIn</label><input className="dkgv-form-control" placeholder="https://linkedin.com/in/username" value={form.linkedInUrl} onChange={(e) => setField('linkedInUrl', e.target.value)} /></div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label"><i className="bi bi-globe2 me-2" />Portfolio / Website</label><input className="dkgv-form-control" placeholder="https://yourwebsite.com" value={form.websiteUrl} onChange={(e) => setField('websiteUrl', e.target.value)} /></div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tài khoản</label><input className="dkgv-form-control" placeholder="Tên tài khoản đăng nhập" value={form.taiKhoan} onChange={(e) => setField('taiKhoan', e.target.value)} />{errors.taiKhoan && <div className="text-danger small mt-1">{errors.taiKhoan}</div>}</div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Mật khẩu</label><input type="password" className="dkgv-form-control" placeholder="Mật khẩu tối thiểu 8 ký tự" value={form.matKhau} onChange={(e) => setField('matKhau', e.target.value)} />{errors.matKhau && <div className="text-danger small mt-1">{errors.matKhau}</div>}</div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Email</label><input className="dkgv-form-control" placeholder="name@example.com" value={form.email} onChange={(e) => setField('email', e.target.value)} />{errors.email && <div className="text-danger small mt-1">{errors.email}</div>}</div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Họ và tên hiển thị</label><input className="dkgv-form-control" placeholder="Tên hiển thị trên hồ sơ" value={form.hoTen} onChange={(e) => setField('hoTen', e.target.value)} /></div></div>
+              </div>
+
+              <div className="dkgv-info-alert"><i className="bi bi-info-circle" /><span>Hồ sơ giảng viên sẽ được đội ngũ EducodeAI xem xét trước khi kích hoạt.</span></div>
+
+              <div className="dkgv-footer">
+                <button className="dkgv-btn-back" type="button" onClick={() => navigate(-1)}>Quay lại</button>
+                <button className="dkgv-btn-next" type="button" onClick={goNext}>Tiếp tục</button>
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <div className="dkgv-section-title"><i className="bi bi-shield-check" /><span>Xác minh số điện thoại</span></div>
+              <div className="dkgv-phone-input-wrap">
+                <div className="dkgv-input-icon"><input className="dkgv-form-control" placeholder="0901234567" value={form.soDienThoai} onChange={(e) => setField('soDienThoai', e.target.value)} /><i className="bi bi-telephone" /></div>
+                <button className="dkgv-btn-brown" type="button" onClick={handleSendOtp}>Gửi mã OTP</button>
+              </div>
+              <div className="dkgv-form-group mt-3"><label className="dkgv-form-label">Số giấy tờ</label><input className="dkgv-form-control" placeholder={docType === 'cccd' ? 'Nhập số CCCD/CMND' : 'Nhập số hộ chiếu'} value={form.soGiayTo} onChange={(e) => setField('soGiayTo', e.target.value)} />{errors.soGiayTo && <div className="text-danger small mt-1">{errors.soGiayTo}</div>}</div>
+              <p className="dkgv-note-text">Mã xác nhận sẽ được gửi qua SMS. Vui lòng kiểm tra điện thoại của bạn.</p>
+              {otpSent && <div className="dkgv-form-group mt-3"><label className="dkgv-form-label">Mã xác nhận</label><input className="dkgv-form-control" placeholder="Nhập mã OTP" value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))} />{errors.otpCode && <div className="text-danger small mt-1">{errors.otpCode}</div>}</div>}
+              {errors.soDienThoai && <div className="text-danger small mt-2">{errors.soDienThoai}</div>}
+
+              <div className="dkgv-section-title"><i className="bi bi-card-text" /><span>Tải lên giấy tờ tùy thân</span></div>
+              <div className="dkgv-doc-type-toggle">
+                <button type="button" className={`dkgv-doc-btn ${docType === 'cccd' ? 'active' : ''}`} onClick={() => setDocType('cccd')}><i className="bi bi-check-circle-fill" /> CCCD / CMND</button>
+                <button type="button" className={`dkgv-doc-btn ${docType === 'passport' ? 'active' : ''}`} onClick={() => setDocType('passport')}><i className="bi bi-passport-fill" /> Hộ chiếu (Passport)</button>
+              </div>
+
+              <div className="dkgv-upload-grid">
+                <div className="dkgv-upload-box-wrap">
+                  <div className="dkgv-upload-box-label">Mặt trước giấy tờ</div>
+                  <input ref={frontInputRef} type="file" accept="image/*" hidden onChange={(e) => setFiles((prev) => ({ ...prev, anhGiayToMatTruoc: e.target.files?.[0] || null }))} />
+                  <div className={previewFront ? "dkgv-upload-box dkgv-upload-has-preview" : "dkgv-upload-box"} onClick={() => frontInputRef.current?.click()} role="button" tabIndex={0}>{previewFront ? <div className="dkgv-preview-container"><img src={previewFront} alt="Mặt trước giấy tờ" className="dkgv-preview-img" /></div> : <><div className="dkgv-upload-box-icon"><i className="bi bi-image" /></div><div className="dkgv-upload-box-title">Kéo thả hoặc Nhấp để tải lên</div><div className="dkgv-upload-box-desc">Hỗ trợ JPG, PNG (Tối đa 5MB)</div></>}$3
+                  </div>
+                  {files.anhGiayToMatTruoc && <div className="small text-success mt-2">Đã chọn: {files.anhGiayToMatTruoc.name}</div>}
+                  {errors.anhGiayToMatTruoc && <div className="text-danger small mt-1">{errors.anhGiayToMatTruoc}</div>}
+                </div>
+                <div className="dkgv-upload-box-wrap">
+                  <div className="dkgv-upload-box-label">Mặt sau giấy tờ</div>
+                  <input ref={backInputRef} type="file" accept="image/*" hidden onChange={(e) => setFiles((prev) => ({ ...prev, anhGiayToMatSau: e.target.files?.[0] || null }))} />
+                  <div className={previewBack ? "dkgv-upload-box dkgv-upload-has-preview" : "dkgv-upload-box"} onClick={() => backInputRef.current?.click()} role="button" tabIndex={0}>{previewBack ? <div className="dkgv-preview-container"><img src={previewBack} alt="Mặt sau giấy tờ" className="dkgv-preview-img" /></div> : <div className="dkgv-upload-box-icon"><i className="bi bi-image" /></div>}
+                    <div className="dkgv-upload-box-title">Kéo thả hoặc Nhấp để tải lên</div>
+                    <div className="dkgv-upload-box-desc">Hỗ trợ JPG, PNG (Tối đa 5MB)</div>
+                  </div>
+                  {files.anhGiayToMatSau && <div className="small text-success mt-2">Đã chọn: {files.anhGiayToMatSau.name}</div>}
+                  {errors.anhGiayToMatSau && <div className="text-danger small mt-1">{errors.anhGiayToMatSau}</div>}
+                </div>
+              </div>
+
+              <div className="dkgv-info-alert"><i className="bi bi-exclamation-triangle" /><span>Lưu ý: Ảnh chụp cần rõ nét, không bị lóa sáng, không mất góc và còn trong thời hạn sử dụng.</span></div>
+
+              <div className="dkgv-footer">
+                <button className="dkgv-btn-back" type="button" onClick={() => setStep(1)}><i className="bi bi-arrow-left" /> Quay lại</button>
+                <button className="dkgv-btn-next brown" type="button" onClick={goNext}>Tiếp tục <i className="bi bi-arrow-right" /></button>
+              </div>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <h2 className="dkgv-payment-title">Phương thức thanh toán</h2>
+              <p className="dkgv-page-subtitle" style={{ marginTop: 6 }}>Chọn cách bạn muốn nhận thu nhập từ các khóa học và dịch vụ hướng dẫn.</p>
+
+              <div className="dkgv-payment-methods">
+                <div className={`dkgv-method-card ${paymentMethod === 'BANK' ? 'active' : ''}`} onClick={() => setPaymentMethod('BANK')} role="button" tabIndex={0}>
+                  <div className="dkgv-method-icon"><i className="bi bi-bank" /></div>
+                  <div className="dkgv-method-title">Chuyển khoản ngân hàng</div>
+                  <div className="dkgv-method-desc">Nội địa (Việt Nam)</div>
+                </div>
+                <div className={`dkgv-method-card ${paymentMethod === 'PAYPAL' ? 'active' : ''}`} onClick={() => setPaymentMethod('PAYPAL')} role="button" tabIndex={0}>
+                  <div className="dkgv-method-icon"><i className="bi bi-cash-coin" /></div>
+                  <div className="dkgv-method-title">PayPal</div>
+                  <div className="dkgv-method-desc">Quốc tế</div>
+                </div>
+                <div className={`dkgv-method-card ${paymentMethod === 'PAYONEER' ? 'active' : ''}`} onClick={() => setPaymentMethod('PAYONEER')} role="button" tabIndex={0}>
+                  <div className="dkgv-method-icon"><i className="bi bi-wallet2" /></div>
+                  <div className="dkgv-method-title">Payoneer</div>
+                  <div className="dkgv-method-desc">Đối tác toàn cầu</div>
+                </div>
+              </div>
+
+              <div className="row g-3">
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tên ngân hàng</label><input className="dkgv-form-control" placeholder="Vietcombank" value={form.tenNganHang} onChange={(e) => setField('tenNganHang', e.target.value)} />{errors.tenNganHang && <div className="text-danger small mt-1">{errors.tenNganHang}</div>}</div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Chi nhánh</label><input className="dkgv-form-control" placeholder="Ví dụ: Chi nhánh Ba Đình" /></div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Số tài khoản</label><input className="dkgv-form-control" placeholder="Nhập số tài khoản của bạn" value={form.soTaiKhoanNhanTien} onChange={(e) => setField('soTaiKhoanNhanTien', e.target.value)} />{errors.soTaiKhoanNhanTien && <div className="text-danger small mt-1">{errors.soTaiKhoanNhanTien}</div>}</div></div>
+                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tên chủ tài khoản</label><input className="dkgv-form-control" placeholder="Viết hoa không dấu" value={form.tenChuTaiKhoan} onChange={(e) => setField('tenChuTaiKhoan', e.target.value)} />{errors.tenChuTaiKhoan && <div className="text-danger small mt-1">{errors.tenChuTaiKhoan}</div>}</div></div>
+                <div className="col-12"><div className="dkgv-form-group"><label className="dkgv-form-label">Mã số thuế <span className="dkgv-optional-text">(Tùy chọn)</span></label><input className="dkgv-form-control" placeholder="Dùng để xuất hóa đơn và khấu trừ thuế" value={form.maSoThue} onChange={(e) => setField('maSoThue', e.target.value)} /></div></div>
+              </div>
+
+              <div className="dkgv-security-note"><i className="bi bi-lock-fill" /><span>Thông tin thanh toán của bạn được mã hóa và bảo mật tuyệt đối.</span></div>
+
+              <div className="dkgv-footer">
+                <button className="dkgv-btn-back" type="button" onClick={() => setStep(2)}><i className="bi bi-arrow-left" /> Quay lại</button>
+                <button className="dkgv-btn-next brown" type="button" disabled={isSubmitting} onClick={handleSubmit}>{isSubmitting ? 'Đang gửi...' : 'Hoàn tất đăng ký'}</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DangKyGiangVien;
+
+
+
+
