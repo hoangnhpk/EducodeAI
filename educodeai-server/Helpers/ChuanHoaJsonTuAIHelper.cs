@@ -50,58 +50,20 @@ namespace educodeai_server.Helpers
         {
             json = string.Empty;
 
-
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
-
-            // 3. Tìm JSON
-            var match = Regex.Match(
-                text,
-                @"```(?:json)?\s*(\{[\s\S]*?\})\s*```",
-                RegexOptions.IgnoreCase
-            );
-
-            string rawJson;
-            if (match.Success)
-            {
-                rawJson = match.Groups[1].Value;
-            }
-            else
-            {
-                // Fallback: Lấy từ dấu { đầu tiên đến dấu } cuối cùng
-                int startIndex = text.IndexOf('{');
-                int endIndex = text.LastIndexOf('}');
-                if (startIndex >= 0 && endIndex > startIndex)
-                {
-                    rawJson = text.Substring(startIndex, endIndex - startIndex + 1);
-                }
-                else
-                {
-                    throw new Exception("Không tìm thấy JSON trong code block ```json\n\nAI Raw Text: " + text);
-                }
-            }
-
-            // 4. Parse + format JSON kết quả
-            try
-
-            if (string.IsNullOrWhiteSpace(text)) return false;
-
             var candidates = new List<string>();
 
+            // 1. Ưu tiên nội dung trong code block ```json ... ```
             foreach (Match match in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
             {
-                JToken.Parse(rawJson);
-                json = rawJson;
-                return true;
+                if (match.Groups.Count > 1)
+                    candidates.Add(match.Groups[1].Value);
             }
 
-            catch (Exception ex)
-            {
-                throw new Exception($"JSON bên trong không hợp lệ. Nguyên bản: {rawJson}", ex);
-
-
-            candidates.Add(text.Trim());
+            // 2. Toàn bộ text và các đoạn JSON cân bằng trích xuất được
+            candidates.Add(text);
             candidates.AddRange(TrichXuatJsonCanBang(text));
 
             foreach (var candidate in candidates.Distinct())
@@ -117,10 +79,11 @@ namespace educodeai_server.Helpers
                 }
                 catch
                 {
-                    // Thu candidate tiep theo.
+                    // Thử candidate tiếp theo.
                 }
-
             }
+
+            return false;
         }
 
         private static IEnumerable<string> TrichXuatJsonCanBang(string text)

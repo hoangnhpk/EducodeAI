@@ -134,15 +134,43 @@ namespace educodeai_server.Services.Implementation
             var danhGia = await _context.DanhGias.FindAsync(id);
             if (danhGia == null) return false;
             danhGia.TrangThai = trangThai;
-            return await _context.SaveChangesAsync() > 0;
+            var thanhCong = await _context.SaveChangesAsync() > 0;
+            if (thanhCong)
+                await CapNhatDiemDanhGiaTBAsync(danhGia.MaKhoaHoc);
+            return thanhCong;
         }
 
         public async Task<bool> XoaAsync(int id)
         {
             var danhGia = await _context.DanhGias.FindAsync(id);
             if (danhGia == null) return false;
+            var maKhoaHoc = danhGia.MaKhoaHoc;
             _context.DanhGias.Remove(danhGia);
-            return await _context.SaveChangesAsync() > 0;
+            var thanhCong = await _context.SaveChangesAsync() > 0;
+            if (thanhCong)
+                await CapNhatDiemDanhGiaTBAsync(maKhoaHoc);
+            return thanhCong;
+        }
+
+        /// <summary>
+        /// Tính lại điểm đánh giá trung bình của khóa học dựa trên các đánh giá đã duyệt (DaDuyet).
+        /// Gọi sau mỗi lần trạng thái đánh giá thay đổi để số sao hiển thị luôn khớp thực tế.
+        /// </summary>
+        private async Task CapNhatDiemDanhGiaTBAsync(int maKhoaHoc)
+        {
+            var khoaHoc = await _context.KhoaHocs.FindAsync(maKhoaHoc);
+            if (khoaHoc == null) return;
+
+            var saoDaDuyet = await _context.DanhGias
+                .Where(x => x.MaKhoaHoc == maKhoaHoc && (x.TrangThai ?? "DaDuyet") == "DaDuyet")
+                .Select(x => x.SoSao)
+                .ToListAsync();
+
+            khoaHoc.DiemDanhGiaTB = saoDaDuyet.Count > 0
+                ? Math.Round(saoDaDuyet.Average(), 1)
+                : 0;
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<List<DanhGiaAdminKhoaHocDTO>> LayDanhSachKhoaHocFilterAsync()
@@ -177,7 +205,11 @@ namespace educodeai_server.Services.Implementation
                 .ToListAsync();
 
             if (danhSachChoDuyet.Count == 0)
-                return new KetQuaAIDuyetDTO();
+                return new KetQuaAIDuyetDTO
+                {
+                    ThanhCong = true,
+                    ThongBao = "Không có đánh giá nào đang chờ duyệt."
+                };
 
             var payload = danhSachChoDuyet.Select(x => new
             {
@@ -215,7 +247,11 @@ namespace educodeai_server.Services.Implementation
             catch (Exception ex)
             {
                 Console.WriteLine($"[AI Duyet] Lỗi Gemini: {ex.Message}");
-                return new KetQuaAIDuyetDTO { TongXuLy = 0 };
+                return new KetQuaAIDuyetDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "Không gọi được AI để duyệt. Vui lòng thử lại sau."
+                };
             }
 
             rawResponse = rawResponse.Trim();
@@ -242,7 +278,11 @@ namespace educodeai_server.Services.Implementation
             catch
             {
                 Console.WriteLine($"[AI Duyet] Không parse được JSON: {rawResponse}");
-                return new KetQuaAIDuyetDTO { TongXuLy = 0 };
+                return new KetQuaAIDuyetDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "AI trả về dữ liệu không hợp lệ. Vui lòng thử lại sau."
+                };
             }
 
             var validIds = danhSachChoDuyet.Select(x => x.MaDanhGia).ToHashSet();
@@ -254,22 +294,32 @@ namespace educodeai_server.Services.Implementation
             if (chiTiet.Count == 0)
             {
                 Console.WriteLine("[AI Duyet] AI trả về kết quả không hợp lệ hoặc không có item nào khớp input.");
-                return new KetQuaAIDuyetDTO { TongXuLy = 0 };
+                return new KetQuaAIDuyetDTO
+                {
+                    ThanhCong = false,
+                    ThongBao = "AI không đưa ra được quyết định hợp lệ cho các đánh giá. Vui lòng thử lại."
+                };
             }
 
             int soDaDuyet = 0, soTuChoi = 0;
+            var maKhoaHocAnhHuong = new HashSet<int>();
             foreach (var item in chiTiet)
             {
                 var dg = await _context.DanhGias.FindAsync(item.Id);
                 if (dg == null) continue;
                 dg.TrangThai = item.KetQua == "TuChoi" ? "TuChoi" : "DaDuyet";
+                maKhoaHocAnhHuong.Add(dg.MaKhoaHoc);
                 if (item.KetQua == "TuChoi") soTuChoi++; else soDaDuyet++;
             }
 
             await _context.SaveChangesAsync();
 
+            foreach (var maKhoaHoc in maKhoaHocAnhHuong)
+                await CapNhatDiemDanhGiaTBAsync(maKhoaHoc);
+
             return new KetQuaAIDuyetDTO
             {
+                ThanhCong = true,
                 TongXuLy = chiTiet.Count,
                 SoDaDuyet = soDaDuyet,
                 SoTuChoi = soTuChoi,
