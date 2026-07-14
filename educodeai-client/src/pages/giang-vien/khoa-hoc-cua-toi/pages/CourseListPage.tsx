@@ -76,26 +76,28 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
               onChange={e => handleSearchChange(e.target.value)}
             />
           </div>
-          <div className="khm-status-tabs">
-            {FILTERS.map(f => (
-              <button
-                key={f}
-                className={`khm-status-tab ${filter === f ? 'active' : ''}`}
-                onClick={() => setFilter(f)}
-              >
-                {FILTER_LABELS[f]}
-              </button>
-            ))}
+          <div className="khm-filter-actions">
+            <div className="khm-status-tabs">
+              {FILTERS.map(f => (
+                <button
+                  key={f}
+                  className={`khm-status-tab ${filter === f ? 'active' : ''}`}
+                  onClick={() => setFilter(f)}
+                >
+                  {FILTER_LABELS[f]}
+                </button>
+              ))}
+            </div>
+            <select
+              className="khm-category-select"
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat === 'Tất cả' ? 'Tất cả lĩnh vực' : cat}</option>
+              ))}
+            </select>
           </div>
-          <select
-            className="khm-category-select"
-            value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
-          >
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat === 'Tất cả' ? 'Tất cả lĩnh vực' : cat}</option>
-            ))}
-          </select>
         </div>
 
         {/* Content */}

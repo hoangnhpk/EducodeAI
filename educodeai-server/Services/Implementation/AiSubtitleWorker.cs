@@ -121,7 +121,22 @@ namespace educodeai_server.Services.Implementation
                 if (uploadResult.Error != null)
                     throw new Exception($"Cloudinary upload failed: {uploadResult.Error.Message}");
 
-                // 7. Update DB. SubtitleSource đã set = "ai" lúc tạo hold, không set lại ở đây.
+                // 7. Reload baiHoc để lấy trạng thái mới nhất: trong lúc job chạy (có thể kéo dài
+                //    do LongRunningRecognize), user có thể đã upload phụ đề thủ công và lưu xong.
+                //    Nếu vậy, tôn trọng lựa chọn của user — KHÔNG ghi đè phụ đề manual.
+                //    Vẫn commit hold vì chi phí Google Speech-to-Text đã phát sinh (không hoàn được).
+                await context.Entry(baiHoc).ReloadAsync();
+                if (baiHoc.SubtitleSource == "manual")
+                {
+                    baiHoc.VideoStatus = "Ready";
+                    hold.Status = "committed";
+                    hold.SettledAt = DateTime.UtcNow;
+                    await context.SaveChangesAsync();
+                    _logger.LogWarning("Job AI cho bài {MaBaiHoc} bỏ qua ghi đè vì đã có phụ đề thủ công", maBaiHoc);
+                    return;
+                }
+
+                // 7b. Update DB. SubtitleSource đã set = "ai" lúc tạo hold, không set lại ở đây.
                 baiHoc.SubtitleUrl = uploadResult.SecureUrl.ToString();
                 baiHoc.HasSubtitle = true;
                 baiHoc.VideoStatus = "Ready";

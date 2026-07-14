@@ -110,12 +110,18 @@ namespace educodeai_server.Services.Implementation
             if (ungVienRac.Count == 0) return;
 
             // Đối chiếu với DB: public_id nào KHÔNG có BaiHoc trỏ tới → là rác.
+            // Chia batch 500 id/lần: IN-clause của SQL Server giới hạn ~2100 tham số,
+            // nếu Cloudinary có hàng nghìn video cũ thì query một phát sẽ văng lỗi.
             var idsUngVien = ungVienRac.Select(x => x.PublicId).ToList();
-            var idsCoTrongDb = await context.BaiHocs
-                .Where(b => b.VideoPublicId != null && idsUngVien.Contains(b.VideoPublicId))
-                .Select(b => b.VideoPublicId!)
-                .ToListAsync(ct);
-            var idsCoTrongDbSet = idsCoTrongDb.ToHashSet();
+            var idsCoTrongDbSet = new HashSet<string>();
+            foreach (var batch in idsUngVien.Chunk(500))
+            {
+                var found = await context.BaiHocs
+                    .Where(b => b.VideoPublicId != null && batch.Contains(b.VideoPublicId))
+                    .Select(b => b.VideoPublicId!)
+                    .ToListAsync(ct);
+                foreach (var id in found) idsCoTrongDbSet.Add(id);
+            }
 
             var idsRac = ungVienRac.Where(x => !idsCoTrongDbSet.Contains(x.PublicId)).ToList();
             if (idsRac.Count == 0) return;

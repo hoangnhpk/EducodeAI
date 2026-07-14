@@ -10,11 +10,11 @@ namespace educodeai_server.Services.Interface
         Task DanhDauWebhookDaXuLyAsync(string notificationId, string notificationType, string payload);
         Task<(bool IsSuccess, string Message)> XuLyWebhookCloudinaryAsync(string payload, string timestamp, string signature);
         Task<bool> DeleteVideoCloudinaryAsync(string publicId);
+        Task<bool> DeleteSubtitleCloudinaryAsync(string subtitleUrl);
         Task<bool> LuuThongTinVideoAsync(int maGiangVien, LuuThongTinVideoDTO dto);
         string LayTokenPhatVideo(string publicId);
         Task<bool> GiangVienSoHuuVideoAsync(int maGiangVien, string publicId);
-        
-        Task<string?> TaiLenPhuDeAsync(Microsoft.AspNetCore.Http.IFormFile file, string folder);
+
         Task<(bool IsSuccess, string? Url, string Message)> LuuPhuDeThuCongAsync(int maGiangVien, int maBaiHoc, Microsoft.AspNetCore.Http.IFormFile file, string folder);
         Task<(bool IsSuccess, string Message)> YeuCauTaoPhuDeAIAsync(int maGiangVien, int maBaiHoc);
     }

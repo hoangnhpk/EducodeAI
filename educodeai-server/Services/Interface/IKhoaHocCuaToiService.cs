@@ -16,7 +16,7 @@ namespace educodeai_server.Services.Interface
         Task<bool> XoaChuongAsync(int maChuong, int maGiangVien);
         Task<ThemVideoResponseDTO> ThemVideoAsync(int maChuong, int maGiangVien, BaiHocVideoCreateUpdateDTO dto);
         Task<bool> CapNhatVideoAsync(int maBaiHoc, int maGiangVien, BaiHocVideoCreateUpdateDTO dto);
-        Task<bool> XoaVideoAsync(int maBaiHoc, int maGiangVien, string webRootPath);
+        Task<(bool IsSuccess, string Message)> XoaVideoAsync(int maBaiHoc, int maGiangVien, string webRootPath);
         
         Task<ThemFileResponseDTO> ThemFileAsync(int maChuong, int maGiangVien, BaiHocFileCreateUpdateDTO dto, string webRootPath);
         Task<bool> CapNhatFileAsync(int maBaiHoc, int maGiangVien, BaiHocFileCreateUpdateDTO dto, string webRootPath);
