@@ -101,24 +101,24 @@ export default function ThongKeHocTap() {
   if (error) {
     return (
       <div className="thong-ke-container">
-        <div style={{ 
-          padding: '20px', 
-          background: '#fee2e2', 
-          border: '1px solid #ef4444',
-          borderRadius: '8px',
-          color: '#991b1b'
+        <div style={{
+          padding: '20px',
+          background: 'var(--danger-soft)',
+          border: '1px solid var(--danger)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--danger-strong)'
         }}>
           <h3>Lỗi tải dữ liệu</h3>
           <p>{error}</p>
-          <button 
+          <button
             onClick={fetchAllData}
             style={{
               marginTop: '10px',
               padding: '8px 16px',
-              background: '#ef4444',
+              background: 'var(--danger)',
               color: 'white',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer'
             }}
           >

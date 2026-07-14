@@ -104,7 +104,7 @@ const QuanLyApiKey = () => {
       title: 'Hiển thị API Key?',
       text: 'Hành động này sẽ được ghi log. Bạn có chắc muốn xem Key này?',
       showCancelButton: true,
-      confirmButtonColor: '#eab308',
+      confirmButtonColor: 'var(--warning)',
       confirmButtonText: 'Hiển thị',
       cancelButtonText: 'Hủy'
     });
@@ -163,7 +163,7 @@ const QuanLyApiKey = () => {
       title: 'NGUY HIỂM: Reset Usage?',
       text: `Bạn có chắc muốn reset mức sử dụng của key "${key.tenKey}" về 0? Hệ thống sẽ tạo một baseline mới.`,
       showCancelButton: true,
-      confirmButtonColor: '#ef4444',
+      confirmButtonColor: 'var(--danger)',
       cancelButtonText: 'Hủy',
       confirmButtonText: 'Reset'
     });
@@ -197,8 +197,8 @@ const QuanLyApiKey = () => {
       title: 'Xóa API Key?',
       text: `Bạn có chắc muốn xóa key "${key.tenKey}" không? Hành động này không thể hoàn tác.`,
       showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#64748b',
+      confirmButtonColor: 'var(--danger)',
+      cancelButtonColor: 'var(--text-muted)',
       confirmButtonText: 'Xóa',
       cancelButtonText: 'Hủy',
     });
@@ -237,7 +237,7 @@ const QuanLyApiKey = () => {
       fetchKeys(); // reload
     } catch (err) {
       console.error(err);
-      alert(editingKey ? "Lỗi cập nhật Key!" : "Lỗi khi tạo Key hoặc mất kết nối Server!");
+      Swal.fire("Lỗi", editingKey ? "Lỗi cập nhật Key!" : "Lỗi khi tạo Key hoặc mất kết nối Server!", "error");
     }
   };
 

@@ -243,8 +243,8 @@ const QuanLyLoTrinh = () => {
         <div className="quan-ly-container">
             <div className="quan-ly-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                 <div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b' }}>Quản lý Tổng hợp Lộ trình</h1>
-                    <p style={{ color: '#64748b' }}>Theo dõi và tinh chỉnh tất cả kế hoạch học tập trên hệ thống</p>
+                    <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-dark)' }}>Quản lý Tổng hợp Lộ trình</h1>
+                    <p style={{ color: 'var(--text-muted)' }}>Theo dõi và tinh chỉnh tất cả kế hoạch học tập trên hệ thống</p>
                 </div>
                 <button onClick={() => { setIsEditMode(false); setEditingItem({ yeuCau: '', trangThai: 'Hoạt động' }); setTempCourses([]); setIsModalOpen(true); }}
                     className="btn-add-main">+ THÊM LỘ TRÌNH</button>
@@ -256,12 +256,12 @@ const QuanLyLoTrinh = () => {
                         <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
                             <span className="visually-hidden">Đang tải...</span>
                         </div>
-                        <p style={{ marginTop: '16px', color: '#64748b', fontWeight: 600 }}>Đang tải danh sách lộ trình...</p>
+                        <p style={{ marginTop: '16px', color: 'var(--text-muted)', fontWeight: 600 }}>Đang tải danh sách lộ trình...</p>
                     </div>
                 ) : danhSach.length === 0 ? (
-                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 0', background: '#f8fafc', borderRadius: '16px', border: '2px dashed #e2e8f0' }}>
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 0', background: 'var(--bg-main)', borderRadius: '16px', border: '2px dashed var(--border-color)' }}>
                         <p style={{ fontSize: '2rem', margin: 0 }}>🗺️</p>
-                        <p style={{ marginTop: '12px', color: '#64748b', fontWeight: 600 }}>Chưa có lộ trình nào. Nhấn "+ THÊM LỘ TRÌNH" để tạo mới.</p>
+                        <p style={{ marginTop: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Chưa có lộ trình nào. Nhấn "+ THÊM LỘ TRÌNH" để tạo mới.</p>
                     </div>
                 ) : danhSach.map((item) => {
 
@@ -277,7 +277,7 @@ const QuanLyLoTrinh = () => {
                                     <small className="text-muted" style={{ fontWeight: 600 }}>Bởi: {item.tenNguoiTao || "Hệ thống"}</small>
                                 </div>
                                 <h3 className="card-title">{clean.title}</h3>
-                                <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Cập nhật: {new Date(item.ngayTao).toLocaleDateString('vi-VN')}</p>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>Cập nhật: {new Date(item.ngayTao).toLocaleDateString('vi-VN')}</p>
                             </div>
                             <div className="card-footer">
                                 <span className="id-tag">#{item.maLoTrinh}</span>
@@ -337,36 +337,36 @@ const QuanLyLoTrinh = () => {
 
                         <div className="modal-body-pro">
                             <div className="form-group-pro" style={{ marginBottom: '25px' }}>
-                                <label style={{ display: 'block', fontWeight: 700, color: '#334155', fontSize: '0.95rem', marginBottom: '8px' }}>
-                                    Tên lộ trình tổng quát <span style={{ color: 'red' }}>*</span>
+                                <label style={{ display: 'block', fontWeight: 700, color: 'var(--text-main)', fontSize: '0.95rem', marginBottom: '8px' }}>
+                                    Tên lộ trình tổng quát <span style={{ color: 'var(--danger)' }}>*</span>
                                 </label>
                                 <input type="text" className="input-pro" value={editingItem.yeuCau} onChange={(e) => setEditingItem({ ...editingItem, yeuCau: e.target.value })} placeholder="Ví dụ: Lập trình Web từ A-Z" />
                             </div>
 
                             <div className="roadmap-section">
-                                <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingBottom: '10px', borderBottom: '2px dashed #e2e8f0' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>Cấu trúc các chặng học</h3>
+                                <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingBottom: '10px', borderBottom: '2px dashed var(--border-color)' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-dark)' }}>Cấu trúc các chặng học</h3>
                                     <button onClick={addCourse} className="btn-select-kh"><i className="fa fa-plus me-1"></i> Thêm khóa học</button>
                                 </div>
 
                                 <div className="course-scroll-area" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
                                     {tempCourses.length === 0 ? (
                                         <div className="empty-state-pro">
-                                            <i className="fa fa-folder-open" style={{ fontSize: '3rem', color: '#cbd5e1', marginBottom: '15px' }}></i>
-                                            <p style={{ margin: 0, fontWeight: 600, color: '#64748b' }}>Chưa có khóa học nào</p>
+                                            <i className="fa fa-folder-open" style={{ fontSize: '3rem', color: 'var(--text-light)', marginBottom: '15px' }}></i>
+                                            <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-muted)' }}>Chưa có khóa học nào</p>
                                         </div>
                                     ) : tempCourses.map((course, idx) => (
                                         <div key={idx} className="course-item-card">
                                             <div className="course-rank">{idx + 1}</div>
                                             <img src={getImgUrl(course.hinhAnh)} className="course-img-small" onError={(e) => (e.currentTarget.src = 'https://careplusvn.com/Uploads/t/de/default-image_730.jpg')} />
                                             <div style={{ flex: '1 1 auto', minWidth: 0 }}>
-                                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '5px', textTransform: 'uppercase' }}>Khóa học</label>
+                                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px', textTransform: 'uppercase' }}>Khóa học</label>
                                                 <select className="select-pro" value={course.maKhoaHoc} onChange={(e) => handleCourseSelect(idx, parseInt(e.target.value))}>
                                                     {khoaHocCoSan.map(k => <option key={k.maKhoaHoc} value={k.maKhoaHoc}>{k.tenKhoaHoc}</option>)}
                                                 </select>
                                             </div>
                                             <div style={{ flex: '0 0 130px' }}>
-                                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '5px', textTransform: 'uppercase' }}>Trạng thái</label>
+                                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '5px', textTransform: 'uppercase' }}>Trạng thái</label>
                                                 <select className={course.trangThai === 'Bắt buộc' ? 'st-req' : 'st-opt'} value={course.trangThai} onChange={(e) => setTempCourses(prev => prev.map((c, i) => i === idx ? { ...c, trangThai: e.target.value } : c))}>
                                                     <option value="Bắt buộc">Bắt buộc</option>
                                                     <option value="Nâng cao">Nâng cao</option>
@@ -396,15 +396,15 @@ const QuanLyLoTrinh = () => {
                         <div className="modal-header-pro">
                             <div>
                                 <h2 style={{ fontSize: '1.3rem' }}>{viewData.title}</h2>
-                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>Tác giả: <strong>{viewData.author}</strong></p>
+                                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Tác giả: <strong>{viewData.author}</strong></p>
                             </div>
                             <button onClick={() => setIsPreviewOpen(false)} className="close-x">×</button>
                         </div>
                         <div className="modal-body-pro" style={{ background: '#f8fafc' }}>
                             <div style={{ padding: '10px' }}>
                                 {viewData.steps.length > 0 ? viewData.steps.map((step: any, i: number) => (
-                                    <div key={i} className="course-item-card" style={{ marginBottom: '15px', borderLeft: '4px solid #2563eb' }}>
-                                        <div className="course-rank" style={{ background: '#2563eb' }}>{i + 1}</div>
+                                    <div key={i} className="course-item-card" style={{ marginBottom: '15px', borderLeft: '4px solid var(--ai-accent)' }}>
+                                        <div className="course-rank" style={{ background: 'var(--ai-accent)' }}>{i + 1}</div>
                                         <img
                                             src={getImgUrl(step.hinhAnh)}
                                             className="course-img-small"
@@ -412,7 +412,7 @@ const QuanLyLoTrinh = () => {
                                         />
                                         <div style={{ flex: 1 }}>
                                             <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{step.ten}</h4>
-                                            <span className="badge-status" style={{ fontSize: '0.7rem', background: '#dcfce7', color: '#166534' }}>{step.trangThai || "Bắt buộc"}</span>
+                                            <span className="badge-status" style={{ fontSize: '0.7rem', background: 'var(--success-soft)', color: 'var(--success-strong)' }}>{step.trangThai || "Bắt buộc"}</span>
                                         </div>
                                     </div>
                                 )) : <p className="text-center">Dữ liệu lộ trình đang được xử lý...</p>}
@@ -426,47 +426,49 @@ const QuanLyLoTrinh = () => {
             )}
 
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-                
-                .quan-ly-container, .pro-modal-v2 { font-family: 'Inter', sans-serif !important; }
-                
+                .quan-ly-container, .pro-modal-v2 { font-family: var(--font-main); }
+
                 .modal-overlay {
                     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-                    background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
-                    display: flex; align-items: center; justify-content: center; z-index: 9999;
+                    background: rgba(17, 24, 39, 0.5); backdrop-filter: blur(4px);
+                    display: flex; align-items: center; justify-content: center; z-index: 1050;
                 }
                 .pro-modal-v2 {
-                    width: 800px !important; max-width: 95vw !important; background: #ffffff !important;
-                    border-radius: 20px !important; display: flex !important; flex-direction: column !important;
-                    max-height: 90vh !important; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25) !important;
+                    width: 800px !important; max-width: 95vw !important; background: var(--bg-card) !important;
+                    border-radius: var(--radius-lg) !important; display: flex !important; flex-direction: column !important;
+                    max-height: 90vh !important; box-shadow: var(--shadow-lg) !important;
                     text-align: left !important; overflow: hidden !important;
                 }
-                .modal-header-pro { padding: 24px 30px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #ffffff; }
-                .modal-header-pro h2 { margin: 0; font-size: 1.5rem; font-weight: 800; color: #1e293b; }
-                .close-x { width: 36px; height: 36px; background: #f1f5f9; border: none; border-radius: 50%; color: #64748b; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-                .close-x:hover { background: #fee2e2; color: #ef4444; transform: rotate(90deg); }
-                .modal-body-pro { padding: 30px; overflow-y: auto; background: #f8fafc; flex: 1; }
-                .input-pro { width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; margin-top: 8px; font-size: 0.95rem; outline: none; transition: 0.2s; background: #ffffff; }
-                .input-pro:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,0.1); }
-                .empty-state-pro { text-align: center; padding: 40px 20px; background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 16px; }
-                .btn-select-kh { background: #eff6ff; color: #2563eb; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-                .btn-select-kh:hover { background: #dbeafe; }
-                .course-item-card { display: flex; align-items: center; gap: 15px; background: #ffffff; padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-                .course-img-small { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 1px solid #e2e8f0; }
-                .select-pro { border: 1.5px solid #e2e8f0; background: #f8fafc; padding: 12px; border-radius: 8px; font-weight: 600; width: 100%; font-size: 0.9rem; outline: none; cursor: pointer;}
-                .select-pro:focus { border-color: #2563eb; }
-                .st-req { background: #fee2e2; color: #dc2626; padding: 12px; border-radius: 8px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; outline: none;}
-                .st-opt { background: #fef3c7; color: #d97706; padding: 12px; border-radius: 8px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; outline: none;}
-                .modal-footer-pro { padding: 20px 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 15px; background: #ffffff; }
-                .btn-save-pro { background: #10b981; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-                .btn-save-pro:hover { background: #059669; transform: translateY(-2px); }
-                .btn-cancel-pro { background: #f1f5f9; color: #475569; border: none; padding: 12px 25px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-                .btn-cancel-pro:hover { background: #e2e8f0; }
-                .btn-del-item { background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; transition: 0.2s; padding: 10px 5px; }
-                .btn-del-item:hover { color: #ef4444; }
-                .btn-add-main { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important; color: white !important; border: none !important; padding: 12px 25px !important; border-radius: 12px !important; font-weight: 700 !important; cursor: pointer !important; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3) !important; transition: 0.3s !important; }
-                .btn-add-main:hover { transform: translateY(-2px); filter: brightness(1.1); }
-                .course-rank { width: 32px; height: 32px; background: #2563eb; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+                .modal-header-pro { padding: 24px 30px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); }
+                .modal-header-pro h2 { margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--text-dark); }
+                .close-x { width: 36px; height: 36px; background: var(--border-light); border: none; border-radius: 50%; color: var(--text-muted); font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition-fast); }
+                .close-x:hover { background: var(--danger-soft); color: var(--danger); transform: rotate(90deg); }
+                .modal-body-pro { padding: 30px; overflow-y: auto; background: var(--bg-main); flex: 1; }
+                .input-pro { width: 100%; padding: 14px 16px; border: 2px solid var(--border-color); border-radius: var(--radius-md); margin-top: 8px; font-size: 0.95rem; outline: none; transition: var(--transition-fast); background: var(--bg-card); }
+                .input-pro:focus { border-color: var(--ai-accent); box-shadow: 0 0 0 4px var(--ai-accent-soft); }
+                .empty-state-pro { text-align: center; padding: 40px 20px; background: var(--bg-card); border: 2px dashed var(--border-color); border-radius: var(--radius-lg); }
+                .btn-select-kh { background: var(--ai-accent-soft); color: var(--ai-accent-hover); border: none; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; transition: var(--transition-fast); }
+                .btn-select-kh:hover { background: #e9e2fb; }
+                .course-item-card { display: flex; align-items: center; gap: 15px; background: var(--bg-card); padding: 15px; border-radius: var(--radius-md); margin-bottom: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
+                .course-img-small { width: 60px; height: 60px; border-radius: var(--radius-md); object-fit: cover; border: 1px solid var(--border-color); }
+                .select-pro { border: 1.5px solid var(--border-color); background: var(--bg-main); padding: 12px; border-radius: var(--radius-sm); font-weight: 600; width: 100%; font-size: 0.9rem; outline: none; cursor: pointer;}
+                .select-pro:focus { border-color: var(--ai-accent); }
+                .st-req { background: var(--danger-soft); color: var(--danger-strong); padding: 12px; border-radius: var(--radius-sm); border: none; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; outline: none;}
+                .st-opt { background: var(--warning-soft); color: var(--warning-strong); padding: 12px; border-radius: var(--radius-sm); border: none; font-weight: 700; font-size: 13px; cursor: pointer; width: 100%; outline: none;}
+                .modal-footer-pro { padding: 20px 30px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 15px; background: var(--bg-card); }
+                .btn-save-pro { background: var(--success); color: white; border: none; padding: 12px 30px; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: var(--transition-fast); }
+                .btn-save-pro:hover { background: var(--success-strong); transform: translateY(-2px); }
+                .btn-cancel-pro { background: var(--border-light); color: var(--text-main); border: none; padding: 12px 25px; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: var(--transition-fast); }
+                .btn-cancel-pro:hover { background: var(--border-color); }
+                .btn-del-item { background: none; border: none; color: var(--text-light); font-size: 1.3rem; cursor: pointer; transition: var(--transition-fast); padding: 10px 5px; }
+                .btn-del-item:hover { color: var(--danger); }
+                .btn-add-main { background: linear-gradient(135deg, var(--ai-accent) 0%, var(--ai-accent-hover) 100%) !important; color: white !important; border: none !important; padding: 12px 25px !important; border-radius: var(--radius-md) !important; font-weight: 700 !important; cursor: pointer !important; box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.3) !important; transition: var(--transition-normal) !important; }
+                .btn-add-main:hover { transform: translateY(-2px); filter: brightness(1.05); }
+                .course-rank { width: 32px; height: 32px; background: var(--ai-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+                @media (prefers-reduced-motion: reduce) {
+                    .close-x, .btn-add-main, .btn-save-pro { transition: none !important; }
+                    .close-x:hover, .btn-add-main:hover, .btn-save-pro:hover { transform: none !important; }
+                }
             `}</style>
         </div>
     );

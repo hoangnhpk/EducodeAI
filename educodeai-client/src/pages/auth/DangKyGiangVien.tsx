@@ -59,7 +59,7 @@ export default function DangKyGiangVien() {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [docType, setDocType] = useState<'cccd' | 'passport'>('cccd');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('BANK');
+  const [paymentMethod] = useState<PaymentMethod>('BANK');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerifying, setIsVerifying] = useState<Record<string, boolean>>({});
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);

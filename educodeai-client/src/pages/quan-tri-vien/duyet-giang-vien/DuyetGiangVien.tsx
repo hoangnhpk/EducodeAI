@@ -116,7 +116,7 @@ export default function DuyetGiangVien() {
       showCancelButton: true,
       confirmButtonText: "Duyệt",
       cancelButtonText: "Huỷ",
-      confirmButtonColor: "#28a745"
+      confirmButtonColor: "#10b981"
     });
     if (!confirm.isConfirmed) return;
 
@@ -220,11 +220,11 @@ export default function DuyetGiangVien() {
       </div>
 
       {dangTai ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
           Đang tải danh sách hồ sơ...
         </div>
       ) : danhSach.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-light)' }}>
           Không tìm thấy hồ sơ nào
         </div>
       ) : (
@@ -251,30 +251,30 @@ export default function DuyetGiangVien() {
                           <img
                             src={`${baseUrl}${hs.anhDaiDienUrl}`}
                             alt={hs.hoTen}
-                            style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid #f1f5f9', flexShrink: 0 }}
+                            style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-light)', flexShrink: 0 }}
                           />
                         ) : (
                           <div style={{
                             width: 32, height: 32, borderRadius: '50%',
-                            background: '#f1f5f9', color: '#64748b',
+                            background: 'var(--border-light)', color: 'var(--text-muted)',
                             display: 'flex', alignItems: 'center',
                             justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0
                           }}>
                             {hs.hoTen ? hs.hoTen[0].toUpperCase() : '?'}
                           </div>
                         )}
-                        <span style={{ ...ellipsisStyle, fontWeight: 600, color: '#1e293b' }} title={hs.hoTen}>
+                        <span style={{ ...ellipsisStyle, fontWeight: 600, color: 'var(--text-dark)' }} title={hs.hoTen}>
                           {hs.hoTen}
                         </span>
                       </div>
                     </td>
-                    <td style={{ color: '#64748b', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={hs.email}>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={hs.email}>
                       {hs.email}
                     </td>
-                    <td style={{ color: '#64748b', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={hs.linhVucGiangDay}>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={hs.linhVucGiangDay}>
                       {hs.linhVucGiangDay}
                     </td>
-                    <td style={{ color: '#94a3b8', fontSize: '12px' }}>
+                    <td style={{ color: 'var(--text-light)', fontSize: '12px' }}>
                       {new Date(hs.ngayTao).toLocaleDateString('vi-VN')}
                     </td>
                     <td>
@@ -349,7 +349,7 @@ export default function DuyetGiangVien() {
               <button className="btn-cancel" onClick={dongModalTuChoi}>Huỷ</button>
               <button
                 className="btn-save"
-                style={{ background: "#ef4444", boxShadow: "0 8px 20px rgba(239, 68, 68, 0.28)" }}
+                style={{ background: "var(--danger)", boxShadow: "0 8px 20px rgba(239, 68, 68, 0.28)" }}
                 onClick={guiTuChoi}
               >
                 Từ chối
@@ -459,7 +459,7 @@ export default function DuyetGiangVien() {
                     </button>
                     <button
                       className="btn-cancel"
-                      style={{ borderColor: "#ef4444", color: "#ef4444" }}
+                      style={{ borderColor: "var(--danger)", color: "var(--danger)" }}
                       onClick={() => xacNhanTuChoi(chiTiet.maHoSoDangKyGiangVien)}
                     >
                       <i className="bi bi-x-lg" /> Từ chối

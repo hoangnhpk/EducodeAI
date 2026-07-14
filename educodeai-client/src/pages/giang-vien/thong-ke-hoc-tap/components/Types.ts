@@ -66,3 +66,30 @@ export interface ProgressDataPoint {
   week: string;
   value: number;
 }
+
+// ================== THU NHẬP (INCOME) ==================
+
+export type NhomThuNhapTheoThoiGian = 'day' | 'week' | 'month';
+
+export interface ThuNhapTongQuan {
+  tongDoanhThu?: number | null;
+  tongPhiNenTang?: number | null;
+  tongThucNhan?: number | null;
+  thucNhanThangNay?: number | null;
+  tongDonHang?: number | null;
+}
+
+export interface ThuNhapTheoThoiGian {
+  nhanThoiGian: string;
+  thucNhan: number;
+  phiNenTang: number;
+}
+
+export interface ThuNhapTheoKhoaHoc {
+  maKhoaHoc: number;
+  tenKhoaHoc: string;
+  soDonHang: number;
+  tongDoanhThu: number;
+  phiNenTang: number;
+  thucNhan: number;
+}
