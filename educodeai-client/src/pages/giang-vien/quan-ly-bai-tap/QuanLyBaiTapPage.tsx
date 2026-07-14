@@ -51,10 +51,10 @@ export default function QuanLyBaiTapPage() {
     };
 
     return (
-        <div className="container-fluid py-4" style={{ backgroundColor: '#F1F5F9', minHeight: '100vh' }}>
+        <div className="container-fluid py-4" style={{ backgroundColor: 'var(--bg-main)', minHeight: '100vh' }}>
             <div className="d-flex justify-content-between align-items-end mb-4">
                 <div>
-                    <h2 className="mb-2" style={{ fontWeight: 800, color: '#1E293B', fontSize: '28px' }}>
+                    <h2 className="mb-2" style={{ fontWeight: 800, color: 'var(--text-dark)', fontSize: '28px' }}>
                         <i className="bi bi-journal-code text-primary me-2"></i>
                         Quản lý Bài Tập & Quiz
                     </h2>
@@ -82,7 +82,7 @@ export default function QuanLyBaiTapPage() {
                         onClick={switchToCreateQuiz}
                     >
                         <i className="bi bi-patch-question me-2"></i> Tạo Quiz AI
-                        <span className="badge ms-2" style={{ background: '#fef9c3', color: '#854d0e', fontSize: '10px', padding: '2px 7px', borderRadius: '999px' }}>Mới</span>
+                        <span className="badge ms-2" style={{ background: 'var(--warning-soft)', color: 'var(--warning-strong)', fontSize: '10px', padding: '2px 7px', borderRadius: '999px' }}>Mới</span>
                     </button>
                 </div>
             </div>

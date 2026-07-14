@@ -88,7 +88,7 @@
 .qtv-nav-link.active {
   background: rgba(255, 255, 255, 0.25);
   color: white;
-  border-left: 3px solid #fef08a;
+  border-left: 3px solid var(--sidebar-active-border);
   padding-left: 11px;
 }
 
