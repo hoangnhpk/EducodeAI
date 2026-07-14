@@ -33,12 +33,12 @@ enabled = false
 
 [db]
 # Port to use for the local database URL.
-# Lưu ý: dải 54315-54414 bị Windows/Hyper-V (WinNAT) reserve nên Docker không bind được.
-# Vì vậy dùng 55432 (ngoài dải reserve) thay cho 54322 mặc định.
-port = 55432
+# LƯU Ý: mọi port > 49152 nằm trong dynamic port range của Windows và có thể bị
+# Hyper-V/WSL2 (WinNAT) chiếm bất cứ lúc nào sau khi khởi động lại. Vì vậy phải
+# dùng port THẤP hơn 49152 để tránh xung đột (54322 và 55432 đều từng bị dính).
+port = 15432
 # Port used by db diff command to initialize the shadow database.
-# 54320 cũng nằm sát dải reserve -> đổi sang 55430 cho an toàn.
-shadow_port = 55430
+shadow_port = 15430
 # Maximum amount of time to wait for health check when starting the local database.
 health_timeout = "2m"
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW

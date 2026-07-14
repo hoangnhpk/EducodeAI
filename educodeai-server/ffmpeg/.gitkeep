@@ -1,0 +1,4 @@
+# Thư mục chứa ffmpeg.exe và ffprobe.exe (không commit vì ~195MB, platform-specific).
+# Tải binary về đây trước khi chạy backend:
+#   - Windows: tải từ https://www.gyan.dev/ffmpeg/builds/ rồi bỏ ffmpeg.exe + ffprobe.exe vào folder này
+#   - Hoặc cài qua package manager: winget install ffmpeg / choco install ffmpeg / apt install ffmpeg
