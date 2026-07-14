@@ -325,7 +325,7 @@ const PhongVanAI: React.FC = () => {
 
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
-                        <select value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value))} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                        <select value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value) as TinhCachAI)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
                             <option value={TinhCachAI.Friendly}>Thân thiện (Hướng dẫn)</option>
                             <option value={TinhCachAI.Normal}>Bình thường (Tiêu chuẩn)</option>
                             <option value={TinhCachAI.Strict}>Khó tính (Xoáy sâu vào lỗi sai)</option>
@@ -640,33 +640,6 @@ const PhongVanAI: React.FC = () => {
                     </div>
                 </div>
             )}
-
-            {/* RESULT MODAL */}
-            {finalResult !== null ? (
-                <div className="iv-modal-overlay">
-                    <div className="iv-modal iv-result-modal">
-                        <div className="iv-result-score-wrap">
-                            <div className="iv-result-score-circle">
-                                <span className="iv-result-score-num">{finalResult.diemSo}</span>
-                                <span className="iv-result-score-label">/ 100</span>
-                            </div>
-                        </div>
-                        <h3>Kết quả phỏng vấn</h3>
-                        <div className="iv-result-review">
-                            <TypewriterText 
-                                content={finalResult.danhGiaChung} 
-                                scrollRef={chatBoxRef} 
-                                onComplete={() => {}} 
-                            />
-                        </div>
-                        <div className="iv-modal-actions">
-                            <button className="iv-modal-btn confirm" onClick={() => navigate('/')}>
-                                Quay về trang chủ
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
 
 <style>{`
                 /* ── RESET & BASE ── */
