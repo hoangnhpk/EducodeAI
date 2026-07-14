@@ -11,6 +11,7 @@ export interface NoiDungVideoRef {
 
 interface Props {
   videoUrl?: string | null;
+  videoSource?: string | null;
   subtitleUrl?: string | null;
   maBaiHoc: number;
   maNguoiDung: number;
@@ -19,7 +20,7 @@ interface Props {
 }
 
 // 2. Bọc component trong forwardRef
-export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBaiHoc, maNguoiDung, daXem, onVideoCompleted }, ref) => {
+export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, videoSource, maBaiHoc, maNguoiDung, daXem, onVideoCompleted }, ref) => {
   const playerRef = useRef<any>(null);
   const [daSanSang, setDaSanSang] = useState(false);
   const [thoiLuongVideo, setThoiLuongVideo] = useState(0);
@@ -62,13 +63,19 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
     }
   }));
 
-  // Lấy Video ID từ URL
+  // Lấy Video ID từ URL YouTube
   const videoId = useMemo(() => {
     if (!videoUrl) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = videoUrl.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
   }, [videoUrl]);
+
+  // Xác định nguồn video: ưu tiên videoSource từ backend, fallback về parse URL
+  const laYouTube = useMemo(() => {
+    if (videoSource) return videoSource.toLowerCase() === 'youtube';
+    return videoId !== null;
+  }, [videoSource, videoId]);
 
   // Cấu hình Player
   const tuyChinh = useMemo(() => ({
@@ -314,9 +321,9 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
     setDaSanSang(false);
     setThoiLuongVideo(0);
     setThoiGianHienTai(0);
-  }, [videoId]);
+  }, [videoUrl]);
 
-  if (!videoId) return (
+  if (!videoUrl) return (
     <div className="cp-video-frame d-flex align-items-center justify-content-center bg-dark text-white">
       Chưa có video
     </div>
@@ -324,9 +331,9 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
 
   return (
     <div className="cp-tab-pane active" style={{ display: 'block', height: '100%' }}>
-      {videoId ? (
+      {laYouTube ? (
         <YouTube
-          videoId={videoId}
+          videoId={videoId ?? undefined}
           opts={tuyChinh}
           onReady={khiSanSang}
           onStateChange={khiTrangThaiThayDoi}
@@ -352,7 +359,16 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, maBa
             playerRef.current.playVideo = () => playerRef.current?.play();
             playerRef.current.pauseVideo = () => playerRef.current?.pause();
             playerRef.current.seekTo = (time: number) => { if (playerRef.current) playerRef.current.currentTime = time; };
+            // Trạng thái giống YouTube API: 1 = đang phát, 2 = tạm dừng, 0 = kết thúc
+            playerRef.current.getPlayerState = () => {
+              const v = playerRef.current;
+              if (!v) return 2;
+              if (v.ended) return 0;
+              return v.paused ? 2 : 1;
+            };
+            playerRef.current.getPlaybackRate = () => playerRef.current?.playbackRate || 1;
           }}
+          onEnded={() => luuTienDo(playerRef.current?.getDuration() || 0)}
           onTimeUpdate={(e) => {
             setThoiGianHienTai(e.currentTarget.currentTime);
           }}

@@ -687,10 +687,12 @@ namespace educodeai_server.Repository.Implementation
             {
                 await transaction.RollbackAsync();
 
+                Console.WriteLine($"[NopBaiKiemTraChungChi] Lỗi lưu kết quả: {ex}");
+
                 return new KetQuaNopBaiKiemTraChungChiDTO
                 {
                     ThanhCong = false,
-                    ThongBao = $"Không thể lưu kết quả bài kiểm tra chứng chỉ: {ex.Message}"
+                    ThongBao = "Không thể lưu kết quả bài kiểm tra chứng chỉ. Vui lòng thử lại sau."
                 };
             }
         }
@@ -720,6 +722,18 @@ namespace educodeai_server.Repository.Implementation
         public async Task<bool> ThemDanhGiaAsync(DanhGiaModel danhGia)
         {
             _context.DanhGias.Add(danhGia);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<DanhGiaModel?> LayDanhGiaCuaNguoiDungAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            return await _context.DanhGias
+                .FirstOrDefaultAsync(d => d.MaKhoaHoc == maKhoaHoc && d.MaNguoiDung == maNguoiDung);
+        }
+
+        public async Task<bool> CapNhatDanhGiaAsync(DanhGiaModel danhGia)
+        {
+            _context.DanhGias.Update(danhGia);
             return await _context.SaveChangesAsync() > 0;
         }
 

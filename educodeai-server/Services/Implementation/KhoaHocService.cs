@@ -348,13 +348,30 @@ namespace educodeai_server.Services.Implementation
             {
                 throw new Exception("Bạn phải hoàn thành 100% khóa học mới được phép đánh giá!");
             }
-            // 1 user chỉ được đánh giá 1 lần cho 1 khóa học
-            bool daTonTai = await _khoaHocRepository.KiemTraDaDanhGiaAsync(yeuCau.MaKhoaHoc, yeuCau.MaNguoiDung);
-            if (daTonTai) throw new Exception("Bạn đã đánh giá khóa học này rồi!");
+
+            // Lọc nội dung tục tĩu/nhạy cảm ngay tại nguồn trước khi lưu
+            if (KiemTraCoTuNhayCam(yeuCau.NhanXet ?? string.Empty))
+            {
+                throw new Exception("Nội dung đánh giá chứa từ ngữ không phù hợp. Vui lòng chỉnh sửa lại!");
+            }
 
             // Submit → ChoDuyet (chỉ chính học viên thấy)
             // Sau khi Admin/AI duyệt → DaDuyet (mọi người thấy)
-            // Bị từ chối → xóa khỏi DB (học viên có thể gửi lại)
+            // Bị từ chối → học viên được phép gửi lại (ghi đè bản cũ, quay về ChoDuyet)
+            var danhGiaHienCo = await _khoaHocRepository.LayDanhGiaCuaNguoiDungAsync(yeuCau.MaKhoaHoc, yeuCau.MaNguoiDung);
+            if (danhGiaHienCo != null)
+            {
+                // Chỉ cho gửi lại nếu bản trước đã bị từ chối; ChoDuyet/DaDuyet thì chặn
+                if (danhGiaHienCo.TrangThai != "TuChoi")
+                    throw new Exception("Bạn đã đánh giá khóa học này rồi!");
+
+                danhGiaHienCo.SoSao = yeuCau.SoSao;
+                danhGiaHienCo.NhanXet = yeuCau.NhanXet;
+                danhGiaHienCo.NgayDanhGia = DateTime.Now;
+                danhGiaHienCo.TrangThai = "ChoDuyet";
+                return await _khoaHocRepository.CapNhatDanhGiaAsync(danhGiaHienCo);
+            }
+
             var model = new DanhGiaModel
             {
                 MaKhoaHoc = yeuCau.MaKhoaHoc,

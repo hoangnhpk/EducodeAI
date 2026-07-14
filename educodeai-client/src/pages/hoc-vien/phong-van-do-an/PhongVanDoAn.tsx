@@ -43,7 +43,6 @@ const PhongVanDoAn: React.FC = () => {
     const [timeLeft, setTimeLeft] = useState(300); // 5 phút = 300 giây
     const [soLanChuyenTab, setSoLanChuyenTab] = useState(0);
     const TONG_SO_CAU = 3;
-    const TOTAL_TIME = 300;
 
     // Khởi tạo tin nhắn đầu tiên từ AI
     useEffect(() => {

@@ -504,6 +504,7 @@ const NoiDungKhoaHoc = () => {
                         ref={videoRef}
                         key={baiHocHienTai.id}
                         videoUrl={baiHocHienTai.linkVideo}
+                        videoSource={baiHocHienTai.videoSource}
                         maBaiHoc={baiHocHienTai.id}
                         maNguoiDung={maNguoiDung}
                         daXem={baiHocHienTai.daXem}
