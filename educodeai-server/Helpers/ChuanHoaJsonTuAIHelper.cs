@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
@@ -59,38 +59,6 @@ namespace educodeai_server.Helpers
             {
                 candidates.Add(match.Groups[1].Value);
             }
-
-            else
-            {
-                // Fallback: Lấy từ dấu { đầu tiên đến dấu } cuối cùng
-                int startIndex = text.IndexOf('{');
-                int endIndex = text.LastIndexOf('}');
-                if (startIndex >= 0 && endIndex > startIndex)
-                {
-                    rawJson = text.Substring(startIndex, endIndex - startIndex + 1);
-                }
-                else
-                {
-                    throw new Exception("Không tìm thấy JSON trong code block ```json\n\nAI Raw Text: " + text);
-                }
-            }
-
-            // 4. Parse + format JSON kết quả
-            try
-            if (string.IsNullOrWhiteSpace(text)) return false;
-
-            var candidates = new List<string>();
-
-            foreach (Match match in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
-            {
-                JToken.Parse(rawJson);
-                json = rawJson;
-                return true;
-            }
-
-            catch (Exception ex)
-            {
-                throw new Exception($"JSON bên trong không hợp lệ. Nguyên bản: {rawJson}", ex);
 
 
             candidates.Add(text.Trim());
