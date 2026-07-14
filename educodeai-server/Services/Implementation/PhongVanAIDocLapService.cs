@@ -12,11 +12,13 @@ namespace educodeai_server.Services.Implementation
     {
         private readonly EduCodeAIDbContext _context;
         private readonly IGeminiAIService _geminiService;
+        private readonly ILogger<PhongVanAIDocLapService> _logger;
 
-        public PhongVanAIDocLapService(EduCodeAIDbContext context, IGeminiAIService geminiService)
+        public PhongVanAIDocLapService(EduCodeAIDbContext context, IGeminiAIService geminiService, ILogger<PhongVanAIDocLapService> logger)
         {
             _context = context;
             _geminiService = geminiService;
+            _logger = logger;
         }
 
         public async Task<StartPhongVanResponseDto> StartInterviewAsync(int userId, StartPhongVanRequestDto request)
@@ -36,14 +38,33 @@ namespace educodeai_server.Services.Implementation
             await _context.SaveChangesAsync();
 
             string prompt = $@"
-Bạn là một chuyên gia phỏng vấn tuyển dụng.
+Bạn là một chuyên gia phỏng vấn tuyển dụng NGƯỜI VIỆT NAM.
 Vị trí ứng tuyển: {request.ViTriUngTuyen}
 Cấp độ: {request.CapDo}
 Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện hướng dẫn, Strict = Khó tính xoáy sâu vào lỗi sai, Normal = Bình thường).
-Nhiệm vụ của bạn: Hãy đưa ra CÂU HỎI ĐẦU TIÊN để bắt đầu buổi phỏng vấn chuyên môn. Câu hỏi nên phù hợp với cấp độ và vị trí.
-Chỉ trả về trực tiếp nội dung câu hỏi, không cần giải thích thêm.";
 
-            string cauHoiDauTien = await _geminiService.GenerateAsync(prompt);
+=== YÊU CẦU BẮT BUỘC ===
+1. BẮT BUỘC trả lời hoàn toàn bằng TIẾNG VIỆT. KHÔNG ĐƯỢC dùng tiếng Anh.
+2. Bạn ĐANG TRONG CUỘC HỘI THOẠI TRỰC TIẾP với ứng viên. Hãy đóng vai và đưa ra CÂU HỎI ĐẦU TIÊN ngay lập tức.
+3. TRẢ VỀ DUY NHẤT một câu hỏi ngắn gọn (tối đa 2-3 câu). KHÔNG suy nghĩ, KHÔNG giải thích, KHÔNG in ra kịch bản, danh sách, hay các lựa chọn.
+4. KHÔNG ĐƯỢC viết tiếng Anh, KHÔNG liệt kê Option, KHÔNG dùng format Role/Personality/Constraint.";
+
+            var rawResponse = await _geminiService.GenerateAsync(prompt);
+            string cauHoiDauTien = "";
+            try {
+                cauHoiDauTien = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse).Replace("*", "").Trim();
+                if (cauHoiDauTien.Length > 200 && cauHoiDauTien.Contains("?")) 
+                {
+                    var sentences = cauHoiDauTien.Split(new[] { '.', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    var questionSentence = sentences.LastOrDefault(s => s.Contains("?"));
+                    if (!string.IsNullOrWhiteSpace(questionSentence))
+                    {
+                        cauHoiDauTien = questionSentence.Trim();
+                    }
+                }
+            } catch {
+                cauHoiDauTien = "Xin lỗi, hiện tại tôi đang gặp vấn đề trong việc đưa ra câu hỏi. Bạn có thể tự giới thiệu về bản thân được không?";
+            }
 
             var turnList = new List<PhongVanDocLapTurnDto>
             {
@@ -78,39 +99,38 @@ Chỉ trả về trực tiếp nội dung câu hỏi, không cần giải thích
             string chatContext = string.Join("\n", chatHistory.Select(x => $"{(x.Role == "ai" ? "Người phỏng vấn" : "Ứng viên")}: {x.Message}"));
 
             string prompt = $@"
-Bạn đang phỏng vấn ứng viên cho vị trí: {lichSu.ViTriUngTuyen} (Cấp độ: {lichSu.CapDo}).
+Bạn là người phỏng vấn VIỆT NAM, đang phỏng vấn ứng viên cho vị trí: {lichSu.ViTriUngTuyen} (Cấp độ: {lichSu.CapDo}).
 Tính cách của bạn: {lichSu.TinhCachAI}.
-Dưới đây là lịch sử cuộc trò chuyện từ đầu đến giờ:
+Dưới đây là lịch sử cuộc trò chuyện:
 {chatContext}
 
 Ứng viên vừa trả lời câu hỏi gần nhất. Nhiệm vụ của bạn:
-1. Đưa ra nhận xét ngắn gọn về câu trả lời của ứng viên (đúng/sai, điểm tốt, điểm cần cải thiện) dựa trên tính cách của bạn.
-{(isFinished ? "2. Đây là câu hỏi cuối cùng, bạn không cần hỏi thêm gì nữa. Chỉ cần nói: 'Cảm ơn bạn, chúng ta kết thúc ở đây.'" : "2. Đưa ra CÂU HỎI TIẾP THEO cho ứng viên. Câu hỏi phải liên quan đến chủ đề đang trao đổi hoặc chuyển sang một khía cạnh khác của vị trí ứng tuyển.")}
+1. Đưa ra nhận xét ngắn gọn (2-3 câu) về câu trả lời của ứng viên bằng TIẾNG VIỆT.
+{(isFinished ? "2. Đây là câu hỏi cuối cùng, bạn không cần hỏi thêm gì nữa. Kết thúc bằng câu: 'Cảm ơn bạn, buổi phỏng vấn kết thúc tại đây.'" : "2. Đưa ra CÂU HỎI TIẾP THEO ngắn gọn (1-2 câu) cho ứng viên bằng TIẾNG VIỆT.")}
 
-Hãy trả về định dạng JSON CHÍNH XÁC như sau:
-```json
-{{
-    ""nhanXet"": ""Nhận xét của bạn về câu trả lời vừa rồi"",
-    ""cauHoiTiepTheo"": ""{(isFinished ? "" : "Câu hỏi tiếp theo của bạn")}""
-}}
-```
-Chỉ trả về JSON, không kèm giải thích.";
+=== YÊU CẦU BẮT BUỘC ===
+- BẮT BUỘC trả lời 100% bằng TIẾNG VIỆT. CẤM dùng tiếng Anh.
+- Trả lời ngắn gọn, tự nhiên như đang nói chuyện. Tối đa 5-6 câu.
+- KHÔNG sử dụng JSON. KHÔNG in ra kịch bản. KHÔNG liệt kê Role/Personality/Context.
+- KHÔNG dùng format có dấu * hoặc markdown.";
 
-            string responseJson = await _geminiService.GenerateAsync(prompt);
+            var rawResponse = await _geminiService.GenerateAsync(prompt);
             string nhanXet = "";
+            try {
+                nhanXet = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse).Replace("*", "").Trim();
+                if (nhanXet.Length > 200 && nhanXet.Contains("?")) 
+                {
+                    var sentences = nhanXet.Split(new[] { '.', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    var questionSentence = sentences.LastOrDefault(s => s.Contains("?"));
+                    if (!string.IsNullOrWhiteSpace(questionSentence))
+                    {
+                        nhanXet = questionSentence.Trim();
+                    }
+                }
+            } catch {
+                nhanXet = "Cảm ơn bạn đã trả lời. " + (isFinished ? "Chúng ta kết thúc phỏng vấn ở đây." : "Hãy tiếp tục với câu hỏi khác nhé.");
+            }
             string cauHoiTiepTheo = "";
-
-            try
-            {
-                string json = ChuanHoaJsonTuAIHelper.ExtractJson(responseJson);
-                var aiRes = JsonSerializer.Deserialize<JsonElement>(json);
-                nhanXet = aiRes.GetProperty("nhanXet").GetString() ?? "";
-                cauHoiTiepTheo = aiRes.GetProperty("cauHoiTiepTheo").GetString() ?? "";
-            }
-            catch
-            {
-                nhanXet = responseJson; // fallback
-            }
 
             var aiTurn = new PhongVanDocLapTurnDto
             {
@@ -148,29 +168,56 @@ Lịch sử cuộc trò chuyện:
 {chatContext}
 
 Buổi phỏng vấn đã kết thúc. Dựa vào toàn bộ câu trả lời của ứng viên, hãy đưa ra đánh giá tổng quát và chấm điểm.
+Viết HOÀN TOÀN bằng TIẾNG VIỆT.
 Hãy trả về định dạng JSON CHÍNH XÁC như sau:
 ```json
 {{
     ""diemSo"": (Một số nguyên từ 0 đến 100),
-    ""danhGiaChung"": ""Nhận xét tổng quát, chi tiết điểm mạnh, điểm yếu và lời khuyên.""
+    ""danhGiaChung"": ""Nhận xét tổng quát ngắn gọn (2-3 câu) về ứng viên."",
+    ""diemManh"": [""Điểm mạnh 1"", ""Điểm mạnh 2""],
+    ""canCaiThien"": [""Điểm cần cải thiện 1"", ""Điểm cần cải thiện 2""],
+    ""loiKhuyen"": ""Lời khuyên cụ thể giúp ứng viên tiến bộ (2-3 câu).""
 }}
 ```
-Chỉ trả về JSON, không kèm giải thích.";
+Yêu cầu:
+- Chỉ trả về JSON, không kèm giải thích, không dùng markdown ngoài JSON.
+- Toàn bộ nội dung BẮT BUỘC bằng TIẾNG VIỆT.
+- diemManh và canCaiThien là mảng, mỗi phần tử là 1 ý ngắn gọn. Nếu không có thì để mảng rỗng.";
 
-            string responseJson = await _geminiService.GenerateAsync(prompt);
+            var rawResponse = await _geminiService.GenerateAsync(prompt);
+            string responseText = "";
             int diemSo = 0;
             string danhGiaChung = "";
+            var diemManh = new List<string>();
+            var canCaiThien = new List<string>();
+            string loiKhuyen = "";
 
             try
             {
-                string json = ChuanHoaJsonTuAIHelper.ExtractJson(responseJson);
+                responseText = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse);
+                string json = ChuanHoaJsonTuAIHelper.ExtractJson(responseText);
                 var aiRes = JsonSerializer.Deserialize<JsonElement>(json);
                 diemSo = aiRes.GetProperty("diemSo").GetInt32();
                 danhGiaChung = aiRes.GetProperty("danhGiaChung").GetString() ?? "";
+
+                if (aiRes.TryGetProperty("diemManh", out var dm) && dm.ValueKind == JsonValueKind.Array)
+                    diemManh = dm.EnumerateArray()
+                        .Select(x => x.GetString() ?? "")
+                        .Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+
+                if (aiRes.TryGetProperty("canCaiThien", out var cct) && cct.ValueKind == JsonValueKind.Array)
+                    canCaiThien = cct.EnumerateArray()
+                        .Select(x => x.GetString() ?? "")
+                        .Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+
+                if (aiRes.TryGetProperty("loiKhuyen", out var lk))
+                    loiKhuyen = lk.GetString() ?? "";
             }
-            catch
+            catch (Exception ex)
             {
-                danhGiaChung = "Đã có lỗi xảy ra trong quá trình đánh giá tổng quát từ AI.";
+                _logger.LogError(ex, "Lỗi phân tích JSON kết quả phỏng vấn. RawResponse: {Raw}", rawResponse);
+                diemSo = 0;
+                danhGiaChung = "Đã xảy ra lỗi khi phân tích kết quả. Bạn có thể tự mình đánh giá lại phần trả lời của bản thân.";
             }
 
             lichSu.TrangThai = TrangThaiPhongVan.Completed;
@@ -182,6 +229,9 @@ Chỉ trả về JSON, không kèm giải thích.";
             {
                 DiemSo = diemSo,
                 DanhGiaChung = danhGiaChung,
+                DiemManh = diemManh,
+                CanCaiThien = canCaiThien,
+                LoiKhuyen = loiKhuyen,
                 LichSuChat = chatHistory
             };
         }

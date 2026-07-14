@@ -1,9 +1,9 @@
 import api from '../configs/api';
 
 export enum TinhCachAI {
-    Friendly = 0,
-    Strict = 1,
-    Normal = 2
+    Friendly = 1,
+    Strict = 2,
+    Normal = 3
 }
 
 export interface StartPhongVanRequest {

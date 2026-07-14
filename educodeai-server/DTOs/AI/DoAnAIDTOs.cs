@@ -57,7 +57,7 @@ namespace educodeai_server.DTOs.AI
     {
         public int MaDoAn { get; set; }
         public int TongDiem { get; set; }       // 0–100
-        public bool DaDat { get; set; }          // >= 60
+        public bool DaDat { get; set; }          // >= 50
         public string NhanXetTong { get; set; } = string.Empty;
         /// <summary>Mã chứng chỉ nếu đạt, null nếu chưa đạt</summary>
         public string? MaChungChi { get; set; }

@@ -150,30 +150,6 @@ const TrangChu: React.FC = () => {
             </section>
 
 
-            {/* 2. Search Bar */}
-            <div className="bg-white border-bottom shadow-sm py-3 position-relative" style={{ zIndex: 10 }}>
-                <div className="container">
-                    <div className="row justify-content-center">
-                        <div className="col-lg-8">
-                            <div className="search-bar-modern">
-                                <div className="search-icon"><i className="fa fa-search"></i></div>
-                                <input
-                                    type="text"
-                                    className="search-input"
-                                    placeholder="Bạn muốn học gì hôm nay? (VD: Java, Python...)"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                                {searchTerm && (
-                                    <button className="clear-btn" onClick={() => setSearchTerm('')}>
-                                        <i className="fa fa-times"></i>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* 3. Stats Section */}
             <section className="py-5 bg-white border-bottom">
@@ -239,7 +215,7 @@ const TrangChu: React.FC = () => {
                                 </div>
                                 <h3 className="h4 fw-bold text-dark mb-3">AI Sinh Lộ Trình</h3>
                                 <p className="text-muted mb-4 leading-relaxed">Phân tích kỹ năng hiện tại và tạo ra một lộ trình học tập cá nhân hóa 100% dành riêng cho bạn.</p>
-                                <Link to="/kham-pha-lo-trinh" className="text-primary fw-bold text-decoration-none feature-link">
+                                <Link to="/yeu-cau-lo-trinh-ai" className="text-primary fw-bold text-decoration-none feature-link">
                                     Trải nghiệm ngay <i className="fas fa-arrow-right"></i>
                                 </Link>
                             </div>
@@ -263,7 +239,7 @@ const TrangChu: React.FC = () => {
                                 </div>
                                 <h3 className="h4 fw-bold text-dark mb-3">Phỏng Vấn Giả Lập</h3>
                                 <p className="text-muted mb-4 leading-relaxed">Luyện tập trực tiếp với Tech Lead AI. Trả lời bằng giọng nói và nhận review điểm ngay lập tức.</p>
-                                <Link to="/hoc-vien/phong-van-ai" className="text-primary fw-bold text-decoration-none feature-link">
+                                <Link to="/phong-van-ai" className="text-primary fw-bold text-decoration-none feature-link">
                                     Luyện tập ngay <i className="fas fa-arrow-right"></i>
                                 </Link>
                             </div>
@@ -493,9 +469,9 @@ const TrangChu: React.FC = () => {
                             <p className="text-muted fs-5 mb-0" style={{ maxWidth: '600px' }}>Trở thành giảng viên trên EduCode để chia sẻ kiến thức, xây dựng thương hiệu cá nhân và tạo thu nhập thụ động.</p>
                         </div>
                         <div className="position-relative z-index-1">
-                            <button className="btn btn-dark btn-lg rounded-4 px-5 py-3 fw-bold shadow">
+                            <Link to="/dang-ky-giang-vien" className="btn btn-dark btn-lg rounded-4 px-5 py-3 fw-bold shadow text-decoration-none">
                                 Đăng ký Giảng viên ngay
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
