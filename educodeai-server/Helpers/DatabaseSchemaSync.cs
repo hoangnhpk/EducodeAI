@@ -16,6 +16,7 @@ public static class DatabaseSchemaSync
             ALTER TABLE "KhoaHocs" ADD COLUMN IF NOT EXISTS "DeletedBy" integer NULL;
             ALTER TABLE "KhoaHocs" ADD COLUMN IF NOT EXISTS "DonViTienTe" character varying(10) NOT NULL DEFAULT 'VND';
             ALTER TABLE "KhoaHocs" ADD COLUMN IF NOT EXISTS "ChoPhepMua" boolean NOT NULL DEFAULT true;
+            ALTER TABLE "KhoaHocs" ADD COLUMN IF NOT EXISTS "BanSeHocDuocGi" text NULL;
 
             ALTER TABLE "KeyAPIs" ADD COLUMN IF NOT EXISTS "DeletedAt" timestamp with time zone NULL;
             ALTER TABLE "KeyAPIs" ADD COLUMN IF NOT EXISTS "DeletedBy" integer NULL;
