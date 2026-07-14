@@ -20,17 +20,20 @@ namespace educodeai_server.Controllers.QuanTriVien
         private readonly IHubContext<SystemConfigHub> _hubContext; // 3. Khai báo Hub
         private readonly IRedisService _redisService;
         private readonly ILogger<CauHinhHeThongController> _logger;
+        private readonly IWebHostEnvironment _env;
 
         public CauHinhHeThongController(
             EduCodeAIDbContext context, 
             IHubContext<SystemConfigHub> hubContext,
             IRedisService redisService,
-            ILogger<CauHinhHeThongController> logger)
+            ILogger<CauHinhHeThongController> logger,
+            IWebHostEnvironment env)
         {
             _context = context;
             _hubContext = hubContext; // 4. Inject Hub vào
             _redisService = redisService;
             _logger = logger;
+            _env = env;
         }
 
         [HttpGet("lay-cau-hinh")]
@@ -92,6 +95,29 @@ namespace educodeai_server.Controllers.QuanTriVien
             Helpers.MaintenanceMiddleware.IsUnderMaintenance = status;
             string msg = status ? "CẢNH BÁO: Đã BẬT bảo trì hệ thống!" : "Thành công: Đã TẮT bảo trì, hệ thống hoạt động bình thường!";
             return Ok(new { success = true, message = msg, currentStatus = status });
+        }
+
+        [HttpPost("upload-banner")]
+        // [Authorize(Roles = "Quản trị viên")]
+        public async Task<IActionResult> UploadBanner(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { success = false, message = "Vui lòng chọn một file hợp lệ." });
+
+            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "system");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+            }
+
+            var url = $"/uploads/system/{uniqueFileName}";
+            return Ok(new { success = true, url = url });
         }
 
         [HttpPost("cap-nhat")]

@@ -11,6 +11,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 
@@ -24,8 +26,10 @@ namespace educodeai_server.Services.Implementation
         private readonly IMemoryCache _memoryCache;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IWebHostEnvironment _env;
+        private readonly IGiayToScanningService _giayToScanningService;
+        private readonly IDataProtector _cccdDataProtector;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
             _config = config;
@@ -33,6 +37,8 @@ namespace educodeai_server.Services.Implementation
             _memoryCache = memoryCache;
             _httpContextAccessor = httpContextAccessor;
             _env = env;
+            _giayToScanningService = giayToScanningService;
+            _cccdDataProtector = dataProtectionProvider.CreateProtector("EduCodeAI.CCCD.OcrData.v1");
         }
 
         #region OTP COOKIE LOGIC
@@ -271,30 +277,39 @@ namespace educodeai_server.Services.Implementation
         private string TaoGiaoDienEmail(string tieuDe, string noiDung, string otp)
         {
             return $@"
-            <div style='font-family: ""Segoe UI"", Roboto, ""Helvetica Neue"", Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea;'>
-                <div style='background-color: #fcfcfc; padding: 25px 0; text-align: center; border-bottom: 1px solid #f0f0f0;'>
-                    <h1 style='margin: 0; font-size: 28px; font-weight: 800; color: #333; letter-spacing: 1px;'>
-                        EDUCODE<span style='color: #fb873f;'>AI</span>
-                    </h1>
-                </div>
-                <div style='padding: 40px 30px;'>
-                    <h2 style='color: #2c3e50; font-size: 22px; margin-top: 0; margin-bottom: 20px; text-align: center;'>{tieuDe}</h2>
-                    <p style='color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px; text-align: center;'>
-                        {noiDung}
-                    </p>
-                    <div style='background-color: #fff8f3; border: 2px dashed #fb873f; border-radius: 12px; padding: 20px; text-align: center; margin: 0 auto; max-width: 300px;'>
-                        <div style='font-size: 13px; color: #fb873f; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;'>MÃƒ XÃC THá»°C Cá»¦A Báº N</div>
-                        <h1 style='color: #fb873f; font-size: 42px; font-weight: 800; letter-spacing: 8px; margin: 0; padding-left: 8px;'>{otp}</h1>
+            <!doctype html>
+            <html lang='vi'>
+            <head>
+                <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+                <meta charset='utf-8'>
+            </head>
+            <body style='margin:0; padding:0; background-color:#f5f5f5;'>
+                <div style='font-family: ""Segoe UI"", Roboto, ""Helvetica Neue"", Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea;'>
+                    <div style='background-color: #fcfcfc; padding: 25px 0; text-align: center; border-bottom: 1px solid #f0f0f0;'>
+                        <h1 style='margin: 0; font-size: 28px; font-weight: 800; color: #333; letter-spacing: 1px;'>
+                            EDUCODE<span style='color: #fb873f;'>AI</span>
+                        </h1>
                     </div>
-                    <p style='color: #888; font-size: 14px; text-align: center; margin-top: 30px;'>
-                        MÃ£ xÃ¡c thá»±c nÃ y cÃ³ hiá»‡u lá»±c trong <b style='color: #555;'>5 phÃºt</b>.<br>Vui lÃ²ng khÃ´ng chia sáº» mÃ£ nÃ y cho báº¥t ká»³ ai Ä‘á»ƒ Ä‘áº£m báº£o an toÃ n.
-                    </p>
+                    <div style='padding: 40px 30px;'>
+                        <h2 style='color: #2c3e50; font-size: 22px; margin-top: 0; margin-bottom: 20px; text-align: center;'>{tieuDe}</h2>
+                        <p style='color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px; text-align: center;'>
+                            {noiDung}
+                        </p>
+                        <div style='background-color: #fff8f3; border: 2px dashed #fb873f; border-radius: 12px; padding: 20px; text-align: center; margin: 0 auto; max-width: 300px;'>
+                            <div style='font-size: 13px; color: #fb873f; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;'>M&#227; x&#225;c th&#7921;c c&#7911;a b&#7841;n</div>
+                            <h1 style='color: #fb873f; font-size: 42px; font-weight: 800; letter-spacing: 8px; margin: 0; padding-left: 8px;'>{otp}</h1>
+                        </div>
+                        <p style='color: #888; font-size: 14px; text-align: center; margin-top: 30px;'>
+                            M&#227; x&#225;c th&#7921;c n&#224;y c&#243; hi&#7879;u l&#7921;c trong <b style='color: #555;'>5 ph&#250;t</b>.<br>Vui l&#242;ng kh&#244;ng chia s&#7867; m&#227; n&#224;y cho b&#7845;t k&#7923; ai &#273;&#7875; &#273;&#7843;m b&#7843;o an to&#224;n.
+                        </p>
+                    </div>
+                    <div style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eee;'>
+                        <p style='color: #999; font-size: 13px; margin: 0 0 10px 0;'>N&#7871;u b&#7841;n kh&#244;ng y&#234;u c&#7847;u m&#227; n&#224;y, vui l&#242;ng b&#7887; qua email ho&#7863;c li&#234;n h&#7879; v&#7899;i b&#7897; ph&#7853;n h&#7895; tr&#7907;.</p>
+                        <p style='color: #bbb; font-size: 12px; margin: 0;'>© {DateTime.Now.Year} EduCodeAI. All rights reserved.</p>
+                    </div>
                 </div>
-                <div style='background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eee;'>
-                    <p style='color: #999; font-size: 13px; margin: 0 0 10px 0;'>Náº¿u báº¡n khÃ´ng yÃªu cáº§u mÃ£ nÃ y, vui lÃ²ng bá» qua email hoáº·c liÃªn há»‡ vá»›i bá»™ pháº­n há»— trá»£.</p>
-                    <p style='color: #bbb; font-size: 12px; margin: 0;'>© {DateTime.Now.Year} EduCodeAI. All rights reserved.</p>
-                </div>
-            </div>";
+            </body>
+            </html>";
         }
 
         private async Task<NguoiDungModel?> LayNguoiDungKemThietBiAsync(string t) => 
@@ -420,7 +435,7 @@ namespace educodeai_server.Services.Implementation
             _memoryCache.Set("OTP_Register_" + r.Email, (Otp: otp, Data: r), TimeSpan.FromMinutes(5));
 
             string subject = "Mã xác thực đăng ký EduCodeAI";
-            string body = $"Mã OTP của bạn là: <h1 style='color: #fb873f;'>{otp}</h1> Mã có hiệu lực trong 5 phút.";
+            string body = $"Mã OTP của bạn là: <h1 style='color: #fb873f;'>{otp}</h1> Mã có hiệu lực trong 5 ph&#250;t.";
             return await EmailHelper.SendEmailAsync(r.Email, subject, body);
         }
 
@@ -607,6 +622,9 @@ namespace educodeai_server.Services.Implementation
             var taiKhoan = request.TaiKhoan.Trim();
             var soGiayTo = request.SoGiayTo.Trim();
 
+            if (request.LoaiDoiTuongThue is not ("CaNhan" or "DoanhNghiep"))
+                throw new Exception("Vui lòng chọn loại đối tượng nộp thuế.");
+
             // 1. Kiểm tra trùng với tài khoản đã hoạt động (NguoiDungs)
             if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
                 throw new Exception("Email này đã được sử dụng bởi một tài khoản khác.");
@@ -617,6 +635,9 @@ namespace educodeai_server.Services.Implementation
             // 2. Kiểm tra trùng trong hồ sơ đang xử lý (chưa bị từ chối hẳn)
             if (await _context.HoSoDangKyGiangViens.AnyAsync(x => x.Email == email && x.TrangThaiHoSo != "TuChoi"))
                 throw new Exception("Email này đang có hồ sơ chờ xử lý. Vui lòng tra cứu trạng thái hồ sơ để cập nhật.");
+
+            if (await _context.HoSoDangKyGiangViens.AnyAsync(x => x.TaiKhoan.ToLower() == taiKhoan.ToLower() && x.TrangThaiHoSo != "TuChoi"))
+                throw new Exception("T\u00ean t\u00e0i kho\u1ea3n n\u00e0y \u0111\u00e3 \u0111\u01b0\u1ee3c d\u00f9ng trong m\u1ed9t h\u1ed3 s\u01a1 \u0111\u0103ng k\u00fd \u0111ang x\u1eed l\u00fd.");
 
             if (await _context.HoSoDangKyGiangViens.AnyAsync(x => x.SoGiayTo == soGiayTo && x.TrangThaiHoSo != "TuChoi"))
                 throw new Exception("Số giấy tờ này đang có hồ sơ chờ xử lý.");
@@ -642,13 +663,36 @@ namespace educodeai_server.Services.Implementation
             if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0)
                 ValidateFile(request.AnhDaiDien, "ảnh đại diện");
 
-            // 4. Lưu file upload ( GUID + ext, chống path traversal)
-            var uploadRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien");
-            var avatarRoot = Path.Combine(uploadRoot, "avatars");
-            var docRoot = Path.Combine(uploadRoot, "giay-to");
-            Directory.CreateDirectory(avatarRoot);
-            Directory.CreateDirectory(docRoot);
+            // 4. Quét OCR ngay trong request. Ảnh CCCD không được ghi xuống ổ đĩa.
+            var ketQuaQuet = await _giayToScanningService.QuetGiayToAsync(new GiayToScanningRequest
+            {
+                AnhMatTruoc = request.AnhGiayToMatTruoc,
+                AnhMatSau = request.AnhGiayToMatSau,
+                LoaiGiayTo = request.LoaiGiayTo.Trim()
+            });
+            if (!ketQuaQuet.ThanhCong || string.IsNullOrWhiteSpace(ketQuaQuet.SoGiayTo))
+                throw new Exception(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
+            if (!string.Equals(ketQuaQuet.SoGiayTo.Trim(), soGiayTo, StringComparison.OrdinalIgnoreCase))
+                throw new Exception("Số giấy tờ nhập vào không khớp với ảnh CCCD đã quét.");
 
+            var duLieuCccdMaHoa = _cccdDataProtector.Protect(JsonSerializer.Serialize(new
+            {
+                loaiGiayTo = request.LoaiGiayTo.Trim(),
+                hoTen = ketQuaQuet.HoTen,
+                soGiayTo = ketQuaQuet.SoGiayTo,
+                ngaySinh = ketQuaQuet.NgaySinh,
+                gioiTinh = ketQuaQuet.GioiTinh,
+                ngayCap = ketQuaQuet.NgayCap,
+                // ?u ti?n n?i c?p ng??i d?ng nh?p tay; fallback OCR n?u tr?ng.
+                noiCap = !string.IsNullOrWhiteSpace(request.NoiCap) ? request.NoiCap.Trim() : ketQuaQuet.NoiCap,
+                diaChi = ketQuaQuet.DiaChi,
+                quocTich = ketQuaQuet.QuocTich,
+                nguyenQuan = ketQuaQuet.NguyenQuan
+            }));
+
+            // Chỉ avatar được lưu. Ảnh CCCD không được lưu ở bất kỳ thư mục nào.
+            var avatarRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien", "avatars");
+            Directory.CreateDirectory(avatarRoot);
             string? avatarPath = null;
             List<string> savedFiles = new();
 
@@ -659,12 +703,6 @@ namespace educodeai_server.Services.Implementation
                     avatarPath = await LuuFileAsync(request.AnhDaiDien, avatarRoot, "/uploads/dang-ky-giang-vien/avatars");
                     savedFiles.Add(Path.Combine(avatarRoot, Path.GetFileName(avatarPath)));
                 }
-
-                var frontPath = await LuuFileAsync(request.AnhGiayToMatTruoc, docRoot, "/uploads/dang-ky-giang-vien/giay-to");
-                savedFiles.Add(Path.Combine(docRoot, Path.GetFileName(frontPath)));
-
-                var backPath = await LuuFileAsync(request.AnhGiayToMatSau, docRoot, "/uploads/dang-ky-giang-vien/giay-to");
-                savedFiles.Add(Path.Combine(docRoot, Path.GetFileName(backPath)));
 
                 // 5. Tạo hồ sơ đăng ký trong transaction (bọc trong execution strategy vì Npgsql retry không cho BeginTransaction trực tiếp)
                 var strategy = _context.Database.CreateExecutionStrategy();
@@ -691,8 +729,9 @@ namespace educodeai_server.Services.Implementation
                             LoaiGiayTo = request.LoaiGiayTo.Trim(),
                             SoGiayTo = soGiayTo,
                             AnhDaiDienUrl = avatarPath,
-                            AnhGiayToMatTruocUrl = frontPath,
-                            AnhGiayToMatSauUrl = backPath,
+                            DuLieuCccdMaHoa = duLieuCccdMaHoa,
+                            AnhGiayToMatTruocUrl = string.Empty,
+                            AnhGiayToMatSauUrl = string.Empty,
                             PhuongThucThanhToan = request.PhuongThucThanhToan.Trim(),
                             TenNganHang = request.TenNganHang?.Trim(),
                             SoTaiKhoanNhanTien = request.SoTaiKhoanNhanTien?.Trim(),
@@ -761,6 +800,26 @@ namespace educodeai_server.Services.Implementation
             await file.CopyToAsync(stream);
             return $"{publicPrefix}/{fileName}";
         }
+
+        /// <summary>
+        /// Lưu ảnh CCCD/private vào thư mục ngoài wwwroot.
+        /// Trả về token nội bộ: private://giay-to/{fileName}
+        /// </summary>
+        private static async Task<string> LuuFilePrivateAsync(IFormFile file, string folderPath)
+        {
+            var ext = Path.GetExtension(file.FileName);
+            if (!_allowedImgExtensions.Contains(ext) || file.Length > _maxFileSize)
+                throw new Exception("File không hợp lệ.");
+
+            var fileName = $"{Guid.NewGuid()}{ext.ToLowerInvariant()}";
+            var fullPath = Path.Combine(folderPath, fileName);
+            await using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+            return $"private://giay-to/{fileName}";
+        }
+
 
 
         /// <summary>
@@ -876,29 +935,51 @@ namespace educodeai_server.Services.Implementation
             if (request.MaSoThue != null) hoSo.MaSoThue = request.MaSoThue.Trim();
             if (!string.IsNullOrWhiteSpace(request.LoaiDoiTuongThue)) hoSo.LoaiDoiTuongThue = request.LoaiDoiTuongThue.Trim();
 
-            // Cập nhật file mới nếu có
-            var uploadRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien");
-            var avatarRoot = Path.Combine(uploadRoot, "avatars");
-            var docRoot = Path.Combine(uploadRoot, "giay-to");
+            // Cập nhật file/avatar nếu có. Ảnh CCCD chỉ dùng tạm để OCR, không lưu file.
+            var avatarRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien", "avatars");
             Directory.CreateDirectory(avatarRoot);
-            Directory.CreateDirectory(docRoot);
-
-            string? oldAvatar = hoSo.AnhDaiDienUrl, oldFront = hoSo.AnhGiayToMatTruocUrl, oldBack = hoSo.AnhGiayToMatSauUrl;
+            string? oldAvatar = hoSo.AnhDaiDienUrl;
 
             if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0)
             {
                 var p = await LuuFileAsync(request.AnhDaiDien, avatarRoot, "/uploads/dang-ky-giang-vien/avatars");
                 hoSo.AnhDaiDienUrl = p;
             }
-            if (request.AnhGiayToMatTruoc != null && request.AnhGiayToMatTruoc.Length > 0)
+
+            // Nếu giảng viên gửi lại 2 mặt CCCD thì quét lại và mã hóa dữ liệu mới.
+            if (request.AnhGiayToMatTruoc != null && request.AnhGiayToMatTruoc.Length > 0
+                && request.AnhGiayToMatSau != null && request.AnhGiayToMatSau.Length > 0)
             {
-                var p = await LuuFileAsync(request.AnhGiayToMatTruoc, docRoot, "/uploads/dang-ky-giang-vien/giay-to");
-                hoSo.AnhGiayToMatTruocUrl = p;
-            }
-            if (request.AnhGiayToMatSau != null && request.AnhGiayToMatSau.Length > 0)
-            {
-                var p = await LuuFileAsync(request.AnhGiayToMatSau, docRoot, "/uploads/dang-ky-giang-vien/giay-to");
-                hoSo.AnhGiayToMatSauUrl = p;
+                var ketQuaQuet = await _giayToScanningService.QuetGiayToAsync(new GiayToScanningRequest
+                {
+                    AnhMatTruoc = request.AnhGiayToMatTruoc,
+                    AnhMatSau = request.AnhGiayToMatSau,
+                    LoaiGiayTo = string.IsNullOrWhiteSpace(hoSo.LoaiGiayTo) ? "CCCD" : hoSo.LoaiGiayTo
+                });
+                if (!ketQuaQuet.ThanhCong || string.IsNullOrWhiteSpace(ketQuaQuet.SoGiayTo))
+                    throw new Exception(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
+
+                var soGiayToMoi = !string.IsNullOrWhiteSpace(request.SoGiayTo) ? request.SoGiayTo.Trim() : hoSo.SoGiayTo;
+                if (!string.Equals(ketQuaQuet.SoGiayTo.Trim(), soGiayToMoi, StringComparison.OrdinalIgnoreCase))
+                    throw new Exception("Số giấy tờ nhập vào không khớp với ảnh CCCD đã quét.");
+
+                hoSo.SoGiayTo = soGiayToMoi;
+                hoSo.DuLieuCccdMaHoa = _cccdDataProtector.Protect(JsonSerializer.Serialize(new
+                {
+                    loaiGiayTo = hoSo.LoaiGiayTo,
+                    hoTen = ketQuaQuet.HoTen,
+                    soGiayTo = ketQuaQuet.SoGiayTo,
+                    ngaySinh = ketQuaQuet.NgaySinh,
+                    gioiTinh = ketQuaQuet.GioiTinh,
+                    ngayCap = ketQuaQuet.NgayCap,
+                    // ?u ti?n n?i c?p ng??i d?ng nh?p tay; fallback OCR n?u tr?ng.
+                    noiCap = !string.IsNullOrWhiteSpace(request.NoiCap) ? request.NoiCap.Trim() : ketQuaQuet.NoiCap,
+                    diaChi = ketQuaQuet.DiaChi,
+                    quocTich = ketQuaQuet.QuocTich,
+                    nguyenQuan = ketQuaQuet.NguyenQuan
+                }));
+                hoSo.AnhGiayToMatTruocUrl = string.Empty;
+                hoSo.AnhGiayToMatSauUrl = string.Empty;
             }
 
             // Đặt lại trạng thái chờ duyệt
@@ -912,21 +993,17 @@ namespace educodeai_server.Services.Implementation
             hoSo.BoSungTokenHetHan = null;
             await _context.SaveChangesAsync();
 
-            // Dọn file cũ đã thay (tránh rác ổ đĩa)
-            static void XoaFileCu(string? url, string webRoot)
+            // Dọn avatar cũ nếu đã thay
+            if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0 && !string.IsNullOrWhiteSpace(oldAvatar))
             {
-                if (string.IsNullOrWhiteSpace(url)) return;
                 try
                 {
-                    var rel = url.TrimStart('/');
-                    var full = Path.Combine(webRoot, rel.Replace('/', Path.DirectorySeparatorChar));
+                    var rel = oldAvatar.TrimStart('/');
+                    var full = Path.Combine(_env.WebRootPath, rel.Replace('/', Path.DirectorySeparatorChar));
                     if (File.Exists(full)) File.Delete(full);
                 }
-                catch { }
+                catch { /* ignore */ }
             }
-            if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0) XoaFileCu(oldAvatar, _env.WebRootPath);
-            if (request.AnhGiayToMatTruoc != null && request.AnhGiayToMatTruoc.Length > 0) XoaFileCu(oldFront, _env.WebRootPath);
-            if (request.AnhGiayToMatSau != null && request.AnhGiayToMatSau.Length > 0) XoaFileCu(oldBack, _env.WebRootPath);
 
             return new
             {

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Mail;
 using System.Linq;
+using System.Text;
 
 namespace educodeai_server.Helpers
 {
@@ -55,12 +56,13 @@ namespace educodeai_server.Helpers
                 };
 
                 using var message = new MailMessage();
-                message.From = new MailAddress(senderEmail!, senderName);
+                message.From = new MailAddress(senderEmail!, senderName, Encoding.UTF8);
                 message.To.Add(toEmail);
                 message.Subject = subject;
-                message.SubjectEncoding = System.Text.Encoding.UTF8;
+                message.SubjectEncoding = Encoding.UTF8;
+                message.HeadersEncoding = Encoding.UTF8;
                 message.Body = body;
-                message.BodyEncoding = System.Text.Encoding.UTF8;
+                message.BodyEncoding = Encoding.UTF8;
                 message.IsBodyHtml = true;
 
                 if (attachments != null)

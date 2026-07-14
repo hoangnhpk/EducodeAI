@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
@@ -55,10 +55,14 @@ namespace educodeai_server.Helpers
 
             var candidates = new List<string>();
 
-            foreach (Match match in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
+            // ?u ti?n JSON n?m trong code block ```json ... ``` ho?c ``` ... ```
+            foreach (Match codeBlockMatch in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
             {
-                candidates.Add(match.Groups[1].Value);
+                var value = codeBlockMatch.Groups[1].Value?.Trim();
+                if (!string.IsNullOrWhiteSpace(value))
+                    candidates.Add(value);
             }
+
 
             candidates.Add(text.Trim());
             candidates.AddRange(TrichXuatJsonCanBang(text));
@@ -66,7 +70,8 @@ namespace educodeai_server.Helpers
             foreach (var candidate in candidates.Distinct())
             {
                 var raw = candidate.Trim();
-                if (string.IsNullOrWhiteSpace(raw)) continue;
+                if (string.IsNullOrWhiteSpace(raw))
+                    continue;
 
                 try
                 {
@@ -76,8 +81,9 @@ namespace educodeai_server.Helpers
                 }
                 catch
                 {
-                    // Thu candidate tiep theo.
+                    // Th? candidate ti?p theo.
                 }
+
             }
 
             return false;
