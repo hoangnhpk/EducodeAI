@@ -219,9 +219,11 @@ export const capNhatBaiHocFile = async (maBaiHoc: number, dto: any) => {
 };
 
 // [HttpDelete("xoa-video/{maBaiHoc}")]
-export const xoaBaiHoc = async (_maGiangVien: number, maBaiHoc: number) => {
+// Trả về message từ backend để hiển thị rõ kết quả xóa tài nguyên Cloudinary
+// (video + phụ đề). Khi có tài nguyên sót lại trên Cloud, message sẽ cảnh báo cần dọn tay.
+export const xoaBaiHoc = async (_maGiangVien: number, maBaiHoc: number): Promise<{ success: boolean; message: string }> => {
   const res: any = await axiosClient.delete(`${BASE}/xoa-video/${maBaiHoc}`);
-  return res?.success ?? true;
+  return { success: res?.success ?? true, message: res?.message ?? '' };
 };
 
 // [HttpPut("chapters/{maChuong}/lessons/reorder")]

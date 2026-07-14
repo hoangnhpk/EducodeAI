@@ -36,11 +36,11 @@ namespace educodeai_server.Services.Implementation
         {
             var giangVien = await _dbContext.NguoiDungs
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.MaNguoiDung == maGiangVien && x.VaiTro == 1);
+                .FirstOrDefaultAsync(x => x.MaNguoiDung == maGiangVien);
 
             if (giangVien == null)
             {
-                throw new ApplicationException("Không tìm thấy tài khoản giảng viên.");
+                throw new ApplicationException("Không tìm thấy tài khoản.");
             }
 
             var (tongDoanhThuDaGhiNhan, tongDangChoXuLyRut, tongDaChuyenKhoan) = await TinhToanSoDuViAsync(maGiangVien);

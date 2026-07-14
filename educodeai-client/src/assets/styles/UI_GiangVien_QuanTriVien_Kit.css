@@ -151,7 +151,7 @@ label {
   display: block;
 }
 
-input, select, textarea {
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   width: 100%;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
@@ -269,6 +269,7 @@ textarea:focus {
 .qtv-sidebar-header {
   padding: 30px 20px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
 }
 
 .header-logo {

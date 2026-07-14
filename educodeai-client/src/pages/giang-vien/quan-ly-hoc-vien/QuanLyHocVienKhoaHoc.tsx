@@ -5,7 +5,6 @@ import {
   BsEyeFill, BsCheckCircleFill, BsX, BsCircle, BsChevronDown, BsGiftFill,
   BsEnvelopeFill, BsStarFill, BsClockHistory, BsPersonPlusFill, BsDownload
 } from 'react-icons/bs';
-import { getUserId } from '@/utils/authHelper';
 import Swal from 'sweetalert2';
 import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
 import lopHocService from '@/services/lop-hoc.service';
@@ -203,56 +202,45 @@ export default function QuanLyHocVienKhoaHoc() {
   const daChonKhoaCuThe = selectedKhoaHoc !== ALL_COURSES_VALUE;
 
   const API_URL = import.meta.env.VITE_API_URL;
-  const maGiangVien = useMemo(() => getUserId() ?? 1, []);
 
   useEffect(() => { setCurrentPage(1); }, [searchInput]);
 
   const fetchKhoaHocs = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/api/giang-vien/lop-hoc/danh-sach-khoa/${maGiangVien}`);
-      if (res.ok) {
-        const result = await res.json();
-        const data = (result?.data ?? []) as KhoaHoc[];
-        if (Array.isArray(data) && data.length > 0) {
-          setKhoaHocs(data);
-          return;
-        }
+      const data = (await lopHocService.layDanhSachKhoa()) as KhoaHoc[];
+      if (Array.isArray(data) && data.length > 0) {
+        setKhoaHocs(data);
+        return;
+      }
 
-        // Fallback: nếu giảng viên chưa có lớp học / API trả rỗng,
-        // vẫn xổ ra toàn bộ khóa học có sẵn để lựa chọn.
-        const token = (localStorage.getItem('user_token') ?? '').trim();
-        const resAll = await fetch(`${API_URL}/api/giangvien/quan-ly-lo-trinh/danh-sach-khoa-hoc-co-san`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
-        if (resAll.ok) {
-          const all = await resAll.json();
-          const mapped: KhoaHoc[] = ((all?.data ?? []) as any[]).map((x) => ({
-            maKhoaHoc: Number(x.maKhoaHoc),
-            tenKhoaHoc: String(x.tenKhoaHoc ?? ''),
-            soLuongHocVien: 0,
-          })).filter((x) => Number.isFinite(x.maKhoaHoc) && x.maKhoaHoc > 0 && x.tenKhoaHoc);
-          setKhoaHocs(mapped);
-        } else {
-          setKhoaHocs([]);
-        }
+      // Fallback: nếu giảng viên chưa có lớp học / API trả rỗng,
+      // vẫn xổ ra toàn bộ khóa học có sẵn để lựa chọn.
+      const token = (localStorage.getItem('user_token') ?? '').trim();
+      const resAll = await fetch(`${API_URL}/api/giangvien/quan-ly-lo-trinh/danh-sach-khoa-hoc-co-san`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (resAll.ok) {
+        const all = await resAll.json();
+        const mapped: KhoaHoc[] = ((all?.data ?? []) as any[]).map((x) => ({
+          maKhoaHoc: Number(x.maKhoaHoc),
+          tenKhoaHoc: String(x.tenKhoaHoc ?? ''),
+          soLuongHocVien: 0,
+        })).filter((x) => Number.isFinite(x.maKhoaHoc) && x.maKhoaHoc > 0 && x.tenKhoaHoc);
+        setKhoaHocs(mapped);
+      } else {
+        setKhoaHocs([]);
       }
     } catch (error) { console.error(error); }
-  }, [API_URL, maGiangVien]);
+  }, [API_URL]);
 
   const fetchHocViens = useCallback(async (maKhoa: string) => {
     setLoading(true);
     try {
-      const url = maKhoa === ALL_COURSES_VALUE
-        ? `${API_URL}/api/giang-vien/lop-hoc/danh-sach-hoc-vien/${maGiangVien}`
-        : `${API_URL}/api/giang-vien/lop-hoc/danh-sach-hoc-vien/${maGiangVien}?maKhoaHoc=${maKhoa}`;
-
-      const res = await fetch(url);
-      if (res.ok) {
-        const result = await res.json();
-        setHocViens(result.data);
-      }
+      const maKhoaHoc = maKhoa === ALL_COURSES_VALUE ? undefined : Number(maKhoa);
+      const data = await lopHocService.layDanhSachHocVien(maKhoaHoc);
+      setHocViens(data);
     } catch (error) { console.error(error); } finally { setLoading(false); }
-  }, [API_URL, maGiangVien]);
+  }, []);
 
   useEffect(() => { fetchKhoaHocs(); }, [fetchKhoaHocs]);
 
@@ -270,21 +258,17 @@ export default function QuanLyHocVienKhoaHoc() {
   const openStudentCoursesModal = useCallback(async (maNguoiDung: number) => {
     setModalMode('DANH_SACH_KHOA');
     setStudentCourses([]);
-    const res = await fetch(`${API_URL}/api/giang-vien/lop-hoc/hoc-vien/${maNguoiDung}/khoa-hoc/${maGiangVien}`);
-    if (!res.ok) return;
-    const result = await res.json();
-    setStudentCourses(result.data);
-  }, [API_URL, maGiangVien]);
+    const data = await lopHocService.layCacKhoaHocCuaHocVien(maNguoiDung);
+    setStudentCourses(data);
+  }, []);
 
   const openProgressModal = useCallback(async (maNguoiDung: number) => {
     setModalMode('TIEN_DO');
     setTienDoKhoaHoc(null);
     setExpandedChapters([]);
-    const res = await fetch(`${API_URL}/api/giang-vien/lop-hoc/${selectedKhoaHoc}/hoc-vien/${maNguoiDung}/tien-do-chi-tiet`);
-    if (!res.ok) return;
-    const result = await res.json();
-    setTienDoKhoaHoc(result.data);
-  }, [API_URL, selectedKhoaHoc]);
+    const data = await lopHocService.layTienDoChiTiet(Number(selectedKhoaHoc), maNguoiDung);
+    setTienDoKhoaHoc(data);
+  }, [selectedKhoaHoc]);
 
   // --- XỬ LÝ KHI BẤM ICON CON MẮT ---
   const handleViewDetailClick = useCallback(async (hv: HocVien) => {

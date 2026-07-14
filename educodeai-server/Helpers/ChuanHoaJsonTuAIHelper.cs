@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
@@ -69,7 +69,8 @@ namespace educodeai_server.Helpers
             foreach (var candidate in candidates.Distinct())
             {
                 var raw = candidate.Trim();
-                if (string.IsNullOrWhiteSpace(raw)) continue;
+                if (string.IsNullOrWhiteSpace(raw))
+                    continue;
 
                 try
                 {

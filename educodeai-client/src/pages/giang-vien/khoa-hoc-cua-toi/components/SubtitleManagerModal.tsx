@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import type { BaiHocDetail } from '../types';
-import { taiLenPhuDe, taoPhuDeAI } from '@/services/media.service';
+import { taiLenPhuDe, taoPhuDeAI, GIA_PHU_DE_AI_MOI_PHUT_USD } from '@/services/media.service';
 
 interface SubtitleManagerModalProps {
   dangMo: boolean;
@@ -44,8 +44,8 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
     setThanhCong(null);
 
     try {
-      const data = await taiLenPhuDe(filePhuDe);
-      setThanhCong('Đã tải lên phụ đề thành công! Vui lòng lưu bài học (Sẽ cập nhật ở phiên bản sau).');
+      const data = await taiLenPhuDe(filePhuDe, baiHoc.maBaiHoc);
+      setThanhCong('Đã tải lên và lưu phụ đề thành công!');
       khiCapNhat({ ...baiHoc, hasSubtitle: true, subtitleSource: 'manual', subtitleUrl: data.url });
     } catch (err: any) {
       setLoi(err.message || 'Lỗi khi upload phụ đề.');
@@ -71,7 +71,7 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
     }
   };
 
-  const chiPhiDuKien = baiHoc.thoiLuong > 0 ? (Math.ceil(baiHoc.thoiLuong / 60) * 0.06).toFixed(2) : "0.06";
+  const chiPhiDuKien = baiHoc.thoiLuong > 0 ? (Math.ceil(baiHoc.thoiLuong / 60) * GIA_PHU_DE_AI_MOI_PHUT_USD).toFixed(2) : GIA_PHU_DE_AI_MOI_PHUT_USD.toFixed(3);
 
   return (
     <div className="khm-modal-backdrop" onClick={dongModal}>
