@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { aiRoadmapService } from '@/services/aiRoadmap.service';
 import type { LoTrinhAICuaToiDTO } from './LoTrinhAICuaToiDTO';
@@ -9,13 +9,13 @@ import Swal from 'sweetalert2';
 const KhoaHocCaNhanAI = () => {
     const [roadmaps, setRoadmaps] = useState<LoTrinhAICuaToiDTO[]>([]);
     const [savedRoadmaps, setSavedRoadmaps] = useState<any[]>([]);
-    const [khoaHocCoSan, setKhoaHocCoSan] = useState<any[]>([]); // Kho chá»©a áº£nh Ä‘á»ƒ DÃ² tÃ¬m
+    const [khoaHocCoSan, setKhoaHocCoSan] = useState<any[]>([]); // Kho chứa ảnh để Dò tìm
     const [loading, setLoading] = useState<boolean>(true);
 
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [viewData, setViewData] = useState<{ title: string, steps: any[], author: string } | null>(null);
 
-    // ðŸ‘‰ ÄÃƒ Sá»¬A: Thay áº£nh JS báº±ng Icon Code/AI xá»‹n sÃ²
+    // 👉 ĐÃ SỬA: Thay ảnh JS bằng Icon Code/AI xịn sò
     const getImgUrl = (imgStr: string) => {
         if (!imgStr) return 'https://cdn-icons-png.flaticon.com/512/8633/8633190.png';
         if (imgStr.startsWith('http')) return imgStr;
@@ -23,7 +23,7 @@ const KhoaHocCaNhanAI = () => {
     };
 
     const getCleanContent = (text: string) => {
-        const fallback = { title: "Lá»™ trÃ¬nh há»c táº­p", steps: [] };
+        const fallback = { title: "Lộ trình học tập", steps: [] };
         if (!text) return fallback;
         try {
             let raw = text;
@@ -49,16 +49,16 @@ const KhoaHocCaNhanAI = () => {
                             item.khoaHocSuDung.forEach((kh: any) => {
                                 finalSteps.push({
                                     maKhoaHoc: kh.maKhoaHoc || 0,
-                                    ten: kh.tenKhoaHoc || kh.ten || "KhÃ³a há»c",
-                                    trangThai: kh.ghiChu || kh.loai || kh.trangThai || "Báº¯t buá»™c",
+                                    ten: kh.tenKhoaHoc || kh.ten || "Khóa học",
+                                    trangThai: kh.ghiChu || kh.loai || kh.trangThai || "Bắt buộc",
                                     hinhAnh: kh.hinhAnh || ""
                                 });
                             });
                         } else {
                             finalSteps.push({
                                 maKhoaHoc: item.maKhoaHoc || 0,
-                                ten: item.ten || item.tenKhoaHoc || "KhÃ³a há»c",
-                                trangThai: item.trangThai || item.loai || item.ghiChu || "Báº¯t buá»™c",
+                                ten: item.ten || item.tenKhoaHoc || "Khóa học",
+                                trangThai: item.trangThai || item.loai || item.ghiChu || "Bắt buộc",
                                 hinhAnh: item.hinhAnh || ""
                             });
                         }
@@ -66,7 +66,7 @@ const KhoaHocCaNhanAI = () => {
                 }
 
                 const extractedTitle = jsonData.tenLoTrinh || jsonData.TenLoTrinh || jsonData.tieuDe;
-                return { title: extractedTitle || "Lá»™ trÃ¬nh AI", steps: finalSteps };
+                return { title: extractedTitle || "Lộ trình AI", steps: finalSteps };
             }
             return fallback;
         } catch { return fallback; }
@@ -75,13 +75,11 @@ const KhoaHocCaNhanAI = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Lá»™ trÃ¬nh Ä‘ang há»c
                 const data = await aiRoadmapService.getAllLoTrinh();
                 setRoadmaps(data);
 
                 const token = localStorage.getItem('user_token');
 
-                // 2. Lá»™ trÃ¬nh Ä‘Ã£ lÆ°u
                 const resSaved = await fetch('https://localhost:7284/api/hocvien/kham-pha-lo-trinh/danh-sach-da-luu', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -90,7 +88,6 @@ const KhoaHocCaNhanAI = () => {
                     if (resultSaved.success) setSavedRoadmaps(resultSaved.data || []);
                 }
 
-                // 3. Láº¥y KHO KHÃ“A Há»ŒC CÃ“ Sáº´N (Äá»ƒ radar dÃ² tÃ¬m áº£nh)
                 const resKhoaHoc = await fetch('https://localhost:7284/api/giangvien/quan-ly-lo-trinh/danh-sach-khoa-hoc-co-san', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -100,7 +97,7 @@ const KhoaHocCaNhanAI = () => {
                 }
 
             } catch (error) {
-                console.error("Lá»—i khi táº£i dá»¯ liá»‡u:", error);
+                console.error("Lỗi khi tải dữ liệu:", error);
             } finally {
                 setLoading(false);
             }
@@ -110,14 +107,14 @@ const KhoaHocCaNhanAI = () => {
 
     const handleRemoveSaved = (id: number) => {
         Swal.fire({
-            title: 'Bá» lÆ°u lá»™ trÃ¬nh nÃ y?',
-            text: "Lá»™ trÃ¬nh sáº½ bá»‹ xÃ³a khá»i danh sÃ¡ch Ä‘Ã£ lÆ°u cá»§a sáº¿p!",
+            title: 'Bỏ lưu lộ trình này?',
+            text: "Lộ trình sẽ bị xóa khỏi danh sách đã lưu của sếp!",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#64748b',
-            confirmButtonText: 'Äá»“ng Ã½ bá»',
-            cancelButtonText: 'Há»§y'
+            confirmButtonText: 'Đồng ý bỏ',
+            cancelButtonText: 'Hủy'
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
@@ -128,18 +125,18 @@ const KhoaHocCaNhanAI = () => {
                     });
                     if (response.ok) {
                         setSavedRoadmaps(prev => prev.filter(item => item.maLoTrinh !== id));
-                        Swal.fire('ThÃ nh cÃ´ng!', 'ÄÃ£ bá» lÆ°u lá»™ trÃ¬nh.', 'success');
+                        Swal.fire('Thành công!', 'Đã bỏ lưu lộ trình.', 'success');
                     } else {
-                        Swal.fire('Lá»—i!', 'KhÃ´ng thá»ƒ xÃ³a lá»™ trÃ¬nh nÃ y.', 'error');
+                        Swal.fire('Lỗi!', 'Không thể xóa lộ trình này.', 'error');
                     }
-                } catch (error) { console.error("Lá»—i khi xÃ³a:", error); }
+                } catch (error) { console.error("Lỗi khi xóa:", error); }
             }
         });
     };
 
     const handlePreview = async (item: any, isSavedItem: boolean = false) => {
         setIsPreviewOpen(true);
-        setViewData(null); // Hiện loading "Đang xử lý..."
+        setViewData(null); 
 
         let stepsToMatch: any[] = [];
         let viewTitle = "";
@@ -152,7 +149,6 @@ const KhoaHocCaNhanAI = () => {
             viewAuthor = item.tenGiangVien || item.tenNguoiTao || "Hệ thống AI";
         } else {
             try {
-                // Fix: Nếu là lộ trình gốc (không có noiDungJSON), gọi API lấy chi tiết để map vào popup
                 const detail = await aiRoadmapService.getChiTietLoTrinh(item.maLoTrinh);
                 detail.giaiDoan?.forEach((gd: any) => {
                     gd.danhSachKhoaHoc?.forEach((kh: any) => {
@@ -171,7 +167,6 @@ const KhoaHocCaNhanAI = () => {
             }
         }
 
-        // 👉 THUẬT TOÁN SMART MATCHING
         const matchedSteps = stepsToMatch.map((step: any) => {
             let img = step.hinhAnh;
             let name = step.ten;
@@ -208,34 +203,32 @@ const KhoaHocCaNhanAI = () => {
 
     return (
         <div className="khoa-hoc-ca-nhan-ai-page">
-            {/* KHá»I 1: Lá»˜ TRÃŒNH ÄANG Há»ŒC */}
+            {/* KHỐI 1: LỘ TRÌNH ĐANG HỌC */}
             <div className="container-xxl py-5 pt-0">
                 <div className="container">
                     <div className="roadmap-wrapper text-center mb-5">
-                        <p className="roadmap-eyebrow">Lá»™ trÃ¬nh há»c táº­p Ä‘Æ°á»£c cÃ¡ nhÃ¢n hÃ³a bá»Ÿi AI</p>
+                        <p className="roadmap-eyebrow">Lộ trình học tập được cá nhân hóa bởi AI</p>
                         <div className="roadmap-heading">
                             <h2 className="display-6 mb-1">Danh sách lộ trình phát triển</h2>
                             <p className="text-muted">Lộ trình được thiết kế riêng dựa trên mục tiêu và trình độ của sếp.</p>
-                            <Link to="/sinh-do-an-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2">
-                                <i className="fas fa-laptop-code"></i> Sinh Đồ Án AI Thực Tế
-                            </Link>
+                            <Link to="/sinh-do-an-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold">Tạo lộ trình mới</Link>
                         </div>
-
+                        
                         <div className="roadmap-grid">
                             {roadmaps.length > 0 ? (
                                 roadmaps.map((item) => (
                                     <div key={item.maLoTrinh} className="roadmap-card roadmap-card-primary text-start shadow-sm">
                                         <div className="card-top">
-                                            <span className="badge bg-primary mb-2">ÄANG Há»ŒC</span>
+                                            <span className="badge bg-primary mb-2">ĐANG HỌC</span>
                                             <h3 className="h5 fw-bold">{item.tenLoTrinh}</h3>
                                             <p className="roadmap-path small text-primary mb-2">
-                                                <i className="fa fa-layer-group me-1"></i> Tá»•ng {item.tongSoGiaiDoan} Giai Ä‘oáº¡n
+                                                <i className="fa fa-layer-group me-1"></i> Tổng {item.tongSoGiaiDoan} Giai đoạn
                                             </p>
                                             <small className="text-muted line-clamp-2">{item.moTaChung}</small>
                                         </div>
                                         <div className="mt-4 mb-3">
                                             <div className="progress-meta d-flex justify-content-between mb-1 small">
-                                                <span>HoÃ n thÃ nh: {item.soGiaiDoanHoanThanh}/{item.tongSoGiaiDoan}</span>
+                                                <span>Hoàn thành: {item.soGiaiDoanHoanThanh}/{item.tongSoGiaiDoan}</span>
                                                 <strong className="text-primary">{item.phanTramHoanThanh}%</strong>
                                             </div>
                                             <div className="progress" style={{ height: '6px' }}>
@@ -244,9 +237,9 @@ const KhoaHocCaNhanAI = () => {
                                         </div>
                                         <div className="d-flex gap-2 mt-2">
                                             <Link to={`/chi-tiet-lo-trinh/${encodeId(item.maLoTrinh)}`} className="btn btn-primary flex-grow-1 py-2">
-                                                VÃ o há»c ngay
+                                                Vào học ngay
                                             </Link>
-                                            <button onClick={() => handlePreview(item)} className="btn btn-outline-primary" title="Xem trÆ°á»›c cáº¥u trÃºc">
+                                            <button onClick={() => handlePreview(item)} className="btn btn-outline-primary" title="Xem trước cấu trúc">
                                                 <i className="fa fa-eye"></i>
                                             </button>
                                         </div>
@@ -254,18 +247,18 @@ const KhoaHocCaNhanAI = () => {
                                 ))
                             ) : (
                                 <div className="col-12 py-4 bg-light rounded-4 border border-dashed">
-                                    <p className="mb-3">Sáº¿p chÆ°a cÃ³ lá»™ trÃ¬nh cÃ¡ nhÃ¢n nÃ o.</p>
-                                    <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary btn-sm">Táº¡o má»›i ngay</Link>
+                                    <p className="mb-3">Sếp chưa có lộ trình cá nhân nào.</p>
+                                    <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary btn-sm">Tạo mới ngay</Link>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* KHá»I 2: Lá»˜ TRÃŒNH ÄÃƒ LÆ¯U */}
+                    {/* KHỐI 2: LỘ TRÌNH ĐÃ LƯU */}
                     <div className="saved-roadmap-section mt-5 pt-5 border-top">
                         <div className="text-center mb-4">
-                            <h2 className="h3 fw-bold"><i className="fa fa-bookmark text-warning me-2"></i>Lá»™ trÃ¬nh sáº¿p Ä‘Ã£ lÆ°u</h2>
-                            <p className="text-muted">CÃ¡c lá»™ trÃ¬nh hay sáº¿p Ä‘Ã£ nháº·t tá»« cá»™ng Ä‘á»“ng KhÃ¡m phÃ¡.</p>
+                            <h2 className="h3 fw-bold"><i className="fa fa-bookmark text-warning me-2"></i>Lộ trình sếp đã lưu</h2>
+                            <p className="text-muted">Các lộ trình hay sếp đã nhặt từ cộng đồng Khám phá.</p>
                         </div>
 
                         <div className="roadmap-grid">
@@ -275,14 +268,14 @@ const KhoaHocCaNhanAI = () => {
                                     return (
                                         <div key={item.maLoTrinh} className="roadmap-card saved-card text-start shadow-sm border-start border-4 border-warning">
                                             <div className="card-top">
-                                                <span className="badge bg-warning text-dark mb-2">ÄÃƒ LÆ¯U</span>
-                                                <h3 className="h5 fw-bold">{clean.title !== "Lá»™ trÃ¬nh AI" ? clean.title : (item.tieuDe || item.yeuCau)}</h3>
+                                                <span className="badge bg-warning text-dark mb-2">ĐÃ LƯU</span>
+                                                <h3 className="h5 fw-bold">{clean.title !== "Lộ trình AI" ? clean.title : (item.tieuDe || item.yeuCau)}</h3>
                                                 <p className="small text-muted mb-3">
-                                                    <i className="fa fa-calendar-alt me-1"></i> LÆ°u ngÃ y: {new Date(item.ngayTao).toLocaleDateString('vi-VN')}
+                                                    <i className="fa fa-calendar-alt me-1"></i> Lưu ngày: {new Date(item.ngayTao).toLocaleDateString('vi-VN')}
                                                 </p>
                                                 <div className="d-flex align-items-center gap-2 mb-3">
-                                                    <span className="badge bg-light text-dark border"><i className="fa fa-book me-1"></i> {clean.steps.length} Cháº·ng</span>
-                                                    <span className="small text-muted">Bá»Ÿi: {item.tenGiangVien || "Há»‡ thá»‘ng"}</span>
+                                                    <span className="badge bg-light text-dark border"><i className="fa fa-book me-1"></i> {clean.steps.length} Chặng</span>
+                                                    <span className="small text-muted">Bởi: {item.tenGiangVien || "Hệ thống"}</span>
                                                 </div>
                                             </div>
 
@@ -305,8 +298,8 @@ const KhoaHocCaNhanAI = () => {
                             ) : (
                                 <div className="col-12 text-center py-5 opacity-75">
                                     <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="80" className="mb-3" style={{ filter: 'grayscale(1)' }} alt="empty" />
-                                    <p>Sáº¿p chÆ°a lÆ°u lá»™ trÃ¬nh nÃ o tá»« trang KhÃ¡m phÃ¡.</p>
-                                    <Link to="/kham-pha-lo-trinh" className="text-decoration-none fw-bold">TÃ¬m lá»™ trÃ¬nh hay ngay â†’</Link>
+                                    <p>Sếp chưa lưu lộ trình nào từ trang Khám phá.</p>
+                                    <Link to="/kham-pha-lo-trinh" className="text-decoration-none fw-bold">Tìm lộ trình hay ngay &rarr;</Link>
                                 </div>
                             )}
                         </div>
@@ -314,36 +307,36 @@ const KhoaHocCaNhanAI = () => {
                 </div>
             </div>
 
-            {/* MODAL XEM CHI TIáº¾T */}
+            {/* MODAL XEM CHI TIẾT */}
             {isPreviewOpen && viewData && (
                 <div className="modal-overlay" onClick={() => setIsPreviewOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div className="pro-modal-v2" onClick={e => e.stopPropagation()} style={{ width: '650px', background: '#fff', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
                         <div className="modal-header-pro" style={{ padding: '24px 30px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <h2 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 800, color: '#1e293b' }}>{viewData.title}</h2>
-                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>TÃ¡c giáº£: <strong>{viewData.author}</strong></p>
+                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>Tác giả: <strong>{viewData.author}</strong></p>
                             </div>
-                            <button onClick={() => setIsPreviewOpen(false)} style={{ width: '36px', height: '36px', background: '#f1f5f9', border: 'none', borderRadius: '50%', color: '#64748b', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>Ã—</button>
+                            <button onClick={() => setIsPreviewOpen(false)} style={{ width: '36px', height: '36px', background: '#f1f5f9', border: 'none', borderRadius: '50%', color: '#64748b', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>&times;</button>
                         </div>
                         <div className="modal-body-pro" style={{ background: '#f8fafc', padding: '30px', maxHeight: '60vh', overflowY: 'auto' }}>
                             {viewData.steps.length > 0 ? viewData.steps.map((step: any, i: number) => (
-                                <div key={i} style={{ display: 'flex', gap: '15px', background: '#fff', padding: '15px', borderRadius: '12px', marginBottom: '12px', borderLeft: '4px solid #2563eb', borderTop: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
-                                    <div style={{ width: '32px', height: '32px', background: '#2563eb', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', flexShrink: 0 }}>{i + 1}</div>
+                                <div key={i} style={{ display: 'flex', gap: '15px', background: '#fff', padding: '15px', borderRadius: '12px', marginBottom: '12px', borderLeft: '4px solid #fb873f', borderTop: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
+                                    <div style={{ width: '32px', height: '32px', background: '#fb873f', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', flexShrink: 0 }}>{i + 1}</div>
                                     <img
                                         src={getImgUrl(step.hinhAnh)}
                                         style={{ width: '60px', height: '60px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
-                                        // ðŸ‘‰ ÄÃƒ Sá»¬A: Äá»“ng bá»™ onError vá»›i hÃ¬nh áº£nh Flaticon luÃ´n
+                                        // 👉 ĐÃ SỬA: Đồng bộ onError với hình ảnh Flaticon luôn
                                         onError={(e) => (e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/8633/8633190.png')}
                                     />
                                     <div style={{ flex: 1 }}>
                                         <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>{step.ten}</h4>
-                                        <span style={{ fontSize: '0.7rem', background: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: '6px', display: 'inline-block', marginTop: '6px', fontWeight: 700 }}>{step.trangThai || "Báº¯t buá»™c"}</span>
+                                        <span style={{ fontSize: '0.7rem', background: '#fff7f1', color: '#c2410c', padding: '4px 8px', borderRadius: '6px', display: 'inline-block', marginTop: '6px', fontWeight: 700 }}>{step.trangThai || "Bắt buộc"}</span>
                                     </div>
                                 </div>
-                            )) : <p className="text-center" style={{ color: '#64748b' }}>Dá»¯ liá»‡u lá»™ trÃ¬nh Ä‘ang Ä‘Æ°á»£c xá»­ lÃ½...</p>}
+                            )) : <p className="text-center" style={{ color: '#64748b' }}>Dữ liệu lộ trình đang được xử lý...</p>}
                         </div>
                         <div style={{ padding: '20px 30px', borderTop: '1px solid #e2e8f0', textAlign: 'right', background: '#fff' }}>
-                            <button onClick={() => setIsPreviewOpen(false)} className="btn btn-secondary" style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '10px 25px', borderRadius: '10px', fontWeight: 700 }}>ÄÃ“NG</button>
+                            <button onClick={() => setIsPreviewOpen(false)} className="btn btn-secondary" style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '10px 25px', borderRadius: '10px', fontWeight: 700 }}>ĐÓNG</button>
                         </div>
                     </div>
                 </div>
