@@ -71,22 +71,22 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
               <p className="fw-bold m-0" style={{ fontSize: '20px', color: '#0f172a' }}>{data?.['Tiêu đề'] || 'Quiz AI'}</p>
             </div>
             <div className="border-start ps-4">
-              <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: '#64748b' }}>Độ khó</label>
+              <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Độ khó</label>
               {getDifficultyBadge(data?.['Độ khó'] || 'Trung bình')}
             </div>
             <div className="border-start ps-4">
-              <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: '#64748b' }}>Số câu</label>
-              <span className="fw-bold" style={{ fontSize: '20px', color: '#6366f1' }}>{localCauHois.length}</span>
+              <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Số câu</label>
+              <span className="fw-bold" style={{ fontSize: '20px', color: 'var(--ai-accent)' }}>{localCauHois.length}</span>
             </div>
           </div>
 
           {/* Cài đặt quiz */}
           <div className="bg-white p-4 rounded-4 shadow-sm border">
             <div className="d-flex align-items-center mb-3">
-              <div className="bg-indigo-100 p-2 rounded-3 me-3" style={{ background: '#eef2ff' }}>
-                <i className="bi bi-sliders fs-5" style={{ color: '#6366f1' }} />
+              <div className="p-2 rounded-3 me-3" style={{ background: 'var(--ai-accent-soft)' }}>
+                <i className="bi bi-sliders fs-5" style={{ color: 'var(--ai-accent)' }} />
               </div>
-              <h5 className="m-0 fw-bold" style={{ color: '#1e293b' }}>Cài đặt Quiz</h5>
+              <h5 className="m-0 fw-bold" style={{ color: 'var(--text-dark)' }}>Cài đặt Quiz</h5>
             </div>
             <div className="row g-3">
               <div className="col-md-3">
@@ -123,7 +123,7 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
                 <div className="p-2 rounded-3 me-3" style={{ background: '#f0fdf4' }}>
                   <i className="bi bi-list-check fs-5 text-success" />
                 </div>
-                <h5 className="m-0 fw-bold" style={{ color: '#1e293b' }}>Câu hỏi ({localCauHois.length})</h5>
+                <h5 className="m-0 fw-bold" style={{ color: 'var(--text-dark)' }}>Câu hỏi ({localCauHois.length})</h5>
               </div>
               <span className="text-muted" style={{ fontSize: '12px' }}>Chỉnh sửa trực tiếp nếu cần</span>
             </div>
@@ -134,12 +134,12 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
                   {/* Header câu hỏi */}
                   <div className="d-flex align-items-start gap-3 mb-3">
                     <span className="fw-bold px-3 py-2 rounded-3 flex-shrink-0"
-                      style={{ background: '#6366f1', color: 'white', fontSize: '14px', minWidth: '42px', textAlign: 'center' }}>
+                      style={{ background: 'var(--ai-accent)', color: 'white', fontSize: '14px', minWidth: '42px', textAlign: 'center' }}>
                       {qIdx + 1}
                     </span>
                     <textarea
                       className="form-control flex-grow-1 border-0"
-                      style={{ minHeight: '70px', fontSize: '15px', fontWeight: 600, color: '#1e293b', background: 'white', resize: 'none' }}
+                      style={{ minHeight: '70px', fontSize: '15px', fontWeight: 600, color: 'var(--text-dark)', background: 'white', resize: 'none' }}
                       value={cau.NoiDung}
                       onChange={e => handleNoiDungChange(qIdx, e.target.value)}
                     />

@@ -154,7 +154,7 @@ export default function QuanLyReviewMoi() {
           icon: 'success',
           title: 'AI xử lý xong!',
           html: `✅ Duyệt: <strong>${result.soDaDuyet}</strong> &nbsp;|&nbsp; ❌ Từ chối: <strong>${result.soTuChoi}</strong>`,
-          confirmButtonColor: '#7c3aed',
+          confirmButtonColor: '#8b5cf6',
         });
       }
     } catch {
@@ -178,7 +178,7 @@ export default function QuanLyReviewMoi() {
       showCancelButton: true,
       confirmButtonText: '🤖 Để AI xử lý',
       cancelButtonText: 'Hủy',
-      confirmButtonColor: '#7c3aed',
+      confirmButtonColor: '#8b5cf6',
     });
     if (confirm.isConfirmed) await runAIDuyet(false);
   };

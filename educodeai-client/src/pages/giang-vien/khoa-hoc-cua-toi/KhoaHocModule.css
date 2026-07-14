@@ -2,19 +2,21 @@
    KhoaHocModule.css — Design System cho Module Khóa Học Của Tôi
    ============================================================ */
 
-/* ---------- Root Variables ---------- */
+/* ---------- Root Variables ----------
+   Repoint sang brand token toàn cục (variables.css). Giữ nguyên tên --khm-*
+   để không vỡ chỗ tham chiếu; brand = CAM (--primary), bỏ indigo. */
 :root {
-  --khm-primary: #6366f1;
-  --khm-primary-hover: #4f46e5;
-  --khm-primary-light: #eef2ff;
-  --khm-accent: #f59e0b;
-  --khm-accent-light: #fef3c7;
-  --khm-success: #10b981;
-  --khm-success-light: #d1fae5;
-  --khm-danger: #ef4444;
-  --khm-danger-light: #fee2e2;
-  --khm-warning: #f59e0b;
-  --khm-warning-light: #fef3c7;
+  --khm-primary: var(--primary);
+  --khm-primary-hover: var(--primary-hover);
+  --khm-primary-light: var(--primary-soft);
+  --khm-accent: var(--warning);
+  --khm-accent-light: var(--warning-soft);
+  --khm-success: var(--success);
+  --khm-success-light: var(--success-soft);
+  --khm-danger: var(--danger);
+  --khm-danger-light: var(--danger-soft);
+  --khm-warning: var(--warning);
+  --khm-warning-light: var(--warning-soft);
   --khm-gray-50: #f9fafb;
   --khm-gray-100: #f3f4f6;
   --khm-gray-200: #e5e7eb;
@@ -26,13 +28,16 @@
   --khm-gray-800: #1f2937;
   --khm-gray-900: #111827;
   --khm-white: #ffffff;
-  --khm-radius: 12px;
+  --khm-radius: var(--radius-md);
   --khm-radius-sm: 8px;
-  --khm-radius-lg: 16px;
-  --khm-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-  --khm-shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
-  --khm-shadow-lg: 0 10px 25px rgba(0,0,0,.08), 0 4px 10px rgba(0,0,0,.06);
-  --khm-transition: 0.2s ease;
+  --khm-radius-lg: var(--radius-lg);
+  --khm-shadow: var(--shadow-sm);
+  --khm-shadow-md: var(--shadow-md);
+  --khm-shadow-lg: var(--shadow-lg);
+  --khm-transition: var(--transition-fast);
+  /* ring cam mờ cho focus, thay cho rgba indigo */
+  --khm-focus-ring: 0 0 0 3px rgba(246, 144, 80, .18);
+  --khm-focus-ring-lg: 0 0 0 4px rgba(246, 144, 80, .14);
 }
 
 /* ---------- Layout ---------- */
@@ -100,7 +105,7 @@
 .khm-btn-primary:hover:not(:disabled) {
   background: var(--khm-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+  box-shadow: 0 4px 12px rgba(246,144,80,0.35);
 }
 
 .khm-btn-accent {
@@ -202,7 +207,7 @@
 }
 .khm-badge-primary {
   background: var(--khm-primary-light);
-  color: #312e81;
+  color: var(--primary-dark);
 }
 .khm-badge-yt {
   background: #fee2e2;
@@ -242,7 +247,7 @@
 .khm-form-select:focus,
 .khm-form-textarea:focus {
   border-color: var(--khm-primary);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+  box-shadow: var(--khm-focus-ring);
 }
 .khm-form-input.error,
 .khm-form-select.error,
@@ -423,7 +428,7 @@
 }
 .khm-search-input:focus {
   border-color: var(--khm-primary);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  box-shadow: var(--khm-focus-ring);
 }
 
 .khm-status-tabs {
@@ -468,7 +473,7 @@
 }
 .khm-category-select:focus {
   border-color: var(--khm-primary);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  box-shadow: var(--khm-focus-ring);
 }
 
 /* Sidebar giảng viên chiếm ~260px, nên breakpoint phải cao hơn 768px viewport
@@ -962,8 +967,8 @@
 }
 .khm-alert-info {
   background: var(--khm-primary-light);
-  color: #312e81;
-  border: 1px solid #c7d2fe;
+  color: var(--primary-dark);
+  border: 1px solid var(--primary);
 }
 .khm-alert-danger {
   background: var(--khm-danger-light);
@@ -978,31 +983,54 @@
 
 /* ---------- Stats row ---------- */
 .khm-stat-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
-  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 .khm-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   background: white;
   border: 1px solid var(--khm-gray-200);
-  border-radius: var(--khm-radius-sm);
+  border-radius: var(--khm-radius);
   box-shadow: var(--khm-shadow);
-  padding: 14px 18px;
-  text-align: center;
-  min-width: 80px;
-  flex: 1;
+  padding: 16px 18px;
+  min-width: 0;
+  transition: box-shadow var(--khm-transition), transform var(--khm-transition);
 }
+.khm-stat-card:hover {
+  box-shadow: var(--khm-shadow-md);
+  transform: translateY(-1px);
+}
+.khm-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--khm-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  background: var(--khm-gray-100);
+  color: var(--khm-gray-500);
+}
+.khm-stat-icon-primary { background: var(--primary-soft); color: var(--primary-dark); }
+.khm-stat-icon-success { background: var(--success-soft); color: var(--success-strong); }
+.khm-stat-icon-info { background: var(--info-soft); color: var(--info-strong); }
+.khm-stat-icon-warning { background: var(--warning-soft); color: var(--warning-strong); }
+.khm-stat-body { min-width: 0; }
 .khm-stat-value {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--khm-gray-900);
-  line-height: 1;
+  line-height: 1.1;
 }
 .khm-stat-label {
   font-size: 0.72rem;
   color: var(--khm-gray-500);
-  margin-top: 4px;
+  margin-top: 2px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -1040,7 +1068,7 @@
 .khm-step-circle.active {
   background: var(--khm-primary);
   color: white;
-  box-shadow: 0 0 0 4px rgba(99,102,241,0.2);
+  box-shadow: var(--khm-focus-ring-lg);
 }
 .khm-step-circle.pending {
   background: var(--khm-gray-200);
@@ -1175,7 +1203,7 @@
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 2.5px solid rgba(99,102,241,0.2);
+  border: 2.5px solid rgba(246, 144, 80, .2);
   border-top-color: var(--khm-primary);
   border-radius: 50%;
   animation: khm-spin 0.7s linear infinite;
@@ -1213,7 +1241,7 @@
 }
 .khm-url-input:focus {
   border-color: var(--khm-primary);
-  box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+  box-shadow: var(--khm-focus-ring-lg);
 }
 .khm-url-input.error { border-color: var(--khm-danger); }
 
@@ -1227,7 +1255,7 @@
 }
 .khm-progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--khm-primary), #818cf8);
+  background: linear-gradient(90deg, var(--khm-primary), var(--khm-primary-hover));
   border-radius: 50px;
   transition: width 0.4s ease;
 }

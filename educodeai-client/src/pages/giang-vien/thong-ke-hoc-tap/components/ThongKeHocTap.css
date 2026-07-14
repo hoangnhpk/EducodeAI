@@ -78,7 +78,7 @@
 .thong-ke-page-header h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #1e40af;
+  color: var(--text-dark);
 }
 
 .thong-ke-page-header p {
@@ -276,9 +276,9 @@
 }
 
 .income-group-tabs button {
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
+  border: 1px solid var(--border-color);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
@@ -287,8 +287,8 @@
 }
 
 .income-group-tabs button.active {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #ffffff;
 }
 

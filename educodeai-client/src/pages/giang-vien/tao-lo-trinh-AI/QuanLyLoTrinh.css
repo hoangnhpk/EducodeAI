@@ -1,13 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 /* =========================================
    CONTAINER VÀ GRID CHÍNH
    ========================================= */
 .quan-ly-container {
     padding: 2.5rem;
-    background-color: #f1f5f9;
+    background-color: var(--bg-main);
     min-height: 100vh;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-main);
 }
 
 .lo-trinh-grid {
@@ -28,7 +26,7 @@
     flex-direction: column;
     justify-content: space-between;
     transition: all 0.3s ease;
-    border-left: 6px solid #2563eb; /* Vạch màu xanh nhận diện thương hiệu */
+    border-left: 6px solid var(--ai-accent); /* Vạch màu nhấn AI (tím) nhận diện tính năng AI */
 }
 
 .lo-trinh-card:hover {
@@ -109,8 +107,8 @@
 
 /* Nút Sửa/Xóa nhỏ trong Card */
 .btn-edit-small {
-    border: 2px solid #2563eb;
-    color: #2563eb;
+    border: 2px solid var(--ai-accent);
+    color: var(--ai-accent);
     font-weight: 700;
     padding: 6px 18px;
     border-radius: 8px;
@@ -120,7 +118,7 @@
 }
 
 .btn-edit-small:hover {
-    background: #2563eb;
+    background: var(--ai-accent);
     color: white;
 }
 
@@ -228,8 +226,8 @@
 }
 
 .pro-step-num {
-    background: #eff6ff;
-    color: #2563eb;
+    background: var(--ai-accent-soft);
+    color: var(--ai-accent);
     width: 32px; height: 32px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -288,7 +286,7 @@ button {
 
 /* Fix con số bị "kì" - tạo hình tròn số thứ tự cực chuẩn */
 .pro-step-num, .course-rank {
-    background: #2563eb !important;
+    background: var(--ai-accent) !important;
     color: white !important;
     width: 32px !important;
     height: 32px !important;
@@ -300,7 +298,7 @@ button {
     font-weight: 700 !important;
     font-family: 'Inter', sans-serif !important; /* Ép font cho con số */
     flex-shrink: 0;
-    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 4px 6px rgba(139, 92, 246, 0.2);
 }
 
 /* Làm đẹp ô Input và Select cho đồng bộ font */
@@ -440,8 +438,8 @@ button {
 
 /* Số thứ tự chặng học */
 .pro-step-num {
-    background: #eff6ff;
-    color: #2563eb;
+    background: var(--ai-accent-soft);
+    color: var(--ai-accent);
     width: 28px; height: 28px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -510,7 +508,7 @@ button {
 }
 
 .form-input:focus {
-    border-color: #2563eb;
+    border-color: var(--ai-accent);
     outline: none;
 }
 
