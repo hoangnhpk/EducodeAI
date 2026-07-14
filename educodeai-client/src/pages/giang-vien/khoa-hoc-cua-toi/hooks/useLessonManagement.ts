@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { BaiHocDetail } from '../types';
@@ -15,10 +15,11 @@ const getGiangVienId = (): number => {
 
 interface UseLessonManagementProps {
   maChuong: number;
+  maKhoaHoc: number;
   initialLessons: BaiHocDetail[];
 }
 
-export const useLessonManagement = ({ maChuong, initialLessons }: UseLessonManagementProps) => {
+export const useLessonManagement = ({ maChuong, maKhoaHoc, initialLessons }: UseLessonManagementProps) => {
   const maGiangVien = getGiangVienId();
   const { showToast, ToastContainer } = useToastStandalone();
 
@@ -38,17 +39,31 @@ export const useLessonManagement = ({ maChuong, initialLessons }: UseLessonManag
   
   const [previewLesson, setPreviewLesson] = useState<BaiHocDetail | null>(null);
 
-  const loadLessons = useCallback(async () => {
-    if (!maChuong) return;
+  const loadLessons = useCallback(async (imLang = false) => {
+    if (!maChuong || !maKhoaHoc) return;
     try {
-      setLoading(true); setError(null);
-      // Fallback API if you ever implement get-lessons-by-chapter.
-      // Currently, chapters and lessons come from course details.
-      await api.getChiTietKhoaHoc(maGiangVien, 0); 
+      if (!imLang) setLoading(true);
+      setError(null);
+      const detail = await api.getChiTietKhoaHoc(maGiangVien, maKhoaHoc);
+      const chuong = detail.danhSachChuong.find(c => c.maChuong === maChuong);
+      const dsBaiHoc = chuong?.danhSachBaiHoc ?? [];
+      setLessons([...dsBaiHoc].sort((a, b) => a.thuTu - b.thuTu));
     } catch {
-      setError('Không thể tải bài học.');
-    } finally { setLoading(false); }
-  }, [maChuong, maGiangVien]);
+      if (!imLang) setError('Không thể tải bài học.');
+    } finally { if (!imLang) setLoading(false); }
+  }, [maChuong, maKhoaHoc, maGiangVien]);
+
+  // Poll trạng thái phụ đề khi có bài học đang xử lý (Processing_Subtitle).
+  // Worker AI chạy nền và cập nhật DB + invalidate cache; FE không có SignalR nên
+  // phải tự refetch định kỳ để thấy badge chuyển "Đang tạo..." → "✓ CC".
+  const dangPoll = lessons.some(l => l.videoStatus === 'Processing_Subtitle');
+  const loadLessonsRef = useRef(loadLessons);
+  loadLessonsRef.current = loadLessons;
+  useEffect(() => {
+    if (!dangPoll) return;
+    const timer = setInterval(() => { void loadLessonsRef.current(true); }, 8000);
+    return () => clearInterval(timer);
+  }, [dangPoll]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -135,9 +150,12 @@ export const useLessonManagement = ({ maChuong, initialLessons }: UseLessonManag
     if (!deleteTarget) return;
     try {
       setDeleting(true);
-      await api.xoaBaiHoc(maGiangVien, deleteTarget.maBaiHoc);
+      const res = await api.xoaBaiHoc(maGiangVien, deleteTarget.maBaiHoc);
       setLessons(prev => prev.filter(l => l.maBaiHoc !== deleteTarget.maBaiHoc));
-      showToast('success', `Đã xóa bài học "${deleteTarget.tieuDe}".`);
+      // Backend báo rõ kết quả xóa tài nguyên Cloudinary (video + phụ đề). Nếu có phần
+      // sót lại (message cảnh báo dọn tay) thì hiện toast "warning" thay vì "success".
+      const coCanhBao = res.message.includes('KHÔNG xóa được');
+      showToast(coCanhBao ? 'warning' : 'success', res.message || `Đã xóa bài học "${deleteTarget.tieuDe}".`);
       setDeleteTarget(null);
     } catch {
       showToast('error', 'Lỗi xóa bài học.');

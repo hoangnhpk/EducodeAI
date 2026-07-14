@@ -37,7 +37,7 @@ const EduBanner: React.FC = () => {
                 <div className="edu-slide-item">
                     {/* 4. Thay đổi src ảnh thành ảnh từ configs */}
                     <img
-                        src={configs?.BannerChinh ? `/img/${configs.BannerChinh}` : "/img/carousel-1.jpg"}
+                        src={configs?.BannerChinh ? (configs.BannerChinh.startsWith('http') ? configs.BannerChinh : `/img/${configs.BannerChinh}`) : "/img/carousel-1.jpg"}
                         alt="Banner"
                         className="edu-bg-img"
                         onError={(e) => { e.currentTarget.src = "/img/carousel-1.jpg"; }}

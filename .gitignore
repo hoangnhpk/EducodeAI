@@ -373,3 +373,12 @@ gcp-service-account.json
 *-service-account.json
 
 ./gcp-service-account.json
+
+# FFmpeg binaries (platform-specific, ~195MB) - cài riêng, không commit
+# Chừa folder + .gitkeep để giữ cấu trúc, chỉ ignore file binary
+educodeai-server/ffmpeg/*
+!educodeai-server/ffmpeg/.gitkeep
+# Runtime uploads (user data) and OCR models - not source code
+educodeai-server/wwwroot/uploads/
+educodeai-server/private_uploads/
+educodeai-server/tessdata/

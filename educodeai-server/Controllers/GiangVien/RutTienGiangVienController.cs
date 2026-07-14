@@ -3,12 +3,13 @@ using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace educodeai_server.Controllers.GiangVien
 {
     [ApiController]
     [Route("api/giang-vien/rut-tien")]
-    [Authorize(Roles = "GiangVien")]
+    [Authorize(Roles = "GiangVien,Admin")]
     public class RutTienGiangVienController : ControllerBase
     {
         private readonly IRutTienGiangVienService _rutTienGiangVienService;
@@ -17,6 +18,8 @@ namespace educodeai_server.Controllers.GiangVien
         {
             _rutTienGiangVienService = rutTienGiangVienService;
         }
+
+        private bool IsAdmin => User.IsInRole("Admin");
 
         [HttpGet("danh-muc-ngan-hang")]
         public async Task<IActionResult> LayDanhMucNganHang()
@@ -28,6 +31,8 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpGet("vi")]
         public async Task<IActionResult> LayThongTinVi()
         {
+            if (IsAdmin) return Ok(new ThongTinViGiangVienDTO());
+
             int maGiangVien = LayNguoiDungID.LayID(User);
             if (maGiangVien == 0)
             {
@@ -41,6 +46,7 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpPost("tai-khoan-nhan-tien")]
         public async Task<IActionResult> ThemTaiKhoanNhanTien([FromBody] CapNhatTaiKhoanRutTienDTO yeuCau)
         {
+            if (IsAdmin) return BadRequest(new { thongBao = "Admin không thể thực hiện thao tác này." });
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { thongBao = "Dữ liệu không hợp lệ." });
@@ -66,6 +72,7 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpDelete("tai-khoan-nhan-tien")]
         public async Task<IActionResult> XoaTaiKhoanNhanTien()
         {
+            if (IsAdmin) return BadRequest(new { thongBao = "Admin không thể thực hiện thao tác này." });
             int maGiangVien = LayNguoiDungID.LayID(User);
             if (maGiangVien == 0)
             {
@@ -86,6 +93,7 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpPost("yeu-cau")]
         public async Task<IActionResult> TaoYeuCauRutTien([FromBody] YeuCauRutTienDTO yeuCau)
         {
+            if (IsAdmin) return BadRequest(new { thongBao = "Admin không thể thực hiện thao tác này." });
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { thongBao = "Dữ liệu không hợp lệ." });
@@ -111,6 +119,7 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpGet("lich-su")]
         public async Task<IActionResult> LayLichSuRutTien()
         {
+            if (IsAdmin) return Ok(new List<object>());
             int maGiangVien = LayNguoiDungID.LayID(User);
             if (maGiangVien == 0)
             {

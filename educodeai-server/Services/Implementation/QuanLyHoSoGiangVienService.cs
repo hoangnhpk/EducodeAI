@@ -1,11 +1,15 @@
 ﻿using educodeai_server.Data;
 using educodeai_server.DTOs.QuanLyHoSoGiangVien;
 using educodeai_server.Helpers;
+using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Hosting;
 using educodeai_server.Config;
+using educodeai_server.Common;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -13,11 +17,15 @@ namespace educodeai_server.Services.Implementation
     {
         private readonly EduCodeAIDbContext _context;
         private readonly PaymentMailOptions _mailOptions;
+        private readonly IWebHostEnvironment _env;
+        private readonly IDataProtector _cccdDataProtector;
 
-        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions)
+        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env, IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
             _mailOptions = mailOptions.Value;
+            _env = env;
+            _cccdDataProtector = dataProtectionProvider.CreateProtector("EduCodeAI.CCCD.OcrData.v1");
         }
 
         public async Task<object> LayDanhSachHoSoAsync(string? trangThai = null)
@@ -72,13 +80,14 @@ namespace educodeai_server.Services.Implementation
                     LoaiGiayTo = h.LoaiGiayTo,
                     SoGiayTo = h.SoGiayTo,
                     AnhDaiDienUrl = h.AnhDaiDienUrl,
-                    AnhGiayToMatTruocUrl = h.AnhGiayToMatTruocUrl,
-                    AnhGiayToMatSauUrl = h.AnhGiayToMatSauUrl,
+                    ThongTinCccdQuet = null,
+                    DuLieuCccdMaHoa = h.DuLieuCccdMaHoa,
                     PhuongThucThanhToan = h.PhuongThucThanhToan,
                     TenNganHang = h.TenNganHang,
                     SoTaiKhoanNhanTien = h.SoTaiKhoanNhanTien,
                     TenChuTaiKhoan = h.TenChuTaiKhoan,
                     MaSoThue = h.MaSoThue,
+                    LoaiDoiTuongThue = h.LoaiDoiTuongThue,
                     TrangThaiHoSo = h.TrangThaiHoSo,
                     LyDoTuChoi = h.LyDoTuChoi,
                     MaQuanTriVienDuyet = h.MaQuanTriVienDuyet,
@@ -89,6 +98,12 @@ namespace educodeai_server.Services.Implementation
                 .FirstOrDefaultAsync();
 
             if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+
+            if (!string.IsNullOrWhiteSpace(hoSo.DuLieuCccdMaHoa)
+                && TryGiaiMaThongTinCccd(hoSo.DuLieuCccdMaHoa, out var thongTinCccd))
+            {
+                hoSo.ThongTinCccdQuet = thongTinCccd;
+            }
 
             return hoSo;
         }
@@ -105,6 +120,7 @@ namespace educodeai_server.Services.Implementation
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
             if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
                 throw new Exception("Hồ sơ này đã được duyệt trước đó.");
@@ -129,6 +145,12 @@ namespace educodeai_server.Services.Implementation
                 try
                 {
                     // Tạo tài khoản giảng viên (VaiTro = 1)
+                    // Lưu mã VietQR vào NguoiDung.MaNganHangNhanTien để dùng chung với ví/rút tiền.
+                    var nganHang = DanhMucNganHangLienKet.LayDanhSach().FirstOrDefault(x =>
+                        string.Equals(x.TenHienThi, hoSo.TenNganHang, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(x.Ma, hoSo.TenNganHang, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(x.MaVietQr, hoSo.TenNganHang, StringComparison.OrdinalIgnoreCase));
+
                     var nguoiDungMoi = new NguoiDungModel
                     {
                         TaiKhoan = taiKhoan,
@@ -139,7 +161,7 @@ namespace educodeai_server.Services.Implementation
                         VaiTro = 1,
                         TrangThai = "Hoạt động",
                         NgayThamGia = DateTime.UtcNow,
-                        MaNganHangNhanTien = hoSo.TenNganHang,
+                        MaNganHangNhanTien = nganHang?.MaVietQr ?? hoSo.TenNganHang,
                         SoTaiKhoanNhanTien = hoSo.SoTaiKhoanNhanTien,
                         TenTaiKhoanNhanTien = hoSo.TenChuTaiKhoan
                     };
@@ -219,6 +241,7 @@ namespace educodeai_server.Services.Implementation
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
             if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
+
             if (hoSo.TrangThaiHoSo == "DaDuyet")
                 throw new Exception("Hồ sơ đã được duyệt, không thể từ chối.");
 
@@ -268,6 +291,7 @@ namespace educodeai_server.Services.Implementation
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
             if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
                 throw new Exception("Hồ sơ đã được duyệt, không thể yêu cầu bổ sung.");
@@ -324,6 +348,20 @@ namespace educodeai_server.Services.Implementation
             }
 
             return new { success = true, message = "Đã yêu cầu bổ sung hồ sơ và gửi email hướng dẫn." };
+        }
+        private bool TryGiaiMaThongTinCccd(string duLieuMaHoa, out Dictionary<string, string>? thongTinCccd)
+        {
+            thongTinCccd = null;
+            try
+            {
+                var json = _cccdDataProtector.Unprotect(duLieuMaHoa);
+                thongTinCccd = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                return thongTinCccd != null;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

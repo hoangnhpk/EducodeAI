@@ -31,6 +31,7 @@ namespace educodeai_server.Services.Implementation
         public string KhoKhan { get; set; } = string.Empty;
         public string TienDoHoanThanh { get; set; } = string.Empty;
         public List<PhongVanTurnDto> LichSu { get; set; } = new();
+        public string CauHoiHienTai { get; set; } = string.Empty;
         public int TongDiem { get; set; }
         public bool DaKetThuc { get; set; }
         public string? MaChungChi { get; set; }
@@ -41,7 +42,8 @@ namespace educodeai_server.Services.Implementation
         private readonly IGeminiAIService _gemini;
         private readonly IMemoryCache _cache;
         private readonly educodeai_server.Data.EduCodeAIDbContext _dbContext;
-        private const int TONG_SO_CAU = 5;
+        private const int TONG_SO_CAU = 3;
+        private const int DIEM_MOI_CAU = 20;
         private const int NGUONG_DAT = 50;
 
         public SinhDoAnAIService(IGeminiAIService gemini, IMemoryCache cache, educodeai_server.Data.EduCodeAIDbContext dbContext)
@@ -204,7 +206,7 @@ BẠN PHẢI TRẢ VỀ DỮ LIỆU ĐÚNG CHUẨN JSON VỚI ĐỊNH DẠNG SAU
             }
             else
             {
-                phien.TongDiem  = phien.LichSu.Sum(t => t.Diem);
+                phien.TongDiem  = _QuyDoiDiem100(phien.LichSu.Sum(t => t.Diem));
                 phien.DaKetThuc = true;
             }
 
@@ -231,7 +233,7 @@ BẠN PHẢI TRẢ VỀ DỮ LIỆU ĐÚNG CHUẨN JSON VỚI ĐỊNH DẠNG SAU
                 throw new Exception("Không tìm thấy phiên phỏng vấn.");
 
             var phien = _LayPhien(sessionId, maNguoiDung);
-            int tongDiem = phien.TongDiem > 0 ? phien.TongDiem : phien.LichSu.Sum(t => t.Diem);
+            int tongDiem = phien.TongDiem > 0 ? phien.TongDiem : _QuyDoiDiem100(phien.LichSu.Sum(t => t.Diem));
             bool daDat   = tongDiem >= NGUONG_DAT;
 
             // Cấp mã chứng chỉ nếu đạt và chưa có
@@ -396,6 +398,14 @@ Nhiệm vụ của bạn là đánh giá mã nguồn xem học viên đã thực
             return phien;
         }
 
+        // Quy đổi tổng điểm thô (TONG_SO_CAU * DIEM_MOI_CAU) về thang 100 mà UI dùng.
+        private static int _QuyDoiDiem100(int diemTho)
+        {
+            int diemToiDaTho = TONG_SO_CAU * DIEM_MOI_CAU;
+            if (diemToiDaTho <= 0) return 0;
+            return (int)Math.Round(diemTho * 100.0 / diemToiDaTho);
+        }
+
         private async Task<string> _SinhCauHoi(PhienPhongVan phien, int soCau)
         {
             var sbLichSu = new StringBuilder();
@@ -430,26 +440,50 @@ Lưu ý quan trọng:
 - Xưng ""anh"", gọi ""em"", giọng điệu chuyên nghiệp, cực kỳ nghiêm ngặt và nhạy bén để chống gian lận.
 - KHÔNG hỏi lại câu cũ, KHÔNG hỏi chung chung. Đi sâu vào 1 chi tiết (schema, logic, security, perf...).
 
-Chỉ trả về DUY NHẤT câu hỏi, không kèm giải thích hay văn bản nào khác.
+=== YÊU CẦU BẮT BUỘC (QUAN TRỌNG) ===
+BẠN PHẢI TRẢ VỀ DUY NHẤT 1 OBJECT JSON, TUYỆT ĐỐI KHÔNG VIẾT SUY NGHĨ CỦA BẠN, KHÔNG DÙNG MARKDOWN, KHÔNG DÙNG TIẾNG ANH.
+JSON CÓ ĐÚNG 1 TRƯỜNG, nội dung câu hỏi phải VIẾT BẰNG TIẾNG VIỆT, là 1 câu hỏi hoàn chỉnh:
+{{
+  ""CauHoi"": ""<nội dung câu hỏi phỏng vấn bằng tiếng Việt>""
+}}
+
+[VIẾT TRỰC TIẾP JSON CỦA BẠN DƯỚI ĐÂY]:
 ";
             try
             {
-                var result = await _gemini.GenerateAsync(prompt);
-                return ChuanHoaJsonTuAIHelper.LayTextChatTuAI(result).Trim();
+                var raw = await _gemini.GenerateAsync(prompt, true); // isJsonMode = true
+                var json = ChuanHoaJsonTuAIHelper.ChuanHoa(raw);
+
+                var parsed = JsonSerializer.Deserialize<JsonElement>(json);
+                string cauHoi = parsed.TryGetProperty("CauHoi", out var ch)
+                    ? (ch.GetString() ?? "").Trim()
+                    : "";
+
+                if (string.IsNullOrWhiteSpace(cauHoi))
+                    cauHoi = $"Em hãy trình bày chi tiết cách em triển khai một chức năng cốt lõi trong đồ án \"{phien.TenDoAn}\" và giải thích lý do em chọn cách làm đó.";
+
+                // Lưu lại câu hỏi vừa sinh để hàm chấm điểm dùng đúng câu hỏi thật học viên đã thấy
+                phien.CauHoiHienTai = cauHoi;
+                return cauHoi;
             }
             catch (Exception ex)
             {
-                return $"[Hệ thống AI đang gián đoạn hoặc hết Token, vui lòng thử lại sau] Chi tiết: {ex.Message}";
+                var loi = $"[Hệ thống AI đang gián đoạn hoặc hết Token, vui lòng thử lại sau] Chi tiết: {ex.Message}";
+                phien.CauHoiHienTai = loi;
+                return loi;
             }
         }
 
         private async Task<(int Diem, string NhanXet, string CauHoiDaHoi)> _ChamDiemCauTraLoi(
             PhienPhongVan phien, int soCau, string cauTraLoi)
         {
-            // Lấy câu hỏi đã hỏi từ lịch sử (nếu có)
-            string cauHoiDaHoi = phien.LichSu.Count >= soCau
-                ? phien.LichSu[soCau - 1].CauHoi
-                : $"Câu hỏi số {soCau} về đồ án {phien.TenDoAn}";
+            // Câu hỏi thật sự vừa hỏi được lưu trong phiên (CauHoiHienTai).
+            // Fallback về lịch sử rồi placeholder nếu vì lý do nào đó chưa có.
+            string cauHoiDaHoi = !string.IsNullOrWhiteSpace(phien.CauHoiHienTai)
+                ? phien.CauHoiHienTai
+                : (phien.LichSu.Count >= soCau
+                    ? phien.LichSu[soCau - 1].CauHoi
+                    : $"Câu hỏi số {soCau} về đồ án {phien.TenDoAn}");
 
             var prompt = $@"
 Bạn là một Senior Tech Lead đang chấm điểm câu trả lời phỏng vấn.
@@ -469,12 +503,15 @@ Chấm điểm (tối đa 20/câu):
 - 8-12: Trả lời chung chung, thiếu chiều sâu thực tế, có thể hiểu loáng thoáng.
 - 0-7: Sai kiến thức cơ bản, lạc đề. NẾU phát hiện học viên copy code / học vẹt mà không hiểu bản chất: Cho thẳng điểm 0-2 và đưa ra nhận xét cảnh cáo (ví dụ: 'Anh nhận thấy câu trả lời của em giống văn bản mẫu/AI sinh ra và em không hiểu rõ cốt lõi').
 
-Trả về chuẩn JSON:
-{{""Diem"": <0-20>, ""NhanXet"": ""<1-2 câu nhận xét>"" }}
-LƯU Ý QUAN TRỌNG ĐỂ KHÔNG LỖI JSON:
-- Bắt buộc phải escape các ký tự đặc biệt trong NhanXet.
-- Nếu muốn xuống dòng, hãy viết \n (backslash n), TUYỆT ĐỐI KHÔNG gõ phím Enter (xuống dòng thật) bên trong chuỗi NhanXet.
-- Thay vì dùng dấu nháy kép ("") bên trong NhanXet, hãy dùng dấu nháy đơn ('').
+=== YÊU CẦU BẮT BUỘC ===
+BẠN PHẢI TRẢ VỀ DUY NHẤT 1 OBJECT JSON, TUYỆT ĐỐI KHÔNG VIẾT SUY NGHĨ CỦA BẠN, KHÔNG DÙNG MARKDOWN.
+JSON CÓ ĐÚNG 2 TRƯỜNG:
+{{
+  ""Diem"": <số từ 0 đến 20>,
+  ""NhanXet"": ""<nhận xét của bạn>""
+}}
+
+[VIẾT TRỰC TIẾP JSON CỦA BẠN DƯỚI ĐÂY]:
 ";
 
             try
