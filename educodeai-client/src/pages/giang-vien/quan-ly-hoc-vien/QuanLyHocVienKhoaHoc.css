@@ -195,7 +195,7 @@
   white-space: nowrap;
   border: 1px solid rgba(0,0,0,0.04);
 }
-.qllh-badge.dang-hoc { background-color: #dbeafe; color: #1e40af; }
+.qllh-badge.dang-hoc { background-color: var(--info-soft); color: var(--info-strong); }
 .qllh-badge.hoan-thanh { background-color: #dcfce7; color: #166534; }
 .qllh-badge.bi-khoa { background-color: #fee2e2; color: #991b1b; }
 .qllh-badge.khong-xac-dinh { background-color: #f3f4f6; color: #374151; }
@@ -415,7 +415,7 @@
 }
 .qllh-smart-tag.tag-xuat-sac { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
 .qllh-smart-tag.tag-giam-chan { background: #fef3c7; color: #92400e; border-color: #fde68a; }
-.qllh-smart-tag.tag-moi-dk { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+.qllh-smart-tag.tag-moi-dk { background: var(--info-soft); color: var(--info-strong); border-color: #bfdbfe; }
 .qllh-smart-tag.tag-none { background: #f3f4f6; color: #6b7280; }
 
 .qllh-skeleton-wrap { display: grid; gap: 10px; margin-bottom: 16px; }

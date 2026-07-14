@@ -92,7 +92,7 @@ export default function YeuCauLoTrinhAI() {
         </div>
 
         {!isAIAvailable && (
-            <div style={{ maxWidth: '800px', margin: '0 auto', marginBottom: '20px', padding: '15px 20px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 500 }}>
+            <div style={{ maxWidth: '800px', margin: '0 auto', marginBottom: '20px', padding: '15px 20px', backgroundColor: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: '12px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 500 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Hệ thống AI hiện đang hết lượt sử dụng hoặc đang bận. Vui lòng quay lại sau ít phút!
             </div>

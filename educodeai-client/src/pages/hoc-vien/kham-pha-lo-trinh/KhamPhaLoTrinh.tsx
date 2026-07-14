@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import './KhamPhaLoTrinh.css';
 
 interface LoTrinhKhamPha {
@@ -194,15 +195,24 @@ const KhamPhaLoTrinh = () => {
     }, [debouncedTerm, page]);
 
     const handleLuuLoTrinh = async (id: number) => {
-        if (!window.confirm("Lưu lộ trình này vào tài khoản cá nhân?")) return;
+        const kq = await Swal.fire({
+            title: 'Lưu lộ trình',
+            text: 'Lưu lộ trình này vào tài khoản cá nhân?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy',
+            confirmButtonColor: '#f69050'
+        });
+        if (!kq.isConfirmed) return;
         try {
             const res = await fetch(`https://localhost:7284/api/hocvien/kham-pha-lo-trinh/luu/${id}`, {
-                method: 'POST', 
+                method: 'POST',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('user_token')}` }
             });
             const result = await res.json();
-            alert(result.message);
-        } catch (error) { alert("Lỗi kết nối!"); }
+            await Swal.fire('Thông báo', result.message, result.success ? 'success' : 'info');
+        } catch (error) { await Swal.fire('Lỗi', 'Lỗi kết nối!', 'error'); }
     };
 
     const handleXemChiTiet = async (id: number) => {
@@ -262,7 +272,7 @@ const KhamPhaLoTrinh = () => {
                     <div className="kp-modal-content" onClick={e => e.stopPropagation()}>
                         <div className="kp-modal-header">
                             <div>
-                                <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#1e293b' }}>
+                                <h2 style={{ margin: 0, fontSize: '1.4rem', color: 'var(--text-dark)' }}>
                                     {getCleanContent(danhSach.find(x => x.maLoTrinh === detail?.maLoTrinh)?.noiDungJSON || "").title}
                                 </h2>
                                 <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '0.9rem' }}>

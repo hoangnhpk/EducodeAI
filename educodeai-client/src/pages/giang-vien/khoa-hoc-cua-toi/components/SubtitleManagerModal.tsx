@@ -97,7 +97,7 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
               </div>
             </label>
 
-            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'manual' ? '#eff6ff' : '#fff' }}>
+            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'manual' ? 'var(--primary-soft)' : '#fff' }}>
               <input type="radio" name="subtitleOpt" checked={luaChon === 'manual'} onChange={() => setLuaChon('manual')} style={{ marginTop: 4, width: 'auto', flexShrink: 0 }} disabled={dangXuLy} />
               <div style={{ flex: 1 }}>
                 <strong style={{ display: 'block', marginBottom: 4 }}>Tự upload file (Miễn phí)</strong>

@@ -31,6 +31,7 @@ export default function QuanLyHocVien() {
     const [hocViens, setHocViens] = useState<HocVien[]>([]);
     const [total, setTotal] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(false);
+    const [loiTai, setLoiTai] = useState<boolean>(false);
 
     const [activeTab, setActiveTab] = useState<string>('Tất cả');
     const [searchInput, setSearchInput] = useState<string>('');
@@ -62,12 +63,13 @@ export default function QuanLyHocVien() {
 
     const fetchHocViens = async () => {
         setLoading(true);
+        setLoiTai(false);
         try {
             const queryParams = new URLSearchParams(Object.entries(filters).reduce((acc, [key, val]) => { acc[key] = String(val); return acc; }, {} as Record<string, string>)).toString();
             const response = await fetch(`${API_URL}/api/admin/hoc-vien?${queryParams}`);
             const result = await response.json();
             if (result.success) { setHocViens(result.data.data); setTotal(result.data.total); }
-        } catch (error) { console.error(error); } finally { setLoading(false); }
+        } catch (error) { console.error(error); setLoiTai(true); } finally { setLoading(false); }
     };
 
     useEffect(() => { fetchHocViens(); }, [filters.Page, filters.TrangThai, filters.Keyword]);
@@ -292,8 +294,8 @@ export default function QuanLyHocVien() {
             <div className="qlhv-card" style={{ marginTop: 20 }}>
                 <div className="qlhv-filter-bar" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <h3 style={{ margin: 0, color: '#9a3412' }}>Lịch sử tặng khóa học</h3>
-                        <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 13 }}>Theo dõi các lượt tặng khóa gần đây của hệ thống.</p>
+                        <h3 style={{ margin: 0, color: 'var(--primary-hover)' }}>Lịch sử tặng khóa học</h3>
+                        <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 13 }}>Theo dõi các lượt tặng khóa gần đây của hệ thống.</p>
                     </div>
                     <form
                         onSubmit={(e) => {
@@ -336,7 +338,7 @@ export default function QuanLyHocVien() {
                                         <td>#{item.maQuaTang}</td>
                                         <td>{item.tenKhoaHoc}</td>
                                         <td>{item.tenNguoiTang}</td>
-                                        <td>{item.tenNguoiNhan}<br /><small style={{ color: '#6b7280' }}>{item.emailNguoiNhan || '—'}</small></td>
+                                        <td>{item.tenNguoiNhan}<br /><small style={{ color: 'var(--text-muted)' }}>{item.emailNguoiNhan || '—'}</small></td>
                                         <td>{item.loaiNguoiTang}</td>
                                         <td>{item.trangThai}</td>
                                         <td>{new Date(item.createdAt).toLocaleString('vi-VN')}</td>
@@ -348,8 +350,8 @@ export default function QuanLyHocVien() {
                 </div>
                 {!dangTaiLichSu && lichSuQuaTang.length > 0 && (
                     <div className="qlhv-pagination">
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>
-                            Trang <b style={{ color: '#ea580c' }}>{trangLichSu}</b> / {tongTrangLichSu}
+                        <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+                            Trang <b style={{ color: 'var(--primary-hover)' }}>{trangLichSu}</b> / {tongTrangLichSu}
                         </span>
                         <div>
                             <button
@@ -395,18 +397,36 @@ export default function QuanLyHocVien() {
                             <tr><th>Mã Học Viên</th><th>Học Viên</th><th>Email</th><th>Trạng thái</th><th style={{ textAlign: 'right' }}>Hành động</th></tr>
                         </thead>
                         <tbody>
-                            {loading ? <tr><td colSpan={5} style={{ textAlign: 'center', color: '#f97316' }}>Đang tải...</td></tr> :
+                            {loiTai ? (
+                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--danger-strong)' }}>
+                                    <BsExclamationTriangleFill size={28} style={{ display: 'block', margin: '0 auto 8px' }} aria-hidden="true" />
+                                    Không tải được danh sách học viên.
+                                    <div style={{ marginTop: 12 }}>
+                                        <button type="button" className="qlhv-btn-search" onClick={() => fetchHocViens()}>Thử lại</button>
+                                    </div>
+                                </td></tr>
+                            ) : loading ? (
+                                Array.from({ length: 6 }).map((_, i) => (
+                                    <tr key={`hv-skeleton-${i}`}>
+                                        <td><span className="qlhv-skeleton qlhv-skeleton--text" style={{ width: '40%' }} /></td>
+                                        <td><div className="qlhv-td-user"><span className="qlhv-skeleton qlhv-skeleton--avatar" /><span className="qlhv-skeleton qlhv-skeleton--text" style={{ width: '60%' }} /></div></td>
+                                        <td><span className="qlhv-skeleton qlhv-skeleton--text" style={{ width: '80%' }} /></td>
+                                        <td><span className="qlhv-skeleton qlhv-skeleton--pill" /></td>
+                                        <td><span className="qlhv-skeleton qlhv-skeleton--text" style={{ width: '90%' }} /></td>
+                                    </tr>
+                                ))
+                            ) : (
                                 hocViens.map(hv => (
                                     <tr key={hv.maNguoiDung}>
-                                        <td style={{ color: '#9ca3af' }}>#{hv.maNguoiDung}</td>
+                                        <td style={{ color: 'var(--text-light)' }}>#{hv.maNguoiDung}</td>
                                         <td>
                                             <div className="qlhv-td-user">
                                                 <div className="qlhv-avatar">
-                                                    {hv.anhDaiDien ? <img src={`${API_URL}${hv.anhDaiDien}`} alt="avt" /> : <BsPersonFill size={24} color="#f97316" />}
+                                                    {hv.anhDaiDien ? <img src={`${API_URL}${hv.anhDaiDien}`} alt="avt" /> : <BsPersonFill size={24} color="var(--primary)" />}
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: 'bold' }}>{hv.hoTen}</div>
-                                                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>Tham gia: {new Date(hv.ngayThamGia).toLocaleDateString('vi-VN')}</div>
+                                                    <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Tham gia: {new Date(hv.ngayThamGia).toLocaleDateString('vi-VN')}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -416,7 +436,7 @@ export default function QuanLyHocVien() {
                                             <button
                                                 onClick={() => void handleTangKhoaHoc(hv)}
                                                 className="qlhv-action-btn"
-                                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#a16207' }}
+                                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--warning-strong)' }}
                                                 disabled={dangTangCho === hv.maNguoiDung}
                                             >
                                                 <BsGiftFill /> {dangTangCho === hv.maNguoiDung ? 'Đang tặng...' : 'Tặng khóa'}
@@ -429,15 +449,15 @@ export default function QuanLyHocVien() {
                                             </button>
                                         </td>
                                     </tr>
-                                ))}
-                            {!loading && hocViens.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
+                                )))}
+                            {!loiTai && !loading && hocViens.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-light)' }}>Không có dữ liệu.</td></tr>}
                         </tbody>
                     </table>
                 </div>
 
                 {totalPages > 0 && (
                     <div className="qlhv-pagination">
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Trang <b style={{ color: '#ea580c' }}>{filters.Page}</b> / {totalPages}</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Trang <b style={{ color: 'var(--primary-hover)' }}>{filters.Page}</b> / {totalPages}</span>
                         <div>
                             <button
                                 disabled={filters.Page === 1}
@@ -470,19 +490,19 @@ export default function QuanLyHocVien() {
                         <form onSubmit={handleSave} noValidate>
                             <div className="qlhv-form-group">
                                 <label>Họ và tên</label>
-                                <input type="text" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.hoTen ? '#ef4444' : '' }} value={formData.hoTen} onChange={e => { setFormData({ ...formData, hoTen: e.target.value }); setFormErrors({ ...formErrors, hoTen: '' }); }} />
+                                <input type="text" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.hoTen ? 'var(--danger)' : '' }} value={formData.hoTen} onChange={e => { setFormData({ ...formData, hoTen: e.target.value }); setFormErrors({ ...formErrors, hoTen: '' }); }} />
                                 {formErrors.hoTen && <span className="qlhv-error-text">{formErrors.hoTen}</span>}
                             </div>
 
                             <div className="qlhv-form-group">
                                 <label>Email</label>
-                                <input type="email" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.email ? '#ef4444' : '' }} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); setFormErrors({ ...formErrors, email: '' }); }} />
+                                <input type="email" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.email ? 'var(--danger)' : '' }} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); setFormErrors({ ...formErrors, email: '' }); }} />
                                 {formErrors.email && <span className="qlhv-error-text">{formErrors.email}</span>}
                             </div>
 
                             <div className="qlhv-form-group">
                                 <label>{modalMode === 'add' ? 'Mật khẩu' : 'Mật khẩu mới (Bỏ trống nếu không đổi)'}</label>
-                                <input type="password" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.matKhauMoi ? '#ef4444' : '' }} value={formData.matKhauMoi} onChange={e => { setFormData({ ...formData, matKhauMoi: e.target.value }); setFormErrors({ ...formErrors, matKhauMoi: '' }); }} />
+                                <input type="password" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.matKhauMoi ? 'var(--danger)' : '' }} value={formData.matKhauMoi} onChange={e => { setFormData({ ...formData, matKhauMoi: e.target.value }); setFormErrors({ ...formErrors, matKhauMoi: '' }); }} />
                                 {formErrors.matKhauMoi && <span className="qlhv-error-text">{formErrors.matKhauMoi}</span>}
                             </div>
 
@@ -508,11 +528,11 @@ export default function QuanLyHocVien() {
                             {/*  HIỂN THỊ Ô NHẬP LÝ DO KHI CHỌN "BỊ KHÓA" */}
                             {modalMode === 'edit' && formData.trangThai === 'Bị khóa' && (
                                 <div className="qlhv-form-group" style={{ animation: 'fadeIn 0.3s' }}>
-                                    <label>Lý do khóa <span style={{ color: '#ef4444' }}>*</span></label>
+                                    <label>Lý do khóa <span style={{ color: 'var(--danger)' }}>*</span></label>
                                     <textarea
                                         className="qlhv-input"
                                         placeholder="Nhập lý do vi phạm hoặc khóa tài khoản..."
-                                        style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.lyDoKhoa ? '#ef4444' : '' }}
+                                        style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.lyDoKhoa ? 'var(--danger)' : '' }}
                                         value={formData.lyDoKhoa}
                                         onChange={e => { setFormData({ ...formData, lyDoKhoa: e.target.value }); setFormErrors({ ...formErrors, lyDoKhoa: '' }); }}
                                     />
@@ -534,13 +554,13 @@ export default function QuanLyHocVien() {
                 <div className="qlhv-modal-overlay">
                     <div className="qlhv-modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '32px 24px' }}>
                         <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
-                            <BsExclamationTriangleFill size={56} color="#ef4444" />
+                            <BsExclamationTriangleFill size={56} color="var(--danger)" />
                         </div>
-                        <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#111827', marginBottom: '12px' }}>
+                        <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '12px' }}>
                             Xác nhận xóa?
                         </h2>
-                        <p style={{ color: '#6b7280', fontSize: '15px', marginBottom: '28px', lineHeight: '1.5' }}>
-                            Bạn có chắc chắn muốn xóa học viên này khỏi hệ thống? Hành động này <b style={{ color: '#ef4444' }}>không thể hoàn tác</b>.
+                        <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '28px', lineHeight: '1.5' }}>
+                            Bạn có chắc chắn muốn xóa học viên này khỏi hệ thống? Hành động này <b style={{ color: 'var(--danger)' }}>không thể hoàn tác</b>.
                         </p>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                             <button onClick={() => setIsDeleteModalOpen(false)} className="qlhv-btn-cancel">

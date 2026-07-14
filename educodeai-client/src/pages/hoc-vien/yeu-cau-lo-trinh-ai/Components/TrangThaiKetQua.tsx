@@ -31,7 +31,7 @@ export default function TrangThaiKetQua({ ketQua, onModify, onConfirm, isProcess
 
       <TimelineLoTrinh ketQua={ketQua} />
 
-      <hr className="my-4" style={{ borderColor: "#fb873f" }} />
+      <hr className="my-4" style={{ borderColor: "var(--primary)" }} />
 
       {/* KHU VỰC ACTION BUTTONS */}
       <div className="action-area">

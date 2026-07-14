@@ -111,8 +111,8 @@ const KhoaHocCaNhanAI = () => {
             text: "Lộ trình sẽ bị xóa khỏi danh sách đã lưu của sếp!",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#64748b',
+            confirmButtonColor: 'var(--danger)',
+            cancelButtonColor: 'var(--text-muted)',
             confirmButtonText: 'Đồng ý bỏ',
             cancelButtonText: 'Hủy'
         }).then(async (result) => {
@@ -311,32 +311,32 @@ const KhoaHocCaNhanAI = () => {
             {isPreviewOpen && viewData && (
                 <div className="modal-overlay" onClick={() => setIsPreviewOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div className="pro-modal-v2" onClick={e => e.stopPropagation()} style={{ width: '650px', background: '#fff', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-                        <div className="modal-header-pro" style={{ padding: '24px 30px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="modal-header-pro" style={{ padding: '24px 30px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                                <h2 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 800, color: '#1e293b' }}>{viewData.title}</h2>
-                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>Tác giả: <strong>{viewData.author}</strong></p>
+                                <h2 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 800, color: 'var(--text-main)' }}>{viewData.title}</h2>
+                                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Tác giả: <strong>{viewData.author}</strong></p>
                             </div>
-                            <button onClick={() => setIsPreviewOpen(false)} style={{ width: '36px', height: '36px', background: '#f1f5f9', border: 'none', borderRadius: '50%', color: '#64748b', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>&times;</button>
+                            <button onClick={() => setIsPreviewOpen(false)} aria-label="Đóng" style={{ width: '36px', height: '36px', background: 'var(--bg-main)', border: 'none', borderRadius: '50%', color: 'var(--text-muted)', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>&times;</button>
                         </div>
-                        <div className="modal-body-pro" style={{ background: '#f8fafc', padding: '30px', maxHeight: '60vh', overflowY: 'auto' }}>
+                        <div className="modal-body-pro" style={{ background: 'var(--bg-main)', padding: '30px', maxHeight: '60vh', overflowY: 'auto' }}>
                             {viewData.steps.length > 0 ? viewData.steps.map((step: any, i: number) => (
-                                <div key={i} style={{ display: 'flex', gap: '15px', background: '#fff', padding: '15px', borderRadius: '12px', marginBottom: '12px', borderLeft: '4px solid #fb873f', borderTop: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
-                                    <div style={{ width: '32px', height: '32px', background: '#fb873f', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', flexShrink: 0 }}>{i + 1}</div>
+                                <div key={i} style={{ display: 'flex', gap: '15px', background: '#fff', padding: '15px', borderRadius: '12px', marginBottom: '12px', borderLeft: '4px solid var(--primary)', borderTop: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
+                                    <div style={{ width: '32px', height: '32px', background: 'var(--primary)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', flexShrink: 0 }}>{i + 1}</div>
                                     <img
                                         src={getImgUrl(step.hinhAnh)}
-                                        style={{ width: '60px', height: '60px', borderRadius: '10px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                                        style={{ width: '60px', height: '60px', borderRadius: '10px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
                                         // 👉 ĐÃ SỬA: Đồng bộ onError với hình ảnh Flaticon luôn
                                         onError={(e) => (e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/8633/8633190.png')}
                                     />
                                     <div style={{ flex: 1 }}>
-                                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>{step.ten}</h4>
-                                        <span style={{ fontSize: '0.7rem', background: '#fff7f1', color: '#c2410c', padding: '4px 8px', borderRadius: '6px', display: 'inline-block', marginTop: '6px', fontWeight: 700 }}>{step.trangThai || "Bắt buộc"}</span>
+                                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>{step.ten}</h4>
+                                        <span style={{ fontSize: '0.7rem', background: 'var(--primary-soft)', color: 'var(--primary-dark)', padding: '4px 8px', borderRadius: '6px', display: 'inline-block', marginTop: '6px', fontWeight: 700 }}>{step.trangThai || "Bắt buộc"}</span>
                                     </div>
                                 </div>
-                            )) : <p className="text-center" style={{ color: '#64748b' }}>Dữ liệu lộ trình đang được xử lý...</p>}
+                            )) : <p className="text-center" style={{ color: 'var(--text-muted)' }}>Dữ liệu lộ trình đang được xử lý...</p>}
                         </div>
-                        <div style={{ padding: '20px 30px', borderTop: '1px solid #e2e8f0', textAlign: 'right', background: '#fff' }}>
-                            <button onClick={() => setIsPreviewOpen(false)} className="btn btn-secondary" style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '10px 25px', borderRadius: '10px', fontWeight: 700 }}>ĐÓNG</button>
+                        <div style={{ padding: '20px 30px', borderTop: '1px solid var(--border-color)', textAlign: 'right', background: '#fff' }}>
+                            <button onClick={() => setIsPreviewOpen(false)} className="btn btn-secondary" style={{ background: 'var(--bg-main)', color: 'var(--text-muted)', border: 'none', padding: '10px 25px', borderRadius: '10px', fontWeight: 700 }}>ĐÓNG</button>
                         </div>
                     </div>
                 </div>
