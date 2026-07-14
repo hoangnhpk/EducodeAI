@@ -41,6 +41,7 @@ const PhongVanDoAn: React.FC = () => {
     const [showKetQua, setShowKetQua] = useState(false);
     const [tongDiemTamThoi, setTongDiemTamThoi] = useState(0);
     const [timeLeft, setTimeLeft] = useState(300); // 5 phút = 300 giây
+    const [soLanChuyenTab, setSoLanChuyenTab] = useState(0);
     const TONG_SO_CAU = 3;
     const TOTAL_TIME = 300;
 
@@ -84,6 +85,38 @@ const PhongVanDoAn: React.FC = () => {
 
         return () => clearInterval(timerId);
     }, [timeLeft, isLoading, daKetThuc]);
+
+    // Phát hiện chuyển tab: chỉ tăng bộ đếm ở đây (updater phải thuần khiết,
+    // không gọi setMessages bên trong để tránh StrictMode chạy đúp gây cảnh báo lặp)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.hidden && !daKetThuc) {
+                setSoLanChuyenTab(prev => prev + 1);
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [daKetThuc]);
+
+    // Phản ứng khi số lần chuyển tab thay đổi: thêm cảnh báo hoặc kick out
+    useEffect(() => {
+        if (soLanChuyenTab === 0 || daKetThuc) return;
+
+        if (soLanChuyenTab > 2) {
+            alert('🚨 HỦY KẾT QUẢ: Bạn đã vi phạm quy chế quá 2 lần do liên tục rời khỏi tab phỏng vấn. Buổi phỏng vấn sẽ kết thúc ngay bây giờ!');
+            navigate('/sinh-do-an-ai');
+            return;
+        }
+
+        setMessages(m => [...m, {
+            id: `warn-tab-${soLanChuyenTab}`,
+            role: 'ai',
+            content: `⚠️ CẢNH BÁO LẦN ${soLanChuyenTab}: Trạm hỏi cung phát hiện bạn vừa rời khỏi tab! Nếu vi phạm quá 2 lần, bạn sẽ bị buộc dừng phỏng vấn.`,
+        }]);
+    }, [soLanChuyenTab, daKetThuc, navigate]);
 
     const handleSend = async (autoText?: string) => {
         const text = autoText ?? inputText.trim();
@@ -212,6 +245,12 @@ const PhongVanDoAn: React.FC = () => {
                             <span>⏱️</span>
                             <span>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
                         </div>
+                        {soLanChuyenTab > 0 && (
+                            <div className="pvd-timer-badge" style={{ color: '#ef4444', backgroundColor: '#fef2f2', border: '1px solid #fecaca' }}>
+                                <span>⚠️</span>
+                                <span>{soLanChuyenTab}</span>
+                            </div>
+                        )}
                         <button
                             className="pvd-exit-btn"
                             onClick={() => navigate('/sinh-do-an-ai')}
