@@ -19,6 +19,7 @@ namespace educodeai_server.DTOs.XacThuc
         public string? LinkedInUrl { get; set; }
         public string? WebsiteUrl { get; set; }
         public string? SoGiayTo { get; set; }
+        public string? NoiCap { get; set; }
         public string? TenNganHang { get; set; }
         public string? SoTaiKhoanNhanTien { get; set; }
         public string? TenChuTaiKhoan { get; set; }

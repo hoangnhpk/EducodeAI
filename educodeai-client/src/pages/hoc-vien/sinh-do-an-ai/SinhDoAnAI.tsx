@@ -970,7 +970,7 @@ const SinhDoAnAI: React.FC = () => {
                                                             {gradeData && !gradeData.isLoading && gradeData.diem !== undefined && (
                                                                 <div className="sda-feature-grade-result">
                                                                     <div className="sda-feature-score">
-                                                                        Điểm: <strong style={{ color: gradeData.diem >= 60 ? '#4ade80' : '#f87171' }}>{gradeData.diem}/100</strong>
+                                                                        Điểm: <strong style={{ color: gradeData.diem >= 50 ? '#4ade80' : '#f87171' }}>{gradeData.diem}/100</strong>
                                                                     </div>
                                                                     <div className="sda-feature-feedback">
                                                                         <strong>Nhận xét từ AI:</strong>
