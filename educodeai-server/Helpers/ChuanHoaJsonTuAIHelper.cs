@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
@@ -63,7 +63,7 @@ namespace educodeai_server.Helpers
                     candidates.Add(value);
             }
 
-            // Th? to?n b? text v? c?c ?o?n JSON ???c tr?ch theo d?u ngo?c c?n b?ng.
+
             candidates.Add(text.Trim());
             candidates.AddRange(TrichXuatJsonCanBang(text));
 
@@ -83,6 +83,7 @@ namespace educodeai_server.Helpers
                 {
                     // Th? candidate ti?p theo.
                 }
+
             }
 
             return false;
