@@ -30,6 +30,7 @@ interface BulkUploadModalProps {
   maChuong: number;
   soLuongHienTai: number;
   khiTaiLenThanhCong: (baiHocMoi: any[]) => void;
+  khiYeuCauPhuDeAI?: (maBaiHocIds: number[]) => void;
 }
 
 const MAX_VIDEO_PER_BATCH = 50;
@@ -105,7 +106,7 @@ const QueueRow: React.FC<{
   );
 };
 
-const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, maGiangVien, maChuong, soLuongHienTai, khiTaiLenThanhCong }) => {
+const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, maGiangVien, maChuong, soLuongHienTai, khiTaiLenThanhCong, khiYeuCauPhuDeAI }) => {
   const [hangDoi, setHangDoi] = useState<BulkUploadItem[]>([]);
   const [dangTaiLen, setDangTaiLen] = useState(false);
   const [apDungPhuDeAI, setApDungPhuDeAI] = useState(false);
@@ -296,13 +297,13 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
         </div>
         <div className="khm-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           
-          <div className="khm-flex khm-gap-16 khm-mb-24">
-             <div className="khm-alert khm-alert-info khm-flex-1" style={{ margin: 0 }}>
+          <div className="khm-flex khm-gap-16 khm-mb-24" style={{ flexWrap: 'wrap', alignItems: 'center' }}>
+             <div className="khm-alert khm-alert-info khm-flex-1" style={{ margin: 0, minWidth: 240 }}>
                <div>
                  <strong>💡 Mẹo:</strong> Giữ tên file gọn gàng (VD: <code>01-gioi-thieu.mp4</code>) để hệ thống tự động sắp xếp (A-Z).
                </div>
              </div>
-             <div className="khm-flex khm-gap-8 khm-items-center">
+             <div className="khm-flex khm-gap-8 khm-items-center" style={{ flexShrink: 0, flexWrap: 'wrap' }}>
                 <input
                   type="file"
                   multiple
@@ -329,13 +330,13 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                   onChange={e => { xuLyChonFile(e.target.files); e.target.value = ''; }}
                   {...({ webkitdirectory: "", directory: "" } as any)}
                 />
-                <button className="khm-btn khm-btn-outline" onClick={() => refInputFile.current?.click()} disabled={dangTaiLen}>
+                <button className="khm-btn khm-btn-outline" onClick={() => refInputFile.current?.click()} disabled={dangTaiLen} style={{ flex: 1, whiteSpace: 'nowrap' }}>
                   + Chọn Files
                 </button>
-                <button className="khm-btn khm-btn-outline" onClick={() => refInputFolder.current?.click()} disabled={dangTaiLen} title="Chọn cả thư mục (Desktop)">
+                <button className="khm-btn khm-btn-outline" onClick={() => refInputFolder.current?.click()} disabled={dangTaiLen} title="Chọn cả thư mục (Desktop)" style={{ flex: 1, whiteSpace: 'nowrap' }}>
                   + Chọn Folder
                 </button>
-                <button className="khm-btn khm-btn-outline khm-btn-sm" onClick={() => refInputSafariFallback.current?.click()} disabled={dangTaiLen} style={{ fontSize: 12 }} title="Safari iOS fallback">
+                <button className="khm-btn khm-btn-outline" onClick={() => refInputSafariFallback.current?.click()} disabled={dangTaiLen} title="Safari iOS fallback" style={{ flex: 1, whiteSpace: 'nowrap' }}>
                   📱 Chọn File (iOS)
                 </button>
              </div>
@@ -420,9 +421,9 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                             </tfoot>
                           </table>
 
-                          <div className="khm-alert khm-alert-info" style={{ fontSize: 13 }}>
-                            <input type="checkbox" id="phude_gdpr_consent" className="khm-mr-4" />
-                            <label htmlFor="phude_gdpr_consent">
+                          <div className="khm-alert khm-alert-info" style={{ fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                            <input type="checkbox" id="phude_gdpr_consent" style={{ marginTop: 3, flexShrink: 0, width: 'auto', padding: 0 }} />
+                            <label htmlFor="phude_gdpr_consent" style={{ cursor: 'pointer', flex: 1, lineHeight: 1.5 }}>
                               Tôi xác nhận video không chứa thông tin cá nhân nhạy cảm. Nội dung audio sẽ gửi tới Google Cloud Speech-to-Text, tự động xóa sau 24h.
                             </label>
                           </div>
@@ -445,10 +446,14 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                                 setDangXuLyPhuDe(true);
                                 try {
                                   let success = 0, fail = 0;
+                                  const idThanhCong: number[] = [];
                                   for (const l of uploadedLessonsRef.current) {
-                                    try { await mediaApi.taoPhuDeAI(l.maBaiHoc); success++; }
+                                    try { await mediaApi.taoPhuDeAI(l.maBaiHoc); success++; idThanhCong.push(l.maBaiHoc); }
                                     catch { fail++; }
                                   }
+                                  // Báo cho component cha đánh dấu các bài này là "Processing_Subtitle"
+                                  // để badge hiện ngay + kích hoạt polling tự cập nhật khi worker xong.
+                                  if (idThanhCong.length > 0) khiYeuCauPhuDeAI?.(idThanhCong);
                                   setPhuDeKetQua(`✅ Đã gửi yêu cầu AI cho ${success} video.${fail > 0 ? ` ❌ ${fail} video thất bại.` : ''} Phụ đề sẽ có sau vài phút.`);
                                 } catch { setPhuDeKetQua('❌ Lỗi hệ thống. Vui lòng thử lại sau.'); }
                                 finally { setDangXuLyPhuDe(false); }

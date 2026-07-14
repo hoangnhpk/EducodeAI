@@ -57,6 +57,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const isYT = editData?.linkVideo && getYTId(editData.linkVideo);
+  const isCloudinary = editData?.videoSource === 'cloudinary';
 
   React.useEffect(() => {
     setLoaiBaiHoc(editData?.loaiBaiHoc === 'File' ? 'File' : 'Video');
@@ -100,15 +101,15 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
         <div className="khm-modal-body">
           {!isEdit && (
             <div className="khm-flex khm-gap-16 khm-mb-16">
-              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer' }}>
+              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 <input type="radio" name="loai" checked={loaiBaiHoc === 'Video'} onChange={() => setLoaiBaiHoc('Video')} />
                 Video (YouTube)
               </label>
-              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer' }}>
+              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 <input type="radio" name="loai" checked={loaiBaiHoc === 'VideoUpload'} onChange={() => setLoaiBaiHoc('VideoUpload')} />
                 Video (Tải lên)
               </label>
-              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer' }}>
+              <label className="khm-flex khm-items-center khm-gap-8" style={{ cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 <input type="radio" name="loai" checked={loaiBaiHoc === 'File'} onChange={() => setLoaiBaiHoc('File')} />
                 Tài liệu (File)
               </label>
@@ -118,6 +119,11 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
           {isYT && (
             <div className="khm-alert khm-alert-info khm-mb-16">
               🎬 Bài học này được import từ YouTube. Chỉ có thể chỉnh sửa tiêu đề và mô tả.
+            </div>
+          )}
+          {isCloudinary && (
+            <div className="khm-alert khm-alert-info khm-mb-16">
+              🎬 Video đã được tải lên hệ thống. Chỉ có thể chỉnh sửa tiêu đề và mô tả.
             </div>
           )}
           
@@ -139,7 +145,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
           </div>
 
           {loaiBaiHoc === 'Video' ? (
-            !isYT && (
+            !isYT && !isCloudinary && (
               <div className="khm-form-grid-2">
                 <div className="khm-form-group">
                   <label className="khm-form-label">Link YouTube</label>
@@ -376,19 +382,20 @@ const LessonRow: React.FC<{
 // ---- Main Component ----
 interface Props {
   maChuong: number;
+  maKhoaHoc: number;
   tenChuong: string;
   initialLessons?: BaiHocDetail[];
   onImportYT?: () => void;
 }
 
-const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons = [], onImportYT }) => {
+const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, tenChuong, initialLessons = [], onImportYT }) => {
   const {
     lessons, loading, error, modalOpen, editTarget, saving, deleteTarget, deleting, previewLesson,
     uploadProgress, setLessons,
     setModalOpen, setEditTarget, setDeleteTarget, setPreviewLesson,
     loadLessons, handleDragEnd, handleSave, handleConfirmDelete,
     ToastContainer
-  } = useLessonManagement({ maChuong, initialLessons });
+  } = useLessonManagement({ maChuong, maKhoaHoc, initialLessons });
 
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [subtitleTarget, setSubtitleTarget] = useState<BaiHocDetail | null>(null);
@@ -472,7 +479,11 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
       <ConfirmDialog
         isOpen={!!deleteTarget}
         title="Xóa bài học?"
-        message={`Xóa bài học "${deleteTarget?.tieuDe}" không thể khôi phục. Bạn có chắc chắn không?`}
+        message={
+          deleteTarget?.loaiBaiHoc === 'Video' && deleteTarget?.videoSource === 'cloudinary'
+            ? `Xóa bài học "${deleteTarget?.tieuDe}" sẽ xóa VĨNH VIỄN cả video${deleteTarget?.hasSubtitle ? ' và phụ đề' : ''} đã lưu trên Cloudinary. Thao tác này không thể khôi phục. Bạn có chắc chắn không?`
+            : `Xóa bài học "${deleteTarget?.tieuDe}" không thể khôi phục. Bạn có chắc chắn không?`
+        }
         confirmText="Xóa bài học"
         variant="danger"
         isLoading={deleting}
@@ -491,8 +502,18 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, tenChuong, initialLessons
              const updated = [...prev, ...newLessons];
              return updated.sort((a, b) => a.thuTu - b.thuTu);
            });
-           setBulkModalOpen(false);
-        }} 
+           // Không tự đóng modal ở đây: nếu người dùng đã tích "Tạo phụ đề AI",
+           // modal xác nhận phụ đề cần được hiện lên (nó nằm bên trong BulkUploadModal).
+           // Người dùng tự bấm "Đóng" khi xong.
+        }}
+        khiYeuCauPhuDeAI={(maBaiHocIds) => {
+           // Đánh dấu ngay các bài vừa gửi AI là "Processing_Subtitle" để badge hiện
+           // và kích hoạt polling (dangPoll) trong useLessonManagement.
+           const idSet = new Set(maBaiHocIds);
+           setLessons(prev => prev.map(l =>
+             idSet.has(l.maBaiHoc) ? { ...l, videoStatus: 'Processing_Subtitle', subtitleSource: 'ai' } : l
+           ));
+        }}
       />
 
       <VideoPreviewModal lesson={previewLesson} onClose={() => setPreviewLesson(null)} />

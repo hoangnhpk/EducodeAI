@@ -35,6 +35,13 @@ namespace educodeai_server.Controllers.GiangVien
 
         // Fixed-window rate limit: cửa sổ neo theo lần request đầu, KHÔNG trượt mỗi request.
         // Trả về true nếu ĐÃ vượt giới hạn (nên chặn); khi đó retryAfterSeconds = số giây còn lại của cửa sổ.
+        //
+        // GIỚI HẠN ĐÃ BIẾT (chấp nhận được ở quy mô 1 instance):
+        //  - TryGetValue + Set KHÔNG atomic: 2 request đồng thời có thể cùng đọc count cũ và cùng lọt.
+        //  - IMemoryCache là per-process: nếu scale-out nhiều instance, mỗi instance có counter riêng
+        //    → giới hạn thực tế bị nhân theo số instance.
+        //  Nếu về sau cần chính xác khi scale-out: chuyển sang Redis atomic (INCR + EXPIRE) qua
+        //  IRedisService.ThucThiLuaScriptAsync (MediaService đã có sẵn IRedisService).
         private bool VuotGioiHan(string key, int limit, TimeSpan window, out int retryAfterSeconds)
         {
             retryAfterSeconds = 0;
@@ -121,6 +128,9 @@ namespace educodeai_server.Controllers.GiangVien
         {
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
+
+            if (file == null || file.Length == 0)
+                return BadRequest(new { success = false, message = "Thiếu file phụ đề." });
 
             if (VuotGioiHan($"RateLimit_TaiLenPhuDe_{maGiangVien}", GioiHanTaiLenPhuDe.Limit, GioiHanTaiLenPhuDe.Window, out var retryAfter))
                 return TooManyRequests("Bạn đã tải lên quá nhiều phụ đề. Vui lòng thử lại sau ít phút.", retryAfter);

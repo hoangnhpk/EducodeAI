@@ -187,10 +187,10 @@ namespace educodeai_server.Controllers.GiangVien
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
             
-            var result = await _service.XoaVideoAsync(maBaiHoc, maGiangVien, env.WebRootPath);
-            if (!result)
-                return BadRequest(new { success = false, message = "Xóa bài học thất bại" });
-            return Ok(new { success = true, message = "Xóa bài học thành công" });
+            var (success, message) = await _service.XoaVideoAsync(maBaiHoc, maGiangVien, env.WebRootPath);
+            if (!success)
+                return BadRequest(new { success = false, message });
+            return Ok(new { success = true, message });
         }
 
         [HttpPost("them-file/{maChuong}")]
