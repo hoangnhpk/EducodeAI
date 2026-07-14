@@ -59,16 +59,39 @@ const CauHinhHeThong = () => {
         setConfigs(prev => ({ ...prev, [key]: value }));
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setConfigs(prev => ({ ...prev, BannerChinh: file.name }));
-            Swal.fire({
-                icon: 'info',
-                title: 'Đã chọn ảnh',
-                text: `Sếp đã chọn file: ${file.name}. Nhấn Lưu để cập nhật tên file vào hệ thống.`,
-                timer: 2000
-            });
+            // Hiển thị loading khi đang upload ảnh
+            Swal.fire({ title: 'Đang tải ảnh lên...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const token = localStorage.getItem('user_token');
+                const res = await fetch(`${apiUrl}/api/quan-tri/cau-hinh/upload-banner`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                const result = await res.json();
+                if (result.success) {
+                    const fullUrl = `${apiUrl}${result.url}`;
+                    setConfigs(prev => ({ ...prev, BannerChinh: fullUrl }));
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Đã tải ảnh thành công',
+                        text: `Sếp đã tải file: ${file.name}. Nhấn Lưu để cập nhật ảnh vào hệ thống.`,
+                        timer: 2000
+                    });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Lỗi', text: result.message || 'Không thể upload ảnh.' });
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Lỗi kết nối', text: 'Không thể upload ảnh vào lúc này.' });
+            }
         }
     };
 
@@ -180,7 +203,7 @@ const CauHinhHeThong = () => {
                                         <label>Banner Trang chủ (Chọn file từ máy tính):</label>
                                         <div className="media-input-group" style={{flexDirection: 'column', alignItems: 'flex-start', gap: '15px'}}>
                                             <img 
-                                                src={`/img/${configs.BannerChinh}`} 
+                                                src={configs.BannerChinh.startsWith('http') ? configs.BannerChinh : `/img/${configs.BannerChinh}`} 
                                                 alt="Banner preview" 
                                                 className="preview-img banner-preview" 
                                                 style={{width: '100%', maxWidth: '600px', height: '150px', objectFit: 'cover'}}

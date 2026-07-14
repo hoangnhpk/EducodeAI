@@ -100,3 +100,42 @@
     width: 100%;
     margin-top: auto;
 }
+
+/* ── OVERRIDE BOOTSTRAP PRIMARY COLOR TO ORANGE THEME ── */
+.khoa-hoc-ca-nhan-ai-page .text-primary {
+    color: #fb873f !important;
+}
+
+.khoa-hoc-ca-nhan-ai-page .bg-primary {
+    background-color: #fb873f !important;
+    color: white !important;
+}
+
+.khoa-hoc-ca-nhan-ai-page .btn-primary {
+    background-color: #fb873f !important;
+    border-color: #fb873f !important;
+    color: #ffffff !important;
+}
+
+.khoa-hoc-ca-nhan-ai-page .btn-primary:hover {
+    background-color: #e57635 !important;
+    border-color: #e57635 !important;
+}
+
+.khoa-hoc-ca-nhan-ai-page .btn-outline-primary {
+    color: #fb873f !important;
+    border-color: #fb873f !important;
+}
+
+.khoa-hoc-ca-nhan-ai-page .btn-outline-primary:hover {
+    background-color: #fb873f !important;
+    color: #ffffff !important;
+}
+
+.khoa-hoc-ca-nhan-ai-page .progress-bar {
+    background-color: #fb873f !important;
+}
+
+.khoa-hoc-ca-nhan-ai-page .spinner-border.text-primary {
+    color: #fb873f !important;
+}
