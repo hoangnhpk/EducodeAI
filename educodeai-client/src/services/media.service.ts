@@ -3,6 +3,12 @@ import axios from 'axios';
 
 const BASE = '/api/giang-vien/media';
 
+// Đơn giá phụ đề AI (USD/phút) — nguồn sự thật duy nhất cho UI, khớp GoogleCloud:SpeechToText:PricePerMinuteUsd ở backend.
+export const GIA_PHU_DE_AI_MOI_PHUT_USD = 0.024;
+
+// Dung lượng tối đa cho video upload lên Cloudinary (2GB). Nguồn sự thật duy nhất cho các luồng bulk/single upload.
+export const MAX_CLOUDINARY_VIDEO_MB = 2048;
+
 // Helper to extract nested 'data' from custom backend response format
 const extractData = <T>(res: any): T => {
   if (res && res.success !== undefined) {
@@ -89,9 +95,10 @@ export const uploadVideoToCloudinary = async (
   return uploadResult; 
 };
 
-export const taiLenPhuDe = async (file: File) => {
+export const taiLenPhuDe = async (file: File, maBaiHoc: number) => {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('maBaiHoc', String(maBaiHoc));
   const res = await axiosClient.post(`${BASE}/tai-len-phu-de`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });

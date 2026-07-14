@@ -20,8 +20,10 @@ namespace educodeai_server.Services.Implementation
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly double _speechPricePerMinuteUsd;
         private readonly ICurrencyExchangeService _currencyExchange;
+        private readonly IRedisService _redisService;
+        private readonly ILogger<MediaService> _logger;
 
-        public MediaService(Cloudinary cloudinary, IOptions<CauHinhCloudinary> cloudinaryConfig, EduCodeAIDbContext context, IServiceScopeFactory serviceScopeFactory, IOptions<CauHinhGoogleCloud> gcpConfig, ICurrencyExchangeService currencyExchange)
+        public MediaService(Cloudinary cloudinary, IOptions<CauHinhCloudinary> cloudinaryConfig, EduCodeAIDbContext context, IServiceScopeFactory serviceScopeFactory, IOptions<CauHinhGoogleCloud> gcpConfig, ICurrencyExchangeService currencyExchange, IRedisService redisService, ILogger<MediaService> logger)
         {
             _cloudinary = cloudinary;
             _cloudinaryConfig = cloudinaryConfig.Value;
@@ -29,6 +31,8 @@ namespace educodeai_server.Services.Implementation
             _serviceScopeFactory = serviceScopeFactory;
             _speechPricePerMinuteUsd = gcpConfig.Value.SpeechToText.PricePerMinuteUsd;
             _currencyExchange = currencyExchange;
+            _redisService = redisService;
+            _logger = logger;
         }
 
         public Task<ChuKyUploadVideoDTO> LayChuKyUploadVideoAsync(string maGiangVien, string folder)
@@ -238,6 +242,45 @@ namespace educodeai_server.Services.Implementation
             if (uploadResult.Error != null) return null;
 
             return uploadResult.SecureUrl?.ToString();
+        }
+
+        // Upload phụ đề thủ công + LƯU vào bảng BaiHoc (đóng gap: trước đây chỉ upload Cloudinary,
+        // không persist URL nên phụ đề thủ công bị mất sau khi reload).
+        public async Task<(bool IsSuccess, string? Url, string Message)> LuuPhuDeThuCongAsync(int maGiangVien, int maBaiHoc, IFormFile file, string folder)
+        {
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            if (extension != ".vtt" && extension != ".srt")
+                return (false, null, "Chỉ chấp nhận file .srt hoặc .vtt.");
+
+            // Kiểm tra quyền sở hữu: giảng viên chỉ được gắn phụ đề cho bài học của khóa mình.
+            var baiHoc = await _context.BaiHocs
+                .Include(b => b.ChuongHoc).ThenInclude(c => c.KhoaHoc)
+                .FirstOrDefaultAsync(b => b.MaBaiHoc == maBaiHoc);
+
+            if (baiHoc == null || baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien)
+                return (false, null, "Bài học không hợp lệ hoặc bạn không có quyền.");
+
+            var secureUrl = await TaiLenPhuDeAsync(file, folder);
+            if (string.IsNullOrEmpty(secureUrl))
+                return (false, null, "Tải lên phụ đề thất bại.");
+
+            baiHoc.SubtitleUrl = secureUrl;
+            baiHoc.HasSubtitle = true;
+            baiHoc.SubtitleSource = "manual";
+            await _context.SaveChangesAsync();
+
+            // Invalidate cache khóa học (mirror AiSubtitleWorker) để chi tiết khóa học phản ánh phụ đề mới.
+            try
+            {
+                await _redisService.XoaKeyAsync($"Instructor:{maGiangVien}:CourseList");
+                await _redisService.TangVersionKhoaHocAsync(baiHoc.ChuongHoc.KhoaHoc.MaKhoaHoc);
+            }
+            catch (Exception cacheEx)
+            {
+                _logger.LogWarning(cacheEx, "Không invalidate được cache sau khi lưu phụ đề thủ công cho bài học {MaBaiHoc}", maBaiHoc);
+            }
+
+            return (true, secureUrl, "Tải lên và lưu phụ đề thành công.");
         }
 
         public async Task<(bool IsSuccess, string Message)> YeuCauTaoPhuDeAIAsync(int maGiangVien, int maBaiHoc)

@@ -194,6 +194,7 @@ builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddTransient<IAiSubtitleWorker, AiSubtitleWorker>();
 builder.Services.AddHostedService<educodeai_server.Services.Implementation.StaleHoldCleanupService>();
+builder.Services.AddHostedService<educodeai_server.Services.Implementation.OrphanVideoCleanupService>();
 
 
 // ==========================================
