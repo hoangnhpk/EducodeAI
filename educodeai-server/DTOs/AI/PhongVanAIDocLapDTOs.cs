@@ -33,6 +33,9 @@ namespace educodeai_server.DTOs.AI
     {
         public int DiemSo { get; set; }
         public string DanhGiaChung { get; set; } = string.Empty;
+        public List<string> DiemManh { get; set; } = new();
+        public List<string> CanCaiThien { get; set; } = new();
+        public string LoiKhuyen { get; set; } = string.Empty;
         public List<PhongVanDocLapTurnDto> LichSuChat { get; set; } = new();
     }
 

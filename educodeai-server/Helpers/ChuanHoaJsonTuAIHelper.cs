@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
@@ -60,6 +60,7 @@ namespace educodeai_server.Helpers
                 candidates.Add(match.Groups[1].Value);
             }
 
+
             candidates.Add(text.Trim());
             candidates.AddRange(TrichXuatJsonCanBang(text));
 
@@ -78,6 +79,7 @@ namespace educodeai_server.Helpers
                 {
                     // Thu candidate tiep theo.
                 }
+
             }
 
             return false;
