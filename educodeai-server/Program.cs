@@ -14,13 +14,24 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CloudinaryDotNet;
 using Google.Cloud.Speech.V1;
+using Google.Cloud.Storage.V1;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using educodeai_server.Hubs;
 using educodeai_server.Workers;
+using FFMpegCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure FFMpegCore to use ffmpeg from project directory
+var ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg");
+GlobalFFOptions.Configure(options =>
+{
+    options.BinaryFolder = ffmpegPath;
+    options.TemporaryFilesFolder = Path.GetTempPath();
+});
+Console.WriteLine($"FFMpegCore configured to use ffmpeg from: {ffmpegPath}");
 
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true)
@@ -93,18 +104,31 @@ try
 
         builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
         builder.Services.AddScoped<IRedisService, RedisService>();
+
+        // Đăng ký Distributed Cache cho Redis
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = redisConnectionString;
+            options.ConfigurationOptions = configOptions;
+        });
     }
     else
     {
         var reason = !isRedisActive ? "turned OFF in appsettings" : "empty connection string";
         Console.WriteLine($"Redis is {reason} – using MemoryCache fallback");
         builder.Services.AddScoped<IRedisService, FallbackRedisService>();
+
+        // Đăng ký Distributed Memory Cache khi Redis không khả dụng
+        builder.Services.AddDistributedMemoryCache();
     }
 }
 catch (Exception ex)
 {
     Console.WriteLine($"Redis setup failed, using MemoryCache fallback: {ex.Message}");
     builder.Services.AddScoped<IRedisService, FallbackRedisService>();
+
+    // Đăng ký Distributed Memory Cache khi Redis fail
+    builder.Services.AddDistributedMemoryCache();
 }
 
 
@@ -129,6 +153,7 @@ builder.Services.AddScoped<IPhongVanAIDocLapService, PhongVanAIDocLapService>();
 builder.Services.AddScoped<IThanhToanEmailService, ThanhToanEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienEmailService, RutTienGiangVienEmailService>();
 builder.Services.AddScoped<IRutTienGiangVienService, RutTienGiangVienService>();
+builder.Services.AddScoped<INapTienAIService, NapTienAIService>();
 builder.Services.AddScoped<IBaiTapRepository, BaiTapRepository>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IBaiTapThucHanhService, BaiTapThucHanhService>();
@@ -171,6 +196,7 @@ builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IGiayToScanningService, GiayToScanningService>();
 builder.Services.AddTransient<IAiSubtitleWorker, AiSubtitleWorker>();
 builder.Services.AddHostedService<educodeai_server.Services.Implementation.StaleHoldCleanupService>();
+builder.Services.AddHostedService<educodeai_server.Services.Implementation.OrphanVideoCleanupService>();
 
 
 // ==========================================
@@ -199,6 +225,9 @@ builder.Services.AddHttpClient<IGeminiToolCallingService, GeminiToolCallingServi
     }
 });
 
+// Currency Exchange Service
+builder.Services.AddHttpClient<ICurrencyExchangeService, CurrencyExchangeService>();
+
 builder.Services.Configure<GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
 builder.Services.Configure<PaymentMailOptions>(builder.Configuration.GetSection("PaymentMail"));
 
@@ -207,6 +236,9 @@ builder.Services.Configure<CauHinhCloudinary>(builder.Configuration.GetSection("
 
 // Google Cloud Configuration
 builder.Services.Configure<CauHinhGoogleCloud>(builder.Configuration.GetSection("GoogleCloud"));
+
+// Currency Exchange Configuration
+builder.Services.Configure<CurrencyExchangeConfig>(builder.Configuration.GetSection("CurrencyExchange"));
 
 // Set GOOGLE_APPLICATION_CREDENTIALS env var + register SpeechClient singleton
 var gcpConfig = builder.Configuration.GetSection("GoogleCloud").Get<CauHinhGoogleCloud>();
@@ -224,6 +256,7 @@ if (gcpConfig != null && !string.IsNullOrEmpty(gcpConfig.ServiceAccountJsonPath)
     }
 }
 builder.Services.AddSingleton(_ => SpeechClient.Create());
+builder.Services.AddSingleton(_ => StorageClient.Create());
 var cloudinarySettings = builder.Configuration.GetSection("Cloudinary").Get<CauHinhCloudinary>();
 if (cloudinarySettings != null)
 {

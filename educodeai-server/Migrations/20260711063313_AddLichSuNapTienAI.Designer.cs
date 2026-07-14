@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using educodeai_server.Data;
@@ -11,9 +12,11 @@ using educodeai_server.Data;
 namespace educodeai_server.Migrations
 {
     [DbContext(typeof(EduCodeAIDbContext))]
-    partial class EduCodeAIDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260711063313_AddLichSuNapTienAI")]
+    partial class AddLichSuNapTienAI
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3059,7 +3062,6 @@ namespace educodeai_server.Migrations
                     b.ToTable("DanhGias");
                 });
 
-
             modelBuilder.Entity("educodeai_server.Models.DanhHieuModel", b =>
                 {
                     b.Property<int>("MaDanhHieu")
@@ -3154,7 +3156,6 @@ namespace educodeai_server.Migrations
 
                     b.ToTable("DoAnThucChiens");
                 });
-
 
             modelBuilder.Entity("educodeai_server.Models.DoanhThuGiangVienModel", b =>
                 {
@@ -3490,9 +3491,11 @@ namespace educodeai_server.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("AnhGiayToMatSauUrl")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("AnhGiayToMatTruocUrl")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("BoSungToken")
@@ -3503,10 +3506,6 @@ namespace educodeai_server.Migrations
 
                     b.Property<bool>("DaNopBoSung")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("DuLieuCccdMaHoa")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<string>("Email")
                         .IsRequired()

@@ -17,7 +17,8 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 const getImageUrl = (url?: string) => {
   if (!url) return 'https://placehold.co/600x200/6366f1/white?text=Khóa+Học';
   if (url.startsWith('http')) return url;
-  return `${BASE_URL}${url}`;
+  if (url.startsWith('/')) return `${BASE_URL}${url}`;
+  return `/img/${url}`;
 };
 
 type Tab = 'overview' | 'content' | 'import' | 'certificate' | 'settings';
@@ -27,16 +28,17 @@ interface Props {
   onBack: () => void;
   onEdit: () => void;
   onImportPlaylist: () => void;
+  initialTab?: Tab;
 }
 
-const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImportPlaylist }) => {
+const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImportPlaylist, initialTab = 'overview' }) => {
   const maGiangVien = getGiangVienId();
   const { showToast, ToastContainer } = useToastStandalone();
 
   const [detail, setDetail] = useState<KhoaHocDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('overview');
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [selectedChapter, setSelectedChapter] = useState<{ maChuong: number; tenChuong: string } | null>(null);
 
   // Certificate state
@@ -329,6 +331,7 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                   <LessonListEditor
                     key={selectedChapter.maChuong}
                     maChuong={selectedChapter.maChuong}
+                    maKhoaHoc={maKhoaHoc}
                     tenChuong={selectedChapter.tenChuong}
                     initialLessons={detail.danhSachChuong.find(c => c.maChuong === selectedChapter.maChuong)?.danhSachBaiHoc ?? []}
                     onImportYT={onImportPlaylist}

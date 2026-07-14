@@ -4,6 +4,7 @@ namespace educodeai_server.Config
     {
         public required string ProjectId { get; set; }
         public required string ServiceAccountJsonPath { get; set; }
+        public string? AudioStagingBucket { get; set; }
         public CauHinhSpeechToText SpeechToText { get; set; } = new();
     }
 

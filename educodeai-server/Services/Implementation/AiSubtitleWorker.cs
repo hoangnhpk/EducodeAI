@@ -2,6 +2,7 @@ using educodeai_server.Config;
 using educodeai_server.Data;
 using educodeai_server.Models;
 using Google.Cloud.Speech.V1;
+using Google.Cloud.Storage.V1;
 using Microsoft.EntityFrameworkCore;
 using FFMpegCore;
 using FFMpegCore.Enums;
@@ -28,23 +29,23 @@ namespace educodeai_server.Services.Implementation
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<AiSubtitleWorker> _logger;
         private readonly SpeechClient _speechClient;
+        private readonly StorageClient _storageClient;
         private readonly CauHinhSpeechToText _sttConfig;
+        private readonly string? _audioStagingBucket;
 
-        public AiSubtitleWorker(IServiceScopeFactory scopeFactory, ILogger<AiSubtitleWorker> logger, SpeechClient speechClient, IOptions<CauHinhGoogleCloud> gcpConfig)
+        public AiSubtitleWorker(IServiceScopeFactory scopeFactory, ILogger<AiSubtitleWorker> logger, SpeechClient speechClient, StorageClient storageClient, IOptions<CauHinhGoogleCloud> gcpConfig)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
             _speechClient = speechClient;
+            _storageClient = storageClient;
             _sttConfig = gcpConfig.Value.SpeechToText;
+            _audioStagingBucket = gcpConfig.Value.AudioStagingBucket;
         }
-
-        // Google Speech giới hạn ~10MB cho audio inline (LongRunningRecognize không dùng GCS).
-        // FLAC 16kHz mono ~= 100KB/giây → ~10MB tương đương ~10 phút audio.
-        private const long MaxInlineAudioBytes = 10 * 1024 * 1024;
 
         public async Task ProcessAsync(int maBaiHoc, int holdId)
         {
-            string? videoPath = null, audioPath = null, vttPath = null;
+            string? videoPath = null, audioPath = null, vttPath = null, gcsObjectName = null;
 
             try
             {
@@ -77,15 +78,18 @@ namespace educodeai_server.Services.Implementation
                         .WithCustomArgument("-vn -ac 1 -ar 16000 -c:a flac"))
                     .ProcessAsynchronously();
 
-                // 3. Đọc bytes → chặn cứng nếu vượt inline limit (10MB ~ 10 phút)
-                var audioBytes = await File.ReadAllBytesAsync(audioPath);
-                if (audioBytes.LongLength > MaxInlineAudioBytes)
-                    throw new InvalidOperationException(
-                        $"Audio {audioBytes.LongLength / (1024 * 1024)}MB vượt giới hạn inline 10MB. " +
-                        "Video quá dài để tạo phụ đề AI (tối đa ~10 phút).");
+                // 3. Upload audio FLAC lên GCS. Speech-to-Text giới hạn inline audio ~1 phút
+                //    thời lượng (không phải dung lượng) → bắt buộc dùng GCS URI cho video dài.
+                if (string.IsNullOrEmpty(_audioStagingBucket))
+                    throw new InvalidOperationException("Chưa cấu hình GoogleCloud:AudioStagingBucket.");
 
-                // 4. Speech-to-Text LongRunningRecognize (async, inline bytes, không cần GCS).
-                //    Dùng long-running để gỡ giới hạn 60 giây của Recognize sync.
+                gcsObjectName = $"audio-staging/{maBaiHoc}-{Guid.NewGuid()}.flac";
+                using (var audioStream = File.OpenRead(audioPath))
+                    await _storageClient.UploadObjectAsync(_audioStagingBucket, gcsObjectName, "audio/flac", audioStream);
+
+                var gcsUri = $"gs://{_audioStagingBucket}/{gcsObjectName}";
+
+                // 4. Speech-to-Text LongRunningRecognize với GCS URI (nâng giới hạn lên tới 480 phút).
                 var recognitionConfig = new RecognitionConfig
                 {
                     Encoding = RecognitionConfig.Types.AudioEncoding.Flac,
@@ -95,7 +99,7 @@ namespace educodeai_server.Services.Implementation
                     EnableWordTimeOffsets = true,
                     Model = _sttConfig.Model
                 };
-                var audio = RecognitionAudio.FromBytes(audioBytes);
+                var audio = RecognitionAudio.FromStorageUri(gcsUri);
                 var operation = await _speechClient.LongRunningRecognizeAsync(recognitionConfig, audio);
                 var completed = await operation.PollUntilCompletedAsync();
                 var response = completed.Result;
@@ -117,7 +121,22 @@ namespace educodeai_server.Services.Implementation
                 if (uploadResult.Error != null)
                     throw new Exception($"Cloudinary upload failed: {uploadResult.Error.Message}");
 
-                // 7. Update DB. SubtitleSource đã set = "ai" lúc tạo hold, không set lại ở đây.
+                // 7. Reload baiHoc để lấy trạng thái mới nhất: trong lúc job chạy (có thể kéo dài
+                //    do LongRunningRecognize), user có thể đã upload phụ đề thủ công và lưu xong.
+                //    Nếu vậy, tôn trọng lựa chọn của user — KHÔNG ghi đè phụ đề manual.
+                //    Vẫn commit hold vì chi phí Google Speech-to-Text đã phát sinh (không hoàn được).
+                await context.Entry(baiHoc).ReloadAsync();
+                if (baiHoc.SubtitleSource == "manual")
+                {
+                    baiHoc.VideoStatus = "Ready";
+                    hold.Status = "committed";
+                    hold.SettledAt = DateTime.UtcNow;
+                    await context.SaveChangesAsync();
+                    _logger.LogWarning("Job AI cho bài {MaBaiHoc} bỏ qua ghi đè vì đã có phụ đề thủ công", maBaiHoc);
+                    return;
+                }
+
+                // 7b. Update DB. SubtitleSource đã set = "ai" lúc tạo hold, không set lại ở đây.
                 baiHoc.SubtitleUrl = uploadResult.SecureUrl.ToString();
                 baiHoc.HasSubtitle = true;
                 baiHoc.VideoStatus = "Ready";
@@ -128,7 +147,27 @@ namespace educodeai_server.Services.Implementation
 
                 await context.SaveChangesAsync();
 
-                // 9. SignalR notify
+                // 9. Invalidate Redis cache cho khóa học
+                try
+                {
+                    var redisService = scope.ServiceProvider.GetRequiredService<IRedisService>();
+                    var maKhoaHoc = baiHoc.ChuongHoc.KhoaHoc.MaKhoaHoc;
+                    var maGiangVien = baiHoc.ChuongHoc.KhoaHoc.MaGiangVien;
+
+                    // Invalidate theo đúng pattern hệ thống (xem KhoaHocCuaToiService):
+                    //  - Danh sách khóa học giảng viên: key "Instructor:{id}:CourseList"
+                    //  - Chi tiết khóa học: key có version "...detail:v{version}" → tăng version để invalidate
+                    await redisService.XoaKeyAsync($"Instructor:{maGiangVien}:CourseList");
+                    await redisService.TangVersionKhoaHocAsync(maKhoaHoc);
+
+                    _logger.LogInformation("Cache invalidated for course {MaKhoaHoc} after subtitle creation", maKhoaHoc);
+                }
+                catch (Exception cacheEx)
+                {
+                    _logger.LogWarning(cacheEx, "Failed to invalidate cache for lesson {MaBaiHoc}, but subtitle was saved successfully", maBaiHoc);
+                }
+
+                // 10. SignalR notify
                 try
                 {
                     await hubContext.Clients.User(baiHoc.ChuongHoc.KhoaHoc.MaGiangVien.ToString())
@@ -184,6 +223,20 @@ namespace educodeai_server.Services.Implementation
                 if (File.Exists(videoPath)) File.Delete(videoPath);
                 if (File.Exists(audioPath)) File.Delete(audioPath);
                 if (File.Exists(vttPath)) File.Delete(vttPath);
+
+                // Xóa object audio trên GCS (nếu đã upload). Bọc try/catch riêng để
+                // lỗi xóa GCS không che lỗi chính. Lifecycle rule 24h là lưới đỡ thứ hai.
+                if (gcsObjectName != null && !string.IsNullOrEmpty(_audioStagingBucket))
+                {
+                    try
+                    {
+                        await _storageClient.DeleteObjectAsync(_audioStagingBucket, gcsObjectName);
+                    }
+                    catch (Exception gcsEx)
+                    {
+                        _logger.LogWarning(gcsEx, "Không xóa được object GCS {ObjectName} sau job phụ đề", gcsObjectName);
+                    }
+                }
             }
         }
 
