@@ -145,18 +145,18 @@ namespace educodeai_server.Services
             }
         }
 
-        public async Task<TienDoKhoaHocHocVienDTO> LayTienDoChiTietAsync(int maKhoaHoc, int maNguoiDung)
+        public async Task<TienDoKhoaHocHocVienDTO?> LayTienDoChiTietAsync(int maGiangVien, int maKhoaHoc, int maNguoiDung)
         {
-            int tongThoiGianPhut = 0;
-            try
-            {
-                tongThoiGianPhut = await _context.TienDoBaiHocs
-                    .Include(t => t.BaiHoc)
-                    .ThenInclude(b => b.ChuongHoc)
-                    .Where(t => t.MaNguoiDung == maNguoiDung && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc)
-                    .SumAsync(t => t.ThoiGianHoc);
-            }
-            catch { /* Bỏ qua nếu lỗi */ }
+            var khoaThuocGiangVien = await _context.KhoaHocs
+                .AnyAsync(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien);
+            if (!khoaThuocGiangVien)
+                return null;
+
+            int tongThoiGianPhut = await _context.TienDoBaiHocs
+                .Include(t => t.BaiHoc)
+                .ThenInclude(b => b.ChuongHoc)
+                .Where(t => t.MaNguoiDung == maNguoiDung && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc)
+                .SumAsync(t => t.ThoiGianHoc);
 
             var tatCaBaiHoc = await _context.BaiHocs
                 .Include(b => b.ChuongHoc)
