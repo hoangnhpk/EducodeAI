@@ -151,7 +151,7 @@ label {
   display: block;
 }
 
-input, select, textarea {
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   width: 100%;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
