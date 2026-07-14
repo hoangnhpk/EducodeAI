@@ -10,6 +10,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import * as mediaApi from '@/services/media.service';
+import { GIA_PHU_DE_AI_MOI_PHUT_USD, MAX_CLOUDINARY_VIDEO_MB } from '@/services/media.service';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
 
 interface BulkUploadItem {
@@ -144,8 +145,8 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
     Array.from(files).forEach(f => {
       if (choPhep.includes(f.type) || f.name.endsWith('.mp4') || f.name.endsWith('.mov')) {
         const dungLuongMb = f.size / (1024 * 1024);
-        if (dungLuongMb > 2000) {
-          alert(`File ${f.name} vượt quá dung lượng tối đa 2GB.`);
+        if (dungLuongMb > MAX_CLOUDINARY_VIDEO_MB) {
+          alert(`File ${f.name} vượt quá dung lượng tối đa ${(MAX_CLOUDINARY_VIDEO_MB / 1024).toFixed(0)}GB.`);
           return;
         }
         let tieuDe = f.name.replace(/\.[^/.]+$/, ""); // remove extension
@@ -401,7 +402,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                                 <tr key={l.maBaiHoc} style={{ borderBottom: '1px solid var(--khm-gray-100)' }}>
                                   <td style={{ padding: '4px 8px' }}>#{i + 1}</td>
                                   <td style={{ padding: '4px 8px' }}>{Math.ceil(l.thoiLuong / 60)} phút</td>
-                                  <td style={{ padding: '4px 8px' }}>${(Math.ceil(l.thoiLuong / 60) * 0.06).toFixed(2)}</td>
+                                  <td style={{ padding: '4px 8px' }}>${(Math.ceil(l.thoiLuong / 60) * GIA_PHU_DE_AI_MOI_PHUT_USD).toFixed(2)}</td>
                                 </tr>
                               ))}
                               {uploadedLessonsRef.current.length > 10 && (
@@ -413,7 +414,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                                 <td style={{ padding: '6px 8px' }}>Tổng</td>
                                 <td style={{ padding: '6px 8px' }}>{uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60), 0)} phút</td>
                                 <td style={{ padding: '6px 8px' }}>
-                                  ${uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60) * 0.06, 0).toFixed(2)}
+                                  ${uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60) * GIA_PHU_DE_AI_MOI_PHUT_USD, 0).toFixed(2)}
                                 </td>
                               </tr>
                             </tfoot>
@@ -433,7 +434,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                         <button className="khm-btn khm-btn-primary khm-btn-sm" onClick={() => setShowPhuDeConfirm(false)}>Đóng</button>
                       ) : (
                         <>
-                          <span className="khm-text-sm khm-text-muted">Phí AI: $0.06/phút</span>
+                          <span className="khm-text-sm khm-text-muted">Phí AI: ${GIA_PHU_DE_AI_MOI_PHUT_USD}/phút</span>
                           <div className="khm-flex khm-gap-8">
                             <button className="khm-btn khm-btn-outline khm-btn-sm" disabled={dangXuLyPhuDe} onClick={() => setShowPhuDeConfirm(false)}>Hủy</button>
                             <button className="khm-btn khm-btn-sm" style={{ background: '#c026d3', color: '#fff', border: 'none' }}
@@ -453,7 +454,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                                 finally { setDangXuLyPhuDe(false); }
                               }}
                             >
-                              {dangXuLyPhuDe ? <><span className="khm-spinner khm-spinner-sm" /> Đang xử lý...</> : `Đồng ý - $${uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60) * 0.06, 0).toFixed(2)}`}
+                              {dangXuLyPhuDe ? <><span className="khm-spinner khm-spinner-sm" /> Đang xử lý...</> : `Đồng ý - $${uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60) * GIA_PHU_DE_AI_MOI_PHUT_USD, 0).toFixed(2)}`}
                             </button>
                           </div>
                         </>

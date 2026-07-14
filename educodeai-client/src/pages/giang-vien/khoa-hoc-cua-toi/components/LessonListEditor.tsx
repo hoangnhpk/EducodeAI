@@ -16,6 +16,7 @@ import { ListItemSkeleton } from './ui/Skeleton';
 import { useLessonManagement } from '../hooks/useLessonManagement';
 import BulkUploadModal from './BulkUploadModal';
 import SubtitleManagerModal from './SubtitleManagerModal';
+import { MAX_CLOUDINARY_VIDEO_MB } from '@/services/media.service';
 
 const getGiangVienId = (): number => {
   try {
@@ -157,8 +158,8 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
                 type="file" 
                 onChange={e => {
                   const selectedFile = e.target.files?.[0] || null;
-                  if (selectedFile && selectedFile.size > 2000 * 1024 * 1024) {
-                    alert('Dung lượng file vượt quá 2GB.');
+                  if (selectedFile && selectedFile.size > MAX_CLOUDINARY_VIDEO_MB * 1024 * 1024) {
+                    alert(`Dung lượng file vượt quá ${(MAX_CLOUDINARY_VIDEO_MB / 1024).toFixed(0)}GB.`);
                     setFile(null);
                     return;
                   }

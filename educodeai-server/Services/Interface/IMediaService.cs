@@ -15,6 +15,7 @@ namespace educodeai_server.Services.Interface
         Task<bool> GiangVienSoHuuVideoAsync(int maGiangVien, string publicId);
         
         Task<string?> TaiLenPhuDeAsync(Microsoft.AspNetCore.Http.IFormFile file, string folder);
+        Task<(bool IsSuccess, string? Url, string Message)> LuuPhuDeThuCongAsync(int maGiangVien, int maBaiHoc, Microsoft.AspNetCore.Http.IFormFile file, string folder);
         Task<(bool IsSuccess, string Message)> YeuCauTaoPhuDeAIAsync(int maGiangVien, int maBaiHoc);
     }
 }

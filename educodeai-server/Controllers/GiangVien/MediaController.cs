@@ -16,6 +16,12 @@ namespace educodeai_server.Controllers.GiangVien
         private readonly IMediaService _mediaService;
         private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
 
+        // Ngưỡng rate limit cho từng endpoint nhạy cảm (số request / cửa sổ thời gian).
+        // Gom về một chỗ để dễ tinh chỉnh khi vận hành.
+        private static readonly (int Limit, TimeSpan Window) GioiHanChuKyUpload = (60, TimeSpan.FromMinutes(5));
+        private static readonly (int Limit, TimeSpan Window) GioiHanTaiLenPhuDe = (30, TimeSpan.FromMinutes(5));
+        private static readonly (int Limit, TimeSpan Window) GioiHanTaoPhuDeAI = (10, TimeSpan.FromMinutes(10));
+
         public MediaController(IMediaService mediaService, Microsoft.Extensions.Caching.Memory.IMemoryCache cache)
         {
             _mediaService = mediaService;
@@ -28,14 +34,20 @@ namespace educodeai_server.Controllers.GiangVien
         }
 
         // Fixed-window rate limit: cửa sổ neo theo lần request đầu, KHÔNG trượt mỗi request.
-        // Trả về true nếu ĐÃ vượt giới hạn (nên chặn).
-        private bool VuotGioiHan(string key, int limit, TimeSpan window)
+        // Trả về true nếu ĐÃ vượt giới hạn (nên chặn); khi đó retryAfterSeconds = số giây còn lại của cửa sổ.
+        private bool VuotGioiHan(string key, int limit, TimeSpan window, out int retryAfterSeconds)
         {
+            retryAfterSeconds = 0;
             // Lưu (count, thời điểm hết hạn tuyệt đối). Expiration của cache entry cũng
             // neo cố định vào windowEnd nên không bị đẩy dài ra khi tăng count.
             if (_cache.TryGetValue<(int Count, DateTimeOffset WindowEnd)>(key, out var entry))
             {
-                if (entry.Count >= limit) return true;
+                if (entry.Count >= limit)
+                {
+                    var conLai = (entry.WindowEnd - DateTimeOffset.UtcNow).TotalSeconds;
+                    retryAfterSeconds = Math.Max(1, (int)Math.Ceiling(conLai));
+                    return true;
+                }
                 _cache.Set(key, (entry.Count + 1, entry.WindowEnd),
                     new MemoryCacheEntryOptions { AbsoluteExpiration = entry.WindowEnd });
                 return false;
@@ -47,6 +59,13 @@ namespace educodeai_server.Controllers.GiangVien
             return false;
         }
 
+        // Gắn header Retry-After (giây) để client biết thời điểm được thử lại.
+        private IActionResult TooManyRequests(string message, int retryAfterSeconds)
+        {
+            Response.Headers["Retry-After"] = retryAfterSeconds.ToString();
+            return StatusCode(429, new { success = false, message });
+        }
+
         [HttpGet("lay-chu-ky-upload")]
         [Authorize(Roles = "GiangVien,Admin")] 
         public async Task<IActionResult> LayChuKyUpload()
@@ -54,9 +73,9 @@ namespace educodeai_server.Controllers.GiangVien
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
 
-            // Áp dụng Rate Limiting chống Spam: 60 requests / 5 minutes
-            if (VuotGioiHan($"RateLimit_UploadSig_{maGiangVien}", 60, TimeSpan.FromMinutes(5)))
-                return StatusCode(429, new { success = false, message = "Bạn đã vượt quá giới hạn lấy chữ ký. Vui lòng thử lại sau 5 phút." });
+            // Áp dụng Rate Limiting chống Spam.
+            if (VuotGioiHan($"RateLimit_UploadSig_{maGiangVien}", GioiHanChuKyUpload.Limit, GioiHanChuKyUpload.Window, out var retryAfter))
+                return TooManyRequests("Bạn đã vượt quá giới hạn lấy chữ ký. Vui lòng thử lại sau ít phút.", retryAfter);
 
             var folder = $"courses/{maGiangVien}";
             var signatureData = await _mediaService.LayChuKyUploadVideoAsync(maGiangVien.ToString(), folder);
@@ -98,21 +117,21 @@ namespace educodeai_server.Controllers.GiangVien
 
         [HttpPost("tai-len-phu-de")]
         [Authorize(Roles = "GiangVien,Admin")]
-        public async Task<IActionResult> TaiLenPhuDe(IFormFile file)
+        public async Task<IActionResult> TaiLenPhuDe([FromForm] int maBaiHoc, IFormFile file)
         {
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
 
-            if (VuotGioiHan($"RateLimit_TaiLenPhuDe_{maGiangVien}", 30, TimeSpan.FromMinutes(5)))
-                return StatusCode(429, new { success = false, message = "Bạn đã tải lên quá nhiều phụ đề. Vui lòng thử lại sau 5 phút." });
+            if (VuotGioiHan($"RateLimit_TaiLenPhuDe_{maGiangVien}", GioiHanTaiLenPhuDe.Limit, GioiHanTaiLenPhuDe.Window, out var retryAfter))
+                return TooManyRequests("Bạn đã tải lên quá nhiều phụ đề. Vui lòng thử lại sau ít phút.", retryAfter);
 
             var folder = $"subtitles/{maGiangVien}";
-            var secureUrl = await _mediaService.TaiLenPhuDeAsync(file, folder);
+            var (success, url, message) = await _mediaService.LuuPhuDeThuCongAsync(maGiangVien, maBaiHoc, file, folder);
 
-            if (string.IsNullOrEmpty(secureUrl))
-                return BadRequest(new { success = false, message = "Tải lên phụ đề thất bại." });
+            if (!success)
+                return BadRequest(new { success = false, message });
 
-            return Ok(new { success = true, data = new { url = secureUrl } });
+            return Ok(new { success = true, data = new { url }, message });
         }
 
         [HttpPost("tao-phu-de-ai/{maBaiHoc}")]
@@ -122,8 +141,8 @@ namespace educodeai_server.Controllers.GiangVien
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
 
-            if (VuotGioiHan($"RateLimit_TaoPhuDeAI_{maGiangVien}", 10, TimeSpan.FromMinutes(10)))
-                return StatusCode(429, new { success = false, message = "Bạn đã gửi quá nhiều yêu cầu AI. Vui lòng thử lại sau 10 phút." });
+            if (VuotGioiHan($"RateLimit_TaoPhuDeAI_{maGiangVien}", GioiHanTaoPhuDeAI.Limit, GioiHanTaoPhuDeAI.Window, out var retryAfter))
+                return TooManyRequests("Bạn đã gửi quá nhiều yêu cầu AI. Vui lòng thử lại sau ít phút.", retryAfter);
 
             var (success, message) = await _mediaService.YeuCauTaoPhuDeAIAsync(maGiangVien, maBaiHoc);
             
