@@ -24,5 +24,6 @@ namespace educodeai_server.Services.Interface
 
         /// <summary>Yêu cầu bổ sung hồ sơ, gửi email hướng dẫn bổ sung.</summary>
         Task<object> YeuCauBoSungHoSoAsync(long maHoSo, int maQuanTriVien, YeuCauBoSungHoSoRequest request);
+
     }
 }

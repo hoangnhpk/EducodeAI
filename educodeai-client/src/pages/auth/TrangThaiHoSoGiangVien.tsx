@@ -55,7 +55,7 @@ export default function TrangThaiHoSoGiangVien() {
   const cauHinh = ketQua ? CauHinhTrangThai[ketQua.trangThai] : null;
 
   return (
-    <div className="dkgv-container" style={{ maxWidth: "640px" }}>
+    <div className="dkgv-container mx-auto" style={{ maxWidth: "640px" }}>
       <div style={{ marginBottom: "20px" }}>
         <Link to="/dang-ky-giang-vien" className="text-decoration-none" style={{ color: "#65676b", fontSize: "14px" }}>
           <FaArrowLeft className="me-2" />

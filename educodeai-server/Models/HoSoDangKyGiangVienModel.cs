@@ -44,11 +44,13 @@ namespace educodeai_server.Models
 
         public string? AnhDaiDienUrl { get; set; }
 
+        /// <summary>Dữ liệu CCCD đã quét và mã hóa; không lưu ảnh CCCD.</summary>
         [Required]
-        public string AnhGiayToMatTruocUrl { get; set; } = string.Empty;
+        public string DuLieuCccdMaHoa { get; set; } = string.Empty;
 
-        [Required]
-        public string AnhGiayToMatSauUrl { get; set; } = string.Empty;
+        // Giữ để tương thích DB hiện có. Hệ thống mới luôn để trống.
+        public string? AnhGiayToMatTruocUrl { get; set; }
+        public string? AnhGiayToMatSauUrl { get; set; }
 
         [Required, StringLength(20)]
         public string PhuongThucThanhToan { get; set; } = "BANK";
