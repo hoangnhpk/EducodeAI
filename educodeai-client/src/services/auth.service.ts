@@ -8,6 +8,11 @@ export const authService = {
     return await api.post('/api/XacThuc/dang-ky-giang-vien', formData);
   },
 
+  scanIdentityDocument: async (formData: FormData) => {
+    // Khong set Content-Type thu cong de axios tu them boundary
+    return await api.post('/api/XacThuc/quet-giay-to', formData, { timeout: 120000 });
+  },
+
   checkEmail: async (email: string) => {
     return await api.get('/api/NguoiDung/check-email', { params: { email } });
   },
@@ -132,3 +137,4 @@ export const authService = {
     return await api.post('/api/XacThuc/xac-nhan-dang-xuat-tu-xa', payload);
   }
 };
+

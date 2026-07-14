@@ -11,12 +11,14 @@ import CourseManagePage from './pages/CourseManagePage';
 //  View State Machine
 //  list → create/edit → manage → import
 // ============================================================
+type ManageTab = 'overview' | 'content' | 'import' | 'certificate' | 'settings';
+
 type View =
   | { type: 'list' }
   | { type: 'create' }
   | { type: 'edit'; maKhoaHoc: number }
   | { type: 'import'; maKhoaHoc: number }
-  | { type: 'manage'; maKhoaHoc: number };
+  | { type: 'manage'; maKhoaHoc: number; tab?: ManageTab };
 
 const parseView = (searchParams: URLSearchParams): View => {
   const view = searchParams.get('view');
@@ -24,6 +26,10 @@ const parseView = (searchParams: URLSearchParams): View => {
 
   if (view === 'create') return { type: 'create' };
   if ((view === 'edit' || view === 'import' || view === 'manage') && Number.isInteger(maKhoaHoc) && maKhoaHoc > 0) {
+    if (view === 'manage') {
+      const tab = searchParams.get('tab') as ManageTab | null;
+      return { type: 'manage', maKhoaHoc, tab: tab ?? undefined };
+    }
     return { type: view, maKhoaHoc };
   }
 
@@ -41,6 +47,10 @@ const KhoaHocCuaToi: React.FC = () => {
       setSearchParams({});
     } else if (nextView.type === 'create') {
       setSearchParams({ view: 'create' });
+    } else if (nextView.type === 'manage') {
+      const params: Record<string, string> = { view: 'manage', maKhoaHoc: String(nextView.maKhoaHoc) };
+      if (nextView.tab) params.tab = nextView.tab;
+      setSearchParams(params);
     } else {
       setSearchParams({ view: nextView.type, maKhoaHoc: String(nextView.maKhoaHoc) });
     }
@@ -50,7 +60,7 @@ const KhoaHocCuaToi: React.FC = () => {
   const goCreate = () => setView({ type: 'create' });
   const goEdit = (maKhoaHoc: number) => setView({ type: 'edit', maKhoaHoc });
   const goImport = (maKhoaHoc: number) => setView({ type: 'import', maKhoaHoc });
-  const goManage = (maKhoaHoc: number) => setView({ type: 'manage', maKhoaHoc });
+  const goManage = (maKhoaHoc: number, tab?: ManageTab) => setView({ type: 'manage', maKhoaHoc, tab });
 
   // ---- LIST ----
   if (view.type === 'list') {
@@ -68,7 +78,7 @@ const KhoaHocCuaToi: React.FC = () => {
     return (
       <CourseFormPage
         onSaved={goManage}
-        onSavedAndContinue={goImport}
+        onSavedAndContinue={(id) => goManage(id, 'content')}
         onCancel={goList}
       />
     );
@@ -101,10 +111,11 @@ const KhoaHocCuaToi: React.FC = () => {
 
   // ---- MANAGE ----
   if (view.type === 'manage') {
-    const { maKhoaHoc } = view;
+    const { maKhoaHoc, tab } = view;
     return (
       <CourseManagePage
         maKhoaHoc={maKhoaHoc}
+        initialTab={tab}
         onBack={goList}
         onEdit={() => goEdit(maKhoaHoc)}
         onImportPlaylist={() => goImport(maKhoaHoc)}

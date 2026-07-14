@@ -388,14 +388,20 @@
   display: flex;
   gap: 12px;
   align-items: center;
-  flex-wrap: wrap;
   margin-bottom: 24px;
 }
 .khm-search-box {
   position: relative;
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 200px;
   max-width: 340px;
+}
+.khm-filter-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .khm-search-box svg {
   position: absolute;
@@ -463,6 +469,15 @@
 .khm-category-select:focus {
   border-color: var(--khm-primary);
   box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+/* Sidebar giảng viên chiếm ~260px, nên breakpoint phải cao hơn 768px viewport
+   để vùng nội dung không bị ép 1 hàng gây tràn dropdown. */
+@media (max-width: 1024px) {
+  .khm-filter-bar { flex-wrap: wrap; }
+  .khm-search-box { flex: 1 1 100%; max-width: none; }
+  .khm-filter-actions { margin-left: 0; width: 100%; flex-wrap: wrap; justify-content: space-between; }
+  .khm-category-select { flex: 1 1 auto; }
 }
 
 .khm-pagination {
@@ -969,8 +984,10 @@
   margin-bottom: 16px;
 }
 .khm-stat-card {
-  background: var(--khm-gray-50);
+  background: white;
+  border: 1px solid var(--khm-gray-200);
   border-radius: var(--khm-radius-sm);
+  box-shadow: var(--khm-shadow);
   padding: 14px 18px;
   text-align: center;
   min-width: 80px;

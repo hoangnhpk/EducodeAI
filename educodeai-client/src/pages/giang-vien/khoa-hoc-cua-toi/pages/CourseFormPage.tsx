@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import type { KhoaHocCreateUpdate, KhoaHocDetail } from '../types';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
 import { FormSkeleton } from '../components/ui/Skeleton';
+import { useToastStandalone } from '../components/ui/Toast';
 import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
 import { getMediaUrl } from '@/utils/mediaUrl';
 
@@ -715,7 +716,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
             onClick={() => void handleSubmit(true)}
             disabled={submitting}
           >
-            {submitting ? <><span className="khm-spinner khm-spinner-sm" /> Đang lưu...</> : '▶ Lưu & Tiếp tục'}
+            {submitting ? <><span className="khm-spinner khm-spinner-sm" /> Đang lưu...</> : '📁 Lưu & Thêm nội dung'}
           </button>
         </div>
       </div>
