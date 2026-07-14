@@ -40,7 +40,7 @@ const DangNhap: React.FC = () => {
     const [showCaptcha, setShowCaptcha] = useState(false); 
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
-    const GOOGLE_CLIENT_ID = "335320969122-3e5a0uoj7scbhmgi83utlesvf5rbrtdt.apps.googleusercontent.com";
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "335320969122-3e5a0uoj7scbhmgi83utlesvf5rbrtdt.apps.googleusercontent.com";
     const FACEBOOK_APP_ID = "994470786348116";
     
     const redirectByUserRole = (user: any) => {
@@ -277,9 +277,10 @@ const DangNhap: React.FC = () => {
                                                                 }
                                                             }}
                                                             onError={() => {
-                                                                Swal.fire('Lỗi', 'Đăng nhập Google thất bại', 'error');
+                                                                console.error('Google Login failed before backend call. Check Google OAuth origin: http://localhost:3000 and popup/cookie settings.');
+                                                                Swal.fire('Lỗi', 'Google OAuth thất bại trước khi gọi API. Kiểm tra OAuth Client ID và Authorized JavaScript origins có http://localhost:3000.', 'error');
                                                             }}
-                                                            useOneTap
+                                                            ux_mode="popup"
                                                             theme="outline"
                                                             width="100%"
                                                         />

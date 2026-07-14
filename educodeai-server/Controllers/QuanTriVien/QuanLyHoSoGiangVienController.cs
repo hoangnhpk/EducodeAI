@@ -126,23 +126,5 @@ namespace educodeai_server.Controllers.QuanTriVien
             }
         }
 
-        /// <summary>
-        /// Lấy ảnh CCCD private (mat=truoc|sau). Chỉ Admin.
-        /// Không public static file.
-        /// </summary>
-        [HttpGet("anh-giay-to/{maHoSo}")]
-        public async Task<IActionResult> LayAnhGiayTo(long maHoSo, [FromQuery] string mat = "truoc")
-        {
-            try
-            {
-                var file = await _service.LayAnhGiayToAsync(maHoSo, mat);
-                if (file == null) return NotFound(new { message = "Không tìm thấy ảnh giấy tờ." });
-                return File(file.Value.Stream, file.Value.ContentType, file.Value.FileName);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
     }
 }

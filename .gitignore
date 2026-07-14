@@ -373,3 +373,8 @@ gcp-service-account.json
 *-service-account.json
 
 ./gcp-service-account.json
+
+# Runtime uploads (user data) and OCR models - not source code
+educodeai-server/wwwroot/uploads/
+educodeai-server/private_uploads/
+educodeai-server/tessdata/

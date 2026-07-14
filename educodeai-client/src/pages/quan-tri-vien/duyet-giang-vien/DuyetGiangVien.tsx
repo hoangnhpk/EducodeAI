@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { HoSoGiangVienAdminService } from "@/services/ho-so-giang-vien-admin.service";
 import type { HoSoGiangVienListItem, HoSoGiangVienDetail } from "@/services/ho-so-giang-vien-admin.service";
@@ -35,15 +35,44 @@ const ellipsisStyle = {
   whiteSpace: "nowrap"
 } as const;
 
+const toExternalUrl = (value?: string | null) => {
+  const url = value?.trim();
+  if (!url) return null;
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+};
+
+const modalWarningSwal = {
+  icon: "warning" as const,
+  customClass: {
+    container: "qlnv-swal-over-modal"
+  }
+};
+
+const CCCD_FIELD_LABELS: Record<string, string> = {
+  loaiGiayTo: "Lo\u1ea1i gi\u1ea5y t\u1edd",
+  hoTen: "H\u1ecd t\u00ean",
+  soGiayTo: "S\u1ed1 gi\u1ea5y t\u1edd",
+  ngaySinh: "Ng\u00e0y sinh",
+  gioiTinh: "Gi\u1edbi t\u00ednh",
+  ngayCap: "Ng\u00e0y c\u1ea5p",
+  noiCap: "N\u01a1i c\u1ea5p",
+  diaChi: "\u0110\u1ecba ch\u1ec9",
+  quocTich: "Qu\u1ed1c t\u1ecbch",
+  nguyenQuan: "Qu\u00ea qu\u00e1n"
+};
+
+
 export default function DuyetGiangVien() {
   const [dangTai, setDangTai] = useState(true);
   const [trangThaiLoc, setTrangThaiLoc] = useState("");
   const [danhSach, setDanhSach] = useState<HoSoGiangVienListItem[]>([]);
   const [chiTiet, setChiTiet] = useState<HoSoGiangVienDetail | null>(null);
   const [moModal, setMoModal] = useState(false);
-  const [frontDocUrl, setFrontDocUrl] = useState<string | null>(null);
-  const [backDocUrl, setBackDocUrl] = useState<string | null>(null);
   const [hienGiayTo, setHienGiayTo] = useState(false);
+  const [maHoSoBoSung, setMaHoSoBoSung] = useState<number | null>(null);
+  const [noiDungBoSung, setNoiDungBoSung] = useState("");
+  const [maHoSoTuChoi, setMaHoSoTuChoi] = useState<number | null>(null);
+  const [lyDoTuChoi, setLyDoTuChoi] = useState("");
 
   const taiDanhSach = async (tt?: string) => {
     try {
@@ -66,44 +95,14 @@ export default function DuyetGiangVien() {
     void taiDanhSach(tt);
   };
 
-  const revokeDocUrls = () => {
-    if (frontDocUrl) URL.revokeObjectURL(frontDocUrl);
-    if (backDocUrl) URL.revokeObjectURL(backDocUrl);
-    setFrontDocUrl(null);
-    setBackDocUrl(null);
-  };
 
-  const loadPrivateDoc = async (maHoSo: number, mat: "truoc" | "sau") => {
-    const token = localStorage.getItem("user_token");
-    const url = HoSoGiangVienAdminService.layAnhGiayToUrl(maHoSo, mat);
-    const res = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token.trim()}` } : {},
-      credentials: "include"
-    });
-    if (!res.ok) throw new Error("Không tải được ảnh giấy tờ.");
-    const blob = await res.blob();
-    return URL.createObjectURL(blob);
-  };
 
   const xemChiTiet = async (maHoSo: number) => {
     try {
-      revokeDocUrls();
       const ct = await HoSoGiangVienAdminService.layChiTiet(maHoSo);
       setChiTiet(ct);
       setMoModal(true);
       setHienGiayTo(false);
-      // Ảnh CCCD chỉ load qua API private (có token admin)
-      try {
-        const [front, back] = await Promise.all([
-          loadPrivateDoc(maHoSo, "truoc"),
-          loadPrivateDoc(maHoSo, "sau")
-        ]);
-        setFrontDocUrl(front);
-        setBackDocUrl(back);
-      } catch {
-        setFrontDocUrl(null);
-        setBackDocUrl(null);
-      }
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không tải được chi tiết hồ sơ.", "error");
     }
@@ -131,46 +130,68 @@ export default function DuyetGiangVien() {
     }
   };
 
-  const xacNhanTuChoi = async (maHoSo: number) => {
-    const { value: lyDo, isConfirmed } = await Swal.fire({
-      title: "Lý do từ chối",
-      input: "textarea",
-      inputPlaceholder: "Nhập lý do từ chối hồ sơ...",
-      showCancelButton: true,
-      confirmButtonText: "Từ chối",
-      cancelButtonText: "Huỷ",
-      confirmButtonColor: "#dc3545",
-      inputValidator: (v) => (!v.trim() ? "Vui lòng nhập lý do" : undefined)
-    });
-    if (!isConfirmed) return;
+  const xacNhanTuChoi = (maHoSo: number) => {
+    setMoModal(false);
+    setMaHoSoTuChoi(maHoSo);
+    setLyDoTuChoi("");
+  };
+
+  const dongModalTuChoi = () => {
+    setMaHoSoTuChoi(null);
+    setLyDoTuChoi("");
+  };
+
+  const guiTuChoi = async () => {
+    if (!maHoSoTuChoi) return;
+
+    const lyDo = lyDoTuChoi.trim();
+    if (!lyDo) {
+      Swal.fire({
+        ...modalWarningSwal,
+        title: "\u0054hi\u1ebfu l\u00fd do",
+        text: "\u0056ui l\u00f2ng nh\u1eadp l\u00fd do t\u1eeb ch\u1ed1i h\u1ed3 s\u01a1."
+      });
+      return;
+    }
 
     try {
-      await HoSoGiangVienAdminService.tuChoiHoSo(maHoSo, lyDo.trim());
+      await HoSoGiangVienAdminService.tuChoiHoSo(maHoSoTuChoi, lyDo);
+      dongModalTuChoi();
       Swal.fire("Thành công", "Đã từ chối hồ sơ và gửi email thông báo.", "success");
-      setMoModal(false);
       void taiDanhSach(trangThaiLoc);
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể từ chối hồ sơ.", "error");
     }
   };
 
-  const xacNhanBoSung = async (maHoSo: number) => {
-    const { value: noiDung, isConfirmed } = await Swal.fire({
-      title: "Yêu cầu bổ sung",
-      input: "textarea",
-      inputPlaceholder: "Nhập nội dung cần giảng viên bổ sung...",
-      showCancelButton: true,
-      confirmButtonText: "Gửi yêu cầu",
-      cancelButtonText: "Huỷ",
-      confirmButtonColor: "#fb873f",
-      inputValidator: (v) => (!v.trim() ? "Vui lòng nhập nội dung" : undefined)
-    });
-    if (!isConfirmed) return;
+  const xacNhanBoSung = (maHoSo: number) => {
+    setMoModal(false);
+    setMaHoSoBoSung(maHoSo);
+    setNoiDungBoSung("");
+  };
+
+  const dongModalBoSung = () => {
+    setMaHoSoBoSung(null);
+    setNoiDungBoSung("");
+  };
+
+  const guiYeuCauBoSung = async () => {
+    if (!maHoSoBoSung) return;
+
+    const noiDung = noiDungBoSung.trim();
+    if (!noiDung) {
+      Swal.fire({
+        ...modalWarningSwal,
+        title: "\u0054hi\u1ebfu n\u1ed9i dung",
+        text: "\u0056ui l\u00f2ng nh\u1eadp n\u1ed9i dung c\u1ea7n b\u1ed5 sung."
+      });
+      return;
+    }
 
     try {
-      await HoSoGiangVienAdminService.yeuCauBoSung(maHoSo, noiDung.trim());
+      await HoSoGiangVienAdminService.yeuCauBoSung(maHoSoBoSung, noiDung);
+      dongModalBoSung();
       Swal.fire("Thành công", "Đã gửi yêu cầu bổ sung hồ sơ.", "success");
-      setMoModal(false);
       void taiDanhSach(trangThaiLoc);
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể gửi yêu cầu bổ sung.", "error");
@@ -290,24 +311,68 @@ export default function DuyetGiangVien() {
         </div>
       )}
 
+      {/* MODAL Y?U C?U B? SUNG */}
+      {maHoSoBoSung && (
+        <div className="qlnv-modal-overlay" onClick={(event) => event.target === event.currentTarget && dongModalBoSung()}>
+          <div className="qlnv-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
+            <div className="modal-title">Yêu cầu bổ sung hồ sơ</div>
+            <div className="form-group">
+                            <textarea
+                rows={5}
+                value={noiDungBoSung}
+                onChange={(event) => setNoiDungBoSung(event.target.value)}
+                placeholder="Nhập nội dung cần giảng viên bổ sung..."
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={dongModalBoSung}>Huỷ</button>
+              <button className="btn-save" onClick={guiYeuCauBoSung}>Gửi yêu cầu</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL T? CH?I */}
+      {maHoSoTuChoi && (
+        <div className="qlnv-modal-overlay" onClick={(event) => event.target === event.currentTarget && dongModalTuChoi()}>
+          <div className="qlnv-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
+            <div className="modal-title">Lý do từ chối</div>
+            <div className="form-group">
+                            <textarea
+                rows={5}
+                value={lyDoTuChoi}
+                onChange={(event) => setLyDoTuChoi(event.target.value)}
+                placeholder="Nhập lý do từ chối hồ sơ..."
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={dongModalTuChoi}>Huỷ</button>
+              <button
+                className="btn-save"
+                style={{ background: "#ef4444", boxShadow: "0 8px 20px rgba(239, 68, 68, 0.28)" }}
+                onClick={guiTuChoi}
+              >
+                Từ chối
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL CHI TIẾT */}
       {moModal && chiTiet && (
-        <div className="modal d-block" tabIndex={-1} style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Chi tiết hồ sơ: {chiTiet.hoTen}</h5>
-                <button type="button" className="btn-close" onClick={() => { revokeDocUrls(); setMoModal(false); }} />
-              </div>
-              <div className="modal-body">
+        <div className="qlnv-modal-overlay" onClick={(event) => event.target === event.currentTarget && setMoModal(false)}>
+          <div className="qlnv-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: 760 }}>
+            <div className="modal-title">Chi tiết hồ sơ: {chiTiet.hoTen}</div>
+            <div style={{ maxHeight: "65vh", overflowY: "auto", paddingRight: 4 }}>
                 <div className="row g-3">
                   <div className="col-md-6">
                     <p><b>Tài khoản đăng nhập:</b> {chiTiet.taiKhoan}</p>
                     <p><b>Email:</b> {chiTiet.email}</p>
                     <p><b>Số điện thoại:</b> {chiTiet.soDienThoai || "—"}</p>
                     <p><b>Lĩnh vực giảng dạy:</b> {chiTiet.linhVucGiangDay}</p>
-                    <p><b>LinkedIn:</b> {chiTiet.linkedInUrl ? <a href={chiTiet.linkedInUrl} target="_blank" rel="noreferrer">Xem</a> : "—"}</p>
-                    <p><b>Website:</b> {chiTiet.websiteUrl ? <a href={chiTiet.websiteUrl} target="_blank" rel="noreferrer">Xem</a> : "—"}</p>
+                    <p><b>LinkedIn:</b> {toExternalUrl(chiTiet.linkedInUrl) ? <a href={toExternalUrl(chiTiet.linkedInUrl)!} target="_blank" rel="noopener noreferrer">Xem</a> : "?"}</p>
+                    <p><b>Website:</b> {toExternalUrl(chiTiet.websiteUrl) ? <a href={toExternalUrl(chiTiet.websiteUrl)!} target="_blank" rel="noopener noreferrer">Xem</a> : "?"}</p>
                   </div>
                   <div className="col-md-6">
                     <p><b>Phương thức thanh toán:</b> {chiTiet.phuongThucThanhToan || "—"}</p>
@@ -347,13 +412,19 @@ export default function DuyetGiangVien() {
                         <div className="col-md-6">
                           <p><b>Số giấy tờ:</b> {chiTiet.soGiayTo}</p>
                         </div>
-                        <div className="col-md-6">
-                          <p><b>Ảnh mặt trước:</b></p>
-                          {frontDocUrl ? <img src={frontDocUrl} alt="Mặt trước" style={{ maxWidth: "100%", borderRadius: 8, border: '1px solid #ddd' }} /> : <span className="text-muted">Không tải được ảnh</span>}
-                        </div>
-                        <div className="col-md-6">
-                          <p><b>Ảnh mặt sau:</b></p>
-                          {backDocUrl ? <img src={backDocUrl} alt="Mặt sau" style={{ maxWidth: "100%", borderRadius: 8, border: '1px solid #ddd' }} /> : <span className="text-muted">Không tải được ảnh</span>}
+                        <div className="col-12">
+                          <p className="mb-2"><b>Dữ liệu quét đã mã hóa:</b></p>
+                          {chiTiet.thongTinCccdQuet && Object.keys(chiTiet.thongTinCccdQuet).length > 0 ? (
+                            <dl className="row mb-0">
+                              {Object.entries(chiTiet.thongTinCccdQuet).map(([key, value]) => (
+                                <React.Fragment key={key}>
+                                  <dt className="col-sm-3">{CCCD_FIELD_LABELS[key] || key}</dt>
+                                  <dd className="col-sm-9">{value || "—"}</dd>
+                                </React.Fragment>
+                              ))}
+                            </dl>
+                          ) : <span className="text-muted">Chưa có dữ liệu quét hoặc dữ liệu cũ chưa được mã hóa.</span>}
+                          <small className="text-muted d-block mt-2">Ảnh CCCD không được lưu trong hệ thống.</small>
                         </div>
                       </div>
                     ) : (
@@ -377,22 +448,25 @@ export default function DuyetGiangVien() {
                   )}
                 </div>
               </div>
-              <div className="modal-footer">
+            <div className="modal-actions">
                 {chiTiet.trangThaiHoSo === "ChoDuyet" && (
                   <>
-                    <button className="btn btn-success" onClick={() => xacNhanDuyet(chiTiet.maHoSoDangKyGiangVien)}>
+                    <button className="btn-save" onClick={() => xacNhanDuyet(chiTiet.maHoSoDangKyGiangVien)}>
                       <i className="bi bi-check-lg" /> Duyệt & tạo tài khoản
                     </button>
-                    <button className="btn btn-outline-warning" onClick={() => xacNhanBoSung(chiTiet.maHoSoDangKyGiangVien)}>
+                    <button className="btn-cancel" onClick={() => xacNhanBoSung(chiTiet.maHoSoDangKyGiangVien)}>
                       <i className="bi bi-pencil" /> Yêu cầu bổ sung
                     </button>
-                    <button className="btn btn-outline-danger" onClick={() => xacNhanTuChoi(chiTiet.maHoSoDangKyGiangVien)}>
+                    <button
+                      className="btn-cancel"
+                      style={{ borderColor: "#ef4444", color: "#ef4444" }}
+                      onClick={() => xacNhanTuChoi(chiTiet.maHoSoDangKyGiangVien)}
+                    >
                       <i className="bi bi-x-lg" /> Từ chối
                     </button>
                   </>
                 )}
-                <button className="btn btn-secondary" onClick={() => setMoModal(false)}>Đóng</button>
-              </div>
+                <button className="btn-cancel" onClick={() => setMoModal(false)}>Đóng</button>
             </div>
           </div>
         </div>

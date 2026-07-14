@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace educodeai_server.DTOs.QuanLyHoSoGiangVien
 {
@@ -20,8 +21,10 @@ namespace educodeai_server.DTOs.QuanLyHoSoGiangVien
         public string LoaiGiayTo { get; set; } = string.Empty;
         public string SoGiayTo { get; set; } = string.Empty;
         public string? AnhDaiDienUrl { get; set; }
-        public string AnhGiayToMatTruocUrl { get; set; } = string.Empty;
-        public string AnhGiayToMatSauUrl { get; set; } = string.Empty;
+        /// <summary>D? li?u OCR CCCD ?? ???c gi?i m?; ch? tr? v? t? API y?u c?u quy?n Admin.</summary>
+        public Dictionary<string, string>? ThongTinCccdQuet { get; set; }
+        [JsonIgnore]
+        public string? DuLieuCccdMaHoa { get; set; }
         public string PhuongThucThanhToan { get; set; } = string.Empty;
         public string? TenNganHang { get; set; }
         public string? SoTaiKhoanNhanTien { get; set; }

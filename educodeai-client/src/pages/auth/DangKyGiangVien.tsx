@@ -540,6 +540,7 @@ export default function DangKyGiangVien() {
     fd.append('WebsiteUrl', form.websiteUrl);
     fd.append('LoaiGiayTo', docType === 'cccd' ? 'CCCD' : 'Passport');
     fd.append('SoGiayTo', form.soGiayTo);
+    fd.append('NoiCap', form.noiCap.trim());
     fd.append('PhuongThucThanhToan', paymentMethod);
     fd.append('TenNganHang', form.tenNganHang);
     fd.append('SoTaiKhoanNhanTien', form.soTaiKhoanNhanTien);
@@ -601,14 +602,15 @@ export default function DangKyGiangVien() {
   );
 
   return (
-    <div className="dkgv-container">
-      <div style={{ maxWidth: '860px', margin: '0 auto 20px auto' }}>
-        <h1 className="fw-bold mb-2" style={{ color: '#1c1e21', fontSize: '32px' }}>Trở thành Giảng viên EducodeAI</h1>
-        <p style={{ color: '#65676b', fontSize: '16px' }}>Chia sẻ kiến thức và nhận thu nhập thụ động</p>
-        <p style={{ color: '#65676b', fontSize: '14px', marginTop: '8px' }}>
-          Đã nộp hồ sơ? <a href='/trang-thai-ho-so-giang-vien' style={{ color: '#fb873f', fontWeight: 600 }}>Tra cứu trạng thái hồ sơ</a>
+    <div className="dkgv-container dkgv-registration-page">
+      <header className="dkgv-registration-intro">
+        <p className="dkgv-registration-eyebrow">{"\u0110\u0103ng k\u00fd gi\u1ea3ng vi\u00ean"}</p>
+        <h1>{"Tr\u1edf th\u00e0nh Gi\u1ea3ng vi\u00ean EducodeAI"}</h1>
+        <p className="dkgv-registration-lead">{"Chia s\u1ebb ki\u1ebfn th\u1ee9c, x\u00e2y d\u1ef1ng l\u1edbp h\u1ecdc v\u00e0 nh\u1eadn thu nh\u1eadp t\u1eeb n\u1ed9i dung c\u1ee7a b\u1ea1n."}</p>
+        <p className="dkgv-registration-status-link">
+          {"\u0110\u00e3 n\u1ed9p h\u1ed3 s\u01a1?"} <a href='/trang-thai-ho-so-giang-vien'>{"Tra c\u1ee9u tr\u1ea1ng th\u00e1i h\u1ed3 s\u01a1"}</a>
         </p>
-      </div>
+      </header>
 
       <div className="dkgv-main-card animate__animated animate__fadeIn">
         {step === 1 && (
@@ -765,26 +767,7 @@ export default function DangKyGiangVien() {
 
           {step === 3 && (
             <>
-              <h2 className="dkgv-payment-title">Phương thức thanh toán</h2>
-              <p className="dkgv-page-subtitle" style={{ marginTop: 6 }}>Chọn cách bạn muốn nhận thu nhập từ các khóa học và dịch vụ hướng dẫn.</p>
-
-              <div className="dkgv-payment-methods">
-                <div className={`dkgv-method-card ${paymentMethod === 'BANK' ? 'active' : ''}`} onClick={() => setPaymentMethod('BANK')} role="button" tabIndex={0}>
-                  <div className="dkgv-method-icon"><i className="bi bi-bank" /></div>
-                  <div className="dkgv-method-title">Chuyển khoản ngân hàng</div>
-                  <div className="dkgv-method-desc">Nội địa (Việt Nam)</div>
-                </div>
-                <div className={`dkgv-method-card ${paymentMethod === 'PAYPAL' ? 'active' : ''}`} onClick={() => setPaymentMethod('PAYPAL')} role="button" tabIndex={0}>
-                  <div className="dkgv-method-icon"><i className="bi bi-cash-coin" /></div>
-                  <div className="dkgv-method-title">PayPal</div>
-                  <div className="dkgv-method-desc">Quốc tế</div>
-                </div>
-                <div className={`dkgv-method-card ${paymentMethod === 'PAYONEER' ? 'active' : ''}`} onClick={() => setPaymentMethod('PAYONEER')} role="button" tabIndex={0}>
-                  <div className="dkgv-method-icon"><i className="bi bi-wallet2" /></div>
-                  <div className="dkgv-method-title">Payoneer</div>
-                  <div className="dkgv-method-desc">Đối tác toàn cầu</div>
-                </div>
-              </div>
+              <h2 className="dkgv-payment-title">{"Ph\u01b0\u01a1ng th\u1ee9c thanh to\u00e1n"}</h2>
 
               <div className="row g-3">
                 <div className="col-md-6">

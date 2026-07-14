@@ -11,6 +11,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 
@@ -24,8 +26,10 @@ namespace educodeai_server.Services.Implementation
         private readonly IMemoryCache _memoryCache;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IWebHostEnvironment _env;
+        private readonly IGiayToScanningService _giayToScanningService;
+        private readonly IDataProtector _cccdDataProtector;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
             _config = config;
@@ -33,6 +37,8 @@ namespace educodeai_server.Services.Implementation
             _memoryCache = memoryCache;
             _httpContextAccessor = httpContextAccessor;
             _env = env;
+            _giayToScanningService = giayToScanningService;
+            _cccdDataProtector = dataProtectionProvider.CreateProtector("EduCodeAI.CCCD.OcrData.v1");
         }
 
         #region OTP COOKIE LOGIC
@@ -630,6 +636,9 @@ namespace educodeai_server.Services.Implementation
             if (await _context.HoSoDangKyGiangViens.AnyAsync(x => x.Email == email && x.TrangThaiHoSo != "TuChoi"))
                 throw new Exception("Email này đang có hồ sơ chờ xử lý. Vui lòng tra cứu trạng thái hồ sơ để cập nhật.");
 
+            if (await _context.HoSoDangKyGiangViens.AnyAsync(x => x.TaiKhoan.ToLower() == taiKhoan.ToLower() && x.TrangThaiHoSo != "TuChoi"))
+                throw new Exception("T\u00ean t\u00e0i kho\u1ea3n n\u00e0y \u0111\u00e3 \u0111\u01b0\u1ee3c d\u00f9ng trong m\u1ed9t h\u1ed3 s\u01a1 \u0111\u0103ng k\u00fd \u0111ang x\u1eed l\u00fd.");
+
             if (await _context.HoSoDangKyGiangViens.AnyAsync(x => x.SoGiayTo == soGiayTo && x.TrangThaiHoSo != "TuChoi"))
                 throw new Exception("Số giấy tờ này đang có hồ sơ chờ xử lý.");
 
@@ -654,15 +663,36 @@ namespace educodeai_server.Services.Implementation
             if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0)
                 ValidateFile(request.AnhDaiDien, "ảnh đại diện");
 
-            // 4. Lưu file upload ( GUID + ext, chống path traversal)
-            // Avatar vẫn public (chỉ ảnh hồ sơ). Ảnh CCCD lưu private ngoài wwwroot để không bị mở thẳng bằng URL.
-            var uploadRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien");
-            var avatarRoot = Path.Combine(uploadRoot, "avatars");
-            var privateRoot = Path.Combine(_env.ContentRootPath, "private_uploads", "dang-ky-giang-vien");
-            var docRoot = Path.Combine(privateRoot, "giay-to");
-            Directory.CreateDirectory(avatarRoot);
-            Directory.CreateDirectory(docRoot);
+            // 4. Quét OCR ngay trong request. Ảnh CCCD không được ghi xuống ổ đĩa.
+            var ketQuaQuet = await _giayToScanningService.QuetGiayToAsync(new GiayToScanningRequest
+            {
+                AnhMatTruoc = request.AnhGiayToMatTruoc,
+                AnhMatSau = request.AnhGiayToMatSau,
+                LoaiGiayTo = request.LoaiGiayTo.Trim()
+            });
+            if (!ketQuaQuet.ThanhCong || string.IsNullOrWhiteSpace(ketQuaQuet.SoGiayTo))
+                throw new Exception(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
+            if (!string.Equals(ketQuaQuet.SoGiayTo.Trim(), soGiayTo, StringComparison.OrdinalIgnoreCase))
+                throw new Exception("Số giấy tờ nhập vào không khớp với ảnh CCCD đã quét.");
 
+            var duLieuCccdMaHoa = _cccdDataProtector.Protect(JsonSerializer.Serialize(new
+            {
+                loaiGiayTo = request.LoaiGiayTo.Trim(),
+                hoTen = ketQuaQuet.HoTen,
+                soGiayTo = ketQuaQuet.SoGiayTo,
+                ngaySinh = ketQuaQuet.NgaySinh,
+                gioiTinh = ketQuaQuet.GioiTinh,
+                ngayCap = ketQuaQuet.NgayCap,
+                // ?u ti?n n?i c?p ng??i d?ng nh?p tay; fallback OCR n?u tr?ng.
+                noiCap = !string.IsNullOrWhiteSpace(request.NoiCap) ? request.NoiCap.Trim() : ketQuaQuet.NoiCap,
+                diaChi = ketQuaQuet.DiaChi,
+                quocTich = ketQuaQuet.QuocTich,
+                nguyenQuan = ketQuaQuet.NguyenQuan
+            }));
+
+            // Chỉ avatar được lưu. Ảnh CCCD không được lưu ở bất kỳ thư mục nào.
+            var avatarRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien", "avatars");
+            Directory.CreateDirectory(avatarRoot);
             string? avatarPath = null;
             List<string> savedFiles = new();
 
@@ -673,12 +703,6 @@ namespace educodeai_server.Services.Implementation
                     avatarPath = await LuuFileAsync(request.AnhDaiDien, avatarRoot, "/uploads/dang-ky-giang-vien/avatars");
                     savedFiles.Add(Path.Combine(avatarRoot, Path.GetFileName(avatarPath)));
                 }
-
-                var frontPath = await LuuFilePrivateAsync(request.AnhGiayToMatTruoc, docRoot);
-                savedFiles.Add(Path.Combine(docRoot, Path.GetFileName(frontPath.Replace("private://giay-to/", string.Empty))));
-
-                var backPath = await LuuFilePrivateAsync(request.AnhGiayToMatSau, docRoot);
-                savedFiles.Add(Path.Combine(docRoot, Path.GetFileName(backPath.Replace("private://giay-to/", string.Empty))));
 
                 // 5. Tạo hồ sơ đăng ký trong transaction (bọc trong execution strategy vì Npgsql retry không cho BeginTransaction trực tiếp)
                 var strategy = _context.Database.CreateExecutionStrategy();
@@ -705,8 +729,9 @@ namespace educodeai_server.Services.Implementation
                             LoaiGiayTo = request.LoaiGiayTo.Trim(),
                             SoGiayTo = soGiayTo,
                             AnhDaiDienUrl = avatarPath,
-                            AnhGiayToMatTruocUrl = frontPath,
-                            AnhGiayToMatSauUrl = backPath,
+                            DuLieuCccdMaHoa = duLieuCccdMaHoa,
+                            AnhGiayToMatTruocUrl = string.Empty,
+                            AnhGiayToMatSauUrl = string.Empty,
                             PhuongThucThanhToan = request.PhuongThucThanhToan.Trim(),
                             TenNganHang = request.TenNganHang?.Trim(),
                             SoTaiKhoanNhanTien = request.SoTaiKhoanNhanTien?.Trim(),
@@ -910,30 +935,51 @@ namespace educodeai_server.Services.Implementation
             if (request.MaSoThue != null) hoSo.MaSoThue = request.MaSoThue.Trim();
             if (!string.IsNullOrWhiteSpace(request.LoaiDoiTuongThue)) hoSo.LoaiDoiTuongThue = request.LoaiDoiTuongThue.Trim();
 
-            // Cập nhật file mới nếu có
-            var uploadRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien");
-            var avatarRoot = Path.Combine(uploadRoot, "avatars");
-            var privateRoot = Path.Combine(_env.ContentRootPath, "private_uploads", "dang-ky-giang-vien");
-            var docRoot = Path.Combine(privateRoot, "giay-to");
+            // Cập nhật file/avatar nếu có. Ảnh CCCD chỉ dùng tạm để OCR, không lưu file.
+            var avatarRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien", "avatars");
             Directory.CreateDirectory(avatarRoot);
-            Directory.CreateDirectory(docRoot);
-
-            string? oldAvatar = hoSo.AnhDaiDienUrl, oldFront = hoSo.AnhGiayToMatTruocUrl, oldBack = hoSo.AnhGiayToMatSauUrl;
+            string? oldAvatar = hoSo.AnhDaiDienUrl;
 
             if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0)
             {
                 var p = await LuuFileAsync(request.AnhDaiDien, avatarRoot, "/uploads/dang-ky-giang-vien/avatars");
                 hoSo.AnhDaiDienUrl = p;
             }
-            if (request.AnhGiayToMatTruoc != null && request.AnhGiayToMatTruoc.Length > 0)
+
+            // Nếu giảng viên gửi lại 2 mặt CCCD thì quét lại và mã hóa dữ liệu mới.
+            if (request.AnhGiayToMatTruoc != null && request.AnhGiayToMatTruoc.Length > 0
+                && request.AnhGiayToMatSau != null && request.AnhGiayToMatSau.Length > 0)
             {
-                var p = await LuuFilePrivateAsync(request.AnhGiayToMatTruoc, docRoot);
-                hoSo.AnhGiayToMatTruocUrl = p;
-            }
-            if (request.AnhGiayToMatSau != null && request.AnhGiayToMatSau.Length > 0)
-            {
-                var p = await LuuFilePrivateAsync(request.AnhGiayToMatSau, docRoot);
-                hoSo.AnhGiayToMatSauUrl = p;
+                var ketQuaQuet = await _giayToScanningService.QuetGiayToAsync(new GiayToScanningRequest
+                {
+                    AnhMatTruoc = request.AnhGiayToMatTruoc,
+                    AnhMatSau = request.AnhGiayToMatSau,
+                    LoaiGiayTo = string.IsNullOrWhiteSpace(hoSo.LoaiGiayTo) ? "CCCD" : hoSo.LoaiGiayTo
+                });
+                if (!ketQuaQuet.ThanhCong || string.IsNullOrWhiteSpace(ketQuaQuet.SoGiayTo))
+                    throw new Exception(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
+
+                var soGiayToMoi = !string.IsNullOrWhiteSpace(request.SoGiayTo) ? request.SoGiayTo.Trim() : hoSo.SoGiayTo;
+                if (!string.Equals(ketQuaQuet.SoGiayTo.Trim(), soGiayToMoi, StringComparison.OrdinalIgnoreCase))
+                    throw new Exception("Số giấy tờ nhập vào không khớp với ảnh CCCD đã quét.");
+
+                hoSo.SoGiayTo = soGiayToMoi;
+                hoSo.DuLieuCccdMaHoa = _cccdDataProtector.Protect(JsonSerializer.Serialize(new
+                {
+                    loaiGiayTo = hoSo.LoaiGiayTo,
+                    hoTen = ketQuaQuet.HoTen,
+                    soGiayTo = ketQuaQuet.SoGiayTo,
+                    ngaySinh = ketQuaQuet.NgaySinh,
+                    gioiTinh = ketQuaQuet.GioiTinh,
+                    ngayCap = ketQuaQuet.NgayCap,
+                    // ?u ti?n n?i c?p ng??i d?ng nh?p tay; fallback OCR n?u tr?ng.
+                    noiCap = !string.IsNullOrWhiteSpace(request.NoiCap) ? request.NoiCap.Trim() : ketQuaQuet.NoiCap,
+                    diaChi = ketQuaQuet.DiaChi,
+                    quocTich = ketQuaQuet.QuocTich,
+                    nguyenQuan = ketQuaQuet.NguyenQuan
+                }));
+                hoSo.AnhGiayToMatTruocUrl = string.Empty;
+                hoSo.AnhGiayToMatSauUrl = string.Empty;
             }
 
             // Đặt lại trạng thái chờ duyệt
@@ -947,30 +993,17 @@ namespace educodeai_server.Services.Implementation
             hoSo.BoSungTokenHetHan = null;
             await _context.SaveChangesAsync();
 
-                        // Dọn file cũ đã thay (tránh rác ổ đĩa)
-            void XoaFileCu(string? url)
+            // Dọn avatar cũ nếu đã thay
+            if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0 && !string.IsNullOrWhiteSpace(oldAvatar))
             {
-                if (string.IsNullOrWhiteSpace(url)) return;
                 try
                 {
-                    string full;
-                    if (url.StartsWith("private://giay-to/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var fileName = Path.GetFileName(url.Replace("private://giay-to/", string.Empty));
-                        full = Path.Combine(_env.ContentRootPath, "private_uploads", "dang-ky-giang-vien", "giay-to", fileName);
-                    }
-                    else
-                    {
-                        var rel = url.TrimStart('/');
-                        full = Path.Combine(_env.WebRootPath, rel.Replace('/', Path.DirectorySeparatorChar));
-                    }
+                    var rel = oldAvatar.TrimStart('/');
+                    var full = Path.Combine(_env.WebRootPath, rel.Replace('/', Path.DirectorySeparatorChar));
                     if (File.Exists(full)) File.Delete(full);
                 }
                 catch { /* ignore */ }
             }
-            if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0) XoaFileCu(oldAvatar);
-            if (request.AnhGiayToMatTruoc != null && request.AnhGiayToMatTruoc.Length > 0) XoaFileCu(oldFront);
-            if (request.AnhGiayToMatSau != null && request.AnhGiayToMatSau.Length > 0) XoaFileCu(oldBack);
 
             return new
             {

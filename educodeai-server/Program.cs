@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -114,6 +114,7 @@ catch (Exception ex)
 builder.Services.AddHttpContextAccessor();
 // Thêm bộ nhớ tạm để lưu OTP mà không cần dùng Database
 builder.Services.AddMemoryCache();
+builder.Services.AddDataProtection();
 // Dịch vụ Xác thực và Captcha mới
 builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddScoped<IXacThucService, XacThucService>();
@@ -368,16 +369,6 @@ try
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGiaKhoaHocs_MaKhoaHoc" ON "MaGiamGiaKhoaHocs" ("MaKhoaHoc");""");
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_DonHangKhoaHocs_MaVoucher" ON "DonHangKhoaHocs" ("MaVoucher");""");
         db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGias_MaNguoiTao" ON "MaGiamGias" ("MaNguoiTao");""");
-        // === SELF-HEALING: HoSoDangKyGiangViens (đăng ký giảng viên) ===
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ALTER COLUMN "MaNguoiDung" TYPE integer USING "MaNguoiDung"::integer;""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ALTER COLUMN "MaNguoiDung" DROP NOT NULL;""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "TaiKhoan" character varying(50) NOT NULL DEFAULT '';""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "MatKhau" character varying(255) NOT NULL DEFAULT '';""");
-
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "BoSungToken" character varying(64) NULL;""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "BoSungTokenHetHan" timestamp with time zone NULL;""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "DaNopBoSung" boolean NOT NULL DEFAULT false;""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "HoSoDangKyGiangViens" ADD COLUMN IF NOT EXISTS "NgayNopBoSung" timestamp with time zone NULL;""");
     }
 }
 catch (Exception ex)
@@ -457,7 +448,12 @@ if (app.Environment.IsDevelopment())
 }
 // app.UseSwagger();
 // app.UseSwaggerUI();
-app.UseHttpsRedirection();
+// Local frontend ch?y HTTP (http://localhost:3000), n?n kh?ng redirect preflight OPTIONS sang HTTPS ? Development.
+// Production v?n b?t bu?c HTTPS.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 // CORS: phải đặt sau UseRouting và trước UseAuthentication/UseAuthorization
