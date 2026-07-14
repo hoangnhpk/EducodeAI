@@ -417,7 +417,8 @@ namespace educodeai_server.Services.Implementation
             {
                 if (tienDo.TrangThai == StClaimed) continue;
 
-                var mau = mauList.First(m => m.MaMau == tienDo.MaMau);
+                var mau = mauList.FirstOrDefault(m => m.MaMau == tienDo.MaMau);
+                if (mau == null) continue; // nhiệm vụ đã bị tắt giữa chu kỳ → giữ nguyên tiến độ, không xử lý
                 var giaTri = giaTriDem.GetValueOrDefault(mau.LoaiDem, 0);
                 tienDo.GiaTriHienTai = giaTri;
                 tienDo.TrangThai = giaTri >= mau.ChiTieu ? StCompleted : StInProgress;

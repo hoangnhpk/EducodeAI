@@ -30,9 +30,7 @@ namespace educodeai_server.Controllers.QuanTriVien
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "Lỗi server khi lấy thống kê tổng quan.",
-                    details = ex.Message
-                });
+                    message = "Lỗi server khi lấy thống kê tổng quan."                });
             }
         }
 
@@ -50,9 +48,7 @@ namespace educodeai_server.Controllers.QuanTriVien
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "Lỗi server khi lấy dữ liệu biểu đồ đăng ký.",
-                    details = ex.Message
-                });
+                    message = "Lỗi server khi lấy dữ liệu biểu đồ đăng ký."                });
             }
         }
 
@@ -88,7 +84,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayDangKyTheoThang ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy dữ liệu biểu đồ đăng ký.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy dữ liệu biểu đồ đăng ký." });
             }
         }
 
@@ -121,7 +117,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayTopKhoaHoc ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy top khóa học.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy top khóa học." });
             }
         }
 
@@ -154,7 +150,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayTopGiangVien ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy top giảng viên.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy top giảng viên." });
             }
         }
 
@@ -187,7 +183,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayHoatDong ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy thống kê hoạt động.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy thống kê hoạt động." });
             }
         }
 
@@ -220,7 +216,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayChatLuongKhoaHoc ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy thống kê chất lượng khóa học.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy thống kê chất lượng khóa học." });
             }
         }
 
@@ -235,7 +231,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayChiTietHocVien ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết học viên.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết học viên." });
             }
         }
 
@@ -250,7 +246,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayChiTietGiangVien ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết giảng viên.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết giảng viên." });
             }
         }
 
@@ -265,7 +261,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayChiTietKhoaHoc ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết khóa học.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết khóa học." });
             }
         }
 
@@ -280,7 +276,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayChiTietDangKy ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết lượt đăng ký.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy chi tiết lượt đăng ký." });
             }
         }
 
@@ -295,7 +291,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayDoanhThuTongQuan ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy thống kê doanh thu.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy thống kê doanh thu." });
             }
         }
 
@@ -326,7 +322,7 @@ namespace educodeai_server.Controllers.QuanTriVien
             catch (Exception ex)
             {
                 Console.WriteLine($"[ThongKeAdmin] LayDoanhThuTheoThoiGian ERROR: {ex}");
-                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy biểu đồ doanh thu.", details = ex.Message });
+                return StatusCode(500, new { success = false, message = "Lỗi server khi lấy biểu đồ doanh thu." });
             }
         }
     }
