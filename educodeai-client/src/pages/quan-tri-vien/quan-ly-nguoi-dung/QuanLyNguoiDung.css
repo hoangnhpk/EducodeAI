@@ -276,6 +276,11 @@
 /* ===========================
    MODAL
 =========================== */
+
+.qlnv-swal-over-modal {
+    z-index: 20000 !important;
+}
+
 .qlnv-modal-overlay {
     position: fixed !important;
     inset: 0 !important;

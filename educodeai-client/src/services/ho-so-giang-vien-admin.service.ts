@@ -21,8 +21,7 @@ export interface HoSoGiangVienDetail extends HoSoGiangVienListItem {
   tieuSu: string;
   linkedInUrl?: string;
   websiteUrl?: string;
-  anhGiayToMatTruocUrl: string;
-  anhGiayToMatSauUrl: string;
+  thongTinCccdQuet?: Record<string, string>;
   phuongThucThanhToan: string;
   tenNganHang?: string;
   soTaiKhoanNhanTien?: string;
@@ -75,10 +74,4 @@ export const HoSoGiangVienAdminService = {
       { noiDungBoSung }
     );
   },
-
-  /** URL ảnh CCCD private (chỉ admin + bearer token). */
-  layAnhGiayToUrl: (maHoSo: number, mat: "truoc" | "sau" = "truoc") => {
-    const base = import.meta.env.VITE_API_URL || "";
-    return `${base}/api/QuanTriVien/quan-ly-ho-so-giang-vien/anh-giay-to/${maHoSo}?mat=${mat}`;
-  }
 };

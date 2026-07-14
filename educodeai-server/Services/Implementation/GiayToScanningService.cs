@@ -104,16 +104,33 @@ namespace educodeai_server.Services.Implementation
                 var qrText = DecodeQrText(frontBytes);
                 var parsed = ParseIdentity(orderedFront, orderedBack, request.LoaiGiayTo, qrText);
                 if (string.IsNullOrWhiteSpace(parsed.SoGiayTo) && string.IsNullOrWhiteSpace(parsed.HoTen))
-                    return Fail("Không đọc được số giấy tờ/họ tên từ CCCD. Vui lòng chụp lại rõ hơn.");
+                    return Fail("Kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c s\u1ed1 gi\u1ea5y t\u1edd/h\u1ecd t\u00ean t\u1eeb CCCD. Vui l\u00f2ng ch\u1ee5p l\u1ea1i \u1ea3nh r\u00f5 n\u00e9t, \u0111\u1eb7t gi\u1ea5y t\u1edd th\u1eb3ng, ch\u1ee5p ngang khung h\u00ecnh, \u0111\u1ee7 s\u00e1ng v\u00e0 kh\u00f4ng b\u1ecb l\u00f3a.");
+
+                var missingFields = GetMissingRequiredFields(parsed, request.LoaiGiayTo);
+                if (missingFields.Count > 0)
+                    return Fail($"Ch\u01b0a \u0111\u1ecdc \u0111\u01b0\u1ee3c: {string.Join(", ", missingFields)}. Vui l\u00f2ng ch\u1ee5p l\u1ea1i \u1ea3nh r\u00f5 n\u00e9t h\u01a1n, \u0111\u1eb7t gi\u1ea5y t\u1edd th\u1eb3ng, ch\u1ee5p ngang khung h\u00ecnh, \u0111\u1ee7 s\u00e1ng, kh\u00f4ng b\u1ecb l\u00f3a v\u00e0 kh\u00f4ng che m\u1ea5t g\u00f3c gi\u1ea5y t\u1edd.");
 
                 parsed.ThanhCong = true;
-                parsed.ThongBao = "Quét CCCD offline thành công. Vui lòng kiểm tra và xác nhận thông tin.";
+                parsed.ThongBao = "Qu\u00e9t CCCD offline th\u00e0nh c\u00f4ng. N\u1ebfu c\u00f3 th\u00f4ng tin n\u00e0o kh\u00f4ng ch\u00ednh x\u00e1c theo gi\u1ea5y t\u1edd, vui l\u00f2ng ch\u1ee5p l\u1ea1i \u1ea3nh r\u00f5 n\u00e9t h\u01a1n, \u0111\u1eb7t gi\u1ea5y t\u1edd th\u1eb3ng, ch\u1ee5p ngang khung h\u00ecnh, \u0111\u1ee7 s\u00e1ng v\u00e0 kh\u00f4ng b\u1ecb l\u00f3a.";
                 return parsed;
             }
             catch
             {
                 return Fail("Đã xảy ra lỗi khi quét offline. Vui lòng thử lại sau.");
             }
+        }
+
+        private static List<string> GetMissingRequiredFields(GiayToScanningResponse result, string loaiGiayTo)
+        {
+            var missing = new List<string>();
+            if (string.IsNullOrWhiteSpace(result.SoGiayTo)) missing.Add("s\u1ed1 gi\u1ea5y t\u1edd");
+            if (string.IsNullOrWhiteSpace(result.HoTen)) missing.Add("h\u1ecd t\u00ean");
+            if (string.IsNullOrWhiteSpace(result.NgaySinh)) missing.Add("ng\u00e0y sinh");
+            if (string.IsNullOrWhiteSpace(result.GioiTinh)) missing.Add("gi\u1edbi t\u00ednh");
+            if (string.IsNullOrWhiteSpace(result.DiaChi)) missing.Add("\u0111\u1ecba ch\u1ec9");
+            if (string.Equals(loaiGiayTo, "CCCD", StringComparison.OrdinalIgnoreCase)
+                && string.IsNullOrWhiteSpace(result.NguyenQuan)) missing.Add("qu\u00ea qu\u00e1n");
+            return missing;
         }
 
         private string ResolveTessDataPath(IConfiguration config)

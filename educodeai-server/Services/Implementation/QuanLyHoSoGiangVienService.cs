@@ -1,6 +1,8 @@
 ﻿using educodeai_server.Data;
 using educodeai_server.DTOs.QuanLyHoSoGiangVien;
 using educodeai_server.Helpers;
+using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -16,12 +18,14 @@ namespace educodeai_server.Services.Implementation
         private readonly EduCodeAIDbContext _context;
         private readonly PaymentMailOptions _mailOptions;
         private readonly IWebHostEnvironment _env;
+        private readonly IDataProtector _cccdDataProtector;
 
-        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env)
+        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env, IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
             _mailOptions = mailOptions.Value;
             _env = env;
+            _cccdDataProtector = dataProtectionProvider.CreateProtector("EduCodeAI.CCCD.OcrData.v1");
         }
 
         public async Task<object> LayDanhSachHoSoAsync(string? trangThai = null)
@@ -76,8 +80,8 @@ namespace educodeai_server.Services.Implementation
                     LoaiGiayTo = h.LoaiGiayTo,
                     SoGiayTo = h.SoGiayTo,
                     AnhDaiDienUrl = h.AnhDaiDienUrl,
-                    AnhGiayToMatTruocUrl = h.AnhGiayToMatTruocUrl,
-                    AnhGiayToMatSauUrl = h.AnhGiayToMatSauUrl,
+                    ThongTinCccdQuet = null,
+                    DuLieuCccdMaHoa = h.DuLieuCccdMaHoa,
                     PhuongThucThanhToan = h.PhuongThucThanhToan,
                     TenNganHang = h.TenNganHang,
                     SoTaiKhoanNhanTien = h.SoTaiKhoanNhanTien,
@@ -95,6 +99,12 @@ namespace educodeai_server.Services.Implementation
 
             if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
+            if (!string.IsNullOrWhiteSpace(hoSo.DuLieuCccdMaHoa)
+                && TryGiaiMaThongTinCccd(hoSo.DuLieuCccdMaHoa, out var thongTinCccd))
+            {
+                hoSo.ThongTinCccdQuet = thongTinCccd;
+            }
+
             return hoSo;
         }
 
@@ -110,6 +120,7 @@ namespace educodeai_server.Services.Implementation
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
             if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
                 throw new Exception("Hồ sơ này đã được duyệt trước đó.");
@@ -230,6 +241,7 @@ namespace educodeai_server.Services.Implementation
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
             if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
+
             if (hoSo.TrangThaiHoSo == "DaDuyet")
                 throw new Exception("Hồ sơ đã được duyệt, không thể từ chối.");
 
@@ -279,6 +291,7 @@ namespace educodeai_server.Services.Implementation
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
             if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
                 throw new Exception("Hồ sơ đã được duyệt, không thể yêu cầu bổ sung.");
@@ -336,51 +349,19 @@ namespace educodeai_server.Services.Implementation
 
             return new { success = true, message = "Đã yêu cầu bổ sung hồ sơ và gửi email hướng dẫn." };
         }
-        public async Task<(Stream Stream, string ContentType, string FileName)?> LayAnhGiayToAsync(long maHoSo, string mat)
+        private bool TryGiaiMaThongTinCccd(string duLieuMaHoa, out Dictionary<string, string>? thongTinCccd)
         {
-            var hoSo = await _context.HoSoDangKyGiangViens
-                .AsNoTracking()
-                .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
-            if (hoSo == null) return null;
-
-            var token = string.Equals(mat, "sau", StringComparison.OrdinalIgnoreCase)
-                ? hoSo.AnhGiayToMatSauUrl
-                : hoSo.AnhGiayToMatTruocUrl;
-
-            if (string.IsNullOrWhiteSpace(token)) return null;
-
-            string? physicalPath = null;
-            string fileName;
-
-            // New private token format: private://giay-to/{file}
-            if (token.StartsWith("private://giay-to/", StringComparison.OrdinalIgnoreCase))
+            thongTinCccd = null;
+            try
             {
-                fileName = Path.GetFileName(token.Replace("private://giay-to/", string.Empty));
-                physicalPath = Path.Combine(_env.ContentRootPath, "private_uploads", "dang-ky-giang-vien", "giay-to", fileName);
+                var json = _cccdDataProtector.Unprotect(duLieuMaHoa);
+                thongTinCccd = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                return thongTinCccd != null;
             }
-            else
+            catch
             {
-                // Backward compatible: old public /uploads/... path
-                var relative = token.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-                physicalPath = Path.Combine(_env.WebRootPath, relative);
-                fileName = Path.GetFileName(physicalPath);
+                return false;
             }
-
-            if (string.IsNullOrWhiteSpace(physicalPath) || !File.Exists(physicalPath))
-                return null;
-
-            var ext = Path.GetExtension(physicalPath).ToLowerInvariant();
-            var contentType = ext switch
-            {
-                ".png" => "image/png",
-                ".webp" => "image/webp",
-                ".jpg" or ".jpeg" => "image/jpeg",
-                _ => "application/octet-stream"
-            };
-
-            Stream stream = new FileStream(physicalPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return (stream, contentType, fileName);
         }
-
     }
 }
