@@ -60,15 +60,15 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
   };
 
   return (
-    <div style={{ background: '#f8fafc' }}>
+    <div style={{ background: 'var(--bg-main)' }}>
       <div className="p-4 pb-5">
         <div className="d-flex flex-column gap-4" style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
           {/* Header info */}
           <div className="bg-white p-4 rounded-4 shadow-sm border d-flex align-items-center gap-4 flex-wrap">
             <div style={{ flex: 1 }}>
-              <label className="text-uppercase fw-bold mb-1" style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '0.05em' }}>Tên Quiz</label>
-              <p className="fw-bold m-0" style={{ fontSize: '20px', color: '#0f172a' }}>{data?.['Tiêu đề'] || 'Quiz AI'}</p>
+              <label className="text-uppercase fw-bold mb-1" style={{ fontSize: '11px', color: 'var(--text-light)', letterSpacing: '0.05em' }}>Tên Quiz</label>
+              <p className="fw-bold m-0" style={{ fontSize: '20px', color: 'var(--text-main)' }}>{data?.['Tiêu đề'] || 'Quiz AI'}</p>
             </div>
             <div className="border-start ps-4">
               <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Độ khó</label>
@@ -120,7 +120,7 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
           <div className="bg-white p-4 rounded-4 shadow-sm border">
             <div className="d-flex align-items-center justify-content-between mb-3">
               <div className="d-flex align-items-center">
-                <div className="p-2 rounded-3 me-3" style={{ background: '#f0fdf4' }}>
+                <div className="p-2 rounded-3 me-3" style={{ background: 'var(--success-soft)' }}>
                   <i className="bi bi-list-check fs-5 text-success" />
                 </div>
                 <h5 className="m-0 fw-bold" style={{ color: 'var(--text-dark)' }}>Câu hỏi ({localCauHois.length})</h5>
@@ -130,7 +130,7 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
 
             <div className="d-flex flex-column gap-3">
               {localCauHois.map((cau, qIdx) => (
-                <div key={qIdx} className="p-4 rounded-3 border" style={{ background: '#f8fafc' }}>
+                <div key={qIdx} className="p-4 rounded-3 border" style={{ background: 'var(--bg-main)' }}>
                   {/* Header câu hỏi */}
                   <div className="d-flex align-items-start gap-3 mb-3">
                     <span className="fw-bold px-3 py-2 rounded-3 flex-shrink-0"
@@ -166,7 +166,7 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
                             <input
                               type="text"
                               className="form-control border-0 p-0"
-                              style={{ background: 'transparent', fontSize: '14px', fontWeight: isCorrect ? 700 : 400, color: isCorrect ? '#166534' : '#334155' }}
+                              style={{ background: 'transparent', fontSize: '14px', fontWeight: isCorrect ? 700 : 400, color: isCorrect ? 'var(--success-strong)' : 'var(--text-main)' }}
                               value={luaChon}
                               onChange={e => handleLuaChonChange(qIdx, aIdx, e.target.value)}
                               onClick={e => e.stopPropagation()}
@@ -192,9 +192,9 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
               disabled={isSaving} style={{ borderRadius: '12px' }}>
               Huỷ bỏ
             </button>
-            <button className="btn btn-warning px-5 py-3 fw-bold shadow-sm" onClick={handleSave}
+            <button className="btn btn-primary px-5 py-3 fw-bold shadow-sm" onClick={handleSave}
               disabled={isSaving || localCauHois.length === 0}
-              style={{ borderRadius: '12px', color: '#78350f' }}>
+              style={{ borderRadius: '12px' }}>
               {isSaving ? (
                 <><span className="spinner-border spinner-border-sm me-2" />Đang lưu Quiz...</>
               ) : (

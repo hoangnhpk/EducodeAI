@@ -148,7 +148,7 @@ const QuanLyNguoiDung = () => {
             Swal.fire({ title: 'Lưu ý', text: 'Chỉ có thể xóa tài khoản đã bị khóa vĩnh viễn', icon: 'warning' });
             return;
         }
-        const { isConfirmed } = await Swal.fire({ title: 'Xác nhận xóa?', text: `Bạn có chắc muốn xóa ${u.hoTen}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
+        const { isConfirmed } = await Swal.fire({ title: 'Xác nhận xóa?', text: `Bạn có chắc muốn xóa ${u.hoTen}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: 'var(--danger)' });
         if (isConfirmed) {
             try {
                 await NguoiDungService.xoaNguoiDung(u.maNguoiDung);

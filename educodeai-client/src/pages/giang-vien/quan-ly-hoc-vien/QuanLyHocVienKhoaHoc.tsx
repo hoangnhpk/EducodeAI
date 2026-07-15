@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import './QuanLyHocVienKhoaHoc.css';
-import {
-  BsSearch, BsChevronLeft, BsChevronRight,
-  BsEyeFill, BsCheckCircleFill, BsX, BsCircle, BsChevronDown, BsGiftFill,
-  BsEnvelopeFill, BsStarFill, BsClockHistory, BsPersonPlusFill, BsDownload
-} from 'react-icons/bs';
 import Swal from 'sweetalert2';
 import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
 import lopHocService from '@/services/lop-hoc.service';
@@ -114,11 +109,11 @@ function HocVienAvatar({ hoTen, anhDaiDien }: { hoTen: string; anhDaiDien: strin
 const getSmartTagMeta = (tag?: string | null) => {
   switch (tag) {
     case 'xuat_sac':
-      return { className: 'tag-xuat-sac', label: 'Xuất sắc', icon: <BsStarFill size={11} /> };
+      return { className: 'tag-xuat-sac', label: 'Xuất sắc', icon: <i className="fas fa-star" aria-hidden="true" /> };
     case 'giam_chan':
-      return { className: 'tag-giam-chan', label: 'Cần nhắc', icon: <BsClockHistory size={11} /> };
+      return { className: 'tag-giam-chan', label: 'Cần nhắc', icon: <i className="fas fa-clock-rotate-left" aria-hidden="true" /> };
     case 'moi_dang_ky':
-      return { className: 'tag-moi-dk', label: 'Mới đăng ký', icon: <BsPersonPlusFill size={11} /> };
+      return { className: 'tag-moi-dk', label: 'Mới đăng ký', icon: <i className="fas fa-user-plus" aria-hidden="true" /> };
     default:
       return null;
   }
@@ -383,7 +378,7 @@ export default function QuanLyHocVienKhoaHoc() {
         html: `<p class="qllh-swal-text">Email đang được gửi đến <strong>${soNguoiGui}</strong> học viên.</p>`,
         icon: 'success',
         confirmButtonText: 'Đóng',
-        confirmButtonColor: '#f97316',
+        confirmButtonColor: 'var(--primary)',
         buttonsStyling: true,
         customClass: {
           popup: 'qllh-swal-popup',
@@ -399,7 +394,7 @@ export default function QuanLyHocVienKhoaHoc() {
         text: error?.response?.data?.message || 'Đã có lỗi xảy ra.',
         icon: 'error',
         confirmButtonText: 'Đóng',
-        confirmButtonColor: '#f97316',
+        confirmButtonColor: 'var(--primary)',
         customClass: { popup: 'qllh-swal-popup', confirmButton: 'qllh-swal-confirm' },
       });
     } finally {
@@ -533,7 +528,7 @@ export default function QuanLyHocVienKhoaHoc() {
       <div className="qllh-filter-bar">
         <div className="qllh-search-form">
           <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-            <BsSearch style={{ position: 'absolute', left: '16px', color: '#9ca3af' }} />
+            <i className="fas fa-magnifying-glass" style={{ position: 'absolute', left: '16px', color: 'var(--text-light)' }} aria-hidden="true" />
             <input
               type="search"
               placeholder="Tìm theo Họ tên hoặc Email học viên..."
@@ -562,7 +557,7 @@ export default function QuanLyHocVienKhoaHoc() {
       {daChonKhoaCuThe && !loading && soHocVienGiamChan > 0 && (
         <div className="qllh-quick-actions">
           <button type="button" className="qllh-btn-quick-select" onClick={chonTatCaGiamChan}>
-            <BsClockHistory size={14} />
+            <i className="fas fa-clock-rotate-left" aria-hidden="true" />
             Chọn học viên cần nhắc ({soHocVienGiamChan})
           </button>
         </div>
@@ -599,7 +594,7 @@ export default function QuanLyHocVienKhoaHoc() {
             <tbody>
               {currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan={daChonKhoaCuThe ? 8 : 5} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  <td colSpan={daChonKhoaCuThe ? 8 : 5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                     {filterTag !== 'all' ? 'Không có học viên thuộc nhãn này.' : 'Không tìm thấy dữ liệu.'}
                   </td>
                 </tr>
@@ -627,7 +622,7 @@ export default function QuanLyHocVienKhoaHoc() {
                         <span className="qllh-user-name">{hv.hoTen}</span>
                       </div>
                     </td>
-                    <td style={{ color: '#4b5563' }}>{hv.email}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{hv.email}</td>
                     {daChonKhoaCuThe && (
                       <td>
                         <div className="qllh-progress-cell">
@@ -639,7 +634,7 @@ export default function QuanLyHocVienKhoaHoc() {
                       </td>
                     )}
                     {daChonKhoaCuThe && (
-                      <td style={{ color: '#6b7280', fontSize: 13 }}>{formatNgayHocCuoi(hv.ngayHocCuoi)}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{formatNgayHocCuoi(hv.ngayHocCuoi)}</td>
                     )}
                     {daChonKhoaCuThe && (
                       <td>
@@ -657,24 +652,26 @@ export default function QuanLyHocVienKhoaHoc() {
                       })()}
                     </td>
                     {!daChonKhoaCuThe && (
-                      <td style={{ color: '#4b5563' }}>{new Date(hv.ngayDangKy).toLocaleDateString('vi-VN')}</td>
+                      <td style={{ color: 'var(--text-muted)' }}>{new Date(hv.ngayDangKy).toLocaleDateString('vi-VN')}</td>
                     )}
 
                     <td className="qllh-col-actions">
                       <button
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a16207', padding: '8px' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--warning-strong)', padding: '8px' }}
                         title="Tặng khóa học"
+                        aria-label="Tặng khóa học"
                         onClick={() => void handleTangKhoaHoc(hv)}
                         disabled={dangTangCho === hv.maNguoiDung}
                       >
-                        <BsGiftFill size={18} />
+                        <i className="fas fa-gift" style={{ fontSize: 18 }} aria-hidden="true" />
                       </button>
                       <button
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f97316', padding: '8px' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '8px' }}
                         title={!daChonKhoaCuThe ? "Xem các khóa đã đăng ký" : "Xem tiến độ chi tiết"}
+                        aria-label={!daChonKhoaCuThe ? "Xem các khóa đã đăng ký" : "Xem tiến độ chi tiết"}
                         onClick={() => handleViewDetailClick(hv)}
                       >
-                        <BsEyeFill size={18} />
+                        <i className="fas fa-eye" style={{ fontSize: 18 }} aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -688,11 +685,11 @@ export default function QuanLyHocVienKhoaHoc() {
               <span className="qllh-page-info">
                 Đang hiển thị {paginationInfo.from} - {paginationInfo.to} trong {paginationInfo.total} học viên
               </span>
-              <button className="qllh-page-btn" onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}><BsChevronLeft size={12} /></button>
+              <button className="qllh-page-btn" onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} aria-label="Trang trước"><i className="fas fa-chevron-left" style={{ fontSize: 12 }} aria-hidden="true" /></button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
                 <button key={number} className={`qllh-page-btn ${currentPage === number ? 'active' : ''}`} onClick={() => paginate(number)}>{number}</button>
               ))}
-              <button className="qllh-page-btn" onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages}><BsChevronRight size={12} /></button>
+              <button className="qllh-page-btn" onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Trang sau"><i className="fas fa-chevron-right" style={{ fontSize: 12 }} aria-hidden="true" /></button>
             </div>
           )}
         </div>
@@ -702,7 +699,7 @@ export default function QuanLyHocVienKhoaHoc() {
         <div className="qllh-gift-section__head">
           <div className="qllh-gift-section__title-wrap">
             <div className="qllh-gift-section__icon" aria-hidden="true">
-              <BsGiftFill size={18} />
+              <i className="fas fa-gift" style={{ fontSize: 18 }} />
             </div>
             <div>
               <h3 className="qllh-gift-section__title">Lịch sử tặng khóa học</h3>
@@ -718,7 +715,7 @@ export default function QuanLyHocVienKhoaHoc() {
             }}
           >
             <div className="qllh-gift-search">
-              <BsSearch className="qllh-gift-search__icon" />
+              <i className="fas fa-magnifying-glass qllh-gift-search__icon" aria-hidden="true" />
               <input
                 type="search"
                 placeholder="Tìm mã, tên hoặc email người nhận..."
@@ -729,7 +726,7 @@ export default function QuanLyHocVienKhoaHoc() {
             </div>
             <button type="submit" className="qllh-gift-btn qllh-gift-btn--primary">Tìm</button>
             <button type="button" className="qllh-gift-btn qllh-gift-btn--outline" onClick={xuatCsvLichSu}>
-              <BsDownload size={14} />
+              <i className="fas fa-download" aria-hidden="true" />
               Xuất CSV
             </button>
           </form>
@@ -759,7 +756,7 @@ export default function QuanLyHocVienKhoaHoc() {
                 <tr>
                   <td colSpan={5}>
                     <div className="qllh-gift-empty">
-                      <BsGiftFill size={26} />
+                      <i className="fas fa-gift" style={{ fontSize: 26 }} aria-hidden="true" />
                       <p>Chưa có lượt tặng khóa học</p>
                       <span>Danh sách sẽ hiện khi bạn tặng khóa cho học viên.</span>
                     </div>
@@ -809,11 +806,11 @@ export default function QuanLyHocVienKhoaHoc() {
             <span className="qllh-page-info">
               Trang {trangLichSu} / {tongTrangLichSu}
             </span>
-            <button className="qllh-page-btn" onClick={() => setTrangLichSu((p) => Math.max(1, p - 1))} disabled={trangLichSu === 1}>
-              <BsChevronLeft size={12} />
+            <button className="qllh-page-btn" onClick={() => setTrangLichSu((p) => Math.max(1, p - 1))} disabled={trangLichSu === 1} aria-label="Trang trước">
+              <i className="fas fa-chevron-left" style={{ fontSize: 12 }} aria-hidden="true" />
             </button>
-            <button className="qllh-page-btn" onClick={() => setTrangLichSu((p) => Math.min(tongTrangLichSu, p + 1))} disabled={trangLichSu >= tongTrangLichSu}>
-              <BsChevronRight size={12} />
+            <button className="qllh-page-btn" onClick={() => setTrangLichSu((p) => Math.min(tongTrangLichSu, p + 1))} disabled={trangLichSu >= tongTrangLichSu} aria-label="Trang sau">
+              <i className="fas fa-chevron-right" style={{ fontSize: 12 }} aria-hidden="true" />
             </button>
           </div>
         )}
@@ -832,7 +829,7 @@ export default function QuanLyHocVienKhoaHoc() {
             className="qllh-floating-bar__mail"
             onClick={() => setShowBulkModal(true)}
           >
-            <BsEnvelopeFill size={15} />
+            <i className="fas fa-envelope" style={{ fontSize: 15 }} aria-hidden="true" />
             Gửi mail
           </button>
         </div>
@@ -872,7 +869,7 @@ export default function QuanLyHocVienKhoaHoc() {
                 </p>
                 {modalMode === 'TIEN_DO' && !loadingModal && tienDoKhoaHoc && (
                   <>
-                    <p style={{ marginTop: '8px', marginBottom: 0, color: '#f97316', fontSize: '14px', fontWeight: 'bold' }}>
+                    <p style={{ marginTop: '8px', marginBottom: 0, color: 'var(--primary)', fontSize: '14px', fontWeight: 'bold' }}>
                       Đã học được: {formatTime(tienDoKhoaHoc.tongThoiGianHocPhut)}
                     </p>
                     <div className="qllh-modal-progress">
@@ -887,17 +884,17 @@ export default function QuanLyHocVienKhoaHoc() {
                   </>
                 )}
               </div>
-              <button className="qllh-btn-close" onClick={closeModal}><BsX /></button>
+              <button className="qllh-btn-close" onClick={closeModal} aria-label="Đóng"><i className="fas fa-xmark" aria-hidden="true" /></button>
             </div>
 
             <div className="qllh-modal-body">
-              {loadingModal && <p style={{ color: '#ea580c', textAlign: 'center' }}>Đang tải dữ liệu...</p>}
+              {loadingModal && <p style={{ color: 'var(--primary-dark)', textAlign: 'center' }}>Đang tải dữ liệu...</p>}
 
               {/* CHẾ ĐỘ TIẾN ĐỘ BÀI HỌC  */}
               {!loadingModal && modalMode === 'TIEN_DO' && tienDoKhoaHoc && (
                 <>
                   {tienDoKhoaHoc.danhSachChuong.length === 0 ? (
-                    <p style={{ textAlign: 'center', color: '#6b7280' }}>Khóa học này chưa cập nhật nội dung bài học.</p>
+                    <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Khóa học này chưa cập nhật nội dung bài học.</p>
                   ) : (
                     tienDoKhoaHoc.danhSachChuong.map((chuong, index) => {
                       const isOpen = expandedChapters.includes(chuong.maChuong);
@@ -906,13 +903,13 @@ export default function QuanLyHocVienKhoaHoc() {
                           <div
                             className="qllh-chuong-title"
                             onClick={() => toggleChapter(chuong.maChuong)}
-                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', backgroundColor: '#f9fafb', padding: '12px', borderRadius: '8px' }}
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', backgroundColor: 'var(--bg-main)', padding: '12px', borderRadius: '8px' }}
                           >
-                            <span style={{ color: '#111827', display: 'flex', alignItems: 'center' }}>
-                              <BsChevronDown style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', marginRight: '10px', color: '#ea580c' }} />
+                            <span style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center' }}>
+                              <i className="fas fa-chevron-down" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', marginRight: '10px', color: 'var(--primary-hover)' }} aria-hidden="true" />
                               {chuong.tenChuong}
                             </span>
-                            <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 'normal' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--text-light)', fontWeight: 'normal' }}>
                               {chuong.danhSachBaiHoc.length} bài
                             </span>
                           </div>
@@ -921,8 +918,8 @@ export default function QuanLyHocVienKhoaHoc() {
                             <ul className="qllh-bai-list" style={{ display: 'block', paddingLeft: '12px', marginTop: '8px' }}>
                               {chuong.danhSachBaiHoc.map(bai => (
                                 <li key={bai.maBaiHoc} className="qllh-bai-item" style={{ padding: '10px 12px' }}>
-                                  {bai.daHoanThanh ? <BsCheckCircleFill color="#10b981" size={16} /> : <BsCircle color="#d1d5db" size={16} />}
-                                  <span className="qllh-bai-name" style={{ marginLeft: '12px', color: '#374151' }}>{bai.tenBaiHoc}</span>
+                                  {bai.daHoanThanh ? <i className="fas fa-check-circle" style={{ color: 'var(--success)', fontSize: 16 }} aria-hidden="true" /> : <i className="far fa-circle" style={{ color: 'var(--text-light)', fontSize: 16 }} aria-hidden="true" />}
+                                  <span className="qllh-bai-name" style={{ marginLeft: '12px', color: 'var(--text-muted)' }}>{bai.tenBaiHoc}</span>
                                 </li>
                               ))}
                             </ul>
@@ -938,18 +935,18 @@ export default function QuanLyHocVienKhoaHoc() {
               {!loadingModal && modalMode === 'DANH_SACH_KHOA' && (
                 <>
                   {studentCourses.length === 0 ? (
-                    <p style={{ textAlign: 'center', color: '#6b7280' }}>Học viên này chưa đăng ký khóa học nào.</p>
+                    <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Học viên này chưa đăng ký khóa học nào.</p>
                   ) : (
                     <div className="qllh-chuong-item">
                       <ul className="qllh-bai-list" style={{ display: 'block' }}>
                         {studentCourses.map(k => (
-                          <li key={k.maKhoaHoc} className="qllh-bai-item" style={{ justifyContent: 'space-between', padding: '16px', backgroundColor: '#f9fafb', borderRadius: '8px', marginBottom: '8px', border: '1px solid #f3f4f6' }}>
+                          <li key={k.maKhoaHoc} className="qllh-bai-item" style={{ justifyContent: 'space-between', padding: '16px', backgroundColor: 'var(--bg-main)', borderRadius: '8px', marginBottom: '8px', border: '1px solid var(--border-light)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <BsCheckCircleFill color="#f97316" size={18} />
+                              <i className="fas fa-check-circle" style={{ color: 'var(--primary)', fontSize: 18 }} aria-hidden="true" />
                               <span className="qllh-bai-name" style={{ fontWeight: 'bold', fontSize: '15px' }}>{k.tenKhoaHoc}</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                              <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                                 {new Date(k.ngayDangKy).toLocaleDateString('vi-VN')}
                               </span>
                               {(() => {

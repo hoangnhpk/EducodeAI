@@ -68,15 +68,15 @@ const MaintenanceGuard = ({ children }: { children: React.ReactNode }) => {
 };
 
 const styles = {
-    container: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', fontFamily: "'Inter', sans-serif" },
+    container: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 100%)', fontFamily: 'var(--font-main)' },
     card: { background: 'rgba(255, 255, 255, 0.03)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', padding: '50px 40px', borderRadius: '24px', textAlign: 'center' as const, maxWidth: '500px', width: '90%', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' },
     iconWrapper: { width: '80px', height: '80px', background: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 25px auto', animation: 'pulse 2s infinite' },
-    icon: { fontSize: '2.5rem', color: '#ffffff' },
-    title: { color: '#ffffff', fontSize: '2rem', fontWeight: 800, margin: '0 0 15px 0' },
-    desc: { color: '#94a3b8', fontSize: '1rem', lineHeight: 1.6, margin: '0 0 30px 0' },
+    icon: { fontSize: '2.5rem', color: 'var(--text-white)' },
+    title: { color: 'var(--text-white)', fontSize: '2rem', fontWeight: 800, margin: '0 0 15px 0' },
+    desc: { color: 'var(--text-light)', fontSize: '1rem', lineHeight: 1.6, margin: '0 0 30px 0' },
     loader: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'rgba(0,0,0,0.2)', padding: '12px 20px', borderRadius: '12px' },
     spinner: { width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' },
-    loaderText: { color: '#cbd5e1', fontSize: '0.9rem', fontWeight: 600 }
+    loaderText: { color: 'var(--text-light)', fontSize: '0.9rem', fontWeight: 600 }
 };
 
 export default MaintenanceGuard;

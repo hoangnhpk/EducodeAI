@@ -31,7 +31,7 @@
     border: 1px solid var(--border-color);
     font-size: 14px;
     outline: none;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
     transition: border-color 0.2s;
 }
@@ -43,7 +43,7 @@
 .btn-add {
     margin-left: auto;
     background: var(--primary);
-    color: white;
+    color: var(--text-white);
     padding: 8px 18px;
     border-radius: var(--radius-md);
     border: none;
@@ -62,7 +62,7 @@
 .user-table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
+    background: var(--bg-card);
     border-radius: 10px;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
@@ -132,27 +132,27 @@
 }
 
 .user-status-active {
-    background: #ecfdf5;
-    color: #047857;
+    background: var(--success-soft);
+    color: var(--success-strong);
 }
 .user-status-active .user-status-dot-indicator {
-    background: #22c55e;
+    background: var(--success);
 }
 
 .user-status-locked {
-    background: #fff7ed;
-    color: #b45309;
+    background: var(--warning-soft);
+    color: var(--warning-strong);
 }
 .user-status-locked .user-status-dot-indicator {
-    background: #f59e0b;
+    background: var(--warning);
 }
 
 .user-status-permanent-locked {
-    background: #fef2f2;
-    color: #b91c1c;
+    background: var(--danger-soft);
+    color: var(--danger-strong);
 }
 .user-status-permanent-locked .user-status-dot-indicator {
-    background: #ef4444;
+    background: var(--danger);
 }
 
 /* ===========================
@@ -175,18 +175,18 @@
     border: 1px solid transparent;
     cursor: pointer;
     transition: 0.2s;
-    background: white;
+    background: var(--bg-card);
 }
 
-.btn-edit   { color: var(--info);  border-color: #bae6fd; }
-.btn-lock   { color: var(--warning); border-color: #fef3c7; }
-.btn-unlock { color: var(--success); border-color: #dcfce7; }
-.btn-delete { color: var(--danger);   border-color: #fee2e2; }
+.btn-edit   { color: var(--info);  border-color: var(--info-soft); }
+.btn-lock   { color: var(--warning); border-color: var(--warning-soft); }
+.btn-unlock { color: var(--success); border-color: var(--success-soft); }
+.btn-delete { color: var(--danger);   border-color: var(--danger-soft); }
 
-.btn-edit:hover   { background: var(--info);  color: white; border-color: var(--info); }
-.btn-lock:hover   { background: var(--warning); color: white; border-color: var(--warning); }
-.btn-unlock:hover { background: var(--success); color: white; border-color: var(--success); }
-.btn-delete:hover { background: var(--danger);   color: white; border-color: var(--danger); }
+.btn-edit:hover   { background: var(--info);  color: var(--text-white); border-color: var(--info); }
+.btn-lock:hover   { background: var(--warning); color: var(--text-white); border-color: var(--warning); }
+.btn-unlock:hover { background: var(--success); color: var(--text-white); border-color: var(--success); }
+.btn-delete:hover { background: var(--danger);   color: var(--text-white); border-color: var(--danger); }
 
 /* ===========================
    PHÂN TRANG (PAGINATION)
@@ -211,7 +211,7 @@
     gap: 5px;
     padding: 6px 14px;
     border: 1px solid var(--border-color);
-    background: white;
+    background: var(--bg-card);
     border-radius: 6px;
     font-size: 14px;
     color: var(--text-muted);
@@ -227,7 +227,7 @@
 .btn-pagination-nav:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    background: #f1f5f9;
+    background: var(--bg-main);
 }
 
 .btn-pagination-page {
@@ -237,7 +237,7 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--border-color);
-    background: white;
+    background: var(--bg-card);
     border-radius: 6px;
     font-size: 14px;
     color: var(--text-muted);
@@ -252,7 +252,7 @@
 
 .btn-pagination-page.active {
     background: var(--primary);
-    color: white;
+    color: var(--text-white);
     border-color: var(--primary);
     font-weight: 600;
 }
@@ -278,7 +278,7 @@
 }
 
 .qlnv-modal-card {
-    background: white;
+    background: var(--bg-card);
     border-radius: 12px;
     padding: 28px;
     width: 100%;
@@ -343,7 +343,7 @@
     padding: 8px 18px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
-    background: white;
+    background: var(--bg-card);
     color: var(--text-muted);
     font-size: 14px;
     font-weight: 500;
@@ -358,7 +358,7 @@ transition: 0.15s;
     border-radius: var(--radius-md);
     border: none;
     background: var(--primary);
-    color: white;
+    color: var(--text-white);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;

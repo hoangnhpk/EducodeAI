@@ -74,7 +74,7 @@ const QuizEditorModal: React.FC<Props> = ({ maKhoaHoc, isOpen, onClose }) => {
           <h2 className="khm-modal-title">📝 Xem & Chỉnh sửa Đề thi Chứng chỉ</h2>
           <button className="khm-modal-close" onClick={onClose} disabled={saving}>×</button>
         </div>
-        <div className="khm-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto', background: '#f8fafc', padding: 20 }}>
+        <div className="khm-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto', background: 'var(--khm-gray-50)', padding: 20 }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--khm-gray-500)' }}>
               <span className="khm-spinner" /> Đang tải dữ liệu...

@@ -1,13 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  BsEnvelopeFill,
-  BsInfoCircle,
-  BsSendFill,
-  BsTypeBold,
-  BsTypeItalic,
-  BsTypeUnderline,
-  BsX,
-} from 'react-icons/bs';
 
 type MauKey = 'nhac_nhe' | 'khen' | 'trong';
 
@@ -207,14 +198,14 @@ export default function BulkMailModal({
       <div className="qllh-bulk-modal qllh-bulk-modal--v2" onClick={(e) => e.stopPropagation()}>
         <div className="qllh-bulk-header">
           <div className="qllh-bulk-header__icon">
-            <BsEnvelopeFill size={18} />
+            <i className="fas fa-envelope" aria-hidden="true" />
           </div>
           <div className="qllh-bulk-header__text">
             <h2>Gửi mail nhắc nhở hàng loạt</h2>
             <p>{moTaNguoiNhan}</p>
           </div>
           <button type="button" className="qllh-btn-close" onClick={onClose} aria-label="Đóng">
-            <BsX size={22} />
+            <i className="fas fa-xmark" style={{ fontSize: 22 }} aria-hidden="true" />
           </button>
         </div>
 
@@ -238,7 +229,7 @@ export default function BulkMailModal({
                       onClick={() => onRemoveNguoiNhan(hv.maNguoiDung)}
                       aria-label={`Bỏ ${hv.hoTen}`}
                     >
-                      <BsX size={14} />
+                      <i className="fas fa-xmark" style={{ fontSize: 14 }} aria-hidden="true" />
                     </button>
                   </span>
                 ))
@@ -281,14 +272,14 @@ export default function BulkMailModal({
             <label className="qllh-bulk-label">Nội dung</label>
             <div className="qllh-rich-editor">
               <div className="qllh-rich-editor__toolbar">
-                <button type="button" onClick={() => applyFormat('bold')} title="In đậm">
-                  <BsTypeBold size={15} />
+                <button type="button" onClick={() => applyFormat('bold')} title="In đậm" aria-label="In đậm">
+                  <i className="fas fa-bold" style={{ fontSize: 15 }} aria-hidden="true" />
                 </button>
-                <button type="button" onClick={() => applyFormat('italic')} title="In nghiêng">
-                  <BsTypeItalic size={15} />
+                <button type="button" onClick={() => applyFormat('italic')} title="In nghiêng" aria-label="In nghiêng">
+                  <i className="fas fa-italic" style={{ fontSize: 15 }} aria-hidden="true" />
                 </button>
-                <button type="button" onClick={() => applyFormat('underline')} title="Gạch chân">
-                  <BsTypeUnderline size={15} />
+                <button type="button" onClick={() => applyFormat('underline')} title="Gạch chân" aria-label="Gạch chân">
+                  <i className="fas fa-underline" style={{ fontSize: 15 }} aria-hidden="true" />
                 </button>
               </div>
               <div
@@ -308,7 +299,7 @@ export default function BulkMailModal({
 
         <div className="qllh-bulk-footer">
           <p className="qllh-bulk-footer__note">
-            <BsInfoCircle size={14} />
+            <i className="fas fa-circle-info" style={{ fontSize: 14 }} aria-hidden="true" />
             Hệ thống sẽ gửi nền (background), bạn không cần chờ.
           </p>
           <div className="qllh-bulk-footer__actions">
@@ -321,7 +312,7 @@ export default function BulkMailModal({
               disabled={dangGui || !tieuDe.trim() || nguoiNhan.length === 0 || !noiDung.trim()}
               onClick={handleSend}
             >
-              <BsSendFill size={14} />
+              <i className="fas fa-paper-plane" aria-hidden="true" />
               {dangGui ? 'Đang gửi...' : 'Gửi ngay'}
             </button>
           </div>

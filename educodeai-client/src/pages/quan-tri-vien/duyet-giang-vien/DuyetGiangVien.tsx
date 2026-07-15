@@ -1,5 +1,6 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { HoSoGiangVienAdminService } from "@/services/ho-so-giang-vien-admin.service";
 import type { HoSoGiangVienListItem, HoSoGiangVienDetail } from "@/services/ho-so-giang-vien-admin.service";
 import "../quan-ly-nguoi-dung/QuanLyNguoiDung.css";
@@ -74,6 +75,13 @@ export default function DuyetGiangVien() {
   const [maHoSoTuChoi, setMaHoSoTuChoi] = useState<number | null>(null);
   const [lyDoTuChoi, setLyDoTuChoi] = useState("");
 
+  const chiTietModalRef = useRef<HTMLDivElement>(null);
+  const boSungModalRef = useRef<HTMLDivElement>(null);
+  const tuChoiModalRef = useRef<HTMLDivElement>(null);
+  useModalA11y(moModal && !!chiTiet, () => setMoModal(false), chiTietModalRef);
+  useModalA11y(maHoSoBoSung !== null, () => { setMaHoSoBoSung(null); setNoiDungBoSung(""); }, boSungModalRef);
+  useModalA11y(maHoSoTuChoi !== null, () => { setMaHoSoTuChoi(null); setLyDoTuChoi(""); }, tuChoiModalRef);
+
   const taiDanhSach = async (tt?: string) => {
     try {
       setDangTai(true);
@@ -116,7 +124,7 @@ export default function DuyetGiangVien() {
       showCancelButton: true,
       confirmButtonText: "Duyệt",
       cancelButtonText: "Huỷ",
-      confirmButtonColor: "#10b981"
+      confirmButtonColor: "var(--success)"
     });
     if (!confirm.isConfirmed) return;
 
@@ -314,7 +322,7 @@ export default function DuyetGiangVien() {
       {/* MODAL Y?U C?U B? SUNG */}
       {maHoSoBoSung && (
         <div className="qlnv-modal-overlay" onClick={(event) => event.target === event.currentTarget && dongModalBoSung()}>
-          <div className="qlnv-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
+          <div className="qlnv-modal-card" ref={boSungModalRef} role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
             <div className="modal-title">Yêu cầu bổ sung hồ sơ</div>
             <div className="form-group">
                             <textarea
@@ -335,7 +343,7 @@ export default function DuyetGiangVien() {
       {/* MODAL T? CH?I */}
       {maHoSoTuChoi && (
         <div className="qlnv-modal-overlay" onClick={(event) => event.target === event.currentTarget && dongModalTuChoi()}>
-          <div className="qlnv-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
+          <div className="qlnv-modal-card" ref={tuChoiModalRef} role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
             <div className="modal-title">Lý do từ chối</div>
             <div className="form-group">
                             <textarea
@@ -362,7 +370,7 @@ export default function DuyetGiangVien() {
       {/* MODAL CHI TIẾT */}
       {moModal && chiTiet && (
         <div className="qlnv-modal-overlay" onClick={(event) => event.target === event.currentTarget && setMoModal(false)}>
-          <div className="qlnv-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: 760 }}>
+          <div className="qlnv-modal-card" ref={chiTietModalRef} role="dialog" aria-modal="true" style={{ maxWidth: 760 }}>
             <div className="modal-title">Chi tiết hồ sơ: {chiTiet.hoTen}</div>
             <div style={{ maxHeight: "65vh", overflowY: "auto", paddingRight: 4 }}>
                 <div className="row g-3">
