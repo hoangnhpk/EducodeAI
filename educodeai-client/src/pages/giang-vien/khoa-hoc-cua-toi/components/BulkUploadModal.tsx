@@ -9,6 +9,7 @@ import {
   verticalListSortingStrategy, useSortable, arrayMove
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import Swal from 'sweetalert2';
 import * as mediaApi from '@/services/media.service';
 import { GIA_PHU_DE_AI_MOI_PHUT_USD, MAX_CLOUDINARY_VIDEO_MB } from '@/services/media.service';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
@@ -75,19 +76,19 @@ const QueueRow: React.FC<{
             </div>
           </div>
           <div style={{ flex: '0 0 120px' }}>
-             {item.trangThai === 'cho_xu_ly' && <span className="khm-badge" style={{ background: '#f1f5f9', color: '#64748b' }}>Chờ tải lên</span>}
+             {item.trangThai === 'cho_xu_ly' && <span className="khm-badge" style={{ background: 'var(--khm-gray-100)', color: 'var(--khm-gray-600)' }}>Chờ tải lên</span>}
              {item.trangThai === 'dang_tai' && (
                <div style={{ width: '100%' }}>
                  <div className="khm-text-sm khm-text-primary khm-mb-4">Đang tải... {item.tienDo}%</div>
-                 <div style={{ background: '#e2e8f0', borderRadius: 4, height: 4, overflow: 'hidden' }}>
+                 <div style={{ background: 'var(--khm-gray-200)', borderRadius: 4, height: 4, overflow: 'hidden' }}>
                     <div style={{ background: 'var(--khm-primary)', height: '100%', width: `${item.tienDo}%`, transition: 'width 0.2s' }} />
                  </div>
                </div>
              )}
-             {item.trangThai === 'thanh_cong' && <span className="khm-badge" style={{ background: '#dcfce7', color: '#166534' }}>✓ Thành công</span>}
+             {item.trangThai === 'thanh_cong' && <span className="khm-badge" style={{ background: 'var(--success-soft)', color: 'var(--success-strong)' }}>✓ Thành công</span>}
              {item.trangThai === 'loi' && (
                <div>
-                 <span className="khm-badge" style={{ background: '#fee2e2', color: '#991b1b', marginBottom: 4 }}>❌ Lỗi</span>
+                 <span className="khm-badge" style={{ background: 'var(--danger-soft)', color: 'var(--danger-strong)', marginBottom: 4 }}>❌ Lỗi</span>
                  <div className="khm-text-sm khm-text-danger" style={{ fontSize: 10 }}>{item.thongBaoLoi}</div>
                </div>
              )}
@@ -147,7 +148,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
       if (choPhep.includes(f.type) || f.name.endsWith('.mp4') || f.name.endsWith('.mov')) {
         const dungLuongMb = f.size / (1024 * 1024);
         if (dungLuongMb > MAX_CLOUDINARY_VIDEO_MB) {
-          alert(`File ${f.name} vượt quá dung lượng tối đa ${(MAX_CLOUDINARY_VIDEO_MB / 1024).toFixed(0)}GB.`);
+          void Swal.fire('Vượt dung lượng', `File ${f.name} vượt quá dung lượng tối đa ${(MAX_CLOUDINARY_VIDEO_MB / 1024).toFixed(0)}GB.`, 'warning');
           return;
         }
         let tieuDe = f.name.replace(/\.[^/.]+$/, ""); // remove extension
@@ -160,7 +161,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
           trangThai: 'cho_xu_ly'
         });
       } else {
-        alert(`File ${f.name} không đúng định dạng video hỗ trợ.`);
+        void Swal.fire('Sai định dạng', `File ${f.name} không đúng định dạng video hỗ trợ.`, 'warning');
       }
     });
 
@@ -169,7 +170,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
         const combined = [...prev, ...itemsMoi];
         const total = combined.length;
         if (total > MAX_VIDEO_PER_BATCH) {
-          alert(`Chỉ được tải lên tối đa ${MAX_VIDEO_PER_BATCH} video mỗi lần. ${total - MAX_VIDEO_PER_BATCH} video vượt quá đã bị loại.`);
+          void Swal.fire('Vượt giới hạn', `Chỉ được tải lên tối đa ${MAX_VIDEO_PER_BATCH} video mỗi lần. ${total - MAX_VIDEO_PER_BATCH} video vượt quá đã bị loại.`, 'warning');
           // Lấy đúng MAX_VIDEO_PER_BATCH item (giữ ưu tiên video đầu tiên)
           const kept = prev.length >= MAX_VIDEO_PER_BATCH ? prev : [...prev, ...itemsMoi.slice(0, MAX_VIDEO_PER_BATCH - prev.length)];
           return kept.sort((a, b) => a.tieuDe.localeCompare(b.tieuDe));
@@ -438,11 +439,11 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                           <span className="khm-text-sm khm-text-muted">Phí AI: ${GIA_PHU_DE_AI_MOI_PHUT_USD}/phút</span>
                           <div className="khm-flex khm-gap-8">
                             <button className="khm-btn khm-btn-outline khm-btn-sm" disabled={dangXuLyPhuDe} onClick={() => setShowPhuDeConfirm(false)}>Hủy</button>
-                            <button className="khm-btn khm-btn-sm" style={{ background: '#c026d3', color: '#fff', border: 'none' }}
+                            <button className="khm-btn khm-btn-sm" style={{ background: 'var(--ai-accent)', color: 'var(--text-white)', border: 'none' }}
                               disabled={dangXuLyPhuDe}
                               onClick={async () => {
                                 const cb = document.getElementById('phude_gdpr_consent') as HTMLInputElement;
-                                if (!cb.checked) { alert('Vui lòng đồng ý với điều khoản GDPR.'); return; }
+                                if (!cb.checked) { await Swal.fire('Chưa đồng ý', 'Vui lòng đồng ý với điều khoản GDPR.', 'warning'); return; }
                                 setDangXuLyPhuDe(true);
                                 try {
                                   let success = 0, fail = 0;

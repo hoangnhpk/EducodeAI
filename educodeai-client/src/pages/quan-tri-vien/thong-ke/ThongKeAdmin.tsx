@@ -29,6 +29,16 @@ import './ThongKeAdmin.css';
 type DetailKind = 'hoc-vien' | 'giang-vien' | 'khoa-hoc' | 'dang-ky';
 type QualityTab = 'top' | 'improve';
 
+// Màu biểu đồ recharts (không khớp token semantic) — gom về một chỗ, không rải inline.
+const CHART_COLORS = {
+  areaStrokeFrom: '#fb873f',
+  areaStrokeTo: '#f69050',
+  areaFill: '#f69050',
+  dotStroke: '#f69050',
+  dotFill: '#ffffff',
+  grid: '#f3f4f6',
+};
+
 export default function ThongKeAdmin() {
   const [overview, setOverview] = useState<ThongKeTongQuanDTO | null>(null);
   const [dangKyTheoThang, setDangKyTheoThang] = useState<DangKyTheoThangDTO[]>([]);
@@ -333,7 +343,7 @@ export default function ThongKeAdmin() {
 
       <div className="adm-chart card border-0 shadow-sm">
         <div className="adm-chart__header">
-          <h2 className="adm-chart__title"><i className="bi bi-graph-up" style={{ marginRight: '8px', color: '#ea580c' }}></i>Lượt đăng ký theo tháng</h2>
+          <h2 className="adm-chart__title"><i className="bi bi-graph-up" style={{ marginRight: '8px', color: 'var(--primary-dark)' }}></i>Lượt đăng ký theo tháng</h2>
           <div className="adm-chart__filters">
             <div className="adm-chart__filter">
               <span className="adm-chart__filter-label">Từ</span>
@@ -409,27 +419,27 @@ export default function ThongKeAdmin() {
               <AreaChart data={chartData} margin={{ top: 12, right: 20, left: 0, bottom: 10 }}>
                 <defs>
                   <linearGradient id="admOrangeFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f69050" stopOpacity={0.38} />
-                    <stop offset="70%" stopColor="#f69050" stopOpacity={0.08} />
-                    <stop offset="100%" stopColor="#f69050" stopOpacity={0} />
+                    <stop offset="0%" stopColor={CHART_COLORS.areaFill} stopOpacity={0.38} />
+                    <stop offset="70%" stopColor={CHART_COLORS.areaFill} stopOpacity={0.08} />
+                    <stop offset="100%" stopColor={CHART_COLORS.areaFill} stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="admOrangeStroke" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#fb873f" />
-                    <stop offset="100%" stopColor="#f69050" />
+                    <stop offset="0%" stopColor={CHART_COLORS.areaStrokeFrom} />
+                    <stop offset="100%" stopColor={CHART_COLORS.areaStrokeTo} />
                   </linearGradient>
                 </defs>
 
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={-15} textAnchor="end" height={50} />
                 <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
                 <Tooltip
                   cursor={{ stroke: 'rgba(246, 144, 80, 0.25)', strokeWidth: 2 }}
                   contentStyle={{
-                    background: '#fff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '10px',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
                     padding: '10px 12px',
-                    boxShadow: '0 10px 30px rgba(2, 6, 23, 0.10)',
+                    boxShadow: 'var(--shadow-lg)',
                   }}
                   formatter={(value: unknown) => [Number(value).toLocaleString('vi-VN'), 'Lượt đăng ký']}
                 />
@@ -440,8 +450,8 @@ export default function ThongKeAdmin() {
                   strokeWidth={3.25}
                   fill="url(#admOrangeFill)"
                   fillOpacity={1}
-                  dot={{ r: 4.25, strokeWidth: 2, stroke: '#f69050', fill: '#fff' }}
-                  activeDot={{ r: 6.25, strokeWidth: 2, stroke: '#f69050', fill: '#fff' }}
+                  dot={{ r: 4.25, strokeWidth: 2, stroke: CHART_COLORS.dotStroke, fill: CHART_COLORS.dotFill }}
+                  activeDot={{ r: 6.25, strokeWidth: 2, stroke: CHART_COLORS.dotStroke, fill: CHART_COLORS.dotFill }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -460,7 +470,7 @@ export default function ThongKeAdmin() {
       <div className="adm-top-grid">
         <div className="adm-top card border-0 shadow-sm">
           <div className="adm-top__header">
-            <h3 className="adm-top__title"><i className="bi bi-trophy" style={{ marginRight: '8px', color: '#ea580c' }}></i>Top 5 khóa học nhiều đăng ký</h3>
+            <h3 className="adm-top__title"><i className="bi bi-trophy" style={{ marginRight: '8px', color: 'var(--primary-dark)' }}></i>Top 5 khóa học nhiều đăng ký</h3>
             <span className="adm-top__range">
               {monthInputToLabel(chartFrom)} - {monthInputToLabel(chartTo)}
             </span>
@@ -499,7 +509,7 @@ export default function ThongKeAdmin() {
 
         <div className="adm-top card border-0 shadow-sm">
           <div className="adm-top__header">
-            <h3 className="adm-top__title"><i className="bi bi-person-video3" style={{ color: '#0284c7', marginRight: '8px' }}></i>Top 5 giảng viên nhiều đăng ký</h3>
+            <h3 className="adm-top__title"><i className="bi bi-person-video3" style={{ color: 'var(--info)', marginRight: '8px' }}></i>Top 5 giảng viên nhiều đăng ký</h3>
             <span className="adm-top__range">
               {monthInputToLabel(chartFrom)} - {monthInputToLabel(chartTo)}
             </span>
@@ -541,7 +551,7 @@ export default function ThongKeAdmin() {
       <div className="adm-widgets-grid">
         <div className="adm-widget card border-0 shadow-sm">
           <div className="adm-widget__header">
-            <h3 className="adm-widget__title"><i className="bi bi-bar-chart-line" style={{ marginRight: '8px', color: '#ea580c' }}></i>Chất lượng khóa học</h3>
+            <h3 className="adm-widget__title"><i className="bi bi-bar-chart-line" style={{ marginRight: '8px', color: 'var(--primary-dark)' }}></i>Chất lượng khóa học</h3>
             <span className="adm-widget__range">
               {monthInputToLabel(chartFrom)} - {monthInputToLabel(chartTo)}
             </span>
@@ -597,7 +607,7 @@ export default function ThongKeAdmin() {
                           <td style={{ textAlign: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                               {/* Phần hiển thị Star Icon */}
-                              <div style={{ color: '#ea580c', fontSize: '14px', display: 'flex', gap: '2px' }}>
+                              <div style={{ color: 'var(--primary-dark)', fontSize: '14px', display: 'flex', gap: '2px' }}>
                                 {[1, 2, 3, 4, 5].map((star) => {
                                   const rating = x.diemDanhGiaTrungBinh || 0;
                                   return (
@@ -616,7 +626,7 @@ export default function ThongKeAdmin() {
                               </div>
 
                               {/* Con số hiển thị */}
-                              <span style={{ fontWeight: 800, color: '#334155' }}>
+                              <span style={{ fontWeight: 800, color: 'var(--text-muted)' }}>
                                 {x.soDanhGia > 0
                                   ? Number(x.diemDanhGiaTrungBinh).toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 1 })
                                   : '—'}

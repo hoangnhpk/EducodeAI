@@ -89,7 +89,7 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
           {thanhCong && <div className="khm-alert khm-alert-success khm-mb-16">{thanhCong}</div>}
 
           <div className="khm-flex khm-gap-16" style={{ flexDirection: 'column' }}>
-            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'none' ? 'var(--khm-gray-50)' : '#fff' }}>
+            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'none' ? 'var(--khm-gray-50)' : 'var(--khm-white)' }}>
               <input type="radio" name="subtitleOpt" checked={luaChon === 'none'} onChange={() => setLuaChon('none')} style={{ marginTop: 4, width: 'auto', flexShrink: 0 }} disabled={dangXuLy} />
               <div>
                 <strong style={{ display: 'block', marginBottom: 4 }}>Không có phụ đề</strong>
@@ -97,7 +97,7 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
               </div>
             </label>
 
-            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'manual' ? 'var(--primary-soft)' : '#fff' }}>
+            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'manual' ? 'var(--primary-soft)' : 'var(--bg-card)' }}>
               <input type="radio" name="subtitleOpt" checked={luaChon === 'manual'} onChange={() => setLuaChon('manual')} style={{ marginTop: 4, width: 'auto', flexShrink: 0 }} disabled={dangXuLy} />
               <div style={{ flex: 1 }}>
                 <strong style={{ display: 'block', marginBottom: 4 }}>Tự upload file (Miễn phí)</strong>
@@ -125,14 +125,14 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
               </div>
             </label>
 
-            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'ai' ? '#fdf4ff' : '#fff' }}>
+            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'ai' ? 'var(--ai-accent-soft)' : 'var(--bg-card)' }}>
               <input type="radio" name="subtitleOpt" checked={luaChon === 'ai'} onChange={() => setLuaChon('ai')} style={{ marginTop: 4, width: 'auto', flexShrink: 0 }} disabled={dangXuLy} />
               <div>
-                <strong style={{ display: 'block', marginBottom: 4, color: '#a21caf' }}>Dùng AI Transcription (Có phí) ✨</strong>
+                <strong style={{ display: 'block', marginBottom: 4, color: 'var(--ai-accent-hover)' }}>Dùng AI Transcription (Có phí) ✨</strong>
                 <span className="khm-text-sm khm-text-muted">Tự động nhận diện giọng nói và tạo phụ đề (Hỗ trợ tiếng Việt).</span>
                 
                 {luaChon === 'ai' && (
-                  <div className="khm-mt-12 khm-p-12" style={{ background: '#fce7f3', borderRadius: 6 }}>
+                  <div className="khm-mt-12 khm-p-12" style={{ background: 'var(--ai-accent-soft)', borderRadius: 6 }}>
                     <div className="khm-text-sm khm-mb-8">
                       <strong>Chi phí ước tính:</strong> ${chiPhiDuKien} USD <br/>
                       <span className="khm-text-muted">(Dựa trên thời lượng {Math.ceil(baiHoc.thoiLuong / 60)} phút)</span>
@@ -143,7 +143,7 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
                     </div>
                     <button 
                       className="khm-btn khm-btn-sm" 
-                      style={{ background: '#c026d3', color: '#fff', border: 'none' }}
+                      style={{ background: 'var(--ai-accent)', color: 'var(--text-white)', border: 'none' }}
                       onClick={() => {
                         const cb = document.getElementById('gdpr_consent') as HTMLInputElement;
                         if (!cb.checked) {
