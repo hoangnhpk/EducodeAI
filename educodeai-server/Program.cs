@@ -193,7 +193,8 @@ builder.Services.AddScoped<ISinhDoAnAIService, SinhDoAnAIService>();
 builder.Services.AddScoped<IChamDiemDoAnService, ChamDiemDoAnService>();
 builder.Services.AddScoped<IRateLimitService, RateLimitService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
-builder.Services.AddScoped<IGiayToScanningService, GiayToScanningService>();
+// Singleton: TesseractEngine/tessdata nạp tốn kém, chỉ nên khởi tạo 1 lần cho cả vòng đời app.
+builder.Services.AddSingleton<IGiayToScanningService, GiayToScanningService>();
 builder.Services.AddTransient<IAiSubtitleWorker, AiSubtitleWorker>();
 builder.Services.AddHostedService<educodeai_server.Services.Implementation.StaleHoldCleanupService>();
 builder.Services.AddHostedService<educodeai_server.Services.Implementation.OrphanVideoCleanupService>();
@@ -286,6 +287,28 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
+    });
+});
+
+// ==========================================
+// RATE LIMITING: bảo vệ endpoint quét CCCD (OCR tốn CPU + tải file ngoài)
+// khỏi bị lạm dụng gây cạn tài nguyên. Giới hạn theo IP.
+// ==========================================
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("QuetGiayToPolicy", httpContext =>
+    {
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ip,
+            factory: _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
     });
 });
 
@@ -493,6 +516,7 @@ app.UseStaticFiles();
 // (https://learn.microsoft.com/en-us/aspnet/core/security/cors)
 app.UseRouting();
 app.UseCors("AllowReactApp");
+app.UseRateLimiter();
 app.UseMiddleware<MaintenanceMiddleware>();
 
 app.UseAuthentication();
