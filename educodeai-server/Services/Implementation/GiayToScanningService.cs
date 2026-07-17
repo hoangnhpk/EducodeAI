@@ -1,4 +1,4 @@
-﻿using educodeai_server.DTOs.XacThuc;
+using educodeai_server.DTOs.XacThuc;
 using educodeai_server.Services.Interface;
 using SkiaSharp;
 using System.Globalization;
@@ -13,12 +13,53 @@ namespace educodeai_server.Services.Implementation
     public class GiayToScanningService : IGiayToScanningService
     {
         private readonly IWebHostEnvironment _env;
+        private readonly ILogger<GiayToScanningService> _logger;
         private readonly string _tessDataPath;
+        // Tải tessdata đúng 1 lần cho cả vòng đời ứng dụng (service là Singleton).
+        private readonly Task _tessReady;
 
-        public GiayToScanningService(IWebHostEnvironment env, IConfiguration config)
+        public GiayToScanningService(IWebHostEnvironment env, IConfiguration config, ILogger<GiayToScanningService> logger)
         {
             _env = env;
+            _logger = logger;
             _tessDataPath = ResolveTessDataPath(config);
+            // Tự động tải tessdata nếu thiếu (chạy nền, không chặn startup).
+            _tessReady = EnsureTessDataAsync();
+        }
+
+        private async Task EnsureTessDataAsync()
+        {
+            var files = new Dictionary<string, string>
+            {
+                ["vie.traineddata"] = "https://github.com/tesseract-ocr/tessdata_fast/raw/main/vie.traineddata",
+                ["eng.traineddata"] = "https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata"
+            };
+
+            Directory.CreateDirectory(_tessDataPath);
+
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("EducodeAI-TessLoader/1.0");
+
+            foreach (var (fileName, url) in files)
+            {
+                var dest = Path.Combine(_tessDataPath, fileName);
+                if (File.Exists(dest)) continue;
+
+                try
+                {
+                    _logger.LogInformation("[TessData] Đang tải {FileName} từ GitHub...", fileName);
+                    var bytes = await httpClient.GetByteArrayAsync(url);
+                    // Ghi ra file tạm rồi move (atomic) để tránh 2 tiến trình ghi đè nửa chừng.
+                    var tmp = dest + ".tmp";
+                    await File.WriteAllBytesAsync(tmp, bytes);
+                    File.Move(tmp, dest, overwrite: true);
+                    _logger.LogInformation("[TessData] Tải {FileName} thành công ({SizeMb} MB).", fileName, bytes.Length / 1024 / 1024);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[TessData] Không tải được {FileName}.", fileName);
+                }
+            }
         }
 
         public async Task<GiayToScanningResponse> QuetGiayToAsync(GiayToScanningRequest request)
@@ -27,6 +68,9 @@ namespace educodeai_server.Services.Implementation
             {
                 var validate = ValidateRequest(request);
                 if (validate != null) return Fail(validate);
+
+                // Chờ tessdata tải xong (nếu đang tải lần đầu) trước khi kiểm tra file.
+                await _tessReady;
 
                 if (!Directory.Exists(_tessDataPath) || !File.Exists(Path.Combine(_tessDataPath, "eng.traineddata")))
                     return Fail("Chưa cài dữ liệu OCR offline (tessdata).");
@@ -43,11 +87,32 @@ namespace educodeai_server.Services.Implementation
                 string backText;
                 try
                 {
-                    frontText = OcrImage(frontBytes);
-                    backText = OcrImage(backBytes);
+                    var hasVie = File.Exists(Path.Combine(_tessDataPath, "vie.traineddata"));
+                    var hasEng = File.Exists(Path.Combine(_tessDataPath, "eng.traineddata"));
+                    if (!hasVie && !hasEng)
+                        throw new InvalidOperationException("Chưa có file tessdata. Đang tải về, vui lòng thử lại sau vài giây.");
+
+                    // Ưu tiên vie+eng. Nếu chưa tải xong vie thì dùng eng tạm.
+                    var lang = hasVie ? (hasEng ? "vie+eng" : "vie") : "eng";
+
+                    // Tạo engine 1 lần rồi dùng cho cả 2 ảnh (load traineddata rất tốn kém).
+                    using var engine = new TesseractEngine(_tessDataPath, lang, EngineMode.Default);
+                    engine.SetVariable("user_defined_dpi", "300");
+                    engine.SetVariable("preserve_interword_spaces", "1");
+                    engine.SetVariable("debug_file", "nul");
+
+                    frontText = OcrImage(engine, frontBytes);
+                    backText = OcrImage(engine, backBytes);
+
+                    if (_env.IsDevelopment())
+                    {
+                        _logger.LogInformation("[OCR-DEBUG] === MAT TRUOC ===\n{FrontText}", frontText);
+                        _logger.LogInformation("[OCR-DEBUG] === MAT SAU ===\n{BackText}", backText);
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Khởi tạo/chạy OCR offline thất bại. TessDataPath={TessDataPath}", _tessDataPath);
                     return Fail("Không khởi tạo được OCR offline. Kiểm tra tessdata và native dll Tesseract.");
                 }
 
@@ -83,9 +148,12 @@ namespace educodeai_server.Services.Implementation
                 if (!backIsId && string.Equals(request.LoaiGiayTo, "CCCD", StringComparison.OrdinalIgnoreCase))
                     return Fail("Ảnh mặt sau không phải CCCD hợp lệ.");
 
-                // Kiem tra 2 mat co cung 1 CCCD khong
-                var frontIds = ExtractAllIdNumbers(frontText);
-                var backIds = ExtractAllIdNumbers(backText);
+                // Kiem tra 2 mat co cung 1 CCCD khong.
+                // Chi lay so 12 chu so sach (khong lay 9-so hoac noisy-ocr)
+                // vi mat sau CCCD VN thuong khong in lai so CCCD 12 chu so ro rang.
+                // Neu mat sau khong tim thay so 12-so ro rang thi bo qua check nay.
+                var frontIds = ExtractCleanIdNumbers(frontText);
+                var backIds  = ExtractCleanIdNumbers(backText);
                 if (frontIds.Count > 0 && backIds.Count > 0)
                 {
                     var same = frontIds.Any(f => backIds.Any(b => IsSameId(f, b)));
@@ -101,7 +169,9 @@ namespace educodeai_server.Services.Implementation
                     orderedBack = frontText;
                 }
 
-                var qrText = DecodeQrText(frontBytes);
+                // QR mã trên CCCD gắn chip chứa dữ liệu chính xác 100%. Thử cả 2 mặt
+                // vì người dùng có thể tải ngược, và fallback OCR chỉ khi QR không đọc được.
+                var qrText = DecodeQrText(frontBytes) ?? DecodeQrText(backBytes);
                 var parsed = ParseIdentity(orderedFront, orderedBack, request.LoaiGiayTo, qrText);
                 if (string.IsNullOrWhiteSpace(parsed.SoGiayTo) && string.IsNullOrWhiteSpace(parsed.HoTen))
                     return Fail("Kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c s\u1ed1 gi\u1ea5y t\u1edd/h\u1ecd t\u00ean t\u1eeb CCCD. Vui l\u00f2ng ch\u1ee5p l\u1ea1i \u1ea3nh r\u00f5 n\u00e9t, \u0111\u1eb7t gi\u1ea5y t\u1edd th\u1eb3ng, ch\u1ee5p ngang khung h\u00ecnh, \u0111\u1ee7 s\u00e1ng v\u00e0 kh\u00f4ng b\u1ecb l\u00f3a.");
@@ -114,8 +184,9 @@ namespace educodeai_server.Services.Implementation
                 parsed.ThongBao = "Qu\u00e9t CCCD offline th\u00e0nh c\u00f4ng. N\u1ebfu c\u00f3 th\u00f4ng tin n\u00e0o kh\u00f4ng ch\u00ednh x\u00e1c theo gi\u1ea5y t\u1edd, vui l\u00f2ng ch\u1ee5p l\u1ea1i \u1ea3nh r\u00f5 n\u00e9t h\u01a1n, \u0111\u1eb7t gi\u1ea5y t\u1edd th\u1eb3ng, ch\u1ee5p ngang khung h\u00ecnh, \u0111\u1ee7 s\u00e1ng v\u00e0 kh\u00f4ng b\u1ecb l\u00f3a.";
                 return parsed;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Lỗi không xác định khi quét giấy tờ offline.");
                 return Fail("Đã xảy ra lỗi khi quét offline. Vui lòng thử lại sau.");
             }
         }
@@ -162,16 +233,10 @@ namespace educodeai_server.Services.Implementation
             return ms.ToArray();
         }
 
-        private string OcrImage(byte[] bytes)
+        private static string OcrImage(TesseractEngine engine, byte[] bytes)
         {
             using var bitmap = SKBitmap.Decode(bytes)
                 ?? throw new InvalidOperationException("Khong decode duoc anh");
-
-            var lang = File.Exists(Path.Combine(_tessDataPath, "vie.traineddata")) ? "vie+eng" : "eng";
-            using var engine = new TesseractEngine(_tessDataPath, lang, EngineMode.Default);
-            engine.SetVariable("user_defined_dpi", "300");
-            engine.SetVariable("preserve_interword_spaces", "1");
-            engine.SetVariable("debug_file", "nul");
 
             var best = string.Empty;
             foreach (var variant in BuildVariants(bitmap))
@@ -193,14 +258,26 @@ namespace educodeai_server.Services.Implementation
 
         private static IEnumerable<byte[]> BuildVariants(SKBitmap source)
         {
+            // Đảm bảo ảnh đủ rộng để Tesseract đọc tốt nhất (tối thiểu 1600px ngang)
             var scale = source.Width < 1600 ? 1600f / source.Width : 1f;
+            // Không phóng to quá 3x để tránh làm mờ ảnh do nội suy
+            if (scale > 3f) scale = 3f;
             var w = Math.Max(1, (int)Math.Round(source.Width * scale));
             var h = Math.Max(1, (int)Math.Round(source.Height * scale));
             using var resized = Resize(source, w, h);
 
-            yield return EncodeJpeg(resized, 92);
-            using (var g1 = GrayContrast(resized, 1.5f)) yield return EncodeJpeg(g1, 92);
-            using (var b1 = Binary(resized, 155)) yield return EncodePng(b1);
+            // Variant 1: Ảnh gốc resize (màu) — tốt nhất nếu ảnh đủ sáng, sắc nét
+            yield return EncodeJpeg(resized, 95);
+
+            // Variant 2: Grayscale tương phản nhẹ (contrast 1.3) — phù hợp ảnh chụp điện thoại thường
+            using (var g1 = GrayContrast(resized, 1.3f)) yield return EncodeJpeg(g1, 95);
+
+            // Variant 3: Grayscale tương phản mạnh (contrast 1.8) — phù hợp ảnh tối/ngược sáng
+            using (var g2 = GrayContrast(resized, 1.8f)) yield return EncodeJpeg(g2, 95);
+
+            // Variant 4: Adaptive threshold (ngưỡng tự động) — thay thế Binary cứng 155
+            // Tesseract tự chọn ngưỡng tốt hơn khi nhận ảnh grayscale sạch
+            using (var g3 = GrayContrast(resized, 2.2f)) yield return EncodePng(g3);
         }
 
         private static SKBitmap Resize(SKBitmap source, int width, int height)
@@ -210,44 +287,38 @@ namespace educodeai_server.Services.Implementation
             var dest = source.Resize(info, new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None));
             if (dest != null) return dest;
 
-            dest = new SKBitmap(info);
+            // Fallback nearest-neighbor: đọc/ghi theo mảng (bulk marshalling) thay vì per-pixel.
+            var src = source.Pixels;
+            var outPixels = new SKColor[width * height];
             for (var y = 0; y < height; y++)
             {
                 var sy = Math.Min(source.Height - 1, (int)(y * (source.Height / (float)height)));
                 for (var x = 0; x < width; x++)
                 {
                     var sx = Math.Min(source.Width - 1, (int)(x * (source.Width / (float)width)));
-                    dest.SetPixel(x, y, source.GetPixel(sx, sy));
+                    outPixels[y * width + x] = src[sy * source.Width + sx];
                 }
             }
+            dest = new SKBitmap(info);
+            dest.Pixels = outPixels;
             return dest;
         }
 
         private static SKBitmap GrayContrast(SKBitmap source, float contrast)
         {
-            var bmp = new SKBitmap(source.Width, source.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
-            for (var y = 0; y < source.Height; y++)
-            for (var x = 0; x < source.Width; x++)
+            // Đọc/ghi theo mảng (1 lần marshalling) thay vì GetPixel/SetPixel per-pixel
+            // (mỗi lần gọi là 1 P/Invoke — cực chậm với ảnh vài triệu điểm ảnh).
+            var pixels = source.Pixels;
+            var outPixels = new SKColor[pixels.Length];
+            for (var i = 0; i < pixels.Length; i++)
             {
-                var c = source.GetPixel(x, y);
+                var c = pixels[i];
                 var l = 0.299 * c.Red + 0.587 * c.Green + 0.114 * c.Blue;
                 var v = (byte)Math.Clamp((int)((l - 128) * contrast + 128), 0, 255);
-                bmp.SetPixel(x, y, new SKColor(v, v, v, 255));
+                outPixels[i] = new SKColor(v, v, v, 255);
             }
-            return bmp;
-        }
-
-        private static SKBitmap Binary(SKBitmap source, int threshold)
-        {
             var bmp = new SKBitmap(source.Width, source.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
-            for (var y = 0; y < source.Height; y++)
-            for (var x = 0; x < source.Width; x++)
-            {
-                var c = source.GetPixel(x, y);
-                var l = 0.299 * c.Red + 0.587 * c.Green + 0.114 * c.Blue;
-                var v = (byte)(l >= threshold ? 255 : 0);
-                bmp.SetPixel(x, y, new SKColor(v, v, v, 255));
-            }
+            bmp.Pixels = outPixels;
             return bmp;
         }
 
@@ -324,6 +395,10 @@ namespace educodeai_server.Services.Implementation
             return hit >= 2 || Regex.IsMatch(u, @"\b\d{9}\b|\b\d{12}\b");
         }
 
+        /// <summary>
+        /// Trích tất cả số định danh (9 hoặc 12 chữ số) kể cả từ OCR noisy.
+        /// Dùng cho ExtractIdNumber (tìm số chính).
+        /// </summary>
         private static List<string> ExtractAllIdNumbers(string text)
         {
             var result = new List<string>();
@@ -342,6 +417,20 @@ namespace educodeai_server.Services.Implementation
                     result.Add(fixedNum);
             }
 
+            return result.Distinct().ToList();
+        }
+
+        /// <summary>
+        /// Chỉ trích số 12 chữ số sạch (không dùng noisy-OCR, không lấy số 9 chữ số).
+        /// Dùng để cross-check mặt trước / mặt sau — tránh false-positive
+        /// do mặt sau CCCD VN không in lại số CCCD rõ ràng.
+        /// </summary>
+        private static List<string> ExtractCleanIdNumbers(string text)
+        {
+            var result = new List<string>();
+            var digits = Regex.Replace(text ?? string.Empty, @"[^\d]", " ");
+            foreach (Match m in Regex.Matches(digits, @"\b\d{12}\b"))
+                result.Add(m.Value);
             return result.Distinct().ToList();
         }
 
@@ -367,13 +456,15 @@ namespace educodeai_server.Services.Implementation
         private static bool IsSameId(string a, string b)
         {
             if (string.Equals(a, b, StringComparison.Ordinal)) return true;
-            // cho phep lech 1 ky tu (OCR nham)
+            // Cho phep OCR doc sai toi da 2 ky tu trong so 12-chu-so
+            // (vi mat sau CCCD co the bi nhoem, goc khuat, lam lech 1-2 so)
             if (a.Length == b.Length && a.Length >= 9)
             {
+                var maxDiff = a.Length >= 12 ? 2 : 1;
                 var diff = 0;
                 for (var i = 0; i < a.Length; i++)
                     if (a[i] != b[i]) diff++;
-                return diff <= 1;
+                return diff <= maxDiff;
             }
             return false;
         }
@@ -385,12 +476,12 @@ namespace educodeai_server.Services.Implementation
                 using var bitmap = SKBitmap.Decode(bytes);
                 if (bitmap == null) return null;
 
-                var pixels = new byte[bitmap.Width * bitmap.Height * 4];
+                // Đọc toàn bộ điểm ảnh 1 lần (bulk) thay vì GetPixel per-pixel.
+                var src = bitmap.Pixels;
+                var pixels = new byte[src.Length * 4];
                 var offset = 0;
-                for (var y = 0; y < bitmap.Height; y++)
-                for (var x = 0; x < bitmap.Width; x++)
+                foreach (var c in src)
                 {
-                    var c = bitmap.GetPixel(x, y);
                     pixels[offset++] = c.Red;
                     pixels[offset++] = c.Green;
                     pixels[offset++] = c.Blue;
@@ -465,9 +556,12 @@ namespace educodeai_server.Services.Implementation
             var ngayCap = ExtractDate(RemoveDiacritics(backText ?? string.Empty), new[] { "ngay cap", "date of issue", "date, month, year", "date month year", "doi", "issue" })
                           ?? ExtractDate(plain, new[] { "ngay cap", "date of issue", "date, month, year", "doi", "issue" });
 
-            // Ngày sinh chỉ lấy từ mặt trước và phải gần nhãn Ngày sinh.
+            // Ngày sinh: ưu tiên MRZ (mã máy đọc ở mặt sau, có checksum nên đáng tin hơn
+            // OCR chữ in vốn hay đọc nát). Sau đó mới đến nhãn "Ngày sinh" ở mặt trước.
             // Không fallback sang ngày bất kỳ vì dễ lấy nhầm ngày cấp.
-            var ngaySinh = ExtractDate(RemoveDiacritics(frontText ?? string.Empty), new[] { "ngay sinh", "date of birth", "dob", "birth" }, allowAnyDateFallback: false)
+            var ngaySinhMrz = ExtractDobFromMrz(backText) ?? ExtractDobFromMrz(frontText);
+            var ngaySinh = ngaySinhMrz
+                           ?? ExtractDate(RemoveDiacritics(frontText ?? string.Empty), new[] { "ngay sinh", "date of birth", "dob", "birth" }, allowAnyDateFallback: false)
                            ?? ExtractBirthDateFromFront(frontText, issueDate: ngayCap);
 
             return new GiayToScanningResponse
@@ -661,6 +755,9 @@ namespace educodeai_server.Services.Implementation
                 cleaned = cleaned[..cutAt];
 
             cleaned = Regex.Replace(cleaned, @"^\s*[,.\s;:-]+", string.Empty);
+            // OCR hay doc vien trai cua o thanh 1 chu cai le (i, l, j, t...) roi dinh vao dau que quan.
+            // Dia danh VN khong bao gio bat dau bang 1 chu cai don tach roi, nen bo an toan.
+            cleaned = Regex.Replace(cleaned, @"^[iIlLjJtT|]\s+(?=\p{Lu})", string.Empty);
             cleaned = Regex.Replace(cleaned, @"Binh\s+Định", "Bình Định", RegexOptions.IgnoreCase);
             cleaned = Regex.Replace(cleaned, @"Binh\s+Dinh", "Bình Định", RegexOptions.IgnoreCase);
             cleaned = Regex.Replace(cleaned, @"\s*[.]\s*", ", ");
@@ -711,6 +808,41 @@ namespace educodeai_server.Services.Implementation
                 return normalized;
             }
             return null;
+        }
+
+        // MRZ (machine-readable zone) o mat sau CCCD gan chip co checksum nen dang tin
+        // hon OCR chu in (vd OCR doc "19lfJ6Jf2lIxI6" thay vi ngay sinh). TD1 gom 3 dong
+        // 30 ky tu; dong 2 chua ngay sinh: YYMMDD + check + gioi tinh + YYMMDD(het han) + check + quoc tich.
+        private static string? ExtractDobFromMrz(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            var upper = RemoveDiacritics(text).ToUpperInvariant();
+            foreach (var rawLine in upper.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                // Bo khoang trang de gom cac ky tu MRZ bi OCR tach roi.
+                var line = Regex.Replace(rawLine, @"\s+", string.Empty);
+                if (line.Length < 15) continue;
+                var m = Regex.Match(line, @"(\d{6})\d[MFX<]\d{6}\d[A-Z<]{3}");
+                if (!m.Success) continue;
+                var dob = ParseMrzDate(m.Groups[1].Value);
+                if (dob != null) return dob;
+            }
+            return null;
+        }
+
+        private static string? ParseMrzDate(string yymmdd)
+        {
+            if (yymmdd.Length != 6) return null;
+            if (!int.TryParse(yymmdd[..2], out var yy)
+                || !int.TryParse(yymmdd.Substring(2, 2), out var mm)
+                || !int.TryParse(yymmdd.Substring(4, 2), out var dd))
+                return null;
+            if (mm is < 1 or > 12 || dd is < 1 or > 31) return null;
+            // Ngay sinh: nam 2 chu so > nam hien tai (2 chu so) thi thuoc the ky truoc.
+            var pivot = DateTime.Now.Year % 100;
+            var year = yy <= pivot ? 2000 + yy : 1900 + yy;
+            if (year is < 1900 or > 2100) return null;
+            return string.Format("{0:00}/{1:00}/{2:0000}", dd, mm, year);
         }
 
         private static string? ExtractGender(string plain)

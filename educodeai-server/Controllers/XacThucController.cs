@@ -383,6 +383,7 @@ namespace educodeai_server.Controllers
 
         [HttpPost("quet-giay-to")]
         [Consumes("multipart/form-data")]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("QuetGiayToPolicy")]
         public async Task<IActionResult> QuetGiayTo([FromForm] GiayToScanningRequest request, [FromServices] educodeai_server.Data.EduCodeAIDbContext dbContext)
         {
             if (!ModelState.IsValid)

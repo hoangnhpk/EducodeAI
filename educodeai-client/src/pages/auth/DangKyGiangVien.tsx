@@ -407,6 +407,7 @@ export default function DangKyGiangVien() {
       const docMismatch = Boolean(soGiayTo && doc && normalizeDocNumber(soGiayTo) !== normalizeDocNumber(doc));
       const scannedInfo: Record<string, string> = {
         'Loại giấy tờ': docType === 'cccd' ? 'CCCD/CMND' : 'Hộ chiếu',
+        'Số giấy tờ': soGiayTo || 'Không đọc được',
         'Họ tên': hoTen || 'Không đọc được',
         'Ngày sinh': ngaySinh || 'Không đọc được',
         'Giới tính': gioiTinh || 'Không đọc được',
@@ -626,12 +627,14 @@ export default function DangKyGiangVien() {
         )}
 
         {step === 2 && (
-          <div className="dkgv-progress-alt">
-            <div className="dkgv-step completed"><div className="dkgv-step-circle">✓</div><div className="dkgv-step-label">Hồ sơ chuyên môn</div></div>
-            <div className="dkgv-progress-line" aria-hidden="true" />
-            <div className="dkgv-step active"><div className="dkgv-step-circle">2</div><div className="dkgv-step-label">Xác minh danh tính (KYC)</div></div>
-            <div className="dkgv-progress-line" aria-hidden="true" />
-            <div className="dkgv-step"><div className="dkgv-step-circle">3</div><div className="dkgv-step-label">Thanh toán</div></div>
+          <div className="dkgv-progress-header">
+            <div className="dkgv-progress-bar">
+              <div className="dkgv-step completed"><div className="dkgv-step-circle">✓</div><div className="dkgv-step-label">Hồ sơ chuyên môn</div></div>
+              <div className="dkgv-progress-line"><div className="dkgv-progress-line-fill" style={{ width: '100%' }} /></div>
+              <div className="dkgv-step active"><div className="dkgv-step-circle">2</div><div className="dkgv-step-label">Xác minh danh tính (KYC)</div></div>
+              <div className="dkgv-progress-line"><div className="dkgv-progress-line-fill" style={{ width: '0%' }} /></div>
+              <div className="dkgv-step"><div className="dkgv-step-circle">3</div><div className="dkgv-step-label">Thanh toán</div></div>
+            </div>
           </div>
         )}
 
