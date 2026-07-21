@@ -41,6 +41,7 @@ namespace educodeai_server.Controllers.HocVien
         // ============================================================
         // CŨ: Sinh đồ án (không cần login)
         // ============================================================
+        [Authorize]
         [HttpPost("generate")]
         public async Task<IActionResult> GenerateDoAn([FromBody] SinhDoAnRequestDto request)
         {
@@ -95,6 +96,18 @@ namespace educodeai_server.Controllers.HocVien
                 var result = await _sinhDoAnAIService.TraLoiPhongVanAsync(userId, request);
                 return Ok(result);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi khi xử lý câu trả lời", details = ex.Message });
@@ -115,6 +128,14 @@ namespace educodeai_server.Controllers.HocVien
 
                 var result = await _sinhDoAnAIService.LayKetQuaPhongVanAsync(0, userId, sessionId);
                 return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {

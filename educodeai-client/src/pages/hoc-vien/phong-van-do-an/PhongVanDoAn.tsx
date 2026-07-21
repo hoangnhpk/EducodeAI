@@ -30,8 +30,18 @@ const PhongVanDoAn: React.FC = () => {
     const chatRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const tenDoAn: string = (location.state as any)?.tenDoAn ?? 'Đồ án của bạn';
-    const cauHoiDauTien: string = (location.state as any)?.cauHoiDauTien ?? '';
+    const sessionStorageKey = sessionId ? `phongvan-do-an-${sessionId}` : '';
+    const savedSession = sessionStorageKey ? sessionStorage.getItem(sessionStorageKey) : null;
+    let savedSessionData: { tenDoAn?: string; cauHoiDauTien?: string } = {};
+    if (savedSession) {
+        try {
+            savedSessionData = JSON.parse(savedSession);
+        } catch {
+            sessionStorage.removeItem(sessionStorageKey);
+        }
+    }
+    const tenDoAn: string = (location.state as any)?.tenDoAn ?? savedSessionData.tenDoAn ?? 'Đồ án của bạn';
+    const cauHoiDauTien: string = (location.state as any)?.cauHoiDauTien ?? savedSessionData.cauHoiDauTien ?? '';
 
     const [messages, setMessages] = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState('');

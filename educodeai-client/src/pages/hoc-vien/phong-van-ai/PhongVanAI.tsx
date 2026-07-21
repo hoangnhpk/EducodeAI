@@ -167,7 +167,7 @@ const PhongVanAI: React.FC = () => {
             if (res && (res.nhanXetCauTruoc || res.cauHoiTiepTheo)) {
                 setIsInterviewerTyping(false);
                 setIsSpeaking(true);
-                setQuestionCount(c => c + 1);
+                setQuestionCount(c => Math.min(c + 1, soLuongCauHoi));
                 
                 const data = res;
                 const aiResponse: IMessage = {
@@ -196,8 +196,9 @@ const PhongVanAI: React.FC = () => {
             navigate('/');
             return;
         }
+
         setShowEndModal(false);
-        navigate('/');
+        await handleGetResult();
     };
 
     const handleGetResult = async () => {
