@@ -97,7 +97,7 @@ namespace educodeai_server.Services.Implementation
                 })
                 .FirstOrDefaultAsync();
 
-            if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+            if (hoSo == null) throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
             if (!string.IsNullOrWhiteSpace(hoSo.DuLieuCccdMaHoa)
                 && TryGiaiMaThongTinCccd(hoSo.DuLieuCccdMaHoa, out var thongTinCccd))
@@ -119,21 +119,21 @@ namespace educodeai_server.Services.Implementation
         {
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
-            if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+            if (hoSo == null) throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
-                throw new Exception("Hồ sơ này đã được duyệt trước đó.");
+                throw ApiException.InvalidRequest("Hồ sơ này đã được duyệt trước đó.");
 
             // Kiểm tra trùng tài khoản/email đã tồn tại trong NguoiDungs
             var email = hoSo.Email.Trim().ToLower();
             var taiKhoan = hoSo.TaiKhoan.Trim();
 
             if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
-                throw new Exception("Email này đã được sử dụng bởi một tài khoản khác.");
+                throw ApiException.InvalidRequest("Email này đã được sử dụng bởi một tài khoản khác.");
 
             if (await _context.NguoiDungs.AnyAsync(u => u.TaiKhoan == taiKhoan))
-                throw new Exception("Tên tài khoản này đã tồn tại, vui lòng liên hệ giảng viên đổi tên đăng nhập.");
+                throw ApiException.InvalidRequest("Tên tài khoản này đã tồn tại, vui lòng liên hệ giảng viên đổi tên đăng nhập.");
 
             int maNguoiDungMoi = 0;
 
@@ -239,11 +239,11 @@ namespace educodeai_server.Services.Implementation
         {
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
-            if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+            if (hoSo == null) throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
-                throw new Exception("Hồ sơ đã được duyệt, không thể từ chối.");
+                throw ApiException.InvalidRequest("Hồ sơ đã được duyệt, không thể từ chối.");
 
             hoSo.TrangThaiHoSo = "TuChoi";
             hoSo.LyDoTuChoi = request.LyDoTuChoi.Trim();
@@ -290,11 +290,11 @@ namespace educodeai_server.Services.Implementation
         {
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
-            if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+            if (hoSo == null) throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
-                throw new Exception("Hồ sơ đã được duyệt, không thể yêu cầu bổ sung.");
+                throw ApiException.InvalidRequest("Hồ sơ đã được duyệt, không thể yêu cầu bổ sung.");
 
             // Sinh token xác thực bổ sung
             hoSo.BoSungToken = Guid.NewGuid().ToString("N").Substring(0, 12);

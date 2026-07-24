@@ -10,11 +10,18 @@ using System.Threading.Tasks;
 public class QuanLyNguoiDungService : IQuanLyNguoiDungService
 {
     private readonly IQuanLyNguoiDungRepository _repo;
+    private readonly ISessionStateCache _sessionStateCache;
+    private readonly ISessionRealtimeNotifier _sessionRealtimeNotifier;
     private readonly PasswordHasher<NguoiDungModel> _passwordHasher;
 
-    public QuanLyNguoiDungService(IQuanLyNguoiDungRepository repo)
+    public QuanLyNguoiDungService(
+        IQuanLyNguoiDungRepository repo,
+        ISessionStateCache sessionStateCache,
+        ISessionRealtimeNotifier sessionRealtimeNotifier)
     {
         _repo = repo;
+        _sessionStateCache = sessionStateCache;
+        _sessionRealtimeNotifier = sessionRealtimeNotifier;
         _passwordHasher = new PasswordHasher<NguoiDungModel>();
     }
 
@@ -113,11 +120,17 @@ public class QuanLyNguoiDungService : IQuanLyNguoiDungService
             return false;
         }
 
-        if (nd.TrangThai == "Hoạt động")
+        var isKhoa = nd.TrangThai == "Hoạt động";
+        // Lấy MaPhien các phiên trước khi Clear để còn invalidate cache + publish sau commit.
+        var maPhienBiThuHoi = isKhoa
+            ? (nd.DanhSachPhienDangNhap?.Select(p => p.MaPhien).ToList() ?? new List<int>())
+            : new List<int>();
+
+        if (isKhoa)
         {
             nd.TrangThai = thoiHan == "vinh-vien" ? "Khóa vĩnh viễn" : "Bị khóa";
             nd.LyDoKhoa = lyDo;
-            
+
             if (thoiHan != "vinh-vien")
             {
                 nd.ThoiGianMoKhoa = thoiHan switch
@@ -149,7 +162,28 @@ public class QuanLyNguoiDungService : IQuanLyNguoiDungService
             nd.ThoiGianMoKhoa = null;
         }
 
-        return await _repo.CapNhatAsync(nd);
+        var capNhatThanhCong = await _repo.CapNhatAsync(nd);
+        if (!capNhatThanhCong)
+        {
+            return false;
+        }
+
+        // Sau commit: invalidate cache để middleware không đọc trạng thái/phiên cũ (mục 2.14, H.3/H.4).
+        // Cache user-status TTL 5 phút nên nếu không xóa, user bị khóa vẫn qua middleware tới hết TTL.
+        await _sessionStateCache.InvalidateUserStatusAsync(maId);
+        foreach (var maPhien in maPhienBiThuHoi)
+        {
+            await _sessionStateCache.InvalidateSessionAsync(maPhien);
+        }
+
+        // Push realtime: khóa → đẩy mọi thiết bị logout ngay; danh sách phiên đổi → trang thiết bị refetch.
+        if (isKhoa)
+        {
+            await _sessionRealtimeNotifier.UserLockedAsync(maId);
+        }
+        await _sessionRealtimeNotifier.SessionListChangedAsync(maId);
+
+        return true;
     }
 
     public async Task<bool> XoaNguoiDungAsync(string id)

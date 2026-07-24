@@ -82,8 +82,9 @@ export const authService = {
     return await api.post(`/api/XacThuc/facebook-login?maThietBi=${maThietBi}&tenThietBi=${tenThietBi}`, payload);
   },
 
-  refreshToken: async (refreshToken: string, maThietBi: string) => {
-    return await api.post(`/api/XacThuc/refresh-token?refreshToken=${refreshToken}&maThietBi=${maThietBi}`);
+  refreshToken: async (maThietBi: string) => {
+    // Refresh token nằm trong HttpOnly cookie; gửi kèm nhờ withCredentials.
+    return await api.post(`/api/XacThuc/refresh-token?maThietBi=${maThietBi}`);
   },
 
   logout: async () => {
@@ -94,7 +95,6 @@ export const authService = {
       });
     } finally {
       localStorage.removeItem('user_token');
-      localStorage.removeItem('refresh_token');
       localStorage.removeItem('token');
       localStorage.removeItem('user_info');
     }

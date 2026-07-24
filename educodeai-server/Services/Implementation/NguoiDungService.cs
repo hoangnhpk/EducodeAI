@@ -2,22 +2,16 @@
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
 using educodeai_server.DTOs.NguoiDung;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using BCrypt.Net;
 namespace educodeai_server.Services.Implementation
 {
     public class NguoiDungService : INguoiDungService
     {
         private readonly INguoiDungRepository _repository;
-        private readonly IConfiguration _configuration;
 
-        public NguoiDungService(INguoiDungRepository repository, IConfiguration configuration)
+        public NguoiDungService(INguoiDungRepository repository)
         {
             _repository = repository;
-            _configuration = configuration;
         }
 
         // Fix lỗi gạch đỏ: Cần thực thi hàm này từ Interface
@@ -70,26 +64,5 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<bool> IsEmailExistAsync(string email) =>
             await _repository.GetUserByEmailAsync(email) != null;
-
-        public string GenerateJwtToken(NguoiDungModel user)
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-            var claims = new[] {
-                new Claim(ClaimTypes.Email, user.Email), 
-                new Claim(ClaimTypes.NameIdentifier, user.MaNguoiDung.ToString()),
-                new Claim("id", user.MaNguoiDung.ToString()),
-                new Claim("MaNguoiDung", user.MaNguoiDung.ToString()),
-                new Claim(ClaimTypes.Role, user.VaiTro == 0 ? "Admin" : (user.VaiTro == 1 ? "GiangVien" : "HocVien")),
-                new Claim(ClaimTypes.Name, user.HoTen ?? "")
-            };
-            var token = new JwtSecurityToken(
-                _configuration["Jwt:Issuer"],
-                _configuration["Jwt:Audience"],
-                claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: credentials);
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
     }
 }

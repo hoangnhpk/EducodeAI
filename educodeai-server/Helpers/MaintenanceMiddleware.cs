@@ -1,12 +1,24 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 
-namespace educodeai_server.Helpers // Hoặc namespace của sếp
+namespace educodeai_server.Helpers
 {
     public class MaintenanceMiddleware
     {
         private readonly RequestDelegate _next;
         public static bool IsUnderMaintenance = false;
+
+        // Các đường dẫn bootstrap bắt buộc mở trong lúc bảo trì để Admin còn đăng nhập được
+        // và frontend còn đọc được trạng thái bảo trì. Không mở toàn bộ /quan-tri như trước.
+        private static readonly string[] BootstrapPaths =
+        {
+            "/api/xacthuc/dang-nhap",
+            "/api/xacthuc/refresh-token",
+            "/api/xacthuc/dang-xuat",
+            "/api/quan-tri/cau-hinh/check-bao-tri",
+            "/systemconfighub"
+        };
 
         public MaintenanceMiddleware(RequestDelegate next)
         {
@@ -15,35 +27,45 @@ namespace educodeai_server.Helpers // Hoặc namespace của sếp
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // 👉 Cho phép các request "Hỏi đường" (CORS Preflight) đi qua an toàn
-            // Trình duyệt gửi cái này trước khi gửi token/header, nên phải cho qua 100%
+            // CORS preflight luôn phải đi qua: trình duyệt gửi trước khi kèm token/header.
             if (context.Request.Method.Equals("OPTIONS", System.StringComparison.OrdinalIgnoreCase))
             {
                 await _next(context);
                 return;
             }
 
-            var path = context.Request.Path.Value?.ToLower();
-
-            // 1. Kiểm tra "Thẻ Bài Miễn Tử" từ Axios gửi lên
-            bool isBypass = context.Request.Headers.ContainsKey("X-Bypass-Maintenance");
-
-            // 👉 2. ĐÃ THÊM: Các đường dẫn VIP luôn luôn được đi qua (Cứu cánh cho Admin)
-            bool isVipRoute = path != null && (
-                path.Contains("/check-bao-tri") ||
-                path.Contains("/quan-tri") // Mở đường vĩnh viễn cho toàn bộ API của Admin
-            );
-
-            // 3. CHẶN NẾU: Đang bảo trì VÀ Không có thẻ bài VÀ Không phải VIP
-            if (IsUnderMaintenance && !isBypass && !isVipRoute)
+            if (!IsUnderMaintenance)
             {
-                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-                context.Response.ContentType = "application/json";
-                await context.Response.WriteAsJsonAsync(new { success = false, message = "Hệ thống đang bảo trì để nâng cấp!" });
+                await _next(context);
                 return;
             }
 
-            await _next(context);
+            var path = context.Request.Path.Value?.ToLowerInvariant();
+
+            // Bypass do server quyết định, không tin header/route từ client (J.2/J.4).
+            bool isBootstrapPath = path != null && System.Array.Exists(
+                BootstrapPaths,
+                allowed => path.StartsWith(allowed, System.StringComparison.Ordinal));
+
+            // Chỉ Admin đã xác thực (JWT đã validate ở UseAuthentication phía trước) mới được bypass.
+            bool isAuthenticatedAdmin =
+                context.User.Identity?.IsAuthenticated == true &&
+                context.User.IsInRole("Admin");
+
+            if (isBootstrapPath || isAuthenticatedAdmin)
+            {
+                await _next(context);
+                return;
+            }
+
+            context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                success = false,
+                message = "Hệ thống đang bảo trì để nâng cấp!",
+                error = new { code = "MAINTENANCE_MODE", message = "Hệ thống đang bảo trì để nâng cấp!" }
+            });
         }
     }
 }
