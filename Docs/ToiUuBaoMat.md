@@ -525,9 +525,9 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ### Chặng D-3 — Hardening đăng ký học viên
 
-- [ ] **D.6** Normalize email `Trim().ToLowerInvariant()` trước query/key/lưu (đồng bộ với luồng giảng viên đã chuẩn).
-- [ ] **D.7** Không lưu toàn bộ mật khẩu đăng ký plain text lâu trong cache; hash sớm hoặc dùng short-lived protected state/pending-registration record được bảo vệ.
-- [ ] **D.8** Transaction chống tạo trùng email/tài khoản khi lưu DB; bắt `DbUpdateException` trả lỗi thân thiện; xác nhận unique index Email/TaiKhoan (cân nhắc `lower(Email)` idempotent qua `DatabaseSchemaSync`).
+- [x] **D.6** Normalize email `Trim().ToLowerInvariant()` trước query/key/lưu. _(`YeuCauDangKyAsync`: normalize `email` một lần rồi dùng cho rate-limit key, query trùng `u.Email.ToLower() == email`, OTP key và lưu `NguoiDungModel.Email`. Đồng bộ với luồng giảng viên đã chuẩn.)_
+- [x] **D.7** Không lưu mật khẩu plain text trong cache. _(Thêm record `DangKyOtpPayload(HoTen, Email, MatKhauHash)`; hash BCrypt ngay tại `YeuCauDangKyAsync` rồi chỉ lưu hash vào OTP payload — không còn serialize cả `DangKyRequest` chứa mật khẩu plain. Verify đọc `MatKhauHash` gán thẳng, không hash lại.)_
+- [x] **D.8** Chống tạo trùng email/tài khoản khi lưu DB. _(`XacNhanDangKyVaLuuDbAsync`: re-check trùng ngay trước insert (email có thể bị chiếm giữa lúc gửi OTP và xác minh) + bắt `DbUpdateException` trả lỗi thân thiện làm hàng phòng thủ cuối dựa trên unique index Email/TaiKhoan sẵn có trong `DbContext`. Không thêm `lower(Email)` index để giữ phạm vi — normalize D.6 đã chặn trùng theo case ở tầng ứng dụng.)_
 
 ## Giai đoạn E — Login và social login
 
