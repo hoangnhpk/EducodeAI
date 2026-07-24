@@ -620,17 +620,23 @@ namespace educodeai_server.Services.Implementation
         public async Task<bool> YeuCauDangKyAsync(DangKyRequest r, string i) {
             await XacThucCaptchaHoacNemAsync(r.CaptchaToken);
 
-            if (!await _otpRateLimiter.TryConsumeSendAsync(OtpPurpose.Register, r.Email, ClientIp()))
+            // D.6: normalize email trước khi rate-limit key/query/lưu để nhất quán và chống trùng theo case.
+            var email = (r.Email ?? string.Empty).Trim().ToLowerInvariant();
+
+            if (!await _otpRateLimiter.TryConsumeSendAsync(OtpPurpose.Register, email, ClientIp()))
                 throw ApiException.InvalidRequest("Bạn yêu cầu mã quá nhiều lần. Vui lòng thử lại sau ít phút.");
 
-            if (await _context.NguoiDungs.AnyAsync(u => u.Email == r.Email))
+            if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
                 throw ApiException.InvalidRequest("Email này đã được sử dụng.");
 
-            string otp = await _otpService.CreateOtpAsync(OtpPurpose.Register, r.Email, JsonSerializer.Serialize(r));
+            // D.7: hash mật khẩu ngay, chỉ cache hash (không lưu plain trong OTP payload).
+            var payload = JsonSerializer.Serialize(new DangKyOtpPayload(
+                r.HoTen, email, BCrypt.Net.BCrypt.HashPassword(r.MatKhau)));
+            string otp = await _otpService.CreateOtpAsync(OtpPurpose.Register, email, payload);
             // LÆ°u vÃ o Cache 5 phÃºt, Key lÃ  Email
             string subject = "Mã xác thực đăng ký EduCodeAI";
             string body = $"Mã OTP của bạn là: <h1 style='color: #fb873f;'>{otp}</h1> Mã có hiệu lực trong 5 ph&#250;t.";
-            return await EmailHelper.SendEmailAsync(r.Email, subject, body);
+            return await EmailHelper.SendEmailAsync(email, subject, body);
         }
 
         public async Task<object> XacNhanDangKyVaLuuDbAsync(XacNhanOtpRequest r) {
@@ -641,21 +647,33 @@ namespace educodeai_server.Services.Implementation
             if (!verify.Success || string.IsNullOrEmpty(verify.PayloadJson))
                 throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác.");
 
-            var data = JsonSerializer.Deserialize<DangKyRequest>(verify.PayloadJson)
+            var data = JsonSerializer.Deserialize<DangKyOtpPayload>(verify.PayloadJson)
                 ?? throw ApiException.InvalidRequest("Dữ liệu đăng ký không hợp lệ.");
 
             var user = new NguoiDungModel {
                 TaiKhoan = data.Email,
                 Email = data.Email,
                 HoTen = data.HoTen,
-                MatKhau = BCrypt.Net.BCrypt.HashPassword(data.MatKhau),
+                MatKhau = data.MatKhauHash, // D.7: đã hash lúc yêu cầu OTP, không lưu plain.
                 VaiTro = 2,
                 TrangThai = "Hoạt động",
                 NgayThamGia = DateTime.UtcNow
             };
 
+            // D.8: re-check trùng ngay trước khi lưu (email có thể bị chiếm giữa lúc gửi OTP và xác minh).
+            if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == data.Email || u.TaiKhoan == data.Email))
+                throw ApiException.InvalidRequest("Email này đã được sử dụng bởi một tài khoản khác.");
+
             _context.NguoiDungs.Add(user);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // D.8: unique index Email/TaiKhoan là hàng phòng thủ cuối chống race tạo trùng.
+                throw ApiException.InvalidRequest("Email này đã được sử dụng bởi một tài khoản khác.");
+            }
 
             // Äáº£m báº£o khÃ´ng truyá»n rá»—ng vÃ o XuLyDangNhapThanhCongAsync
             string finalDeviceId = string.IsNullOrEmpty(r.MaThietBi) ? "FP-INIT-ERR" : r.MaThietBi;
