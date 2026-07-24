@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
+import ReCAPTCHA from "react-google-recaptcha";
 
 import { FaArrowLeft } from 'react-icons/fa';
 
@@ -18,6 +19,7 @@ const QuenMatKhau: React.FC = () => {
     // State quản lý lỗi và thay thế thiết bị
     const [errors, setErrors] = useState<any>({});
     const [replaceDeviceInfo, setReplaceDeviceInfo] = useState<{ oldestDeviceName: string; email: string } | null>(null);
+    const [captchaToken, setCaptchaToken] = useState<string>('');
 
     useEffect(() => {
         if (countdown > 0) {
@@ -65,12 +67,16 @@ const QuenMatKhau: React.FC = () => {
             setErrors({ email: 'Định dạng email không hợp lệ' });
             return;
         }
+        if (!captchaToken) {
+            setErrors({ captcha: 'Vui lòng xác thực bạn không phải robot' });
+            return;
+        }
 
         setLoading(true);
-        setErrors({}); 
+        setErrors({});
         setOtp('');
         try {
-            const res: any = await authService.forgotPasswordSendOtp(email);
+            const res: any = await authService.forgotPasswordSendOtp(email, captchaToken);
             if (res) {
                 setCountdown(120);
                 Swal.fire({ icon: 'success', text: "Mã xác thực đã được gửi tới email của bạn!", timer: 1500, showConfirmButton: false });
@@ -221,6 +227,16 @@ const QuenMatKhau: React.FC = () => {
                                                 {loading ? '...' : (countdown > 0 ? `${countdown}s` : 'Gửi mã')}
                                             </button>
                                         </div>
+                                    </div>
+                                    <div className="col-12 mt-2 d-flex flex-column align-items-center">
+                                        <ReCAPTCHA
+                                            sitekey="6Legm5csAAAAABr5FTIC25geZIxrxlmF5ORzuiYt"
+                                            onChange={(token) => {
+                                                setCaptchaToken(token || '');
+                                                if (errors.captcha) setErrors((prev: any) => ({ ...prev, captcha: null }));
+                                            }}
+                                        />
+                                        {errors.captcha && <div className="text-danger small mt-1 text-center">{errors.captcha}</div>}
                                     </div>
                                     <div className="col-12 mt-3 text-center">
                                         <Link to="/dang-nhap" className="text-decoration-none small fw-bold" style={{color: '#fb873f'}}>Quay lại đăng nhập</Link>

@@ -179,7 +179,7 @@ namespace educodeai_server.Controllers
             if (!ModelState.IsValid) return BadRequest(new { message = "Email không hợp lệ." });
             try
             {
-                var sent = await _xacThucService.GuiOtpEmailGiangVienAsync(request.Email);
+                var sent = await _xacThucService.GuiOtpEmailGiangVienAsync(request.Email, request.CaptchaToken);
                 if (!sent) return BadRequest(new { message = "Không gửi được OTP email. Kiểm tra cấu hình SMTP/Gmail." });
                 return Ok(new { message = "Đã gửi OTP email. Mã có hiệu lực trong 5 phút." });
             }

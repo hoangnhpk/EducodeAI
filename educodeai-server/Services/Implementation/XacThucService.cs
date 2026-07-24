@@ -34,8 +34,9 @@ namespace educodeai_server.Services.Implementation
         private readonly ISessionStateCache _sessionStateCache;
         private readonly ISessionRealtimeNotifier _sessionRealtimeNotifier;
         private readonly IOtpService _otpService;
+        private readonly IOtpRateLimiter _otpRateLimiter;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter)
         {
             _context = context;
             _config = config;
@@ -49,6 +50,29 @@ namespace educodeai_server.Services.Implementation
             _sessionStateCache = sessionStateCache;
             _sessionRealtimeNotifier = sessionRealtimeNotifier;
             _otpService = otpService;
+            _otpRateLimiter = otpRateLimiter;
+        }
+
+        // IP client cho rate-limit; null nếu không xác định được (rate-limiter tự bỏ qua phần IP).
+        private string? ClientIp() =>
+            _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+        // Verify CAPTCHA server-side (D.4). "SKIP_CAPTCHA" chỉ được chấp nhận ngoài production (D.5):
+        // dev/test cho qua để tự động hóa, production luôn bắt buộc token hợp lệ.
+        private async Task XacThucCaptchaHoacNemAsync(string? captchaToken)
+        {
+            if (!_env.IsProduction()
+                && (string.IsNullOrEmpty(captchaToken) || captchaToken == "SKIP_CAPTCHA"))
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(captchaToken) || captchaToken == "SKIP_CAPTCHA")
+                throw ApiException.InvalidRequest("Vui lòng xác thực CAPTCHA.");
+
+            var ok = await _captchaService.XacNhanCaptchaAsync(captchaToken);
+            if (!ok)
+                throw ApiException.InvalidRequest("Mã CAPTCHA không hợp lệ hoặc đã hết hạn.");
         }
 
         #region OTP COOKIE LOGIC
@@ -217,6 +241,9 @@ namespace educodeai_server.Services.Implementation
         public async Task<object> XacNhanThayTheThietBiAsync(XacNhanOtpRequest r) {
             var user = await LayNguoiDungKemThietBiAsync(r.TaiKhoan);
             if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+
+            if (!await _otpRateLimiter.TryConsumeVerifyAsync(OtpPurpose.ReplaceDevice, user.Email, ClientIp()))
+                throw ApiException.InvalidRequest("Bạn thao tác quá nhiều lần. Vui lòng thử lại sau ít phút.");
 
             var verify = await _otpService.VerifyOtpAsync(OtpPurpose.ReplaceDevice, user.Email, r.OtpCode);
             if (!verify.Success)
@@ -554,10 +581,15 @@ namespace educodeai_server.Services.Implementation
         // --- Triá»ƒn khai cÃ¡c hÃ m OTP báº£o máº­t qua MemoryCache ---
 
 
-        public async Task<bool> GuiOtpEmailGiangVienAsync(string email)
+        public async Task<bool> GuiOtpEmailGiangVienAsync(string email, string? captchaToken)
         {
             email = (email ?? string.Empty).Trim().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(email)) throw ApiException.InvalidRequest("Vui lòng nhập email.");
+
+            await XacThucCaptchaHoacNemAsync(captchaToken);
+
+            if (!await _otpRateLimiter.TryConsumeSendAsync(OtpPurpose.InstructorEmail, email, ClientIp()))
+                throw ApiException.InvalidRequest("Bạn yêu cầu mã quá nhiều lần. Vui lòng thử lại sau ít phút.");
 
             if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
                 throw ApiException.InvalidRequest("Email này đã được sử dụng.");
@@ -586,7 +618,11 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<bool> YeuCauDangKyAsync(DangKyRequest r, string i) {
-            // Kiá»ƒm tra email tá»“n táº¡i
+            await XacThucCaptchaHoacNemAsync(r.CaptchaToken);
+
+            if (!await _otpRateLimiter.TryConsumeSendAsync(OtpPurpose.Register, r.Email, ClientIp()))
+                throw ApiException.InvalidRequest("Bạn yêu cầu mã quá nhiều lần. Vui lòng thử lại sau ít phút.");
+
             if (await _context.NguoiDungs.AnyAsync(u => u.Email == r.Email))
                 throw ApiException.InvalidRequest("Email này đã được sử dụng.");
 
@@ -598,6 +634,9 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<object> XacNhanDangKyVaLuuDbAsync(XacNhanOtpRequest r) {
+            if (!await _otpRateLimiter.TryConsumeVerifyAsync(OtpPurpose.Register, r.TaiKhoan, ClientIp()))
+                throw ApiException.InvalidRequest("Bạn thử mã quá nhiều lần. Vui lòng thử lại sau.");
+
             var verify = await _otpService.VerifyOtpAsync(OtpPurpose.Register, r.TaiKhoan, r.OtpCode);
             if (!verify.Success || string.IsNullOrEmpty(verify.PayloadJson))
                 throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác.");
@@ -703,6 +742,9 @@ namespace educodeai_server.Services.Implementation
             if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
             // HÃ m nÃ y dÃ¹ng cho luá»“ng Ä‘Äƒng nháº­p thiáº¿t bá»‹ má»›i yÃªu cáº§u OTP
+            if (!await _otpRateLimiter.TryConsumeVerifyAsync(OtpPurpose.LoginNewDevice, user.Email, ClientIp()))
+                throw ApiException.InvalidRequest("Bạn thử mã quá nhiều lần. Vui lòng thử lại sau.");
+
             var verify = await _otpService.VerifyOtpAsync(OtpPurpose.LoginNewDevice, user.Email, r.OtpCode);
             if (!verify.Success)
                 throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác.");
@@ -712,6 +754,10 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest r, string i) {
+            await XacThucCaptchaHoacNemAsync(r.CaptchaToken);
+            if (!await _otpRateLimiter.TryConsumeSendAsync(OtpPurpose.ForgotPassword, r.Email, ClientIp()))
+                throw ApiException.InvalidRequest("Bạn yêu cầu mã quá nhiều lần. Vui lòng thử lại sau.");
+
             var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == r.Email);
             if (user == null) throw ApiException.InvalidRequest("Email không tồn tại trên hệ thống.");
 
@@ -723,6 +769,9 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest r) {
+            if (!await _otpRateLimiter.TryConsumeVerifyAsync(OtpPurpose.ForgotPassword, r.Email, ClientIp()))
+                throw ApiException.InvalidRequest("Bạn thử mã quá nhiều lần. Vui lòng thử lại sau.");
+
             var verify = await _otpService.VerifyOtpAsync(OtpPurpose.ForgotPassword, r.Email, r.OtpCode);
             if (!verify.Success)
                 throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác hoặc đã hết hạn.");
