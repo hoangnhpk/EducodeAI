@@ -505,15 +505,29 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ## Giai đoạn D — OTP, CAPTCHA, registration
 
-- [ ] **D.1** Tạo OTP service dùng chung cho `Register`, `ForgotPassword`, `NewDevice`, `ReplaceDevice`, `RemoteLogout`, `InstructorEmail`.
-- [ ] **D.2** CSPRNG 6 số, hash, TTL 5 phút, single-use, max attempts 5.
-- [ ] **D.3** Rate limit phát OTP theo purpose + email/user + IP; invalid OTP theo identifier/IP.
-- [ ] **D.4** Verify CAPTCHA server-side ở đăng ký, quên mật khẩu và phát OTP công khai.
-- [ ] **D.5** Không cho `SKIP_CAPTCHA` ngoài test environment.
-- [ ] **D.6** Normalize email `Trim().ToLowerInvariant()` trước query/key.
-- [ ] **D.7** Không lưu toàn bộ mật khẩu đăng ký plain text lâu trong cache; dùng short-lived protected state hoặc pending-registration record được bảo vệ.
-- [ ] **D.8** Transaction chống tạo trùng email/tài khoản; unique index DB.
-- [ ] **D.9** Không log OTP hay dữ liệu đăng ký.
+> **Cách triển khai:** chia 3 chặng, chốt từng chặng trước khi sang chặng sau (chạm 6 flow OTP dùng chung + endpoint công khai).
+>
+> **Quyết định lưu trữ:** OTP và rate-limit counter lưu trên `IDistributedCache` (Redis nếu có, memory fallback dev) — cùng hạ tầng đã dùng ở Phase G (`ISessionStateCache`), không dùng `IMemoryCache` process-local nữa để đồng bộ multi-instance và không mất khi restart. Chỉ lưu **hash** OTP, không lưu plain.
+>
+> **Không phá flow hiện tại:** tạo `IOtpService`/`OtpService` mới rồi thay thế từng nơi tạo/verify OTP đang dùng `new Random()` + `IMemoryCache`, giữ nguyên chữ ký endpoint và luồng email.
+
+### Chặng D-1 — OTP service foundation (CSPRNG + hash + single-use + max attempts)
+
+- [x] **D.1** Tạo `IOtpService`/`OtpService` dùng chung cho `Register`, `ForgotPassword`, `NewDevice`, `ReplaceDevice`, `RemoteLogout`, `InstructorEmail`; backing store `IDistributedCache`. _(`Services/Interface/IOtpService.cs` + `Services/Implementation/OtpService.cs`; DI scoped trong `Program.cs`. Đã thay toàn bộ 7 nơi tạo + 6 nơi verify OTP trong `XacThucService.cs` từ `new Random()`+`IMemoryCache` sang OtpService. Payload thiết bị/đăng ký serialize JSON kèm entry: `DTOs/XacThuc/OtpPayloads.cs`.)_
+- [x] **D.2** CSPRNG 6 số (`RandomNumberGenerator.GetInt32(0, 1_000_000)`), chỉ lưu hash SHA-256, TTL 5 phút, single-use, tối đa 5 lần nhập sai/OTP rồi vô hiệu; so sánh hash constant-time (`CryptographicOperations.FixedTimeEquals`); invalidate OTP cũ khi phát OTP mới (ghi đè cùng key). Attempt sai ghi lại theo TTL còn lại tuyệt đối (`ExpiresAtUtc`), không nới hạn OTP. _(Test: `Security/PhaseDOtpServiceTests.cs` — 9 case.)_
+- [x] **D.9** Không log OTP hay dữ liệu đăng ký (OtpService không log giá trị nào; giữ nguyên nguyên tắc B.2/B.3).
+
+### Chặng D-2 — Rate-limit phát/verify OTP + CAPTCHA
+
+- [ ] **D.3** Rate limit phát OTP theo purpose + normalized email/user + IP; đếm invalid OTP theo identifier/IP (tận dụng pattern Lua atomic trong `RateLimitService` hoặc `IDistributedCache` counter).
+- [ ] **D.4** Verify CAPTCHA server-side ở đăng ký, quên mật khẩu và các endpoint phát OTP công khai (dùng `ICaptchaService` sẵn có).
+- [ ] **D.5** Không cho `SKIP_CAPTCHA` ngoài test environment (gate bằng `IWebHostEnvironment`).
+
+### Chặng D-3 — Hardening đăng ký học viên
+
+- [ ] **D.6** Normalize email `Trim().ToLowerInvariant()` trước query/key/lưu (đồng bộ với luồng giảng viên đã chuẩn).
+- [ ] **D.7** Không lưu toàn bộ mật khẩu đăng ký plain text lâu trong cache; hash sớm hoặc dùng short-lived protected state/pending-registration record được bảo vệ.
+- [ ] **D.8** Transaction chống tạo trùng email/tài khoản khi lưu DB; bắt `DbUpdateException` trả lỗi thân thiện; xác nhận unique index Email/TaiKhoan (cân nhắc `lower(Email)` idempotent qua `DatabaseSchemaSync`).
 
 ## Giai đoạn E — Login và social login
 
