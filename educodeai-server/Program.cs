@@ -198,6 +198,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ISessionStateCache, SessionStateCache>();
 // Publish event realtime tới SessionHub (G.8).
 builder.Services.AddScoped<ISessionRealtimeNotifier, SessionRealtimeNotifier>();
+// OTP service dùng chung (D.1): CSPRNG + hash + single-use + max attempts, backing store IDistributedCache.
+builder.Services.AddScoped<IOtpService, OtpService>();
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();

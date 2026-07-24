@@ -33,8 +33,9 @@ namespace educodeai_server.Services.Implementation
         private readonly ITokenService _tokenService;
         private readonly ISessionStateCache _sessionStateCache;
         private readonly ISessionRealtimeNotifier _sessionRealtimeNotifier;
+        private readonly IOtpService _otpService;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService)
         {
             _context = context;
             _config = config;
@@ -47,6 +48,7 @@ namespace educodeai_server.Services.Implementation
             _tokenService = tokenService;
             _sessionStateCache = sessionStateCache;
             _sessionRealtimeNotifier = sessionRealtimeNotifier;
+            _otpService = otpService;
         }
 
         #region OTP COOKIE LOGIC
@@ -185,9 +187,9 @@ namespace educodeai_server.Services.Implementation
                 if (activeSessions.Count >= 3)
                 {
                     var oldest = activeSessions.OrderBy(p => p.ThoiGianHoatDongCuoi).First();
-                    string otp = new Random().Next(100000, 999999).ToString();
-                    _memoryCache.Set("OTP_ReplaceDevice_" + user.Email, (Otp: otp, NewMaThietBi: request.MaThietBi, NewTenThietBi: request.TenThietBi, OldMaPhien: oldest.MaPhien), TimeSpan.FromMinutes(5));
-                    
+                    var replacePayload = JsonSerializer.Serialize(new ThayTheThietBiOtpPayload(request.MaThietBi, request.TenThietBi, oldest.MaPhien));
+                    string otp = await _otpService.CreateOtpAsync(OtpPurpose.ReplaceDevice, user.Email, replacePayload);
+
                     string body = TaoGiaoDienEmail("Xác nhận thay thế thiết bị", $"Bạn đang đăng nhập trên một thiết bị mới. Vì tài khoản đã đạt giới hạn 3 thiết bị, vui lòng nhập mã bên dưới để đăng xuất thiết bị <b>{oldest.TenThietBi}</b> và tiếp tục.", otp);
                     await EmailHelper.SendEmailAsync(user.Email, "Xác nhận thay thế thiết bị - EduCodeAI", body);
                     
@@ -197,9 +199,9 @@ namespace educodeai_server.Services.Implementation
                 // TRÆ¯á»œNG Há»¢P B: ChÆ°a Ä‘á»§ 3 thiáº¿t bá»‹ nhÆ°ng lÃ  THIáº¾T Bá»Š Má»šI -> YÃªu cáº§u OTP xÃ¡c minh thiáº¿t bá»‹ má»›i
                 else
                 {
-                    string otp = new Random().Next(100000, 999999).ToString();
-                    _memoryCache.Set("OTP_LoginNewDevice_" + user.Email, (Otp: otp, MaThietBi: request.MaThietBi, TenThietBi: request.TenThietBi), TimeSpan.FromMinutes(5));
-                    
+                    var newDevicePayload = JsonSerializer.Serialize(new ThietBiOtpPayload(request.MaThietBi, request.TenThietBi));
+                    string otp = await _otpService.CreateOtpAsync(OtpPurpose.LoginNewDevice, user.Email, newDevicePayload);
+
                     string body = TaoGiaoDienEmail("Xác minh thiết bị mới", $"Hệ thống phát hiện bạn đang đăng nhập trên một thiết bị lạ. Để bảo vệ tài khoản, vui lòng nhập mã xác thực bên dưới để hoàn tất đăng nhập.", otp);
                     await EmailHelper.SendEmailAsync(user.Email, "Xác minh thiết bị mới - EduCodeAI", body);
                     
@@ -216,19 +218,19 @@ namespace educodeai_server.Services.Implementation
             var user = await LayNguoiDungKemThietBiAsync(r.TaiKhoan);
             if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
-            if (!_memoryCache.TryGetValue("OTP_ReplaceDevice_" + user.Email, out (string Otp, string NewMaThietBi, string NewTenThietBi, int OldMaPhien) cached))
-                throw ApiException.InvalidRequest("Mã OTP đã hết hạn hoặc không hợp lệ.");
+            var verify = await _otpService.VerifyOtpAsync(OtpPurpose.ReplaceDevice, user.Email, r.OtpCode);
+            if (!verify.Success)
+                throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác hoặc đã hết hạn.");
 
-            if (cached.Otp != r.OtpCode)
-                throw ApiException.InvalidRequest("Mã OTP không chính xác.");
+            var payload = JsonSerializer.Deserialize<ThayTheThietBiOtpPayload>(verify.PayloadJson ?? "{}")
+                          ?? throw ApiException.InvalidRequest("Dữ liệu xác thực không hợp lệ.");
 
             // 1. ÄÄƒng xuáº¥t thiáº¿t bá»‹ cÅ© nháº¥t
-            var oldestSession = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaPhien == cached.OldMaPhien);
+            var oldestSession = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaPhien == payload.OldMaPhien);
             if (oldestSession != null) oldestSession.DangHoatDong = false;
 
             // 2. Xá»­ lÃ½ Ä‘Äƒng nháº­p cho thiáº¿t bá»‹ má»›i
-            _memoryCache.Remove("OTP_ReplaceDevice_" + user.Email);
-            return await XuLyDangNhapThanhCongAsync(user, cached.NewMaThietBi, cached.NewTenThietBi);
+            return await XuLyDangNhapThanhCongAsync(user, payload.NewMaThietBi, payload.NewTenThietBi);
         }
 
         public async Task<object> DangNhapGoogleAsync(GoogleLoginRequest request, string maThietBi, string tenThietBi)
@@ -563,28 +565,24 @@ namespace educodeai_server.Services.Implementation
             if (await _context.HoSoDangKyGiangViens.AnyAsync(h => h.Email.ToLower() == email.ToLower() && h.TrangThaiHoSo != "TuChoi"))
                 throw ApiException.InvalidRequest("Email này đã có hồ sơ giảng viên đang chờ xử lý hoặc đã được duyệt.");
 
-            if (!_memoryCache.TryGetValue("OTP_InstructorEmail_" + email, out string otp))
-            {
-                otp = new Random().Next(100000, 999999).ToString();
-                _memoryCache.Set("OTP_InstructorEmail_" + email, otp, TimeSpan.FromMinutes(5));
-            }
+            var otp = await _otpService.CreateOtpAsync(OtpPurpose.InstructorEmail, email);
 
             string subject = "Mã xác thực email đăng ký giảng viên EduCodeAI";
             string body = TaoGiaoDienEmail("Xác thực email đăng ký giảng viên", "Bạn đang đăng ký trở thành giảng viên EduCodeAI. Vui lòng nhập mã xác thực dưới đây để tiếp tục.", otp);
             return await EmailHelper.SendEmailAsync(email, subject, body);
         }
 
-        public Task<bool> XacMinhOtpEmailGiangVienAsync(string email, string otpCode)
+        public async Task<bool> XacMinhOtpEmailGiangVienAsync(string email, string otpCode)
         {
             email = (email ?? string.Empty).Trim().ToLowerInvariant();
             otpCode = (otpCode ?? string.Empty).Trim();
 
-            if (!_memoryCache.TryGetValue("OTP_InstructorEmail_" + email, out string cachedOtp) || cachedOtp != otpCode)
-                throw ApiException.InvalidRequest("Mã OTP không chính xác hoặc đã hết hạn.");
+            var result = await _otpService.VerifyOtpAsync(OtpPurpose.InstructorEmail, email, otpCode);
+            if (!result.Success)
+                throw ApiException.InvalidRequest(result.ErrorMessage ?? "Mã OTP không chính xác hoặc đã hết hạn.");
 
             _memoryCache.Set("VERIFIED_InstructorEmail_" + email, true, TimeSpan.FromMinutes(30));
-            _memoryCache.Remove("OTP_InstructorEmail_" + email);
-            return Task.FromResult(true);
+            return true;
         }
 
         public async Task<bool> YeuCauDangKyAsync(DangKyRequest r, string i) {
@@ -592,36 +590,33 @@ namespace educodeai_server.Services.Implementation
             if (await _context.NguoiDungs.AnyAsync(u => u.Email == r.Email))
                 throw ApiException.InvalidRequest("Email này đã được sử dụng.");
 
-            string otp = new Random().Next(100000, 999999).ToString();
+            string otp = await _otpService.CreateOtpAsync(OtpPurpose.Register, r.Email, JsonSerializer.Serialize(r));
             // LÆ°u vÃ o Cache 5 phÃºt, Key lÃ  Email
-            _memoryCache.Set("OTP_Register_" + r.Email, (Otp: otp, Data: r), TimeSpan.FromMinutes(5));
-
             string subject = "Mã xác thực đăng ký EduCodeAI";
             string body = $"Mã OTP của bạn là: <h1 style='color: #fb873f;'>{otp}</h1> Mã có hiệu lực trong 5 ph&#250;t.";
             return await EmailHelper.SendEmailAsync(r.Email, subject, body);
         }
 
         public async Task<object> XacNhanDangKyVaLuuDbAsync(XacNhanOtpRequest r) {
-            if (!_memoryCache.TryGetValue("OTP_Register_" + r.TaiKhoan, out (string Otp, DangKyRequest Data) cached))
-                throw ApiException.InvalidRequest("Mã OTP đã hết hạn hoặc không tồn tại.");
+            var verify = await _otpService.VerifyOtpAsync(OtpPurpose.Register, r.TaiKhoan, r.OtpCode);
+            if (!verify.Success || string.IsNullOrEmpty(verify.PayloadJson))
+                throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác.");
 
-            if (cached.Otp != r.OtpCode)
-                throw ApiException.InvalidRequest("Mã OTP không chính xác.");
+            var data = JsonSerializer.Deserialize<DangKyRequest>(verify.PayloadJson)
+                ?? throw ApiException.InvalidRequest("Dữ liệu đăng ký không hợp lệ.");
 
             var user = new NguoiDungModel {
-                TaiKhoan = cached.Data.Email, 
-                Email = cached.Data.Email,
-                HoTen = cached.Data.HoTen,
-                MatKhau = BCrypt.Net.BCrypt.HashPassword(cached.Data.MatKhau),
-                VaiTro = 2, 
+                TaiKhoan = data.Email,
+                Email = data.Email,
+                HoTen = data.HoTen,
+                MatKhau = BCrypt.Net.BCrypt.HashPassword(data.MatKhau),
+                VaiTro = 2,
                 TrangThai = "Hoạt động",
                 NgayThamGia = DateTime.UtcNow
             };
 
             _context.NguoiDungs.Add(user);
             await _context.SaveChangesAsync();
-            
-            _memoryCache.Remove("OTP_Register_" + r.TaiKhoan);
 
             // Äáº£m báº£o khÃ´ng truyá»n rá»—ng vÃ o XuLyDangNhapThanhCongAsync
             string finalDeviceId = string.IsNullOrEmpty(r.MaThietBi) ? "FP-INIT-ERR" : r.MaThietBi;
@@ -634,8 +629,7 @@ namespace educodeai_server.Services.Implementation
             var user = await _context.NguoiDungs.FindAsync(userId);
             if (user == null) return false;
 
-            string otp = new Random().Next(100000, 999999).ToString();
-            _memoryCache.Set($"OTP_LogoutRemote_{userId}", otp, TimeSpan.FromMinutes(5));
+            string otp = await _otpService.CreateOtpAsync(OtpPurpose.RemoteLogout, userId.ToString());
 
             string emailBody = TaoGiaoDienEmail("Đăng xuất từ xa", "Bạn vừa gửi yêu cầu đăng xuất tài khoản khỏi các thiết bị khác. Để đảm bảo an toàn, vui lòng nhập mã xác thực dưới đây để xác nhận hành động này.", otp);
             await EmailHelper.SendEmailAsync(user.Email, "Xác nhận đăng xuất từ xa", emailBody);
@@ -643,8 +637,9 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<bool> XacNhanDangXuatTuXaAsync(int userId, DangXuatTuXaRequest r) {
-            if (!_memoryCache.TryGetValue($"OTP_LogoutRemote_{userId}", out string cachedOtp) || cachedOtp != r.OtpCode)
-                throw ApiException.InvalidRequest("Mã OTP không chính xác hoặc đã hết hạn.");
+            var otpResult = await _otpService.VerifyOtpAsync(OtpPurpose.RemoteLogout, userId.ToString(), r.OtpCode);
+            if (!otpResult.Success)
+                throw ApiException.InvalidRequest(otpResult.ErrorMessage ?? "Mã OTP không chính xác hoặc đã hết hạn.");
 
             var ipThuHoi = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
             var deactivatedSessionIds = new List<int>();
@@ -700,7 +695,6 @@ namespace educodeai_server.Services.Implementation
                 await _sessionRealtimeNotifier.SessionListChangedAsync(userId);
             }
 
-            _memoryCache.Remove($"OTP_LogoutRemote_{userId}");
             return true;
         }
 
@@ -709,22 +703,19 @@ namespace educodeai_server.Services.Implementation
             if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
             // HÃ m nÃ y dÃ¹ng cho luá»“ng Ä‘Äƒng nháº­p thiáº¿t bá»‹ má»›i yÃªu cáº§u OTP
-            if (!_memoryCache.TryGetValue("OTP_LoginNewDevice_" + user.Email, out (string Otp, string MaThietBi, string TenThietBi) cached))
-                throw ApiException.InvalidRequest("Mã OTP đã hết hạn.");
+            var verify = await _otpService.VerifyOtpAsync(OtpPurpose.LoginNewDevice, user.Email, r.OtpCode);
+            if (!verify.Success)
+                throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác.");
 
-            if (cached.Otp != r.OtpCode)
-                throw ApiException.InvalidRequest("Mã OTP không chính xác.");
-
-            _memoryCache.Remove("OTP_LoginNewDevice_" + user.Email);
-            return await XuLyDangNhapThanhCongAsync(user, cached.MaThietBi, cached.TenThietBi);
+            var payload = JsonSerializer.Deserialize<ThietBiOtpPayload>(verify.PayloadJson ?? "{}")!;
+            return await XuLyDangNhapThanhCongAsync(user, payload.MaThietBi, payload.TenThietBi);
         }
 
         public async Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest r, string i) {
             var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == r.Email);
             if (user == null) throw ApiException.InvalidRequest("Email không tồn tại trên hệ thống.");
 
-            string otp = new Random().Next(100000, 999999).ToString();
-            _memoryCache.Set("OTP_Forgot_" + r.Email, otp, TimeSpan.FromMinutes(5));
+            string otp = await _otpService.CreateOtpAsync(OtpPurpose.ForgotPassword, r.Email);
 
             string emailBody = TaoGiaoDienEmail("Đặt lại mật khẩu", "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng nhập mã xác thực dưới đây để tiến hành thiết lập mật khẩu mới.", otp);
             await EmailHelper.SendEmailAsync(r.Email, "Mã xác nhận đặt lại mật khẩu", emailBody);
@@ -732,8 +723,9 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest r) {
-            if (!_memoryCache.TryGetValue("OTP_Forgot_" + r.Email, out string cachedOtp) || cachedOtp != r.OtpCode)
-                throw ApiException.InvalidRequest("Mã OTP không chính xác hoặc đã hết hạn.");
+            var verify = await _otpService.VerifyOtpAsync(OtpPurpose.ForgotPassword, r.Email, r.OtpCode);
+            if (!verify.Success)
+                throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác hoặc đã hết hạn.");
 
             var user = await LayNguoiDungKemThietBiAsync(r.Email);
             if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
@@ -743,7 +735,7 @@ namespace educodeai_server.Services.Implementation
             await _context.SaveChangesAsync();
             
             // 2. XÃ³a OTP quÃªn máº­t kháº©u khá»i cache
-            _memoryCache.Remove("OTP_Forgot_" + r.Email);
+            // OTP đã single-use tự xóa trong VerifyOtpAsync.
 
             // 3. LOGIC Äá»’NG Bá»˜ Vá»šI ÄÄ‚NG NHáº¬P: KIá»‚M TRA THIáº¾T Bá»Š
             var activeSessions = user.DanhSachPhienDangNhap.Where(p => p.DangHoatDong).ToList();
@@ -752,14 +744,11 @@ namespace educodeai_server.Services.Implementation
             if (activeSessions.Count >= 3 && !activeSessions.Any(p => p.MaThietBi == r.MaThietBi))
             {
                 var oldest = activeSessions.OrderBy(p => p.ThoiGianHoatDongCuoi).First();
-                string otp = new Random().Next(100000, 999999).ToString();
+                var replaceAfterResetPayload = JsonSerializer.Serialize(new ThayTheThietBiOtpPayload(r.MaThietBi, r.TenThietBi, oldest.MaPhien));
+                string otp = await _otpService.CreateOtpAsync(OtpPurpose.ReplaceDevice, user.Email, replaceAfterResetPayload);
                 
                 // LÆ°u OTP thay tháº¿ thiáº¿t bá»‹ vÃ o cache
-                _memoryCache.Set("OTP_ReplaceDevice_" + user.Email, 
-                    (Otp: otp, NewMaThietBi: r.MaThietBi, NewTenThietBi: r.TenThietBi, OldMaPhien: oldest.MaPhien), 
-                    TimeSpan.FromMinutes(5));
-
-                await EmailHelper.SendEmailAsync(user.Email, "Xác nhận thay thế thiết bị sau khi đổi mật khẩu", 
+                await EmailHelper.SendEmailAsync(user.Email, "Xác nhận thay thế thiết bị sau khi đổi mật khẩu",
                     $"Bạn vừa đặt lại mật khẩu và đang đăng nhập trên thiết bị mới. Vui lòng nhập mã <b>{otp}</b> để đăng xuất thiết bị <b>{oldest.TenThietBi}</b> và tiếp tục vào hệ thống.");
 
                 return new { 
