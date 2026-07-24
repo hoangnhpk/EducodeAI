@@ -35,7 +35,7 @@ const QuenMatKhau: React.FC = () => {
         }
 
         localStorage.setItem('user_token', res.token);
-        localStorage.setItem('refresh_token', res.refreshToken);
+        // Refresh token do backend đặt trong cookie HttpOnly; frontend không lưu/đọc.
         localStorage.setItem('user_info', JSON.stringify(res.user));
         
         await Swal.fire({ 

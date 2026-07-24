@@ -20,6 +20,8 @@ namespace educodeai_server.Services.Implementation
 {
     public class XacThucService : IXacThucService
     {
+        private const string RefreshCookieName = "ecai_rt";
+
         private readonly EduCodeAIDbContext _context;
         private readonly IConfiguration _config;
         private readonly ICaptchaService _captchaService;
@@ -28,8 +30,11 @@ namespace educodeai_server.Services.Implementation
         private readonly IWebHostEnvironment _env;
         private readonly IGiayToScanningService _giayToScanningService;
         private readonly IDataProtector _cccdDataProtector;
+        private readonly ITokenService _tokenService;
+        private readonly ISessionStateCache _sessionStateCache;
+        private readonly ISessionRealtimeNotifier _sessionRealtimeNotifier;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier)
         {
             _context = context;
             _config = config;
@@ -39,6 +44,9 @@ namespace educodeai_server.Services.Implementation
             _env = env;
             _giayToScanningService = giayToScanningService;
             _cccdDataProtector = dataProtectionProvider.CreateProtector("EduCodeAI.CCCD.OcrData.v1");
+            _tokenService = tokenService;
+            _sessionStateCache = sessionStateCache;
+            _sessionRealtimeNotifier = sessionRealtimeNotifier;
         }
 
         #region OTP COOKIE LOGIC
@@ -99,13 +107,13 @@ namespace educodeai_server.Services.Implementation
                                    remaining.TotalHours >= 1 ? $"{(int)remaining.TotalHours} giá»" :
                                    remaining.TotalMinutes >= 1 ? $"{(int)remaining.TotalMinutes} phút" :
                                    $"{(int)remaining.TotalSeconds} giây";
-                    throw new Exception($"Tài khoản bị khóa. Lý do: {user.LyDoKhoa}. Còn lại: {timeStr}");
+                    throw ApiException.Forbidden($"Tài khoản bị khóa. Lý do: {user.LyDoKhoa}. Còn lại: {timeStr}");
                 }
             }
             else if (string.Equals(user.TrangThai, "Khóa vĩnh viễn", StringComparison.OrdinalIgnoreCase) || 
                      string.Equals(user.TrangThai, "Bị khóa", StringComparison.OrdinalIgnoreCase))
             {
-                throw new Exception($"Tài khoản bị khóa vĩnh viễn. Lý do: {user.LyDoKhoa}");
+                throw ApiException.Forbidden($"Tài khoản bị khóa vĩnh viễn. Lý do: {user.LyDoKhoa}");
             }
         }
 
@@ -129,7 +137,7 @@ namespace educodeai_server.Services.Implementation
 
                 // XÃ¡c thá»±c Captcha tháº­t vá»›i Google
                 bool isCaptchaValid = await _captchaService.XacNhanCaptchaAsync(request.CaptchaToken);
-                if (!isCaptchaValid) throw new Exception("Mã CAPTCHA không hợp lệ hoặc đã hết hạn.");
+                if (!isCaptchaValid) throw ApiException.InvalidRequest("Mã CAPTCHA không hợp lệ hoặc đã hết hạn.");
                 
                 // GIáº¢I ÄÃšNG CAPTCHA -> XÃ“A Sáº CH Sá» Láº¦N SAI Vá»€ 0
                 _memoryCache.Remove(cacheKey);
@@ -150,14 +158,14 @@ namespace educodeai_server.Services.Implementation
                 // Náº¿u Ä‘Ã¢y lÃ  láº§n thá»­ ngay sau khi giáº£i Captcha (failedAttempts vá»«a reset vá» 0 vÃ  tÄƒng lÃªn 1)
                 if (failedAttempts == 1 && !string.IsNullOrEmpty(request.CaptchaToken) && request.CaptchaToken != "SKIP_CAPTCHA")
                 {
-                    throw new Exception("Xác minh thành công! Vui lòng kiểm tra và nhập lại chính xác tài khoản, mật khẩu.");
+                    throw ApiException.InvalidRequest("Xác minh thành công! Vui lòng kiểm tra và nhập lại chính xác tài khoản, mật khẩu.");
                 }
 
                 if (failedAttempts >= 3) {
                     return new { requiresCaptcha = true, message = "Bạn đã nhập sai quá 3 lần. Vui lòng xác thực CAPTCHA." };
                 }
 
-                throw new Exception($"Tài khoản hoặc mật khẩu không chính xác. (Lần {failedAttempts}/3)");
+                throw ApiException.InvalidRequest($"Tài khoản hoặc mật khẩu không chính xác. (Lần {failedAttempts}/3)");
             }
 
             // 5. Náº¿u Ä‘Äƒng nháº­p Ä‘Ãºng thÃ´ng tin -> Kiá»ƒm tra tÃ i khoáº£n cÃ³ bá»‹ Admin khÃ³a khÃ´ng
@@ -206,13 +214,13 @@ namespace educodeai_server.Services.Implementation
         // API Má»šI: XÃ¡c nháº­n OTP Ä‘á»ƒ Ä‘Ã¡ thiáº¿t bá»‹ cÅ© vÃ  cho thiáº¿t bá»‹ má»›i vÃ o
         public async Task<object> XacNhanThayTheThietBiAsync(XacNhanOtpRequest r) {
             var user = await LayNguoiDungKemThietBiAsync(r.TaiKhoan);
-            if (user == null) throw new Exception("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
             if (!_memoryCache.TryGetValue("OTP_ReplaceDevice_" + user.Email, out (string Otp, string NewMaThietBi, string NewTenThietBi, int OldMaPhien) cached))
-                throw new Exception("Mã OTP đã hết hạn hoặc không hợp lệ.");
+                throw ApiException.InvalidRequest("Mã OTP đã hết hạn hoặc không hợp lệ.");
 
             if (cached.Otp != r.OtpCode)
-                throw new Exception("Mã OTP không chính xác.");
+                throw ApiException.InvalidRequest("Mã OTP không chính xác.");
 
             // 1. ÄÄƒng xuáº¥t thiáº¿t bá»‹ cÅ© nháº¥t
             var oldestSession = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaPhien == cached.OldMaPhien);
@@ -253,23 +261,130 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<object> LamMoiTokenAsync(string refreshToken, string maThietBi)
         {
-            if (!_memoryCache.TryGetValue("RefreshToken_" + refreshToken, out (int MaNguoiDung, string MaThietBi) data)) throw new Exception("Hết hạn.");
-            var user = await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.MaNguoiDung == data.MaNguoiDung);
-            
-            if (user == null) throw new Exception("Không tồn tại.");
-            
-            // QUAN TRá»ŒNG: Kiá»ƒm tra tráº¡ng thÃ¡i khÃ³a khi Refresh Token
-            try {
-                await KiemTraTrangThaiKhoaAsync(user);
-            } catch (Exception ex) {
-                _memoryCache.Remove("RefreshToken_" + refreshToken);
-                throw new Exception(ex.Message);
+            var httpContext = _httpContextAccessor.HttpContext;
+
+            // Phase C: refresh token đọc từ HttpOnly cookie; giá trị query cũ chỉ dùng để backward compat cho client chưa cập nhật
+            string? cookieToken = httpContext?.Request.Cookies[RefreshCookieName];
+            string? plainToken = !string.IsNullOrWhiteSpace(cookieToken)
+                ? cookieToken
+                : (!string.IsNullOrWhiteSpace(refreshToken) ? refreshToken : null);
+
+            if (string.IsNullOrWhiteSpace(plainToken))
+            {
+                throw ApiException.AuthenticationFailed("Phiên làm việc đã hết hạn hoặc bị đăng xuất.");
             }
 
-            var phien = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == maThietBi);
-            if (phien == null || !phien.DangHoatDong) throw new Exception("Phiên làm việc đã hết hạn hoặc bị đăng xuất từ xa.");
+            var tokenHash = _tokenService.HashRefreshToken(plainToken);
+            var stored = await _context.RefreshTokens
+                .FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
 
-            return await XuLyDangNhapThanhCongAsync(user, maThietBi, "Thiết bị hiện tại");
+            // Không thấy hash trong DB → token không hợp lệ. Không có fallback cấp phiên mới
+            // để tránh đường cấp token bỏ qua rotation/reuse-detection (Phase C).
+            if (stored == null)
+            {
+                throw ApiException.AuthenticationFailed("Phiên làm việc đã hết hạn hoặc bị đăng xuất.");
+            }
+
+            // Phát hiện reuse: token đã bị revoke hoặc đã có replacement -> revoke toàn bộ family
+            if (stored.NgayThuHoi.HasValue || !string.IsNullOrEmpty(stored.ReplacedByTokenHash))
+            {
+                var ipReuse = httpContext?.Connection.RemoteIpAddress?.ToString();
+                var familyTokens = await _context.RefreshTokens
+                    .Where(r => r.FamilyId == stored.FamilyId && r.NgayThuHoi == null)
+                    .ToListAsync();
+                foreach (var t in familyTokens)
+                {
+                    t.NgayThuHoi = DateTime.UtcNow;
+                    t.LyDoThuHoi = "REUSE_DETECTED";
+                    t.IpThuHoi = ipReuse;
+                }
+
+                if (stored.MaPhien.HasValue)
+                {
+                    var phienReuse = await _context.PhienDangNhaps.FirstOrDefaultAsync(p => p.MaPhien == stored.MaPhien.Value);
+                    if (phienReuse != null) phienReuse.DangHoatDong = false;
+                }
+
+                await _context.SaveChangesAsync();
+                ClearRefreshCookie();
+                throw ApiException.AuthenticationFailed("Phiên làm việc đã bị vô hiệu hóa do phát hiện sử dụng lại token.");
+            }
+
+            if (stored.ThoiGianHetHan <= DateTime.UtcNow)
+            {
+                stored.NgayThuHoi = DateTime.UtcNow;
+                stored.LyDoThuHoi = "EXPIRED";
+                await _context.SaveChangesAsync();
+                ClearRefreshCookie();
+                throw ApiException.AuthenticationFailed("Phiên làm việc đã hết hạn.");
+            }
+
+            var user = await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.MaNguoiDung == stored.MaNguoiDung);
+            if (user == null)
+            {
+                throw ApiException.AuthenticationFailed("Phiên làm việc không hợp lệ.");
+            }
+
+            await KiemTraTrangThaiKhoaAsync(user);
+
+            var phien = stored.MaPhien.HasValue
+                ? user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaPhien == stored.MaPhien.Value)
+                : user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == maThietBi);
+            if (phien == null || !phien.DangHoatDong)
+            {
+                stored.NgayThuHoi = DateTime.UtcNow;
+                stored.LyDoThuHoi = "SESSION_INACTIVE";
+                await _context.SaveChangesAsync();
+                ClearRefreshCookie();
+                throw ApiException.AuthenticationFailed("Phiên làm việc đã hết hạn hoặc bị đăng xuất từ xa.");
+            }
+
+            // Rotate: tạo refresh token mới cùng family, revoke token cũ
+            var newMaterial = _tokenService.CreateRefreshTokenMaterial();
+            var ipCurrent = httpContext?.Connection.RemoteIpAddress?.ToString();
+            var uaCurrent = httpContext?.Request.Headers.UserAgent.ToString();
+
+            var newToken = new RefreshTokenModel
+            {
+                MaNguoiDung = user.MaNguoiDung,
+                MaPhien = phien.MaPhien,
+                TokenHash = newMaterial.TokenHash,
+                FamilyId = stored.FamilyId,
+                Jti = newMaterial.Jti,
+                ThoiGianHetHan = newMaterial.ExpiresAtUtc,
+                NgayTao = DateTime.UtcNow,
+                IpTao = ipCurrent,
+                UserAgentTao = uaCurrent != null && uaCurrent.Length > 256 ? uaCurrent.Substring(0, 256) : uaCurrent
+            };
+            _context.RefreshTokens.Add(newToken);
+
+            stored.NgayThuHoi = DateTime.UtcNow;
+            stored.LyDoThuHoi = "ROTATED";
+            stored.ReplacedByTokenHash = newMaterial.TokenHash;
+            stored.IpThuHoi = ipCurrent;
+
+            phien.ThoiGianHoatDongCuoi = DateTime.UtcNow;
+            user.NgayDangNhapCuoi = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            var accessToken = _tokenService.CreateAccessToken(user, phien.MaPhien);
+            SetRefreshCookie(newMaterial.PlainToken, newMaterial.ExpiresAtUtc);
+
+            return new
+            {
+                token = accessToken.Token,
+                user = new
+                {
+                    maNguoiDung = user.MaNguoiDung,
+                    id = user.MaNguoiDung,
+                    taiKhoan = user.TaiKhoan,
+                    hoTen = user.HoTen,
+                    email = user.Email,
+                    vaiTro = user.VaiTro,
+                    anhDaiDien = user.AnhDaiDien
+                }
+            };
         }
         #endregion
 
@@ -341,50 +456,97 @@ namespace educodeai_server.Services.Implementation
                 phien.TenThietBi = deviceName; // LuÃ´n cáº­p nháº­t tÃªn thiáº¿t bá»‹ má»›i nháº¥t
             }
 
-            u.NgayDangNhapCuoi = DateTime.UtcNow; 
+            u.NgayDangNhapCuoi = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // Táº¡o Refresh Token
-            string rt = Guid.NewGuid().ToString(); 
-            _memoryCache.Set("RefreshToken_" + rt, (MaNguoiDung: u.MaNguoiDung, MaThietBi: devId), TimeSpan.FromDays(7));
+            // Phase C: refresh token CSPRNG hash trong DB + HttpOnly cookie
+            var material = _tokenService.CreateRefreshTokenMaterial();
+            var httpContext = _httpContextAccessor.HttpContext;
+            var ipTao = httpContext?.Connection.RemoteIpAddress?.ToString();
+            var uaTao = httpContext?.Request.Headers["User-Agent"].ToString();
+            if (!string.IsNullOrEmpty(uaTao) && uaTao!.Length > 256) uaTao = uaTao.Substring(0, 256);
 
-            return new { 
-                token = TaoJwtToken(u, phien.MaPhien), 
-                refreshToken = rt, 
-                user = new { 
-                    maNguoiDung = u.MaNguoiDung, 
-                    id = u.MaNguoiDung, 
-                    taiKhoan = u.TaiKhoan, 
-                    hoTen = u.HoTen, 
-                    email = u.Email, 
+            _context.RefreshTokens.Add(new RefreshTokenModel
+            {
+                MaNguoiDung = u.MaNguoiDung,
+                MaPhien = phien.MaPhien,
+                TokenHash = material.TokenHash,
+                FamilyId = material.FamilyId,
+                Jti = material.Jti,
+                ThoiGianHetHan = material.ExpiresAtUtc,
+                NgayTao = DateTime.UtcNow,
+                IpTao = ipTao,
+                UserAgentTao = uaTao
+            });
+            await _context.SaveChangesAsync();
+
+            SetRefreshCookie(material.PlainToken, material.ExpiresAtUtc);
+
+            var accessToken = _tokenService.CreateAccessToken(u, phien.MaPhien);
+
+            return new {
+                token = accessToken.Token,
+                tokenExpiresAt = accessToken.ExpiresAtUtc,
+                user = new {
+                    maNguoiDung = u.MaNguoiDung,
+                    id = u.MaNguoiDung,
+                    taiKhoan = u.TaiKhoan,
+                    hoTen = u.HoTen,
+                    email = u.Email,
                     vaiTro = u.VaiTro,
                     anhDaiDien = u.AnhDaiDien
-                } 
+                }
             };
         }
 
-        private string TaoJwtToken(NguoiDungModel u, int m) { 
-            var claims = new[] { 
-                new Claim("id", u.MaNguoiDung.ToString()),
-                new Claim("MaNguoiDung", u.MaNguoiDung.ToString()), 
-                new Claim(ClaimTypes.NameIdentifier, u.MaNguoiDung.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, u.Email ?? ""), 
-                new Claim("MaPhien", m.ToString()), 
-                new Claim(ClaimTypes.Role, u.VaiTro == 0 ? "Admin" : (u.VaiTro == 1 ? "GiangVien" : "HocVien")) 
-            };
-            var token = new JwtSecurityToken(_config["Jwt:Issuer"], _config["Jwt:Audience"], claims, 
-                expires: DateTime.UtcNow.AddMinutes(1440), 
-                signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"])), SecurityAlgorithms.HmacSha256));
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        private void KiemTraGioiHanThietBi(NguoiDungModel u, string d) { 
+        private void KiemTraGioiHanThietBi(NguoiDungModel u, string d) {
             // Náº¿u Ä‘Ã£ Ä‘á»§ 3 thiáº¿t bá»‹ VÃ€ thiáº¿t bá»‹ hiá»‡n táº¡i khÃ´ng náº±m trong danh sÃ¡ch Ä‘ang hoáº¡t Ä‘á»™ng
-            if (u.DanhSachPhienDangNhap.Count(p => p.DangHoatDong) >= 3 && 
-                !u.DanhSachPhienDangNhap.Any(p => p.MaThietBi == d && p.DangHoatDong)) 
+            if (u.DanhSachPhienDangNhap.Count(p => p.DangHoatDong) >= 3 &&
+                !u.DanhSachPhienDangNhap.Any(p => p.MaThietBi == d && p.DangHoatDong))
             {
-                throw new Exception("Tài khoản của bạn đã đạt giới hạn đăng nhập trên 3 thiết bị. Vui lòng đăng xuất bớt thiết bị cũ.");
+                throw ApiException.InvalidRequest("Tài khoản của bạn đã đạt giới hạn đăng nhập trên 3 thiết bị. Vui lòng đăng xuất bớt thiết bị cũ.");
             }
+        }
+
+        private void SetRefreshCookie(string plainToken, DateTime expiresAtUtc)
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null) return;
+
+            var options = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/api/XacThuc",
+                Expires = expiresAtUtc,
+                IsEssential = true
+            };
+            httpContext.Response.Cookies.Append(RefreshCookieName, plainToken, options);
+        }
+
+        // Lấy MaPhien từ JWT của request hiện tại (căn cứ revoke — G.4/G.6).
+        private int? LayMaPhienTuJwt()
+        {
+            var raw = _httpContextAccessor.HttpContext?.User?.FindFirst("MaPhien")?.Value;
+            return int.TryParse(raw, out var maPhien) ? maPhien : (int?)null;
+        }
+
+        private void ClearRefreshCookie()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext == null) return;
+
+            var options = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/api/XacThuc",
+                Expires = DateTime.UtcNow.AddDays(-1),
+                IsEssential = true
+            };
+            httpContext.Response.Cookies.Append(RefreshCookieName, string.Empty, options);
         }
 
         // --- Triá»ƒn khai cÃ¡c hÃ m OTP báº£o máº­t qua MemoryCache ---
@@ -393,13 +555,13 @@ namespace educodeai_server.Services.Implementation
         public async Task<bool> GuiOtpEmailGiangVienAsync(string email)
         {
             email = (email ?? string.Empty).Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(email)) throw new Exception("Vui lòng nhập email.");
+            if (string.IsNullOrWhiteSpace(email)) throw ApiException.InvalidRequest("Vui lòng nhập email.");
 
             if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
-                throw new Exception("Email này đã được sử dụng.");
+                throw ApiException.InvalidRequest("Email này đã được sử dụng.");
 
             if (await _context.HoSoDangKyGiangViens.AnyAsync(h => h.Email.ToLower() == email.ToLower() && h.TrangThaiHoSo != "TuChoi"))
-                throw new Exception("Email này đã có hồ sơ giảng viên đang chờ xử lý hoặc đã được duyệt.");
+                throw ApiException.InvalidRequest("Email này đã có hồ sơ giảng viên đang chờ xử lý hoặc đã được duyệt.");
 
             if (!_memoryCache.TryGetValue("OTP_InstructorEmail_" + email, out string otp))
             {
@@ -418,7 +580,7 @@ namespace educodeai_server.Services.Implementation
             otpCode = (otpCode ?? string.Empty).Trim();
 
             if (!_memoryCache.TryGetValue("OTP_InstructorEmail_" + email, out string cachedOtp) || cachedOtp != otpCode)
-                throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
+                throw ApiException.InvalidRequest("Mã OTP không chính xác hoặc đã hết hạn.");
 
             _memoryCache.Set("VERIFIED_InstructorEmail_" + email, true, TimeSpan.FromMinutes(30));
             _memoryCache.Remove("OTP_InstructorEmail_" + email);
@@ -428,7 +590,7 @@ namespace educodeai_server.Services.Implementation
         public async Task<bool> YeuCauDangKyAsync(DangKyRequest r, string i) {
             // Kiá»ƒm tra email tá»“n táº¡i
             if (await _context.NguoiDungs.AnyAsync(u => u.Email == r.Email))
-                throw new Exception("Email này đã được sử dụng.");
+                throw ApiException.InvalidRequest("Email này đã được sử dụng.");
 
             string otp = new Random().Next(100000, 999999).ToString();
             // LÆ°u vÃ o Cache 5 phÃºt, Key lÃ  Email
@@ -440,14 +602,11 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<object> XacNhanDangKyVaLuuDbAsync(XacNhanOtpRequest r) {
-            // Log Ä‘á»ƒ kiá»ƒm tra dá»¯ liá»‡u nháº­n Ä‘Æ°á»£c tá»« FE
-            Console.WriteLine($"[Register Confirm] Device: {r.MaThietBi}, Name: {r.TenThietBi}");
-
             if (!_memoryCache.TryGetValue("OTP_Register_" + r.TaiKhoan, out (string Otp, DangKyRequest Data) cached))
-                throw new Exception("Mã OTP đã hết hạn hoặc không tồn tại.");
+                throw ApiException.InvalidRequest("Mã OTP đã hết hạn hoặc không tồn tại.");
 
             if (cached.Otp != r.OtpCode)
-                throw new Exception("Mã OTP không chính xác.");
+                throw ApiException.InvalidRequest("Mã OTP không chính xác.");
 
             var user = new NguoiDungModel {
                 TaiKhoan = cached.Data.Email, 
@@ -485,35 +644,76 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<bool> XacNhanDangXuatTuXaAsync(int userId, DangXuatTuXaRequest r) {
             if (!_memoryCache.TryGetValue($"OTP_LogoutRemote_{userId}", out string cachedOtp) || cachedOtp != r.OtpCode)
-                throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
+                throw ApiException.InvalidRequest("Mã OTP không chính xác hoặc đã hết hạn.");
+
+            var ipThuHoi = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+            var deactivatedSessionIds = new List<int>();
+
+            // G.6: "Đăng xuất tất cả" phải giữ phiên hiện tại (lấy MaPhien từ JWT đã verify).
+            var maPhienHienTai = LayMaPhienTuJwt();
 
             if (r.DangXuatTatCa) {
                 var allSessions = await _context.PhienDangNhaps
-                    .Where(p => p.MaNguoiDung == userId && p.DangHoatDong)
+                    .Where(p => p.MaNguoiDung == userId && p.DangHoatDong
+                                && (!maPhienHienTai.HasValue || p.MaPhien != maPhienHienTai.Value))
                     .ToListAsync();
-                foreach (var s in allSessions) s.DangHoatDong = false;
+                foreach (var s in allSessions) { s.DangHoatDong = false; deactivatedSessionIds.Add(s.MaPhien); }
             } else if (r.DanhSachMaPhien != null && r.DanhSachMaPhien.Any()) {
+                // G.5: chỉ thao tác phiên thuộc user hiện tại (filter MaNguoiDung == userId chống IDOR).
                 var sessions = await _context.PhienDangNhaps
                     .Where(p => p.MaNguoiDung == userId && r.DanhSachMaPhien.Contains(p.MaPhien))
                     .ToListAsync();
-                foreach (var s in sessions) s.DangHoatDong = false;
+                foreach (var s in sessions) { s.DangHoatDong = false; deactivatedSessionIds.Add(s.MaPhien); }
+            }
+
+            if (deactivatedSessionIds.Count > 0)
+            {
+                var tokens = await _context.RefreshTokens
+                    .Where(t => t.MaNguoiDung == userId
+                                && t.NgayThuHoi == null
+                                && t.MaPhien.HasValue
+                                && deactivatedSessionIds.Contains(t.MaPhien.Value))
+                    .ToListAsync();
+                foreach (var t in tokens)
+                {
+                    t.NgayThuHoi = DateTime.UtcNow;
+                    t.LyDoThuHoi = "REMOTE_LOGOUT";
+                    t.IpThuHoi = ipThuHoi;
+                }
             }
 
             await _context.SaveChangesAsync();
+
+            // Invalidate cache từng phiên bị revoke để request kế tiếp bị chặn ngay (G.5/G.6).
+            foreach (var maPhien in deactivatedSessionIds)
+            {
+                await _sessionStateCache.InvalidateSessionAsync(maPhien);
+            }
+
+            // Publish sau commit + invalidate cache: đẩy các thiết bị bị revoke thoát tức thời (G.8).
+            foreach (var maPhien in deactivatedSessionIds)
+            {
+                await _sessionRealtimeNotifier.SessionRevokedAsync(maPhien);
+            }
+            if (deactivatedSessionIds.Count > 0)
+            {
+                await _sessionRealtimeNotifier.SessionListChangedAsync(userId);
+            }
+
             _memoryCache.Remove($"OTP_LogoutRemote_{userId}");
             return true;
         }
 
         public async Task<object> XacNhanOtpVaDangNhapAsync(XacNhanOtpRequest r) {
             var user = await LayNguoiDungKemThietBiAsync(r.TaiKhoan);
-            if (user == null) throw new Exception("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
             // HÃ m nÃ y dÃ¹ng cho luá»“ng Ä‘Äƒng nháº­p thiáº¿t bá»‹ má»›i yÃªu cáº§u OTP
             if (!_memoryCache.TryGetValue("OTP_LoginNewDevice_" + user.Email, out (string Otp, string MaThietBi, string TenThietBi) cached))
-                throw new Exception("Mã OTP đã hết hạn.");
+                throw ApiException.InvalidRequest("Mã OTP đã hết hạn.");
 
             if (cached.Otp != r.OtpCode)
-                throw new Exception("Mã OTP không chính xác.");
+                throw ApiException.InvalidRequest("Mã OTP không chính xác.");
 
             _memoryCache.Remove("OTP_LoginNewDevice_" + user.Email);
             return await XuLyDangNhapThanhCongAsync(user, cached.MaThietBi, cached.TenThietBi);
@@ -521,7 +721,7 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest r, string i) {
             var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == r.Email);
-            if (user == null) throw new Exception("Email không tồn tại trên hệ thống.");
+            if (user == null) throw ApiException.InvalidRequest("Email không tồn tại trên hệ thống.");
 
             string otp = new Random().Next(100000, 999999).ToString();
             _memoryCache.Set("OTP_Forgot_" + r.Email, otp, TimeSpan.FromMinutes(5));
@@ -533,10 +733,10 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest r) {
             if (!_memoryCache.TryGetValue("OTP_Forgot_" + r.Email, out string cachedOtp) || cachedOtp != r.OtpCode)
-                throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
+                throw ApiException.InvalidRequest("Mã OTP không chính xác hoặc đã hết hạn.");
 
             var user = await LayNguoiDungKemThietBiAsync(r.Email);
-            if (user == null) throw new Exception("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
             // 1. Cáº­p nháº­t máº­t kháº©u má»›i
             user.MatKhau = BCrypt.Net.BCrypt.HashPassword(r.MatKhauMoi);
@@ -582,14 +782,43 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<bool> DoiMatKhauAsync(int userId, DoiMatKhauRequest r) {
             var user = await _context.NguoiDungs.FindAsync(userId);
-            if (user == null) throw new Exception("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
 
             if (!BCrypt.Net.BCrypt.Verify(r.MatKhauCu, user.MatKhau))
-                throw new Exception("Mật khẩu hiện tại không chính xác.");
+                throw ApiException.InvalidRequest("Mật khẩu hiện tại không chính xác.");
 
             user.MatKhau = BCrypt.Net.BCrypt.HashPassword(r.MatKhauMoi);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<object> LayTrangThaiPhienAsync(int userId) {
+            // G.12: endpoint đồng bộ một lần khi SignalR reconnect — trả trạng thái phiên hiện tại
+            // (lấy MaPhien từ JWT) để frontend biết có bị revoke/khóa trong lúc mất kết nối không.
+            var user = await _context.NguoiDungs
+                .AsNoTracking()
+                .Select(u => new { u.MaNguoiDung, u.TrangThai })
+                .FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
+
+            bool isBanned = user == null
+                || string.Equals(user.TrangThai, "Bị khóa", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(user.TrangThai, "Khóa vĩnh viễn", StringComparison.OrdinalIgnoreCase);
+
+            var maPhien = LayMaPhienTuJwt();
+            bool sessionActive = true;
+            if (maPhien.HasValue)
+            {
+                sessionActive = await _context.PhienDangNhaps
+                    .AsNoTracking()
+                    .AnyAsync(p => p.MaPhien == maPhien.Value && p.MaNguoiDung == userId && p.DangHoatDong);
+            }
+
+            return new
+            {
+                isBanned,
+                sessionActive,
+                isValid = !isBanned && sessionActive
+            };
         }
 
         public async Task<object> LayDanhSachThietBiAsync(int userId, string maThietBiHienTai) {
@@ -609,11 +838,40 @@ namespace educodeai_server.Services.Implementation
         }
 
         public async Task<bool> DangXuatAsync(int userId, string maThietBi) {
-            var phien = await _context.PhienDangNhaps.FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaThietBi == maThietBi);
+            // G.4: MaPhien trong JWT là căn cứ chính (không tin device ID từ body).
+            // Chỉ khi claim thiếu (token legacy) mới fallback tra theo maThietBi.
+            var maPhienJwt = LayMaPhienTuJwt();
+            var phien = maPhienJwt.HasValue
+                ? await _context.PhienDangNhaps.FirstOrDefaultAsync(p => p.MaPhien == maPhienJwt.Value && p.MaNguoiDung == userId)
+                : await _context.PhienDangNhaps.FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaThietBi == maThietBi);
+
             if (phien != null) {
                 phien.DangHoatDong = false;
+
+                // Phase C: revoke refresh tokens của phiên này để không thể lam-moi được nữa
+                var tokens = await _context.RefreshTokens
+                    .Where(r => r.MaPhien == phien.MaPhien && r.NgayThuHoi == null)
+                    .ToListAsync();
+                var ipRevoke = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+                foreach (var t in tokens)
+                {
+                    t.NgayThuHoi = DateTime.UtcNow;
+                    t.LyDoThuHoi = "LOGOUT";
+                    t.IpThuHoi = ipRevoke;
+                }
+
                 await _context.SaveChangesAsync();
+
+                // Invalidate cache ngay sau commit để request kế tiếp bị từ chối (G.4).
+                await _sessionStateCache.InvalidateSessionAsync(phien.MaPhien);
+
+                // Push realtime để các tab của chính phiên này thoát UI ngay (G.8).
+                await _sessionRealtimeNotifier.SessionRevokedAsync(phien.MaPhien);
+                await _sessionRealtimeNotifier.SessionListChangedAsync(userId);
             }
+
+            // Clear cookie refresh của thiết bị hiện tại
+            ClearRefreshCookie();
             return true;
         }
         public async Task<object> DangKyGiangVienAsync(DangKyGiangVienRequest request)
@@ -623,24 +881,24 @@ namespace educodeai_server.Services.Implementation
             var soGiayTo = request.SoGiayTo.Trim();
 
             if (request.LoaiDoiTuongThue is not ("CaNhan" or "DoanhNghiep"))
-                throw new Exception("Vui lòng chọn loại đối tượng nộp thuế.");
+                throw ApiException.InvalidRequest("Vui lòng chọn loại đối tượng nộp thuế.");
 
             // 1. Kiểm tra trùng với tài khoản đã hoạt động (NguoiDungs)
             if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
-                throw new Exception("Email này đã được sử dụng bởi một tài khoản khác.");
+                throw ApiException.InvalidRequest("Email này đã được sử dụng bởi một tài khoản khác.");
 
             if (await _context.NguoiDungs.AnyAsync(u => u.TaiKhoan == taiKhoan))
-                throw new Exception("Tên tài khoản này đã tồn tại.");
+                throw ApiException.InvalidRequest("Tên tài khoản này đã tồn tại.");
 
             // 2. Kiểm tra trùng trong hồ sơ đang xử lý (chưa bị từ chối hẳn)
             if (await _context.HoSoDangKyGiangViens.AnyAsync(x => x.Email == email && x.TrangThaiHoSo != "TuChoi"))
-                throw new Exception("Email này đang có hồ sơ chờ xử lý. Vui lòng tra cứu trạng thái hồ sơ để cập nhật.");
+                throw ApiException.InvalidRequest("Email này đang có hồ sơ chờ xử lý. Vui lòng tra cứu trạng thái hồ sơ để cập nhật.");
 
             if (await _context.HoSoDangKyGiangViens.AnyAsync(x => x.TaiKhoan.ToLower() == taiKhoan.ToLower() && x.TrangThaiHoSo != "TuChoi"))
-                throw new Exception("T\u00ean t\u00e0i kho\u1ea3n n\u00e0y \u0111\u00e3 \u0111\u01b0\u1ee3c d\u00f9ng trong m\u1ed9t h\u1ed3 s\u01a1 \u0111\u0103ng k\u00fd \u0111ang x\u1eed l\u00fd.");
+                throw ApiException.InvalidRequest("T\u00ean t\u00e0i kho\u1ea3n n\u00e0y \u0111\u00e3 \u0111\u01b0\u1ee3c d\u00f9ng trong m\u1ed9t h\u1ed3 s\u01a1 \u0111\u0103ng k\u00fd \u0111ang x\u1eed l\u00fd.");
 
             if (await _context.HoSoDangKyGiangViens.AnyAsync(x => x.SoGiayTo == soGiayTo && x.TrangThaiHoSo != "TuChoi"))
-                throw new Exception("Số giấy tờ này đang có hồ sơ chờ xử lý.");
+                throw ApiException.InvalidRequest("Số giấy tờ này đang có hồ sơ chờ xử lý.");
 
             // 3. Validate file upload (chỉ chấp nhận ảnh, tối đa 5MB)
             const long MaxFileSize = 5 * 1024 * 1024;
@@ -648,14 +906,14 @@ namespace educodeai_server.Services.Implementation
             void ValidateFile(IFormFile f, string label)
             {
                 if (f == null || f.Length == 0)
-                    throw new Exception($"Vui lòng tải lên {label}.");
+                    throw ApiException.InvalidRequest($"Vui lòng tải lên {label}.");
                 if (f.Length > MaxFileSize)
-                    throw new Exception($"{label} vượt quá 5MB.");
+                    throw ApiException.InvalidRequest($"{label} vượt quá 5MB.");
                 var ext = Path.GetExtension(f.FileName);
                 if (!_allowedImgExtensions.Contains(ext))
-                    throw new Exception($"{label} phải là ảnh JPG, PNG hoặc WEBP.");
+                    throw ApiException.InvalidRequest($"{label} phải là ảnh JPG, PNG hoặc WEBP.");
                 if (!f.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-                    throw new Exception($"{label} không phải là file ảnh hợp lệ.");
+                    throw ApiException.InvalidRequest($"{label} không phải là file ảnh hợp lệ.");
             }
 
             ValidateFile(request.AnhGiayToMatTruoc, "ảnh mặt trước giấy tờ");
@@ -671,9 +929,9 @@ namespace educodeai_server.Services.Implementation
                 LoaiGiayTo = request.LoaiGiayTo.Trim()
             });
             if (!ketQuaQuet.ThanhCong || string.IsNullOrWhiteSpace(ketQuaQuet.SoGiayTo))
-                throw new Exception(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
+                throw ApiException.InvalidRequest(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
             if (!string.Equals(ketQuaQuet.SoGiayTo.Trim(), soGiayTo, StringComparison.OrdinalIgnoreCase))
-                throw new Exception("Số giấy tờ nhập vào không khớp với ảnh CCCD đã quét.");
+                throw ApiException.InvalidRequest("Số giấy tờ nhập vào không khớp với ảnh CCCD đã quét.");
 
             var duLieuCccdMaHoa = _cccdDataProtector.Protect(JsonSerializer.Serialize(new
             {
@@ -792,7 +1050,7 @@ namespace educodeai_server.Services.Implementation
             // Validate phòng vệ (layer 2)
             var ext = Path.GetExtension(file.FileName);
             if (!_allowedImgExtensions.Contains(ext) || file.Length > _maxFileSize)
-                throw new Exception("File không hợp lệ.");
+                throw ApiException.InvalidRequest("File không hợp lệ.");
 
             var fileName = $"{Guid.NewGuid()}{ext.ToLowerInvariant()}";
             var fullPath = Path.Combine(folderPath, fileName);
@@ -809,7 +1067,7 @@ namespace educodeai_server.Services.Implementation
         {
             var ext = Path.GetExtension(file.FileName);
             if (!_allowedImgExtensions.Contains(ext) || file.Length > _maxFileSize)
-                throw new Exception("File không hợp lệ.");
+                throw ApiException.InvalidRequest("File không hợp lệ.");
 
             var fileName = $"{Guid.NewGuid()}{ext.ToLowerInvariant()}";
             var fullPath = Path.Combine(folderPath, fileName);
@@ -829,7 +1087,7 @@ namespace educodeai_server.Services.Implementation
         {
             var normalizedEmail = email.Trim().ToLower();
             if (string.IsNullOrWhiteSpace(normalizedEmail))
-                throw new Exception("Vui lòng nhập email.");
+                throw ApiException.InvalidRequest("Vui lòng nhập email.");
 
             var hoSo = await _context.HoSoDangKyGiangViens
                 .AsNoTracking()
@@ -851,7 +1109,7 @@ namespace educodeai_server.Services.Implementation
                 .FirstOrDefaultAsync();
 
             if (hoSo == null)
-                throw new Exception("Không tìm thấy hồ sơ đăng ký với email này.");
+                throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký với email này.");
 
             string trangThaiHienThi = hoSo.TrangThaiHoSo switch
             {
@@ -888,16 +1146,16 @@ namespace educodeai_server.Services.Implementation
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.MaHoSoDangKyGiangVien == maHoSo);
             if (hoSo == null)
-                throw new Exception("Không tìm thấy hồ sơ đăng ký.");
+                throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký.");
 
             if (hoSo.TrangThaiHoSo != "CanBoSung")
-                throw new Exception("Hồ sơ không ở trạng thái cần bổ sung.");
+                throw ApiException.InvalidRequest("Hồ sơ không ở trạng thái cần bổ sung.");
 
             if (string.IsNullOrWhiteSpace(token) || hoSo.BoSungToken != token.Trim() || hoSo.BoSungTokenHetHan <= DateTime.UtcNow)
-                throw new Exception("Mã xác thực không hợp lệ hoặc đã hết hạn.");
+                throw ApiException.InvalidRequest("Mã xác thực không hợp lệ hoặc đã hết hạn.");
 
             if (hoSo.DaNopBoSung)
-                throw new Exception("Hồ sơ đã được gửi bổ sung. Vui lòng đợi kết quả.");
+                throw ApiException.InvalidRequest("Hồ sơ đã được gửi bổ sung. Vui lòng đợi kết quả.");
 
             return new { valid = true };
         }
@@ -909,17 +1167,17 @@ namespace educodeai_server.Services.Implementation
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(x => x.MaHoSoDangKyGiangVien == maHoSo);
             if (hoSo == null)
-                throw new Exception("Không tìm thấy hồ sơ đăng ký.");
+                throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký.");
 
             if (hoSo.TrangThaiHoSo != "CanBoSung")
-                throw new Exception("Hồ sơ không ở trạng thái cần bổ sung. Không thể cập nhật.");
+                throw ApiException.InvalidRequest("Hồ sơ không ở trạng thái cần bổ sung. Không thể cập nhật.");
 
             // Verify token xác thực bổ sung
             var tokenNhap = request.Token?.Trim();
             if (string.IsNullOrEmpty(tokenNhap) || hoSo.BoSungToken != tokenNhap || hoSo.BoSungTokenHetHan <= DateTime.UtcNow)
-                throw new Exception("Mã xác thực bổ sung không hợp lệ hoặc đã hết hạn.");
+                throw ApiException.InvalidRequest("Mã xác thực bổ sung không hợp lệ hoặc đã hết hạn.");
             if (hoSo.DaNopBoSung)
-                throw new Exception("Hồ sơ đã được gửi bổ sung. Vui lòng đợi kết quả.");
+                throw ApiException.InvalidRequest("Hồ sơ đã được gửi bổ sung. Vui lòng đợi kết quả.");
 
             // Cập nhật thông tin text nếu có
             if (!string.IsNullOrWhiteSpace(request.HoTen)) hoSo.HoTen = request.HoTen.Trim();
@@ -957,11 +1215,11 @@ namespace educodeai_server.Services.Implementation
                     LoaiGiayTo = string.IsNullOrWhiteSpace(hoSo.LoaiGiayTo) ? "CCCD" : hoSo.LoaiGiayTo
                 });
                 if (!ketQuaQuet.ThanhCong || string.IsNullOrWhiteSpace(ketQuaQuet.SoGiayTo))
-                    throw new Exception(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
+                    throw ApiException.InvalidRequest(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
 
                 var soGiayToMoi = !string.IsNullOrWhiteSpace(request.SoGiayTo) ? request.SoGiayTo.Trim() : hoSo.SoGiayTo;
                 if (!string.Equals(ketQuaQuet.SoGiayTo.Trim(), soGiayToMoi, StringComparison.OrdinalIgnoreCase))
-                    throw new Exception("Số giấy tờ nhập vào không khớp với ảnh CCCD đã quét.");
+                    throw ApiException.InvalidRequest("Số giấy tờ nhập vào không khớp với ảnh CCCD đã quét.");
 
                 hoSo.SoGiayTo = soGiayToMoi;
                 hoSo.DuLieuCccdMaHoa = _cccdDataProtector.Protect(JsonSerializer.Serialize(new

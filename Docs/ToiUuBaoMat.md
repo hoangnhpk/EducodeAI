@@ -1,1373 +1,679 @@
-﻿# TỐI ƯU BẢO MẬT HỆ THỐNG XÁC THỰC EDUCODEAI
+# KẾ HOẠCH CẢI TIẾN BẢO MẬT XÁC THỰC EDUCODEAI
 
-> Tài liệu này ghi lại toàn bộ phân tích hiện trạng module xác thực của dự án EduCodeAI, các vấn đề bảo mật đang tồn tại, đánh giá quy trình, và hướng dẫn sửa chi tiết từng bước để AI có thể đọc file này rồi tự fix.
-
----
-
-## PHẦN 1: LOGIC XÁC THỰC HIỆN TẠI
-
-### 1.1. Đăng ký học viên
-
-**Flow hiện tại:**
-
-1. Frontend gọi `POST /api/XacThuc/dang-ky` với body:
-
-```json
-{
-  "hoTen": "...",
-  "email": "...",
-  "matKhau": "...",
-  "captchaToken": "..."
-}
-```
-
-2. Backend `YeuCauDangKyAsync`:
-   - Kiểm tra email đã tồn tại trong bảng `NguoiDungs`.
-   - Tạo OTP 6 số bằng `new Random().Next(100000, 999999)`.
-   - Lưu OTP và toàn bộ dữ liệu đăng ký vào `IMemoryCache` trong 5 phút:
-
-```csharp
-_memoryCache.Set("OTP_Register_" + r.Email, (Otp: otp, Data: r), TimeSpan.FromMinutes(5));
-```
-
-   - Gửi OTP qua email.
-
-3. Người dùng nhập OTP, frontend gọi `POST /api/XacThuc/xac-minh-dang-ky`.
-
-4. Backend `XacNhanDangKyVaLuuDbAsync`:
-   - Lấy cache theo key `"OTP_Register_" + r.TaiKhoan`.
-   - So sánh OTP dạng plain text.
-   - Nếu đúng thì tạo user mới với:
-     - `TaiKhoan = email`
-     - `Email = email`
-     - `MatKhau = BCrypt hash`
-     - `VaiTro = 2`
-     - `TrangThai = "Hoạt động"`
-   - Xóa OTP cache.
-   - Tự động đăng nhập bằng `XuLyDangNhapThanhCongAsync`.
-
-**Đánh giá nhanh:**
-
-- OTP lưu plain text trong RAM.
-- Không rate limit gửi OTP.
-- Không giới hạn số lần nhập sai OTP.
-- Dùng `Random` không an toàn cho OTP.
-- Captcha ở đăng ký có field nhưng trong `YeuCauDangKyAsync` chưa verify captcha.
-- Dữ liệu đăng ký nằm trong `MemoryCache`, nếu server restart là mất.
-- Email chưa normalize thống nhất `trim + lowercase` ở mọi chỗ.
+> **Loại tài liệu:** Phân tích hiện trạng + phạm vi + quy định + backlog triển khai.  
+> **Ngày cập nhật:** 2026-07-21  
+> **Trạng thái:** Chỉ lập kế hoạch, **chưa sửa code**.  
+> **Nguồn sự thật:** Code hiện tại trên nhánh `Au`, sau khi đồng bộ `origin/dev`.
 
 ---
 
-### 1.2. Đăng nhập bằng tài khoản/mật khẩu
+## 0. LƯU Ý QUAN TRỌNG — PHẠM VI BẮT BUỘC
 
-**Flow hiện tại:**
+### 0.1. Được phép phân tích và sửa trong các bước triển khai sau
 
-1. Frontend gọi `POST /api/XacThuc/dang-nhap` với body:
+Chỉ được thay đổi những phần trực tiếp phục vụ bảo mật web và các luồng:
 
-```json
-{
-  "taiKhoan": "...",
-  "matKhau": "...",
-  "maThietBi": "...",
-  "tenThietBi": "...",
-  "captchaToken": "..."
-}
-```
+- Đăng ký học viên.
+- Đăng nhập bằng tài khoản/mật khẩu.
+- Đăng nhập Google/Facebook.
+- Quên mật khẩu, đặt lại mật khẩu, đổi mật khẩu.
+- OTP và CAPTCHA của các luồng xác thực.
+- Access token, refresh token, cookie, localStorage và axios interceptor.
+- Đăng xuất, đăng xuất từ xa, quản lý thiết bị/phiên đăng nhập.
+- Quản lý người dùng: khóa/mở khóa, thu hồi phiên.
+- Đăng ký giảng viên, xác minh email, OCR giấy tờ, duyệt/từ chối/bổ sung hồ sơ.
+- Middleware xác thực, phân quyền, session, maintenance nếu ảnh hưởng trực tiếp tới truy cập web.
+- Log/audit liên quan đến xác thực và thông tin nhạy cảm.
+- Frontend hiển thị/luân chuyển dữ liệu nhạy cảm có thể quan sát bằng F12.
+- Test và CI chỉ dành cho các phạm vi trên.
 
-2. Frontend tạo `maThietBi` bằng canvas fingerprint:
+### 0.2. Tuyệt đối không sửa
 
-```ts
-maThietBi: "FP-" + hashString(platform + screen + hardware + canvas)
-```
+- Không thay đổi cấu trúc tổng thể của dự án dù cấu trúc hiện tại chưa sạch.
+- Không refactor diện rộng, không di chuyển folder/file chỉ để “làm đẹp”.
+- Không sửa chức năng thanh toán, nạp/rút tiền, SePay, voucher hoặc giao dịch.
+- Không sửa Gemini, cấu hình API key Gemini hoặc luồng AI không liên quan xác thực.
+- Không sửa các API key/tích hợp khác ngoài trường hợp token/secret đó bị đưa ra trình duyệt hoặc log web trong luồng xác thực.
+- Không tự động sửa toàn bộ `appsettings*.json`; các file cấu hình hiện tại để nguyên theo yêu cầu. Chỉ ghi nhận rủi ro nếu secret bị log hoặc trả ra frontend.
+- Không thay đổi nghiệp vụ khóa học, bài học, bài tập, chứng chỉ, marketplace.
+- Không tự chạy migration lên database thật khi chưa được phê duyệt.
+- Không lưu ảnh CCCD/CMND/Hộ chiếu của giảng viên ra đĩa, cloud hoặc DB blob.
 
-3. Backend `DangNhapAsync`:
-   - Đếm số lần đăng nhập sai theo IP bằng `IMemoryCache` với key `FailedLogin_IP_{ip}`.
-   - Nếu sai >= 3 lần thì yêu cầu captcha.
-   - Tìm user theo `TaiKhoan` hoặc `Email`.
-   - Verify mật khẩu bằng BCrypt.
-   - Kiểm tra trạng thái tài khoản có bị khóa không.
-   - Lấy danh sách phiên đang hoạt động trong `PhienDangNhap`.
-   - Nếu thiết bị hiện tại đã có session active thì đăng nhập luôn.
-   - Nếu thiết bị mới và chưa đủ 3 thiết bị: gửi OTP email xác minh thiết bị mới.
-   - Nếu thiết bị mới và đã đủ 3 thiết bị: gửi OTP để thay thế thiết bị cũ nhất.
+### 0.3. Quy tắc triển khai
 
-4. Nếu thiết bị mới, frontend gọi `POST /api/XacThuc/xac-nhan-otp`.
+1. Mỗi task phải có test/tiêu chí nghiệm thu trước khi đánh dấu hoàn thành.
+2. Backend là nguồn quyết định quyền truy cập; không tin dữ liệu, role, email, device ID hoặc bypass header từ frontend.
+3. Không log token, OTP, mật khẩu, JWT signing key, cookie, authorization header hoặc nội dung giấy tờ.
+4. Không đưa refresh token vào URL/query string.
+5. Không lưu refresh token trong `localStorage`/`sessionStorage`/IndexedDB.
+6. Mọi revoke session phải có hiệu lực gần realtime mà không polling DB liên tục.
+7. Lỗi xác thực trả mã lỗi ổn định, không trả stack trace/connection string/exception nội bộ.
+8. Không đánh dấu `[x]` nếu chưa chạy build/test tương ứng.
 
-5. Nếu thay thế thiết bị, frontend gọi `POST /api/XacThuc/xac-nhan-thay-the-thiet-bi`.
+## 0.4. BẢN ĐỒ RANH GIỚI TOÀN DỰ ÁN — TRÁNH SỬA LUNG TUNG
 
-**Đánh giá nhanh:**
+Đã rà soát toàn bộ cây nguồn backend, frontend, database, migrations, docs và các cấu hình gốc. Khi thực hiện tài liệu này, phải tuân thủ danh sách dưới đây.
 
-- Ý tưởng xác minh thiết bị mới là tốt.
-- Tuy nhiên OTP vẫn dùng `Random` và lưu plain text.
-- Thiết bị dựa vào canvas fingerprint có thể bị spoof và có thể không ổn định.
-- Đếm login fail chỉ theo IP dễ gây vấn đề với NAT và dễ bị bypass khi đổi IP.
-- Captcha chỉ bật sau 3 lần sai, nhưng cần thêm rate limit theo IP + tài khoản.
+### Vùng được phép sửa trực tiếp
 
----
+**Backend auth/security:**
 
-### 1.3. Khi đăng nhập thành công
+- `Program.cs`: chỉ phần JWT, auth DI, CORS/auth middleware order, session/maintenance middleware registration.
+- `Controllers/XacThucController.cs`, `Controllers/NguoiDungController.cs` và controller Admin quản lý user/duyệt giảng viên: chỉ endpoint thuộc phạm vi tài liệu.
+- `Services/Implementation/XacThucService.cs`, `NguoiDungService.cs`, service quản lý user/hồ sơ giảng viên.
+- `Services/Interface` tương ứng.
+- `DTOs/XacThuc/*`; DTO user/teacher chỉ khi endpoint đang sửa thực sự dùng.
+- `Models/NguoiDungModel.cs`, `PhienDangNhapModel.cs`, model OTP/audit/hồ sơ giảng viên: chỉ field/index bắt buộc.
+- `Data/EduCodeAIDbContext.cs`: chỉ DbSet/index/relation thuộc auth/session/teacher; không chỉnh relation domain khác.
+- `Helpers/SessionCheckMiddleware.cs`, `MaintenanceMiddleware.cs`, current-user/crypto helper liên quan trực tiếp.
+- Redis/session/rate-limit service: phải giữ hoạt động ở cả Redis và memory fallback dev.
 
-Method chính: `XuLyDangNhapThanhCongAsync`.
+**Frontend auth/security:**
 
-Nó làm:
+- `src/configs/axios.ts`.
+- `src/services/auth.service.ts`, `src/services/xac-thuc.service.ts`.
+- `src/pages/auth/**`, `ProtectedRoute.tsx`.
+- `src/App.tsx`, `src/router/index.tsx`: chỉ logic auth/session/route guard.
+- `src/utils/authHelper.ts`, `src/utils/deviceHelper.ts`.
+- Trang đổi mật khẩu/quản lý thiết bị/bảo mật tài khoản.
+- Header ba role chỉ khi cần cập nhật logout/session UI.
+- Trang quản lý user và duyệt giảng viên chỉ trong phạm vi authorization/account state.
 
-1. Tìm session theo `MaThietBi`.
-2. Nếu chưa có thì tạo mới `PhienDangNhapModel`:
+### Vùng cấm sửa khi làm kế hoạch này
 
-```csharp
-MaNguoiDung
-MaThietBi
-TenThietBi
-ThoiGianDangNhap
-ThoiGianHoatDongCuoi
-DangHoatDong = true
-```
+**Thanh toán/thương mại:** mọi controller/service/DTO/model liên quan `ThanhToan`, `SePay`, `DonHang`, `GiaoDich`, `MaGiamGia`, `QuaTang`, `RutTien`, `DoanhThu`, ngân hàng. Không đổi extraction `MaNguoiDung` theo cách làm hỏng checkout/enrollment.
 
-3. Nếu đã có thì bật lại:
+**AI/Gemini/API key/video:** mọi controller/service/helper/DTO/model liên quan `AI`, `Gemini`, `KeyAPI`, `VideoAI`, `YouTube`, sinh đồ án, lộ trình AI. Nếu endpoint Admin API key cần bảo vệ thì chỉ sửa authorization guard, không sửa logic key/AI.
 
-```csharp
-phien.DangHoatDong = true;
-phien.ThoiGianHoatDongCuoi = DateTime.UtcNow;
-```
+**Khóa học/học tập:** `KhoaHoc`, `ChuongHoc`, `BaiHoc`, đăng ký khóa học, tiến độ, không gian học tập, đánh giá, bình luận, marketplace và seed data.
 
-4. Tạo refresh token bằng:
+**Bài tập/chứng chỉ:** quiz, thực hành, test case, code execution, kết quả bài làm, PDF/chứng chỉ.
 
-```csharp
-Guid.NewGuid().ToString()
-```
+**Thống kê/reporting:** dashboard, thống kê học tập/Admin, quản lý review ngoài authorization tối thiểu.
 
-5. Lưu refresh token vào `IMemoryCache` 7 ngày:
+**Static/runtime/generated:**
 
-```csharp
-_memoryCache.Set("RefreshToken_" + rt, (MaNguoiDung: u.MaNguoiDung, MaThietBi: devId), TimeSpan.FromDays(7));
-```
+- Không sửa/xóa `wwwroot/uploads/avatars`, `wwwroot/uploads/khoa-hoc` hoặc file upload thật.
+- Không sửa `bin/`, `obj/`, artifacts, logs, cache, `node_modules`.
+- Không sửa tay `Migrations/*.Designer.cs` hoặc model snapshot; dùng EF tooling.
+- Không rewrite migration EF/Supabase đã áp dụng.
+- Không chạy `supabase db reset`, `supabase db push`, `dotnet ef database update` nếu chưa được phê duyệt.
+- Không đụng nested/tạm như `scratch`, `taste-skill-main`, `test`, probe dirs.
 
-6. Tạo JWT access token có hạn 1440 phút, tức 24 giờ:
+### Coupling bắt buộc phải giữ
 
-```csharp
-expires: DateTime.UtcNow.AddMinutes(1440)
-```
+1. `NguoiDungModel` là hub FK của gần toàn hệ thống; không đổi khóa chính, cascade hoặc navigation ngoài nhu cầu auth.
+2. JWT claim hiện được nhiều nơi đọc dưới các tên `id`, `MaNguoiDung`, `NameIdentifier`; khi chuẩn hóa phải có giai đoạn tương thích và test payment/course không bị đổi user.
+3. Claim `MaPhien` là căn cứ revoke; mọi token auth mới phải có nhưng không xóa claim legacy trước khi audit hết issuer.
+4. Role mapping và `ClaimTypes.Role` ảnh hưởng toàn bộ `[Authorize(Roles=...)]`; không đổi tên role tùy tiện.
+5. Trạng thái user đang là chuỗi (`Hoạt động`, `Bị khóa`, `Khóa vĩnh viễn`); không đổi text mà chưa đồng bộ Admin/service/middleware/data.
+6. Redis là optional; auth không được phụ thuộc Redis-only nếu fallback chưa tương đương.
+7. `axios.ts` đang coupling token, refresh queue, alert, redirect, maintenance và device; thay từng phần, phải test retry loop và không tạo refresh storm.
+8. `user_info` casing không thống nhất; route guards đọc `vaiTro`/`VaiTro` và nhiều biến thể user id. Chỉ chuẩn hóa khi có compatibility adapter.
+9. SignalR `SystemConfigHub` đang phục vụ cấu hình/maintenance; nếu thêm auth-session realtime phải tách event/group rõ ràng, không phá hub hiện tại.
+10. EF migration và Supabase migration đang cùng tồn tại; với schema auth phải chọn EF làm nguồn tạo migration của backend và ghi rõ cách đồng bộ, không tạo hai migration mâu thuẫn.
 
-7. JWT claim có:
-   - `id`
-   - `MaNguoiDung`
-   - `NameIdentifier`
-   - `Email`
-   - `MaPhien`
-   - `Role`
+### Quy tắc kiểm tra diff trước khi hoàn thành
 
-8. Trả về frontend:
-
-```json
-{
-  "token": "...",
-  "refreshToken": "...",
-  "user": {
-    "maNguoiDung": 1,
-    "id": 1,
-    "taiKhoan": "...",
-    "hoTen": "...",
-    "email": "...",
-    "vaiTro": 2,
-    "anhDaiDien": "..."
-  }
-}
-```
-
-9. Frontend lưu token và thông tin user vào `localStorage`.
-
-**Đánh giá nhanh:**
-
-- Access token sống 24 giờ là quá dài.
-- Refresh token lưu `MemoryCache` không ổn cho production vì server restart là mất.
-- Refresh token không được hash trong DB.
-- Refresh token cũ không bị revoke khi refresh token mới được cấp.
-- Lưu token trong `localStorage` dễ bị XSS đánh cắp.
+- `git diff --name-only` không được chứa file ngoài vùng cho phép. Nếu có, dừng và giải thích.
+- Nếu phải sửa file dùng chung như `Program.cs`, `DbContext`, `axios.ts`, chỉ thay block nhỏ nhất liên quan auth.
+- Không format lại toàn file, không đổi encoding/line ending hàng loạt.
+- Không chạy cleanup tự động trên toàn repo.
+- Mỗi thay đổi auth phải chạy backend build/test và frontend lint/build/test liên quan.
+- Chỉ đánh dấu task done sau khi xác nhận không ảnh hưởng payment, AI/Gemini, course, exercise và upload runtime.
 
 ---
 
-### 1.4. Refresh token
+## 1. PHẠM VI CODE CẦN ĐỌC/KIỂM TRA KHI TRIỂN KHAI
 
-**Flow hiện tại:**
+### Backend
 
-1. Frontend interceptor gặp 401 sẽ gọi:
+- `educodeai-server/Program.cs`
+- `educodeai-server/Controllers/XacThucController.cs`
+- `educodeai-server/Controllers/NguoiDungController.cs`
+- `educodeai-server/Controllers/QuanTriVien/QuanLyNguoiDungController.cs`
+- Các controller quản lý/duyệt hồ sơ giảng viên.
+- `educodeai-server/Services/Implementation/XacThucService.cs`
+- `educodeai-server/Services/Implementation/NguoiDungService.cs`
+- Các service quản lý người dùng và hồ sơ giảng viên.
+- `educodeai-server/Helpers/SessionCheckMiddleware.cs`
+- `educodeai-server/Helpers/MaintenanceMiddleware.cs`
+- `educodeai-server/Models/NguoiDungModel.cs`
+- `educodeai-server/Models/PhienDangNhapModel.cs`
+- Model hồ sơ đăng ký giảng viên.
+- `educodeai-server/Data/EduCodeAIDbContext.cs`
+- DTO trong `educodeai-server/DTOs/XacThuc/` và DTO quản lý người dùng/giảng viên.
 
-```ts
-POST /api/XacThuc/refresh-token?refreshToken=...&maThietBi=...
-```
+### Frontend
 
-2. Backend `LamMoiTokenAsync`:
-   - Tìm refresh token trong `IMemoryCache`.
-   - Tìm user.
-   - Kiểm tra user có bị khóa không.
-   - Tìm session theo `maThietBi`.
-   - Nếu session còn active thì gọi lại `XuLyDangNhapThanhCongAsync`.
-
-**Vấn đề:**
-
-- Refresh token gửi qua query string, dễ bị log ở browser/proxy/server.
-- Refresh token lưu trong RAM, mất khi restart.
-- Không có bảng quản lý refresh token.
-- Không có rotation chuẩn.
-- Token cũ không bị xóa ngay sau khi cấp token mới.
-
----
-
-### 1.5. Quên mật khẩu
-
-**Flow hiện tại:**
-
-1. Frontend gọi `POST /api/XacThuc/quen-mat-khau` với body:
-
-```json
-{
-  "email": "..."
-}
-```
-
-2. Backend `YeuCauQuenMatKhauAsync`:
-   - Tìm user theo email.
-   - Nếu không có thì báo lỗi rõ: `Email không tồn tại trên hệ thống.`
-   - Tạo OTP bằng `Random`.
-   - Lưu OTP plain text vào `MemoryCache` 5 phút với key `OTP_Forgot_{email}`.
-   - Gửi email.
-
-3. Frontend gọi `POST /api/XacThuc/dat-lai-mat-khau` với body:
-
-```json
-{
-  "email": "...",
-  "NewPassword": "...",
-  "OtpCode": "...",
-  "maThietBi": "...",
-  "tenThietBi": "..."
-}
-```
-
-4. Backend `DatLaiMatKhauAsync`:
-   - Verify OTP cache.
-   - Cập nhật mật khẩu mới bằng BCrypt.
-   - Xóa OTP cache.
-   - Tự động đăng nhập user.
-   - Nếu user đã có 3 thiết bị active và thiết bị hiện tại là thiết bị mới thì lại gửi OTP thay thế thiết bị.
-
-**Đánh giá nhanh:**
-
-- Có OTP reset password là đúng hướng.
-- Nhưng hiện tại tiết lộ email có tồn tại hay không.
-- Không rate limit gửi OTP.
-- Không giới hạn số lần nhập sai OTP.
-- OTP lưu plain text.
-- Sau reset password không revoke toàn bộ session/refresh token cũ.
-- Không kiểm tra độ mạnh mật khẩu mới.
-- Reset password xong tự động login ngay; an toàn hơn là revoke session cũ và bắt login lại.
+- `educodeai-client/src/configs/axios.ts`
+- `educodeai-client/src/services/auth.service.ts`
+- `educodeai-client/src/App.tsx`
+- `educodeai-client/src/router/` và protected route.
+- `educodeai-client/src/pages/auth/`
+- Trang quản lý thiết bị/phiên đăng nhập.
+- Trang đổi/quên/đặt lại mật khẩu.
+- Trang đăng ký giảng viên và quản trị duyệt hồ sơ.
+- `educodeai-client/src/layouts/hoc-vien/LayoutHocVien.tsx`
+- `educodeai-client/src/utils/deviceHelper.ts`
 
 ---
 
-### 1.6. Đổi mật khẩu khi đang đăng nhập
+## 2. HIỆN TRẠNG VÀ LỖ HỔNG ĐÃ XÁC ĐỊNH
 
-**Flow hiện tại:**
+## 2.1. JWT signing key bị ghi ra log
 
-1. Frontend gọi `POST /api/XacThuc/doi-mat-khau` với body:
+**Hiện trạng:** `Program.cs` có lệnh in `Jwt:Key` khi cấu hình JwtBearer.
 
-```json
-{
-  "MatKhauCu": "...",
-  "MatKhauMoi": "...",
-  "OtpCode": "..."
-}
-```
+**Rủi ro:** người xem log có thể ký JWT giả, giả mạo học viên/giảng viên/Admin.
 
-2. Backend `DoiMatKhauAsync`:
-   - Lấy user từ JWT.
-   - Verify mật khẩu cũ.
-   - Hash mật khẩu mới.
-   - Lưu DB.
+**Mức độ:** CRITICAL.
 
-**Đánh giá nhanh:**
+**Yêu cầu:**
 
-- DTO có `OtpCode`, nhưng service không dùng.
-- Không revoke các phiên khác sau khi đổi mật khẩu.
-- Không kiểm tra password policy.
-- Không kiểm tra mật khẩu mới có trùng mật khẩu cũ không.
+- Xóa log giá trị JWT key.
+- Không log bất kỳ secret/token nào.
+- Sau khi triển khai, rotate JWT key ngoài code và vô hiệu hóa token cũ.
+- Thêm test/quy tắc secret scan để ngăn tái diễn.
+
+## 2.2. Token có thể quan sát bằng F12
+
+**Hiện trạng cần xử lý:** frontend lưu access token và refresh token trong storage; axios đọc token từ `localStorage`. Refresh token còn được gửi qua query string trong luồng refresh.
+
+**Rủi ro:**
+
+- XSS có thể đọc token trong storage.
+- Refresh token xuất hiện trong DevTools, browser history, proxy/server log hoặc monitoring vì nằm trong URL.
+- Token cũ có thể tiếp tục dùng nếu logout không revoke đúng.
+
+**Mức độ:** CRITICAL/HIGH.
+
+**Mục tiêu:**
+
+- Refresh token chỉ nằm trong cookie `HttpOnly`, `Secure`, `SameSite` phù hợp; JavaScript không đọc được.
+- Refresh endpoint đọc cookie, không nhận token trong URL/body do frontend tự cung cấp.
+- Access token chuyển sang bộ nhớ runtime; không lưu bền trong localStorage. Nếu cần rollout an toàn, triển khai hai giai đoạn nhưng đích cuối là không để token đọc được bằng JavaScript.
+- Không trả refresh token trong JSON response.
+
+## 2.3. Refresh token lưu MemoryCache, không hash và không rotate chuẩn
+
+**Hiện trạng:** token tạo từ GUID, lưu process-local cache, TTL dài; server restart làm mất token; multi-instance không đồng bộ; logout không bảo đảm revoke token.
+
+**Rủi ro:** replay, không audit được, không thu hồi nhất quán, URL leakage.
+
+**Mức độ:** HIGH.
+
+**Mục tiêu:**
+
+- Sinh bằng `RandomNumberGenerator` tối thiểu 256-bit.
+- Lưu hash token trong DB, gắn với `MaPhien`, user, device, expiry, revoke time, replacement token.
+- Rotate mỗi lần refresh.
+- Phát hiện reuse token cũ; khi phát hiện, revoke token family/session liên quan.
+- Revoke khi logout, remote logout, reset/đổi mật khẩu, khóa user, thay thế thiết bị.
+
+## 2.4. Access token sống quá lâu và JWT phát từ nhiều nơi
+
+**Hiện trạng:** có luồng tạo JWT 24 giờ; một số JWT không có claim `MaPhien`, trong khi session middleware chỉ kiểm tra nếu claim tồn tại.
+
+**Rủi ro:** token bị đánh cắp dùng lâu; token không có `MaPhien` có thể không chịu cơ chế revoke thiết bị.
+
+**Mức độ:** HIGH.
+
+**Mục tiêu:**
+
+- Chỉ có một token service phát JWT.
+- Mọi access token có: user id, role, `MaPhien`, `jti`, issued-at.
+- TTL 10–15 phút.
+- Không tin role do client gửi.
+- Validate issuer, audience, lifetime, signature; `ClockSkew` tối đa 1 phút.
+
+## 2.5. OTP dùng `Random`, lưu plain text trong MemoryCache
+
+**Các flow chịu ảnh hưởng:** đăng ký, quên mật khẩu, thiết bị mới, thay thiết bị, remote logout, xác minh email giảng viên.
+
+**Rủi ro:** OTP có thể dự đoán, mất khi restart, không giới hạn attempt thống nhất, không audit/rate-limit tốt.
+
+**Mức độ:** HIGH.
+
+**Mục tiêu:**
+
+- Sinh OTP bằng `RandomNumberGenerator`.
+- Chỉ lưu hash OTP.
+- TTL 5 phút; dùng một lần; tối đa 5 lần nhập sai.
+- Rate limit theo purpose + normalized identifier + IP.
+- Invalidate OTP cũ khi phát OTP mới.
+- Không log hoặc trả OTP ngoài kênh gửi email.
+
+## 2.6. CAPTCHA chưa được kiểm tra nhất quán
+
+**Hiện trạng:** một số DTO có `CaptchaToken` nhưng backend không verify; có nhánh `SKIP_CAPTCHA` hoặc chỉ check sau số lần đăng nhập sai.
+
+**Rủi ro:** spam email, brute force OTP/login, abuse đăng ký/quên mật khẩu.
+
+**Mục tiêu:**
+
+- Verify captcha server-side tại đăng ký, quên mật khẩu, phát OTP remote logout và các endpoint phát OTP công khai.
+- Không chấp nhận `SKIP_CAPTCHA` ngoài test environment được kiểm soát.
+- Captcha chỉ là một lớp; vẫn phải rate-limit.
+
+## 2.7. Quên mật khẩu làm lộ email tồn tại
+
+**Hiện trạng:** phản hồi khác nhau khi email không tồn tại; endpoint check-email public cũng trả `exists` rõ ràng.
+
+**Rủi ro:** user enumeration.
+
+**Mức độ:** MEDIUM/HIGH.
+
+**Mục tiêu:**
+
+- Quên mật khẩu luôn trả cùng message và thời gian xử lý gần tương đương.
+- Rate limit check-email; chỉ giữ endpoint nếu UX thật sự cần.
+- Không tiết lộ trạng thái tài khoản qua lỗi chi tiết.
+
+## 2.8. Reset/đổi mật khẩu chưa thu hồi đầy đủ phiên cũ
+
+**Hiện trạng:** reset có thể tự đăng nhập lại; các session/refresh token cũ không được revoke đầy đủ. DTO đổi mật khẩu có OTP nhưng backend không dùng.
+
+**Rủi ro:** attacker đã có session vẫn truy cập được sau khi chủ tài khoản đổi/reset mật khẩu.
+
+**Mục tiêu:**
+
+- Reset password: revoke toàn bộ session/token, không auto-login, yêu cầu đăng nhập lại.
+- Đổi mật khẩu: verify mật khẩu cũ, policy mật khẩu mới, không trùng mật khẩu cũ; revoke các phiên khác hoặc toàn bộ theo policy.
+- Nếu không dùng OTP đổi mật khẩu thì xóa field/UI để tránh cảm giác bảo mật giả.
+
+## 2.9. Social login tin dữ liệu frontend
+
+**Hiện trạng:** backend nhận email/name/picture và tạo/đăng nhập user mà chưa xác minh token với Google/Facebook.
+
+**Rủi ro:** attacker giả email của người khác để chiếm tài khoản.
+
+**Mức độ:** CRITICAL.
+
+**Mục tiêu:**
+
+- Google: frontend gửi credential/id_token; backend verify chữ ký/token, issuer, audience, expiry, email_verified.
+- Facebook: backend verify access token với provider/app id và lấy profile từ Graph API.
+- Chỉ dùng email/subject trả về từ provider; bỏ qua email/name/role do client tự gửi.
+- Không đưa provider token vào URL/log.
+
+## 2.10. Logout và remote logout không cắt phiên tức thời
+
+**Hiện trạng:** logout dựa vào `maThietBi` client gửi; session cache có thể còn hợp lệ; refresh token không chắc được revoke. “Đăng xuất tất cả” có thể đăng xuất cả phiên hiện tại.
+
+**Mục tiêu:**
+
+- Logout hiện tại lấy `MaPhien` từ JWT, không tin device ID body.
+- Revoke session + refresh token transactionally.
+- Remote logout chỉ thao tác các session thuộc user hiện tại.
+- “Đăng xuất tất cả thiết bị khác” phải giữ `MaPhien` hiện tại.
+- Cache/event được invalidated ngay sau commit.
+
+## 2.11. Session middleware fail-open khi DB lỗi
+
+**Hiện trạng:** khi DB/socket lỗi, middleware có thể coi user “Hoạt động” và session còn hiệu lực.
+
+**Rủi ro:** user bị khóa/session đã revoke vẫn được truy cập trong thời gian sự cố.
+
+**Mức độ:** HIGH.
+
+**Mục tiêu:**
+
+- Không fail-open ở auth/session.
+- Nếu không xác minh được trạng thái session cho endpoint bảo vệ, trả `503 AUTH_STATE_UNAVAILABLE` hoặc `401` theo policy; không tự mặc định active.
+- Dùng cache trạng thái đáng tin cậy để giảm phụ thuộc DB nhưng phải có invalidation.
+
+## 2.12. Quản lý thiết bị đang polling và gọi DB liên tục
+
+**Hiện trạng:** frontend gọi API danh sách/check trạng thái định kỳ (khoảng 10 giây). Mỗi request đi qua middleware và có thể query user/session DB. Ngoài tải DB, logout vẫn có độ trễ theo polling/cache TTL.
+
+**Vấn đề:** đây không phải realtime thật; số tab/user tăng sẽ làm số request và query tăng tuyến tính.
+
+**Mục tiêu:** phản hồi revoke gần realtime mà không polling DB liên tục.
+
+## 2.13. Device fingerprint không phải bằng chứng bảo mật
+
+**Hiện trạng:** frontend tạo mã thiết bị từ canvas/platform/screen/hardware; client có thể sửa/spoof và fingerprint có thể thay đổi.
+
+**Mục tiêu:**
+
+- Xem fingerprint là metadata UX, không dùng làm credential.
+- Session id/token do server phát mới là định danh bảo mật.
+- Có thể dùng random device id lưu local cho tên thiết bị, nhưng không cấp quyền dựa riêng vào nó.
+
+## 2.14. Khóa/mở khóa người dùng chưa invalidation tức thời
+
+**Hiện trạng:** user status cache 60 giây; multi-instance memory cache không đồng bộ. API check status riêng còn polling.
+
+**Mục tiêu:**
+
+- Sau khi Admin khóa user: DB commit → revoke sessions/refresh tokens → publish invalidation/event → đóng kết nối SignalR → frontend logout.
+- Sau khi mở khóa: invalidate user-status cache.
+- Mọi hành động có audit log Admin, target user, reason, IP, timestamp.
+
+## 2.15. Đăng ký và duyệt giảng viên
+
+**Rủi ro cần kiểm soát:**
+
+- OTP email chưa thống nhất với OTP service.
+- File avatar cần validate kích thước/MIME/magic bytes và filename server-generated.
+- Không tin role/trạng thái hồ sơ từ frontend.
+- Endpoint duyệt/từ chối/bổ sung phải `[Authorize(Roles="Admin")]` hoặc policy tương đương.
+- Chống IDOR: Admin endpoint vẫn phải truy vấn đúng hồ sơ; user chỉ xem/sửa hồ sơ của chính họ qua token có thời hạn.
+- Không log OCR text/CCCD.
+- Không lưu ảnh CCCD; chỉ OCR trong RAM, mã hóa dữ liệu cần thiết bằng Data Protection rồi lưu.
+- Duyệt hồ sơ và tạo tài khoản/role nên nằm trong transaction, chống duyệt lặp.
+- Audit đầy đủ ai duyệt, khi nào, lý do từ chối, field nào thay đổi.
+
+## 2.16. Exception/log làm lộ thông tin nội bộ
+
+**Hiện trạng:** controller bắt `Exception` và trả `ex.Message`; có `Console.WriteLine` stack/error; một số lỗi chứa Supabase/DNS/socket.
+
+**Mục tiêu:**
+
+- Global exception middleware.
+- Response envelope ổn định, không stack/SQL/connection details.
+- Structured logging có redaction.
+- Không log Authorization, cookie, token, OTP, password, OCR/CCCD.
+
+## 2.17. Maintenance bypass do client điều khiển
+
+**Hiện trạng cần xác minh khi triển khai:** frontend có thể gắn bypass header; middleware cho qua theo header/path rộng và chạy trước authentication.
+
+**Mục tiêu:**
+
+- Authentication chạy trước maintenance middleware.
+- Chỉ authenticated Admin được bypass.
+- Không tin `X-Bypass-Maintenance` hoặc URL chứa `/quan-tri`.
 
 ---
 
-### 1.7. Đăng xuất thiết bị hiện tại hoặc thiết bị cụ thể
+## 3. KIẾN TRÚC QUẢN LÝ PHIÊN REALTIME ĐỀ XUẤT
 
-**Flow hiện tại:**
+## 3.1. Phương án được chọn: event-driven SignalR + distributed session cache
 
-1. Frontend gọi:
+Không dùng frontend polling mỗi 10 giây và không query DB trên mỗi request.
 
-```ts
-POST /api/XacThuc/dang-xuat
-```
+### Thành phần
 
-Body là string `maThietBi`.
+1. **Database — nguồn sự thật bền vững**
+   - `PhienDangNhap`: active/revoked, user, device metadata, last activity.
+   - Refresh token hash/expiry/revocation.
 
-2. Backend `DangXuatAsync` làm:
+2. **Distributed cache — hot path**
+   - Redis nếu có; memory fallback chỉ phù hợp single-instance dev.
+   - Key ví dụ:
+     - `auth:user:{userId}:status`
+     - `auth:session:{maPhien}:active`
+     - `auth:user:{userId}:session-version`
+   - Request middleware đọc cache; chỉ query DB khi cache miss.
 
-```csharp
-var phien = await _context.PhienDangNhaps.FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaThietBi == maThietBi);
-phien.DangHoatDong = false;
-```
+3. **SignalR — push event tới browser**
+   - Connection join group theo user/session sau khi JWT được xác thực:
+     - `user:{userId}`
+     - `session:{maPhien}`
+   - Event:
+     - `SessionRevoked`
+     - `AllOtherSessionsRevoked`
+     - `UserLocked`
+     - `PasswordChanged`
+     - `SessionListChanged`
+   - Frontend nhận event → xóa auth state runtime, đóng UI bảo vệ, redirect login.
 
-3. Frontend xóa localStorage.
+4. **Cache invalidation — bắt buộc**
+   - Logout/remote logout/ban/reset/change password:
+     1. Update DB trong transaction.
+     2. Commit thành công.
+     3. Set/delete distributed cache ngay.
+     4. Publish SignalR event.
+   - Không publish trước commit.
 
-**Vấn đề:**
+5. **Middleware — không query DB liên tục**
+   - Validate JWT local.
+   - Đọc `user status` và `session active/version` từ cache.
+   - Cache miss mới query DB và populate cache.
+   - Cache lỗi + DB lỗi: fail closed cho endpoint protected.
 
-- Không xóa refresh token đang lưu trong cache.
-- Middleware cache session 60 giây nên thiết bị vừa logout có thể vẫn gọi API được trong tối đa 60 giây.
-- API nhận `maThietBi` từ body, trong khi logout current nên dựa vào `MaPhien` từ JWT.
-- Nếu logout thiết bị khác nên dùng `MaPhien` và yêu cầu OTP hoặc re-auth.
+### Tính realtime
 
----
+- SignalR cho UX logout gần như tức thời.
+- Cache invalidation làm request kế tiếp bị từ chối ngay cả khi SignalR bị mất kết nối.
+- Access token TTL ngắn là lớp an toàn cuối.
 
-### 1.8. Đăng xuất từ xa
+### Fallback khi SignalR mất kết nối
 
-**Flow hiện tại:**
+- Tự reconnect với backoff.
+- Khi reconnect, gọi **một lần** endpoint `GET /api/XacThuc/session-state` để đồng bộ, không polling liên tục.
+- Mọi API protected vẫn qua session middleware; vì vậy user không thể tiếp tục thao tác chỉ vì UI chưa nhận event.
+- Có thể có heartbeat SignalR ở tầng transport; không dùng heartbeat để query DB.
 
-1. User đang đăng nhập gọi:
+### Cập nhật `ThoiGianHoatDongCuoi`
 
-```ts
-POST /api/XacThuc/yeu-cau-otp-dang-xuat-tu-xa
-```
+Không `SaveChanges` mỗi request.
 
-2. Backend tạo OTP và gửi email với key:
+- Ghi activity vào cache, throttle tối thiểu 1–5 phút/session.
+- Worker nền flush activity theo batch về DB.
+- Hoặc update DB chỉ khi thời gian cũ cách hiện tại trên ngưỡng.
+- Danh sách thiết bị lấy projection nhẹ và chỉ tải khi user mở trang hoặc nhận `SessionListChanged`.
 
-```csharp
-OTP_LogoutRemote_{userId}
-```
+## 3.2. Vì sao không chọn các phương án khác
 
-3. User nhập OTP, gọi:
-
-```ts
-POST /api/XacThuc/xac-nhan-dang-xuat-tu-xa
-```
-
-Body:
-
-```json
-{
-  "DangXuatTatCa": true,
-  "DanhSachMaPhien": [1, 2],
-  "OtpCode": "...",
-  "CaptchaToken": "..."
-}
-```
-
-4. Backend:
-   - Verify OTP.
-   - Nếu `DangXuatTatCa = true`, set tất cả session active của user thành false.
-   - Nếu có danh sách mã phiên, set các phiên đó thành false.
-   - Xóa OTP cache.
-
-**Đánh giá nhanh:**
-
-- Ý tưởng remote logout + OTP là đúng hướng.
-- Nhưng `DangXuatTatCa = true` hiện tại logout cả thiết bị hiện tại.
-- Không xóa cache `session_{maPhien}` nên session có thể còn hiệu lực đến 60 giây.
-- Không revoke refresh token tương ứng.
-- Không giới hạn số lần nhập sai OTP.
-- `CaptchaToken` trong DTO nhưng không verify.
+- **Polling DB:** tải tăng tuyến tính, không realtime thật, tạo nhiều request thừa.
+- **Chỉ SignalR, không cache/middleware:** event có thể mất khi client offline; token vẫn gọi API được.
+- **Chỉ JWT TTL ngắn:** revoke không tức thời và không quản lý được thiết bị tốt.
+- **Chỉ IMemoryCache:** không đồng bộ khi scale nhiều server và mất khi restart.
 
 ---
 
-### 1.9. Social login Google/Facebook
+## 4. BACKLOG TRIỂN KHAI CHI TIẾT
 
-**Flow hiện tại:**
+Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
-1. Frontend gọi `POST /api/XacThuc/google-login` hoặc `POST /api/XacThuc/facebook-login`.
-2. Backend nhận email/name/picture từ client.
-3. Tìm user theo email. Nếu chưa có thì tạo mới.
-4. Tự động đăng nhập.
+## Giai đoạn A — Baseline và test bảo vệ hành vi
 
-**Lỗi nghiêm trọng:**
+- [x] **A.1** Lập inventory toàn bộ endpoint auth/user/device/teacher và attribute `[Authorize]`, role/policy hiện tại. _(Xem `Docs/BaselineBaoMatXacThuc.md` §A.1.)_
+- [x] **A.2** Lập inventory tất cả nơi tạo/đọc/lưu/log access token, refresh token, OTP, password, authorization header. _(§A.2.)_
+- [x] **A.3** Tạo backend test project cho phạm vi auth. _(`educodeai-server.Tests/`.)_
+- [x] **A.4** Tạo frontend Vitest cho axios/auth storage. _(`axios.test.ts`, `authStorage.test.ts`.)_
+- [x] **A.5** Viết test hiện trạng để khóa các luồng hợp lệ: đăng ký, login thiết bị cũ/mới, forgot/reset, quản lý thiết bị, đăng ký/duyệt giảng viên. _(`XacThucFlowBaselineTests.cs`, `XacThucControllerTests.cs`.)_
+- [x] **A.6** Ghi rõ endpoint nào public, authenticated, Admin-only; sửa checklist nếu code khác tài liệu. _(§A.6 ma trận quyền + danh sách mismatch.)_
 
-Backend đang tin dữ liệu frontend gửi lên, không verify token thật với Google/Facebook. Ai cũng có thể gửi email bất kỳ để đăng nhập hoặc tạo tài khoản.
+## Giai đoạn B — Chặn lộ token/log trên web
 
----
+- [x] **B.1** Xóa log JWT signing key trong `Program.cs`.
+- [x] **B.2** Grep và loại log token/OTP/password/cookie/Authorization/OCR text trong phạm vi cho phép.
+- [x] **B.3** Thêm redaction cho structured logging.
+- [x] **B.4** Tạo `ApiResponse<T>`, `ApiError`, stable error codes.
+- [x] **B.5** Thêm global exception middleware; không trả `ex.Message`/stack nội bộ.
+- [x] **B.6** Test F12/Network: URL không chứa refresh token/OTP/password.
+- [x] **B.7** Test Application Storage: không có refresh token; mục tiêu cuối không có access token.
 
-## PHẦN 2: VẤN ĐỀ BẢO MẬT
+## Giai đoạn C — Chuẩn hóa JWT và refresh token
 
-### Mức nghiêm trọng cao
+- [x] **C.1** Tạo một token service duy nhất.
+- [x] **C.2** Mọi JWT có `MaPhien`, user id, role, `jti`, `iat`; TTL 10–15 phút.
+- [x] **C.3** Thêm refresh-token fields/table: hash, session id, expiry, revoked, replaced-by, family id, created IP/user-agent.
+- [x] **C.4** Sinh token 256-bit CSPRNG; chỉ lưu hash.
+- [x] **C.5** Set refresh token cookie `HttpOnly`, `Secure`, `SameSite=None` nếu cross-site HTTPS; nếu same-site thì ưu tiên `Lax/Strict`.
+- [x] **C.6** Refresh endpoint chỉ đọc cookie; không nhận query/body token.
+- [x] **C.7** Rotate token mỗi lần refresh; token cũ dùng lại → revoke family/session + audit.
+- [x] **C.8** Login/register/social login set cookie; logout xóa cookie.
+- [x] **C.9** Frontend bỏ `refresh_token` khỏi localStorage và URL.
+- [ ] **C.10** Chuyển access token sang memory state; reload dùng refresh cookie để lấy access token mới. _(Hoãn theo quyết định — access token vẫn ở localStorage; sẽ làm sau.)_
+- [x] **C.11** Thêm CSRF defense phù hợp cho cookie refresh (Origin/Referer validation và/or anti-CSRF token).
+- [x] **C.12** Migration chỉ tạo file (`AddRefreshTokenTable`) + provision idempotent qua `DatabaseSchemaSync`; không tự apply production.
 
-| # | Vấn đề | Lý do |
-|---|---|---|
-| 1 | Google/Facebook login tin vào dữ liệu frontend | Backend không verify token thật, có thể giả mạo email |
-| 2 | Refresh token lưu `MemoryCache` và gửi qua query string | Query string dễ bị log, cache mất khi server restart |
-| 3 | Refresh token không hash trong DB | Không audit/revoke/rotate chuẩn được |
-| 4 | Access token sống 24 giờ | Token bị lộ sẽ dùng được quá lâu |
-| 5 | OTP dùng `Random` và lưu plain text | `Random` không phù hợp cho mã bảo mật |
-| 6 | Không rate limit OTP/register/forgot/remote logout | Dễ spam email và brute force OTP |
-| 7 | Reset/đổi mật khẩu không revoke session cũ | Kẻ tấn công có thể giữ phiên cũ |
-| 8 | `DoiMatKhauRequest.OtpCode` có nhưng không kiểm tra | UI có thể nghĩ đã xác minh OTP nhưng backend bỏ qua |
+## Giai đoạn D — OTP, CAPTCHA, registration
 
-### Mức trung bình
+- [ ] **D.1** Tạo OTP service dùng chung cho `Register`, `ForgotPassword`, `NewDevice`, `ReplaceDevice`, `RemoteLogout`, `InstructorEmail`.
+- [ ] **D.2** CSPRNG 6 số, hash, TTL 5 phút, single-use, max attempts 5.
+- [ ] **D.3** Rate limit phát OTP theo purpose + email/user + IP; invalid OTP theo identifier/IP.
+- [ ] **D.4** Verify CAPTCHA server-side ở đăng ký, quên mật khẩu và phát OTP công khai.
+- [ ] **D.5** Không cho `SKIP_CAPTCHA` ngoài test environment.
+- [ ] **D.6** Normalize email `Trim().ToLowerInvariant()` trước query/key.
+- [ ] **D.7** Không lưu toàn bộ mật khẩu đăng ký plain text lâu trong cache; dùng short-lived protected state hoặc pending-registration record được bảo vệ.
+- [ ] **D.8** Transaction chống tạo trùng email/tài khoản; unique index DB.
+- [ ] **D.9** Không log OTP hay dữ liệu đăng ký.
 
-| # | Vấn đề |
-|---|---|
-| 9 | Quên mật khẩu tiết lộ email tồn tại |
-| 10 | Middleware cache session 60 giây, logout không cắt ngay |
-| 11 | Captcha đăng ký/remote logout có field nhưng chưa verify |
-| 12 | Thiết bị dựa vào canvas fingerprint có thể spoof |
-| 13 | Refresh token cũ không bị xóa khi refresh |
-| 14 | Login fail chỉ đếm theo IP |
-| 15 | DTO reset/forgot thiếu validation chặt |
-| 16 | OTP không có attempt counter |
+## Giai đoạn E — Login và social login
 
-### Mức thấp nhưng nên sửa
+- [ ] **E.1** Rate limit login theo IP + normalized account; không chỉ IP.
+- [ ] **E.2** Message sai tài khoản/mật khẩu giống nhau.
+- [ ] **E.3** Không tiết lộ account existence/trạng thái trước khi xác minh hợp lệ.
+- [ ] **E.4** Device fingerprint chỉ là metadata; session server-side là căn cứ.
+- [ ] **E.5** Google token verify issuer/audience/expiry/email_verified; chỉ dùng profile từ provider.
+- [ ] **E.6** Facebook token verify app/provider; chỉ dùng profile từ Graph API.
+- [ ] **E.7** Không gửi provider token qua URL/log.
+- [ ] **E.8** Audit login success/failure/new device/provider login.
 
-| # | Vấn đề |
-|---|---|
-| 17 | Nhiều text tiếng Việt bị mojibake trong source |
-| 18 | `XacThucRepository` rỗng, logic dồn hết vào service |
-| 19 | Có function không dùng: `KiemTraGioiHanThietBi`, OTP cookie logic |
-| 20 | `DiaChiIP` trong `PhienDangNhapModel` không được set khi login |
-| 21 | `ThoiGianHoatDongCuoi` chỉ cập nhật lúc login/refresh |
-| 22 | Public tra cứu hồ sơ giảng viên theo email có thể lộ trạng thái |
-| 23 | Ảnh KYC giảng viên lưu trong `wwwroot/uploads`, có nguy cơ public |
+## Giai đoạn F — Quên/reset/đổi mật khẩu
 
----
-## PHẦN 3: HƯỚNG DẪN GIẢI QUYẾT TỪNG VẤN ĐỀ
+- [ ] **F.1** Forgot password luôn trả generic message dù email tồn tại hay không.
+- [ ] **F.2** Rate limit + CAPTCHA + OTP policy chung.
+- [ ] **F.3** Password policy backend: tối thiểu 8–12 ký tự, chống trùng mật khẩu cũ, không chứa email dễ đoán.
+- [ ] **F.4** Reset: revoke toàn bộ session/refresh token, clear cache, push SignalR event, không auto-login.
+- [ ] **F.5** Change password: verify password cũ; xử lý dứt điểm field OTP (dùng thật hoặc xóa khỏi DTO/UI).
+- [ ] **F.6** Sau đổi password, revoke các phiên khác hoặc toàn bộ theo policy đã ghi rõ.
+- [ ] **F.7** Audit password changed/reset; không log password/hash/OTP.
 
-### BƯỚC 0: Chuẩn bị trước khi sửa
+## Giai đoạn G — Realtime quản lý thiết bị và session
 
-Mục tiêu: tạo nền tảng chung để các bước sau dùng lại, tránh copy/paste logic OTP, token và audit nhiều nơi.
+> **Cách triển khai:** chia 3 chặng, chốt từng chặng trước khi sang chặng sau (khối lượng lớn, chạm middleware dùng chung + realtime).
+>
+> **Quyết định SignalR (authorize connection):** dùng cách chuẩn của SignalR — client truyền access token qua `accessTokenFactory`; với WebSocket/SSE token đi ở query string `access_token` (đây là cơ chế chuẩn, không vi phạm quy tắc "không đưa token vào URL do frontend tự chế" vì SignalR yêu cầu vậy và kết nối chạy trên HTTPS/WSS). Backend cấu hình `JwtBearerEvents.OnMessageReceived` đọc `access_token` cho đúng path hub. Hub gắn `[Authorize]`; sau khi kết nối, join group `user:{userId}` và `session:{maPhien}` lấy từ claim đã verify — **không tin userId/maPhien do client gửi**. Access token vẫn ở localStorage (C.10 hoãn) nên chấp nhận được; khi C.10 làm sau, `accessTokenFactory` chỉ cần đọc từ memory state, không đổi kiến trúc hub.
+>
+> **Không phá `SystemConfigHub`:** tạo hub mới `SessionHub` riêng cho auth/session, giữ nguyên `SystemConfigHub` (maintenance/config). Tách event, tách group.
 
-#### 0.1. Tạo bảng OTP riêng
+### Chặng G-1 — Backend foundation (cache + middleware + index + logout)
 
-Tạo file `Models/AuthOtpModel.cs`:
+- [x] **G.1** Chuẩn hóa `ISessionStateCache` có Redis + memory fallback dev. _(`Services/Interface/ISessionStateCache.cs`, `Services/Implementation/SessionStateCache.cs` chạy trên `IDistributedCache`; DI trong `Program.cs`. Lỗi cache ném ra để middleware fail-closed.)_
+- [x] **G.2** Middleware đọc cache; DB chỉ khi cache miss; bỏ fail-open (DB/Redis lỗi → fail closed cho endpoint bảo vệ, trả `503 AUTH_STATE_UNAVAILABLE`). _(`Helpers/SessionCheckMiddleware.cs`: hot-path đọc cache, cache miss mới `AsNoTracking` DB rồi populate; catch lỗi → 503 `AUTH_STATE_UNAVAILABLE`, không mặc định active.)_
+- [x] **G.3** Thêm index hot path cho session theo `MaPhien`, `(MaNguoiDung, DangHoatDong)`, `(MaNguoiDung, MaThietBi)` — chỉ tạo file migration + provision idempotent qua `DatabaseSchemaSync`, không tự apply production. _(`DatabaseSchemaSync` tạo `IX_PhienDangNhap_MaNguoiDung_DangHoatDong` + `IX_PhienDangNhap_MaNguoiDung_MaThietBi` bằng `CREATE INDEX IF NOT EXISTS`; `MaPhien` đã là PK.)_
+- [x] **G.4** Logout current lấy `MaPhien` từ JWT, revoke DB + refresh token + cache. _(`XacThucService.DangXuatAsync`: `LayMaPhienTuJwt()` là căn cứ chính; revoke phiên + refresh token, commit → `InvalidateSessionAsync` → publish `SessionRevoked`/`SessionListChanged`; clear cookie.)_
+- [x] **G.5** Remote logout xác minh OTP/re-auth; validate session ownership. _(`XacThucService.XacNhanDangXuatTuXaAsync`: verify OTP; query filter `MaNguoiDung == userId` chống IDOR; revoke session + refresh token; invalidate cache + publish sau commit.)_
+- [x] **G.6** “Logout all others” giữ session hiện tại. _(Nhánh `DangXuatTatCa` loại trừ `MaPhien` hiện tại lấy từ JWT đã verify.)_
 
-```csharp
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+### Chặng G-2 — SignalR realtime (backend hub + publish + frontend connect)
 
-namespace educodeai_server.Models
-{
-    [Table("AuthOtps")]
-    public class AuthOtpModel
-    {
-        [Key]
-        public long Id { get; set; }
+- [x] **G.7** Tạo SignalR `SessionHub` riêng (`Hubs/SessionHub.cs`, `[Authorize]`); authorize connection bằng JWT (`accessTokenFactory` phía FE + `OnMessageReceived` đọc `access_token` cho path `/sessionHub` phía BE); giữ nguyên `SystemConfigHub`. Join group `user:{userId}`/`session:{maPhien}` từ claim đã verify.
+- [x] **G.8** `ISessionRealtimeNotifier`/`SessionRealtimeNotifier` publish `SessionRevoked`, `UserLocked`, `SessionListChanged` theo group; gọi SAU commit DB + invalidate cache trong `DangXuatAsync`/`XacNhanDangXuatTuXaAsync`.
+- [x] **G.9** Frontend `configs/sessionHub.ts` kết nối/reconnect + logout UI khi nhận event; khởi động trong `App.tsx`. _(Polling cũ giữ tạm, bỏ ở G-3.)_
+- [x] **G.12** Reconnect gọi sync endpoint (`GET /api/XacThuc/session-state`) một lần trong `onreconnected`, không polling.
 
-        [Required, MaxLength(100)]
-        public string Purpose { get; set; } = null!;
-        // Register, ForgotPassword, NewDevice, ReplaceDevice, RemoteLogout, ChangePassword, InstructorEmail
+### Chặng G-3 — Bỏ polling + throttle activity + test
 
-        [Required, MaxLength(150)]
-        public string Identifier { get; set; } = null!;
-        // email hoặc userId
+- [x] **G.10** Bỏ polling thiết bị trong `App.tsx` (interval `getDevices` 10 giây đã gỡ; chỉ còn SignalR).
+- [x] **G.11** Bỏ polling ban status 10 giây trong layout; dựa vào middleware + SignalR (event `UserLocked`).
+- [x] **G.13** Throttle activity write. _(Thực trạng sau khi viết lại middleware G.2: `ThoiGianHoatDongCuoi` chỉ được ghi lúc login, KHÔNG ghi mỗi request; middleware hot-path chỉ đọc `AsNoTracking`, không `SaveChanges`. Vì vậy không còn activity write nào trên hot path để phải throttle — không thêm worker/batch flush để tránh mở rộng phạm vi/YAGNI.)_
+- [x] **G.14** Trang quản lý thiết bị chỉ fetch khi mở + khi nhận event `SessionListChanged` (SignalR dispatch), bỏ polling.
+- [x] **G.15** Test đơn vị: `SessionStateCache` round-trip, middleware fail-closed 503 khi cache lỗi, cache-hit quyết định 401 khóa/inactive/pass (không chạm DB). _(`educodeai-server.Tests/Security/PhaseGSessionTests.cs`: 7 test pass — cache round-trip + invalidate, anonymous pass-through, fail-closed 503, cache-hit quyết định 401 banned/inactive/pass mà không chạm DB. Các kịch bản tích hợp multi-tab/reconnect/multi-instance/Redis-DB down cần môi trường chạy thật — để lại cho Chặng K E2E/integration.)_
 
-        [Required, MaxLength(255)]
-        public string OtpHash { get; set; } = null!;
+## Giai đoạn H — Quản lý người dùng Admin
 
-        public DateTime ExpiresAt { get; set; }
-        public int AttemptCount { get; set; } = 0;
-        public int MaxAttempts { get; set; } = 5;
-        public bool IsConsumed { get; set; } = false;
-        public DateTime? ConsumedAt { get; set; }
+- [ ] **H.1** Audit tất cả endpoint khóa/mở khóa/sửa role/xóa user; bắt buộc Admin policy.
+- [ ] **H.2** Chống mass assignment: DTO chỉ chứa field được phép sửa.
+- [ ] **H.3** Khóa user transactionally revoke sessions/tokens.
+- [ ] **H.4** Invalidate distributed cache và push `UserLocked` sau commit.
+- [ ] **H.5** Không cho Admin tự vô hiệu hóa Admin cuối cùng hoặc tự hạ quyền ngoài policy.
+- [ ] **H.6** Audit actor admin, target user, reason, before/after, IP, timestamp.
+- [ ] **H.7** Pagination/filter server-side; không trả password hash/token/PII không cần thiết.
 
-        [MaxLength(45)]
-        public string? CreatedIp { get; set; }
+## Giai đoạn I — Đăng ký và duyệt giảng viên
 
-        [MaxLength(500)]
-        public string? CreatedUserAgent { get; set; }
+- [ ] **I.1** OTP email giảng viên dùng OTP service chung.
+- [ ] **I.2** Normalize/unique email, username, tax/identity fields theo policy.
+- [ ] **I.3** Validate avatar: max 5MB, allowlist MIME + magic bytes, filename do server tạo, chống path traversal.
+- [ ] **I.4** **Không lưu ảnh giấy tờ tùy thân**; OCR trong RAM, mã hóa text cần thiết, dispose buffer/stream sau request.
+- [ ] **I.5** Không log OCR text/số giấy tờ/plain encrypted payload.
+- [ ] **I.6** Endpoint duyệt/từ chối/bổ sung hồ sơ dùng Admin policy và chống IDOR.
+- [ ] **I.7** Duyệt hồ sơ + tạo/cập nhật user role trong transaction, idempotent chống double-submit.
+- [ ] **I.8** Token bổ sung hồ sơ có TTL, single-use, scope đúng hồ sơ; không để trong log nếu truyền URL — ưu tiên body/header/cookie phù hợp.
+- [ ] **I.9** Audit submitted/updated/approved/rejected với actor/reason.
+- [ ] **I.10** Response Admin không trả dữ liệu nhạy cảm vượt nhu cầu xét duyệt.
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    }
-}
-```
+## Giai đoạn J — Authorization và maintenance
 
-Thêm vào `Data/EduCodeAIDbContext.cs`:
+- [x] **J.1** Authentication trước maintenance/session/authorization đúng thứ tự.
+- [x] **J.2** Maintenance bypass chỉ authenticated Admin; bỏ header/path bypass client-controlled.
+- [x] **J.3** Kiểm từng endpoint có `[AllowAnonymous]`, `[Authorize]`, role/policy đúng. _(Đã quét toàn bộ 47 controller. Khóa `CauHinhHeThongController` (`[Authorize(Roles="Admin")]`, `[AllowAnonymous]` cho `lay-cau-hinh`/`check-bao-tri`) và vá 2 lỗ CRITICAL đang public toàn bộ trong phạm vi quản lý user: `QuanLyNguoiDungController` và `QuanLyHocVienController` (`api/admin/hoc-vien`) → `[Authorize(Roles="Admin")]`. Các controller không có attribute còn lại đều ngoài phạm vi (khóa học/thanh toán/AI) hoặc là stub test (`ValuesController`, `TestPdfController`). Mismatch check-email enumeration/teacher status thuộc D/F.)_
+- [x] **J.4** Không dựa vào route frontend để bảo vệ API.
+- [x] **J.5** Stable response `401/403/503`, frontend xử lý theo `error.code`.
 
-```csharp
-public DbSet<AuthOtpModel> AuthOtps { get; set; }
-```
+## Giai đoạn K — Audit log, test và CI
 
-#### 0.2. Tạo service OTP dùng chung
-
-Tạo `Services/Interface/IOtpService.cs`:
-
-```csharp
-namespace educodeai_server.Services.Interface
-{
-    public interface IOtpService
-    {
-        Task<string> CreateOtpAsync(string purpose, string identifier, string? ip, string? userAgent);
-        Task<bool> VerifyOtpAsync(string purpose, string identifier, string otpCode);
-        Task<bool> HasOtpRateLimitAsync(string purpose, string identifier, int maxPer15Min = 3);
-    }
-}
-```
-
-Tạo `Services/Implementation/OtpService.cs`:
-
-```csharp
-using System.Security.Cryptography;
-using educodeai_server.Data;
-using educodeai_server.Models;
-using educodeai_server.Services.Interface;
-using Microsoft.EntityFrameworkCore;
-
-namespace educodeai_server.Services.Implementation
-{
-    public class OtpService : IOtpService
-    {
-        private readonly EduCodeAIDbContext _context;
-
-        public OtpService(EduCodeAIDbContext context)
-        {
-            _context = context;
-        }
-
-        public async Task<string> CreateOtpAsync(string purpose, string identifier, string? ip, string? userAgent)
-        {
-            string otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
-            string otpHash = BCrypt.Net.BCrypt.HashPassword(otp);
-
-            var record = new AuthOtpModel
-            {
-                Purpose = purpose,
-                Identifier = identifier,
-                OtpHash = otpHash,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(5),
-                MaxAttempts = 5,
-                CreatedIp = ip,
-                CreatedUserAgent = userAgent
-            };
-
-            _context.AuthOtps.Add(record);
-            await _context.SaveChangesAsync();
-            return otp;
-        }
-
-        public async Task<bool> VerifyOtpAsync(string purpose, string identifier, string otpCode)
-        {
-            if (string.IsNullOrWhiteSpace(otpCode)) return false;
-
-            var otp = await _context.AuthOtps
-                .Where(o => o.Purpose == purpose
-                         && o.Identifier == identifier
-                         && !o.IsConsumed
-                         && o.ExpiresAt > DateTime.UtcNow)
-                .OrderByDescending(o => o.CreatedAt)
-                .FirstOrDefaultAsync();
-
-            if (otp == null) return false;
-            if (otp.AttemptCount >= otp.MaxAttempts) return false;
-
-            otp.AttemptCount++;
-
-            bool isValid = BCrypt.Net.BCrypt.Verify(otpCode, otp.OtpHash);
-            if (isValid)
-            {
-                otp.IsConsumed = true;
-                otp.ConsumedAt = DateTime.UtcNow;
-            }
-
-            await _context.SaveChangesAsync();
-            return isValid;
-        }
-
-        public async Task<bool> HasOtpRateLimitAsync(string purpose, string identifier, int maxPer15Min = 3)
-        {
-            var cutoff = DateTime.UtcNow.AddMinutes(-15);
-            int count = await _context.AuthOtps
-                .Where(o => o.Purpose == purpose
-                         && o.Identifier == identifier
-                         && o.CreatedAt > cutoff)
-                .CountAsync();
-
-            return count >= maxPer15Min;
-        }
-    }
-}
-```
-
-Đăng ký DI trong `Program.cs`:
-
-```csharp
-builder.Services.AddScoped<IOtpService, OtpService>();
-```
-
-Chạy migration:
-
-```bash
-dotnet ef migrations add AddAuthOtpTable
-dotnet ef database update
-```
+- [ ] **K.1** Audit events: login success/fail, register, OTP lockout, refresh rotate/reuse, logout, remote logout, password change/reset, user lock/unlock, teacher approve/reject.
+- [ ] **K.2** Audit log không chứa secret/OTP/token/password/CCCD plain text.
+- [ ] **K.3** Unit tests token/OTP/password/session cache.
+- [ ] **K.4** Integration tests auth endpoints, cookie flags, rotation/reuse, session revoke, authorization.
+- [ ] **K.5** Frontend tests: không token storage/query, refresh queue một lần, SignalR revoke handling.
+- [ ] **K.6** E2E: đăng ký/login/forgot/device logout/admin lock/teacher approval.
+- [ ] **K.7** CI build/test backend + frontend trong phạm vi.
+- [ ] **K.8** Secret scan để phát hiện token/key/log pattern mới; không tự sửa các cấu hình API ngoài phạm vi.
 
 ---
 
-### BƯỚC 1: Sửa toàn bộ OTP
+## 5. TIÊU CHÍ NGHIỆM THU BẮT BUỘC
 
-#### Vấn đề cần xử lý
+### Token/F12
 
-Hiện OTP đang dùng:
+- Refresh token không xuất hiện trong localStorage/sessionStorage/IndexedDB/URL/JSON response.
+- Cookie refresh có `HttpOnly`, `Secure`, `SameSite`, path đúng.
+- Không log JWT key/access token/refresh token/OTP/password.
+- Access token TTL tối đa 15 phút và mọi token có `MaPhien`.
 
-```csharp
-new Random().Next(100000, 999999)
-```
+### Session/device realtime
 
-và lưu plain text vào `MemoryCache`.
+- Không còn interval 10 giây gọi API check session/ban/device toàn cục.
+- Khi remote logout/ban user, browser online nhận event và thoát trong mục tiêu ≤ 2 giây.
+- Request tiếp theo bị backend từ chối ngay nhờ cache invalidation, không phụ thuộc UI/event.
+- Cache hit không query DB.
+- Mất SignalR rồi reconnect đồng bộ đúng bằng một request.
+- DB/Redis lỗi không tự cho session chưa xác minh đi qua endpoint bảo vệ.
 
-#### Hướng sửa
+### Registration/password
 
-Thay toàn bộ OTP bằng `IOtpService`.
-
-Mapping `Purpose`:
-
-| Flow | Purpose |
-|---|---|
-| Đăng ký học viên | `Register` |
-| Quên mật khẩu | `ForgotPassword` |
-| Thiết bị mới | `NewDevice` |
-| Thay thế thiết bị | `ReplaceDevice` |
-| Đăng xuất từ xa | `RemoteLogout` |
-| Đổi mật khẩu | `ChangePassword` |
-| Đăng ký giảng viên xác minh email | `InstructorEmail` |
-
-#### Ví dụ sửa đăng ký
-
-Code cũ:
-
-```csharp
-string otp = new Random().Next(100000, 999999).ToString();
-_memoryCache.Set("OTP_Register_" + r.Email, (Otp: otp, Data: r), TimeSpan.FromMinutes(5));
-```
-
-Code mới:
-
-```csharp
-string email = r.Email.Trim().ToLowerInvariant();
-string? ip = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
-string? userAgent = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"];
-
-if (await _otpService.HasOtpRateLimitAsync("Register", email))
-    throw new Exception("Bạn đã yêu cầu quá nhiều mã OTP. Vui lòng thử lại sau 15 phút.");
-
-string otp = await _otpService.CreateOtpAsync("Register", email, ip, userAgent);
-_memoryCache.Set("RegisterData_" + email, r, TimeSpan.FromMinutes(5));
-```
-
-Khi xác nhận OTP:
-
-```csharp
-string email = r.TaiKhoan.Trim().ToLowerInvariant();
-if (!await _otpService.VerifyOtpAsync("Register", email, r.OtpCode))
-    throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
-
-if (!_memoryCache.TryGetValue("RegisterData_" + email, out DangKyRequest data))
-    throw new Exception("Phiên đăng ký đã hết hạn. Vui lòng đăng ký lại.");
-```
-
----
-
-### BƯỚC 2: Verify captcha thật ở đăng ký và các endpoint nhạy cảm
-
-#### Vấn đề
-
-`DangKyRequest` có `CaptchaToken`, nhưng `YeuCauDangKyAsync` chưa verify captcha.
-
-#### Sửa trong `YeuCauDangKyAsync`
-
-Thêm đầu method:
-
-```csharp
-if (string.IsNullOrWhiteSpace(r.CaptchaToken) || r.CaptchaToken == "SKIP_CAPTCHA")
-    throw new Exception("Vui lòng xác thực CAPTCHA.");
-
-bool isCaptchaValid = await _captchaService.XacNhanCaptchaAsync(r.CaptchaToken);
-if (!isCaptchaValid)
-    throw new Exception("Mã CAPTCHA không hợp lệ hoặc đã hết hạn.");
-```
-
-Nên thêm captcha cho:
-
-- `dang-ky`
-- `quen-mat-khau`
-- `yeu-cau-otp-dang-xuat-tu-xa`
-- Các endpoint gửi OTP nhiều lần.
-
----
-
-### BƯỚC 3: Sửa quên mật khẩu không được lộ email tồn tại
-
-#### Vấn đề
-
-Hiện tại code báo rõ:
-
-```txt
-Email không tồn tại trên hệ thống.
-```
-
-Điều này tạo lỗi user enumeration.
-
-#### Sửa `YeuCauQuenMatKhauAsync`
-
-Luôn trả cùng một message:
-
-```csharp
-public async Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest r, string ipAddress)
-{
-    string email = (r.Email ?? "").Trim().ToLowerInvariant();
-    const string genericMessage = "Nếu email tồn tại, hệ thống đã gửi hướng dẫn đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.";
-
-    if (await _otpService.HasOtpRateLimitAsync("ForgotPassword", email))
-        return new { message = genericMessage };
-
-    var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == email);
-    if (user == null)
-        return new { message = genericMessage };
-
-    string? userAgent = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"];
-    string otp = await _otpService.CreateOtpAsync("ForgotPassword", email, ipAddress, userAgent);
-
-    string body = TaoGiaoDienEmail(
-        "Đặt lại mật khẩu",
-        "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng nhập mã xác thực bên dưới để thiết lập mật khẩu mới.",
-        otp);
-
-    await EmailHelper.SendEmailAsync(email, "Mã xác nhận đặt lại mật khẩu - EduCodeAI", body);
-    return new { message = genericMessage };
-}
-```
-
----
-
-### BƯỚC 4: Reset password phải revoke session cũ
-
-#### Vấn đề
-
-Sau khi đặt lại mật khẩu, các session cũ vẫn sống.
-
-#### Sửa trong `DatLaiMatKhauAsync`
-
-Sau khi verify OTP và trước/sau khi đổi mật khẩu:
-
-```csharp
-string email = r.Email.Trim().ToLowerInvariant();
-if (!await _otpService.VerifyOtpAsync("ForgotPassword", email, r.OtpCode))
-    throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
-
-var user = await _context.NguoiDungs
-    .Include(u => u.DanhSachPhienDangNhap)
-    .FirstOrDefaultAsync(u => u.Email == email);
-
-if (user == null)
-    throw new Exception("Không thể đặt lại mật khẩu.");
-
-PasswordValidator.Validate(r.MatKhauMoi, user.Email);
-user.MatKhau = BCrypt.Net.BCrypt.HashPassword(r.MatKhauMoi);
-
-foreach (var session in user.DanhSachPhienDangNhap.Where(p => p.DangHoatDong))
-{
-    session.DangHoatDong = false;
-    session.RefreshTokenRevokedAt = DateTime.UtcNow;
-    _memoryCache.Remove($"session_{session.MaPhien}");
-}
-
-await _context.SaveChangesAsync();
-```
-
-Khuyến nghị: không tự động đăng nhập sau reset password. Hãy trả:
-
-```json
-{
-  "message": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại."
-}
-```
-
----
-
-### BƯỚC 5: Đổi mật khẩu phải có policy và revoke session khác
-
-#### Tạo `Helpers/PasswordValidator.cs`
-
-```csharp
-namespace educodeai_server.Helpers
-{
-    public static class PasswordValidator
-    {
-        public static void Validate(string password, string? email = null)
-        {
-            if (string.IsNullOrWhiteSpace(password))
-                throw new Exception("Mật khẩu không được để trống.");
-
-            if (password.Length < 8)
-                throw new Exception("Mật khẩu phải có ít nhất 8 ký tự.");
-
-            if (!password.Any(char.IsUpper))
-                throw new Exception("Mật khẩu phải chứa ít nhất 1 chữ hoa.");
-
-            if (!password.Any(char.IsLower))
-                throw new Exception("Mật khẩu phải chứa ít nhất 1 chữ thường.");
-
-            if (!password.Any(char.IsDigit))
-                throw new Exception("Mật khẩu phải chứa ít nhất 1 chữ số.");
-
-            if (!string.IsNullOrEmpty(email))
-            {
-                var local = email.Split('@')[0].ToLowerInvariant();
-                if (password.ToLowerInvariant().Contains(local))
-                    throw new Exception("Mật khẩu không được chứa tên email.");
-            }
-        }
-    }
-}
-```
-
-#### Sửa `DoiMatKhauAsync`
-
-```csharp
-public async Task<bool> DoiMatKhauAsync(int userId, DoiMatKhauRequest r)
-{
-    var user = await _context.NguoiDungs
-        .Include(u => u.DanhSachPhienDangNhap)
-        .FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
-
-    if (user == null)
-        throw new Exception("Người dùng không tồn tại.");
-
-    if (!BCrypt.Net.BCrypt.Verify(r.MatKhauCu, user.MatKhau))
-        throw new Exception("Mật khẩu hiện tại không chính xác.");
-
-    PasswordValidator.Validate(r.MatKhauMoi, user.Email);
-
-    if (BCrypt.Net.BCrypt.Verify(r.MatKhauMoi, user.MatKhau))
-        throw new Exception("Mật khẩu mới không được trùng mật khẩu cũ.");
-
-    user.MatKhau = BCrypt.Net.BCrypt.HashPassword(r.MatKhauMoi);
-
-    var maPhienClaim = _httpContextAccessor.HttpContext?.User.FindFirst("MaPhien")?.Value;
-    int.TryParse(maPhienClaim, out int currentMaPhien);
-
-    foreach (var session in user.DanhSachPhienDangNhap.Where(p => p.DangHoatDong && p.MaPhien != currentMaPhien))
-    {
-        session.DangHoatDong = false;
-        session.RefreshTokenRevokedAt = DateTime.UtcNow;
-        _memoryCache.Remove($"session_{session.MaPhien}");
-    }
-
-    await _context.SaveChangesAsync();
-    return true;
-}
-```
-
-Nếu muốn dùng OTP đổi mật khẩu thì thêm API gửi OTP `ChangePassword` và verify:
-
-```csharp
-if (!await _otpService.VerifyOtpAsync("ChangePassword", userId.ToString(), r.OtpCode))
-    throw new Exception("Mã OTP xác nhận không chính xác hoặc đã hết hạn.");
-```
-
-Nếu chưa làm OTP đổi mật khẩu thì nên bỏ field `OtpCode` khỏi DTO/UI để tránh hiểu nhầm.
-
----
-### BƯỚC 6: Refresh token phải lưu DB, hash và rotate
-
-#### Vấn đề
-
-Hiện refresh token:
-
-- Tạo bằng `Guid.NewGuid().ToString()`.
-- Lưu trong `IMemoryCache`.
-- Gửi qua query string.
-- Không hash.
-- Không rotate chuẩn.
-
-#### Sửa model `PhienDangNhapModel.cs`
-
-Thêm các field:
-
-```csharp
-[MaxLength(255)]
-public string? RefreshTokenHash { get; set; }
-
-public DateTime? RefreshTokenExpiresAt { get; set; }
-
-public DateTime? RefreshTokenRevokedAt { get; set; }
-
-[MaxLength(255)]
-public string? ReplacedByTokenHash { get; set; }
-
-[MaxLength(500)]
-public string? UserAgent { get; set; }
-```
-
-Chạy migration:
-
-```bash
-dotnet ef migrations add AddRefreshTokenToPhienDangNhap
-dotnet ef database update
-```
-
-#### Tạo refresh token mới
-
-Trong `XuLyDangNhapThanhCongAsync`, thay đoạn tạo refresh token bằng:
-
-```csharp
-byte[] tokenBytes = new byte[32];
-using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
-{
-    rng.GetBytes(tokenBytes);
-}
-string refreshToken = Convert.ToBase64String(tokenBytes);
-
-phien.RefreshTokenHash = BCrypt.Net.BCrypt.HashPassword(refreshToken);
-phien.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
-phien.RefreshTokenRevokedAt = null;
-phien.ReplacedByTokenHash = null;
-phien.UserAgent = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"];
-phien.DiaChiIP = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
-```
-
-Trả `refreshToken` về client, không lưu MemoryCache nữa.
-
-#### Không gửi refresh token qua query string
-
-Tạo DTO `DTOs/XacThuc/RefreshTokenRequest.cs`:
-
-```csharp
-namespace educodeai_server.DTOs.XacThuc
-{
-    public class RefreshTokenRequest
-    {
-        public string RefreshToken { get; set; } = string.Empty;
-        public string MaThietBi { get; set; } = string.Empty;
-    }
-}
-```
-
-Sửa controller:
-
-```csharp
-[HttpPost("refresh-token")]
-public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
-{
-    var result = await _xacThucService.LamMoiTokenAsync(request.RefreshToken, request.MaThietBi);
-    return Ok(result);
-}
-```
-
-Sửa frontend `src/configs/axios.ts`:
-
-```ts
-const response: any = await axios.post(
-  `${import.meta.env.VITE_API_URL}/api/XacThuc/refresh-token`,
-  { refreshToken, maThietBi }
-);
-```
-
-#### Rotate refresh token trong `LamMoiTokenAsync`
-
-Pseudo-code:
-
-```csharp
-var sessions = await _context.PhienDangNhaps
-    .Where(p => p.MaThietBi == maThietBi && p.DangHoatDong)
-    .ToListAsync();
-
-PhienDangNhapModel? matched = null;
-foreach (var session in sessions)
-{
-    if (session.RefreshTokenRevokedAt == null
-        && session.RefreshTokenExpiresAt > DateTime.UtcNow
-        && !string.IsNullOrEmpty(session.RefreshTokenHash)
-        && BCrypt.Net.BCrypt.Verify(refreshToken, session.RefreshTokenHash))
-    {
-        matched = session;
-        break;
-    }
-}
-
-if (matched == null)
-    throw new Exception("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-
-// Tạo refresh token mới
-byte[] bytes = new byte[32];
-using var rng = RandomNumberGenerator.Create();
-rng.GetBytes(bytes);
-string newRefreshToken = Convert.ToBase64String(bytes);
-
-matched.RefreshTokenRevokedAt = DateTime.UtcNow;
-matched.ReplacedByTokenHash = BCrypt.Net.BCrypt.HashPassword(newRefreshToken);
-matched.RefreshTokenHash = matched.ReplacedByTokenHash;
-matched.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
-matched.ThoiGianHoatDongCuoi = DateTime.UtcNow;
-
-await _context.SaveChangesAsync();
-
-return new
-{
-    token = TaoJwtToken(user, matched.MaPhien),
-    refreshToken = newRefreshToken,
-    user = ...
-};
-```
-
----
-
-### BƯỚC 7: Giảm access token từ 24 giờ xuống 15 phút
-
-Trong `TaoJwtToken`, đổi:
-
-```csharp
-expires: DateTime.UtcNow.AddMinutes(1440)
-```
-
-thành:
-
-```csharp
-expires: DateTime.UtcNow.AddMinutes(15)
-```
-
----
-
-### BƯỚC 8: Sửa Google/Facebook login
-
-#### Vấn đề
-
-Backend đang tin email do frontend gửi lên. Đây là lỗi nghiêm trọng.
-
-#### Google
-
-Frontend phải gửi `id_token` thật từ Google.
-
-DTO nên có:
-
-```csharp
-public class GoogleLoginRequest
-{
-    public string IdToken { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Picture { get; set; } = string.Empty;
-}
-```
-
-Backend verify với Google:
-
-```csharp
-var response = await _httpClient.GetAsync($"https://oauth2.googleapis.com/tokeninfo?id_token={request.IdToken}");
-if (!response.IsSuccessStatusCode)
-    throw new Exception("Token Google không hợp lệ.");
-
-var tokenInfo = await response.Content.ReadFromJsonAsync<GoogleTokenInfo>();
-if (tokenInfo == null || string.IsNullOrEmpty(tokenInfo.email))
-    throw new Exception("Không xác thực được email Google.");
-
-string email = tokenInfo.email.Trim().ToLowerInvariant();
-```
-
-Chỉ dùng email lấy từ Google token response, không tin email client gửi.
-
-#### Facebook
-
-Frontend phải gửi `access_token` thật từ Facebook.
-
-Backend verify với Graph API:
-
-```csharp
-var fbResponse = await _httpClient.GetAsync(
-    $"https://graph.facebook.com/me?fields=id,name,email,picture&access_token={request.AccessToken}");
-
-if (!fbResponse.IsSuccessStatusCode)
-    throw new Exception("Token Facebook không hợp lệ.");
-```
-
----
-
-### BƯỚC 9: Sửa logout và remote logout
-
-#### Logout hiện tại
-
-Không nên để client gửi `maThietBi` cho logout current. Backend nên lấy `MaPhien` từ JWT.
-
-Sửa `DangXuatAsync`:
-
-```csharp
-public async Task<bool> DangXuatAsync(int userId, string maThietBi)
-{
-    var phien = await _context.PhienDangNhaps
-        .FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaThietBi == maThietBi);
-
-    if (phien != null)
-    {
-        phien.DangHoatDong = false;
-        phien.RefreshTokenRevokedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-        _memoryCache.Remove($"session_{phien.MaPhien}");
-    }
-
-    return true;
-}
-```
-
-#### Remote logout
-
-Sau khi xác nhận OTP:
-
-```csharp
-foreach (var session in sessionsToLogout)
-{
-    session.DangHoatDong = false;
-    session.RefreshTokenRevokedAt = DateTime.UtcNow;
-    _memoryCache.Remove($"session_{session.MaPhien}");
-}
-await _context.SaveChangesAsync();
-```
-
-Nếu user chọn đăng xuất tất cả thiết bị khác, hãy giữ lại `MaPhien` hiện tại:
-
-```csharp
-.Where(p => p.MaNguoiDung == userId && p.DangHoatDong && p.MaPhien != currentMaPhien)
-```
-
----
-
-### BƯỚC 10: Thêm rate limit đăng nhập
-
-Hiện đang đếm theo IP. Nên thêm theo IP + tài khoản:
-
-```csharp
-string normalizedLogin = request.TaiKhoan.Trim().ToLowerInvariant();
-string cleanIp = ipAddress.Replace(":", "_").Replace(".", "_");
-string key = $"LoginFail_{cleanIp}_{normalizedLogin}";
-
-int failCount = _memoryCache.Get<int?>(key) ?? 0;
-if (failCount >= 10)
-    throw new Exception("Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau 30 phút.");
-```
-
-Khi sai mật khẩu:
-
-```csharp
-_memoryCache.Set(key, failCount + 1, TimeSpan.FromMinutes(30));
-```
-
-Khi login thành công:
-
-```csharp
-_memoryCache.Remove(key);
-```
-
----
-
-### BƯỚC 11: Cập nhật `ThoiGianHoatDongCuoi`
-
-Trong middleware hoặc service, khi request hợp lệ, cập nhật thời gian hoạt động cuối.
-
-Đơn giản nhất: trong `SessionCheckMiddleware`, sau khi session active:
-
-```csharp
-if (isActive)
-{
-    var session = await dbContext.PhienDangNhaps.FirstOrDefaultAsync(p => p.MaPhien == maPhien);
-    if (session != null)
-    {
-        session.ThoiGianHoatDongCuoi = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync();
-    }
-}
-```
-
-Để tối ưu, chỉ cập nhật nếu lần cập nhật cuối cách hiện tại > 1 phút.
-
----
-
-### BƯỚC 12: Thêm audit log
-
-Tạo model `AuthAuditLog`:
-
-```csharp
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace educodeai_server.Models
-{
-    [Table("AuthAuditLogs")]
-    public class AuthAuditLog
-    {
-        [Key]
-        public long Id { get; set; }
-        public int? UserId { get; set; }
-        [MaxLength(50)] public string EventType { get; set; } = null!;
-        [MaxLength(200)] public string? Description { get; set; }
-        [MaxLength(45)] public string? IpAddress { get; set; }
-        [MaxLength(500)] public string? UserAgent { get; set; }
-        [MaxLength(255)] public string? DeviceId { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    }
-}
-```
-
-Thêm DbSet:
-
-```csharp
-public DbSet<AuthAuditLog> AuthAuditLogs { get; set; }
-```
-
-Ghi log cho các event:
-
-- `LoginSuccess`
-- `LoginFailed`
-- `RegisterSuccess`
-- `PasswordChanged`
-- `PasswordReset`
-- `RemoteLogout`
-- `NewDeviceLogin`
-- `ReplaceDevice`
-
----
-
-### BƯỚC 13: Sửa mojibake tiếng Việt trong source code
-
-Các chuỗi đang bị lỗi cần sửa:
-
-| Sai | Đúng |
-|---|---|
-| `Hoáº¡t Ä‘á»™ng` | `Hoạt động` |
-| `Bá»‹ khÃ³a` | `Bị khóa` |
-| `KhÃ³a vÄ©nh viá»…n` | `Khóa vĩnh viễn` |
-| `TÃ i khoáº£n` | `Tài khoản` |
-| `MÃ£ OTP` | `Mã OTP` |
-
-File cần ưu tiên:
-
-- `Services/Implementation/XacThucService.cs`
-- `Helpers/SessionCheckMiddleware.cs`
-- `Models/NguoiDungModel.cs`
-- `src/configs/axios.ts`
-- `src/App.tsx`
-- `src/utils/deviceHelper.ts`
-
-**Lưu ý:** Sửa bằng UTF-8, không dùng ANSI/Windows-1252.
-
----
-
-### BƯỚC 14: Bảo vệ file KYC giảng viên
-
-Hiện file giấy tờ được lưu trong:
-
-```csharp
-wwwroot/uploads/dang-ky-giang-vien/giay-to
-```
-
-Đây là thư mục public.
-
-Nên chuyển sang:
-
-```csharp
-App_Data/kyc-files/giay-to
-```
-
-Khi admin cần xem, tạo API protected:
-
-```csharp
-[Authorize(Roles = "Admin")]
-[HttpGet("kyc-file/{fileName}")]
-public IActionResult GetKycFile(string fileName)
-{
-    var filePath = Path.Combine(_env.ContentRootPath, "App_Data", "kyc-files", "giay-to", fileName);
-    if (!System.IO.File.Exists(filePath)) return NotFound();
-    return PhysicalFile(filePath, "image/jpeg");
-}
-```
-
----
-
-## PHẦN 4: CHECKLIST FILE CẦN SỬA
-
-| File | Việc cần làm |
-|---|---|
-| `Models/AuthOtpModel.cs` | Tạo mới |
-| `Models/AuthAuditLog.cs` | Tạo mới |
-| `Models/PhienDangNhapModel.cs` | Thêm refresh token fields |
-| `Data/EduCodeAIDbContext.cs` | Thêm `DbSet<AuthOtpModel>`, `DbSet<AuthAuditLog>` |
-| `Services/Interface/IOtpService.cs` | Tạo mới |
-| `Services/Implementation/OtpService.cs` | Tạo mới |
-| `Helpers/PasswordValidator.cs` | Tạo mới |
-| `DTOs/XacThuc/RefreshTokenRequest.cs` | Tạo mới |
-| `Services/Implementation/XacThucService.cs` | Sửa nhiều nhất: OTP, captcha, refresh token, revoke session, password policy, social login |
-| `Controllers/XacThucController.cs` | Sửa refresh-token nhận body, có thể thêm API OTP đổi mật khẩu |
-| `Helpers/SessionCheckMiddleware.cs` | Clear/cập nhật session, sửa mojibake |
-| `src/configs/axios.ts` | Sửa refresh token không dùng query string |
-| `src/services/auth.service.ts` | Sửa call refresh token, social login payload |
-| `src/utils/deviceHelper.ts` | Sửa mojibake, cân nhắc dùng local device id ổn định hơn fingerprint |
-
----
-
-## PHẦN 5: THỨ TỰ TRIỂN KHAI KHUYẾN NGHỊ
-
-1. Tạo `AuthOtpModel`, `OtpService`, migration.
-2. Sửa OTP cho đăng ký/quên mật khẩu/thiết bị mới/remote logout.
-3. Verify captcha ở đăng ký và các endpoint gửi OTP.
-4. Sửa quên mật khẩu không lộ email.
-5. Thêm `PasswordValidator`.
-6. Reset password revoke toàn bộ session.
-7. Đổi mật khẩu revoke session khác.
-8. Thêm fields refresh token vào `PhienDangNhapModel`.
-9. Chuyển refresh token từ `MemoryCache` sang DB hash + rotate.
-10. Sửa frontend gọi refresh token bằng body thay vì query string.
-11. Giảm access token xuống 15 phút.
-12. Sửa Google/Facebook login verify token thật.
-13. Sửa logout clear cache + revoke refresh token.
-14. Thêm audit log.
-15. Sửa mojibake tiếng Việt trong source.
-16. Chuyển file KYC ra khỏi `wwwroot`.
-17. Test end-to-end toàn bộ flow xác thực.
-
----
-
-## PHẦN 6: TEST CASE BẮT BUỘC SAU KHI SỬA
-
-### Đăng ký
-
-- Đăng ký email mới → nhận OTP → nhập đúng OTP → tạo tài khoản thành công.
-- Nhập sai OTP 5 lần → bị chặn.
-- Gửi OTP quá nhiều lần → bị rate limit.
-- Server restart → OTP DB vẫn kiểm tra được nếu chưa hết hạn.
-
-### Đăng nhập
-
-- Sai mật khẩu nhiều lần → captcha/rate limit hoạt động.
-- Đăng nhập thiết bị cũ → vào thẳng.
-- Đăng nhập thiết bị mới → yêu cầu OTP.
-- Đăng nhập thiết bị thứ 4 → yêu cầu thay thế thiết bị cũ.
-
-### Refresh token
-
-- Access token hết hạn → refresh token body hoạt động.
-- Dùng lại refresh token cũ sau rotation → bị từ chối.
-- Logout xong dùng refresh token cũ → bị từ chối.
-
-### Quên mật khẩu
-
-- Email tồn tại và không tồn tại đều trả message giống nhau.
-- Reset password thành công → mọi session cũ bị logout.
-- Mật khẩu yếu bị từ chối.
-
-### Đổi mật khẩu
-
-- Sai mật khẩu cũ → bị từ chối.
-- Mật khẩu mới trùng cũ → bị từ chối.
-- Đổi mật khẩu thành công → các session khác bị logout.
-
-### Remote logout
-
-- OTP đúng → logout thiết bị đã chọn.
-- OTP sai nhiều lần → bị khóa OTP.
-- Session logout bị cắt ngay, không chờ 60 giây.
+- OTP CSPRNG, hash, max 5 attempts, TTL 5 phút, single-use, rate-limit.
+- Forgot password không lộ email.
+- Reset password revoke mọi phiên và không auto-login.
+- Password mới không trùng cũ và đạt policy.
 
 ### Social login
 
-- Google/Facebook token thật → login được.
-- Email giả gửi từ frontend nhưng token không hợp lệ → bị từ chối.
+- Email client giả + provider token không hợp lệ phải bị từ chối.
+- Backend chỉ dùng identity đã verify từ Google/Facebook.
+
+### User/teacher administration
+
+- Non-admin nhận 403 khi gọi quản lý/duyệt.
+- Ban user revoke toàn bộ session/token và push event.
+- Không lưu ảnh CCCD; chỉ dữ liệu OCR cần thiết được mã hóa.
+- Duyệt/từ chối có audit actor/reason/time.
 
 ---
 
-> Tài liệu tạo ngày: 2026-07-03  
-> Phiên bản: v1.1 - đã sửa lỗi tiếng Việt UTF-8  
-> Trạng thái: Ready for implementation
+## 6. THỨ TỰ TRIỂN KHAI KHUYẾN NGHỊ
+
+1. A — Baseline tests và inventory quyền.
+2. B — Chặn log/lộ token và exception.
+3. J — Sửa authorization/maintenance blocker.
+4. C — JWT + refresh cookie/hash/rotation.
+5. G — Session cache + SignalR, bỏ polling DB.
+6. D — OTP/CAPTCHA/đăng ký.
+7. F — Forgot/reset/change password.
+8. E — Login/social login.
+9. H — Quản lý người dùng Admin.
+10. I — Đăng ký/duyệt giảng viên.
+11. K — Hoàn thiện audit/E2E/CI.
+
+Không triển khai sang thanh toán, Gemini/API key, nghiệp vụ khóa học hoặc refactor cấu trúc dự án.
+
+---
+
+## 7. QUYẾT ĐỊNH THIẾT KẾ CẦN GIỮ
+
+- Database là nguồn sự thật; Redis là cache/invalidation, không phải nguồn dữ liệu duy nhất.
+- SignalR phục vụ realtime UX; middleware/cache vẫn là enforcement backend.
+- Session/token do server phát; fingerprint client không phải credential.
+- Không lưu ảnh giấy tờ tùy thân.
+- Không dùng polling DB để mô phỏng realtime.
+- Không mở rộng phạm vi sang cấu trúc dự án, payment hoặc Gemini.

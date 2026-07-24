@@ -104,11 +104,7 @@ namespace educodeai_server.Services.Implementation
                     frontText = OcrImage(engine, frontBytes);
                     backText = OcrImage(engine, backBytes);
 
-                    if (_env.IsDevelopment())
-                    {
-                        _logger.LogInformation("[OCR-DEBUG] === MAT TRUOC ===\n{FrontText}", frontText);
-                        _logger.LogInformation("[OCR-DEBUG] === MAT SAU ===\n{BackText}", backText);
-                    }
+                    // Nội dung OCR là dữ liệu giấy tờ nhạy cảm, không được ghi vào log.
                 }
                 catch (Exception ex)
                 {

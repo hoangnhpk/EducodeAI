@@ -175,7 +175,7 @@ const DangNhap: React.FC = () => {
 
     const handleLoginSuccess = async (res: any) => {
         localStorage.setItem('user_token', res.token);
-        localStorage.setItem('refresh_token', res.refreshToken); // Lưu refresh token
+        // Refresh token do backend đặt trong cookie HttpOnly; frontend không lưu/đọc.
         localStorage.setItem('user_info', JSON.stringify(res.user));
         await Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false });
         redirectByUserRole(res.user);

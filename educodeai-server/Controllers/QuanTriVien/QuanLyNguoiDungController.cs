@@ -1,10 +1,12 @@
 ﻿using educodeai_server.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using educodeai_server.DTOs.NguoiDung;
 namespace educodeai_server.Controllers
 {
     [Route("api/nguoi-dung")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class QuanLyNguoiDungController : ControllerBase
     {
         private readonly IQuanLyNguoiDungService _service;

@@ -33,13 +33,6 @@ axiosClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token.trim()}`;
     }
 
-    // 👉 ĐÃ THÊM: Gắn "kim bài miễn tử" cho Admin/Giảng viên
-    // Báo cho Cửa cuốn Middleware biết "Ta là Admin, cho ta qua!"
-    const currentPath = window.location.pathname.toLowerCase();
-    if (currentPath.includes('/quan-tri-vien')) {
-      config.headers["X-Bypass-Maintenance"] = "true";
-    }
-
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     } else {
@@ -110,47 +103,19 @@ axiosClient.interceptors.response.use(
         originalRequest._retry = true;
         isRefreshing = true;
 
-        const refreshToken = localStorage.getItem("refresh_token");
         const { maThietBi } = getDeviceInfo();
 
-        if (!refreshToken) {
-          isRefreshing = false;
-          // Hiển thị thông báo và đếm ngược 3 giây
-          import("sweetalert2").then((Swal) => {
-            Swal.default.fire({
-              title: "Hết phiên đăng nhập!",
-              html: "Tài khoản của bạn đã được đăng xuất hoặc phiên làm việc đã hết hạn. Hệ thống sẽ chuyển hướng sau <b>3</b> giây...",
-              icon: "warning",
-              timer: 3000,
-              timerProgressBar: true,
-              showConfirmButton: false,
-              allowOutsideClick: false,
-              didOpen: () => {
-                const b = Swal.default.getHtmlContainer()?.querySelector("b");
-                let timerInterval = setInterval(() => {
-                  if (b) b.textContent = Math.ceil(Swal.default.getTimerLeft()! / 1000).toString();
-                }, 100);
-                (Swal as any)._timerInterval = timerInterval;
-              },
-              willClose: () => {
-                clearInterval((Swal as any)._timerInterval);
-              }
-            }).then(() => {
-              localStorage.clear();
-              window.location.href = "/dang-nhap";
-            });
-          });
-          return Promise.reject(error);
-        }
-
         try {
+          // Refresh token nằm trong cookie HttpOnly (JS không đọc được);
+          // gửi kèm tự động nhờ withCredentials. Không truyền token qua URL.
           const response: any = await axios.post(
-            `${import.meta.env.VITE_API_URL}/api/XacThuc/refresh-token?refreshToken=${refreshToken}&maThietBi=${maThietBi}`
+            `${import.meta.env.VITE_API_URL}/api/XacThuc/refresh-token?maThietBi=${maThietBi}`,
+            null,
+            { withCredentials: true }
           );
-          
-          const { token, refreshToken: newRefreshToken } = response.data;
+
+          const { token } = response.data;
           localStorage.setItem("user_token", token);
-          localStorage.setItem("refresh_token", newRefreshToken);
 
           axiosClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
           processQueue(null, token);

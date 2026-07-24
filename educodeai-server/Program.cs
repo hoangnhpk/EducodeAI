@@ -49,8 +49,6 @@ builder.Services.AddSignalR();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        Console.WriteLine("JWT KEY (VERIFY): " + builder.Configuration["Jwt:Key"]);
-
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -59,8 +57,61 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-            RoleClaimType = ClaimTypes.Role
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured."))),
+            RoleClaimType = ClaimTypes.Role,
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+
+        // Trả envelope ổn định { success, message, error:{ code } } cho 401/403 để
+        // frontend xử lý theo error.code thay vì body rỗng mặc định (J.5).
+        options.Events = new JwtBearerEvents
+        {
+            // SignalR chuẩn: WebSocket/SSE không gửi được Authorization header nên client
+            // truyền access token qua query "access_token". Chỉ đọc cho path hub session
+            // (kết nối chạy trên HTTPS/WSS). Các request HTTP khác vẫn dùng header như cũ.
+            OnMessageReceived = messageContext =>
+            {
+                var accessToken = messageContext.Request.Query["access_token"];
+                var path = messageContext.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/sessionHub"))
+                {
+                    messageContext.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            },
+            OnChallenge = async challengeContext =>
+            {
+                challengeContext.HandleResponse();
+                if (challengeContext.Response.HasStarted)
+                {
+                    return;
+                }
+
+                challengeContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                challengeContext.Response.ContentType = "application/json";
+                await challengeContext.Response.WriteAsJsonAsync(new
+                {
+                    success = false,
+                    message = "Bạn cần đăng nhập để truy cập.",
+                    error = new { code = "AUTHENTICATION_FAILED", message = "Bạn cần đăng nhập để truy cập." }
+                });
+            },
+            OnForbidden = async forbiddenContext =>
+            {
+                if (forbiddenContext.Response.HasStarted)
+                {
+                    return;
+                }
+
+                forbiddenContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+                forbiddenContext.Response.ContentType = "application/json";
+                await forbiddenContext.Response.WriteAsJsonAsync(new
+                {
+                    success = false,
+                    message = "Bạn không có quyền thực hiện thao tác này.",
+                    error = new { code = "FORBIDDEN", message = "Bạn không có quyền thực hiện thao tác này." }
+                });
+            }
         };
     });
 
@@ -142,6 +193,11 @@ builder.Services.AddDataProtection();
 // Dịch vụ Xác thực và Captcha mới
 builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddScoped<IXacThucService, XacThucService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+// Cache trạng thái user/session cho hot-path middleware (G.1); chạy trên IDistributedCache (Redis/memory fallback).
+builder.Services.AddScoped<ISessionStateCache, SessionStateCache>();
+// Publish event realtime tới SessionHub (G.8).
+builder.Services.AddScoped<ISessionRealtimeNotifier, SessionRealtimeNotifier>();
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
@@ -515,14 +571,18 @@ app.UseStaticFiles();
 // CORS: phải đặt sau UseRouting và trước UseAuthentication/UseAuthorization
 // (https://learn.microsoft.com/en-us/aspnet/core/security/cors)
 app.UseRouting();
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseCors("AllowReactApp");
 app.UseRateLimiter();
-app.UseMiddleware<MaintenanceMiddleware>();
 
+// Authentication phải chạy TRƯỚC maintenance để middleware biết user có phải Admin đã đăng nhập
+// hay không (J.1). Trước đây maintenance đứng trước authentication nên không thể phân biệt Admin.
 app.UseAuthentication();
+app.UseMiddleware<MaintenanceMiddleware>();
 app.UseSessionCheck();
 app.UseAuthorization();
 app.MapHub<SystemConfigHub>("/systemConfigHub").RequireCors("AllowReactApp");
+app.MapHub<SessionHub>("/sessionHub").RequireCors("AllowReactApp");
 
 app.MapControllers();
 

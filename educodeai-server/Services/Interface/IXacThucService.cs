@@ -37,5 +37,8 @@ namespace educodeai_server.Services.Interface
         Task<bool> DangXuatAsync(int maNguoiDung, string maThietBi);
         Task<bool> YeuCauOtpDangXuatTuXaAsync(int maNguoiDung);
         Task<bool> XacNhanDangXuatTuXaAsync(int maNguoiDung, DangXuatTuXaRequest request);
+
+        // --- ĐỒNG BỘ TRẠNG THÁI PHIÊN (G.12): frontend gọi 1 lần khi reconnect SignalR ---
+        Task<object> LayTrangThaiPhienAsync(int maNguoiDung);
     }
 }
