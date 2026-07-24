@@ -519,9 +519,9 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ### Chặng D-2 — Rate-limit phát/verify OTP + CAPTCHA
 
-- [ ] **D.3** Rate limit phát OTP theo purpose + normalized email/user + IP; đếm invalid OTP theo identifier/IP (tận dụng pattern Lua atomic trong `RateLimitService` hoặc `IDistributedCache` counter).
-- [ ] **D.4** Verify CAPTCHA server-side ở đăng ký, quên mật khẩu và các endpoint phát OTP công khai (dùng `ICaptchaService` sẵn có).
-- [ ] **D.5** Không cho `SKIP_CAPTCHA` ngoài test environment (gate bằng `IWebHostEnvironment`).
+- [x] **D.3** Rate limit phát OTP theo purpose + normalized email/user + IP; đếm invalid OTP theo identifier/IP. _(`IOtpRateLimiter`/`OtpRateLimiter` fixed-window trên `IDistributedCache`: gửi 5/identifier + 20/IP mỗi 15 phút, verify 10/identifier + 50/IP; fail-open khi cache lỗi. Gắn vào cả 6 flow phát và các flow verify trong `XacThucService`.)_
+- [x] **D.4** Verify CAPTCHA server-side ở đăng ký, quên mật khẩu và các endpoint phát OTP công khai. _(Helper `XacThucCaptchaHoacNemAsync` dùng `ICaptchaService`; gắn vào `YeuCauDangKyAsync`, `YeuCauQuenMatKhauAsync`, `GuiOtpEmailGiangVienAsync`. Thêm `CaptchaToken` vào `QuenMatKhauRequest`/`EmailOtpGiangVienRequest` + FE `QuenMatKhau.tsx`/`DangKyGiangVien.tsx` gắn ReCAPTCHA, auth.service truyền token.)_
+- [x] **D.5** Không cho `SKIP_CAPTCHA` ngoài test environment. _(`XacThucCaptchaHoacNemAsync` chỉ bỏ qua khi `!_env.IsProduction()`; production luôn bắt token hợp lệ.)_
 
 ### Chặng D-3 — Hardening đăng ký học viên
 

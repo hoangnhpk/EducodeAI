@@ -17,8 +17,8 @@ export const authService = {
     return await api.get('/api/NguoiDung/check-email', { params: { email } });
   },
 
-  sendInstructorEmailOtp: async (email: string) => {
-    return await api.post('/api/XacThuc/giang-vien/gui-otp-email', { email });
+  sendInstructorEmailOtp: async (email: string, captchaToken: string) => {
+    return await api.post('/api/XacThuc/giang-vien/gui-otp-email', { email, captchaToken });
   },
 
   verifyInstructorEmailOtp: async (email: string, otpCode: string) => {
@@ -100,8 +100,8 @@ export const authService = {
     }
   },
 
-  forgotPasswordSendOtp: async (emailValue: string) => {
-    return await api.post('/api/XacThuc/quen-mat-khau', { email: emailValue });
+  forgotPasswordSendOtp: async (emailValue: string, captchaToken: string) => {
+    return await api.post('/api/XacThuc/quen-mat-khau', { email: emailValue, captchaToken });
   },
 
   resetPassword: async (payload: { Email: string; NewPassword: string; OtpCode: string }) => {

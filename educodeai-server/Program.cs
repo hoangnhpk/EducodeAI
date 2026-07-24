@@ -200,6 +200,10 @@ builder.Services.AddScoped<ISessionStateCache, SessionStateCache>();
 builder.Services.AddScoped<ISessionRealtimeNotifier, SessionRealtimeNotifier>();
 // OTP service dùng chung (D.1): CSPRNG + hash + single-use + max attempts, backing store IDistributedCache.
 builder.Services.AddScoped<IOtpService, OtpService>();
+// Rate-limit phát/verify OTP theo purpose + identifier + IP (D.3); fail-open khi cache lỗi.
+builder.Services.AddScoped<IOtpRateLimiter, OtpRateLimiter>();
+// Rate-limit phát/verify OTP theo purpose + identifier + IP (D.3); backing store IDistributedCache.
+builder.Services.AddScoped<IOtpRateLimiter, OtpRateLimiter>();
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();

@@ -108,7 +108,7 @@ public sealed class XacThucFlowBaselineTests
         var statusResult = new { status = "ChoDuyet" };
         var permissionResult = new { allowed = true };
         var supplementResult = new { updated = true };
-        _authService.Setup(x => x.GuiOtpEmailGiangVienAsync(otpRequest.Email)).ReturnsAsync(true);
+        _authService.Setup(x => x.GuiOtpEmailGiangVienAsync(otpRequest.Email, It.IsAny<string?>())).ReturnsAsync(true);
         _authService.Setup(x => x.XacMinhOtpEmailGiangVienAsync(otpRequest.Email, otpRequest.OtpCode)).ReturnsAsync(true);
         _authService.Setup(x => x.DangKyGiangVienAsync(registration)).ReturnsAsync(registrationResult);
         _authService.Setup(x => x.TraCuuTrangThaiHoSoAsync(otpRequest.Email)).ReturnsAsync(statusResult);
