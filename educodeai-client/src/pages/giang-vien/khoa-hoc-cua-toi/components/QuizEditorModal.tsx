@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { CauHoiChungChi } from '../types';
 import { useToastStandalone } from '../components/ui/Toast';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface Props {
   maKhoaHoc: number;
@@ -14,6 +15,9 @@ const QuizEditorModal: React.FC<Props> = ({ maKhoaHoc, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [questions, setQuestions] = useState<CauHoiChungChi[]>([]);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useModalA11y(isOpen, onClose, panelRef);
 
   useEffect(() => {
     if (isOpen) {
@@ -68,11 +72,11 @@ const QuizEditorModal: React.FC<Props> = ({ maKhoaHoc, isOpen, onClose }) => {
 
   return (
     <div className="khm-modal-backdrop" onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="khm-modal khm-modal-lg fade-in" onClick={e => e.stopPropagation()} style={{ margin: 'auto', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="khm-modal khm-modal-lg fade-in" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="quiz-editor-modal-title" onClick={e => e.stopPropagation()} style={{ margin: 'auto', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
         <ToastContainer />
         <div className="khm-modal-header">
-          <h2 className="khm-modal-title">📝 Xem & Chỉnh sửa Đề thi Chứng chỉ</h2>
-          <button className="khm-modal-close" onClick={onClose} disabled={saving}>×</button>
+          <h2 className="khm-modal-title" id="quiz-editor-modal-title">📝 Xem & Chỉnh sửa Đề thi Chứng chỉ</h2>
+          <button className="khm-modal-close" onClick={onClose} disabled={saving} aria-label="Đóng">×</button>
         </div>
         <div className="khm-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto', background: 'var(--khm-gray-50)', padding: 20 }}>
           {loading ? (

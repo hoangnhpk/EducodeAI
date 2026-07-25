@@ -36,7 +36,7 @@ namespace educodeai_server.Services.Implement
 
         private async Task InvalidateCourseListAsync(int maGiangVien)
         {
-            var key = $"Instructor:{maGiangVien}:CourseList";
+            var key = CacheKeys.InstructorCourseList(maGiangVien);
             await _redisService.XoaKeyAsync(key);
             _logger.LogInformation("[CACHE INVALIDATE] Xóa danh sách khóa học của Giảng Viên #{Id}", maGiangVien);
         }
@@ -45,7 +45,7 @@ namespace educodeai_server.Services.Implement
         public async Task<List<KhoaHocGiangVienListDTO>> GetDanhSachKhoaHocAsync(int maGiangVien)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            string cacheKey = $"Instructor:{maGiangVien}:CourseList";
+            string cacheKey = CacheKeys.InstructorCourseList(maGiangVien);
             var cached = await _redisService.LayGiaTriAsync(cacheKey);
             List<KhoaHocGiangVienListDTO>? list = null;
 
@@ -151,7 +151,7 @@ namespace educodeai_server.Services.Implement
             await _repository.AddKhoaHocAsync(khoaHoc);
             await _repository.SaveChangesAsync();
             // Xóa cache danh sách công khai khi có khóa học mới
-            await _redisService.XoaKeyAsync("CourseList:Public");
+            await _redisService.XoaKeyAsync(CacheKeys.CourseListPublic);
             await InvalidateCourseListAsync(maGiangVien);
             return khoaHoc.MaKhoaHoc;
         }
@@ -167,7 +167,7 @@ namespace educodeai_server.Services.Implement
             // Tăng version -> cache cũ tự expire theo TTL
             await InvalidateCourseListAsync(maGiangVien);
             await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
-            await _redisService.XoaKeyAsync("CourseList:Public");
+            await _redisService.XoaKeyAsync(CacheKeys.CourseListPublic);
             return true;
         }
 
@@ -186,7 +186,7 @@ namespace educodeai_server.Services.Implement
             // Tăng version + xóa list cache khi khóa học bị xóa
             await InvalidateCourseListAsync(maGiangVien);
             await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
-            await _redisService.XoaKeyAsync("CourseList:Public");
+            await _redisService.XoaKeyAsync(CacheKeys.CourseListPublic);
             return true;
         }
 
@@ -205,7 +205,7 @@ namespace educodeai_server.Services.Implement
 
             await InvalidateCourseListAsync(maGiangVien);
             await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
-            await _redisService.XoaKeyAsync("CourseList:Public");
+            await _redisService.XoaKeyAsync(CacheKeys.CourseListPublic);
             return true;
         }
 

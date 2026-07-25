@@ -67,7 +67,6 @@ namespace educodeai_server.Controllers
                             ? dn.GetString() ?? ""
                             : m.GetProperty("name").GetString() ?? ""
                     })
-                    .Where(m => m.Name.StartsWith("models/gemini"))
                     .OrderBy(m => m.Name)
                     .ToList();
 

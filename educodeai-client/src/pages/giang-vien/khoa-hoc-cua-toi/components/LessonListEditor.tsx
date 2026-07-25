@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors,
@@ -11,6 +11,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import Swal from 'sweetalert2';
 import type { BaiHocDetail } from '../types';
+import { useModalA11y } from '@/hooks/useModalA11y';
 import EmptyState from './ui/EmptyState';
 import ConfirmDialog from './ui/ConfirmDialog';
 import { ListItemSkeleton } from './ui/Skeleton';
@@ -59,6 +60,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
   const [errors, setErrors] = useState<Record<string, string>>({});
   const isYT = editData?.linkVideo && getYTId(editData.linkVideo);
   const isCloudinary = editData?.videoSource === 'cloudinary';
+  const panelRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     setLoaiBaiHoc(editData?.loaiBaiHoc === 'File' ? 'File' : 'Video');
@@ -69,6 +71,8 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
     setFile(null);
     setErrors({});
   }, [editData, isOpen]);
+
+  useModalA11y(isOpen && !isLoading, onClose, panelRef);
 
   if (!isOpen) return null;
   const validate = () => {
@@ -94,10 +98,10 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
 
   return (
     <div className="khm-modal-backdrop" onClick={onClose}>
-      <div className="khm-modal khm-modal-lg" onClick={e => e.stopPropagation()}>
+      <div className="khm-modal khm-modal-lg" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="lesson-modal-title" onClick={e => e.stopPropagation()}>
         <div className="khm-modal-header">
-          <h3 className="khm-modal-title">{isEdit ? 'Chỉnh sửa bài học' : 'Thêm bài học mới'}</h3>
-          <button className="khm-modal-close" onClick={onClose}>×</button>
+          <h3 className="khm-modal-title" id="lesson-modal-title">{isEdit ? 'Chỉnh sửa bài học' : 'Thêm bài học mới'}</h3>
+          <button className="khm-modal-close" onClick={onClose} aria-label="Đóng">×</button>
         </div>
         <div className="khm-modal-body">
           {!isEdit && (
@@ -223,25 +227,19 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
 
 // ---- Video Preview Modal ----
 const VideoPreviewModal: React.FC<{ lesson: BaiHocDetail | null; onClose: () => void }> = ({ lesson, onClose }) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(!!lesson, onClose, panelRef);
+
   if (!lesson) return null;
   const ytId = getYTId(lesson.linkVideo);
   const isFile = lesson.loaiBaiHoc === 'File';
 
-  // Debug: Log subtitle info
-  console.log('VideoPreviewModal - lesson:', {
-    maBaiHoc: lesson.maBaiHoc,
-    tieuDe: lesson.tieuDe,
-    hasSubtitle: lesson.hasSubtitle,
-    subtitleUrl: lesson.subtitleUrl,
-    videoSource: lesson.videoSource
-  });
-
   return (
     <div className="khm-modal-backdrop" onClick={onClose}>
-      <div className="khm-modal khm-modal-lg" onClick={e => e.stopPropagation()}>
+      <div className="khm-modal khm-modal-lg" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="video-preview-title" onClick={e => e.stopPropagation()}>
         <div className="khm-modal-header">
-          <h3 className="khm-modal-title khm-truncate">{lesson.tieuDe}</h3>
-          <button className="khm-modal-close" onClick={onClose}>×</button>
+          <h3 className="khm-modal-title khm-truncate" id="video-preview-title">{lesson.tieuDe}</h3>
+          <button className="khm-modal-close" onClick={onClose} aria-label="Đóng">×</button>
         </div>
         <div className="khm-modal-body khm-p-0">
           {isFile ? (

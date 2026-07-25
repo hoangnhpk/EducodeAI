@@ -8,6 +8,7 @@ using System.Text.Json;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using educodeai_server.Repository.Interface;
+using educodeai_server.Constants;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -18,17 +19,19 @@ namespace educodeai_server.Helpers
         private readonly HttpClient _http;
         private readonly IRedisService _redisService;
         private readonly IKeyApiRepository _keyApiRepo;
+        private readonly IRateLimitService _rateLimitService;
         private readonly ILogger<GeminiToolCallingService> _logger;
         private readonly string _secretKey;
 
         private static int _currentKeyIndex = 0;
         private static readonly object _lock = new object();
 
-        public GeminiToolCallingService(HttpClient http, IConfiguration config, IRedisService redisService, IKeyApiRepository keyApiRepo, ILogger<GeminiToolCallingService> logger)
+        public GeminiToolCallingService(HttpClient http, IConfiguration config, IRedisService redisService, IKeyApiRepository keyApiRepo, IRateLimitService rateLimitService, ILogger<GeminiToolCallingService> logger)
         {
             _http = http;
             _redisService = redisService;
             _keyApiRepo = keyApiRepo;
+            _rateLimitService = rateLimitService;
             _logger = logger;
             _secretKey = config["ApiSecurity:SecretKey"] ?? throw new Exception("Chưa cấu hình SecretKey!");
         }
@@ -38,21 +41,15 @@ namespace educodeai_server.Helpers
             var validKeys = new List<string>();
             try
             {
-                var keys = _redisService.LayDanhSachKeyTheoPattern("EduCodeAI:KeyPool:*").ToList();
+                var keys = _redisService.LayDanhSachKeyTheoPattern(CacheKeys.KeyPoolPattern).ToList();
                 foreach (var k in keys)
                 {
                     var trangThaiStr = await _redisService.LayHashAsync(k, "TrangThai");
                     if (bool.TryParse(trangThaiStr, out bool isOk) && isOk)
                     {
-                        var reqMaxStr = await _redisService.LayHashAsync(k, "HanMucRequest");
-                        var reqUsedStr = await _redisService.LayHashAsync(k, "RequestDaDung");
-                        int.TryParse(reqMaxStr, out int max);
-                        int.TryParse(reqUsedStr, out int used);
-                        
-                        if (max == 0 || used < max)
-                        {
-                            validKeys.Add(k);
-                        }
+                        // Enforce quota được thực hiện qua ReserveQuotaAsync lúc gọi AI,
+                        // nên ở đây chỉ cần key đang bật.
+                        validKeys.Add(k);
                     }
                 }
             }
@@ -71,14 +68,14 @@ namespace educodeai_server.Helpers
                     {
                         if (key.TrangThai) // Chá kiá tra trang thái vì không có fields DaSuDungRequest
                         {
-                            var redisKey = $"EduCodeAI:KeyPool:{key.ID}";
-                            
-                            // Äông bá key vào Redis/MemoryCache
+                            var redisKey = CacheKeys.KeyPool(key.ID);
+
+                            // Đồng bộ key vào Redis/MemoryCache theo schema chuẩn (RPM/TPM/RPD).
                             await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", key.MaKeyMaHoa);
-                            await _redisService.LuuHashAsync(redisKey, "HanMucRequest", key.HanMucRequest.ToString());
-                            await _redisService.LuuHashAsync(redisKey, "HanMucToken", key.HanMucToken.ToString());
-                            await _redisService.LuuHashAsync(redisKey, "RequestDaDung", "0"); // Bát dáu tù 0
-                            await _redisService.LuuHashAsync(redisKey, "TokenDaDung", "0");  // Bát dáu tù 0
+                            await _redisService.LuuHashAsync(redisKey, "RPMLimit", key.RPMLimit.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "TPMLimit", key.TPMLimit.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "RPDLimit", key.RPDLimit.ToString());
+                            await _redisService.LuuHashAsync(redisKey, "ModelSuDung", key.ModelSuDung);
                             await _redisService.LuuHashAsync(redisKey, "TrangThai", "true");
                             
                             validKeys.Add(redisKey);
@@ -191,6 +188,25 @@ namespace educodeai_server.Helpers
 
                     string requestUrl = $"v1beta/models/gemini-2.5-flash:generateContent?key={rawKey}";
 
+                    // Reserve quota atomic trước khi gọi (giống GeminiAIService)
+                    var parts = currentRedisKey.Split(':');
+                    int.TryParse(parts.Length >= 3 ? parts[2] : "0", out int keyId);
+
+                    int.TryParse(await _redisService.LayHashAsync(currentRedisKey, "RPMLimit"), out int rpmLimit);
+                    int.TryParse(await _redisService.LayHashAsync(currentRedisKey, "TPMLimit"), out int tpmLimit);
+                    int.TryParse(await _redisService.LayHashAsync(currentRedisKey, "RPDLimit"), out int rpdLimit);
+
+                    // Ước lượng token: ~0.3 token/ký tự trên toàn bộ nội dung request + overhead
+                    int docDaiNoiDung = JsonSerializer.Serialize(contents).Length;
+                    int estimatedTokens = (int)Math.Ceiling(docDaiNoiDung * 0.3) + 200;
+
+                    if (!await _rateLimitService.ReserveQuotaAsync(keyId, rpmLimit, tpmLimit, rpdLimit, estimatedTokens))
+                    {
+                        Console.WriteLine($"[RateLimit] Key {currentRedisKey} bị giới hạn (RPM/TPM/RPD). Đang chuyển Key khác...");
+                        soLanThuLai++;
+                        continue;
+                    }
+
                     HttpResponseMessage response = null;
 
                     try
@@ -200,6 +216,7 @@ namespace educodeai_server.Helpers
                     catch (Exception ex)
                     {
                         Console.WriteLine($"[Gemini Lỗi Kết Nối] Google từ chối phũ phàng với key {currentRedisKey}. Chi tiết: {ex.Message}. Đang thử key khác...");
+                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
                         soLanThuLai++;
                         await Task.Delay(2000);
                         continue;
@@ -209,26 +226,26 @@ namespace educodeai_server.Helpers
                     {
                         var responseBody = await response.Content.ReadAsStringAsync();
 
-                        await _redisService.TangGiaTriHashAsync(currentRedisKey, "RequestDaDung", 1);
-
+                        int actualTokens = 0;
                         try
                         {
                             string usageMetaString = ChuanHoaJsonTuAIHelper.usageMetadata(responseBody);
                             var metaObj = Newtonsoft.Json.Linq.JObject.Parse(usageMetaString);
-                            int totalTokens = (int?)metaObj["totalTokenCount"] ?? 0;
+                            actualTokens = (int?)metaObj["totalTokenCount"] ?? 0;
 
-                            if (totalTokens > 0)
+                            if (actualTokens > 0)
                             {
-                                await _redisService.TangGiaTriHashAsync(currentRedisKey, "TokenDaDung", totalTokens);
-                                Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {totalTokens} tokens.");
+                                Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {actualTokens} tokens.");
                             }
 
-                            await LuuLogVaoRedisQueue(currentRedisKey, totalTokens, (int)response.StatusCode, requestUrl);
+                            await LuuLogVaoRedisQueue(currentRedisKey, actualTokens, (int)response.StatusCode, requestUrl);
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine($"[Gemini Lỗi Token Tracker] {ex.Message}");
                         }
+
+                        await _rateLimitService.CommitQuotaAsync(keyId, actualTokens, estimatedTokens);
 
                         return responseBody;
                     }
@@ -242,7 +259,7 @@ namespace educodeai_server.Helpers
                     {
                         Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
 
-                        await _redisService.TangGiaTriHashAsync(currentRedisKey, "RequestDaDung", 1);
+                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
 
                         await LuuLogVaoRedisQueue(currentRedisKey, 0, (int)response.StatusCode, requestUrl);
 
@@ -295,7 +312,7 @@ namespace educodeai_server.Helpers
                 };
 
                 string jsonLog = JsonSerializer.Serialize(nhatKy);
-                await _redisService.DayVaoCuoiListAsync("EduCodeAI:LogQueue", jsonLog);
+                await _redisService.DayVaoCuoiListAsync(CacheKeys.LogQueue, jsonLog);
             }
             catch (Exception ex)
             {

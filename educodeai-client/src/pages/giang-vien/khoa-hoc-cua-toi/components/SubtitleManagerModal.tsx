@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import type { BaiHocDetail } from '../types';
 import { taiLenPhuDe, taoPhuDeAI, GIA_PHU_DE_AI_MOI_PHUT_USD } from '@/services/media.service';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface SubtitleManagerModalProps {
   dangMo: boolean;
@@ -19,6 +20,7 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
   const [thanhCong, setThanhCong] = useState<string | null>(null);
   
   const refInputFile = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (baiHoc?.hasSubtitle) {
@@ -30,6 +32,8 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
     setLoi(null);
     setThanhCong(null);
   }, [baiHoc, dangMo]);
+
+  useModalA11y(dangMo && !!baiHoc, dongModal, panelRef);
 
   if (!dangMo || !baiHoc) return null;
 
@@ -75,10 +79,10 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
 
   return (
     <div className="khm-modal-backdrop" onClick={dongModal}>
-      <div className="khm-modal khm-modal-md" onClick={e => e.stopPropagation()}>
+      <div className="khm-modal khm-modal-md" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="subtitle-modal-title" onClick={e => e.stopPropagation()}>
         <div className="khm-modal-header">
-          <h3 className="khm-modal-title">Quản lý Phụ đề (Subtitles)</h3>
-          <button className="khm-modal-close" onClick={dongModal} disabled={dangXuLy}>×</button>
+          <h3 className="khm-modal-title" id="subtitle-modal-title">Quản lý Phụ đề (Subtitles)</h3>
+          <button className="khm-modal-close" onClick={dongModal} disabled={dangXuLy} aria-label="Đóng">×</button>
         </div>
         <div className="khm-modal-body">
           <p className="khm-text-sm khm-text-muted khm-mb-16">

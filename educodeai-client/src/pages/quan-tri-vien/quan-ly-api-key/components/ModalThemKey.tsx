@@ -79,7 +79,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
         headers: { "Content-Type": "application/json" },
       });
       if (res.length === 0) {
-        setFetchModelError("Không tìm thấy model Gemini nào cho key này.");
+        setFetchModelError("Không tìm thấy model sinh nội dung nào cho key này.");
       } else {
         setModelList(res);
         // Tự chọn model đầu tiên nếu chưa có

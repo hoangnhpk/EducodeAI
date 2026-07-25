@@ -3,6 +3,7 @@ using System.Text.Json;
 using educodeai_server.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using educodeai_server.Constants;
 using educodeai_server.Data;
 using educodeai_server.DTOs.AI;
 using educodeai_server.DTOs.KhoaHoc;
@@ -42,7 +43,7 @@ namespace educodeai_server.Services.Implementation
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            const string publicKey = "CourseList:Public:v2";
+            const string publicKey = CacheKeys.CourseListPublic;
 
             // 1. Đọc Public Cache
             var cached = await _redisService.LayGiaTriAsync(publicKey);

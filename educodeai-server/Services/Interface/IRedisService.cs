@@ -11,6 +11,10 @@ namespace educodeai_server.Services.Interface
         Task<long> TangGiaTriHashAsync(string key, string thuocTinh, long mucTang = 1);
         Task DayVaoCuoiListAsync(string key, string giaTri);
         Task<IEnumerable<string>> LayTuDauListAsync(string key, int soLuong);
+
+        // Peek-then-trim: đọc không xóa (an toàn khi flush DB có thể thất bại)
+        Task<IEnumerable<string>> DocDauListKhongXoaAsync(string key, int soLuong);
+        Task CatDauListAsync(string key, int soLuong);
         IEnumerable<string> LayDanhSachKeyTheoPattern(string pattern);
 
         // Course Cache Versioning
