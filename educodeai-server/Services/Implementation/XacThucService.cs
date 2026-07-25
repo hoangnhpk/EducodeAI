@@ -474,8 +474,13 @@ namespace educodeai_server.Services.Implementation
             </html>";
         }
 
-        private async Task<NguoiDungModel?> LayNguoiDungKemThietBiAsync(string t) => 
-            await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.TaiKhoan == t || u.Email == t);
+        private async Task<NguoiDungModel?> LayNguoiDungKemThietBiAsync(string t)
+        {
+            // Email so sánh case-insensitive (đồng bộ với chỗ tạo/normalize email); TaiKhoan giữ khớp nguyên.
+            var emailLower = (t ?? string.Empty).Trim().ToLower();
+            return await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap)
+                .FirstOrDefaultAsync(u => u.TaiKhoan == t || u.Email.ToLower() == emailLower);
+        }
         
         private async Task<object> XuLyDangNhapThanhCongAsync(NguoiDungModel u, string? maThietBi, string? tenThietBi) { 
             // maThietBi lÃºc nÃ y lÃ  Fingerprint gá»­i tá»« FE
@@ -626,6 +631,9 @@ namespace educodeai_server.Services.Implementation
         {
             email = (email ?? string.Empty).Trim().ToLowerInvariant();
             otpCode = (otpCode ?? string.Empty).Trim();
+
+            if (!await _otpRateLimiter.TryConsumeVerifyAsync(OtpPurpose.InstructorEmail, email, ClientIp()))
+                throw ApiException.InvalidRequest("Bạn thử mã quá nhiều lần. Vui lòng thử lại sau.");
 
             var result = await _otpService.VerifyOtpAsync(OtpPurpose.InstructorEmail, email, otpCode);
             if (!result.Success)
@@ -803,9 +811,11 @@ namespace educodeai_server.Services.Implementation
             var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email.ToLower() == email);
             if (user != null)
             {
+                // Gửi email nền (fire-and-forget) để thời gian phản hồi đồng đều dù email tồn tại hay không,
+                // chống enumeration qua timing. OTP vẫn tạo đồng bộ để lưu trước khi response trả về.
                 string otp = await _otpService.CreateOtpAsync(OtpPurpose.ForgotPassword, email);
                 string emailBody = TaoGiaoDienEmail("Đặt lại mật khẩu", "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng nhập mã xác thực dưới đây để tiến hành thiết lập mật khẩu mới.", otp);
-                await EmailHelper.SendEmailAsync(email, "Mã xác nhận đặt lại mật khẩu", emailBody);
+                _ = Task.Run(() => EmailHelper.SendEmailAsync(email, "Mã xác nhận đặt lại mật khẩu", emailBody));
             }
 
             return new { message = "Nếu email tồn tại trong hệ thống, mã xác thực đã được gửi. Vui lòng kiểm tra hộp thư." };
