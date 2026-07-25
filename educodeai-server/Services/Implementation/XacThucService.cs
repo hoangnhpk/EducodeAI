@@ -93,43 +93,6 @@ namespace educodeai_server.Services.Implementation
                 throw ApiException.InvalidRequest("Mật khẩu mới không được trùng mật khẩu hiện tại.");
         }
 
-        #region OTP COOKIE LOGIC
-        private string GetOrCreateVisitorId()
-        {
-            var context = _httpContextAccessor.HttpContext;
-            string visitorId = context.Request.Cookies["VisitorId"];
-            if (string.IsNullOrEmpty(visitorId))
-            {
-                visitorId = Guid.NewGuid().ToString();
-                var options = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.None,
-                    Expires = DateTime.UtcNow.AddDays(7)
-                };
-                context.Response.Cookies.Append("VisitorId", visitorId, options);
-            }
-            return visitorId;
-        }
-
-        private void LuuOtpVaoCookie(string identifier, string otp)
-        {
-            var cookieOptions = new CookieOptions { HttpOnly = true, Secure = true, SameSite = SameSiteMode.None, Expires = DateTime.UtcNow.AddMinutes(5) };
-            string hashedOtp = BCrypt.Net.BCrypt.HashPassword(otp + identifier);
-            _httpContextAccessor.HttpContext.Response.Cookies.Append("Auth_OTP_Hash", hashedOtp, cookieOptions);
-            _httpContextAccessor.HttpContext.Response.Cookies.Append("Auth_OTP_Identifier", identifier, cookieOptions);
-        }
-        private bool XacThucOtpTuCookie(string identifier, string otpInput)
-        {
-            if (string.IsNullOrEmpty(otpInput)) return false;
-            var cookies = _httpContextAccessor.HttpContext.Request.Cookies;
-            string hashedOtp = cookies["Auth_OTP_Hash"];
-            string cookieIdentifier = cookies["Auth_OTP_Identifier"];
-            if (string.IsNullOrEmpty(hashedOtp) || string.IsNullOrEmpty(cookieIdentifier) || cookieIdentifier != identifier) return false;
-            try { return BCrypt.Net.BCrypt.Verify(otpInput + identifier, hashedOtp); } catch { return false; }
-        }
-        #endregion
 
         #region 1. LUá»’NG ÄÄ‚NG NHáº¬P
 
@@ -391,6 +354,23 @@ namespace educodeai_server.Services.Implementation
             var ipCurrent = httpContext?.Connection.RemoteIpAddress?.ToString();
             var uaCurrent = httpContext?.Request.Headers.UserAgent.ToString();
 
+            // Chống double-spend: atomic claim revoke token cũ với điều kiện NgayThuHoi==null.
+            // Hai request đồng thời cùng token → chỉ request đầu flip được (rows=1); request thua (rows=0)
+            // buộc đăng nhập lại, không cấp token trùng family. UPDATE...WHERE ở tầng DB đóng hẳn cửa sổ race.
+            var claimed = await _context.RefreshTokens
+                .Where(r => r.MaRefreshToken == stored.MaRefreshToken && r.NgayThuHoi == null)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(r => r.NgayThuHoi, DateTime.UtcNow)
+                    .SetProperty(r => r.LyDoThuHoi, "ROTATED")
+                    .SetProperty(r => r.ReplacedByTokenHash, newMaterial.TokenHash)
+                    .SetProperty(r => r.IpThuHoi, ipCurrent));
+
+            if (claimed == 0)
+            {
+                ClearRefreshCookie();
+                throw ApiException.AuthenticationFailed("Phiên làm việc đã hết hạn hoặc bị đăng xuất.");
+            }
+
             var newToken = new RefreshTokenModel
             {
                 MaNguoiDung = user.MaNguoiDung,
@@ -404,11 +384,6 @@ namespace educodeai_server.Services.Implementation
                 UserAgentTao = uaCurrent != null && uaCurrent.Length > 256 ? uaCurrent.Substring(0, 256) : uaCurrent
             };
             _context.RefreshTokens.Add(newToken);
-
-            stored.NgayThuHoi = DateTime.UtcNow;
-            stored.LyDoThuHoi = "ROTATED";
-            stored.ReplacedByTokenHash = newMaterial.TokenHash;
-            stored.IpThuHoi = ipCurrent;
 
             phien.ThoiGianHoatDongCuoi = DateTime.UtcNow;
             user.NgayDangNhapCuoi = DateTime.UtcNow;
