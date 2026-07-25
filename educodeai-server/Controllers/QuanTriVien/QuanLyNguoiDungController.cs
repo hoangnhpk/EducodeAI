@@ -17,9 +17,9 @@ namespace educodeai_server.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> LayDanhSach()
+        public async Task<IActionResult> LayDanhSach([FromQuery] NguoiDungFilterDTO filter)
         {
-            var result = await _service.LayDanhSachNguoiDungAsync();
+            var result = await _service.LayDanhSachNguoiDungAsync(filter);
             return Ok(result);
         }
         [HttpPost("them-nguoi-dung")]
