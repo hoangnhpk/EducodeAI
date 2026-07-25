@@ -22,6 +22,10 @@ namespace educodeai_server.Services.Implementation
     {
         private const string RefreshCookieName = "ecai_rt";
 
+        // E.3: hash BCrypt hợp lệ tính một lần lúc load để chạy Verify giả khi user không tồn tại,
+        // giữ thời gian phản hồi đồng đều chống timing enumeration. Không phải mật khẩu thật.
+        private static readonly string DummyBcryptHash = BCrypt.Net.BCrypt.HashPassword("dummy-timing-guard");
+
         private readonly EduCodeAIDbContext _context;
         private readonly IConfiguration _config;
         private readonly ICaptchaService _captchaService;
@@ -36,8 +40,9 @@ namespace educodeai_server.Services.Implementation
         private readonly IOtpService _otpService;
         private readonly IOtpRateLimiter _otpRateLimiter;
         private readonly ILogger<XacThucService> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter, ILogger<XacThucService> logger)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter, ILogger<XacThucService> logger, IHttpClientFactory httpClientFactory)
         {
             _context = context;
             _config = config;
@@ -53,6 +58,7 @@ namespace educodeai_server.Services.Implementation
             _otpService = otpService;
             _otpRateLimiter = otpRateLimiter;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
         }
 
         // IP client cho rate-limit; null nếu không xác định được (rate-limiter tự bỏ qua phần IP).
@@ -131,8 +137,14 @@ namespace educodeai_server.Services.Implementation
             string cacheKey = $"FailedLogin_IP_{cleanIp}";
             int failedAttempts = _memoryCache.Get<int?>(cacheKey) ?? 0;
 
-            // 2. Náº¿u Ä‘Ã£ sai >= 3 láº§n, báº¯t buá»™c check Captcha
-            if (failedAttempts >= 3)
+            // E.1: đếm sai theo cả normalized account, không chỉ IP — chặn credential stuffing phân tán IP
+            // nhắm một tài khoản. Ngưỡng account cao hơn IP một chút vì có thể có nhiều thiết bị hợp lệ.
+            string normalizedAccount = (request.TaiKhoan ?? string.Empty).Trim().ToLowerInvariant();
+            string accountCacheKey = $"FailedLogin_Acc_{normalizedAccount}";
+            int failedAccountAttempts = _memoryCache.Get<int?>(accountCacheKey) ?? 0;
+
+            // 2. Nếu đã sai quá ngưỡng (theo IP HOẶC theo account), bắt buộc check Captcha
+            if (failedAttempts >= 3 || failedAccountAttempts >= 5)
             {
                 if (string.IsNullOrEmpty(request.CaptchaToken) || request.CaptchaToken == "SKIP_CAPTCHA")
                 {
@@ -148,19 +160,34 @@ namespace educodeai_server.Services.Implementation
                 
                 // GIáº¢I ÄÃšNG CAPTCHA -> XÃ“A Sáº CH Sá» Láº¦N SAI Vá»€ 0
                 _memoryCache.Remove(cacheKey);
+                _memoryCache.Remove(accountCacheKey);
                 failedAttempts = 0;
+                failedAccountAttempts = 0;
             }
 
             // 3. TÃ¬m user trong Database
             var user = await LayNguoiDungKemThietBiAsync(request.TaiKhoan);
             
             // 4. Kiá»ƒm tra tÃ­nh há»£p lá»‡ (TÃ i khoáº£n tá»“n táº¡i + Máº­t kháº©u Ä‘Ãºng)
-            bool isLoginValid = user != null && BCrypt.Net.BCrypt.Verify(request.MatKhau, user.MatKhau);
+            // E.3: chống timing enumeration — khi user không tồn tại vẫn chạy một BCrypt.Verify giả
+            // (dummy hash) để thời gian phản hồi đồng đều với trường hợp user tồn tại nhưng sai mật khẩu.
+            bool isLoginValid;
+            if (user != null)
+            {
+                isLoginValid = BCrypt.Net.BCrypt.Verify(request.MatKhau, user.MatKhau);
+            }
+            else
+            {
+                BCrypt.Net.BCrypt.Verify(request.MatKhau, DummyBcryptHash);
+                isLoginValid = false;
+            }
 
             if (!isLoginValid)
             {
                 failedAttempts++;
+                failedAccountAttempts++;
                 _memoryCache.Set(cacheKey, failedAttempts, TimeSpan.FromMinutes(30));
+                _memoryCache.Set(accountCacheKey, failedAccountAttempts, TimeSpan.FromMinutes(30));
                 
                 // Náº¿u Ä‘Ã¢y lÃ  láº§n thá»­ ngay sau khi giáº£i Captcha (failedAttempts vá»«a reset vá» 0 vÃ  tÄƒng lÃªn 1)
                 if (failedAttempts == 1 && !string.IsNullOrEmpty(request.CaptchaToken) && request.CaptchaToken != "SKIP_CAPTCHA")
@@ -182,6 +209,9 @@ namespace educodeai_server.Services.Implementation
             _memoryCache.Remove(cacheKey);
 
             // 6. KIá»‚M TRA THIáº¾T Bá»Š (Má»šI / CÅ¨ / Äáº¦Y PHIÃŠN)
+            _memoryCache.Remove(accountCacheKey);
+            _logger.LogInformation("Đăng nhập thành công cho user {UserId}.", user!.MaNguoiDung);
+
             var activeSessions = user!.DanhSachPhienDangNhap.Where(p => p.DangHoatDong).ToList();
             var currentSession = activeSessions.FirstOrDefault(p => p.MaThietBi == request.MaThietBi);
 
@@ -243,30 +273,144 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<object> DangNhapGoogleAsync(GoogleLoginRequest request, string maThietBi, string tenThietBi)
         {
-            var user = await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.Email == request.Email);
+            // E.5: verify id_token với Google — KHÔNG tin email/name/picture do client tự gửi.
+            var clientId = _config["SocialLogin:Google:ClientId"];
+            if (string.IsNullOrWhiteSpace(clientId))
+                throw ApiException.InvalidRequest("Đăng nhập Google chưa được cấu hình.");
+            if (string.IsNullOrWhiteSpace(request.Credential))
+                throw ApiException.InvalidRequest("Thiếu thông tin xác thực Google.");
+
+            Google.Apis.Auth.GoogleJsonWebSignature.Payload payload;
+            try
+            {
+                payload = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(
+                    request.Credential,
+                    new Google.Apis.Auth.GoogleJsonWebSignature.ValidationSettings
+                    {
+                        // Chỉ chấp nhận token phát cho client ID của ứng dụng này (chống token của app khác).
+                        Audience = new[] { clientId }
+                    });
+            }
+            catch (Exception)
+            {
+                // ValidateAsync đã kiểm chữ ký, issuer, audience, expiry. Lỗi bất kỳ → từ chối.
+                throw ApiException.AuthenticationFailed("Xác thực Google không hợp lệ.");
+            }
+
+            // Chỉ dùng identity từ payload đã verify; bỏ qua mọi dữ liệu client gửi kèm.
+            if (!payload.EmailVerified || string.IsNullOrWhiteSpace(payload.Email))
+                throw ApiException.AuthenticationFailed("Email Google chưa được xác minh.");
+
+            var user = await LinkHoacTaoUserSocialAsync(payload.Email, payload.Name, payload.Picture, "Google");
+            await KiemTraTrangThaiKhoaAsync(user);
+            _logger.LogInformation("Đăng nhập Google thành công cho user {UserId}.", user.MaNguoiDung);
+            return await XuLyDangNhapThanhCongAsync(user, maThietBi, tenThietBi);
+        }
+
+        // Link vào tài khoản email đã tồn tại (đăng ký thường hoặc provider khác) hoặc tạo mới nếu chưa có.
+        // Email đã được provider verify nên link an toàn. VaiTro luôn = 2, không nhận từ client.
+        private async Task<NguoiDungModel> LinkHoacTaoUserSocialAsync(string email, string? name, string? picture, string provider)
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            var user = await _context.NguoiDungs
+                .Include(u => u.DanhSachPhienDangNhap)
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
+
             if (user == null)
             {
-                user = new NguoiDungModel { Email = request.Email, HoTen = request.Name, AnhDaiDien = request.Picture, TaiKhoan = request.Email, MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), VaiTro = 2, TrangThai = "Hoạt động", NgayThamGia = DateTime.UtcNow };
+                user = new NguoiDungModel
+                {
+                    Email = normalizedEmail,
+                    HoTen = name ?? normalizedEmail,
+                    AnhDaiDien = picture,
+                    TaiKhoan = normalizedEmail,
+                    MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+                    VaiTro = 2,
+                    TrangThai = "Hoạt động",
+                    NgayThamGia = DateTime.UtcNow
+                };
                 _context.NguoiDungs.Add(user);
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    // Race: user khác vừa tạo cùng email — nạp lại bản ghi đã có để link.
+                    user = await _context.NguoiDungs
+                        .Include(u => u.DanhSachPhienDangNhap)
+                        .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail)
+                        ?? throw ApiException.AuthenticationFailed("Không thể tạo tài khoản.");
+                }
             }
-            
-            await KiemTraTrangThaiKhoaAsync(user);
-            return await XuLyDangNhapThanhCongAsync(user, maThietBi, tenThietBi);
+
+            return user;
         }
 
         public async Task<object> DangNhapFacebookAsync(FacebookDTO request, string maThietBi, string tenThietBi)
         {
-            var user = await _context.NguoiDungs.Include(u => u.DanhSachPhienDangNhap).FirstOrDefaultAsync(u => u.Email == request.Email);
-            if (user == null)
-            {
-                user = new NguoiDungModel { Email = request.Email, HoTen = request.Name, AnhDaiDien = request.Picture, TaiKhoan = request.Email, MatKhau = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()), VaiTro = 2, TrangThai = "Hoạt động", NgayThamGia = DateTime.UtcNow };
-                _context.NguoiDungs.Add(user);
-                await _context.SaveChangesAsync();
-            }
+            // E.6: verify access token với Facebook — KHÔNG tin email/name do client tự gửi.
+            var appId = _config["SocialLogin:Facebook:AppId"];
+            var appSecret = _config["SocialLogin:Facebook:AppSecret"];
+            if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
+                throw ApiException.InvalidRequest("Đăng nhập Facebook chưa được cấu hình.");
+            if (string.IsNullOrWhiteSpace(request.AccessToken))
+                throw ApiException.InvalidRequest("Thiếu thông tin xác thực Facebook.");
 
+            var (email, name, picture) = await XacThucFacebookTokenAsync(request.AccessToken, appId, appSecret);
+            if (string.IsNullOrWhiteSpace(email))
+                throw ApiException.AuthenticationFailed("Tài khoản Facebook không chia sẻ email hợp lệ.");
+
+            var user = await LinkHoacTaoUserSocialAsync(email, name, picture, "Facebook");
             await KiemTraTrangThaiKhoaAsync(user);
+            _logger.LogInformation("Đăng nhập Facebook thành công cho user {UserId}.", user.MaNguoiDung);
             return await XuLyDangNhapThanhCongAsync(user, maThietBi, tenThietBi);
+        }
+
+        // Verify token với Graph API: debug_token xác nhận token thuộc đúng app + còn hiệu lực,
+        // rồi lấy profile từ /me. Chỉ trả identity do Facebook cung cấp, không tin client.
+        private async Task<(string? Email, string? Name, string? Picture)> XacThucFacebookTokenAsync(
+            string accessToken, string appId, string appSecret)
+        {
+            var client = _httpClientFactory.CreateClient();
+            try
+            {
+                var appToken = $"{appId}|{appSecret}";
+                var debugUrl = $"https://graph.facebook.com/debug_token?input_token={Uri.EscapeDataString(accessToken)}&access_token={Uri.EscapeDataString(appToken)}";
+                using var debugRes = await client.GetAsync(debugUrl);
+                if (!debugRes.IsSuccessStatusCode)
+                    throw ApiException.AuthenticationFailed("Xác thực Facebook không hợp lệ.");
+
+                using var debugDoc = JsonDocument.Parse(await debugRes.Content.ReadAsStringAsync());
+                var data = debugDoc.RootElement.GetProperty("data");
+                bool isValid = data.TryGetProperty("is_valid", out var v) && v.GetBoolean();
+                string? tokenAppId = data.TryGetProperty("app_id", out var a) ? a.GetString() : null;
+                if (!isValid || tokenAppId != appId)
+                    throw ApiException.AuthenticationFailed("Xác thực Facebook không hợp lệ.");
+
+                var meUrl = $"https://graph.facebook.com/me?fields=id,name,email,picture&access_token={Uri.EscapeDataString(accessToken)}";
+                using var meRes = await client.GetAsync(meUrl);
+                if (!meRes.IsSuccessStatusCode)
+                    throw ApiException.AuthenticationFailed("Xác thực Facebook không hợp lệ.");
+
+                using var meDoc = JsonDocument.Parse(await meRes.Content.ReadAsStringAsync());
+                var root = meDoc.RootElement;
+                string? email = root.TryGetProperty("email", out var e) ? e.GetString() : null;
+                string? name = root.TryGetProperty("name", out var n) ? n.GetString() : null;
+                string? picture = root.TryGetProperty("picture", out var p)
+                    && p.TryGetProperty("data", out var pd) && pd.TryGetProperty("url", out var pu)
+                    ? pu.GetString() : null;
+                return (email, name, picture);
+            }
+            catch (ApiException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                // Lỗi mạng/parse → từ chối, không lộ chi tiết.
+                throw ApiException.AuthenticationFailed("Không xác thực được tài khoản Facebook.");
+            }
         }
 
         public async Task<object> LamMoiTokenAsync(string refreshToken, string maThietBi)

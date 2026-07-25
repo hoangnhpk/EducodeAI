@@ -74,11 +74,11 @@ export const authService = {
     });
   },
 
-  googleLogin: async (payload: { email: string; name: string; picture: string }, maThietBi: string, tenThietBi: string) => {
+  googleLogin: async (payload: { credential: string }, maThietBi: string, tenThietBi: string) => {
     return await api.post(`/api/XacThuc/google-login?maThietBi=${maThietBi}&tenThietBi=${tenThietBi}`, payload);
   },
 
-  facebookLogin: async (payload: { email: string; name: string; picture: string; userID: string }, maThietBi: string, tenThietBi: string) => {
+  facebookLogin: async (payload: { accessToken: string }, maThietBi: string, tenThietBi: string) => {
     return await api.post(`/api/XacThuc/facebook-login?maThietBi=${maThietBi}&tenThietBi=${tenThietBi}`, payload);
   },
 
