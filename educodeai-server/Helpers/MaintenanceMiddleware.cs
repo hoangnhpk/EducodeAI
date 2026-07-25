@@ -43,9 +43,11 @@ namespace educodeai_server.Helpers
             var path = context.Request.Path.Value?.ToLowerInvariant();
 
             // Bypass do server quyết định, không tin header/route từ client (J.2/J.4).
+            // Khớp tuyệt đối HOẶC theo ranh giới segment (allowed + "/") để cho phép sub-path hợp lệ
+            // của SignalR hub (vd /systemconfighub/negotiate) mà vẫn chặn hậu tố giả như .../dang-nhap-xyz.
             bool isBootstrapPath = path != null && System.Array.Exists(
                 BootstrapPaths,
-                allowed => path.StartsWith(allowed, System.StringComparison.Ordinal));
+                allowed => path == allowed || path.StartsWith(allowed + "/", System.StringComparison.Ordinal));
 
             // Chỉ Admin đã xác thực (JWT đã validate ở UseAuthentication phía trước) mới được bypass.
             bool isAuthenticatedAdmin =
