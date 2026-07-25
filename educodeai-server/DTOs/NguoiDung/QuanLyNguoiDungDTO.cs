@@ -38,4 +38,14 @@ namespace educodeai_server.DTOs.NguoiDung
     {
         public string? VaiTroMoi { get; set; }
     }
+
+    // H.7: filter + pagination server-side cho danh sách user (giảng viên + học viên).
+    public class NguoiDungFilterDTO
+    {
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public string? Keyword { get; set; }
+        public int? VaiTro { get; set; }      // 1=Giảng viên, 2=Học viên; null=cả hai
+        public string? TrangThai { get; set; } // "Hoạt động"/"Bị khóa"/"Khóa vĩnh viễn"; null=tất cả
+    }
 }

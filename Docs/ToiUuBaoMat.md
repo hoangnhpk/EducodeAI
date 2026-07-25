@@ -613,13 +613,25 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ## Giai đoạn H — Quản lý người dùng Admin
 
-- [ ] **H.1** Audit tất cả endpoint khóa/mở khóa/sửa role/xóa user; bắt buộc Admin policy.
-- [ ] **H.2** Chống mass assignment: DTO chỉ chứa field được phép sửa.
-- [ ] **H.3** Khóa user transactionally revoke sessions/tokens.
-- [ ] **H.4** Invalidate distributed cache và push `UserLocked` sau commit.
-- [ ] **H.5** Không cho Admin tự vô hiệu hóa Admin cuối cùng hoặc tự hạ quyền ngoài policy.
-- [ ] **H.6** Audit actor admin, target user, reason, before/after, IP, timestamp.
-- [ ] **H.7** Pagination/filter server-side; không trả password hash/token/PII không cần thiết.
+> **Cách triển khai:** chia 3 chặng, chốt từng chặng trước khi sang chặng sau (chạm service quản lý user + revoke token dùng chung + frontend danh sách).
+>
+> **Quyết định (đã chốt):** (1) chống mass assignment role bằng whitelist chỉ cho VaiTro ∈ {1,2}, chặn tạo/nâng Admin qua endpoint quản lý user; (2) audit admin action qua structured log (`ILogger`), không tạo bảng DB mới; (3) thêm pagination server-side cho `LayDanhSachNguoiDungAsync` (phá FE `layDanhSach`, sửa kèm).
+>
+> **Đã đạt từ Phase G/J:** `[Authorize(Roles="Admin")]` cấp class cả 2 controller (H.1); khóa user đã invalidate cache + push `UserLocked` sau commit (H.4). Còn lại: revoke refresh token khi khóa (H.3), whitelist role (H.2), chặn self/last-admin (H.5), audit (H.6), pagination (H.7).
+
+### Chặng H-1 — Chống mass assignment + chặn tự hạ quyền/admin cuối (H.2/H.5)
+
+- [x] **H.2** Whitelist `VaiTro ∈ {1,2}` trong `CapNhatNguoiDungAsync`/`ThemNguoiDungAsync`; chặn set/nâng Admin (VaiTro=0) qua endpoint quản lý user. _(`QuanLyNguoiDungService`: `VaiTroChoPhep = {1,2}`; `ThemNguoiDungAsync`/`CapNhatNguoiDungAsync` ném `Forbidden` nếu VaiTro ngoài whitelist.)_
+- [x] **H.5** Không cho vô hiệu hóa/sửa target là Admin. _(`CapNhatNguoiDungAsync`/`XoaNguoiDungAsync` ném `Forbidden` khi `nd.VaiTro == 0` → Admin bất khả xâm phạm qua API quản lý user thường; bao trùm cả self-protection vì actor cũng là Admin. Actor id/IP lấy từ JWT đã verify cho audit.)_
+
+### Chặng H-2 — Khóa user revoke refresh token + audit (H.3/H.6)
+
+- [x] **H.3** Khóa user revoke cả RefreshTokens trong DB (`NgayThuHoi`/`LyDoThuHoi="USER_LOCKED"`) cùng transaction với set trạng thái khóa. _(`KhoaNguoiDungAsync` set `NgayThuHoi` qua `_context.RefreshTokens`; repo + service dùng chung DbContext scoped nên lưu chung trong `SaveChanges` của `CapNhatAsync`.)_
+- [x] **H.6** Audit qua `ILogger`: actor admin, target user, hành động, lý do, IP. _(Log ở `ThemNguoiDungAsync`/`CapNhatNguoiDungAsync`/`KhoaNguoiDungAsync`/`XoaNguoiDungAsync` với ActorId+TargetId+IP; không log hash/token.)_
+
+### Chặng H-3 — Pagination server-side danh sách user (H.7)
+
+- [x] **H.7** `LayDanhSachNguoiDungAsync` phân trang + filter server-side (`NguoiDungFilterDTO` → `PagedResult`, query qua `_context` `AsNoTracking`, chỉ role 1/2, clamp PageSize ≤ 100); cập nhật frontend `layDanhSach` gửi params + `QuanLyNguoiDung.tsx` fetch theo trang/keyword/vaiTrò/trạng thái; DTO không lộ hash/token/PII.
 
 ## Giai đoạn I — Đăng ký và duyệt giảng viên
 

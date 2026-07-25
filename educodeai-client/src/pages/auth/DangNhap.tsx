@@ -8,21 +8,6 @@ import { getDeviceInfo } from '../../utils/deviceHelper';
 import { FaArrowLeft } from 'react-icons/fa';
 import ReCAPTCHA from "react-google-recaptcha";
 
-const decodeJwtPayload = (token: string): any => {
-    const base64Url = token.split('.')[1];
-    if (!base64Url) {
-        throw new Error('Invalid Google token');
-    }
-
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const paddedBase64 = base64.padEnd(base64.length + ((4 - base64.length % 4) % 4), '=');
-    const binary = atob(paddedBase64);
-    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-    const json = new TextDecoder('utf-8').decode(bytes);
-
-    return JSON.parse(json);
-};
-
 const DangNhap: React.FC = () => {
     const navigate = useNavigate();
     const recaptchaRef = useRef<any>(null);
