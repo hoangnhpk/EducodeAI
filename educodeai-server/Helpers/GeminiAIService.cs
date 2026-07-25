@@ -228,7 +228,8 @@ namespace educodeai_server.Helpers
                     // Estimate Tokens: roughly 0.3 tokens per char for prompt
                     int estimatedTokens = (int)Math.Ceiling(prompt.Length * 0.3) + 200; // 200 overhead
 
-                    if (!await _rateLimitService.ReserveQuotaAsync(keyId, rpmLimit, tpmLimit, rpdLimit, estimatedTokens))
+                    var reservation = await _rateLimitService.ReserveQuotaAsync(keyId, rpmLimit, tpmLimit, rpdLimit, estimatedTokens);
+                    if (reservation == null)
                     {
                         Console.WriteLine($"[RateLimit] Key {currentRedisKey} bị giới hạn (RPM/TPM/RPD). Đang chuyển Key khác...");
                         soLanThuLai++;
@@ -246,7 +247,7 @@ namespace educodeai_server.Helpers
                     catch (Exception ex)
                     {
                         Console.WriteLine($"[Gemini Lỗi Kết Nối] Google từ chối phũ phàng với key {currentRedisKey}. Chi tiết: {ex.Message}. Đang thử key khác...");
-                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
+                        await _rateLimitService.CommitQuotaAsync(reservation, 0);
                         soLanThuLai++;
                         await Task.Delay(2000);
                         continue;
@@ -274,7 +275,7 @@ namespace educodeai_server.Helpers
                             Console.WriteLine($"[Gemini Lỗi Token Tracker] {ex.Message}");
                         }
 
-                        await _rateLimitService.CommitQuotaAsync(keyId, actualTokens, estimatedTokens);
+                        await _rateLimitService.CommitQuotaAsync(reservation, actualTokens);
 
                         return responseBody;
                     }
@@ -288,7 +289,7 @@ namespace educodeai_server.Helpers
                     {
                         Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
 
-                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
+                        await _rateLimitService.CommitQuotaAsync(reservation, 0);
                         await LuuLogVaoRedisQueue(currentRedisKey, 0, (int)response.StatusCode, requestUrl);
 
                         soLanThuLai++;
@@ -321,13 +322,13 @@ namespace educodeai_server.Helpers
 
                     if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     {
-                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
+                        await _rateLimitService.CommitQuotaAsync(reservation, 0);
                         var body = await response.Content.ReadAsStringAsync();
                         _logger.LogError("[Gemini] Model/API endpoint không tồn tại. Model={Model}, Body={Body}", modelSuDung, body);
                         throw new Exception($"Model AI '{modelSuDung}' không tồn tại hoặc chưa được Google hỗ trợ. Vui lòng kiểm tra cấu hình.");
                     }
 
-                    await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
+                    await _rateLimitService.CommitQuotaAsync(reservation, 0);
                     response.EnsureSuccessStatusCode();
 
                 }
