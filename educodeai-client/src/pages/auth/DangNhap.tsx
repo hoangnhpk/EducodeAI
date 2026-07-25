@@ -261,13 +261,10 @@ const DangNhap: React.FC = () => {
                                                             onSuccess={async (credentialResponse) => {
                                                                 try {
                                                                     setIsLoading(true);
-                                                                    const decoded: any = decodeJwtPayload(credentialResponse.credential!);
                                                                     const { maThietBi, tenThietBi } = getDeviceInfo();
-                                                                    // Gọi API Backend mới
-                                                                    const response: any = await authService.googleLogin({ 
-                                                                        email: decoded.email, 
-                                                                        name: decoded.name, 
-                                                                        picture: decoded.picture 
+                                                                    // E.5: gửi credential (id_token) thô để backend verify với Google.
+                                                                    const response: any = await authService.googleLogin({
+                                                                        credential: credentialResponse.credential!
                                                                     }, maThietBi, tenThietBi);
                                                                     handleLoginSuccess(response);
                                                                 } catch (error: any) {
@@ -290,19 +287,14 @@ const DangNhap: React.FC = () => {
                                                             appId={FACEBOOK_APP_ID}
                                                             scope="public_profile,email"
                                                             fields="name,email,picture"
-                                                            onProfileSuccess={async (response: any) => {
+                                                            onSuccess={async (response: any) => {
                                                                 try {
                                                                     setIsLoading(true);
                                                                     const { maThietBi, tenThietBi } = getDeviceInfo();
-                                                                    
-                                                                    const fbData = {
-                                                                        email: response.email || `${response.id}@facebook.com`,
-                                                                        name: response.name,
-                                                                        picture: response.picture?.data?.url || response.picture || "",
-                                                                        userID: response.id
-                                                                    };
-
-                                                                    const fbResponse: any = await authService.facebookLogin(fbData, maThietBi, tenThietBi);
+                                                                    // E.6: gửi access token thô để backend verify với Graph API.
+                                                                    const fbResponse: any = await authService.facebookLogin(
+                                                                        { accessToken: response.accessToken },
+                                                                        maThietBi, tenThietBi);
                                                                     handleLoginSuccess(fbResponse);
                                                                 } catch (error: any) {
                                                                     const msg = error.response?.data?.message || error.message || 'Đăng nhập Facebook thất bại';

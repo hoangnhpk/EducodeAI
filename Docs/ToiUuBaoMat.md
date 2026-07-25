@@ -531,14 +531,29 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ## Giai đoạn E — Login và social login
 
-- [ ] **E.1** Rate limit login theo IP + normalized account; không chỉ IP.
-- [ ] **E.2** Message sai tài khoản/mật khẩu giống nhau.
-- [ ] **E.3** Không tiết lộ account existence/trạng thái trước khi xác minh hợp lệ.
-- [ ] **E.4** Device fingerprint chỉ là metadata; session server-side là căn cứ.
-- [ ] **E.5** Google token verify issuer/audience/expiry/email_verified; chỉ dùng profile từ provider.
-- [ ] **E.6** Facebook token verify app/provider; chỉ dùng profile từ Graph API.
-- [ ] **E.7** Không gửi provider token qua URL/log.
-- [ ] **E.8** Audit login success/failure/new device/provider login.
+> **Cách triển khai:** chia 3 chặng, chốt từng chặng trước khi sang chặng sau (chạm social login + frontend + config secret).
+>
+> **Quyết định (đã chốt):** (1) Google verify `id_token` bằng thư viện `Google.Apis.Auth`; (2) ClientId/AppId/AppSecret đặt trong `appsettings` (non-secret) + User Secrets (secret), không hardcode; (3) social login trả email đã tồn tại → đăng nhập vào tài khoản đó (link theo email đã verify).
+>
+> **Điểm mấu chốt:** frontend hiện decode `id_token` client-side rồi VỨT credential đi, chỉ gửi email/name/picture (`DangNhap.tsx`). Phải sửa frontend gửi credential/accessToken THÔ lên backend để backend verify với provider — nếu không backend không có gì để verify.
+
+### Chặng E-1 — Social login verify token với provider (CRITICAL 2.9)
+
+- [x] **E.5** Google: FE gửi `credential` (id_token); BE verify chữ ký/issuer/audience(ClientId)/expiry + bắt buộc `email_verified`; chỉ dùng email/sub/name/picture từ payload đã verify, bỏ qua dữ liệu client tự khai. _(`DangNhapGoogleAsync` dùng `GoogleJsonWebSignature.ValidateAsync` với `Audience=ClientId`; FE `DangNhap.tsx` gửi `credentialResponse.credential` thô, bỏ `decodeJwtPayload`.)_
+- [x] **E.6** Facebook: FE gửi `accessToken`; BE verify token với Graph API (`/debug_token` theo app id/secret) rồi lấy profile từ `/me`; chỉ dùng dữ liệu từ Graph API. _(`XacThucFacebookTokenAsync`: `debug_token` check `is_valid` + `app_id==appId`, profile lấy từ `/me`; FE dùng `onSuccess` gửi `accessToken` thô.)_
+- [x] **E.7** Không đưa provider token vào URL/query/log (gửi qua body, không log giá trị token). _(credential/accessToken đi trong body POST; chỉ log `UserId` sau khi verify.)_
+- [x] Link theo email đã verify: email tồn tại → đăng nhập tài khoản đó; chưa có → tạo mới `VaiTro=2` (không nhận role từ client). Config ClientId/AppId/AppSecret qua `appsettings` + User Secrets. _(`LinkHoacTaoUserSocialAsync` dùng chung Google/Facebook, có xử lý race `DbUpdateException`; `SocialLogin` section trong appsettings placeholder.)_
+
+### Chặng E-2 — Login hardening (rate-limit account + enumeration)
+
+- [x] **E.1** Rate limit login theo IP + normalized account (không chỉ IP) để chặn credential stuffing nhắm 1 tài khoản. _(Thêm counter `FailedLogin_Acc_{normalizedAccount}` song song IP; ngưỡng account 5, IP 3; tăng/reset/xóa đồng bộ cả hai.)_
+- [x] **E.2** Message sai tài khoản/mật khẩu giống nhau. _(Đã đạt sẵn: cả hai trường hợp trả cùng chuỗi lỗi.)_
+- [x] **E.3** Không tiết lộ account existence/trạng thái trước khi xác minh hợp lệ; giảm timing side-channel khi user không tồn tại. _(`KiemTraTrangThaiKhoaAsync` chạy SAU verify; thêm dummy `BCrypt.Verify` khi user null để đồng đều thời gian phản hồi.)_
+
+### Chặng E-3 — Device metadata + audit login
+
+- [x] **E.4** Device fingerprint chỉ là metadata UX; session server-side (MaPhien) là căn cứ bảo mật — không cấp quyền dựa trên fingerprint client. _(Xác nhận: quyền truy cập dựa `MaPhien` + `SessionCheckMiddleware`, fingerprint chỉ dùng đặt tên/nhận diện thiết bị.)_
+- [x] **E.8** Audit login success/failure/new device/social provider login ở mức thông tin (không log token/password/OTP). _(`_logger.LogInformation` cho login thường + Google + Facebook thành công, chỉ ghi `UserId`.)_
 
 ## Giai đoạn F — Quên/reset/đổi mật khẩu
 
