@@ -1,3 +1,4 @@
+using educodeai_server.Constants;
 using educodeai_server.DTOs.AI;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
@@ -24,8 +25,8 @@ namespace educodeai_server.Services.Implementation
                 if (key != null && key.TrangThai)
                 {
                     string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
-                    var reqStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
-                    var tokStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
+                    var reqStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageRpd(key.ID, homNaySuffix));
+                    var tokStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageDailyToken(key.ID, homNaySuffix));
 
                     if (int.TryParse(reqStr, out int req))
                     {
@@ -54,8 +55,8 @@ namespace educodeai_server.Services.Implementation
             if (key != null && key.TrangThai)
             {
                 string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
-                var reqStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
-                var tokStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
+                var reqStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageRpd(key.ID, homNaySuffix));
+                var tokStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageDailyToken(key.ID, homNaySuffix));
 
                 if (int.TryParse(reqStr, out int req)) key.DaSuDungRequestHomNay = req;
                 if (int.TryParse(tokStr, out int tok)) key.DaSuDungTokenHomNay = tok;
@@ -183,8 +184,8 @@ namespace educodeai_server.Services.Implementation
                 if (rawKey != null && rawKey.TrangThai)
                 {
                     string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
-                    await _redisService.XoaKeyAsync($"EduCodeAI:Usage:RPD:{id}:{homNaySuffix}");
-                    await _redisService.XoaKeyAsync($"EduCodeAI:Usage:DailyToken:{id}:{homNaySuffix}");
+                    await _redisService.XoaKeyAsync(CacheKeys.UsageRpd(id, homNaySuffix));
+                    await _redisService.XoaKeyAsync(CacheKeys.UsageDailyToken(id, homNaySuffix));
                 }
             }
 

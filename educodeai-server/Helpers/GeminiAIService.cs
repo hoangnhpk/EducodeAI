@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Text.Json;
+using educodeai_server.Constants;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using educodeai_server.Repository.Interface;
@@ -43,7 +44,7 @@ namespace educodeai_server.Helpers
             var keys = new List<string>();
             try
             {
-                keys = _redisService.LayDanhSachKeyTheoPattern("EduCodeAI:KeyPool:*").ToList();
+                keys = _redisService.LayDanhSachKeyTheoPattern(CacheKeys.KeyPoolPattern).ToList();
                 foreach (var k in keys)
                 {
                     var trangThaiStr = await _redisService.LayHashAsync(k, "TrangThai");
@@ -56,7 +57,7 @@ namespace educodeai_server.Helpers
                         if (parts.Length >= 3 && int.TryParse(parts[2], out int keyId))
                         {
                             string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
-                            var reqUsedStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{keyId}:{homNaySuffix}");
+                            var reqUsedStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageRpd(keyId, homNaySuffix));
                             int.TryParse(reqUsedStr ?? "0", out int used);
                             
                             if (max > 0 && used < max)
@@ -82,7 +83,7 @@ namespace educodeai_server.Helpers
                     {
                         if (key.TrangThai && key.RPDLimit > 0)
                         {
-                            var redisKey = $"EduCodeAI:KeyPool:{key.ID}";
+                            var redisKey = CacheKeys.KeyPool(key.ID);
                             
                             // Äông bá key vào Redis/MemoryCache
                             await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", key.MaKeyMaHoa);
@@ -352,7 +353,7 @@ namespace educodeai_server.Helpers
                 };
 
                 string jsonLog = JsonSerializer.Serialize(nhatKy);
-                await _redisService.DayVaoCuoiListAsync("EduCodeAI:LogQueue", jsonLog);
+                await _redisService.DayVaoCuoiListAsync(CacheKeys.LogQueue, jsonLog);
             }
             catch (Exception ex)
             {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 type MauKey = 'nhac_nhe' | 'khen' | 'trong';
 
@@ -140,6 +141,9 @@ export default function BulkMailModal({
   const [tieuDe, setTieuDe] = useState(MAU_NHAC_NHE.tieuDe);
   const [noiDung, setNoiDung] = useState(MAU_NHAC_NHE.noiDung);
   const editorRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useModalA11y(open && !dangGui, onClose, panelRef);
 
   const cfg = MAU_MAP[mau];
 
@@ -195,13 +199,13 @@ export default function BulkMailModal({
 
   return (
     <div className="qllh-modal-overlay" onClick={onClose}>
-      <div className="qllh-bulk-modal qllh-bulk-modal--v2" onClick={(e) => e.stopPropagation()}>
+      <div className="qllh-bulk-modal qllh-bulk-modal--v2" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="bulk-mail-title" onClick={(e) => e.stopPropagation()}>
         <div className="qllh-bulk-header">
           <div className="qllh-bulk-header__icon">
             <i className="fas fa-envelope" aria-hidden="true" />
           </div>
           <div className="qllh-bulk-header__text">
-            <h2>Gửi mail nhắc nhở hàng loạt</h2>
+            <h2 id="bulk-mail-title">Gửi mail nhắc nhở hàng loạt</h2>
             <p>{moTaNguoiNhan}</p>
           </div>
           <button type="button" className="qllh-btn-close" onClick={onClose} aria-label="Đóng">

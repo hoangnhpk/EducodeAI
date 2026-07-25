@@ -13,6 +13,7 @@ import Swal from 'sweetalert2';
 import * as mediaApi from '@/services/media.service';
 import { GIA_PHU_DE_AI_MOI_PHUT_USD, MAX_CLOUDINARY_VIDEO_MB } from '@/services/media.service';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface BulkUploadItem {
   id: string;
@@ -121,6 +122,11 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
   const refInputFile = useRef<HTMLInputElement>(null);
   const refInputFolder = useRef<HTMLInputElement>(null);
   const refInputSafariFallback = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const phuDeConfirmRef = useRef<HTMLDivElement>(null);
+
+  useModalA11y(dangMo && !dangTaiLen, dongModal, panelRef);
+  useModalA11y(showPhuDeConfirm && !dangXuLyPhuDe, () => setShowPhuDeConfirm(false), phuDeConfirmRef);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -291,10 +297,10 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
 
   return (
     <div className="khm-modal-backdrop">
-      <div className="khm-modal khm-modal-xl" onClick={e => e.stopPropagation()} style={{ maxWidth: 900 }}>
+      <div className="khm-modal khm-modal-xl" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="bulk-upload-title" onClick={e => e.stopPropagation()} style={{ maxWidth: 900 }}>
         <div className="khm-modal-header">
-          <h3 className="khm-modal-title">Tải lên hàng loạt (Bulk Upload)</h3>
-          {!dangTaiLen && <button className="khm-modal-close" onClick={dongModal}>×</button>}
+          <h3 className="khm-modal-title" id="bulk-upload-title">Tải lên hàng loạt (Bulk Upload)</h3>
+          {!dangTaiLen && <button className="khm-modal-close" onClick={dongModal} aria-label="Đóng">×</button>}
         </div>
         <div className="khm-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           
@@ -378,10 +384,10 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
               {/* AI Subtitle Confirm Modal */}
               {showPhuDeConfirm && (
                 <div className="khm-modal-backdrop">
-                  <div className="khm-modal khm-modal-md" onClick={e => e.stopPropagation()}>
+                  <div className="khm-modal khm-modal-md" ref={phuDeConfirmRef} role="dialog" aria-modal="true" aria-labelledby="phude-confirm-title" onClick={e => e.stopPropagation()}>
                     <div className="khm-modal-header">
-                      <h3 className="khm-modal-title">✨ Xác nhận tạo Phụ đề AI</h3>
-                      <button className="khm-modal-close" disabled={dangXuLyPhuDe} onClick={() => setShowPhuDeConfirm(false)}>×</button>
+                      <h3 className="khm-modal-title" id="phude-confirm-title">✨ Xác nhận tạo Phụ đề AI</h3>
+                      <button className="khm-modal-close" disabled={dangXuLyPhuDe} onClick={() => setShowPhuDeConfirm(false)} aria-label="Đóng">×</button>
                     </div>
                     <div className="khm-modal-body">
                       {phuDeKetQua ? (

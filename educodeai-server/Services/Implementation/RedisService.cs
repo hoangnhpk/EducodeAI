@@ -1,3 +1,4 @@
+using educodeai_server.Constants;
 using educodeai_server.Services.Interface;
 using StackExchange.Redis;
 
@@ -90,6 +91,26 @@ namespace educodeai_server.Services
             }
         }
 
+        public async Task<IEnumerable<string>> DocDauListKhongXoaAsync(string key, int soLuong)
+        {
+            try
+            {
+                var values = await _db.ListRangeAsync(key, 0, soLuong - 1);
+                return values.Select(v => v.ToString()).ToList();
+            }
+            catch (RedisConnectionException ex)
+            {
+                _logger.LogWarning(ex, "Redis unavailable – DocDauListKhongXoaAsync({Key}) returned empty", key);
+                return Enumerable.Empty<string>();
+            }
+        }
+
+        public async Task CatDauListAsync(string key, int soLuong)
+        {
+            try { await _db.ListTrimAsync(key, soLuong, -1); }
+            catch (RedisConnectionException ex) { _logger.LogWarning(ex, "Redis unavailable – CatDauListAsync({Key}) skipped", key); }
+        }
+
         public IEnumerable<string> LayDanhSachKeyTheoPattern(string pattern)
         {
             try
@@ -110,7 +131,7 @@ namespace educodeai_server.Services
         {
             try
             {
-                var key = $"course:{maKhoaHoc}:version";
+                var key = CacheKeys.CourseVersion(maKhoaHoc);
                 var val = await _db.StringGetAsync(key);
                 if (val.HasValue && long.TryParse(val, out var v))
                 {
@@ -131,7 +152,7 @@ namespace educodeai_server.Services
         {
             try
             {
-                var key = $"course:{maKhoaHoc}:version";
+                var key = CacheKeys.CourseVersion(maKhoaHoc);
                 await _db.StringIncrementAsync(key);
                 // Version key sống 30 ngày (Dài hơn detail)
                 await _db.KeyExpireAsync(key, TimeSpan.FromDays(30));

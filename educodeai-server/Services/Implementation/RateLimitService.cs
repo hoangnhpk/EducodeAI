@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using educodeai_server.Constants;
 using educodeai_server.Services.Interface;
 using Microsoft.Extensions.Logging;
 
@@ -72,10 +73,12 @@ namespace educodeai_server.Services.Implementation
             try
             {
                 var now = DateTime.UtcNow;
-                string rpmKey = $"EduCodeAI:Usage:RPM:{keyId}:{now:yyyyMMddHHmm}";
-                string tpmKey = $"EduCodeAI:Usage:TPM:{keyId}:{now:yyyyMMddHHmm}";
-                string rpdKey = $"EduCodeAI:Usage:RPD:{keyId}:{now:yyyyMMdd}";
-                string dailyTpmKey = $"EduCodeAI:Usage:DailyToken:{keyId}:{now:yyyyMMdd}";
+                string phutSuffix = now.ToString("yyyyMMddHHmm");
+                string ngaySuffix = now.ToString("yyyyMMdd");
+                string rpmKey = CacheKeys.UsageRpm(keyId, phutSuffix);
+                string tpmKey = CacheKeys.UsageTpm(keyId, phutSuffix);
+                string rpdKey = CacheKeys.UsageRpd(keyId, ngaySuffix);
+                string dailyTpmKey = CacheKeys.UsageDailyToken(keyId, ngaySuffix);
 
                 string[] keys = { rpmKey, tpmKey, rpdKey, dailyTpmKey };
                 
@@ -108,8 +111,8 @@ namespace educodeai_server.Services.Implementation
                 if (diff == 0) return true;
 
                 var now = DateTime.UtcNow;
-                string tpmKey = $"EduCodeAI:Usage:TPM:{keyId}:{now:yyyyMMddHHmm}";
-                string dailyTpmKey = $"EduCodeAI:Usage:DailyToken:{keyId}:{now:yyyyMMdd}";
+                string tpmKey = CacheKeys.UsageTpm(keyId, now.ToString("yyyyMMddHHmm"));
+                string dailyTpmKey = CacheKeys.UsageDailyToken(keyId, now.ToString("yyyyMMdd"));
 
                 string[] keys = { tpmKey, dailyTpmKey };
                 string[] args = { diff.ToString() };

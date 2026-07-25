@@ -1,3 +1,4 @@
+using educodeai_server.Constants;
 using educodeai_server.Services.Interface;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -176,6 +177,48 @@ namespace educodeai_server.Services
             }
         }
 
+        public Task<IEnumerable<string>> DocDauListKhongXoaAsync(string key, int soLuong)
+        {
+            try
+            {
+                var listKey = $"list:{key}";
+                if (_memoryCache.TryGetValue(listKey, out List<string>? list) && list != null)
+                {
+                    return Task.FromResult<IEnumerable<string>>(list.Take(soLuong).ToList());
+                }
+                return Task.FromResult(Enumerable.Empty<string>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error peeking list in MemoryCache for key: {Key}", key);
+                return Task.FromResult(Enumerable.Empty<string>());
+            }
+        }
+
+        public Task CatDauListAsync(string key, int soLuong)
+        {
+            try
+            {
+                var listKey = $"list:{key}";
+                if (_memoryCache.TryGetValue(listKey, out List<string>? list) && list != null)
+                {
+                    if (list.Count > soLuong)
+                    {
+                        _memoryCache.Set(listKey, list.Skip(soLuong).ToList(), TimeSpan.FromHours(1));
+                    }
+                    else
+                    {
+                        _memoryCache.Remove(listKey);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error trimming list in MemoryCache for key: {Key}", key);
+            }
+            return Task.CompletedTask;
+        }
+
         public IEnumerable<string> LayDanhSachKeyTheoPattern(string pattern)
         {
             try
@@ -193,14 +236,14 @@ namespace educodeai_server.Services
         // --- Course Cache Versioning (MemoryCache Fallback) ---
         public Task<long> LayVersionKhoaHocAsync(int maKhoaHoc)
         {
-            var key = $"course:{maKhoaHoc}:version";
+            var key = CacheKeys.CourseVersion(maKhoaHoc);
             _memoryCache.TryGetValue(key, out long version);
             return Task.FromResult(version == 0 ? 1L : version);
         }
 
         public Task TangVersionKhoaHocAsync(int maKhoaHoc)
         {
-            var key = $"course:{maKhoaHoc}:version";
+            var key = CacheKeys.CourseVersion(maKhoaHoc);
             _memoryCache.TryGetValue(key, out long current);
             _memoryCache.Set(key, current + 1, TimeSpan.FromDays(30));
             return Task.CompletedTask;

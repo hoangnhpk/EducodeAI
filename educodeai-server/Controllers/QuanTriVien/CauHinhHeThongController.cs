@@ -7,6 +7,7 @@ using educodeai_server.DTOs.QuanTriVien;
 using Microsoft.AspNetCore.SignalR; // 1. Thêm cái này
 using educodeai_server.Hubs;      // 2. Thêm cái này
 using educodeai_server.Services.Interface;
+using educodeai_server.Constants;
 using System.Text.Json;
 
 namespace educodeai_server.Controllers.QuanTriVien
@@ -41,7 +42,7 @@ namespace educodeai_server.Controllers.QuanTriVien
         {
             try
             {
-                var cacheKey = "SystemConfig:All";
+                var cacheKey = CacheKeys.SystemConfigAll;
                 var cachedData = await _redisService.LayGiaTriAsync(cacheKey);
 
                 if (!string.IsNullOrEmpty(cachedData))
@@ -153,7 +154,7 @@ namespace educodeai_server.Controllers.QuanTriVien
                 await _context.SaveChangesAsync();
 
                 // 5. XÓA CACHE TRƯỚC KHI PHÁT SIGNALR
-                await _redisService.XoaKeyAsync("SystemConfig:All");
+                await _redisService.XoaKeyAsync(CacheKeys.SystemConfigAll);
                 _logger.LogInformation("[CACHE INVALIDATE] Đã xóa cache cấu hình hệ thống (SystemConfig:All).");
 
                 // 6. PHÁT TÍN HIỆU REALTIME

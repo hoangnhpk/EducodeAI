@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, Outlet } from "react-router-dom";
+import Swal from "sweetalert2";
 import HeaderHocVien from "@/layouts/hoc-vien/HeaderHocVien";
 import FooterHocVien from "@/layouts/hoc-vien/FooterHocVien";
 import "@/assets/styles/variables.css";
@@ -34,8 +35,12 @@ useEffect(() => {
             localStorage.removeItem('user_info');
             localStorage.removeItem('login_success');
 
-            // 3. Hiển thị thông báo
-            alert(`TÀI KHOẢN CỦA BẠN ĐÃ BỊ KHÓA!\n\nLý do: ${data.reason}\n\nHệ thống sẽ tự động đăng xuất ngay lập tức.`);
+            await Swal.fire({
+              icon: "error",
+              title: "Tài khoản đã bị khóa",
+              text: `Lý do: ${data.reason ?? "Không xác định"}. Hệ thống sẽ tự động đăng xuất ngay lập tức.`,
+              confirmButtonColor: "var(--primary)",
+            });
 
             // 4. Sút thẳng ra ngoài trang đăng nhập
             navigate('/dang-nhap', { replace: true });
