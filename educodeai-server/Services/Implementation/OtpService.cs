@@ -23,8 +23,10 @@ namespace educodeai_server.Services.Implementation
             _cache = cache;
         }
 
+        // Normalize identifier để key lúc create và verify luôn khớp dù caller truyền email khác case
+        // (email chữ hoa/thường, khoảng trắng thừa). userId toàn số không bị ảnh hưởng.
         private static string Key(OtpPurpose purpose, string identifier) =>
-            $"otp:{purpose}:{identifier}";
+            $"otp:{purpose}:{(identifier ?? string.Empty).Trim().ToLowerInvariant()}";
 
         public async Task<string> CreateOtpAsync(OtpPurpose purpose, string identifier, string? payloadJson = null)
         {

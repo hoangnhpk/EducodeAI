@@ -127,6 +127,32 @@ public sealed class PhaseDOtpServiceTests
         Assert.False(result.Success);
     }
 
+    // ---- Regression: identifier không phân biệt hoa/thường ----
+    // Trước đây Key() ghép identifier raw → email có chữ hoa lúc create lệch key lúc verify,
+    // làm đăng ký/reset thất bại. Key() giờ normalize nên create/verify khác case vẫn khớp.
+
+    [Fact]
+    public async Task VerifyOtp_IdentifierIsCaseInsensitive()
+    {
+        var otpService = NewService();
+        var otp = await otpService.CreateOtpAsync(OtpPurpose.Register, "John@Example.com");
+
+        var result = await otpService.VerifyOtpAsync(OtpPurpose.Register, "john@example.com", otp);
+
+        Assert.True(result.Success);
+    }
+
+    [Fact]
+    public async Task VerifyOtp_IdentifierIgnoresSurroundingWhitespace()
+    {
+        var otpService = NewService();
+        var otp = await otpService.CreateOtpAsync(OtpPurpose.ForgotPassword, "user@example.com");
+
+        var result = await otpService.VerifyOtpAsync(OtpPurpose.ForgotPassword, "  user@example.com  ", otp);
+
+        Assert.True(result.Success);
+    }
+
     private static OtpService NewService()
     {
         var distributed = new MemoryDistributedCache(
