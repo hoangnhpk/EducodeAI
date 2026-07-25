@@ -71,26 +71,6 @@ namespace educodeai_server.Services
             catch (RedisConnectionException ex) { _logger.LogWarning(ex, "Redis unavailable – DayVaoCuoiListAsync({Key}) skipped", key); }
         }
 
-        public async Task<IEnumerable<string>> LayTuDauListAsync(string key, int soLuong)
-        {
-            try
-            {
-                var danhSach = new List<string>();
-                for (int i = 0; i < soLuong; i++)
-                {
-                    var giaTri = await _db.ListLeftPopAsync(key);
-                    if (!giaTri.HasValue) break;
-                    danhSach.Add(giaTri.ToString());
-                }
-                return danhSach;
-            }
-            catch (RedisConnectionException ex)
-            {
-                _logger.LogWarning(ex, "Redis unavailable – LayTuDauListAsync({Key}) returned empty", key);
-                return Enumerable.Empty<string>();
-            }
-        }
-
         public async Task<IEnumerable<string>> DocDauListKhongXoaAsync(string key, int soLuong)
         {
             try

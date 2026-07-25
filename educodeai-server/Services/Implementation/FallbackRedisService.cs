@@ -144,39 +144,6 @@ namespace educodeai_server.Services
             }
         }
 
-        public async Task<IEnumerable<string>> LayTuDauListAsync(string key, int soLuong)
-        {
-            try
-            {
-                var listKey = $"list:{key}";
-                if (_memoryCache.TryGetValue(listKey, out List<string>? list))
-                {
-                    var result = list.Take(soLuong).ToList();
-                    
-                    // Remove taken items from cache
-                    if (list.Count > soLuong)
-                    {
-                        list = list.Skip(soLuong).ToList();
-                        _memoryCache.Set(listKey, list, TimeSpan.FromHours(1));
-                    }
-                    else
-                    {
-                        _memoryCache.Remove(listKey);
-                    }
-                    
-                    _logger.LogWarning("Redis không available, using MemoryCache for list key: {Key}, items: {Count}", key, result.Count);
-                    return result;
-                }
-                
-                return Enumerable.Empty<string>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error popping from list in MemoryCache for key: {Key}", key);
-                return Enumerable.Empty<string>();
-            }
-        }
-
         public Task<IEnumerable<string>> DocDauListKhongXoaAsync(string key, int soLuong)
         {
             try
