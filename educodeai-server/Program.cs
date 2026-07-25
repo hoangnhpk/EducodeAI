@@ -202,8 +202,6 @@ builder.Services.AddScoped<ISessionRealtimeNotifier, SessionRealtimeNotifier>();
 builder.Services.AddScoped<IOtpService, OtpService>();
 // Rate-limit phát/verify OTP theo purpose + identifier + IP (D.3); fail-open khi cache lỗi.
 builder.Services.AddScoped<IOtpRateLimiter, OtpRateLimiter>();
-// Rate-limit phát/verify OTP theo purpose + identifier + IP (D.3); backing store IDistributedCache.
-builder.Services.AddScoped<IOtpRateLimiter, OtpRateLimiter>();
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
