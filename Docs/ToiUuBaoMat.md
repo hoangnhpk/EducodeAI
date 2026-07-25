@@ -542,13 +542,27 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ## Giai đoạn F — Quên/reset/đổi mật khẩu
 
-- [ ] **F.1** Forgot password luôn trả generic message dù email tồn tại hay không.
-- [ ] **F.2** Rate limit + CAPTCHA + OTP policy chung.
-- [ ] **F.3** Password policy backend: tối thiểu 8–12 ký tự, chống trùng mật khẩu cũ, không chứa email dễ đoán.
-- [ ] **F.4** Reset: revoke toàn bộ session/refresh token, clear cache, push SignalR event, không auto-login.
-- [ ] **F.5** Change password: verify password cũ; xử lý dứt điểm field OTP (dùng thật hoặc xóa khỏi DTO/UI).
-- [ ] **F.6** Sau đổi password, revoke các phiên khác hoặc toàn bộ theo policy đã ghi rõ.
-- [ ] **F.7** Audit password changed/reset; không log password/hash/OTP.
+> **Cách triển khai:** chia 3 chặng, chốt từng chặng trước khi sang chặng sau (chạm revoke session + SignalR dùng chung của Phase G).
+>
+> **Quyết định (đã chốt):** (1) sau RESET (quên mật khẩu) → revoke TẤT CẢ session/refresh token, KHÔNG auto-login, buộc đăng nhập lại; (2) xóa hẳn field `OtpCode` khỏi `DoiMatKhauRequest` (đổi mật khẩu chỉ verify mật khẩu cũ, không dùng OTP); (3) sau ĐỔI mật khẩu (đang đăng nhập) → revoke các phiên KHÁC, giữ phiên hiện tại.
+>
+> **Tái dùng pattern revoke có sẵn:** `DangXuatAsync`/`XacNhanDangXuatTuXaAsync` (revoke DB → commit → `InvalidateSessionAsync` → `SessionRevokedAsync`/`SessionListChangedAsync`). Password policy dùng chung một helper cho cả reset và change.
+
+### Chặng F-1 — Forgot password (chống enumeration + normalize)
+
+- [x] **F.1** Forgot password luôn trả generic message dù email tồn tại hay không (không throw "email không tồn tại"); normalize email `Trim().ToLowerInvariant()` trước query/rate-limit key. _(`YeuCauQuenMatKhauAsync`: normalize email, chỉ gửi OTP khi email có tài khoản nhưng response luôn giống nhau "Nếu email tồn tại...".)_
+- [x] **F.2** Xác nhận rate limit + CAPTCHA + OTP policy chung đã áp (đã có từ Phase D); vá phần còn thiếu nếu có. _(`TryConsumeSendAsync`/`TryConsumeVerifyAsync` + `XacThucCaptchaHoacNemAsync` + `OtpService` đã áp từ Phase D; rate-limit key giờ dùng email normalized.)_
+
+### Chặng F-2 — Reset password (policy + revoke all, không auto-login)
+
+- [x] **F.3** Password policy backend dùng chung: tối thiểu 8 ký tự, chống trùng mật khẩu cũ, không chứa phần local của email; áp cho cả reset và change. _(Helper `KiemTraPasswordPolicyHoacNem`; gọi trong cả `DatLaiMatKhauAsync` và `DoiMatKhauAsync`.)_
+- [x] **F.4** Reset: revoke TOÀN BỘ session/refresh token của user, invalidate cache, push SignalR (`SessionRevoked` từng phiên + `SessionListChanged`), KHÔNG auto-login — trả message yêu cầu đăng nhập lại. _(`DatLaiMatKhauAsync`: revoke hết phiên + token `PASSWORD_RESET`, invalidate user-status + từng session, publish SignalR, `ClearRefreshCookie`, không gọi `XuLyDangNhapThanhCongAsync` nữa.)_
+
+### Chặng F-3 — Change password (verify cũ + revoke phiên khác)
+
+- [x] **F.5** Change password: verify mật khẩu cũ; XÓA hẳn field `OtpCode` khỏi `DoiMatKhauRequest` (dứt điểm, không dùng OTP). _(Bỏ field ở DTO backend + `auth.service.ts` + 2 trang đổi mật khẩu frontend.)_
+- [x] **F.6** Sau đổi password: revoke các phiên KHÁC (giữ phiên hiện tại lấy `MaPhien` từ JWT), invalidate cache + push SignalR cho các phiên bị revoke. _(`DoiMatKhauAsync`: revoke phiên khác + token `PASSWORD_CHANGE`, giữ `MaPhien` hiện tại, invalidate cache + publish SignalR.)_
+- [x] **F.7** Audit password changed/reset ở mức thông tin (không log password/hash/OTP — giữ nguyên tắc B.2/B.3). _(`ILogger<XacThucService>` log userId + số phiên bị revoke; không log secret.)_
 
 ## Giai đoạn G — Realtime quản lý thiết bị và session
 

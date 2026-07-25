@@ -35,8 +35,9 @@ namespace educodeai_server.Services.Implementation
         private readonly ISessionRealtimeNotifier _sessionRealtimeNotifier;
         private readonly IOtpService _otpService;
         private readonly IOtpRateLimiter _otpRateLimiter;
+        private readonly ILogger<XacThucService> _logger;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter, ILogger<XacThucService> logger)
         {
             _context = context;
             _config = config;
@@ -51,6 +52,7 @@ namespace educodeai_server.Services.Implementation
             _sessionRealtimeNotifier = sessionRealtimeNotifier;
             _otpService = otpService;
             _otpRateLimiter = otpRateLimiter;
+            _logger = logger;
         }
 
         // IP client cho rate-limit; null nếu không xác định được (rate-limiter tự bỏ qua phần IP).
@@ -73,6 +75,22 @@ namespace educodeai_server.Services.Implementation
             var ok = await _captchaService.XacNhanCaptchaAsync(captchaToken);
             if (!ok)
                 throw ApiException.InvalidRequest("Mã CAPTCHA không hợp lệ hoặc đã hết hạn.");
+        }
+
+        // Password policy dùng chung cho reset và change (F.3): tối thiểu 8 ký tự, không chứa phần local
+        // của email (dễ đoán), và không trùng mật khẩu cũ. currentHash null nghĩa là không có mật khẩu cũ để so.
+        private static void KiemTraPasswordPolicyHoacNem(string? matKhauMoi, string? email, string? currentHash)
+        {
+            if (string.IsNullOrWhiteSpace(matKhauMoi) || matKhauMoi.Length < 8)
+                throw ApiException.InvalidRequest("Mật khẩu mới phải có tối thiểu 8 ký tự.");
+
+            var localPart = (email ?? string.Empty).Split('@').FirstOrDefault();
+            if (!string.IsNullOrEmpty(localPart) && localPart.Length >= 3
+                && matKhauMoi.Contains(localPart, StringComparison.OrdinalIgnoreCase))
+                throw ApiException.InvalidRequest("Mật khẩu không được chứa tên đăng nhập/email dễ đoán.");
+
+            if (!string.IsNullOrEmpty(currentHash) && BCrypt.Net.BCrypt.Verify(matKhauMoi, currentHash))
+                throw ApiException.InvalidRequest("Mật khẩu mới không được trùng mật khẩu hiện tại.");
         }
 
         #region OTP COOKIE LOGIC
@@ -773,17 +791,24 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest r, string i) {
             await XacThucCaptchaHoacNemAsync(r.CaptchaToken);
-            if (!await _otpRateLimiter.TryConsumeSendAsync(OtpPurpose.ForgotPassword, r.Email, ClientIp()))
+
+            // F.1: normalize email trước rate-limit key/query để nhất quán và ổn định key.
+            var email = (r.Email ?? string.Empty).Trim().ToLowerInvariant();
+
+            if (!await _otpRateLimiter.TryConsumeSendAsync(OtpPurpose.ForgotPassword, email, ClientIp()))
                 throw ApiException.InvalidRequest("Bạn yêu cầu mã quá nhiều lần. Vui lòng thử lại sau.");
 
-            var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email == r.Email);
-            if (user == null) throw ApiException.InvalidRequest("Email không tồn tại trên hệ thống.");
+            // F.1: KHÔNG tiết lộ email có tồn tại hay không. Chỉ gửi OTP khi email thật sự có tài khoản,
+            // nhưng response luôn giống nhau để chống user enumeration.
+            var user = await _context.NguoiDungs.FirstOrDefaultAsync(u => u.Email.ToLower() == email);
+            if (user != null)
+            {
+                string otp = await _otpService.CreateOtpAsync(OtpPurpose.ForgotPassword, email);
+                string emailBody = TaoGiaoDienEmail("Đặt lại mật khẩu", "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng nhập mã xác thực dưới đây để tiến hành thiết lập mật khẩu mới.", otp);
+                await EmailHelper.SendEmailAsync(email, "Mã xác nhận đặt lại mật khẩu", emailBody);
+            }
 
-            string otp = await _otpService.CreateOtpAsync(OtpPurpose.ForgotPassword, r.Email);
-
-            string emailBody = TaoGiaoDienEmail("Đặt lại mật khẩu", "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng nhập mã xác thực dưới đây để tiến hành thiết lập mật khẩu mới.", otp);
-            await EmailHelper.SendEmailAsync(r.Email, "Mã xác nhận đặt lại mật khẩu", emailBody);
-            return new { message = "Mã OTP đã được gửi." };
+            return new { message = "Nếu email tồn tại trong hệ thống, mã xác thực đã được gửi. Vui lòng kiểm tra hộp thư." };
         }
 
         public async Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest r) {
@@ -795,45 +820,56 @@ namespace educodeai_server.Services.Implementation
                 throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác hoặc đã hết hạn.");
 
             var user = await LayNguoiDungKemThietBiAsync(r.Email);
-            if (user == null) throw ApiException.InvalidRequest("NgÆ°á»i dÃ¹ng khÃ´ng tá»“n táº¡i.");
+            if (user == null) throw ApiException.InvalidRequest("Phiên làm việc không hợp lệ.");
 
-            // 1. Cáº­p nháº­t máº­t kháº©u má»›i
+            // F.3: áp password policy chung (>=8 ký tự, không chứa local email, không trùng mật khẩu cũ).
+            KiemTraPasswordPolicyHoacNem(r.MatKhauMoi, user.Email, user.MatKhau);
+
+            // Cập nhật mật khẩu mới. OTP đã single-use tự xóa trong VerifyOtpAsync.
             user.MatKhau = BCrypt.Net.BCrypt.HashPassword(r.MatKhauMoi);
-            await _context.SaveChangesAsync();
-            
-            // 2. XÃ³a OTP quÃªn máº­t kháº©u khá»i cache
-            // OTP đã single-use tự xóa trong VerifyOtpAsync.
 
-            // 3. LOGIC Äá»’NG Bá»˜ Vá»šI ÄÄ‚NG NHáº¬P: KIá»‚M TRA THIáº¾T Bá»Š
-            var activeSessions = user.DanhSachPhienDangNhap.Where(p => p.DangHoatDong).ToList();
-            
-            // Náº¿u thiáº¿t bá»‹ hiá»‡n táº¡i chÆ°a cÃ³ phiÃªn VÃ€ Ä‘Ã£ Ä‘á»§ 3 thiáº¿t bá»‹ khÃ¡c Ä‘ang hoáº¡t Ä‘á»™ng
-            if (activeSessions.Count >= 3 && !activeSessions.Any(p => p.MaThietBi == r.MaThietBi))
+            // F.4: revoke TOÀN BỘ phiên + refresh token của user (không giữ phiên nào), KHÔNG auto-login.
+            var ipThuHoi = ClientIp();
+            var revokedSessionIds = user.DanhSachPhienDangNhap
+                .Where(p => p.DangHoatDong)
+                .Select(p => p.MaPhien)
+                .ToList();
+            foreach (var p in user.DanhSachPhienDangNhap.Where(p => p.DangHoatDong))
             {
-                var oldest = activeSessions.OrderBy(p => p.ThoiGianHoatDongCuoi).First();
-                var replaceAfterResetPayload = JsonSerializer.Serialize(new ThayTheThietBiOtpPayload(r.MaThietBi, r.TenThietBi, oldest.MaPhien));
-                string otp = await _otpService.CreateOtpAsync(OtpPurpose.ReplaceDevice, user.Email, replaceAfterResetPayload);
-                
-                // LÆ°u OTP thay tháº¿ thiáº¿t bá»‹ vÃ o cache
-                await EmailHelper.SendEmailAsync(user.Email, "Xác nhận thay thế thiết bị sau khi đổi mật khẩu",
-                    $"Bạn vừa đặt lại mật khẩu và đang đăng nhập trên thiết bị mới. Vui lòng nhập mã <b>{otp}</b> để đăng xuất thiết bị <b>{oldest.TenThietBi}</b> và tiếp tục vào hệ thống.");
-
-                return new { 
-                    requiresLogoutOldest = true, 
-                    oldestDeviceName = oldest.TenThietBi, 
-                    email = user.Email, 
-                    message = "Äáº·t láº¡i máº­t kháº©u thÃ nh cÃ´ng! Tuy nhiÃªn báº¡n Ä‘Ã£ Ä‘áº¡t giá»›i háº¡n 3 thiáº¿t bá»‹. Vui lÃ²ng xÃ¡c nháº­n thay tháº¿ thiáº¿t bá»‹ Ä‘á»ƒ vÃ o há»‡ thá»‘ng." 
-                };
+                p.DangHoatDong = false;
             }
 
-            // 4. Náº¿u há»£p lá»‡ (thiáº¿t bá»‹ cÅ© hoáº·c cÃ²n chá»—) -> Tá»± Ä‘á»™ng Ä‘Äƒng nháº­p
-            var loginResult = await XuLyDangNhapThanhCongAsync(user, r.MaThietBi, r.TenThietBi);
-            
-            // Tráº£ vá» cáº£ message thÃ´ng bÃ¡o thÃ nh cÃ´ng vÃ  dá»¯ liá»‡u Ä‘Äƒng nháº­p
-            return new {
-                message = "Äáº·t láº¡i máº­t kháº©u thÃ nh cÃ´ng vÃ  Ä‘Ã£ tá»± Ä‘á»™ng Ä‘Äƒng nháº­p!",
-                loginData = loginResult
-            };
+            var tokens = await _context.RefreshTokens
+                .Where(t => t.MaNguoiDung == user.MaNguoiDung && t.NgayThuHoi == null)
+                .ToListAsync();
+            foreach (var t in tokens)
+            {
+                t.NgayThuHoi = DateTime.UtcNow;
+                t.LyDoThuHoi = "PASSWORD_RESET";
+                t.IpThuHoi = ipThuHoi;
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Sau commit: invalidate cache + push SignalR để mọi thiết bị bị đá ngay (tái dùng pattern G).
+            await _sessionStateCache.InvalidateUserStatusAsync(user.MaNguoiDung);
+            foreach (var maPhien in revokedSessionIds)
+            {
+                await _sessionStateCache.InvalidateSessionAsync(maPhien);
+            }
+            foreach (var maPhien in revokedSessionIds)
+            {
+                await _sessionRealtimeNotifier.SessionRevokedAsync(maPhien);
+            }
+            await _sessionRealtimeNotifier.SessionListChangedAsync(user.MaNguoiDung);
+
+            // Xóa cookie refresh của thiết bị hiện tại; KHÔNG auto-login, buộc đăng nhập lại.
+            ClearRefreshCookie();
+
+            // F.7: audit mức thông tin, không log password/hash/OTP.
+            _logger.LogInformation("Password reset for user {UserId}; revoked {Count} session(s).", user.MaNguoiDung, revokedSessionIds.Count);
+
+            return new { message = "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới." };
         }
 
         public async Task<bool> DoiMatKhauAsync(int userId, DoiMatKhauRequest r) {
@@ -843,8 +879,58 @@ namespace educodeai_server.Services.Implementation
             if (!BCrypt.Net.BCrypt.Verify(r.MatKhauCu, user.MatKhau))
                 throw ApiException.InvalidRequest("Mật khẩu hiện tại không chính xác.");
 
+            // F.3: áp password policy chung (>=8 ký tự, không chứa local email, không trùng mật khẩu cũ).
+            KiemTraPasswordPolicyHoacNem(r.MatKhauMoi, user.Email, user.MatKhau);
+
             user.MatKhau = BCrypt.Net.BCrypt.HashPassword(r.MatKhauMoi);
+
+            // F.6: revoke các phiên KHÁC, giữ phiên hiện tại (lấy MaPhien từ JWT đã verify).
+            var maPhienHienTai = LayMaPhienTuJwt();
+            var ipThuHoi = ClientIp();
+            var revokedSessionIds = await _context.PhienDangNhaps
+                .Where(p => p.MaNguoiDung == userId && p.DangHoatDong
+                            && (!maPhienHienTai.HasValue || p.MaPhien != maPhienHienTai.Value))
+                .Select(p => p.MaPhien)
+                .ToListAsync();
+
+            if (revokedSessionIds.Count > 0)
+            {
+                var sessions = await _context.PhienDangNhaps
+                    .Where(p => revokedSessionIds.Contains(p.MaPhien))
+                    .ToListAsync();
+                foreach (var p in sessions) p.DangHoatDong = false;
+
+                var tokens = await _context.RefreshTokens
+                    .Where(t => t.MaNguoiDung == userId && t.NgayThuHoi == null
+                                && t.MaPhien.HasValue && revokedSessionIds.Contains(t.MaPhien.Value))
+                    .ToListAsync();
+                foreach (var t in tokens)
+                {
+                    t.NgayThuHoi = DateTime.UtcNow;
+                    t.LyDoThuHoi = "PASSWORD_CHANGE";
+                    t.IpThuHoi = ipThuHoi;
+                }
+            }
+
             await _context.SaveChangesAsync();
+
+            // Sau commit: invalidate cache + push SignalR cho các phiên bị revoke (tái dùng pattern G).
+            foreach (var maPhien in revokedSessionIds)
+            {
+                await _sessionStateCache.InvalidateSessionAsync(maPhien);
+            }
+            foreach (var maPhien in revokedSessionIds)
+            {
+                await _sessionRealtimeNotifier.SessionRevokedAsync(maPhien);
+            }
+            if (revokedSessionIds.Count > 0)
+            {
+                await _sessionRealtimeNotifier.SessionListChangedAsync(userId);
+            }
+
+            // F.7: audit mức thông tin, không log password/hash/OTP.
+            _logger.LogInformation("Password changed for user {UserId}; revoked {Count} other session(s).", userId, revokedSessionIds.Count);
+
             return true;
         }
 

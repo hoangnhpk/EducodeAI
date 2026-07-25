@@ -125,7 +125,7 @@ export const authService = {
     });
   },
 
-  doiMatKhau: async (payload: { MatKhauCu: string; MatKhauMoi: string; OtpCode: string }) => {
+  doiMatKhau: async (payload: { MatKhauCu: string; MatKhauMoi: string }) => {
     return await api.post('/api/XacThuc/doi-mat-khau', payload);
   },
 
