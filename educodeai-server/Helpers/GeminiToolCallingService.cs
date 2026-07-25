@@ -200,7 +200,8 @@ namespace educodeai_server.Helpers
                     int docDaiNoiDung = JsonSerializer.Serialize(contents).Length;
                     int estimatedTokens = (int)Math.Ceiling(docDaiNoiDung * 0.3) + 200;
 
-                    if (!await _rateLimitService.ReserveQuotaAsync(keyId, rpmLimit, tpmLimit, rpdLimit, estimatedTokens))
+                    var reservation = await _rateLimitService.ReserveQuotaAsync(keyId, rpmLimit, tpmLimit, rpdLimit, estimatedTokens);
+                    if (reservation == null)
                     {
                         Console.WriteLine($"[RateLimit] Key {currentRedisKey} bị giới hạn (RPM/TPM/RPD). Đang chuyển Key khác...");
                         soLanThuLai++;
@@ -216,7 +217,7 @@ namespace educodeai_server.Helpers
                     catch (Exception ex)
                     {
                         Console.WriteLine($"[Gemini Lỗi Kết Nối] Google từ chối phũ phàng với key {currentRedisKey}. Chi tiết: {ex.Message}. Đang thử key khác...");
-                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
+                        await _rateLimitService.CommitQuotaAsync(reservation, 0);
                         soLanThuLai++;
                         await Task.Delay(2000);
                         continue;
@@ -245,7 +246,7 @@ namespace educodeai_server.Helpers
                             Console.WriteLine($"[Gemini Lỗi Token Tracker] {ex.Message}");
                         }
 
-                        await _rateLimitService.CommitQuotaAsync(keyId, actualTokens, estimatedTokens);
+                        await _rateLimitService.CommitQuotaAsync(reservation, actualTokens);
 
                         return responseBody;
                     }
@@ -259,7 +260,7 @@ namespace educodeai_server.Helpers
                     {
                         Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
 
-                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
+                        await _rateLimitService.CommitQuotaAsync(reservation, 0);
 
                         await LuuLogVaoRedisQueue(currentRedisKey, 0, (int)response.StatusCode, requestUrl);
 
