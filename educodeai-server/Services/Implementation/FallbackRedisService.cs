@@ -57,13 +57,14 @@ namespace educodeai_server.Services
             }
         }
 
-        public async Task LuuHashAsync(string key, string thuocTinh, string giaTri)
+        public async Task<bool> LuuHashAsync(string key, string thuocTinh, string giaTri)
         {
             try
             {
                 var hashKey = $"{key}:{thuocTinh}";
                 _memoryCache.Set(hashKey, giaTri, TimeSpan.FromHours(1));
                 _logger.LogWarning("Redis không available, using MemoryCache for hash key: {Key}:{ThuocTinh}", key, thuocTinh);
+                return true;
             }
             catch (Exception ex)
             {
