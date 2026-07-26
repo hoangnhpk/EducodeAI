@@ -68,6 +68,8 @@ namespace educodeai_server.DTOs.QuanTriVien
 
     public class KetQuaAIDuyetDTO
     {
+        public bool ThanhCong { get; set; } = true;
+        public string ThongBao { get; set; } = string.Empty;
         public int TongXuLy { get; set; }
         public int SoDaDuyet { get; set; }
         public int SoTuChoi { get; set; }

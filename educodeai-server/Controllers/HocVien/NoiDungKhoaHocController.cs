@@ -3,12 +3,14 @@ using educodeai_server.DTOs.KhoaHoc;
 using educodeai_server.Helpers;
 using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace educodeai_server.Controllers.HocVien
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "HocVien,GiangVien")]
     public class NoiDungKhoaHocController : ControllerBase
     {
         private readonly IKhoaHocService _khoaHocService;

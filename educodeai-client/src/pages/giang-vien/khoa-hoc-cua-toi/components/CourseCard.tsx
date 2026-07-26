@@ -5,7 +5,9 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 const getImageUrl = (url?: string): string => {
   if (!url) return 'https://placehold.co/600x340/6366f1/white?text=Khóa+Học';
   if (url.startsWith('http')) return url;
-  return `${BASE_URL}${url}`;
+  // Ảnh upload thật (/uploads/...) do backend phục vụ; tên file trần (seed) là asset public của frontend.
+  if (url.startsWith('/')) return `${BASE_URL}${url}`;
+  return `/img/${url}`;
 };
 
 interface Props {

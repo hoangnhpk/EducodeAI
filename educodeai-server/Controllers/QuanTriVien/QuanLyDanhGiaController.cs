@@ -1,11 +1,13 @@
 using educodeai_server.DTOs.QuanTriVien;
 using educodeai_server.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace educodeai_server.Controllers.QuanTriVien
 {
     [Route("api/admin/danh-gia")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class QuanLyDanhGiaController : ControllerBase
     {
         private readonly IQuanLyDanhGiaService _service;
@@ -67,10 +69,15 @@ namespace educodeai_server.Controllers.QuanTriVien
         public async Task<IActionResult> AIDuyetHangLoat()
         {
             var result = await _service.DuyetHangLoatBangAIAsync();
+            var message = result.ThanhCong
+                ? (result.TongXuLy > 0
+                    ? $"AI đã xử lý {result.TongXuLy} đánh giá: {result.SoDaDuyet} duyệt, {result.SoTuChoi} từ chối."
+                    : result.ThongBao)
+                : result.ThongBao;
             return Ok(new
             {
-                success = true,
-                message = $"AI đã xử lý {result.TongXuLy} đánh giá: {result.SoDaDuyet} duyệt, {result.SoTuChoi} từ chối.",
+                success = result.ThanhCong,
+                message,
                 data = result
             });
         }

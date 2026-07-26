@@ -1,10 +1,12 @@
 import axiosClient from '@/configs/axios';
 
-export enum TinhCachAI {
-    Friendly = 1,
-    Strict = 2,
-    Normal = 3
-}
+export const TinhCachAI = {
+    Friendly: 1,
+    Strict: 2,
+    Normal: 3
+} as const;
+
+export type TinhCachAI = typeof TinhCachAI[keyof typeof TinhCachAI];
 
 export interface StartPhongVanRequest {
     viTriUngTuyen: string;
@@ -58,19 +60,15 @@ export interface LichSuPhongVan {
 
 export const PhongVanAIService = {
     startInterview: async (request: StartPhongVanRequest) => {
-        const response = await axiosClient.post('/api/PhongVanAI/start', request);
-        return response.data;
+        return await axiosClient.post<StartPhongVanResponse>('/api/PhongVanAI/start', request);
     },
     answerQuestion: async (request: AnswerPhongVanRequest) => {
-        const response = await axiosClient.post('/api/PhongVanAI/answer', request);
-        return response.data;
+        return await axiosClient.post<AnswerPhongVanResponse>('/api/PhongVanAI/answer', request);
     },
     endInterview: async (maPhongVan: number) => {
-        const response = await axiosClient.post(`/api/PhongVanAI/end/${maPhongVan}`);
-        return response.data;
+        return await axiosClient.post<EndPhongVanResponse>(`/api/PhongVanAI/end/${maPhongVan}`);
     },
     getHistory: async () => {
-        const response = await axiosClient.get('/api/PhongVanAI/history');
-        return response.data;
+        return await axiosClient.get<LichSuPhongVan[]>('/api/PhongVanAI/history');
     }
 };
