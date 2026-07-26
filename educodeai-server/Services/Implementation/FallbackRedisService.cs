@@ -57,35 +57,38 @@ namespace educodeai_server.Services
             }
         }
 
-        public async Task<bool> LuuHashAsync(string key, string thuocTinh, string giaTri)
+        public Task<bool> LuuHashAsync(string key, string thuocTinh, string giaTri)
         {
             try
             {
                 var hashKey = $"{key}:{thuocTinh}";
                 _memoryCache.Set(hashKey, giaTri, TimeSpan.FromHours(1));
                 _logger.LogWarning("Redis không available, using MemoryCache for hash key: {Key}:{ThuocTinh}", key, thuocTinh);
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
+                // Trả false thay vì throw: hợp đồng IRedisService là "ghi hỏng thì báo false"
+                // (RedisService thật cũng vậy), nơi gọi như KeyApiService.SyncKeyToRedisAsync
+                // dựa vào giá trị này để biết sync có thành công không.
                 _logger.LogError(ex, "Error saving hash to MemoryCache for key: {Key}:{ThuocTinh}", key, thuocTinh);
-                throw;
+                return Task.FromResult(false);
             }
         }
 
-        public async Task<string> LayHashAsync(string key, string thuocTinh)
+        public Task<string> LayHashAsync(string key, string thuocTinh)
         {
             try
             {
                 var hashKey = $"{key}:{thuocTinh}";
                 _memoryCache.TryGetValue(hashKey, out string? value);
                 _logger.LogWarning("Redis không available, using MemoryCache for hash key: {Key}:{ThuocTinh}", key, thuocTinh);
-                return value ?? "0"; // Default value for counters
+                return Task.FromResult(value ?? "0"); // Default value for counters
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error reading hash from MemoryCache for key: {Key}:{ThuocTinh}", key, thuocTinh);
-                return "0";
+                return Task.FromResult("0");
             }
         }
 

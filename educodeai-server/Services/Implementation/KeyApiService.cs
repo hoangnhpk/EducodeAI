@@ -114,7 +114,7 @@ namespace educodeai_server.Services.Implementation
 
             if (isUpdated)
             {
-                string redisKey = $"EduCodeAI:KeyPool:{id}";
+                string redisKey = CacheKeys.KeyPool(id);
 
                 if (status)
                 {
@@ -137,7 +137,7 @@ namespace educodeai_server.Services.Implementation
 
             if (isDeleted)
             {
-                await _redisService.XoaKeyAsync($"EduCodeAI:KeyPool:{id}");
+                await _redisService.XoaKeyAsync(CacheKeys.KeyPool(id));
             }
 
             return isDeleted;
@@ -149,7 +149,7 @@ namespace educodeai_server.Services.Implementation
 
             if (rawKey == null || !rawKey.TrangThai) return false;
 
-            string redisKey = $"EduCodeAI:KeyPool:{rawKey.ID}";
+            string redisKey = CacheKeys.KeyPool(rawKey.ID);
 
             // Gom kết quả từng lệnh ghi. Redis ngắt → LuuHashAsync trả false (đã nuốt
             // RedisConnectionException bên trong). Chỉ khi TẤT CẢ ghi được mới coi là sync thành công.
