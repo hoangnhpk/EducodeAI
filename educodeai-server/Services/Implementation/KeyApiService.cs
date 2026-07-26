@@ -151,12 +151,21 @@ namespace educodeai_server.Services.Implementation
 
             string redisKey = $"EduCodeAI:KeyPool:{rawKey.ID}";
 
-            await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", rawKey.MaKeyMaHoa);
-            await _redisService.LuuHashAsync(redisKey, "RPMLimit", rawKey.RPMLimit.ToString());
-            await _redisService.LuuHashAsync(redisKey, "TPMLimit", rawKey.TPMLimit.ToString());
-            await _redisService.LuuHashAsync(redisKey, "RPDLimit", rawKey.RPDLimit.ToString());
-            await _redisService.LuuHashAsync(redisKey, "ModelSuDung", rawKey.ModelSuDung);
-            await _redisService.LuuHashAsync(redisKey, "TrangThai", rawKey.TrangThai.ToString());
+            // Gom kết quả từng lệnh ghi. Redis ngắt → LuuHashAsync trả false (đã nuốt
+            // RedisConnectionException bên trong). Chỉ khi TẤT CẢ ghi được mới coi là sync thành công.
+            bool tatCaGhiDuoc =
+                await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", rawKey.MaKeyMaHoa) &
+                await _redisService.LuuHashAsync(redisKey, "RPMLimit", rawKey.RPMLimit.ToString()) &
+                await _redisService.LuuHashAsync(redisKey, "TPMLimit", rawKey.TPMLimit.ToString()) &
+                await _redisService.LuuHashAsync(redisKey, "RPDLimit", rawKey.RPDLimit.ToString()) &
+                await _redisService.LuuHashAsync(redisKey, "ModelSuDung", rawKey.ModelSuDung) &
+                await _redisService.LuuHashAsync(redisKey, "TrangThai", rawKey.TrangThai.ToString());
+
+            if (!tatCaGhiDuoc)
+            {
+                // Không ghi audit SYNC_CONFIG khi sync thất bại để log phản ánh đúng thực tế.
+                return false;
+            }
 
             var auditLog = new educodeai_server.Models.ApiKeyAuditLog
             {

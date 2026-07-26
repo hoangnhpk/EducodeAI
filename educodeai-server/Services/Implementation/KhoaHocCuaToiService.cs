@@ -347,22 +347,33 @@ namespace educodeai_server.Services.Implement
             }
             else if (baiHoc.LoaiBaiHoc == "Video" && baiHoc.VideoSource == "cloudinary" && !string.IsNullOrEmpty(baiHoc.VideoPublicId))
             {
-                // Xóa video trên Cloudinary.
-                var xoaVideoOk = await _mediaService.DeleteVideoCloudinaryAsync(baiHoc.VideoPublicId);
-                if (!xoaVideoOk)
+                // Chỉ dọn tài nguyên Cloudinary khi KHÔNG còn bài học nào khác dùng chung
+                // cùng VideoPublicId. Nếu còn bài khác tham chiếu (count > 1), giữ nguyên
+                // file trên Cloud để không làm hỏng nội dung học của bài kia.
+                var soThamChieu = await _repository.CountBaiHocByVideoPublicIdAsync(baiHoc.VideoPublicId);
+                if (soThamChieu > 1)
                 {
-                    _logger.LogWarning("Không xóa được video Cloudinary {PublicId} của bài học {MaBaiHoc}", baiHoc.VideoPublicId, maBaiHoc);
-                    canhBao.Add("video trên Cloudinary");
+                    _logger.LogInformation("Video {PublicId} còn {Count} bài học tham chiếu — bỏ qua xóa Cloudinary khi xóa bài {MaBaiHoc}", baiHoc.VideoPublicId, soThamChieu, maBaiHoc);
                 }
-
-                // Xóa luôn phụ đề (raw resource) nếu có — trước đây bị bỏ sót, để lại file rác.
-                if (baiHoc.HasSubtitle && !string.IsNullOrEmpty(baiHoc.SubtitleUrl))
+                else
                 {
-                    var xoaPhuDeOk = await _mediaService.DeleteSubtitleCloudinaryAsync(baiHoc.SubtitleUrl);
-                    if (!xoaPhuDeOk)
+                    // Xóa video trên Cloudinary.
+                    var xoaVideoOk = await _mediaService.DeleteVideoCloudinaryAsync(baiHoc.VideoPublicId);
+                    if (!xoaVideoOk)
                     {
-                        _logger.LogWarning("Không xóa được phụ đề Cloudinary {SubtitleUrl} của bài học {MaBaiHoc}", baiHoc.SubtitleUrl, maBaiHoc);
-                        canhBao.Add("phụ đề trên Cloudinary");
+                        _logger.LogWarning("Không xóa được video Cloudinary {PublicId} của bài học {MaBaiHoc}", baiHoc.VideoPublicId, maBaiHoc);
+                        canhBao.Add("video trên Cloudinary");
+                    }
+
+                    // Xóa luôn phụ đề (raw resource) nếu có — trước đây bị bỏ sót, để lại file rác.
+                    if (baiHoc.HasSubtitle && !string.IsNullOrEmpty(baiHoc.SubtitleUrl))
+                    {
+                        var xoaPhuDeOk = await _mediaService.DeleteSubtitleCloudinaryAsync(baiHoc.SubtitleUrl);
+                        if (!xoaPhuDeOk)
+                        {
+                            _logger.LogWarning("Không xóa được phụ đề Cloudinary {SubtitleUrl} của bài học {MaBaiHoc}", baiHoc.SubtitleUrl, maBaiHoc);
+                            canhBao.Add("phụ đề trên Cloudinary");
+                        }
                     }
                 }
             }

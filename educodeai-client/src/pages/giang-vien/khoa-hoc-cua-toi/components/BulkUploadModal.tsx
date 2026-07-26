@@ -21,7 +21,7 @@ interface BulkUploadItem {
   tieuDe: string;
   dungLuongMb: number;
   tienDo: number;
-  trangThai: 'cho_xu_ly' | 'dang_tai' | 'thanh_cong' | 'loi';
+  trangThai: 'cho_xu_ly' | 'dang_tai' | 'thanh_cong' | 'loi' | 'da_huy';
   thongBaoLoi?: string;
 }
 
@@ -87,6 +87,7 @@ const QueueRow: React.FC<{
                </div>
              )}
              {item.trangThai === 'thanh_cong' && <span className="khm-badge" style={{ background: 'var(--success-soft)', color: 'var(--success-strong)' }}>✓ Thành công</span>}
+             {item.trangThai === 'da_huy' && <span className="khm-badge" style={{ background: 'var(--khm-gray-100)', color: 'var(--khm-gray-600)' }}>⊘ Đã hủy</span>}
              {item.trangThai === 'loi' && (
                <div>
                  <span className="khm-badge" style={{ background: 'var(--danger-soft)', color: 'var(--danger-strong)', marginBottom: 4 }}>❌ Lỗi</span>
@@ -119,6 +120,10 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
   // Track uploaded lesson IDs for post-upload AI subtitle
   const uploadedLessonsRef = useRef<{ maBaiHoc: number; thoiLuong: number }[]>([]);
 
+  // Cờ hủy toàn batch + các AbortController đang chạy (mỗi item 1 cái) để hủy upload giữa chừng.
+  const daHuyRef = useRef(false);
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+
   const refInputFile = useRef<HTMLInputElement>(null);
   const refInputFolder = useRef<HTMLInputElement>(null);
   const refInputSafariFallback = useRef<HTMLInputElement>(null);
@@ -139,6 +144,8 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
       setDangTaiLen(false);
       setApDungPhuDeAI(false);
       uploadedLessonsRef.current = [];
+      daHuyRef.current = false;
+      abortControllersRef.current.clear();
       setShowPhuDeConfirm(false);
       setDangXuLyPhuDe(false);
       setPhuDeKetQua(null);
@@ -213,16 +220,25 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
     const qSnapshot = [...hangDoi];
 
     const taiLenFile = async (item: BulkUploadItem, indexOffset: number) => {
+      // Nếu đã bấm hủy toàn batch trước khi tới lượt item này thì bỏ qua, không upload.
+      if (daHuyRef.current) {
+        capNhatItem(item.id, { trangThai: 'da_huy', thongBaoLoi: 'Đã hủy' });
+        return;
+      }
+
+      const controller = new AbortController();
+      abortControllersRef.current.set(item.id, controller);
+
       try {
         capNhatItem(item.id, { trangThai: 'dang_tai', tienDo: 0, thongBaoLoi: undefined });
-        
+
         // 1. Get Signature sequentially for each file just before uploading (Rate Limit prevention)
         const chuKy = await mediaApi.layChuKyUploadVideo();
 
-        // 2. Upload to Cloudinary
+        // 2. Upload to Cloudinary (truyền signal để hủy giữa chừng)
         const ketQua = await mediaApi.uploadVideoToCloudinary(item.file, chuKy, (p) => {
            capNhatItem(item.id, { tienDo: p });
-        });
+        }, controller.signal);
 
         // 3. Save to DB
         const thoiLuong = Math.round(ketQua.duration || 0);
@@ -252,8 +268,17 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
 
         capNhatItem(item.id, { trangThai: 'thanh_cong', tienDo: 100 });
       } catch (error: any) {
+         // Bị hủy giữa chừng (abort) → đánh dấu da_huy, KHÔNG coi là lỗi và KHÔNG gọi themBaiHoc
+         // (đã bị ngắt trước bước lưu DB nên không gắn video dở vào bài học).
+         const laHuy = daHuyRef.current || error?.name === 'CanceledError' || error?.name === 'AbortError' || error?.code === 'ERR_CANCELED';
+         if (laHuy) {
+            capNhatItem(item.id, { trangThai: 'da_huy', thongBaoLoi: 'Đã hủy' });
+            return;
+         }
          capNhatItem(item.id, { trangThai: 'loi', thongBaoLoi: error.message || 'Lỗi không xác định' });
          throw error; // Throw so we know it failed
+      } finally {
+         abortControllersRef.current.delete(item.id);
       }
     };
 
@@ -288,10 +313,17 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
      xuLyTaiLenHangDoi();
   };
 
+  // Hủy toàn bộ batch đang tải: bật cờ hủy (chặn item chưa tới lượt) + abort mọi upload đang chạy.
+  const xuLyHuyTaiLen = () => {
+    daHuyRef.current = true;
+    abortControllersRef.current.forEach(c => c.abort());
+    abortControllersRef.current.clear();
+  };
+
   const soLuongCho = hangDoi.filter(q => q.trangThai === 'cho_xu_ly').length;
   const soLuongThanhCong = hangDoi.filter(q => q.trangThai === 'thanh_cong').length;
   const soLuongLoi = hangDoi.filter(q => q.trangThai === 'loi').length;
-  const daHoanThanh = hangDoi.length > 0 && hangDoi.every(q => q.trangThai === 'thanh_cong' || q.trangThai === 'loi');
+  const daHoanThanh = hangDoi.length > 0 && hangDoi.every(q => q.trangThai === 'thanh_cong' || q.trangThai === 'loi' || q.trangThai === 'da_huy');
 
   if (!dangMo) return null;
 
@@ -499,9 +531,14 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
              )}
              
              {dangTaiLen && (
-               <button className="khm-btn khm-btn-primary khm-btn-sm" disabled>
-                 <span className="khm-spinner khm-spinner-sm" /> Đang xử lý...
-               </button>
+               <>
+                 <button className="khm-btn khm-btn-primary khm-btn-sm" disabled>
+                   <span className="khm-spinner khm-spinner-sm" /> Đang xử lý...
+                 </button>
+                 <button className="khm-btn khm-btn-danger khm-btn-sm" onClick={xuLyHuyTaiLen}>
+                   ✕ Hủy tải lên
+                 </button>
+               </>
              )}
 
              {daHoanThanh && soLuongLoi > 0 && !dangTaiLen && (

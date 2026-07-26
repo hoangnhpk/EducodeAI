@@ -39,10 +39,10 @@ namespace educodeai_server.Services
             catch (RedisConnectionException ex) { _logger.LogWarning(ex, "Redis unavailable – XoaKeyAsync({Key}) skipped", key); }
         }
 
-        public async Task LuuHashAsync(string key, string thuocTinh, string giaTri)
+        public async Task<bool> LuuHashAsync(string key, string thuocTinh, string giaTri)
         {
-            try { await _db.HashSetAsync(key, thuocTinh, giaTri); }
-            catch (RedisConnectionException ex) { _logger.LogWarning(ex, "Redis unavailable – LuuHashAsync({Key}:{Field}) skipped", key, thuocTinh); }
+            try { await _db.HashSetAsync(key, thuocTinh, giaTri); return true; }
+            catch (RedisConnectionException ex) { _logger.LogWarning(ex, "Redis unavailable – LuuHashAsync({Key}:{Field}) skipped", key, thuocTinh); return false; }
         }
 
         public async Task<string> LayHashAsync(string key, string thuocTinh)
