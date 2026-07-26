@@ -208,87 +208,93 @@ namespace educodeai_server.Helpers
                         continue;
                     }
 
-                    HttpResponseMessage response = null;
-
+                    // Quota đã được INCR trên Redis. Mọi đường thoát khỏi vòng lặp này
+                    // (return / continue / throw / exception bất ngờ) đều phải commit lại,
+                    // nếu không estimatedTokens sẽ kẹt trong bucket TPM/ngày đến khi hết hạn.
+                    bool daHoanQuota = false;
                     try
                     {
-                        response = await _http.PostAsJsonAsync(requestUrl, requestBody);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[Gemini Lỗi Kết Nối] Google từ chối phũ phàng với key {currentRedisKey}. Chi tiết: {ex.Message}. Đang thử key khác...");
-                        await _rateLimitService.CommitQuotaAsync(reservation, 0);
-                        soLanThuLai++;
-                        await Task.Delay(2000);
-                        continue;
-                    }
+                        HttpResponseMessage response = null;
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var responseBody = await response.Content.ReadAsStringAsync();
-
-                        int actualTokens = 0;
                         try
                         {
-                            string usageMetaString = ChuanHoaJsonTuAIHelper.usageMetadata(responseBody);
-                            var metaObj = Newtonsoft.Json.Linq.JObject.Parse(usageMetaString);
-                            actualTokens = (int?)metaObj["totalTokenCount"] ?? 0;
-
-                            if (actualTokens > 0)
-                            {
-                                Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {actualTokens} tokens.");
-                            }
-
-                            await LuuLogVaoRedisQueue(currentRedisKey, actualTokens, (int)response.StatusCode, requestUrl);
+                            response = await _http.PostAsJsonAsync(requestUrl, requestBody);
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[Gemini Lỗi Token Tracker] {ex.Message}");
+                            Console.WriteLine($"[Gemini Lỗi Kết Nối] Google từ chối phũ phàng với key {currentRedisKey}. Chi tiết: {ex.Message}. Đang thử key khác...");
+                            await _rateLimitService.CommitQuotaAsync(reservation, 0);
+                            daHoanQuota = true;
+                            soLanThuLai++;
+                            await Task.Delay(2000);
+                            continue;
                         }
 
-                        await _rateLimitService.CommitQuotaAsync(reservation, actualTokens);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var responseBody = await response.Content.ReadAsStringAsync();
 
-                        return responseBody;
-                    }
+                            int actualTokens = 0;
+                            try
+                            {
+                                string usageMetaString = ChuanHoaJsonTuAIHelper.usageMetadata(responseBody);
+                                var metaObj = Newtonsoft.Json.Linq.JObject.Parse(usageMetaString);
+                                actualTokens = (int?)metaObj["totalTokenCount"] ?? 0;
 
-                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
-                        response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
-                        response.StatusCode == System.Net.HttpStatusCode.Forbidden ||
-                        response.StatusCode == System.Net.HttpStatusCode.InternalServerError ||
-                        response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable ||
-                        response.StatusCode == System.Net.HttpStatusCode.BadGateway)
-                    {
-                        Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
+                                if (actualTokens > 0)
+                                {
+                                    Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {actualTokens} tokens.");
+                                }
 
-                        await _rateLimitService.CommitQuotaAsync(reservation, 0);
+                                await LuuLogVaoRedisQueue(currentRedisKey, actualTokens, (int)response.StatusCode, requestUrl);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[Gemini Lỗi Token Tracker] {ex.Message}");
+                            }
 
-                        await LuuLogVaoRedisQueue(currentRedisKey, 0, (int)response.StatusCode, requestUrl);
+                            await _rateLimitService.CommitQuotaAsync(reservation, actualTokens);
+                            daHoanQuota = true;
 
-                        soLanThuLai++;
-                        await Task.Delay(2000);
-                        continue;
-                    }
+                            return responseBody;
+                        }
 
-                    if (!response.IsSuccessStatusCode)
-                    {
+                        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                            response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
+                            response.StatusCode == System.Net.HttpStatusCode.Forbidden ||
+                            response.StatusCode == System.Net.HttpStatusCode.InternalServerError ||
+                            response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable ||
+                            response.StatusCode == System.Net.HttpStatusCode.BadGateway)
+                        {
+                            Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
+
+                            await _rateLimitService.CommitQuotaAsync(reservation, 0);
+                            daHoanQuota = true;
+
+                            await LuuLogVaoRedisQueue(currentRedisKey, 0, (int)response.StatusCode, requestUrl);
+
+                            soLanThuLai++;
+                            await Task.Delay(2000);
+                            continue;
+                        }
+
+                        // Còn lại là status không nằm trong nhóm retry (VD 404 model sai):
+                        // ném lỗi tiếng Việt ra UI, quota được finally hoàn lại.
                         string errorContent = await response.Content.ReadAsStringAsync();
-                        
 
-                        string msg = "Lỗi kết nối đến máy chủ AI (Tool Calling). Vui lòng thử lại.";
-
-                        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                            msg = "Lỗi (401): API Key bị thiếu hoặc sai. Vui lòng kiểm tra lại cấu hình Key trong hệ thống.";
-                        else if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                            msg = "Lỗi (429): API Key đã dùng hết lượt hoặc bị gọi quá nhanh. Vui lòng thử lại sau 1 phút hoặc thêm Key mới.";
-                        else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                            msg = "Lỗi (403): API Key bị từ chối truy cập (có thể do sai quyền hoặc bị khóa).";
-                        else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || response.StatusCode == System.Net.HttpStatusCode.BadGateway)
-                            msg = $"Lỗi ({response.StatusCode}): Máy chủ AI của Google đang bị nghẽn mạng. Vui lòng nhấn Thử lại sau ít phút.";
+                        string msg;
+                        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                            msg = "Model AI (Tool Calling) không tồn tại hoặc chưa được Google hỗ trợ. Vui lòng kiểm tra cấu hình.";
                         else
                             msg = $"Lỗi không xác định từ AI ({response.StatusCode}). Vui lòng báo cho Admin.";
 
                         Console.WriteLine($"[Gemini Tool Calling Error] {response.StatusCode} - {errorContent}");
                         throw new Exception(msg);
+                    }
+                    finally
+                    {
+                        if (!daHoanQuota)
+                            await _rateLimitService.CommitQuotaAsync(reservation, 0);
                     }
                 }
 
