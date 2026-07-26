@@ -31,6 +31,14 @@ namespace educodeai_server.Services.Implementation
                 .OrderByDescending(dk => dk.NgayDangKy)
                 .ToListAsync();
 
+            // Gom tiến độ của tất cả khóa trong 2 truy vấn thay vì 2 truy vấn cho mỗi khóa (N+1).
+            var maKhoaIds = dangKyList
+                .Where(dk => dk.KhoaHoc != null)
+                .Select(dk => dk.MaKhoaHoc)
+                .Distinct()
+                .ToList();
+            var tienDoMap = await LayTienDoNhieuKhoaAsync(maNguoiDung, maKhoaIds);
+
             var result = new List<KhongGianHocTapItemDTO>();
 
             foreach (var dk in dangKyList)
@@ -39,7 +47,7 @@ namespace educodeai_server.Services.Implementation
                 if (kh == null) continue;
 
                 int maKhoa = dk.MaKhoaHoc;
-                var (tongSoBai, soBaiDaHoc, phanTram) = await LayTienDoKhoaHocAsync(maNguoiDung, maKhoa);
+                var (tongSoBai, soBaiDaHoc, phanTram) = tienDoMap.GetValueOrDefault(maKhoa);
 
                 result.Add(new KhongGianHocTapItemDTO
                 {
@@ -60,20 +68,20 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<SkillTreeResponseDTO> LaySkillTreeAsync(int maNguoiDung, int? maLoTrinh)
         {
-            var loTrinhList = await _context.LoTrinhAIs
+            // Cùng nguồn với trang khoa-hoc-ai-cua-toi: chỉ lấy lộ trình TrangThai = "Đã lưu".
+            // Trước đây tải toàn bộ lộ trình của học viên rồi mới lọc, kèm 2 nhánh OrderBy
+            // theo "Đã lưu"/"Hoạt động" trở thành vô nghĩa ngay sau khi lọc.
+            var loTrinhDaLuu = await _context.LoTrinhAIs
                 .AsNoTracking()
-                .Where(lt => lt.MaNguoiDung == maNguoiDung)
-                .OrderByDescending(lt => lt.TrangThai == "Đã lưu")
-                .ThenByDescending(lt => lt.TrangThai == "Hoạt động")
-                .ThenByDescending(lt => lt.NgayTao)
+                .Where(lt => lt.MaNguoiDung == maNguoiDung && lt.TrangThai == "Đã lưu")
+                .OrderByDescending(lt => lt.NgayTao)
                 .ToListAsync();
 
-            // Cùng nguồn với trang khoa-hoc-ai-cua-toi: lộ trình TrangThai = "Đã lưu"
-            var loTrinhDaLuu = loTrinhList
-                .Where(lt => lt.TrangThai == "Đã lưu")
-                .ToList();
-
-            var tatCaKhoa = await _context.KhoaHocs.AsNoTracking().ToListAsync();
+            // Chỉ cần mã + tên để dò khóa học theo tên; không kéo toàn bộ cột của mọi khóa học.
+            var tatCaKhoa = await _context.KhoaHocs
+                .AsNoTracking()
+                .Select(k => new KhoaHocRutGon(k.MaKhoaHoc, k.TenKhoaHoc))
+                .ToListAsync();
 
             var options = new List<SkillTreeLoTrinhOptionDTO>();
             foreach (var lt in loTrinhDaLuu)
@@ -149,12 +157,17 @@ namespace educodeai_server.Services.Implementation
             bool foundNext = false;
             bool khoaTruocDaHoanThanh = true;
 
+            // Gom tiến độ của mọi node trong 2 truy vấn, thay vì 2 truy vấn mỗi node (N+1).
+            var tienDoMap = await LayTienDoNhieuKhoaAsync(
+                maNguoiDung,
+                orderedCourses.Select(c => c.MaKhoaHoc).Distinct().ToList());
+
             for (int i = 0; i < orderedCourses.Count; i++)
             {
                 var course = orderedCourses[i];
                 khoaMeta.TryGetValue(course.MaKhoaHoc, out var khoaDb);
 
-                var (tongSoBai, soBaiDaHoc, phanTram) = await LayTienDoKhoaHocAsync(maNguoiDung, course.MaKhoaHoc);
+                var (tongSoBai, soBaiDaHoc, phanTram) = tienDoMap.GetValueOrDefault(course.MaKhoaHoc);
                 bool daDangKy = dangKyByKhoa.ContainsKey(course.MaKhoaHoc);
                 var dk = daDangKy ? dangKyByKhoa[course.MaKhoaHoc] : null;
 
@@ -164,13 +177,17 @@ namespace educodeai_server.Services.Implementation
 
                 bool biKhoaTheoThuTu = i > 0 && !khoaTruocDaHoanThanh;
 
+                // Thứ tự xét: đã đăng ký phải THẮNG khóa-theo-thứ-tự.
+                // Học viên đã mua thì vào học được thật (route /khoa-hoc/{slug}/{id} không chặn),
+                // nên hiện "locked" là nói sai về hành vi hệ thống và còn ẩn mất tiến độ thật.
+                // Sau khi đổi, "locked" mang nghĩa: CHƯA mua VÀ lộ trình chưa tới lượt.
                 string trangThai;
                 if (done)
                     trangThai = "done";
-                else if (biKhoaTheoThuTu)
-                    trangThai = "locked";
                 else if (daDangKy)
                     trangThai = "in_progress";
+                else if (biKhoaTheoThuTu)
+                    trangThai = "locked";
                 else
                     trangThai = "not_registered";
 
@@ -386,9 +403,12 @@ namespace educodeai_server.Services.Implementation
             return text;
         }
 
+        /// <summary>Bản rút gọn của khóa học, chỉ giữ mã + tên để dò theo tên.</summary>
+        private sealed record KhoaHocRutGon(int MaKhoaHoc, string? TenKhoaHoc);
+
         private static List<(int MaKhoaHoc, string TenKhoaHoc, int GiaiDoan, string MucTieu)> GiaiQuyetMaKhoaHocTuTen(
             List<(int MaKhoaHoc, string TenKhoaHoc, int GiaiDoan, string MucTieu)> courses,
-            List<Models.KhoaHocModel> khoaDb)
+            List<KhoaHocRutGon> khoaDb)
         {
             if (courses.Count == 0)
                 return courses;
@@ -458,25 +478,45 @@ namespace educodeai_server.Services.Implementation
             return null;
         }
 
-        private async Task<(int tongSoBai, int soBaiDaHoc, int phanTram)> LayTienDoKhoaHocAsync(int maNguoiDung, int maKhoaHoc)
+        /// <summary>
+        /// Đếm tổng số bài và số bài đã học của nhiều khóa cùng lúc bằng 2 truy vấn,
+        /// thay cho việc gọi 2 truy vấn cho từng khóa trong vòng lặp (N+1).
+        /// </summary>
+        private async Task<Dictionary<int, (int tongSoBai, int soBaiDaHoc, int phanTram)>> LayTienDoNhieuKhoaAsync(
+            int maNguoiDung,
+            List<int> maKhoaHocIds)
         {
-            int tongSoBai = await _context.BaiHocs
-                .AsNoTracking()
-                .Where(b => b.ChuongHoc.MaKhoaHoc == maKhoaHoc)
-                .CountAsync();
+            var ketQua = new Dictionary<int, (int, int, int)>();
+            if (maKhoaHocIds.Count == 0)
+                return ketQua;
 
-            int soBaiDaHoc = await _context.TienDoBaiHocs
+            var tongTheoKhoa = await _context.BaiHocs
+                .AsNoTracking()
+                .Where(b => maKhoaHocIds.Contains(b.ChuongHoc.MaKhoaHoc))
+                .GroupBy(b => b.ChuongHoc.MaKhoaHoc)
+                .Select(g => new { MaKhoaHoc = g.Key, SoBai = g.Count() })
+                .ToDictionaryAsync(x => x.MaKhoaHoc, x => x.SoBai);
+
+            var daHocTheoKhoa = await _context.TienDoBaiHocs
                 .AsNoTracking()
                 .Where(t => t.MaNguoiDung == maNguoiDung
                          && t.DaXem
-                         && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc)
-                .CountAsync();
+                         && maKhoaHocIds.Contains(t.BaiHoc.ChuongHoc.MaKhoaHoc))
+                .GroupBy(t => t.BaiHoc.ChuongHoc.MaKhoaHoc)
+                .Select(g => new { MaKhoaHoc = g.Key, SoBai = g.Count() })
+                .ToDictionaryAsync(x => x.MaKhoaHoc, x => x.SoBai);
 
-            int phanTram = tongSoBai > 0
-                ? (int)Math.Round((double)soBaiDaHoc / tongSoBai * 100)
-                : 0;
+            foreach (var ma in maKhoaHocIds)
+            {
+                var tong = tongTheoKhoa.GetValueOrDefault(ma, 0);
+                var daHoc = daHocTheoKhoa.GetValueOrDefault(ma, 0);
+                var phanTram = tong > 0
+                    ? (int)Math.Round((double)daHoc / tong * 100)
+                    : 0;
+                ketQua[ma] = (tong, daHoc, phanTram);
+            }
 
-            return (tongSoBai, soBaiDaHoc, phanTram);
+            return ketQua;
         }
     }
 }
