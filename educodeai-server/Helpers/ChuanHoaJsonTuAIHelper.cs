@@ -55,16 +55,15 @@ namespace educodeai_server.Helpers
 
             var candidates = new List<string>();
 
-            // ?u ti?n JSON n?m trong code block ```json ... ``` ho?c ``` ... ```
-            foreach (Match codeBlockMatch in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
+            // 1. Ưu tiên nội dung trong code block ```json ... ```
+            foreach (Match match in Regex.Matches(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase))
             {
-                var value = codeBlockMatch.Groups[1].Value?.Trim();
-                if (!string.IsNullOrWhiteSpace(value))
-                    candidates.Add(value);
+                if (match.Groups.Count > 1)
+                    candidates.Add(match.Groups[1].Value);
             }
 
-
-            candidates.Add(text.Trim());
+            // 2. Toàn bộ text và các đoạn JSON cân bằng trích xuất được
+            candidates.Add(text);
             candidates.AddRange(TrichXuatJsonCanBang(text));
 
             foreach (var candidate in candidates.Distinct())
@@ -81,9 +80,8 @@ namespace educodeai_server.Helpers
                 }
                 catch
                 {
-                    // Th? candidate ti?p theo.
+                    // Thử candidate tiếp theo.
                 }
-
             }
 
             return false;

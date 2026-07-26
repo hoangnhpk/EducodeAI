@@ -94,7 +94,7 @@
     gap: 8px;
     margin-bottom: 32px;
     padding: 6px;
-    background: snow;
+    background: white;
     border-radius: 16px;
     box-shadow: 0 2px 8px rgba(15, 20, 25, 0.06);
     width: fit-content;
@@ -116,12 +116,12 @@
 
 .tab.active {
     background: #0066FF;
-    color: snow;
+    color: white;
     box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25);
 }
 
 .card {
-    background: snow;
+    background: white;
     border-radius: 24px;
     padding: 32px;
     box-shadow: 0 8px 24px rgba(15, 20, 25, 0.1);
