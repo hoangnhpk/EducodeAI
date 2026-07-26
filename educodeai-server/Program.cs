@@ -319,6 +319,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Khởi tạo dữ liệu nền của module thử thách nếu môi trường hiện tại còn thiếu.
+// Initializer chỉ thêm theo MaCode, không ghi đè cấu hình nhiệm vụ/danh hiệu đã tồn tại.
+await ThuThachDataInitializer.InitializeAsync(app.Services);
+
 // Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 

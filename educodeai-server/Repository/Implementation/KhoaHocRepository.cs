@@ -438,6 +438,10 @@ namespace educodeai_server.Repository.Implementation
                         .FirstOrDefaultAsync(td => td.MaBaiHoc == dto.MaBaiHoc
                                                 && td.MaNguoiDung == dto.MaNguoiDung);
 
+                    // Đạt quiz chỉ đánh dấu ĐÃ XEM, không sinh ra thời gian xem video.
+                    // ThoiGianHoc là số GIÂY xem thật (client gửi currentTime của player),
+                    // nên không được gán giá trị bịa vào đây — trước đây gán 100 với ý
+                    // "100%" làm sai đơn vị và ghi đè mất thời gian xem thật ở nhánh else.
                     if (tienDo == null)
                     {
                         tienDo = new TienDoBaiHocModel
@@ -445,7 +449,6 @@ namespace educodeai_server.Repository.Implementation
                             MaBaiHoc = dto.MaBaiHoc,
                             MaNguoiDung = dto.MaNguoiDung,
                             DaXem = true,
-                            ThoiGianHoc = 100, // 100%
                             NgayCapNhat = DateTime.Now
                         };
                         _context.TienDoBaiHocs.Add(tienDo);
@@ -455,8 +458,9 @@ namespace educodeai_server.Repository.Implementation
                         if (!tienDo.DaXem)
                         {
                             tienDo.DaXem = true;
-                            tienDo.ThoiGianHoc = 100;
                         }
+                        // NgayCapNhat vẫn cập nhật: học viên có học hôm nay thật, dữ liệu này
+                        // cấp cho nhiệm vụ ngay_hoc / hoc_bai và nhãn giam_chan.
                         tienDo.NgayCapNhat = DateTime.Now;
                         _context.TienDoBaiHocs.Update(tienDo);
                     }
