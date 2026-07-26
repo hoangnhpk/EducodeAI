@@ -97,6 +97,34 @@
   padding: 8px 0;
 }
 
+.tt-empty {
+  margin: 20px 24px;
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  background: #fafbfc;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+}
+
+.tt-empty p {
+  margin: 0 0 12px;
+}
+
+.tt-empty button {
+  padding: 8px 16px;
+  color: #fff;
+  font-weight: 700;
+  background: var(--primary-color);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tt-empty button:hover {
+  filter: brightness(0.95);
+}
+
 .tt-task-card {
   display: grid;
   grid-template-columns: auto 1fr auto;

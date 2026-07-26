@@ -680,7 +680,9 @@ namespace educodeai_server.Services.Implementation
             }
             else if (mode == "week")
             {
-                var cursor = start;
+                // Căn con trỏ về thứ Hai của tuần ISO chứa `start`. Nếu bước 7 ngày từ một
+                // ngày lệch tuần, tuần cuối cùng (tuần chứa hôm nay) sẽ bị bỏ sót khỏi biểu đồ.
+                var cursor = start.AddDays(-(((int)start.DayOfWeek + 6) % 7));
                 while (cursor < endExclusive)
                 {
                     var year = ISOWeek.GetYear(cursor);
@@ -695,7 +697,10 @@ namespace educodeai_server.Services.Implementation
             }
             else if (mode == "year")
             {
-                for (int y = start.Year; y < endExclusive.Year; y++)
+                // endExclusive là mốc loại trừ nên phải lấy năm của ngày cuối cùng được tính,
+                // dùng endExclusive.Year sẽ làm mất năm hiện tại khỏi biểu đồ.
+                var namCuoi = endExclusive.AddDays(-1).Year;
+                for (int y = start.Year; y <= namCuoi; y++)
                 {
                     var key = y.ToString();
                     result.Add(map.TryGetValue(key, out var v) ? v : new DoanhThuTheoThoiGianDTO
