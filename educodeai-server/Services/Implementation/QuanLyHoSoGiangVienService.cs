@@ -8,6 +8,9 @@ using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 using educodeai_server.Config;
 using educodeai_server.Common;
 
@@ -19,14 +22,23 @@ namespace educodeai_server.Services.Implementation
         private readonly PaymentMailOptions _mailOptions;
         private readonly IWebHostEnvironment _env;
         private readonly IDataProtector _cccdDataProtector;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<QuanLyHoSoGiangVienService> _logger;
+        private readonly ITokenService _tokenService;
 
-        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env, IDataProtectionProvider dataProtectionProvider)
+        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env, IDataProtectionProvider dataProtectionProvider, IHttpContextAccessor httpContextAccessor, ILogger<QuanLyHoSoGiangVienService> logger, ITokenService tokenService)
         {
             _context = context;
             _mailOptions = mailOptions.Value;
             _env = env;
             _cccdDataProtector = dataProtectionProvider.CreateProtector("EduCodeAI.CCCD.OcrData.v1");
+            _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
+            _tokenService = tokenService;
         }
+
+        private string? ActorIp() =>
+            _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 
         public async Task<object> LayDanhSachHoSoAsync(string? trangThai = null)
         {
@@ -144,6 +156,14 @@ namespace educodeai_server.Services.Implementation
                 await using var tx = await _context.Database.BeginTransactionAsync();
                 try
                 {
+                    // I.7: atomic claim — chỉ request đầu flip được ChoDuyet→DangDuyet (rows=1) mới tạo tài khoản.
+                    // Hai admin bấm duyệt đồng thời cùng hồ sơ: request thua (rows=0) dừng, không tạo 2 tài khoản.
+                    var claimed = await _context.HoSoDangKyGiangViens
+                        .Where(h => h.MaHoSoDangKyGiangVien == maHoSo && h.TrangThaiHoSo == "ChoDuyet")
+                        .ExecuteUpdateAsync(s => s.SetProperty(h => h.TrangThaiHoSo, "DangDuyet"));
+                    if (claimed == 0)
+                        throw ApiException.InvalidRequest("Hồ sơ đang được xử lý hoặc đã được duyệt.");
+
                     // Tạo tài khoản giảng viên (VaiTro = 1)
                     // Lưu mã VietQR vào NguoiDung.MaNganHangNhanTien để dùng chung với ví/rút tiền.
                     var nganHang = DanhMucNganHangLienKet.LayDanhSach().FirstOrDefault(x =>
@@ -296,8 +316,11 @@ namespace educodeai_server.Services.Implementation
             if (hoSo.TrangThaiHoSo == "DaDuyet")
                 throw ApiException.InvalidRequest("Hồ sơ đã được duyệt, không thể yêu cầu bổ sung.");
 
-            // Sinh token xác thực bổ sung
-            hoSo.BoSungToken = Guid.NewGuid().ToString("N").Substring(0, 12);
+            // I.8: sinh token CSPRNG 256-bit; chỉ lưu HASH trong DB, plaintext chỉ gửi qua email.
+            // Trước đây token là 12 hex đầu của GUID (~48-bit) lưu plaintext → brute-force được.
+            var tokenMaterial = _tokenService.CreateRefreshTokenMaterial();
+            var plainToken = tokenMaterial.PlainToken;
+            hoSo.BoSungToken = _tokenService.HashRefreshToken(plainToken);
             hoSo.BoSungTokenHetHan = DateTime.UtcNow.AddHours(24);
             hoSo.DaNopBoSung = false;
             hoSo.NgayNopBoSung = null;
@@ -308,8 +331,8 @@ namespace educodeai_server.Services.Implementation
             hoSo.NgayCapNhat = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // Gửi email với link bổ sung
-            string boSungLink = $"{_mailOptions.FrontendGiangVienBoSungUrl}/{maHoSo}?token={hoSo.BoSungToken}";
+            // Gửi email với link bổ sung — dùng plaintext token, KHÔNG lưu plaintext ở đâu.
+            string boSungLink = $"{_mailOptions.FrontendGiangVienBoSungUrl}/{maHoSo}?token={plainToken}";
             string subject = "Yêu cầu bổ sung hồ sơ đăng ký giảng viên EduCodeAI";
             string body = $@"
             <div style='font-family: ""Segoe UI"", Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background:#fff; border-radius:12px; border:1px solid #eaeaea; overflow:hidden;'>

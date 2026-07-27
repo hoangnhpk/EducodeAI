@@ -1340,6 +1340,22 @@ namespace educodeai_server.Services.Implementation
         private static readonly HashSet<string> _allowedImgExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp" };
         private const long _maxFileSize = 5 * 1024 * 1024;
 
+        // I.8: verify token bổ sung — DB lưu hash, token nhập là plaintext. Hash token nhập rồi so
+        // constant-time với hash trong DB; kiểm còn hạn. Trả false nếu thiếu/sai/hết hạn.
+        private bool XacThucBoSungToken(string? tokenNhap, string? tokenHashDb, DateTime? hetHan)
+        {
+            tokenNhap = tokenNhap?.Trim();
+            if (string.IsNullOrEmpty(tokenNhap) || string.IsNullOrEmpty(tokenHashDb))
+                return false;
+            if (!hetHan.HasValue || hetHan.Value <= DateTime.UtcNow)
+                return false;
+
+            var hashNhap = _tokenService.HashRefreshToken(tokenNhap);
+            return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+                System.Text.Encoding.UTF8.GetBytes(hashNhap),
+                System.Text.Encoding.UTF8.GetBytes(tokenHashDb));
+        }
+
         // I.3: kiểm magic bytes của ảnh (JPEG/PNG/WEBP) thay vì tin ContentType/ext client gửi.
         // Chống upload file giả .jpg (polyglot/HTML/SVG) — avatar được serve public nên rủi ro stored-XSS.
         private static async Task<bool> KiemTraMagicBytesAnhAsync(IFormFile file)
@@ -1468,6 +1484,10 @@ namespace educodeai_server.Services.Implementation
         /// </summary>
         public async Task<object> KiemTraQuyenBoSungHoSoAsync(long maHoSo, string token)
         {
+            // I.8: rate-limit theo hồ sơ + IP để chặn brute-force token bổ sung.
+            if (!await _otpRateLimiter.TryConsumeVerifyAsync(OtpPurpose.BoSungHoSo, maHoSo.ToString(), ClientIp()))
+                throw ApiException.InvalidRequest("Bạn thử quá nhiều lần. Vui lòng thử lại sau.");
+
             var hoSo = await _context.HoSoDangKyGiangViens
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.MaHoSoDangKyGiangVien == maHoSo);
@@ -1477,7 +1497,8 @@ namespace educodeai_server.Services.Implementation
             if (hoSo.TrangThaiHoSo != "CanBoSung")
                 throw ApiException.InvalidRequest("Hồ sơ không ở trạng thái cần bổ sung.");
 
-            if (string.IsNullOrWhiteSpace(token) || hoSo.BoSungToken != token.Trim() || hoSo.BoSungTokenHetHan <= DateTime.UtcNow)
+            // I.8: token gửi qua email là plaintext; DB chỉ lưu hash. Hash token nhập rồi so constant-time.
+            if (!XacThucBoSungToken(token, hoSo.BoSungToken, hoSo.BoSungTokenHetHan))
                 throw ApiException.InvalidRequest("Mã xác thực không hợp lệ hoặc đã hết hạn.");
 
             if (hoSo.DaNopBoSung)
@@ -1498,9 +1519,10 @@ namespace educodeai_server.Services.Implementation
             if (hoSo.TrangThaiHoSo != "CanBoSung")
                 throw ApiException.InvalidRequest("Hồ sơ không ở trạng thái cần bổ sung. Không thể cập nhật.");
 
-            // Verify token xác thực bổ sung
-            var tokenNhap = request.Token?.Trim();
-            if (string.IsNullOrEmpty(tokenNhap) || hoSo.BoSungToken != tokenNhap || hoSo.BoSungTokenHetHan <= DateTime.UtcNow)
+            // I.8: rate-limit + verify token qua hash constant-time (DB chỉ lưu hash).
+            if (!await _otpRateLimiter.TryConsumeVerifyAsync(OtpPurpose.BoSungHoSo, maHoSo.ToString(), ClientIp()))
+                throw ApiException.InvalidRequest("Bạn thử quá nhiều lần. Vui lòng thử lại sau.");
+            if (!XacThucBoSungToken(request.Token, hoSo.BoSungToken, hoSo.BoSungTokenHetHan))
                 throw ApiException.InvalidRequest("Mã xác thực bổ sung không hợp lệ hoặc đã hết hạn.");
             if (hoSo.DaNopBoSung)
                 throw ApiException.InvalidRequest("Hồ sơ đã được gửi bổ sung. Vui lòng đợi kết quả.");
