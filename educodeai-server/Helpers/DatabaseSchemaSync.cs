@@ -95,6 +95,16 @@ public static class DatabaseSchemaSync
                 ON "PhienDangNhap" ("MaNguoiDung", "DangHoatDong");
             CREATE INDEX IF NOT EXISTS "IX_PhienDangNhap_MaNguoiDung_MaThietBi"
                 ON "PhienDangNhap" ("MaNguoiDung", "MaThietBi");
+
+            -- I.2: unique index (partial) chống TOCTOU race tạo 2 hồ sơ giảng viên trùng
+            -- email/tài khoản/số giấy tờ khi đang chờ xử lý. Chỉ ràng buộc hồ sơ chưa bị từ chối
+            -- (TuChoi) để cho phép nộp lại sau khi bị từ chối. Là hàng phòng thủ cuối sau check AnyAsync.
+            CREATE UNIQUE INDEX IF NOT EXISTS "UX_HoSoGV_Email_DangXuLy"
+                ON "HoSoDangKyGiangViens" (lower("Email")) WHERE "TrangThaiHoSo" <> 'TuChoi';
+            CREATE UNIQUE INDEX IF NOT EXISTS "UX_HoSoGV_TaiKhoan_DangXuLy"
+                ON "HoSoDangKyGiangViens" (lower("TaiKhoan")) WHERE "TrangThaiHoSo" <> 'TuChoi';
+            CREATE UNIQUE INDEX IF NOT EXISTS "UX_HoSoGV_SoGiayTo_DangXuLy"
+                ON "HoSoDangKyGiangViens" ("SoGiayTo") WHERE "TrangThaiHoSo" <> 'TuChoi';
             """,
             cancellationToken);
     }

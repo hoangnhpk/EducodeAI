@@ -635,16 +635,27 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ## Giai đoạn I — Đăng ký và duyệt giảng viên
 
-- [ ] **I.1** OTP email giảng viên dùng OTP service chung.
-- [ ] **I.2** Normalize/unique email, username, tax/identity fields theo policy.
-- [ ] **I.3** Validate avatar: max 5MB, allowlist MIME + magic bytes, filename do server tạo, chống path traversal.
-- [ ] **I.4** **Không lưu ảnh giấy tờ tùy thân**; OCR trong RAM, mã hóa text cần thiết, dispose buffer/stream sau request.
-- [ ] **I.5** Không log OCR text/số giấy tờ/plain encrypted payload.
-- [ ] **I.6** Endpoint duyệt/từ chối/bổ sung hồ sơ dùng Admin policy và chống IDOR.
-- [ ] **I.7** Duyệt hồ sơ + tạo/cập nhật user role trong transaction, idempotent chống double-submit.
-- [ ] **I.8** Token bổ sung hồ sơ có TTL, single-use, scope đúng hồ sơ; không để trong log nếu truyền URL — ưu tiên body/header/cookie phù hợp.
-- [ ] **I.9** Audit submitted/updated/approved/rejected với actor/reason.
-- [ ] **I.10** Response Admin không trả dữ liệu nhạy cảm vượt nhu cầu xét duyệt.
+> **Cách triển khai:** chia 3 chặng, chốt từng chặng trước khi sang chặng sau (chạm OCR giấy tờ + upload file + transaction duyệt hồ sơ + audit).
+>
+> **Đã đạt sẵn (Phase trước / hiện trạng):** I.1 OTP giảng viên dùng `IOtpService`/`IOtpRateLimiter` chung; I.4 ảnh CCCD không lưu đĩa, OCR trong RAM, mã hóa qua Data Protection; I.5 không log OCR text/số giấy tờ/payload; I.6 `[Authorize(Roles="Admin")]` cấp class + actor id từ JWT. Các mục này chỉ cần xác nhận, không sửa lại.
+>
+> **Trọng tâm cần vá:** I.2 (unique index chống TOCTOU race), I.3 (magic bytes avatar), I.7 (duyệt atomic chống tạo 2 tài khoản), I.8 (token bổ sung entropy yếu/plaintext/không rate-limit), I.9 (audit qua `ILogger`), I.10 (masking CCCD/số TK, danh sách không trả số giấy tờ full). I.1 bổ sung: backend enforce cờ email đã verify lúc submit.
+
+### Chặng I-1 — Hardening submit đăng ký (I.1 enforce + I.2 + I.3)
+
+- [x] **I.1** Backend enforce cờ email đã verify (`VERIFIED_InstructorEmail_*`) lúc submit hồ sơ — không chỉ dựa frontend chặn. _(`DangKyGiangVienAsync` đầu method kiểm cờ `VERIFIED_InstructorEmail_{email}`; thiếu/false → 400 "Vui lòng xác minh email".)_
+- [x] **I.2** Unique index DB (email/taiKhoan/soGiayTo trong hồ sơ) làm hàng phòng thủ cuối chống TOCTOU race; bắt `DbUpdateException` trả lỗi thân thiện; normalize + validate `MaSoThue` server-side. _(Partial unique index `WHERE "TrangThaiHoSo" <> 'TuChoi'` cho email/taiKhoan/soGiayTo qua `DatabaseSchemaSync`; catch `DbUpdateException` trong transaction; MST regex `^\d{10}(\d{3})?$`.)_
+- [x] **I.3** Validate avatar bằng magic bytes (không chỉ tin `ContentType`+ext); giữ filename server-generated + allowlist ext/size sẵn có. _(`KiemTraMagicBytesAnhAsync` đọc 12 byte header check JPEG/PNG/WEBP signature; áp cho cả 3 ảnh trong `ValidateFile`.)_
+
+### Chặng I-2 — Duyệt hồ sơ atomic + token bổ sung an toàn (I.7 + I.8)
+
+- [ ] **I.7** Duyệt hồ sơ dùng atomic claim (`ExecuteUpdateAsync ... WHERE TrangThaiHoSo='ChoDuyet'`, kiểm rows ảnh hưởng) chống race tạo 2 tài khoản; guard trạng thái nguồn cho từ chối/bổ sung.
+- [ ] **I.8** Token bổ sung: CSPRNG + chỉ lưu hash, so sánh constant-time, rate-limit endpoint kiểm tra/nộp bổ sung (chống brute-force token). Giữ TTL 24h + single-use.
+
+### Chặng I-3 — Audit + tối thiểu hóa dữ liệu response (I.9 + I.10)
+
+- [ ] **I.9** Audit qua `ILogger` cho submitted/approved/rejected/bổ sung: actor admin, target hồ sơ, hành động, lý do, IP, timestamp; bỏ `Console.WriteLine(exMail.Message)`.
+- [ ] **I.10** Masking số CCCD/số tài khoản trong response; danh sách hồ sơ không trả `SoGiayTo` full; chi tiết chỉ trả dữ liệu CCCD giải mã khi thực sự cần.
 
 ## Giai đoạn J — Authorization và maintenance
 
