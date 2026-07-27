@@ -1147,7 +1147,7 @@ namespace educodeai_server.Services.Implementation
         }
         public async Task<object> DangKyGiangVienAsync(DangKyGiangVienRequest request)
         {
-            var email = request.Email.Trim().ToLower();
+            var email = request.Email.Trim().ToLowerInvariant();
             var taiKhoan = request.TaiKhoan.Trim();
             var soGiayTo = request.SoGiayTo.Trim();
 
@@ -1364,8 +1364,9 @@ namespace educodeai_server.Services.Implementation
             {
                 var header = new byte[12];
                 await using var stream = file.OpenReadStream();
-                int read = await stream.ReadAsync(header, 0, 12);
-                if (read < 12) return false;
+                // ReadExactly: Stream không đảm bảo fill buffer trong 1 lần đọc; đọc đủ 12 byte
+                // (ném EndOfStreamException nếu file ngắn hơn → catch trả false), tránh từ chối nhầm ảnh hợp lệ.
+                await stream.ReadExactlyAsync(header, 0, 12);
 
                 // JPEG: FF D8 FF
                 if (header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF)
@@ -1548,6 +1549,10 @@ namespace educodeai_server.Services.Implementation
 
             if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0)
             {
+                // I.3: kiểm magic bytes cả ở luồng bổ sung (LuuFileAsync chỉ check ext+size) —
+                // tránh upload file giả .jpg làm avatar serve public → stored-XSS.
+                if (!await KiemTraMagicBytesAnhAsync(request.AnhDaiDien))
+                    throw ApiException.InvalidRequest("Ảnh đại diện không phải là ảnh hợp lệ (nội dung file sai định dạng).");
                 var p = await LuuFileAsync(request.AnhDaiDien, avatarRoot, "/uploads/dang-ky-giang-vien/avatars");
                 hoSo.AnhDaiDienUrl = p;
             }
