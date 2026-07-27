@@ -649,8 +649,8 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ### Chặng I-2 — Duyệt hồ sơ atomic + token bổ sung an toàn (I.7 + I.8)
 
-- [ ] **I.7** Duyệt hồ sơ dùng atomic claim (`ExecuteUpdateAsync ... WHERE TrangThaiHoSo='ChoDuyet'`, kiểm rows ảnh hưởng) chống race tạo 2 tài khoản; guard trạng thái nguồn cho từ chối/bổ sung.
-- [ ] **I.8** Token bổ sung: CSPRNG + chỉ lưu hash, so sánh constant-time, rate-limit endpoint kiểm tra/nộp bổ sung (chống brute-force token). Giữ TTL 24h + single-use.
+- [x] **I.7** Duyệt hồ sơ dùng atomic claim (`ExecuteUpdateAsync ... WHERE TrangThaiHoSo='ChoDuyet'` → `DangDuyet`, kiểm `rows==0` thì dừng) trong transaction chống race tạo 2 tài khoản; rollback đưa trạng thái về `ChoDuyet` khi lỗi. _(`DuyetHoSoAsync`: claim đầu transaction, request thua thấy `DangDuyet`→rows=0→ném lỗi, không tạo tài khoản trùng.)_
+- [x] **I.8** Token bổ sung: CSPRNG 256-bit (`ITokenService.CreateRefreshTokenMaterial`), DB chỉ lưu **hash** SHA-256, plaintext chỉ gửi qua email; verify hash + so sánh constant-time (`FixedTimeEquals` trong `XacThucBoSungToken`); rate-limit `TryConsumeVerifyAsync(OtpPurpose.BoSungHoSo, maHoSo, IP)` ở cả `KiemTraQuyenBoSungHoSoAsync`/`BoSungHoSoAsync`. Giữ TTL 24h + single-use. _(Token vẫn qua `?token=` URL email như cũ nên FE không đổi.)_
 
 ### Chặng I-3 — Audit + tối thiểu hóa dữ liệu response (I.9 + I.10)
 

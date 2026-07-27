@@ -10,7 +10,8 @@ namespace educodeai_server.Services.Interface
         LoginNewDevice,
         ReplaceDevice,
         RemoteLogout,
-        InstructorEmail
+        InstructorEmail,
+        BoSungHoSo
     }
 
     /// <summary>
