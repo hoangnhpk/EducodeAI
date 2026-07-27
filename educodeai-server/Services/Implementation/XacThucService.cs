@@ -1154,6 +1154,16 @@ namespace educodeai_server.Services.Implementation
             if (request.LoaiDoiTuongThue is not ("CaNhan" or "DoanhNghiep"))
                 throw ApiException.InvalidRequest("Vui lòng chọn loại đối tượng nộp thuế.");
 
+            // I.1: backend enforce email đã xác minh OTP (cờ set ở XacMinhOtpEmailGiangVienAsync).
+            // Trước đây chỉ frontend chặn nên có thể submit hồ sơ mà không cần verify email.
+            if (!_memoryCache.TryGetValue("VERIFIED_InstructorEmail_" + email, out bool daXacMinh) || !daXacMinh)
+                throw ApiException.InvalidRequest("Vui lòng xác minh email trước khi gửi hồ sơ.");
+
+            // I.2: validate mã số thuế server-side (10 hoặc 13 chữ số) — không chỉ tin frontend.
+            var maSoThue = request.MaSoThue?.Trim();
+            if (!string.IsNullOrEmpty(maSoThue) && !System.Text.RegularExpressions.Regex.IsMatch(maSoThue, @"^\d{10}(\d{3})?$"))
+                throw ApiException.InvalidRequest("Mã số thuế phải gồm 10 hoặc 13 chữ số.");
+
             // 1. Kiểm tra trùng với tài khoản đã hoạt động (NguoiDungs)
             if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
                 throw ApiException.InvalidRequest("Email này đã được sử dụng bởi một tài khoản khác.");
@@ -1174,7 +1184,7 @@ namespace educodeai_server.Services.Implementation
             // 3. Validate file upload (chỉ chấp nhận ảnh, tối đa 5MB)
             const long MaxFileSize = 5 * 1024 * 1024;
 
-            void ValidateFile(IFormFile f, string label)
+            async Task ValidateFile(IFormFile f, string label)
             {
                 if (f == null || f.Length == 0)
                     throw ApiException.InvalidRequest($"Vui lòng tải lên {label}.");
@@ -1185,12 +1195,15 @@ namespace educodeai_server.Services.Implementation
                     throw ApiException.InvalidRequest($"{label} phải là ảnh JPG, PNG hoặc WEBP.");
                 if (!f.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
                     throw ApiException.InvalidRequest($"{label} không phải là file ảnh hợp lệ.");
+                // I.3: kiểm magic bytes — không tin ContentType/ext do client gửi (file giả .jpg lọt được).
+                if (!await KiemTraMagicBytesAnhAsync(f))
+                    throw ApiException.InvalidRequest($"{label} không phải là ảnh hợp lệ (nội dung file sai định dạng).");
             }
 
-            ValidateFile(request.AnhGiayToMatTruoc, "ảnh mặt trước giấy tờ");
-            ValidateFile(request.AnhGiayToMatSau, "ảnh mặt sau giấy tờ");
+            await ValidateFile(request.AnhGiayToMatTruoc, "ảnh mặt trước giấy tờ");
+            await ValidateFile(request.AnhGiayToMatSau, "ảnh mặt sau giấy tờ");
             if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0)
-                ValidateFile(request.AnhDaiDien, "ảnh đại diện");
+                await ValidateFile(request.AnhDaiDien, "ảnh đại diện");
 
             // 4. Quét OCR ngay trong request. Ảnh CCCD không được ghi xuống ổ đĩa.
             var ketQuaQuet = await _giayToScanningService.QuetGiayToAsync(new GiayToScanningRequest
@@ -1265,7 +1278,7 @@ namespace educodeai_server.Services.Implementation
                             TenNganHang = request.TenNganHang?.Trim(),
                             SoTaiKhoanNhanTien = request.SoTaiKhoanNhanTien?.Trim(),
                             TenChuTaiKhoan = request.TenChuTaiKhoan?.Trim(),
-                            MaSoThue = request.MaSoThue?.Trim(),
+                            MaSoThue = maSoThue,
                             LoaiDoiTuongThue = request.LoaiDoiTuongThue?.Trim(),
                             TrangThaiHoSo = "ChoDuyet",
                             NgayTao = DateTime.UtcNow,
@@ -1278,6 +1291,17 @@ namespace educodeai_server.Services.Implementation
 
                         maHoSoTao = hoSo.MaHoSoDangKyGiangVien;
                         trangThaiTao = hoSo.TrangThaiHoSo;
+                    }
+                    catch (DbUpdateException)
+                    {
+                        // I.2: unique index chống TOCTOU race — 2 request đồng thời vượt qua check AnyAsync
+                        // đều insert, index chặn cái sau. Trả lỗi thân thiện thay vì 500.
+                        await tx.RollbackAsync();
+                        foreach (var p in savedFiles)
+                        {
+                            try { if (File.Exists(p)) File.Delete(p); } catch { }
+                        }
+                        throw ApiException.InvalidRequest("Email, tài khoản hoặc số giấy tờ đã có hồ sơ đang xử lý.");
                     }
                     catch
                     {
@@ -1315,6 +1339,37 @@ namespace educodeai_server.Services.Implementation
 
         private static readonly HashSet<string> _allowedImgExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp" };
         private const long _maxFileSize = 5 * 1024 * 1024;
+
+        // I.3: kiểm magic bytes của ảnh (JPEG/PNG/WEBP) thay vì tin ContentType/ext client gửi.
+        // Chống upload file giả .jpg (polyglot/HTML/SVG) — avatar được serve public nên rủi ro stored-XSS.
+        private static async Task<bool> KiemTraMagicBytesAnhAsync(IFormFile file)
+        {
+            try
+            {
+                var header = new byte[12];
+                await using var stream = file.OpenReadStream();
+                int read = await stream.ReadAsync(header, 0, 12);
+                if (read < 12) return false;
+
+                // JPEG: FF D8 FF
+                if (header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF)
+                    return true;
+                // PNG: 89 50 4E 47 0D 0A 1A 0A
+                if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47
+                    && header[4] == 0x0D && header[5] == 0x0A && header[6] == 0x1A && header[7] == 0x0A)
+                    return true;
+                // WEBP: "RIFF" .... "WEBP"
+                if (header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46
+                    && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50)
+                    return true;
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         private static async Task<string> LuuFileAsync(IFormFile file, string folderPath, string publicPrefix)
         {
