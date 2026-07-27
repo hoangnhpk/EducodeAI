@@ -188,6 +188,10 @@ namespace educodeai_server.Services.Implementation
                 failedAccountAttempts++;
                 _memoryCache.Set(cacheKey, failedAttempts, TimeSpan.FromMinutes(30));
                 _memoryCache.Set(accountCacheKey, failedAccountAttempts, TimeSpan.FromMinutes(30));
+
+                // K.1: audit login fail — không log tài khoản/mật khẩu, chỉ userId (nếu tồn tại) + IP + số lần sai.
+                _logger.LogWarning("Đăng nhập thất bại cho user {UserId} từ IP {Ip} (lần {FailedAttempts}).",
+                    user?.MaNguoiDung, ClientIp(), failedAttempts);
                 
                 // Náº¿u Ä‘Ã¢y lÃ  láº§n thá»­ ngay sau khi giáº£i Captcha (failedAttempts vá»«a reset vá» 0 vÃ  tÄƒng lÃªn 1)
                 if (failedAttempts == 1 && !string.IsNullOrEmpty(request.CaptchaToken) && request.CaptchaToken != "SKIP_CAPTCHA")
@@ -461,6 +465,9 @@ namespace educodeai_server.Services.Implementation
 
                 await _context.SaveChangesAsync();
                 ClearRefreshCookie();
+                // K.1: reuse token là sự kiện bảo mật cao — log để điều tra (không log giá trị token).
+                _logger.LogWarning("Phát hiện reuse refresh token, revoke family {FamilyId} của user {UserId} từ IP {Ip}.",
+                    stored.FamilyId, stored.MaNguoiDung, ipReuse);
                 throw ApiException.AuthenticationFailed("Phiên làm việc đã bị vô hiệu hóa do phát hiện sử dụng lại token.");
             }
 
@@ -533,6 +540,9 @@ namespace educodeai_server.Services.Implementation
             user.NgayDangNhapCuoi = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            // K.1: audit refresh rotate thành công (không log giá trị token).
+            _logger.LogInformation("Refresh token rotate cho user {UserId} phiên {MaPhien}.", user.MaNguoiDung, phien.MaPhien);
 
             var accessToken = _tokenService.CreateAccessToken(user, phien.MaPhien);
             SetRefreshCookie(newMaterial.PlainToken, newMaterial.ExpiresAtUtc);
@@ -820,6 +830,9 @@ namespace educodeai_server.Services.Implementation
                 throw ApiException.InvalidRequest("Email này đã được sử dụng bởi một tài khoản khác.");
             }
 
+            // K.1: audit tạo tài khoản mới (không log email/mật khẩu — chỉ userId + IP).
+            _logger.LogInformation("Đăng ký tài khoản mới thành công: user {UserId} từ IP {Ip}.", user.MaNguoiDung, ClientIp());
+
             // Äáº£m báº£o khÃ´ng truyá»n rá»—ng vÃ o XuLyDangNhapThanhCongAsync
             string finalDeviceId = string.IsNullOrEmpty(r.MaThietBi) ? "FP-INIT-ERR" : r.MaThietBi;
             string finalDeviceName = string.IsNullOrEmpty(r.TenThietBi) ? "Thiáº¿t bá»‹ khÃ´ng xÃ¡c Ä‘á»‹nh (ÄÄƒng kÃ½)" : r.TenThietBi;
@@ -896,6 +909,9 @@ namespace educodeai_server.Services.Implementation
             {
                 await _sessionRealtimeNotifier.SessionListChangedAsync(userId);
             }
+
+            _logger.LogInformation("Remote logout cho user {UserId}; thu hồi {Count} phiên từ IP {Ip}.",
+                userId, deactivatedSessionIds.Count, ipThuHoi);
 
             return true;
         }
@@ -1139,6 +1155,9 @@ namespace educodeai_server.Services.Implementation
                 // Push realtime để các tab của chính phiên này thoát UI ngay (G.8).
                 await _sessionRealtimeNotifier.SessionRevokedAsync(phien.MaPhien);
                 await _sessionRealtimeNotifier.SessionListChangedAsync(userId);
+
+                // K.1: audit logout (không log token/secret).
+                _logger.LogInformation("Đăng xuất user {UserId} phiên {MaPhien}.", userId, phien.MaPhien);
             }
 
             // Clear cookie refresh của thiết bị hiện tại

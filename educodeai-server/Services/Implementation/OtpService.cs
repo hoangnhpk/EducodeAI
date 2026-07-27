@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using educodeai_server.Services.Interface;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -17,10 +19,12 @@ namespace educodeai_server.Services.Implementation
         private const int MaxAttempts = 5;
 
         private readonly IDistributedCache _cache;
+        private readonly ILogger<OtpService> _logger;
 
-        public OtpService(IDistributedCache cache)
+        public OtpService(IDistributedCache cache, ILogger<OtpService> logger)
         {
             _cache = cache;
+            _logger = logger;
         }
 
         // Normalize identifier để key lúc create và verify luôn khớp dù caller truyền email khác case
@@ -81,6 +85,8 @@ namespace educodeai_server.Services.Implementation
                 {
                     // Vượt ngưỡng → vô hiệu OTP, buộc phát lại mã mới.
                     await _cache.RemoveAsync(key);
+                    // K.1: audit OTP lockout (sự kiện bảo mật). Chỉ log purpose, KHÔNG log OTP/identifier (K.2).
+                    _logger.LogWarning("OTP lockout: vượt {MaxAttempts} lần nhập sai cho purpose {Purpose}.", MaxAttempts, purpose);
                     return OtpVerifyResult.Fail("Bạn đã nhập sai quá số lần cho phép. Vui lòng yêu cầu mã mới.");
                 }
 
