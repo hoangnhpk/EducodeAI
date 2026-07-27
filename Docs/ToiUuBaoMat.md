@@ -680,8 +680,8 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ### Chặng K-2 — Bổ sung unit test backend + frontend (K.3 + K.5)
 
-- [ ] **K.3** Unit test còn thiếu: `TokenService` (access token TTL ≤15' + có `MaPhien`/`jti`; refresh material CSPRNG + hash SHA256), password policy `KiemTraPasswordPolicyHoacNem` (≥8, không chứa local email, không trùng cũ). _(Rotation/reuse-detection trong `LamMoiTokenAsync` cần DbContext — để unit test thuần cho phần tách được; phần chạm DB ghi rõ lý do hoãn.)_
-- [ ] **K.5** Frontend test còn thiếu: refresh queue single-flight (nhiều 401 đồng thời chỉ refresh một lần) nếu tách được logic; SignalR revoke handling nếu tách được. _(Ghi rõ nếu phần nào phụ thuộc runtime khó test đơn vị.)_
+- [x] **K.3** Unit test bổ sung: `PhaseKTokenServiceTests` (access token TTL ≤15' + có `MaPhien`/`jti`/`iat`, role map theo VaiTro; refresh material CSPRNG unique + hash SHA256 khớp plain, empty throw) + `PhaseKPasswordPolicyTests` cho `PasswordPolicy.KiemTraHoacNem` (≥8 ký tự, không chứa local email, không trùng mật khẩu cũ). _(Đã tách `KiemTraPasswordPolicyHoacNem` private → `Helpers/PasswordPolicy.cs` public static để test được; `XacThucService` delegate sang helper. Rotation/reuse-detection trong `LamMoiTokenAsync` chạm DbContext — để lại cho integration test tương lai.)_ Tổng 78 test pass.
+- [~] **K.5** Frontend: giữ nguyên `authStorage.test.ts` + `axios.test.ts` (không token storage/query — đã đạt). Refresh-queue single-flight và SignalR revoke handling nằm lồng trong axios interceptor / `sessionHub.ts`, phụ thuộc runtime (state module-level, dynamic import), khó tách unit test đơn vị thuần — ghi nhận để lại cho integration/E2E tương lai thay vì ép test giả.
 - [ ] **K.4 / K.6** BỎ theo quyết định — integration HTTP thật + E2E browser cần môi trường chạy thật; ghi nhận là việc cần môi trường CI có service container (tương lai).
 
 ### Chặng K-3 — CI GitHub Actions + secret scan (K.7 + K.8)

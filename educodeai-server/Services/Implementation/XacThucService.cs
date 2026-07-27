@@ -86,18 +86,7 @@ namespace educodeai_server.Services.Implementation
         // Password policy dùng chung cho reset và change (F.3): tối thiểu 8 ký tự, không chứa phần local
         // của email (dễ đoán), và không trùng mật khẩu cũ. currentHash null nghĩa là không có mật khẩu cũ để so.
         private static void KiemTraPasswordPolicyHoacNem(string? matKhauMoi, string? email, string? currentHash)
-        {
-            if (string.IsNullOrWhiteSpace(matKhauMoi) || matKhauMoi.Length < 8)
-                throw ApiException.InvalidRequest("Mật khẩu mới phải có tối thiểu 8 ký tự.");
-
-            var localPart = (email ?? string.Empty).Split('@').FirstOrDefault();
-            if (!string.IsNullOrEmpty(localPart) && localPart.Length >= 3
-                && matKhauMoi.Contains(localPart, StringComparison.OrdinalIgnoreCase))
-                throw ApiException.InvalidRequest("Mật khẩu không được chứa tên đăng nhập/email dễ đoán.");
-
-            if (!string.IsNullOrEmpty(currentHash) && BCrypt.Net.BCrypt.Verify(matKhauMoi, currentHash))
-                throw ApiException.InvalidRequest("Mật khẩu mới không được trùng mật khẩu hiện tại.");
-        }
+            => PasswordPolicy.KiemTraHoacNem(matKhauMoi, email, currentHash);
 
 
         #region 1. LUá»’NG ÄÄ‚NG NHáº¬P
