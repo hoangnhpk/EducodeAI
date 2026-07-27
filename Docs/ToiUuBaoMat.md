@@ -667,14 +667,27 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ## Giai đoạn K — Audit log, test và CI
 
-- [ ] **K.1** Audit events: login success/fail, register, OTP lockout, refresh rotate/reuse, logout, remote logout, password change/reset, user lock/unlock, teacher approve/reject.
-- [ ] **K.2** Audit log không chứa secret/OTP/token/password/CCCD plain text.
-- [ ] **K.3** Unit tests token/OTP/password/session cache.
-- [ ] **K.4** Integration tests auth endpoints, cookie flags, rotation/reuse, session revoke, authorization.
-- [ ] **K.5** Frontend tests: không token storage/query, refresh queue một lần, SignalR revoke handling.
-- [ ] **K.6** E2E: đăng ký/login/forgot/device logout/admin lock/teacher approval.
-- [ ] **K.7** CI build/test backend + frontend trong phạm vi.
-- [ ] **K.8** Secret scan để phát hiện token/key/log pattern mới; không tự sửa các cấu hình API ngoài phạm vi.
+> **Cách triển khai:** chia 3 chặng, chốt từng chặng trước khi sang chặng sau.
+>
+> **Quyết định (đã chốt):** (1) K.4 (integration test qua HTTP thật) + K.6 (E2E Playwright/Cypress) BỎ vì cần môi trường chạy thật (Postgres/Supabase, Redis, browser) khó dựng — thay bằng bổ sung unit test cho các nhánh còn thiếu; (2) K.7 CI dùng **GitHub Actions** (repo github.com/hoangnhpk/EducodeAI): build + test cả backend lẫn frontend; (3) K.8 các secret NGOÀI phạm vi auth còn trong `appsettings.json` (DB password, Cloudinary, Email, YouTube, SePay, ApiSecurity) chỉ **ghi nhận rủi ro**, KHÔNG tự đụng (ràng buộc mục 0.2). JWT/Captcha/Gemini/Social đã chuyển placeholder ở các phase trước.
+>
+> **Đã đạt sẵn (qua các phase trước):** K.1 một phần (login success 3 luồng, password change/reset, user lock/unlock, teacher approve/reject/bổ sung); K.2 (log hiện có không rò secret/OTP/token/CCCD); K.3 một phần (`PhaseDOtpServiceTests`, `PhaseDOtpRateLimiterTests`, `PhaseGSessionTests`); K.5 một phần (`authStorage.test.ts`, `axios.test.ts`).
+
+### Chặng K-1 — Bổ sung audit events còn thiếu (K.1 + K.2)
+
+- [x] **K.1** Thêm log cho các sự kiện còn thiếu: login fail, register (tạo tài khoản), OTP lockout, refresh rotate, refresh reuse-detected (sự kiện bảo mật cao), logout, remote logout. Giữ nguyên các event đã có. _(`XacThucService`: login-fail log userId nếu tồn tại + IP; register log userId mới; rotate/reuse log userId + IP trong `LamMoiTokenAsync`; logout/remote-logout log userId + số phiên; OTP lockout log purpose trong `OtpService` (inject `ILogger`, không log identifier/OTP).)_
+- [x] **K.2** Mọi log mới chỉ dùng structured params (userId/actorId/action/count/enum/purpose), KHÔNG nội suy secret/OTP/token/password/CCCD. OTP lockout chỉ log `{Purpose}`, không log identifier (email/PII) lẫn giá trị OTP.
+
+### Chặng K-2 — Bổ sung unit test backend + frontend (K.3 + K.5)
+
+- [ ] **K.3** Unit test còn thiếu: `TokenService` (access token TTL ≤15' + có `MaPhien`/`jti`; refresh material CSPRNG + hash SHA256), password policy `KiemTraPasswordPolicyHoacNem` (≥8, không chứa local email, không trùng cũ). _(Rotation/reuse-detection trong `LamMoiTokenAsync` cần DbContext — để unit test thuần cho phần tách được; phần chạm DB ghi rõ lý do hoãn.)_
+- [ ] **K.5** Frontend test còn thiếu: refresh queue single-flight (nhiều 401 đồng thời chỉ refresh một lần) nếu tách được logic; SignalR revoke handling nếu tách được. _(Ghi rõ nếu phần nào phụ thuộc runtime khó test đơn vị.)_
+- [ ] **K.4 / K.6** BỎ theo quyết định — integration HTTP thật + E2E browser cần môi trường chạy thật; ghi nhận là việc cần môi trường CI có service container (tương lai).
+
+### Chặng K-3 — CI GitHub Actions + secret scan (K.7 + K.8)
+
+- [ ] **K.7** Tạo `.github/workflows/ci.yml`: job build + test backend (.NET 9, `dotnet test`) và job build + test frontend (Node, `npm ci` + `vitest run` + `tsc`), chạy trên push/PR.
+- [ ] **K.8** Thêm secret-scan job (gitleaks) vào CI để chặn secret pattern mới. Ghi nhận (không tự sửa) các secret NGOÀI auth còn trong `appsettings.json` cần chủ dự án chuyển sang User Secrets/env + rotate.
 
 ---
 

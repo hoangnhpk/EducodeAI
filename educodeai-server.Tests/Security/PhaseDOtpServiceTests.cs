@@ -2,6 +2,7 @@ using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace educodeai_server.Tests.Security;
@@ -157,6 +158,6 @@ public sealed class PhaseDOtpServiceTests
     {
         var distributed = new MemoryDistributedCache(
             Options.Create(new MemoryDistributedCacheOptions()));
-        return new OtpService(distributed);
+        return new OtpService(distributed, NullLogger<OtpService>.Instance);
     }
 }
