@@ -49,7 +49,7 @@ namespace educodeai_server.Services.Implementation
                 query = query.Where(h => h.TrangThaiHoSo == trangThai);
             }
 
-            var list = await query
+            var rows = await query
                 .OrderByDescending(h => h.NgayTao)
                 .Select(h => new
                 {
@@ -69,7 +69,23 @@ namespace educodeai_server.Services.Implementation
                 })
                 .ToListAsync();
 
-            return list;
+            // I.10: danh sách chỉ cần nhận diện hồ sơ — mask số giấy tờ, không trả full cho mọi bản ghi.
+            return rows.Select(h => new
+            {
+                h.MaHoSoDangKyGiangVien,
+                h.HoTen,
+                h.Email,
+                h.SoDienThoai,
+                h.LinhVucGiangDay,
+                h.LoaiGiayTo,
+                SoGiayTo = MaskSoGiayTo(h.SoGiayTo),
+                h.AnhDaiDienUrl,
+                h.TrangThaiHoSo,
+                h.LyDoTuChoi,
+                h.NgayTao,
+                h.NgayDuyet,
+                h.MaNguoiDung
+            }).ToList();
         }
 
         public async Task<object> LayChiTietHoSoAsync(long maHoSo)
@@ -209,6 +225,9 @@ namespace educodeai_server.Services.Implementation
                 }
             });
 
+            // I.9: audit — ai duyệt hồ sơ nào, tạo user nào, IP, thời điểm. Không log dữ liệu CCCD/số giấy tờ.
+            _logger.LogInformation("Admin {ActorId} duyệt hồ sơ {MaHoSo} → tạo user {TargetId} từ IP {Ip}.",
+                maQuanTriVien, maHoSo, maNguoiDungMoi, ActorIp());
 
             // Gửi email chúc mừng (ngoài transaction - lỗi email không rollback tài khoản)
             string subject = "Hồ sơ giảng viên EduCodeAI đã được duyệt";
@@ -243,7 +262,7 @@ namespace educodeai_server.Services.Implementation
             }
             catch (Exception exMail)
             {
-                Console.WriteLine($"[DuyetHoSo] Gửi email thất bại: {exMail.Message}");
+                _logger.LogWarning(exMail, "Gửi email duyệt hồ sơ {MaHoSo} thất bại.", maHoSo);
             }
 
             return new
@@ -270,6 +289,10 @@ namespace educodeai_server.Services.Implementation
             hoSo.MaQuanTriVienDuyet = maQuanTriVien;
             hoSo.NgayCapNhat = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            // I.9: audit hành động admin (không log dữ liệu nhạy cảm).
+            _logger.LogInformation("Admin {ActorId} từ chối hồ sơ {MaHoSo} từ IP {Ip}.",
+                maQuanTriVien, maHoSo, ActorIp());
 
             string subject = "Kết quả hồ sơ đăng ký giảng viên EduCodeAI";
             string body = $@"
@@ -300,7 +323,7 @@ namespace educodeai_server.Services.Implementation
             }
             catch (Exception exMail)
             {
-                Console.WriteLine($"[TuChoiHoSo] Gửi email thất bại: {exMail.Message}");
+                _logger.LogWarning(exMail, "Gửi email từ chối hồ sơ {MaHoSo} thất bại.", maHoSo);
             }
 
             return new { success = true, message = "Đã từ chối hồ sơ và gửi email thông báo." };
@@ -330,6 +353,10 @@ namespace educodeai_server.Services.Implementation
             hoSo.MaQuanTriVienDuyet = maQuanTriVien;
             hoSo.NgayCapNhat = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            // I.9: audit hành động yêu cầu bổ sung (actor admin, hồ sơ, IP) — không log token/PII.
+            _logger.LogInformation("Admin {ActorId} yêu cầu bổ sung hồ sơ {MaHoSo} từ IP {Ip}.",
+                maQuanTriVien, maHoSo, ActorIp());
 
             // Gửi email với link bổ sung — dùng plaintext token, KHÔNG lưu plaintext ở đâu.
             string boSungLink = $"{_mailOptions.FrontendGiangVienBoSungUrl}/{maHoSo}?token={plainToken}";
@@ -367,11 +394,20 @@ namespace educodeai_server.Services.Implementation
             }
             catch (Exception exMail)
             {
-                Console.WriteLine($"[YeuCauBoSungHoSo] Gửi email thất bại: {exMail.Message}");
+                _logger.LogWarning(exMail, "Gửi email yêu cầu bổ sung hồ sơ {MaHoSo} thất bại.", maHoSo);
             }
 
             return new { success = true, message = "Đã yêu cầu bổ sung hồ sơ và gửi email hướng dẫn." };
         }
+        // I.10: che bớt số giấy tờ/số tài khoản khi trả ra danh sách/response — chỉ lộ 4 ký tự cuối.
+        private static string? MaskSoGiayTo(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return value;
+            var v = value.Trim();
+            if (v.Length <= 4) return new string('*', v.Length);
+            return new string('*', v.Length - 4) + v[^4..];
+        }
+
         private bool TryGiaiMaThongTinCccd(string duLieuMaHoa, out Dictionary<string, string>? thongTinCccd)
         {
             thongTinCccd = null;
