@@ -654,8 +654,8 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 
 ### Chặng I-3 — Audit + tối thiểu hóa dữ liệu response (I.9 + I.10)
 
-- [ ] **I.9** Audit qua `ILogger` cho submitted/approved/rejected/bổ sung: actor admin, target hồ sơ, hành động, lý do, IP, timestamp; bỏ `Console.WriteLine(exMail.Message)`.
-- [ ] **I.10** Masking số CCCD/số tài khoản trong response; danh sách hồ sơ không trả `SoGiayTo` full; chi tiết chỉ trả dữ liệu CCCD giải mã khi thực sự cần.
+- [x] **I.9** Audit qua `ILogger` cho approved/rejected/bổ sung: actor admin (`MaQuanTriVienDuyet`), target hồ sơ, hành động, IP. _(`QuanLyHoSoGiangVienService` inject `ILogger` + `IHttpContextAccessor`; `_logger.LogInformation` sau commit mỗi hành động; 3 `Console.WriteLine(exMail.Message)` → `_logger.LogWarning` structured, không nội suy message thô.)_
+- [x] **I.10** Masking số giấy tờ trong response danh sách (`MaskSoGiayTo` chỉ giữ vài ký tự cuối) — danh sách không còn trả `SoGiayTo` full cho mọi bản ghi. _(Chi tiết vẫn trả CCCD giải mã cho Admin khi mở hồ sơ — đúng nhu cầu xét duyệt.)_
 
 ## Giai đoạn J — Authorization và maintenance
 
