@@ -5,6 +5,7 @@ import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
 import lopHocService from '@/services/lop-hoc.service';
 import BulkMailModal from './components/BulkMailModal';
 import { layChuCaiAvatar, layMauAvatar } from '@/utils/avatarHelper';
+import { getAccessToken } from '@/utils/authStorage';
 
 interface KhoaHoc {
   maKhoaHoc: number;
@@ -210,7 +211,7 @@ export default function QuanLyHocVienKhoaHoc() {
 
       // Fallback: nếu giảng viên chưa có lớp học / API trả rỗng,
       // vẫn xổ ra toàn bộ khóa học có sẵn để lựa chọn.
-      const token = (localStorage.getItem('user_token') ?? '').trim();
+      const token = getAccessToken();
       const resAll = await fetch(`${API_URL}/api/giangvien/quan-ly-lo-trinh/danh-sach-khoa-hoc-co-san`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
