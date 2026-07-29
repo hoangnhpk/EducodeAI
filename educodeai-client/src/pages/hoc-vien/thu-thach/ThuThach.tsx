@@ -21,7 +21,9 @@ export default function ThuThach() {
   const [bangXepHang, setBangXepHang] = useState<BangXepHangResponse | null>(null);
   const [lbRefresh, setLbRefresh] = useState(0);
 
+  // tick chỉ để bắt component vẽ lại mỗi phút; mốc thật của đồng hồ là mocDemNguoc.
   const [tick, setTick] = useState(0);
+  const [mocDemNguoc, setMocDemNguoc] = useState(() => Date.now());
 
   const taiDuLieu = useCallback(async () => {
     setLoading(true);
@@ -46,11 +48,20 @@ export default function ThuThach() {
     return () => window.clearInterval(timer);
   }, []);
 
+  // Neo lại mốc mỗi khi backend trả về giá trị đếm ngược mới (tải lại, nhận thưởng...).
+  // Trước đây trừ theo tick tích lũy nên sau khi nhận thưởng đồng hồ bị nhảy lùi
+  // đúng bằng số phút người dùng đã ở trên trang.
+  const giayGoc = data?.giayConLaiDenLamMoi;
+  useEffect(() => {
+    setMocDemNguoc(Date.now());
+  }, [giayGoc]);
+
   const demNguoc = useMemo(() => {
-    if (!data) return '—';
-    const base = data.giayConLaiDenLamMoi - tick * 60;
-    return formatDemNguoc(base);
-  }, [data, tick]);
+    if (giayGoc == null) return '—';
+    const daQuaGiay = Math.floor((Date.now() - mocDemNguoc) / 1000);
+    return formatDemNguoc(giayGoc - daQuaGiay);
+    // tick là nhịp vẽ lại mỗi phút, cố ý nằm trong dependency.
+  }, [giayGoc, mocDemNguoc, tick]);
 
   const titleSync = useMemo(() => {
     if (!data) return null;
@@ -175,16 +186,23 @@ export default function ThuThach() {
               demNguoc={demNguoc}
             />
 
-            <div className="tt-task-list">
-              {data.danhSachNhiemVu.map((task) => (
-                <TaskCard
-                  key={task.maMau}
-                  task={task}
-                  dangNhan={claiming === task.maMau}
-                  onClaim={() => void handleClaim(task.maMau)}
-                />
-              ))}
-            </div>
+            {data.danhSachNhiemVu.length > 0 ? (
+              <div className="tt-task-list">
+                {data.danhSachNhiemVu.map((task) => (
+                  <TaskCard
+                    key={task.maMau}
+                    task={task}
+                    dangNhan={claiming === task.maMau}
+                    onClaim={() => void handleClaim(task.maMau)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="tt-empty">
+                <p>Tuần này chưa có nhiệm vụ học tập.</p>
+                <button type="button" onClick={() => void taiDuLieu()}>Tải lại</button>
+              </div>
+            )}
 
             {data.danhSachDanhHieu.length > 0 && (
               <TitleCollection

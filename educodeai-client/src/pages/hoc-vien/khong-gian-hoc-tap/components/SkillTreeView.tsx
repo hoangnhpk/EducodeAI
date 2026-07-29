@@ -89,8 +89,12 @@ export default function SkillTreeView({ maLoTrinh, onLoTrinhChange }: Props) {
     };
   }, [maLoTrinh, setNodes, setEdges]);
 
+  // Đồng bộ lại khi backend trả về lộ trình khác với lộ trình được yêu cầu.
+  // maLoTrinh được nhớ trong localStorage; nếu lộ trình đó đã bị xóa, backend sẽ
+  // fallback sang lộ trình khác — trước đây chỉ đồng bộ khi chưa chọn gì (!maLoTrinh)
+  // nên picker vẫn hiện lộ trình cũ trong khi bản đồ là của lộ trình khác.
   useEffect(() => {
-    if (tree?.maLoTrinh && !maLoTrinh) {
+    if (tree?.maLoTrinh && tree.maLoTrinh !== maLoTrinh) {
       onLoTrinhChange?.(tree.maLoTrinh);
     }
   }, [tree?.maLoTrinh, maLoTrinh, onLoTrinhChange]);

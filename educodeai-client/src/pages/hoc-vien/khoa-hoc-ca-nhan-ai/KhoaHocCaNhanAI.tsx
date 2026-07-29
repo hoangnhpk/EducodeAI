@@ -211,7 +211,7 @@ const KhoaHocCaNhanAI = () => {
                         <div className="roadmap-heading">
                             <h2 className="display-6 mb-1">Danh sách lộ trình phát triển</h2>
                             <p className="text-muted">Lộ trình được thiết kế riêng dựa trên mục tiêu và trình độ của sếp.</p>
-                            <Link to="/sinh-do-an-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold">Tạo lộ trình mới</Link>
+                            <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold">Tạo lộ trình mới</Link>
                         </div>
                         
                         <div className="roadmap-grid">
