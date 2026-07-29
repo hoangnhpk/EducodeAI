@@ -1,5 +1,6 @@
 import axios from 'axios'
 import axiosClient from './axios'
+import { getAuthTokens, setAuthTokens } from '../utils/authStorage'
 
 vi.mock('../utils/deviceHelper', () => ({
   getDeviceInfo: () => ({ maThietBi: 'device-001', tenThietBi: 'Vitest Browser' }),
@@ -11,8 +12,8 @@ describe('axios auth storage integration', () => {
     window.history.pushState({}, '', '/')
   })
 
-  it('adds a trimmed bearer token from localStorage to outgoing requests', async () => {
-    localStorage.setItem('user_token', '  access-token  ')
+  it('adds a trimmed bearer token from runtime memory to outgoing requests', async () => {
+    setAuthTokens('access-token')
 
     const config = await axiosClient.interceptors.request.handlers[0].fulfilled({
       headers: {},
@@ -53,14 +54,14 @@ describe('axios auth storage integration', () => {
       response: { status: 401, data: {} },
     })
 
-    // Access token refreshed and stored; refresh token never touches localStorage.
-    expect(localStorage.getItem('user_token')).toBe('new-access-token')
+    expect(getAuthTokens().accessToken).toBe('new-access-token')
+    expect(localStorage.getItem('user_token')).toBeNull()
     expect(localStorage.getItem('refresh_token')).toBeNull()
 
     // Refresh request carries no refresh token in the URL and relies on the cookie.
     const [url, body, options] = postSpy.mock.calls[0]
     expect(url).not.toContain('refreshToken=')
-    expect(body).toBeNull()
+    expect(body).toEqual({ maThietBi: 'device-001' })
     expect(options).toMatchObject({ withCredentials: true })
   })
 })

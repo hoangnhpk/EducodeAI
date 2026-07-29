@@ -58,6 +58,37 @@ public sealed class XacThucFlowBaselineTests
     }
 
     [Fact]
+    public async Task RefreshToken_WithAllowedOrigin_UsesBodyDeviceAndCookieOnlyFlow()
+    {
+        var request = new RefreshTokenRequest { MaThietBi = "device-001" };
+        var refreshResult = new { token = "new-access-token" };
+        _controller.HttpContext.Request.Headers.Origin = "http://localhost:3000";
+        _authService
+            .Setup(x => x.LamMoiTokenAsync(string.Empty, request.MaThietBi))
+            .ReturnsAsync(refreshResult);
+
+        var action = await _controller.RefreshToken(request);
+
+        Assert.Same(refreshResult, Assert.IsType<OkObjectResult>(action).Value);
+        _authService.Verify(
+            x => x.LamMoiTokenAsync(string.Empty, "device-001"),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RefreshToken_WithoutOriginOrReferer_IsRejectedBeforeServiceCall()
+    {
+        var request = new RefreshTokenRequest { MaThietBi = "device-001" };
+
+        await Assert.ThrowsAsync<educodeai_server.Helpers.ApiException>(
+            () => _controller.RefreshToken(request));
+
+        _authService.Verify(
+            x => x.LamMoiTokenAsync(It.IsAny<string>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task ForgotAndResetPassword_ReturnServiceResults()
     {
         var forgotRequest = new QuenMatKhauRequest();
@@ -72,6 +103,25 @@ public sealed class XacThucFlowBaselineTests
 
         Assert.Same(forgotResult, Assert.IsType<OkObjectResult>(forgotAction).Value);
         Assert.Same(resetResult, Assert.IsType<OkObjectResult>(resetAction).Value);
+    }
+
+    [Fact]
+    public async Task ForgotPasswordOtpVerification_ReturnsResetTokenOnlyAfterServiceValidation()
+    {
+        var request = new XacMinhOtpQuenMatKhauRequest
+        {
+            Email = "user@example.com",
+            OtpCode = "123456"
+        };
+        var verificationResult = new { resetToken = "opaque-reset-token" };
+        _authService
+            .Setup(x => x.XacMinhOtpQuenMatKhauAsync(request))
+            .ReturnsAsync(verificationResult);
+
+        var action = await _controller.XacMinhOtpQuenMatKhau(request);
+
+        Assert.Same(verificationResult, Assert.IsType<OkObjectResult>(action).Value);
+        _authService.Verify(x => x.XacMinhOtpQuenMatKhauAsync(request), Times.Once);
     }
 
     [Fact]

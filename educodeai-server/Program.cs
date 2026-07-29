@@ -33,11 +33,6 @@ GlobalFFOptions.Configure(options =>
 });
 Console.WriteLine($"FFMpegCore configured to use ffmpeg from: {ffmpegPath}");
 
-builder.Configuration
-    .AddJsonFile("appsettings.json", optional: true)
-    .AddEnvironmentVariables();
-
-builder.Configuration.AddUserSecrets<Program>();
 // ==========================================
 // THÊM: ĐĂNG KÝ SIGNALR
 // ==========================================
@@ -341,9 +336,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp", policy =>
     {
         policy.WithOrigins("https://educodeai-client.vercel.app",
-                           "http://localhost:3000", "http://localhost:3001",
-                           "http://127.0.0.1:3000", "http://127.0.0.1:3001",
-                           "http://[::1]:3000", "http://[::1]:3001")
+                           "http://localhost:3000", "http://localhost:3001", "http://localhost:5173",
+                           "http://127.0.0.1:3000", "http://127.0.0.1:3001", "http://127.0.0.1:5173",
+                           "http://[::1]:3000", "http://[::1]:3001", "http://[::1]:5173")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

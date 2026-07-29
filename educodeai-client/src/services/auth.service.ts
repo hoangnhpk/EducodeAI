@@ -1,5 +1,7 @@
 ﻿import axiosInstance from '@/configs/axios';
 import { getDeviceInfo } from '../utils/deviceHelper';
+import { clearAuthTokens } from '../utils/authStorage';
+import { stopSessionHub } from '../configs/sessionHub';
 
 const api = axiosInstance as any;
 
@@ -84,18 +86,18 @@ export const authService = {
 
   refreshToken: async (maThietBi: string) => {
     // Refresh token nằm trong HttpOnly cookie; gửi kèm nhờ withCredentials.
-    return await api.post(`/api/XacThuc/refresh-token?maThietBi=${maThietBi}`);
+    return await api.post('/api/XacThuc/refresh-token', { maThietBi }, { withCredentials: true });
   },
 
   logout: async () => {
     const { maThietBi } = getDeviceInfo();
+    await stopSessionHub();
     try {
       await api.post('/api/XacThuc/dang-xuat', `"${maThietBi}"`, {
         headers: { 'Content-Type': 'application/json' }
       });
     } finally {
-      localStorage.removeItem('user_token');
-      localStorage.removeItem('token');
+      clearAuthTokens();
       localStorage.removeItem('user_info');
     }
   },
@@ -104,12 +106,16 @@ export const authService = {
     return await api.post('/api/XacThuc/quen-mat-khau', { email: emailValue, captchaToken });
   },
 
-  resetPassword: async (payload: { Email: string; NewPassword: string; OtpCode: string }) => {
+  verifyForgotPasswordOtp: async (email: string, otpCode: string) => {
+    return await api.post('/api/XacThuc/xac-minh-otp-quen-mat-khau', { email, otpCode });
+  },
+
+  resetPassword: async (payload: { Email: string; NewPassword: string; ResetToken: string }) => {
     const { maThietBi, tenThietBi } = getDeviceInfo();
     return await api.post('/api/XacThuc/dat-lai-mat-khau', {
       email: payload.Email,
       NewPassword: payload.NewPassword,
-      OtpCode: payload.OtpCode,
+      ResetToken: payload.ResetToken,
       maThietBi,
       tenThietBi
     });
@@ -117,12 +123,6 @@ export const authService = {
 
   getDevices: async (maThietBiHienTai: string) => {
     return await api.get('/api/XacThuc/danh-sach-thiet-bi', { params: { maThietBiHienTai } });
-  },
-
-  logoutDevice: async (maThietBiCanXoa: string) => {
-    return await api.post('/api/XacThuc/dang-xuat', `"${maThietBiCanXoa}"`, {
-      headers: { 'Content-Type': 'application/json' }
-    });
   },
 
   doiMatKhau: async (payload: { MatKhauCu: string; MatKhauMoi: string }) => {

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getDeviceInfo } from "../utils/deviceHelper";
+import { clearAuthTokens, getAuthTokens, setAuthTokens } from "../utils/authStorage";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -26,7 +27,7 @@ const processQueue = (error: any, token: string | null = null) => {
 // ======================
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("user_token");
+    const token = getAuthTokens().accessToken;
 
     // Gắn token nếu có
     if (token) {
@@ -80,7 +81,8 @@ axiosClient.interceptors.response.use(
               clearInterval((Swal as any)._timerInterval);
             }
           }).then(() => {
-            localStorage.clear();
+            clearAuthTokens();
+            localStorage.removeItem("user_info");
             window.location.href = "/dang-nhap";
           });
         });
@@ -109,13 +111,13 @@ axiosClient.interceptors.response.use(
           // Refresh token nằm trong cookie HttpOnly (JS không đọc được);
           // gửi kèm tự động nhờ withCredentials. Không truyền token qua URL.
           const response: any = await axios.post(
-            `${import.meta.env.VITE_API_URL}/api/XacThuc/refresh-token?maThietBi=${maThietBi}`,
-            null,
+            `${import.meta.env.VITE_API_URL}/api/XacThuc/refresh-token`,
+            { maThietBi },
             { withCredentials: true }
           );
 
           const { token } = response.data;
-          localStorage.setItem("user_token", token);
+          setAuthTokens(token);
 
           axiosClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
           processQueue(null, token);
@@ -149,7 +151,8 @@ axiosClient.interceptors.response.use(
                 clearInterval((Swal as any)._timerInterval);
               }
             }).then(() => {
-              localStorage.clear();
+              clearAuthTokens();
+              localStorage.removeItem("user_info");
               window.location.href = "/dang-nhap";
             });
           });
@@ -165,7 +168,6 @@ axiosClient.interceptors.response.use(
       window.dispatchEvent(new Event('BaoTriKhanCap'));
     }
 
-    console.error("❌ Lỗi API:", error.response?.status);
     return Promise.reject(error);
   }
 );

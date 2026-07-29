@@ -42,6 +42,38 @@ public sealed class XacThucControllerTests
         Assert.Equal("Thông tin đăng nhập không hợp lệ.", exception.Message);
     }
 
+    [Fact]
+    public async Task RefreshToken_WithAllowedOrigin_UsesBodyDeviceIdAndEmptyRefreshArgument()
+    {
+        var request = new RefreshTokenRequest { MaThietBi = "device-001" };
+        var expectedResult = new { token = "new-access-token" };
+        var authService = new Mock<IXacThucService>();
+        authService
+            .Setup(service => service.LamMoiTokenAsync(string.Empty, request.MaThietBi))
+            .ReturnsAsync(expectedResult);
+        var controller = CreateController(authService.Object);
+        controller.HttpContext.Request.Headers.Origin = "http://localhost:3000";
+
+        var actionResult = await controller.RefreshToken(request);
+
+        Assert.Same(expectedResult, Assert.IsType<OkObjectResult>(actionResult).Value);
+        authService.Verify(service => service.LamMoiTokenAsync(string.Empty, "device-001"), Times.Once);
+    }
+
+    [Fact]
+    public async Task RefreshToken_WithoutOriginOrReferer_RejectsBeforeCallingService()
+    {
+        var authService = new Mock<IXacThucService>();
+        var controller = CreateController(authService.Object);
+
+        await Assert.ThrowsAsync<educodeai_server.Helpers.ApiException>(
+            () => controller.RefreshToken(new RefreshTokenRequest { MaThietBi = "device-001" }));
+
+        authService.Verify(
+            service => service.LamMoiTokenAsync(It.IsAny<string>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
     private static DangNhapRequest CreateValidLoginRequest() => new()
     {
         TaiKhoan = "hocvien@example.com",
