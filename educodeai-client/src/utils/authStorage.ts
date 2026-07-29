@@ -1,17 +1,25 @@
-const ACCESS_TOKEN_KEY = 'user_token'
+const LEGACY_ACCESS_TOKEN_KEYS = ['user_token', 'token', 'refresh_token'] as const
+
+let accessToken: string | null = null
 
 export interface AuthTokens {
   accessToken: string | null
 }
 
-export const getAuthTokens = (): AuthTokens => ({
-  accessToken: localStorage.getItem(ACCESS_TOKEN_KEY),
-})
+const removeLegacyTokens = (): void => {
+  LEGACY_ACCESS_TOKEN_KEYS.forEach((key) => localStorage.removeItem(key))
+}
 
-export const setAuthTokens = (accessToken: string): void => {
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
+export const getAccessToken = (): string | null => accessToken
+
+export const getAuthTokens = (): AuthTokens => ({ accessToken })
+
+export const setAuthTokens = (token: string): void => {
+  accessToken = token.trim() || null
+  removeLegacyTokens()
 }
 
 export const clearAuthTokens = (): void => {
-  localStorage.removeItem(ACCESS_TOKEN_KEY)
+  accessToken = null
+  removeLegacyTokens()
 }

@@ -1,4 +1,5 @@
 import * as signalR from "@microsoft/signalr";
+import { clearAuthTokens, getAuthTokens } from "../utils/authStorage";
 
 // Kết nối SignalR SessionHub (Phase G.9): nhận event revoke/khóa realtime để logout UI
 // ngay, thay cho việc polling mỗi 10 giây. Access token lấy từ localStorage qua
@@ -7,7 +8,7 @@ import * as signalR from "@microsoft/signalr";
 let connection: signalR.HubConnection | null = null;
 let isForcingLogout = false;
 
-const getToken = () => localStorage.getItem("user_token") || localStorage.getItem("token") || "";
+const getToken = () => getAuthTokens().accessToken || "";
 
 const forceLogout = (title: string, message: string) => {
   if (isForcingLogout) return;
@@ -23,7 +24,8 @@ const forceLogout = (title: string, message: string) => {
       showConfirmButton: false,
       allowOutsideClick: false,
     }).then(() => {
-      localStorage.clear();
+      clearAuthTokens();
+      localStorage.removeItem("user_info");
       window.location.href = "/dang-nhap";
     });
   });

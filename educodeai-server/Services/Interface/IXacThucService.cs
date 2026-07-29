@@ -27,6 +27,7 @@ namespace educodeai_server.Services.Interface
 
         // --- CÁC HÀM QUÊN MK ---
         Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest request, string ipAddress);
+        Task<object> XacMinhOtpQuenMatKhauAsync(XacMinhOtpQuenMatKhauRequest request);
         Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest request);
 
         // CÁC HÀM ĐỔI MẬT KHẨU

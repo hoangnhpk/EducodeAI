@@ -1,0 +1,70 @@
+name: CI
+
+# Build + test trong phạm vi bảo mật xác thực (Phase K.7) + secret scan (K.8).
+# Chạy trên push và pull request vào các nhánh chính.
+on:
+  push:
+    branches: [main, Au2]
+  pull_request:
+    branches: [main, Au2]
+
+jobs:
+  backend:
+    name: Backend build + test (.NET 9)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore educodeai-server.Tests/educodeai-server.Tests.csproj
+
+      - name: Build
+        run: dotnet build educodeai-server.Tests/educodeai-server.Tests.csproj --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test educodeai-server.Tests/educodeai-server.Tests.csproj --no-build --configuration Release --verbosity normal
+
+  frontend:
+    name: Frontend test (Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: educodeai-client
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: educodeai-client/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Chỉ chạy test đơn vị (Vitest) trong phạm vi auth. KHÔNG chạy `npm run build`
+      # vì `tsc -b` hiện còn lỗi type prexisting ngoài phạm vi bảo mật (thống kê học tập,
+      # course form) — sẽ bật lại build gate khi các lỗi đó được dọn.
+      - name: Test
+        run: npm run test
+
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Chặn secret pattern mới lọt vào repo (K.8). Không tự sửa secret cũ ngoài phạm vi
+      # (ràng buộc mục 0.2) — chỉ ngăn rò rỉ mới từ đây về sau.
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

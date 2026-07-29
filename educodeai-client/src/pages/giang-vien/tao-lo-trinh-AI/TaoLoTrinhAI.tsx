@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import './QuanLyLoTrinh.css';
+import { getAccessToken } from '../../../utils/authStorage';
 
 interface IKhoaHocGoc {
     maKhoaHoc: number;
@@ -106,7 +106,7 @@ const QuanLyLoTrinh = () => {
     const fetchDanhSach = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('user_token');
+            const token = getAccessToken();
             const response = await fetch('https://localhost:7284/api/giangvien/quan-ly-lo-trinh/danh-sach', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -121,7 +121,7 @@ const QuanLyLoTrinh = () => {
 
     const fetchKhoaHocCoSan = async () => {
         try {
-            const token = localStorage.getItem('user_token');
+            const token = getAccessToken();
             const response = await fetch('https://localhost:7284/api/giangvien/quan-ly-lo-trinh/danh-sach-khoa-hoc-co-san', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -175,7 +175,7 @@ const QuanLyLoTrinh = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    const token = localStorage.getItem('user_token');
+                    const token = getAccessToken();
                     const res = await fetch(`https://localhost:7284/api/giangvien/quan-ly-lo-trinh/xoa/${id}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -196,7 +196,7 @@ const QuanLyLoTrinh = () => {
         if (tempCourses.length === 0) return Swal.fire('Cảnh báo', "Chưa có khóa học nào!", "warning");
 
         try {
-            const token = localStorage.getItem('user_token');
+            const token = getAccessToken();
             const method = isEditMode ? 'PUT' : 'POST';
             const url = isEditMode
                 ? `https://localhost:7284/api/giangvien/quan-ly-lo-trinh/cap-nhat/${editingItem.maLoTrinh}`

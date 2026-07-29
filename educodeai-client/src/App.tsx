@@ -1,18 +1,27 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Router from "./router/index";
 import { startSessionHub, stopSessionHub } from "./configs/sessionHub";
+import { bootstrapAuth } from "./configs/authBootstrap";
 
 function App() {
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
   useEffect(() => {
-    // G.9/G.10: SignalR SessionHub nhận event revoke/khóa realtime để logout UI ngay,
-    // thay cho polling getDevices mỗi 10 giây (đã bỏ). Middleware + cache invalidation
-    // vẫn là lớp enforcement backend nếu event bị mất; reconnect gọi sync endpoint một lần.
-    void startSessionHub();
+    let isMounted = true;
+
+    void bootstrapAuth().finally(() => {
+      if (!isMounted) return;
+      setIsAuthReady(true);
+      void startSessionHub();
+    });
 
     return () => {
+      isMounted = false;
       void stopSessionHub();
     };
   }, []);
+
+  if (!isAuthReady) return null;
 
   return (
     <Router />

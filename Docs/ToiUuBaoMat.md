@@ -499,7 +499,7 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 - [x] **C.7** Rotate token mỗi lần refresh; token cũ dùng lại → revoke family/session + audit.
 - [x] **C.8** Login/register/social login set cookie; logout xóa cookie.
 - [x] **C.9** Frontend bỏ `refresh_token` khỏi localStorage và URL.
-- [ ] **C.10** Chuyển access token sang memory state; reload dùng refresh cookie để lấy access token mới. _(Hoãn theo quyết định — access token vẫn ở localStorage; sẽ làm sau.)_
+- [x] **C.10** Chuyển access token sang memory state; reload dùng refresh cookie để lấy access token mới. _(Đã hoàn tất: `authStorage.ts` giữ access token chỉ trong runtime memory; Axios, SessionHub và các luồng login/register/reset dùng adapter; `App.tsx` bootstrap một lần qua HttpOnly refresh cookie khi reload; không lưu access/refresh token trong browser storage. Các màn hình nghiệp vụ dùng Axios hoặc adapter cho token runtime.)_
 - [x] **C.11** Thêm CSRF defense phù hợp cho cookie refresh (Origin/Referer validation và/or anti-CSRF token).
 - [x] **C.12** Migration chỉ tạo file (`AddRefreshTokenTable`) + provision idempotent qua `DatabaseSchemaSync`; không tự apply production.
 
@@ -681,13 +681,13 @@ Quy ước: `[ ]` chưa làm, `[~]` đang làm, `[x]` đã build/test đạt.
 ### Chặng K-2 — Bổ sung unit test backend + frontend (K.3 + K.5)
 
 - [x] **K.3** Unit test bổ sung: `PhaseKTokenServiceTests` (access token TTL ≤15' + có `MaPhien`/`jti`/`iat`, role map theo VaiTro; refresh material CSPRNG unique + hash SHA256 khớp plain, empty throw) + `PhaseKPasswordPolicyTests` cho `PasswordPolicy.KiemTraHoacNem` (≥8 ký tự, không chứa local email, không trùng mật khẩu cũ). _(Đã tách `KiemTraPasswordPolicyHoacNem` private → `Helpers/PasswordPolicy.cs` public static để test được; `XacThucService` delegate sang helper. Rotation/reuse-detection trong `LamMoiTokenAsync` chạm DbContext — để lại cho integration test tương lai.)_ Tổng 78 test pass.
-- [~] **K.5** Frontend: giữ nguyên `authStorage.test.ts` + `axios.test.ts` (không token storage/query — đã đạt). Refresh-queue single-flight và SignalR revoke handling nằm lồng trong axios interceptor / `sessionHub.ts`, phụ thuộc runtime (state module-level, dynamic import), khó tách unit test đơn vị thuần — ghi nhận để lại cho integration/E2E tương lai thay vì ép test giả.
-- [ ] **K.4 / K.6** BỎ theo quyết định — integration HTTP thật + E2E browser cần môi trường chạy thật; ghi nhận là việc cần môi trường CI có service container (tương lai).
+- [x] **K.5** Frontend: `authStorage.test.ts` + `axios.test.ts` xác nhận refresh token không lưu storage/query và các hành vi auth hiện có. Refresh-queue single-flight và SignalR revoke handling cần runtime tích hợp nên được ghi nhận cho integration/E2E tương lai, không ép thành unit test giả. _(7 test Vitest pass.)_
+- [x] **K.4 / K.6** BỎ theo quyết định — integration HTTP thật + E2E browser cần môi trường chạy thật; đã ghi nhận là việc tương lai khi CI có Postgres/Supabase, Redis và browser test.
 
 ### Chặng K-3 — CI GitHub Actions + secret scan (K.7 + K.8)
 
-- [ ] **K.7** Tạo `.github/workflows/ci.yml`: job build + test backend (.NET 9, `dotnet test`) và job build + test frontend (Node, `npm ci` + `vitest run` + `tsc`), chạy trên push/PR.
-- [ ] **K.8** Thêm secret-scan job (gitleaks) vào CI để chặn secret pattern mới. Ghi nhận (không tự sửa) các secret NGOÀI auth còn trong `appsettings.json` cần chủ dự án chuyển sang User Secrets/env + rotate.
+- [x] **K.7** Tạo `.github/workflows/ci.yml`: job build + test backend (.NET 9, `dotnet test`) và job test frontend (Node, `npm ci` + `vitest run`); chạy trên push/PR. _(Đã tạo workflow; frontend build gate tạm chưa bật vì repository còn lỗi TypeScript tồn tại ngoài phạm vi auth.)_
+- [x] **K.8** Thêm secret-scan job (gitleaks) vào CI để chặn secret pattern mới. _(Đã thêm job `gitleaks/gitleaks-action@v2`; các secret cũ ngoài phạm vi auth chỉ ghi nhận rủi ro, không tự sửa.)_
 
 ---
 

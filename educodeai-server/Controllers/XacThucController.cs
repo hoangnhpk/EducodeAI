@@ -67,13 +67,13 @@ namespace educodeai_server.Controllers
         }
 
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromQuery] string? maThietBi)
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             if (!IsSameSiteRequest(HttpContext.Request))
             {
                 throw Helpers.ApiException.Forbidden("Yêu cầu không hợp lệ.");
             }
-            var result = await _xacThucService.LamMoiTokenAsync(string.Empty, maThietBi ?? string.Empty);
+            var result = await _xacThucService.LamMoiTokenAsync(string.Empty, request.MaThietBi);
             return Ok(result);
         }
 
@@ -84,10 +84,13 @@ namespace educodeai_server.Controllers
                 "https://educodeai-client.vercel.app",
                 "http://localhost:3000",
                 "http://localhost:3001",
+                "http://localhost:5173",
                 "http://127.0.0.1:3000",
                 "http://127.0.0.1:3001",
+                "http://127.0.0.1:5173",
                 "http://[::1]:3000",
-                "http://[::1]:3001"
+                "http://[::1]:3001",
+                "http://[::1]:5173"
             };
 
             var origin = request.Headers["Origin"].ToString();
@@ -315,6 +318,13 @@ namespace educodeai_server.Controllers
             {
                 throw;
             }
+        }
+
+        [HttpPost("xac-minh-otp-quen-mat-khau")]
+        public async Task<IActionResult> XacMinhOtpQuenMatKhau([FromBody] XacMinhOtpQuenMatKhauRequest request)
+        {
+            var result = await _xacThucService.XacMinhOtpQuenMatKhauAsync(request);
+            return Ok(result);
         }
 
         [HttpPost("dat-lai-mat-khau")]

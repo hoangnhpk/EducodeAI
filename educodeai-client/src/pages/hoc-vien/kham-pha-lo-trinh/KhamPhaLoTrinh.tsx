@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './KhamPhaLoTrinh.css';
+import { getAccessToken } from '../../../utils/authStorage';
 
 interface LoTrinhKhamPha {
     maLoTrinh: number; 
@@ -153,7 +154,7 @@ const KhamPhaLoTrinh = () => {
     useEffect(() => {
         const fetchKhoaHocCoSan = async () => {
             try {
-                const token = localStorage.getItem('user_token');
+                const token = getAccessToken();
                 // Lưu ý: Nếu sếp có API này dành riêng cho /hocvien/ thì sửa lại đường dẫn nhé
                 const response = await fetch('https://localhost:7284/api/giangvien/quan-ly-lo-trinh/danh-sach-khoa-hoc-co-san', {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -177,7 +178,7 @@ const KhamPhaLoTrinh = () => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const token = localStorage.getItem('user_token');
+                const token = getAccessToken();
                 const searchLower = debouncedTerm.toLowerCase();
                 const url = `https://localhost:7284/api/hocvien/kham-pha-lo-trinh/danh-sach?tuKhoa=${encodeURIComponent(searchLower)}&page=${page}&pageSize=9`;
                 
@@ -198,7 +199,7 @@ const KhamPhaLoTrinh = () => {
         try {
             const res = await fetch(`https://localhost:7284/api/hocvien/kham-pha-lo-trinh/luu/${id}`, {
                 method: 'POST', 
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('user_token')}` }
+                headers: { 'Authorization': `Bearer ${getAccessToken()}` }
             });
             const result = await res.json();
             alert(result.message);
@@ -210,7 +211,7 @@ const KhamPhaLoTrinh = () => {
         setDetailLoading(true);
         try {
             const res = await fetch(`https://localhost:7284/api/hocvien/kham-pha-lo-trinh/chi-tiet/${id}`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('user_token')}` }
+                headers: { 'Authorization': `Bearer ${getAccessToken()}` }
             });
             const result = await res.json();
             if (result.success) setDetail(result.data);

@@ -6,10 +6,12 @@ using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
@@ -21,6 +23,8 @@ namespace educodeai_server.Services.Implementation
     public class XacThucService : IXacThucService
     {
         private const string RefreshCookieName = "ecai_rt";
+        private const int PasswordResetTokenTtlMinutes = 5;
+        private const string PasswordResetTokenKeyPrefix = "auth:password-reset:";
 
         // E.3: hash BCrypt hợp lệ tính một lần lúc load để chạy Verify giả khi user không tồn tại,
         // giữ thời gian phản hồi đồng đều chống timing enumeration. Không phải mật khẩu thật.
@@ -30,6 +34,7 @@ namespace educodeai_server.Services.Implementation
         private readonly IConfiguration _config;
         private readonly ICaptchaService _captchaService;
         private readonly IMemoryCache _memoryCache;
+        private readonly IDistributedCache _distributedCache;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IWebHostEnvironment _env;
         private readonly IGiayToScanningService _giayToScanningService;
@@ -42,12 +47,13 @@ namespace educodeai_server.Services.Implementation
         private readonly ILogger<XacThucService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter, ILogger<XacThucService> logger, IHttpClientFactory httpClientFactory)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IDistributedCache distributedCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter, ILogger<XacThucService> logger, IHttpClientFactory httpClientFactory)
         {
             _context = context;
             _config = config;
             _captchaService = captchaService;
             _memoryCache = memoryCache;
+            _distributedCache = distributedCache;
             _httpContextAccessor = httpContextAccessor;
             _env = env;
             _giayToScanningService = giayToScanningService;
@@ -64,6 +70,9 @@ namespace educodeai_server.Services.Implementation
         // IP client cho rate-limit; null nếu không xác định được (rate-limiter tự bỏ qua phần IP).
         private string? ClientIp() =>
             _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+        private static string HashPasswordResetToken(string? token) =>
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token ?? string.Empty)));
 
         // Verify CAPTCHA server-side (D.4). "SKIP_CAPTCHA" chỉ được chấp nhận ngoài production (D.5):
         // dev/test cho qua để tự động hóa, production luôn bắt buộc token hợp lệ.
@@ -268,8 +277,8 @@ namespace educodeai_server.Services.Implementation
         {
             // E.5: verify id_token với Google — KHÔNG tin email/name/picture do client tự gửi.
             var clientId = _config["SocialLogin:Google:ClientId"];
-            if (string.IsNullOrWhiteSpace(clientId))
-                throw ApiException.InvalidRequest("Đăng nhập Google chưa được cấu hình.");
+            if (string.IsNullOrWhiteSpace(clientId) || clientId.Contains("<GOOGLE_OAUTH_CLIENT_ID>", StringComparison.Ordinal))
+                throw ApiException.InvalidRequest("Đăng nhập Google chưa được cấu hình đúng Client ID.");
             if (string.IsNullOrWhiteSpace(request.Credential))
                 throw ApiException.InvalidRequest("Thiếu thông tin xác thực Google.");
 
@@ -410,11 +419,8 @@ namespace educodeai_server.Services.Implementation
         {
             var httpContext = _httpContextAccessor.HttpContext;
 
-            // Phase C: refresh token đọc từ HttpOnly cookie; giá trị query cũ chỉ dùng để backward compat cho client chưa cập nhật
-            string? cookieToken = httpContext?.Request.Cookies[RefreshCookieName];
-            string? plainToken = !string.IsNullOrWhiteSpace(cookieToken)
-                ? cookieToken
-                : (!string.IsNullOrWhiteSpace(refreshToken) ? refreshToken : null);
+            // Refresh token chỉ được chấp nhận từ cookie HttpOnly.
+            var plainToken = httpContext?.Request.Cookies[RefreshCookieName];
 
             if (string.IsNullOrWhiteSpace(plainToken))
             {
@@ -683,11 +689,12 @@ namespace educodeai_server.Services.Implementation
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return;
 
+            var isHttps = httpContext.Request.IsHttps;
             var options = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
+                Secure = isHttps,
+                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
                 Path = "/api/XacThuc",
                 Expires = expiresAtUtc,
                 IsEssential = true
@@ -707,11 +714,12 @@ namespace educodeai_server.Services.Implementation
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return;
 
+            var isHttps = httpContext.Request.IsHttps;
             var options = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
+                Secure = isHttps,
+                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
                 Path = "/api/XacThuc",
                 Expires = DateTime.UtcNow.AddDays(-1),
                 IsEssential = true
@@ -939,21 +947,51 @@ namespace educodeai_server.Services.Implementation
                 // chống enumeration qua timing. OTP vẫn tạo đồng bộ để lưu trước khi response trả về.
                 string otp = await _otpService.CreateOtpAsync(OtpPurpose.ForgotPassword, email);
                 string emailBody = TaoGiaoDienEmail("Đặt lại mật khẩu", "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Vui lòng nhập mã xác thực dưới đây để tiến hành thiết lập mật khẩu mới.", otp);
-                _ = Task.Run(() => EmailHelper.SendEmailAsync(email, "Mã xác nhận đặt lại mật khẩu", emailBody));
+                var emailSent = await EmailHelper.SendEmailAsync(email, "Mã xác nhận đặt lại mật khẩu", emailBody);
+                if (!emailSent)
+                {
+                    throw ApiException.InvalidRequest("Không thể gửi email lúc này. Vui lòng thử lại sau.");
+                }
             }
 
             return new { message = "Nếu email tồn tại trong hệ thống, mã xác thực đã được gửi. Vui lòng kiểm tra hộp thư." };
         }
 
-        public async Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest r) {
-            if (!await _otpRateLimiter.TryConsumeVerifyAsync(OtpPurpose.ForgotPassword, r.Email, ClientIp()))
+        public async Task<object> XacMinhOtpQuenMatKhauAsync(XacMinhOtpQuenMatKhauRequest r)
+        {
+            var email = r.Email.Trim().ToLowerInvariant();
+            if (!await _otpRateLimiter.TryConsumeVerifyAsync(OtpPurpose.ForgotPassword, email, ClientIp()))
                 throw ApiException.InvalidRequest("Bạn thử mã quá nhiều lần. Vui lòng thử lại sau.");
 
-            var verify = await _otpService.VerifyOtpAsync(OtpPurpose.ForgotPassword, r.Email, r.OtpCode);
+            var verify = await _otpService.VerifyOtpAsync(OtpPurpose.ForgotPassword, email, r.OtpCode);
             if (!verify.Success)
                 throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác hoặc đã hết hạn.");
 
-            var user = await LayNguoiDungKemThietBiAsync(r.Email);
+            var resetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+            await _distributedCache.SetStringAsync(
+                PasswordResetTokenKeyPrefix + HashPasswordResetToken(resetToken),
+                email,
+                new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(PasswordResetTokenTtlMinutes)
+                });
+
+            return new { resetToken, expiresInSeconds = PasswordResetTokenTtlMinutes * 60 };
+        }
+
+        public async Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest r) {
+            var email = r.Email.Trim().ToLowerInvariant();
+            var tokenKey = PasswordResetTokenKeyPrefix + HashPasswordResetToken(r.ResetToken);
+            var tokenEmail = string.IsNullOrWhiteSpace(r.ResetToken)
+                ? null
+                : await _distributedCache.GetStringAsync(tokenKey);
+            if (string.IsNullOrWhiteSpace(tokenEmail)
+                || !string.Equals(tokenEmail, email, StringComparison.Ordinal))
+            {
+                throw ApiException.InvalidRequest("Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
+            }
+
+            var user = await LayNguoiDungKemThietBiAsync(email);
             if (user == null) throw ApiException.InvalidRequest("Phiên làm việc không hợp lệ.");
 
             // F.3: áp password policy chung (>=8 ký tự, không chứa local email, không trùng mật khẩu cũ).
@@ -984,6 +1022,7 @@ namespace educodeai_server.Services.Implementation
             }
 
             await _context.SaveChangesAsync();
+            await _distributedCache.RemoveAsync(tokenKey);
 
             // Sau commit: invalidate cache + push SignalR để mọi thiết bị bị đá ngay (tái dùng pattern G).
             await _sessionStateCache.InvalidateUserStatusAsync(user.MaNguoiDung);
