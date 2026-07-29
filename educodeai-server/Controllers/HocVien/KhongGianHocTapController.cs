@@ -11,10 +11,14 @@ namespace educodeai_server.Controllers.HocVien
     public class KhongGianHocTapController : ControllerBase
     {
         private readonly IKhongGianHocTapService _service;
+        private readonly ILogger<KhongGianHocTapController> _logger;
 
-        public KhongGianHocTapController(IKhongGianHocTapService service)
+        public KhongGianHocTapController(
+            IKhongGianHocTapService service,
+            ILogger<KhongGianHocTapController> logger)
         {
             _service = service;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -42,7 +46,14 @@ namespace educodeai_server.Controllers.HocVien
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = ex.Message });
+                // Không trả ex.Message ra client: client hiển thị thẳng message này lên UI,
+                // làm lộ chi tiết nội bộ (tên bảng, câu SQL, chuỗi kết nối...) cho học viên.
+                _logger.LogError(ex, "Lỗi lấy skill-tree cho người dùng {MaNguoiDung}", maNguoiDung);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Không tải được bản đồ lộ trình. Vui lòng thử lại sau."
+                });
             }
         }
     }
