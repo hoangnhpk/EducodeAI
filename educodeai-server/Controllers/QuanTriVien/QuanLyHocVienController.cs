@@ -1,11 +1,13 @@
 ﻿using educodeai_server.DTOs.NguoiDung;
 using educodeai_server.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace educodeai_server.Controllers.QuanTriVien
 {
     [Route("api/admin/hoc-vien")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class QuanLyHocVienController : ControllerBase
     {
         private readonly IQuanLyHocVienService _service;

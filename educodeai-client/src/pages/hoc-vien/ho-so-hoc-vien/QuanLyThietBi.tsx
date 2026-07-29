@@ -23,7 +23,13 @@ const QuanLyThietBi: React.FC = () => {
     };
 
     useEffect(() => {
+        // G.14: chỉ fetch khi mở trang; sau đó refetch khi nhận event SessionListChanged
+        // từ SignalR (sessionHub dispatch) thay vì polling định kỳ.
         fetchDevices();
+
+        const onSessionListChanged = () => { fetchDevices(); };
+        window.addEventListener('SessionListChanged', onSessionListChanged);
+        return () => window.removeEventListener('SessionListChanged', onSessionListChanged);
     }, []);
 
     const handleLogoutRemote = (all: boolean, maPhien?: number) => {

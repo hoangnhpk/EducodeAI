@@ -18,7 +18,7 @@ namespace educodeai_server.Services.Interface
         Task<bool> YeuCauDangKyAsync(DangKyRequest request, string ipAddress);
         Task<object> XacNhanDangKyVaLuuDbAsync(XacNhanOtpRequest request);
         Task<object> DangKyGiangVienAsync(DangKyGiangVienRequest request);
-        Task<bool> GuiOtpEmailGiangVienAsync(string email);
+        Task<bool> GuiOtpEmailGiangVienAsync(string email, string? captchaToken);
         Task<bool> XacMinhOtpEmailGiangVienAsync(string email, string otpCode);
         // --- GIẢNG VIÊN: TRA CỨU & BỔ SUNG HỒ SƠ ---
         Task<object> TraCuuTrangThaiHoSoAsync(string email);
@@ -27,6 +27,7 @@ namespace educodeai_server.Services.Interface
 
         // --- CÁC HÀM QUÊN MK ---
         Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest request, string ipAddress);
+        Task<object> XacMinhOtpQuenMatKhauAsync(XacMinhOtpQuenMatKhauRequest request);
         Task<object> DatLaiMatKhauAsync(DatLaiMatKhauRequest request);
 
         // CÁC HÀM ĐỔI MẬT KHẨU
@@ -37,5 +38,8 @@ namespace educodeai_server.Services.Interface
         Task<bool> DangXuatAsync(int maNguoiDung, string maThietBi);
         Task<bool> YeuCauOtpDangXuatTuXaAsync(int maNguoiDung);
         Task<bool> XacNhanDangXuatTuXaAsync(int maNguoiDung, DangXuatTuXaRequest request);
+
+        // --- ĐỒNG BỘ TRẠNG THÁI PHIÊN (G.12): frontend gọi 1 lần khi reconnect SignalR ---
+        Task<object> LayTrangThaiPhienAsync(int maNguoiDung);
     }
 }
