@@ -492,9 +492,7 @@ catch (Exception ex)
 }
 
 // === SELF-HEALING: cột video/phụ đề + bảng phụ trợ của phase upload video cloud ===
-// Tách riêng khỏi khối gift-code ở trên: nếu 1 lệnh ALTER của gift-code ném lỗi (VD bảng
-// chưa tồn tại trên DB restore từ backup), khối try đó sẽ abort giữa chừng và KHÔNG chạy
-// tới đây. ApplyAsync idempotent (ADD COLUMN / CREATE TABLE IF NOT EXISTS) nên an toàn.
+// Khối này không tạo schema auth; RefreshToken đã thuộc EF migration.
 try
 {
     using var scope = app.Services.CreateScope();
@@ -506,8 +504,52 @@ try
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Schema sync (video upload) bỏ qua: {ex.Message}");
+    Console.WriteLine($"Schema sync (legacy/domain) bỏ qua: {ex.Message}");
 }
+
+// PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
+// Nếu setval không chạy → trùng PK → 500 khi tạo mã QR.
+//try
+//{
+//    using var scope = app.Services.CreateScope();
+//    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
+//    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
+//    {
+//        var bangVaCot = new[]
+//        {
+//            ("DonHangKhoaHocs", "MaDonHang"),
+//            ("ChiTietDonHangs", "MaChiTiet"),
+//            ("GiaoDichThanhToans", "MaGiaoDich"),
+//            ("DoanhThuGiangViens", "MaDoanhThu"),
+//            ("MaGiamGias", "MaVoucher"),
+//        };
+//        foreach (var (bang, cot) in bangVaCot)
+//        {
+//            try
+//            {
+//                db.Database.ExecuteSqlRaw(
+//                    $"""
+//                    SELECT setval(
+//                        COALESCE(
+//                            pg_get_identity_sequence('""{bang}""', '{cot}'),
+//                            pg_get_serial_sequence('""{bang}""', '{cot}')
+//                        ),
+//                        COALESCE((SELECT MAX(""{cot}"") FROM ""{bang}""), 0),
+//                        true
+//                    );
+//                    """);
+//            }
+//            catch (Exception ex)
+//            {
+//                Console.WriteLine($"Seed sync setval for {bang}.{cot} bỏ qua: {ex.Message}");
+//            }
+//        }
+//    }
+//}
+//catch (Exception ex)
+//{
+//    Console.WriteLine($"Seed sync bỏ qua: {ex.Message}");
+//}
 
 // PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
 // Nếu setval không chạy → trùng PK → 500 khi tạo mã QR.
