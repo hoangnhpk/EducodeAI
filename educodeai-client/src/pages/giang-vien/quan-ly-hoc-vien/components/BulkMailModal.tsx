@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useModalA11y } from '@/hooks/useModalA11y';
 
 type MauKey = 'nhac_nhe' | 'khen' | 'trong';
 
@@ -40,7 +39,7 @@ const MAU_TRONG: MauConfig = {
   label: 'Tùy chỉnh',
   tieuDe: '',
   heading: 'Thông báo từ giảng viên',
-  headingColor: '#ea580c',
+  headingColor: '#2563eb',
   noiDung: '',
 };
 
@@ -80,15 +79,15 @@ function buildEmailHtml(mau: MauKey, heading: string, headingColor: string, user
   const year = new Date().getFullYear();
   const isKhen = mau === 'khen';
   const isNhac = mau === 'nhac_nhe';
-  const accent = isKhen ? '#16a34a' : isNhac ? '#dc2626' : '#fb873f';
+  const accent = isKhen ? '#16a34a' : isNhac ? '#dc2626' : '#2563eb';
   const boxBg = isKhen ? '#f0fdf4' : isNhac ? '#fef2f2' : '#fff8f3';
-  const boxBorder = isKhen ? '#bbf7d0' : isNhac ? '#fecaca' : '#fed7aa';
-  const topBar = isKhen ? '#16a34a' : isNhac ? '#dc2626' : '#fb873f';
+  const boxBorder = isKhen ? '#bbf7d0' : isNhac ? '#fecaca' : '#bfdbfe';
+  const topBar = isKhen ? '#16a34a' : isNhac ? '#dc2626' : '#2563eb';
 
   return `<div style="font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.05);border:1px solid #eaeaea;">
 <div style="height:4px;background:${topBar};"></div>
 <div style="background-color:#fcfcfc;padding:22px 0 20px;text-align:center;border-bottom:1px solid #f0f0f0;">
-<h1 style="margin:0;font-size:26px;font-weight:800;color:#333;letter-spacing:1px;">EDUCODE<span style="color:#fb873f;">AI</span></h1>
+<h1 style="margin:0;font-size:26px;font-weight:800;color:#333;letter-spacing:1px;">EDUCODE<span style="color:#2563eb;">AI</span></h1>
 </div>
 <div style="padding:36px 30px 40px;">
 <div style="text-align:center;margin-bottom:6px;">
@@ -141,9 +140,6 @@ export default function BulkMailModal({
   const [tieuDe, setTieuDe] = useState(MAU_NHAC_NHE.tieuDe);
   const [noiDung, setNoiDung] = useState(MAU_NHAC_NHE.noiDung);
   const editorRef = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useModalA11y(open && !dangGui, onClose, panelRef);
 
   const cfg = MAU_MAP[mau];
 
@@ -199,17 +195,17 @@ export default function BulkMailModal({
 
   return (
     <div className="qllh-modal-overlay" onClick={onClose}>
-      <div className="qllh-bulk-modal qllh-bulk-modal--v2" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="bulk-mail-title" onClick={(e) => e.stopPropagation()}>
+      <div className="qllh-bulk-modal qllh-bulk-modal--v2" onClick={(e) => e.stopPropagation()}>
         <div className="qllh-bulk-header">
           <div className="qllh-bulk-header__icon">
-            <i className="fas fa-envelope" aria-hidden="true" />
+            <i className="bi bi-envelope-paper" aria-hidden="true" />
           </div>
           <div className="qllh-bulk-header__text">
-            <h2 id="bulk-mail-title">Gửi mail nhắc nhở hàng loạt</h2>
+            <h2>Gửi mail nhắc nhở hàng loạt</h2>
             <p>{moTaNguoiNhan}</p>
           </div>
           <button type="button" className="qllh-btn-close" onClick={onClose} aria-label="Đóng">
-            <i className="fas fa-xmark" style={{ fontSize: 22 }} aria-hidden="true" />
+            <i className="bi bi-x-lg" style={{ fontSize: 22 }} aria-hidden="true" />
           </button>
         </div>
 
@@ -233,7 +229,7 @@ export default function BulkMailModal({
                       onClick={() => onRemoveNguoiNhan(hv.maNguoiDung)}
                       aria-label={`Bỏ ${hv.hoTen}`}
                     >
-                      <i className="fas fa-xmark" style={{ fontSize: 14 }} aria-hidden="true" />
+                      <i className="bi bi-x-lg" style={{ fontSize: 14 }} aria-hidden="true" />
                     </button>
                   </span>
                 ))
@@ -276,14 +272,14 @@ export default function BulkMailModal({
             <label className="qllh-bulk-label">Nội dung</label>
             <div className="qllh-rich-editor">
               <div className="qllh-rich-editor__toolbar">
-                <button type="button" onClick={() => applyFormat('bold')} title="In đậm" aria-label="In đậm">
-                  <i className="fas fa-bold" style={{ fontSize: 15 }} aria-hidden="true" />
+                <button type="button" onClick={() => applyFormat('bold')} title="In đậm">
+                  <i className="bi bi-type-bold" style={{ fontSize: 15 }} aria-hidden="true" />
                 </button>
-                <button type="button" onClick={() => applyFormat('italic')} title="In nghiêng" aria-label="In nghiêng">
-                  <i className="fas fa-italic" style={{ fontSize: 15 }} aria-hidden="true" />
+                <button type="button" onClick={() => applyFormat('italic')} title="In nghiêng">
+                  <i className="bi bi-type-italic" style={{ fontSize: 15 }} aria-hidden="true" />
                 </button>
-                <button type="button" onClick={() => applyFormat('underline')} title="Gạch chân" aria-label="Gạch chân">
-                  <i className="fas fa-underline" style={{ fontSize: 15 }} aria-hidden="true" />
+                <button type="button" onClick={() => applyFormat('underline')} title="Gạch chân">
+                  <i className="bi bi-type-underline" style={{ fontSize: 15 }} aria-hidden="true" />
                 </button>
               </div>
               <div
@@ -303,7 +299,7 @@ export default function BulkMailModal({
 
         <div className="qllh-bulk-footer">
           <p className="qllh-bulk-footer__note">
-            <i className="fas fa-circle-info" style={{ fontSize: 14 }} aria-hidden="true" />
+            <i className="bi bi-info-circle" style={{ fontSize: 14 }} aria-hidden="true" />
             Hệ thống sẽ gửi nền (background), bạn không cần chờ.
           </p>
           <div className="qllh-bulk-footer__actions">
@@ -316,7 +312,7 @@ export default function BulkMailModal({
               disabled={dangGui || !tieuDe.trim() || nguoiNhan.length === 0 || !noiDung.trim()}
               onClick={handleSend}
             >
-              <i className="fas fa-paper-plane" aria-hidden="true" />
+              <i className="bi bi-send-fill" style={{ fontSize: 14 }} aria-hidden="true" />
               {dangGui ? 'Đang gửi...' : 'Gửi ngay'}
             </button>
           </div>

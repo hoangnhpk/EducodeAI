@@ -224,6 +224,10 @@ export default function KhongGianHocTap() {
                             alt=""
                             loading="lazy"
                             onError={(e) => {
+                              // Chặn vòng lặp: defaultImg là ảnh ngoài, nếu chính nó lỗi thì
+                              // gán lại cùng src sẽ khiến onError bắn liên tục.
+                              if (e.currentTarget.dataset.fallback === '1') return;
+                              e.currentTarget.dataset.fallback = '1';
                               e.currentTarget.src = defaultImg;
                             }}
                           />

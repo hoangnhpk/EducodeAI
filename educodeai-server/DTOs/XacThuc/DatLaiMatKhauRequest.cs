@@ -20,9 +20,9 @@ namespace educodeai_server.DTOs.XacThuc
         [Newtonsoft.Json.JsonIgnore]
         public string MatKhauMoi => NewPassword ?? MatKhauMoiField ?? "";
 
-        [JsonPropertyName("OtpCode")]
-        [JsonProperty("OtpCode")]
-        public string OtpCode { get; set; }
+        [JsonPropertyName("ResetToken")]
+        [JsonProperty("ResetToken")]
+        public string ResetToken { get; set; } = string.Empty;
 
         public string? MaThietBi { get; set; }
         public string? TenThietBi { get; set; }

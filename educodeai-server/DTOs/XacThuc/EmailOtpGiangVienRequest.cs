@@ -9,5 +9,7 @@ namespace educodeai_server.DTOs.XacThuc
         public string Email { get; set; } = string.Empty;
 
         public string? OtpCode { get; set; }
+
+        public string? CaptchaToken { get; set; }
     }
 }
