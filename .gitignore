@@ -382,3 +382,12 @@ educodeai-server/ffmpeg/*
 educodeai-server/wwwroot/uploads/
 educodeai-server/private_uploads/
 educodeai-server/tessdata/
+
+# Claude Code local state (worktrees, session data)
+.claude/
+
+# Scratch / temporary working dir
+scratch/
+
+# Frontend test coverage output
+educodeai-client/coverage/

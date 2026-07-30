@@ -14,7 +14,7 @@ namespace educodeai_server.Controllers.QuanTriVien
 {
     [ApiController]
     [Route("api/quan-tri/cau-hinh")]
-    // [Authorize(Roles = "Quản trị viên")] 
+    [Authorize(Roles = "Admin")]
     public class CauHinhHeThongController : ControllerBase
     {
         private readonly EduCodeAIDbContext _context;
@@ -38,6 +38,7 @@ namespace educodeai_server.Controllers.QuanTriVien
         }
 
         [HttpGet("lay-cau-hinh")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetCauHinh()
         {
             try
@@ -77,7 +78,8 @@ namespace educodeai_server.Controllers.QuanTriVien
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = ex.Message });
+                _logger.LogError(ex, "Lỗi khi lấy cấu hình hệ thống.");
+                return StatusCode(500, new { success = false, message = "Không thể lấy cấu hình hệ thống. Vui lòng thử lại sau." });
             }
         }
         // API cho Frontend quét liên tục xem có đang bảo trì không
@@ -88,9 +90,8 @@ namespace educodeai_server.Controllers.QuanTriVien
             return Ok(new { isMaintenance = Helpers.MaintenanceMiddleware.IsUnderMaintenance });
         }
 
-        // API CÔNG TẮC: Chỗ này sếp gắn vào nút Bật/Tắt bảo trì ở giao diện Admin
+        // API CÔNG TẮC bật/tắt bảo trì — chỉ Admin (kế thừa [Authorize(Roles="Admin")] cấp controller).
         [HttpPost("toggle-bao-tri")]
-        // [Authorize] -> (Nhớ phân quyền Admin chỗ này nhé)
         public IActionResult ToggleBaoTri([FromBody] bool status)
         {
             Helpers.MaintenanceMiddleware.IsUnderMaintenance = status;
@@ -99,7 +100,6 @@ namespace educodeai_server.Controllers.QuanTriVien
         }
 
         [HttpPost("upload-banner")]
-        // [Authorize(Roles = "Quản trị viên")]
         public async Task<IActionResult> UploadBanner(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -164,7 +164,8 @@ namespace educodeai_server.Controllers.QuanTriVien
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = "Lỗi khi lưu", error = ex.Message });
+                _logger.LogError(ex, "Lỗi khi lưu cấu hình hệ thống.");
+                return StatusCode(500, new { success = false, message = "Không thể lưu cấu hình hệ thống. Vui lòng thử lại sau." });
             }
         }
     }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import './CauHinhHeThong.css';
 import { useSystemConfig } from '../../../contexts/SystemConfigContext';
+import { getAccessToken } from '../../../utils/authStorage';
 
 const CauHinhHeThong = () => {
     const [activeTab, setActiveTab] = useState('general');
@@ -26,7 +27,7 @@ const CauHinhHeThong = () => {
     const fetchConfigs = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('user_token');
+            const token = getAccessToken();
             // 👉 ĐÃ SỬA: Dùng apiUrl thay cho localhost
             const res = await fetch(`${apiUrl}/api/quan-tri/cau-hinh/lay-cau-hinh`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -69,7 +70,7 @@ const CauHinhHeThong = () => {
                 const formData = new FormData();
                 formData.append('file', file);
                 
-                const token = localStorage.getItem('user_token');
+                const token = getAccessToken();
                 const res = await fetch(`${apiUrl}/api/quan-tri/cau-hinh/upload-banner`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
@@ -99,7 +100,7 @@ const CauHinhHeThong = () => {
         Swal.fire({ title: 'Đang lưu cấu hình...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         
         try {
-            const token = localStorage.getItem('user_token');
+            const token = getAccessToken();
             const configArray = Object.keys(configs).map(key => ({
                 MaKhoa: key,
                 GiaTri: configs[key]

@@ -1,10 +1,12 @@
 ﻿using educodeai_server.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using educodeai_server.DTOs.NguoiDung;
 namespace educodeai_server.Controllers
 {
     [Route("api/nguoi-dung")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class QuanLyNguoiDungController : ControllerBase
     {
         private readonly IQuanLyNguoiDungService _service;
@@ -15,9 +17,9 @@ namespace educodeai_server.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> LayDanhSach()
+        public async Task<IActionResult> LayDanhSach([FromQuery] NguoiDungFilterDTO filter)
         {
-            var result = await _service.LayDanhSachNguoiDungAsync();
+            var result = await _service.LayDanhSachNguoiDungAsync(filter);
             return Ok(result);
         }
         [HttpPost("them-nguoi-dung")]

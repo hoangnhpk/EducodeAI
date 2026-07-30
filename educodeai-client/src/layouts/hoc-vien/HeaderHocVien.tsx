@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
+import { authService } from "../../services/auth.service";
+import { clearAuthTokens } from "../../utils/authStorage";
 
 export default function HeaderHocVien() {
   const navigate = useNavigate();
@@ -20,18 +21,15 @@ export default function HeaderHocVien() {
 
   // Hàm xử lý đăng xuất
   const handleLogout = async () => {
-    localStorage.removeItem("user_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("user_info");
-    setUser(null);
-    await Swal.fire({
-      icon: "success",
-      title: "Đăng xuất thành công",
-      text: "Bạn đã đăng xuất thành công!",
-      confirmButtonColor: "var(--primary)",
-    });
-    navigate("/dang-nhap");
+    try {
+      await authService.logout();
+    } finally {
+      clearAuthTokens();
+      localStorage.removeItem("user_info");
+      setUser(null);
+      alert("Bạn đã đăng xuất thành công!");
+      navigate("/dang-nhap");
+    }
   };
 
   return (
@@ -42,7 +40,7 @@ export default function HeaderHocVien() {
       >
         <p className="m-0 fw-bold" style={{ fontSize: 25 }}>
           <img src="/img/icon.png" alt="" height={50} />
-          EDUCODE<span style={{ color: "var(--primary)" }}>AI</span>
+          EDUCODE<span style={{ color: "#fb873f" }}>AI</span>
         </p>
       </Link>
 

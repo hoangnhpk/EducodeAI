@@ -76,8 +76,9 @@ export default function ThongKeAdmin() {
 
   const [chartFrom, setChartFrom] = useState(defaultFrom);
   const [chartTo, setChartTo] = useState(defaultTo);
-  const [chartLoading, setChartLoading] = useState(false);
-  const [topLoading, setTopLoading] = useState(false);
+  // Bật sẵn true vì effect theo khoảng tháng luôn chạy ngay khi mount.
+  const [chartLoading, setChartLoading] = useState(true);
+  const [topLoading, setTopLoading] = useState(true);
   const fromMonthRef = useRef<HTMLInputElement | null>(null);
   const toMonthRef = useRef<HTMLInputElement | null>(null);
 
@@ -107,29 +108,17 @@ export default function ThongKeAdmin() {
       setLoading(true);
       setError(null);
       try {
-        const [ov, chart, doanhThu] = await Promise.all([
+        // Chỉ nạp dữ liệu không phụ thuộc khoảng tháng ở đây. Biểu đồ đăng ký, top khóa học,
+        // top giảng viên và chất lượng khóa học do effect [chartFrom, chartTo] bên dưới lo —
+        // effect đó cũng chạy ngay khi mount, nếu nạp cả ở đây sẽ gọi trùng 4 API mỗi lần vào trang.
+        const [ov, doanhThu] = await Promise.all([
           thongKeAdminService.getTongQuan(),
-          thongKeAdminService.getDangKyTheoThang({ from: defaultFrom, to: defaultTo }),
           thongKeAdminService.getDoanhThuTongQuan(),
         ]);
 
         if (cancelled) return;
         setOverview(ov);
-        setDangKyTheoThang(chart);
         setDoanhThuOverview(doanhThu);
-
-        // Load top lists for default range
-        const [topCourses, topTeachers] = await Promise.all([
-          thongKeAdminService.getTopKhoaHoc({ from: defaultFrom, to: defaultTo, top: 5 }),
-          thongKeAdminService.getTopGiangVien({ from: defaultFrom, to: defaultTo, top: 5 }),
-        ]);
-        if (cancelled) return;
-        setTopKhoaHoc(topCourses);
-        setTopGiangVien(topTeachers);
-
-        const quality = await thongKeAdminService.getChatLuongKhoaHoc({ from: defaultFrom, to: defaultTo, top: 10 });
-        if (cancelled) return;
-        setChatLuong(quality);
       } catch (e: unknown) {
         if (cancelled) return;
         const maybeAxios = e as { response?: { data?: { message?: string } } };
@@ -167,6 +156,16 @@ export default function ThongKeAdmin() {
 
         const quality = await thongKeAdminService.getChatLuongKhoaHoc({ from, to, top: 10 });
         if (!cancelled) setChatLuong(quality);
+      } catch (e: unknown) {
+        // Effect này là nguồn nạp duy nhất của biểu đồ + các bảng top nên phải bắt lỗi,
+        // nếu không promise sẽ reject lặng và UI đứng ở trạng thái "Chưa có dữ liệu".
+        if (!cancelled) {
+          console.error('[ThongKeAdmin] Không tải được dữ liệu theo khoảng tháng:', e);
+          setDangKyTheoThang([]);
+          setTopKhoaHoc([]);
+          setTopGiangVien([]);
+          setChatLuong([]);
+        }
       } finally {
         if (!cancelled) {
           setChartLoading(false);
@@ -369,6 +368,7 @@ export default function ThongKeAdmin() {
                   className="adm-month__input"
                   ref={fromMonthRef}
                   value={chartFrom}
+                  max={chartTo}
                   onChange={(e) => setChartFrom(e.target.value)}
                   aria-label="Chọn tháng bắt đầu"
                 />
@@ -398,6 +398,7 @@ export default function ThongKeAdmin() {
                   className="adm-month__input"
                   ref={toMonthRef}
                   value={chartTo}
+                  min={chartFrom}
                   onChange={(e) => setChartTo(e.target.value)}
                   aria-label="Chọn tháng kết thúc"
                 />

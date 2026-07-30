@@ -1,5 +1,6 @@
 
 import { Navigate } from 'react-router-dom';
+import { clearAuthTokens, getAccessToken } from '../../utils/authStorage';
 
 interface Props {
     children: React.ReactNode;
@@ -8,9 +9,10 @@ interface Props {
 
 const ProtectedRoute: React.FC<Props> = ({ children, allowRoles }) => {
     const userRaw = localStorage.getItem('user_info');
-    
-    // 1. Chưa đăng nhập -> Đá về trang đăng nhập
-    if (!userRaw) {
+    const accessToken = getAccessToken();
+
+    // user_info chỉ phục vụ hiển thị; access token runtime mới xác nhận phiên bootstrap thành công.
+    if (!userRaw || !accessToken) {
         return <Navigate to="/dang-nhap" replace />;
     }
 
@@ -18,18 +20,14 @@ const ProtectedRoute: React.FC<Props> = ({ children, allowRoles }) => {
     try {
         user = JSON.parse(userRaw);
     } catch {
+        clearAuthTokens();
         localStorage.removeItem("user_info");
-        localStorage.removeItem("user_token");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("token");
         return <Navigate to="/dang-nhap" replace />;
     }
 
     if (!user || typeof user !== "object") {
+        clearAuthTokens();
         localStorage.removeItem("user_info");
-        localStorage.removeItem("user_token");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("token");
         return <Navigate to="/dang-nhap" replace />;
     }
 

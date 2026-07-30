@@ -5,6 +5,7 @@ import { ChiTietKhoaHocService } from "../../../services/chi-tiet-khoa-hoc.servi
 import type { ChiTietKhoaHocDTO, DanhGiaDTO } from "../../../services/chi-tiet-khoa-hoc.service";
 import "./ChiTietKhoaHocGiaoDien.css";
 import { getMediaUrl } from "../../../utils/mediaUrl";
+import { getAccessToken } from '../../../utils/authStorage';
 
 type VideoPreview = { type: 'youtube' | 'direct'; src: string };
 
@@ -95,7 +96,7 @@ const ChiTietKhoaHoc = () => {
       return;
     }
 
-    const token = localStorage.getItem('user_token');
+    const token = getAccessToken();
     if (!token) {
       Swal.fire({
         title: 'Cần đăng nhập',

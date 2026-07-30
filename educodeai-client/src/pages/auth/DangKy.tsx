@@ -5,6 +5,7 @@ import { authService } from '../../services/auth.service';
 import Swal from 'sweetalert2';
 // 1. IMPORT THƯ VIỆN CAPTCHA
 import ReCAPTCHA from "react-google-recaptcha";
+import { setAuthTokens } from '../../utils/authStorage';
 
 const RegisterPage = () => {
     const navigate = useNavigate();
@@ -118,12 +119,12 @@ const RegisterPage = () => {
 
             // 2. Lấy dữ liệu Token và User từ response (tùy cấu trúc Backend của bạn)
             // Giả sử Backend trả về: { token: "...", refreshToken: "...", user: { ... } }
-            const { token, refreshToken, user } = response;
+            const { token, user } = response;
 
             if (token) {
                 // 3. Lưu vào localStorage để tạo "phiên đăng nhập"
-                localStorage.setItem('user_token', token);
-                localStorage.setItem('refresh_token', refreshToken);
+                setAuthTokens(token);
+                // Refresh token do backend đặt trong cookie HttpOnly; frontend không lưu/đọc.
                 localStorage.setItem('user_info', JSON.stringify(user));
 
                 // 4. Thông báo và điều hướng thẳng vào trang trong (ví dụ /)

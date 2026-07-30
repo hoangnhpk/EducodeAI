@@ -8,6 +8,9 @@ using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 using educodeai_server.Config;
 using educodeai_server.Common;
 
@@ -19,14 +22,23 @@ namespace educodeai_server.Services.Implementation
         private readonly PaymentMailOptions _mailOptions;
         private readonly IWebHostEnvironment _env;
         private readonly IDataProtector _cccdDataProtector;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<QuanLyHoSoGiangVienService> _logger;
+        private readonly ITokenService _tokenService;
 
-        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env, IDataProtectionProvider dataProtectionProvider)
+        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env, IDataProtectionProvider dataProtectionProvider, IHttpContextAccessor httpContextAccessor, ILogger<QuanLyHoSoGiangVienService> logger, ITokenService tokenService)
         {
             _context = context;
             _mailOptions = mailOptions.Value;
             _env = env;
             _cccdDataProtector = dataProtectionProvider.CreateProtector("EduCodeAI.CCCD.OcrData.v1");
+            _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
+            _tokenService = tokenService;
         }
+
+        private string? ActorIp() =>
+            _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 
         public async Task<object> LayDanhSachHoSoAsync(string? trangThai = null)
         {
@@ -37,7 +49,7 @@ namespace educodeai_server.Services.Implementation
                 query = query.Where(h => h.TrangThaiHoSo == trangThai);
             }
 
-            var list = await query
+            var rows = await query
                 .OrderByDescending(h => h.NgayTao)
                 .Select(h => new
                 {
@@ -57,7 +69,23 @@ namespace educodeai_server.Services.Implementation
                 })
                 .ToListAsync();
 
-            return list;
+            // I.10: danh sách chỉ cần nhận diện hồ sơ — mask số giấy tờ, không trả full cho mọi bản ghi.
+            return rows.Select(h => new
+            {
+                h.MaHoSoDangKyGiangVien,
+                h.HoTen,
+                h.Email,
+                h.SoDienThoai,
+                h.LinhVucGiangDay,
+                h.LoaiGiayTo,
+                SoGiayTo = MaskSoGiayTo(h.SoGiayTo),
+                h.AnhDaiDienUrl,
+                h.TrangThaiHoSo,
+                h.LyDoTuChoi,
+                h.NgayTao,
+                h.NgayDuyet,
+                h.MaNguoiDung
+            }).ToList();
         }
 
         public async Task<object> LayChiTietHoSoAsync(long maHoSo)
@@ -97,7 +125,7 @@ namespace educodeai_server.Services.Implementation
                 })
                 .FirstOrDefaultAsync();
 
-            if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+            if (hoSo == null) throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
             if (!string.IsNullOrWhiteSpace(hoSo.DuLieuCccdMaHoa)
                 && TryGiaiMaThongTinCccd(hoSo.DuLieuCccdMaHoa, out var thongTinCccd))
@@ -119,21 +147,21 @@ namespace educodeai_server.Services.Implementation
         {
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
-            if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+            if (hoSo == null) throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
-                throw new Exception("Hồ sơ này đã được duyệt trước đó.");
+                throw ApiException.InvalidRequest("Hồ sơ này đã được duyệt trước đó.");
 
             // Kiểm tra trùng tài khoản/email đã tồn tại trong NguoiDungs
             var email = hoSo.Email.Trim().ToLower();
             var taiKhoan = hoSo.TaiKhoan.Trim();
 
             if (await _context.NguoiDungs.AnyAsync(u => u.Email.ToLower() == email))
-                throw new Exception("Email này đã được sử dụng bởi một tài khoản khác.");
+                throw ApiException.InvalidRequest("Email này đã được sử dụng bởi một tài khoản khác.");
 
             if (await _context.NguoiDungs.AnyAsync(u => u.TaiKhoan == taiKhoan))
-                throw new Exception("Tên tài khoản này đã tồn tại, vui lòng liên hệ giảng viên đổi tên đăng nhập.");
+                throw ApiException.InvalidRequest("Tên tài khoản này đã tồn tại, vui lòng liên hệ giảng viên đổi tên đăng nhập.");
 
             int maNguoiDungMoi = 0;
 
@@ -144,6 +172,14 @@ namespace educodeai_server.Services.Implementation
                 await using var tx = await _context.Database.BeginTransactionAsync();
                 try
                 {
+                    // I.7: atomic claim — chỉ request đầu flip được ChoDuyet→DangDuyet (rows=1) mới tạo tài khoản.
+                    // Hai admin bấm duyệt đồng thời cùng hồ sơ: request thua (rows=0) dừng, không tạo 2 tài khoản.
+                    var claimed = await _context.HoSoDangKyGiangViens
+                        .Where(h => h.MaHoSoDangKyGiangVien == maHoSo && h.TrangThaiHoSo == "ChoDuyet")
+                        .ExecuteUpdateAsync(s => s.SetProperty(h => h.TrangThaiHoSo, "DangDuyet"));
+                    if (claimed == 0)
+                        throw ApiException.InvalidRequest("Hồ sơ đang được xử lý hoặc đã được duyệt.");
+
                     // Tạo tài khoản giảng viên (VaiTro = 1)
                     // Lưu mã VietQR vào NguoiDung.MaNganHangNhanTien để dùng chung với ví/rút tiền.
                     var nganHang = DanhMucNganHangLienKet.LayDanhSach().FirstOrDefault(x =>
@@ -189,6 +225,9 @@ namespace educodeai_server.Services.Implementation
                 }
             });
 
+            // I.9: audit — ai duyệt hồ sơ nào, tạo user nào, IP, thời điểm. Không log dữ liệu CCCD/số giấy tờ.
+            _logger.LogInformation("Admin {ActorId} duyệt hồ sơ {MaHoSo} → tạo user {TargetId} từ IP {Ip}.",
+                maQuanTriVien, maHoSo, maNguoiDungMoi, ActorIp());
 
             // Gửi email chúc mừng (ngoài transaction - lỗi email không rollback tài khoản)
             string subject = "Hồ sơ giảng viên EduCodeAI đã được duyệt";
@@ -223,7 +262,7 @@ namespace educodeai_server.Services.Implementation
             }
             catch (Exception exMail)
             {
-                Console.WriteLine($"[DuyetHoSo] Gửi email thất bại: {exMail.Message}");
+                _logger.LogWarning(exMail, "Gửi email duyệt hồ sơ {MaHoSo} thất bại.", maHoSo);
             }
 
             return new
@@ -239,17 +278,21 @@ namespace educodeai_server.Services.Implementation
         {
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
-            if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+            if (hoSo == null) throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
-                throw new Exception("Hồ sơ đã được duyệt, không thể từ chối.");
+                throw ApiException.InvalidRequest("Hồ sơ đã được duyệt, không thể từ chối.");
 
             hoSo.TrangThaiHoSo = "TuChoi";
             hoSo.LyDoTuChoi = request.LyDoTuChoi.Trim();
             hoSo.MaQuanTriVienDuyet = maQuanTriVien;
             hoSo.NgayCapNhat = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            // I.9: audit hành động admin (không log dữ liệu nhạy cảm).
+            _logger.LogInformation("Admin {ActorId} từ chối hồ sơ {MaHoSo} từ IP {Ip}.",
+                maQuanTriVien, maHoSo, ActorIp());
 
             string subject = "Kết quả hồ sơ đăng ký giảng viên EduCodeAI";
             string body = $@"
@@ -280,7 +323,7 @@ namespace educodeai_server.Services.Implementation
             }
             catch (Exception exMail)
             {
-                Console.WriteLine($"[TuChoiHoSo] Gửi email thất bại: {exMail.Message}");
+                _logger.LogWarning(exMail, "Gửi email từ chối hồ sơ {MaHoSo} thất bại.", maHoSo);
             }
 
             return new { success = true, message = "Đã từ chối hồ sơ và gửi email thông báo." };
@@ -290,14 +333,17 @@ namespace educodeai_server.Services.Implementation
         {
             var hoSo = await _context.HoSoDangKyGiangViens
                 .FirstOrDefaultAsync(h => h.MaHoSoDangKyGiangVien == maHoSo);
-            if (hoSo == null) throw new Exception("Không tìm thấy hồ sơ đăng ký giảng viên.");
+            if (hoSo == null) throw ApiException.InvalidRequest("Không tìm thấy hồ sơ đăng ký giảng viên.");
 
 
             if (hoSo.TrangThaiHoSo == "DaDuyet")
-                throw new Exception("Hồ sơ đã được duyệt, không thể yêu cầu bổ sung.");
+                throw ApiException.InvalidRequest("Hồ sơ đã được duyệt, không thể yêu cầu bổ sung.");
 
-            // Sinh token xác thực bổ sung
-            hoSo.BoSungToken = Guid.NewGuid().ToString("N").Substring(0, 12);
+            // I.8: sinh token CSPRNG 256-bit; chỉ lưu HASH trong DB, plaintext chỉ gửi qua email.
+            // Trước đây token là 12 hex đầu của GUID (~48-bit) lưu plaintext → brute-force được.
+            var tokenMaterial = _tokenService.CreateRefreshTokenMaterial();
+            var plainToken = tokenMaterial.PlainToken;
+            hoSo.BoSungToken = _tokenService.HashRefreshToken(plainToken);
             hoSo.BoSungTokenHetHan = DateTime.UtcNow.AddHours(24);
             hoSo.DaNopBoSung = false;
             hoSo.NgayNopBoSung = null;
@@ -308,8 +354,12 @@ namespace educodeai_server.Services.Implementation
             hoSo.NgayCapNhat = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // Gửi email với link bổ sung
-            string boSungLink = $"{_mailOptions.FrontendGiangVienBoSungUrl}/{maHoSo}?token={hoSo.BoSungToken}";
+            // I.9: audit hành động yêu cầu bổ sung (actor admin, hồ sơ, IP) — không log token/PII.
+            _logger.LogInformation("Admin {ActorId} yêu cầu bổ sung hồ sơ {MaHoSo} từ IP {Ip}.",
+                maQuanTriVien, maHoSo, ActorIp());
+
+            // Gửi email với link bổ sung — dùng plaintext token, KHÔNG lưu plaintext ở đâu.
+            string boSungLink = $"{_mailOptions.FrontendGiangVienBoSungUrl}/{maHoSo}?token={plainToken}";
             string subject = "Yêu cầu bổ sung hồ sơ đăng ký giảng viên EduCodeAI";
             string body = $@"
             <div style='font-family: ""Segoe UI"", Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background:#fff; border-radius:12px; border:1px solid #eaeaea; overflow:hidden;'>
@@ -344,11 +394,20 @@ namespace educodeai_server.Services.Implementation
             }
             catch (Exception exMail)
             {
-                Console.WriteLine($"[YeuCauBoSungHoSo] Gửi email thất bại: {exMail.Message}");
+                _logger.LogWarning(exMail, "Gửi email yêu cầu bổ sung hồ sơ {MaHoSo} thất bại.", maHoSo);
             }
 
             return new { success = true, message = "Đã yêu cầu bổ sung hồ sơ và gửi email hướng dẫn." };
         }
+        // I.10: che bớt số giấy tờ/số tài khoản khi trả ra danh sách/response — chỉ lộ 4 ký tự cuối.
+        private static string? MaskSoGiayTo(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return value;
+            var v = value.Trim();
+            if (v.Length <= 4) return new string('*', v.Length);
+            return new string('*', v.Length - 4) + v[^4..];
+        }
+
         private bool TryGiaiMaThongTinCccd(string duLieuMaHoa, out Dictionary<string, string>? thongTinCccd)
         {
             thongTinCccd = null;
