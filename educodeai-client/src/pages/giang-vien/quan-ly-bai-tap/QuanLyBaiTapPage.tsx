@@ -58,7 +58,7 @@ export default function QuanLyBaiTapPage() {
                         <i className="bi bi-journal-code text-primary me-2"></i>
                         Quản lý Bài Tập & Quiz
                     </h2>
-                    <p className="text-muted mb-0">Hệ thống sinh bài tập và câu hỏi trắc nghiệm thông minh bằng AI</p>
+                    <p className="btth-page-subtitle mb-0">Hệ thống sinh bài tập và câu hỏi trắc nghiệm thông minh bằng AI</p>
                 </div>
             </div>
 
@@ -82,7 +82,7 @@ export default function QuanLyBaiTapPage() {
                         onClick={switchToCreateQuiz}
                     >
                         <i className="bi bi-patch-question me-2"></i> Tạo Quiz AI
-                        <span className="badge ms-2" style={{ background: 'var(--warning-soft)', color: 'var(--warning-strong)', fontSize: '10px', padding: '2px 7px', borderRadius: '999px' }}>Mới</span>
+                        <span className="badge ms-2 btth-new-badge" style={{ background: 'var(--warning-soft)', color: 'var(--warning-strong)', fontSize: '10px', padding: '2px 7px', borderRadius: '999px' }}>MỚI</span>
                     </button>
                 </div>
             </div>

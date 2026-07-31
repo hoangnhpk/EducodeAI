@@ -27,7 +27,7 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
                         <th>Chương</th>
                         <th>Bài học</th>
                         <th>Trạng thái</th>
-                        <th>Hành động</th>
+                        <th className="exercise-actions-column">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -80,7 +80,7 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
                                         {baiTap.trangThai}
                                     </span>
                                 </td>
-                                <td>
+                                <td className="exercise-actions-column">
                                     <div className="actions-group">
                                         <button className="action-btn view-btn" onClick={() => onViewClick(baiTap.maBaiTap)}>
                                             <i className="bi bi-eye"></i> Xem

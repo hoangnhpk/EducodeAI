@@ -53,6 +53,64 @@
   padding: 28px 24px;
 }
 
+.khm-wrapper > .khm-course-form-page,
+.khm-page.khm-course-form-page {
+  width: 100% !important;
+  max-width: 1000px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: left;
+  align-items: flex-start;
+}
+
+.khm-course-form-page .khm-breadcrumb,
+.khm-course-form-page .khm-page-header,
+.khm-course-form-page .khm-form-section {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0;
+  margin-right: 0;
+  text-align: left;
+}
+
+.khm-course-form-page .khm-page-header {
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.khm-course-form-page .khm-form-section {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.khm-course-form-page .khm-form-section-header,
+.khm-course-form-page .khm-form-section-body {
+  padding: 24px;
+}
+
+.khm-course-form-page .khm-form-group {
+  margin-bottom: 20px;
+}
+
+.khm-course-form-page .khm-form-input,
+.khm-course-form-page .khm-form-select,
+.khm-course-form-page .khm-form-textarea {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .khm-course-form-page .khm-page-header {
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
+
+  .khm-course-form-page .khm-form-section-header,
+  .khm-course-form-page .khm-form-section-body {
+    padding: 20px;
+  }
+}
+
 /* ---------- Page Header ---------- */
 .khm-page-header {
   display: flex;
@@ -1328,5 +1386,60 @@
 .khm-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .khm-text-primary { color: var(--khm-primary); }
 .khm-font-semibold { font-weight: 600; }
+
+.subtitle-ai-title {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ai-accent-hover);
+}
+
+.subtitle-ai-description {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.subtitle-ai-cost {
+  margin-bottom: 6px;
+}
+
+.subtitle-ai-cost > strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #4c1d95;
+  font-weight: 600;
+}
+
+.subtitle-ai-duration {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.subtitle-ai-gdpr {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.subtitle-ai-gdpr input {
+  width: auto;
+  flex: 0 0 auto;
+  margin: 3px 0 0;
+}
+
+.subtitle-ai-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+}
 .khm-relative { position: relative; }
 .khm-absolute-inset { position: absolute; inset: 0; }

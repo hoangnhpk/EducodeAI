@@ -32,12 +32,18 @@
 /* ── Tabs ── */
 .btth-tabs-wrapper .tabs {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0;
+  padding: 0;
+  margin-bottom: 0;
 }
 
 .btth-tabs-wrapper .tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   padding: 12px 24px;
   border: 1px solid transparent;
   border-bottom: none;
@@ -45,6 +51,7 @@
   color: var(--text-muted);
   font-weight: 600;
   font-size: 14px;
+  line-height: 1;
   cursor: pointer;
   position: relative;
   transition: all var(--transition-fast);
@@ -55,6 +62,16 @@
 
 .btth-tabs-wrapper .tab i {
   font-size: 16px;
+  line-height: 1;
+}
+
+.btth-tabs-wrapper .btth-new-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px !important;
+  line-height: 1;
+  text-align: center;
 }
 
 .btth-tabs-wrapper .tab:hover {
@@ -165,6 +182,141 @@
   padding: 10px 14px;
   font-size: 14px;
   transition: all var(--transition-fast);
+}
+
+.btth-section-block input.form-control,
+.btth-section-block select.form-control,
+.btth-section-block .form-select,
+.btth-tabs-wrapper ~ .fade-in .select-wrapper select.form-control {
+  height: 42px;
+  min-height: 42px;
+  border-radius: var(--radius-md);
+  line-height: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.btth-tabs-wrapper ~ .fade-in .select-wrapper {
+  position: relative;
+}
+
+.btth-tabs-wrapper ~ .fade-in .select-wrapper select.form-control {
+  display: block;
+  width: 100%;
+}
+
+.selected-lesson-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 10px 14px;
+  min-height: 42px;
+  box-sizing: border-box;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: var(--text-main);
+  line-height: 20px;
+}
+
+.selected-lesson-box > i {
+  flex: 0 0 auto;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.selected-lesson-box > span {
+  min-width: 0;
+  line-height: 20px;
+}
+
+.selected-quiz-lesson {
+  gap: 8px;
+}
+
+.quiz-config-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+  width: 100%;
+  padding: 0 12px;
+  margin-bottom: 16px;
+}
+
+.quiz-question-field,
+.quiz-difficulty-field {
+  min-width: 0;
+}
+
+.quiz-question-input {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 42px;
+}
+
+.quiz-question-input input.form-control {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 42px;
+  border-radius: 8px 0 0 8px;
+}
+
+.quiz-question-suffix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.quiz-difficulty-field select.form-control {
+  height: 42px;
+  min-height: 42px;
+}
+
+.quiz-help-text {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.quiz-generate-btn {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px 24px !important;
+  white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+  .quiz-config-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btth-generate-btn {
+  gap: 8px !important;
+  padding: 12px 24px !important;
+  line-height: 1.25;
+}
+
+.btth-generate-btn i,
+.btth-generate-btn .spinner-border {
+  flex: 0 0 auto;
+  line-height: 1;
 }
 
 .form-control:focus {
