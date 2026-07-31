@@ -62,26 +62,11 @@ export const ThanhTieuDe: React.FC<Props> = ({
 
                         <button
                             type="button"
-                            className="btn btn-sm"
+                            className="cp-btn-mua-khoa-hoc"
                             onClick={onMuaKhoaHoc}
-                            style={{
-                                background: '#ffffff',
-                                color: '#f69050',
-                                fontWeight: 700,
-                                fontSize: '0.8rem',
-                                padding: '4px 14px',
-                                borderRadius: '999px',
-                                border: 'none',
-                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                            }}
                             title="Mua toàn bộ khóa học để mở khóa tất cả nội dung"
                         >
-                            <i className="fas fa-shopping-cart" />
+                            <i className="fas fa-shopping-cart" style={{ color: 'inherit' }} />
                             <span className="d-none d-sm-inline">Mua khóa học</span>
                         </button>
                     </div>

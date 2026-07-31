@@ -87,6 +87,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
 
         try {
             const response: any = await axiosClient.post('/api/ChatBotAI/tu-van-hoc-tap', {
+                MaBaiHoc: maBaiHoc || null,
                 LichSuChat: lichSuGuiDi,
                 TieuDeBaiHoc: tieuDeBaiHoc || null,
                 NoiDungBaiHoc: noiDungBaiHoc ? noiDungBaiHoc.substring(0, 3000) : null 
