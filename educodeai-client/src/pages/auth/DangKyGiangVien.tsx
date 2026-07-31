@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { authService } from '../../services/auth.service';
 import { DANH_MUC_NGAN_HANG_MAC_DINH } from '../../constants/danh-muc-ngan-hang-mac-dinh';
 import './DangKyGiangVien.css';
@@ -78,10 +79,13 @@ export default function DangKyGiangVien() {
     bankInfo: null
   });
 
+  const [emailCaptchaToken, setEmailCaptchaToken] = useState<string>('');
+
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const frontInputRef = useRef<HTMLInputElement | null>(null);
   const backInputRef = useRef<HTMLInputElement | null>(null);
   const bankBoxRef = useRef<HTMLDivElement | null>(null);
+  const emailCaptchaRef = useRef<ReCAPTCHA | null>(null);
 
   const [form, setForm] = useState<FormState>({
     hoTen: '',
@@ -328,10 +332,14 @@ export default function DangKyGiangVien() {
       setErrors((prev) => ({ ...prev, email: 'Vui lòng nhập email đúng định dạng trước.' }));
       return;
     }
+    if (!emailCaptchaToken) {
+      setErrors((prev) => ({ ...prev, email: 'Vui lòng xác thực CAPTCHA trước khi gửi OTP.' }));
+      return;
+    }
 
     try {
       setVerifyLoading('email', true);
-      await authService.sendInstructorEmailOtp(email);
+      await authService.sendInstructorEmailOtp(email, emailCaptchaToken);
       setVerification((prev) => ({ ...prev, emailStatus: 'pending', emailOtpSent: true, emailOtpCode: '' }));
       setErrors((prev) => ({ ...prev, email: '', emailOtpCode: '' }));
       Swal.fire('Đã gửi OTP email', 'Vui lòng kiểm tra email. Mã có hiệu lực trong 5 phút.', 'success');
@@ -339,6 +347,9 @@ export default function DangKyGiangVien() {
       setVerification((prev) => ({ ...prev, emailStatus: 'failed', emailOtpSent: false }));
       Swal.fire('Lỗi', error?.response?.data?.message || 'Không gửi được OTP email.', 'error');
     } finally {
+      // reCAPTCHA token single-use: reset sau mỗi lần gửi để lần sau lấy token mới.
+      emailCaptchaRef.current?.reset();
+      setEmailCaptchaToken('');
       setVerifyLoading('email', false);
     }
   };
@@ -407,6 +418,7 @@ export default function DangKyGiangVien() {
       const docMismatch = Boolean(soGiayTo && doc && normalizeDocNumber(soGiayTo) !== normalizeDocNumber(doc));
       const scannedInfo: Record<string, string> = {
         'Loại giấy tờ': docType === 'cccd' ? 'CCCD/CMND' : 'Hộ chiếu',
+        'Số giấy tờ': soGiayTo || 'Không đọc được',
         'Họ tên': hoTen || 'Không đọc được',
         'Ngày sinh': ngaySinh || 'Không đọc được',
         'Giới tính': gioiTinh || 'Không đọc được',
@@ -626,12 +638,14 @@ export default function DangKyGiangVien() {
         )}
 
         {step === 2 && (
-          <div className="dkgv-progress-alt">
-            <div className="dkgv-step completed"><div className="dkgv-step-circle">✓</div><div className="dkgv-step-label">Hồ sơ chuyên môn</div></div>
-            <div className="dkgv-progress-line" aria-hidden="true" />
-            <div className="dkgv-step active"><div className="dkgv-step-circle">2</div><div className="dkgv-step-label">Xác minh danh tính (KYC)</div></div>
-            <div className="dkgv-progress-line" aria-hidden="true" />
-            <div className="dkgv-step"><div className="dkgv-step-circle">3</div><div className="dkgv-step-label">Thanh toán</div></div>
+          <div className="dkgv-progress-header">
+            <div className="dkgv-progress-bar">
+              <div className="dkgv-step completed"><div className="dkgv-step-circle">✓</div><div className="dkgv-step-label">Hồ sơ chuyên môn</div></div>
+              <div className="dkgv-progress-line"><div className="dkgv-progress-line-fill" style={{ width: '100%' }} /></div>
+              <div className="dkgv-step active"><div className="dkgv-step-circle">2</div><div className="dkgv-step-label">Xác minh danh tính (KYC)</div></div>
+              <div className="dkgv-progress-line"><div className="dkgv-progress-line-fill" style={{ width: '0%' }} /></div>
+              <div className="dkgv-step"><div className="dkgv-step-circle">3</div><div className="dkgv-step-label">Thanh toán</div></div>
+            </div>
           </div>
         )}
 
@@ -685,6 +699,18 @@ export default function DangKyGiangVien() {
                       <input className={`dkgv-form-control ${errors.email ? 'is-invalid' : ''}`} placeholder="name@example.com" maxLength={255} value={form.email} onChange={(e) => setField('email', e.target.value.trim())} />
                       <button className="dkgv-btn-brown" type="button" disabled={isVerifying.email || verification.emailStatus === 'verified'} onClick={handleSendEmailOtp}>{isVerifying.email ? 'Đang kiểm tra...' : 'Gửi OTP'}</button>
                     </div>
+                    {verification.emailStatus !== 'verified' && (
+                      <div className="mt-2">
+                        <ReCAPTCHA
+                          ref={emailCaptchaRef}
+                          sitekey="6Legm5csAAAAABr5FTIC25geZIxrxlmF5ORzuiYt"
+                          onChange={(token) => {
+                            setEmailCaptchaToken(token || '');
+                            if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
+                          }}
+                        />
+                      </div>
+                    )}
                     {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
                     {verification.emailOtpSent && verification.emailStatus !== 'verified' && (
                       <div className="dkgv-inline-verify mt-2">

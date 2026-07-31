@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { type NguoiDung } from '@/pages/quan-tri-vien/quan-ly-nguoi-dung/DuLieuNguoiDungDTO'
 import { NguoiDungService } from "@/services/quan-ly-nguoi-dung.service";
 
@@ -67,44 +67,37 @@ const QuanLyNguoiDung = () => {
         } as any;
     }, [getStatusInfo]);
 
+    const [tongSo, setTongSo] = useState(0);
+
+    // H.7: filter + pagination server-side. Gọi lại API khi đổi trang/keyword/vai trò/trạng thái.
     const taiDanhSach = useCallback(async () => {
         setDangTai(true);
         setLoi(false);
         try {
-            const res = await NguoiDungService.layDanhSach();
-            const rawData = Array.isArray(res) ? res : (res as any)?.data || [];
-            const normalized = rawData.map(normalizeUser);
-            setDs(normalized);
+            const vaiTroNum = vaiTroLoc === "Giảng viên" ? 1 : vaiTroLoc === "Học viên" ? 2 : undefined;
+            const res = await NguoiDungService.layDanhSach({
+                page: trangHienTai,
+                pageSize: soLuongMoiTrang,
+                keyword: tuKhoa.trim() || undefined,
+                vaiTro: vaiTroNum,
+                trangThai: trangThaiLoc === "ALL" ? undefined : trangThaiLoc,
+            });
+            setDs((res.data || []).map(normalizeUser));
+            setTongSo(res.total || 0);
         } catch (error) {
             console.error("Lỗi tải danh sách:", error);
             setLoi(true);
         } finally {
             setDangTai(false);
         }
-    }, [normalizeUser]);
+    }, [normalizeUser, trangHienTai, tuKhoa, vaiTroLoc, trangThaiLoc]);
 
     useEffect(() => {
         taiDanhSach();
     }, [taiDanhSach]);
 
-    const danhSachSauLoc = useMemo(() => {
-        const keyword = tuKhoa.toLowerCase().trim();
-        return ds.filter(u => {
-            const matchKeyword = !keyword || (u.hoTen?.toLowerCase().includes(keyword)) || (u.email?.toLowerCase().includes(keyword));
-            const matchVaiTro = vaiTroLoc === "ALL" || u.vaiTro === vaiTroLoc;
-            const matchTrangThai = trangThaiLoc === "ALL" || 
-                                 u.trangThai === trangThaiLoc || 
-                                 (trangThaiLoc === "Bị khóa" && (u.trangThai === "Bị khóa" || u.trangThai === "Tạm khóa"));
-            return matchKeyword && matchVaiTro && matchTrangThai;
-        });
-    }, [ds, tuKhoa, vaiTroLoc, trangThaiLoc]);
-
-    const danhSachPhanTrang = useMemo(() => {
-        const start = (trangHienTai - 1) * soLuongMoiTrang;
-        return danhSachSauLoc.slice(start, start + soLuongMoiTrang);
-    }, [danhSachSauLoc, trangHienTai]);
-
-    const tongSoTrang = Math.ceil(danhSachSauLoc.length / soLuongMoiTrang);
+    const danhSachPhanTrang = ds;
+    const tongSoTrang = Math.ceil(tongSo / soLuongMoiTrang);
 
     const handleSua = useCallback((u: NguoiDung) => { 
         setDangSua(u);
@@ -148,7 +141,7 @@ const QuanLyNguoiDung = () => {
             Swal.fire({ title: 'Lưu ý', text: 'Chỉ có thể xóa tài khoản đã bị khóa vĩnh viễn', icon: 'warning' });
             return;
         }
-        const { isConfirmed } = await Swal.fire({ title: 'Xác nhận xóa?', text: `Bạn có chắc muốn xóa ${u.hoTen}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
+        const { isConfirmed } = await Swal.fire({ title: 'Xác nhận xóa?', text: `Bạn có chắc muốn xóa ${u.hoTen}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: 'var(--danger)' });
         if (isConfirmed) {
             try {
                 await NguoiDungService.xoaNguoiDung(u.maNguoiDung);

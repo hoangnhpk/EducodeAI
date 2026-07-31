@@ -264,7 +264,7 @@ export default function RutTienGiangVien() {
             <div
               className="card h-100 border-primary border-2 shadow-sm overflow-hidden"
               style={{
-                background: "linear-gradient(145deg, #ffffff 0%, var(--primary-soft) 100%)"
+                background: "linear-gradient(145deg, var(--bg-card) 0%, var(--primary-soft) 100%)"
               }}
             >
               <div className="card-body p-3 p-md-4 d-flex flex-column">

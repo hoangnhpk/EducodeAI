@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './QuanLyHocVien.css';
 import Swal from 'sweetalert2';
 import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
-import {
-    BsCheckCircleFill, BsXCircleFill, BsPersonPlusFill, BsSearch,
-    BsPencilSquare, BsTrashFill, BsPersonFill, BsExclamationTriangleFill,
-    BsChevronLeft, BsChevronRight, BsGiftFill
-} from 'react-icons/bs';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface HocVien { maNguoiDung: number; hoTen: string; email: string; anhDaiDien: string | null; trangThai: string; ngayThamGia: string; lyDoKhoa?: string | null; }
 interface FilterParams { Keyword: string; TrangThai: string; Page: number; PageSize: number; }
@@ -53,6 +49,11 @@ export default function QuanLyHocVien() {
     const [tuKhoaLichSu, setTuKhoaLichSu] = useState<string>('');
     const [trangLichSu, setTrangLichSu] = useState<number>(1);
     const pageSizeLichSu = 10;
+
+    const formModalRef = useRef<HTMLDivElement>(null);
+    const deleteModalRef = useRef<HTMLDivElement>(null);
+    useModalA11y(isModalOpen, () => setIsModalOpen(false), formModalRef);
+    useModalA11y(isDeleteModalOpen, () => setIsDeleteModalOpen(false), deleteModalRef);
 
     const API_URL = import.meta.env.VITE_API_URL;
 
@@ -276,7 +277,9 @@ export default function QuanLyHocVien() {
         <div className="qlhv-container relative">
             {toast && (
                 <div className={`qlhv-toast ${toast.type}`}>
-                    {toast.type === 'success' ? <BsCheckCircleFill size={20} /> : <BsXCircleFill size={20} />}
+                    {toast.type === 'success'
+                        ? <i className="fas fa-circle-check" style={{ fontSize: 20 }} aria-hidden="true" />
+                        : <i className="fas fa-circle-xmark" style={{ fontSize: 20 }} aria-hidden="true" />}
                     <span>{toast.message}</span>
                 </div>
             )}
@@ -287,7 +290,7 @@ export default function QuanLyHocVien() {
                     <p className="qlhv-subtitle">Quản lý tài khoản và trạng thái của học viên trong hệ thống.</p>
                 </div>
                 <button onClick={() => openModal('add')} className="qlhv-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <BsPersonPlusFill size={18} /> Thêm học viên
+                    <i className="fas fa-user-plus" style={{ fontSize: 18 }} aria-hidden="true" /> Thêm học viên
                 </button>
             </div>
 
@@ -360,7 +363,7 @@ export default function QuanLyHocVien() {
                                 className="qlhv-page-btn"
                                 title="Trang trước"
                             >
-                                <BsChevronLeft size={18} />
+                                <i className="fas fa-chevron-left" aria-hidden="true" />
                             </button>
                             <button
                                 disabled={trangLichSu >= tongTrangLichSu}
@@ -368,7 +371,7 @@ export default function QuanLyHocVien() {
                                 className="qlhv-page-btn"
                                 title="Trang sau"
                             >
-                                <BsChevronRight size={18} />
+                                <i className="fas fa-chevron-right" aria-hidden="true" />
                             </button>
                         </div>
                     </div>
@@ -386,7 +389,7 @@ export default function QuanLyHocVien() {
                     <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', width: '100%' }}>
                         <input type="text" placeholder="Tìm theo Mã, Họ tên hoặc Email..." className="qlhv-input" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
                         <button type="submit" className="qlhv-btn-search" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <BsSearch /> Tìm kiếm
+                            <i className="fas fa-magnifying-glass" aria-hidden="true" /> Tìm kiếm
                         </button>
                     </form>
                 </div>
@@ -399,7 +402,7 @@ export default function QuanLyHocVien() {
                         <tbody>
                             {loiTai ? (
                                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--danger-strong)' }}>
-                                    <BsExclamationTriangleFill size={28} style={{ display: 'block', margin: '0 auto 8px' }} aria-hidden="true" />
+                                    <i className="fas fa-triangle-exclamation" style={{ display: 'block', margin: '0 auto 8px', fontSize: 28 }} aria-hidden="true" />
                                     Không tải được danh sách học viên.
                                     <div style={{ marginTop: 12 }}>
                                         <button type="button" className="qlhv-btn-search" onClick={() => fetchHocViens()}>Thử lại</button>
@@ -422,7 +425,7 @@ export default function QuanLyHocVien() {
                                         <td>
                                             <div className="qlhv-td-user">
                                                 <div className="qlhv-avatar">
-                                                    {hv.anhDaiDien ? <img src={`${API_URL}${hv.anhDaiDien}`} alt="avt" /> : <BsPersonFill size={24} color="var(--primary)" />}
+                                                    {hv.anhDaiDien ? <img src={`${API_URL}${hv.anhDaiDien}`} alt="avt" /> : <i className="fas fa-user" style={{ fontSize: 24, color: 'var(--primary)' }} aria-hidden="true" />}
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: 'bold' }}>{hv.hoTen}</div>
@@ -439,13 +442,13 @@ export default function QuanLyHocVien() {
                                                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--warning-strong)' }}
                                                 disabled={dangTangCho === hv.maNguoiDung}
                                             >
-                                                <BsGiftFill /> {dangTangCho === hv.maNguoiDung ? 'Đang tặng...' : 'Tặng khóa'}
+                                                <i className="fas fa-gift" aria-hidden="true" /> {dangTangCho === hv.maNguoiDung ? 'Đang tặng...' : 'Tặng khóa'}
                                             </button>
                                             <button onClick={() => openModal('edit', hv)} className="qlhv-action-btn qlhv-btn-edit" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                <BsPencilSquare /> Sửa
+                                                <i className="fas fa-pen-to-square" aria-hidden="true" /> Sửa
                                             </button>
                                             <button onClick={() => handleDeleteClick(hv.maNguoiDung)} className="qlhv-action-btn qlhv-btn-delete" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                <BsTrashFill /> Xóa
+                                                <i className="fas fa-trash" aria-hidden="true" /> Xóa
                                             </button>
                                         </td>
                                     </tr>
@@ -466,7 +469,7 @@ export default function QuanLyHocVien() {
                                 aria-label="Trang trước"
                                 title="Trang trước"
                             >
-                                <BsChevronLeft size={18} />
+                                <i className="fas fa-chevron-left" aria-hidden="true" />
                             </button>
                             <button
                                 disabled={filters.Page >= totalPages}
@@ -475,7 +478,7 @@ export default function QuanLyHocVien() {
                                 aria-label="Trang sau"
                                 title="Trang sau"
                             >
-                                <BsChevronRight size={18} />
+                                <i className="fas fa-chevron-right" aria-hidden="true" />
                             </button>
                         </div>
                     </div>
@@ -484,9 +487,9 @@ export default function QuanLyHocVien() {
 
             {/* Modal Thêm/Sửa */}
             {isModalOpen && (
-                <div className="qlhv-modal-overlay">
-                    <div className="qlhv-modal-content">
-                        <h2 className="qlhv-title" style={{ marginBottom: '24px' }}>{modalMode === 'add' ? 'Thêm Học Viên' : 'Cập Nhật Học Viên'}</h2>
+                <div className="qlhv-modal-overlay" onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}>
+                    <div className="qlhv-modal-content" ref={formModalRef} role="dialog" aria-modal="true" aria-labelledby="qlhv-form-modal-title">
+                        <h2 id="qlhv-form-modal-title" className="qlhv-title" style={{ marginBottom: '24px' }}>{modalMode === 'add' ? 'Thêm Học Viên' : 'Cập Nhật Học Viên'}</h2>
                         <form onSubmit={handleSave} noValidate>
                             <div className="qlhv-form-group">
                                 <label>Họ và tên</label>
@@ -551,10 +554,10 @@ export default function QuanLyHocVien() {
 
             {/* Modal Xác nhận Xóa */}
             {isDeleteModalOpen && (
-                <div className="qlhv-modal-overlay">
-                    <div className="qlhv-modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '32px 24px' }}>
+                <div className="qlhv-modal-overlay" onClick={(e) => e.target === e.currentTarget && setIsDeleteModalOpen(false)}>
+                    <div className="qlhv-modal-content" ref={deleteModalRef} role="dialog" aria-modal="true" style={{ maxWidth: '400px', textAlign: 'center', padding: '32px 24px' }}>
                         <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
-                            <BsExclamationTriangleFill size={56} color="var(--danger)" />
+                            <i className="fas fa-triangle-exclamation" style={{ fontSize: 56, color: 'var(--danger)' }} aria-hidden="true" />
                         </div>
                         <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '12px' }}>
                             Xác nhận xóa?
