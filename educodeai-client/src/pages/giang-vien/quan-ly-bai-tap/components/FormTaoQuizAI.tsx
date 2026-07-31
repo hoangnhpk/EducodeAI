@@ -43,17 +43,11 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
           {/* Bài học readonly */}
           <div className="col-12 mb-4">
             <label className="btth-label">Bài học đang chọn</label>
-            <div className="input-group">
-              <span className="input-group-text bg-light border-end-0" style={{ borderRadius: 'var(--radius-md) 0 0 var(--radius-md)' }}>
-                <i className="bi bi-journal-text" aria-hidden="true" />
+            <div className="selected-lesson-box selected-quiz-lesson">
+              <i className="bi bi-journal-text" aria-hidden="true" />
+              <span style={{ fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}>
+                {tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
               </span>
-              <input
-                type="text"
-                className="form-control border-start-0"
-                style={{ borderRadius: '0 var(--radius-md) var(--radius-md) 0', background: 'var(--bg-main)', fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}
-                value={tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
-                readOnly
-              />
             </div>
           </div>
 
@@ -69,31 +63,32 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
             />
           </div>
 
-          {/* Số câu + Độ khó */}
-          <div className="col-md-6 mb-3">
-            <label className="btth-label">Số câu hỏi</label>
-            <div className="input-group">
-              <input
-                type="number"
-                className="form-control"
-                value={soCau}
-                onChange={(e) => setSoCau(Math.min(20, Math.max(3, Number(e.target.value))))}
-                min={3}
-                max={20}
-              />
-              <span className="input-group-text bg-light">câu</span>
-            </div>
-            <small className="text-muted">Tối thiểu 3, tối đa 20 câu</small>
-          </div>
+            <div className="quiz-config-row">
+              <div className="quiz-question-field">
+                <label className="btth-label">Số câu hỏi</label>
+                <div className="quiz-question-input">
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={soCau}
+                    onChange={(e) => setSoCau(Math.min(20, Math.max(3, Number(e.target.value))))}
+                    min={3}
+                    max={20}
+                  />
+                  <span className="quiz-question-suffix">câu</span>
+                </div>
+                <small className="quiz-help-text">Tối thiểu 3, tối đa 20 câu</small>
+              </div>
 
-          <div className="col-md-6 mb-3">
-            <label className="btth-label">Độ khó</label>
-            <select className="form-select form-control" value={doKho} onChange={(e) => setDoKho(e.target.value)}>
-              <option value="Dễ">Dễ — Câu hỏi cơ bản, nhận biết</option>
-              <option value="Trung bình">Trung bình — Câu hỏi ứng dụng</option>
-              <option value="Khó">Khó — Câu hỏi phân tích, tổng hợp</option>
-            </select>
-          </div>
+              <div className="quiz-difficulty-field">
+                <label className="btth-label">Độ khó</label>
+                <select className="form-select form-control" value={doKho} onChange={(e) => setDoKho(e.target.value)}>
+                  <option value="Dễ">Dễ — Câu hỏi cơ bản, nhận biết</option>
+                  <option value="Trung bình">Trung bình — Câu hỏi ứng dụng</option>
+                  <option value="Khó">Khó — Câu hỏi phân tích, tổng hợp</option>
+                </select>
+              </div>
+            </div>
 
           {/* Nội dung tóm tắt bổ sung */}
           <div className="col-12 mb-3">
@@ -112,7 +107,7 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
         <div className="mt-4 pt-2">
           <button
             type="submit"
-            className="btn w-100 py-3 d-flex align-items-center justify-content-center gap-2"
+            className="btn w-100 py-3 d-flex align-items-center justify-content-center gap-2 quiz-generate-btn"
             style={{ borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '15px', background: 'var(--ai-accent)', color: 'var(--text-white)', boxShadow: 'var(--shadow-md)' }}
             disabled={!baiHocId || isGenerating}
           >
