@@ -181,21 +181,32 @@ namespace educodeai_server.Helpers
             }
         }
 
-        public async Task<string> GenerateAsync(string prompt, bool isJsonMode = false)
+        public async Task<string> GenerateAsync(string prompt, bool isJsonMode = false, string? systemInstruction = null)
         {
-
-
             return await AiRequestQueueHelper.EnqueueAsync(async () =>
             {
                 object config = isJsonMode 
                     ? new { temperature = 0.7, topP = 0.9, maxOutputTokens = 8192, responseMimeType = "application/json" }
                     : new { temperature = 0.7, topP = 0.9, maxOutputTokens = 8192 };
 
-                var requestBody = new
+                object requestBody;
+                if (!string.IsNullOrWhiteSpace(systemInstruction))
                 {
-                    contents = new[] { new { parts = new[] { new { text = prompt } } } },
-                    generationConfig = config
-                };
+                    requestBody = new
+                    {
+                        system_instruction = new { parts = new[] { new { text = systemInstruction } } },
+                        contents = new[] { new { parts = new[] { new { text = prompt } } } },
+                        generationConfig = config
+                    };
+                }
+                else
+                {
+                    requestBody = new
+                    {
+                        contents = new[] { new { parts = new[] { new { text = prompt } } } },
+                        generationConfig = config
+                    };
+                }
 
                 var hopLeKeys = await LayDanhSachKeyHopLeTuRedisAsync();
                 

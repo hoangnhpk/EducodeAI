@@ -86,6 +86,9 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
       controls: 1,
       modestbranding: 1,
       rel: 0,
+      fs: 1,
+      cc_load_policy: 0,
+      iv_load_policy: 1,
     },
   }), []);
 
@@ -287,9 +290,9 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
       // Chỉ hiện Quiz cho những Chapter có câu hỏi (videoQuizs.length > 0)
       const currentChapters = chaptersRef.current;
       if (currentChapters.length > 0) {
-        const chuaKiemTra = currentChapters.find(c => 
-          !c.daKiemTra && 
-          c.videoQuizs && c.videoQuizs.length > 0 && 
+        const chuaKiemTra = currentChapters.find(c =>
+          !c.daKiemTra &&
+          c.videoQuizs && c.videoQuizs.length > 0 &&
           currentVideoTime >= c.thoiGianKetThuc
         );
         if (chuaKiemTra) {
@@ -377,13 +380,12 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
             lastRealTimeRef.current = Date.now();
           }}
         >
-          {/* Phụ đề: browser chỉ render <track> định dạng VTT. SRT bị bỏ qua (cần convert, ngoài phạm vi). */}
+          {/* Phụ đề: browser chỉ render <track> định dạng VTT. SRT bị bỏ qua. */}
           {subtitleUrl && subtitleUrl.toLowerCase().endsWith('.vtt') && (
             <track
               kind="subtitles"
               srcLang="vi"
               label="Tiếng Việt"
-              default
               src={subtitleUrl}
             />
           )}

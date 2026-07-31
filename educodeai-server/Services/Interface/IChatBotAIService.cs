@@ -7,6 +7,6 @@ namespace educodeai_server.Services.Interface
     {
         Task<string> TuVanHocTapAsync(YeuCauChatAIDTO yeuCau);
         Task<string> TomTatVideoAsync(YeuCauTomTatVideoDTO yeuCau);
-        Task<VideoAnalysisResultDTO?> PhanTichVideoAsync(string linkVideo, string tieuDeBaiHoc);
+        Task<VideoAnalysisResultDTO?> PhanTichVideoAsync(string linkVideo, string tieuDeBaiHoc, string? subtitleUrl = null);
     }
 }

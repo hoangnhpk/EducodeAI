@@ -141,9 +141,13 @@ export const DanhSachBaiHoc: React.FC<Props> = ({
                           </div>
 
                           <div className="cp-lesson-status">
-                            {daHoanThanh && <i className="fas fa-check-circle text-success"></i>}
-                            {dangHocVideo && !daHoanThanh && <i className="far fa-dot-circle"></i>}
-                            {biKhoa && <i className="fas fa-lock"></i>}
+                            {biKhoa ? (
+                              <i className="fas fa-lock"></i>
+                            ) : daHoanThanh ? (
+                              <i className="fas fa-check-circle text-success"></i>
+                            ) : dangHocVideo ? (
+                              <i className="far fa-dot-circle"></i>
+                            ) : null}
                           </div>
                         </div>
 
