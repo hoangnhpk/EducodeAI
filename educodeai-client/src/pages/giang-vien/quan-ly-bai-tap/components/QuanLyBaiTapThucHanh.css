@@ -3,6 +3,35 @@
    Style phục vụ module Bài Tập Thực Hành AI (Giảng viên)
    ============================================================ */
 
+.test-case-field-shell {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.test-case-textarea {
+  width: 100%;
+  max-width: 100%;
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.test-case-type-cell {
+  vertical-align: middle !important;
+  white-space: nowrap;
+}
+
+.test-case-type-select {
+  min-width: 120px;
+  max-width: 100%;
+  padding: 6px 28px 6px 12px !important;
+  white-space: nowrap;
+  text-overflow: clip;
+  box-sizing: border-box;
+}
+
 .btth-container {
   font-family: var(--font-main);
   color: var(--text-main);
