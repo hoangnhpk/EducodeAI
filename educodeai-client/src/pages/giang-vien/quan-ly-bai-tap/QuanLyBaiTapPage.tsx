@@ -1,4 +1,4 @@
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import './QuanLyBaiTap.css';
 import './components/QuanLyBaiTapThucHanh.css';
 import QuizDetailView from './components/QuizDetailView';
@@ -16,6 +16,8 @@ import StatusSinhAI from './components/StatusSinhAI';
 
 export default function QuanLyBaiTapPage() {
     const [cheDoManHinh, setCheDoManHinh] = useState<'list' | 'createPractice' | 'createQuiz'>('list');
+    const modalTriggerRef = useRef<HTMLButtonElement | null>(null);
+    const modalContentRef = useRef<HTMLDivElement | null>(null);
 
     const {
         isLoading,
@@ -38,15 +40,46 @@ export default function QuanLyBaiTapPage() {
     useEffect(() => {
         if (!modalState.isModalOpen) return;
 
+        const modal = modalContentRef.current;
+        const focusableSelector = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+        const focusableElements = () => Array.from(modal?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
+        focusableElements()[0]?.focus();
+
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape' || event.key === 'Esc') {
                 modalState.closeModal();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+
+            const elements = focusableElements();
+            if (elements.length === 0) {
+                event.preventDefault();
+                modal?.focus();
+                return;
+            }
+            const first = elements[0];
+            const last = elements[elements.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
             }
         };
 
         document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            modalTriggerRef.current?.focus();
+        };
     }, [modalState.isModalOpen, modalState.closeModal]);
+
+    const handleViewItem = (item: Parameters<typeof handleViewClick>[0], trigger: HTMLButtonElement) => {
+        modalTriggerRef.current = trigger;
+        handleViewClick(item);
+    };
 
     const switchToCreatePractice = () => {
         setCheDoManHinh('createPractice');
@@ -109,7 +142,7 @@ export default function QuanLyBaiTapPage() {
                         <ExerciseTable 
                             isLoading={isLoading} 
                             danhSachHienThi={danhSachHienThi} 
-                            onViewClick={handleViewClick} 
+                            onViewClick={handleViewItem}
                             onDeleteClick={handleDeleteClick} 
                             onCreateClick={switchToCreatePractice}
                         />
@@ -135,7 +168,16 @@ export default function QuanLyBaiTapPage() {
 
                     {modalState.isModalOpen && (
                         <div className="modal-backdrop-custom" onClick={modalState.closeModal}>
-                            <div className="modal-dialog-custom" onClick={(event) => event.stopPropagation()}>
+                            <div
+                                ref={modalContentRef}
+                                className="modal-dialog-custom"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="exercise-detail-modal-title"
+                                tabIndex={-1}
+                                onClick={(event) => event.stopPropagation()}
+                            >
+                                <h2 id="exercise-detail-modal-title" className="visually-hidden">Chi tiết bài tập</h2>
                                 <button
                                     type="button"
                                     className="btn-close modal-close-button"
