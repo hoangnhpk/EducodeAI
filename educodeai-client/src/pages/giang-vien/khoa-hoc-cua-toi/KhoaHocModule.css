@@ -79,9 +79,9 @@
 }
 
 .khm-course-form-page .khm-form-section {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .khm-course-form-page .khm-form-section-header,
@@ -1405,7 +1405,7 @@
 .subtitle-ai-cost > strong {
   display: block;
   margin-bottom: 6px;
-  color: #4c1d95;
+  color: var(--ai-accent-hover);
   font-weight: 600;
 }
 

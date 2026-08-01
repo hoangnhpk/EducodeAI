@@ -363,7 +363,8 @@
     align-items: center;
     justify-content: center;
     padding: 16px;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(17, 24, 39, 0.6);
+    backdrop-filter: blur(4px);
 }
 
 .modal-dialog-custom {
@@ -375,8 +376,8 @@
     max-width: 900px;
     max-height: 90vh;
     overflow: hidden;
-    background: var(--bg-card, #fff);
-    border-radius: 12px;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
 }
 
@@ -396,7 +397,7 @@
     height: 32px;
     padding: 8px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.92);
+    background-color: var(--bg-card);
     box-shadow: var(--shadow-sm);
 }
 
