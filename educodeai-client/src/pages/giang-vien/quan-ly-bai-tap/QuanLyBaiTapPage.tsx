@@ -1,4 +1,4 @@
-import { useState, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import './QuanLyBaiTap.css';
 import './components/QuanLyBaiTapThucHanh.css';
 import QuizDetailView from './components/QuizDetailView';
@@ -34,6 +34,19 @@ export default function QuanLyBaiTapPage() {
     };
 
     const ai = useAIGenerator(handleAIGeneratorSuccess);
+
+    useEffect(() => {
+        if (!modalState.isModalOpen) return;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' || event.key === 'Esc') {
+                modalState.closeModal();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [modalState.isModalOpen, modalState.closeModal]);
 
     const switchToCreatePractice = () => {
         setCheDoManHinh('createPractice');
@@ -121,16 +134,27 @@ export default function QuanLyBaiTapPage() {
                     )}
 
                     {modalState.isModalOpen && (
-                        <div className="modal-backdrop-custom" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1040, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div className="modal-dialog-custom" style={{ background: 'white', borderRadius: '12px', width: '80%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', padding: '24px', zIndex: 1041, position: 'relative' }}>
-                                <button className="btn-close position-absolute top-0 end-0 m-3" onClick={modalState.closeModal}></button>
-                                {modalState.isLoadingDetails ? (
-                                    <div className="text-center p-5"><i className="bi bi-arrow-repeat fs-1 text-primary" style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}></i><div className="mt-2 text-muted">Đang tải dữ liệu...</div></div>
-                                ) : (
-                                    <Suspense fallback={<div className="text-center p-5">Đang tải...</div>}>
-                                        <QuizDetailView data={modalState.chiTietQuiz} />
-                                    </Suspense>
-                                )}
+                        <div className="modal-backdrop-custom" onClick={modalState.closeModal}>
+                            <div className="modal-dialog-custom" onClick={(event) => event.stopPropagation()}>
+                                <button
+                                    type="button"
+                                    className="btn-close modal-close-button"
+                                    onClick={modalState.closeModal}
+                                    aria-label="Đóng"
+                                />
+                                <div className="modal-scroll-body">
+                                    {modalState.isLoadingDetails ? (
+                                        <div className="text-center p-5"><i className="bi bi-arrow-repeat fs-1 text-primary" style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}></i><div className="mt-2 text-muted">Đang tải dữ liệu...</div></div>
+                                    ) : (
+                                        <Suspense fallback={<div className="text-center p-5">Đang tải...</div>}>
+                                            {modalState.modalType === 'IDE' ? (
+                                                <PreviewBaiTapAI data={modalState.chiTietBaiTap} editable={false} onCancel={modalState.closeModal} />
+                                            ) : modalState.modalType === 'Quiz' ? (
+                                                <QuizDetailView data={modalState.chiTietBaiTap} />
+                                            ) : null}
+                                        </Suspense>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}

@@ -4,7 +4,7 @@ import type { DanhSachBaiTapDTO } from '../types';
 interface ExerciseTableProps {
     isLoading: boolean;
     danhSachHienThi: DanhSachBaiTapDTO[];
-    onViewClick: (maBaiTap: number) => void;
+    onViewClick: (item: DanhSachBaiTapDTO) => void;
     onDeleteClick: (maBaiTap: number, tenBaiTap: string) => void;
     onCreateClick: () => void;
 }
@@ -82,7 +82,7 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
                                 </td>
                                 <td className="exercise-actions-column">
                                     <div className="actions-group">
-                                        <button className="action-btn view-btn" onClick={() => onViewClick(baiTap.maBaiTap)}>
+                                        <button className="action-btn view-btn" onClick={() => onViewClick(baiTap)}>
                                             <i className="bi bi-eye"></i> Xem
                                         </button>
                                         <button className="action-btn delete-btn"
