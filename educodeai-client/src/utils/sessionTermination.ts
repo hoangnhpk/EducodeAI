@@ -5,6 +5,7 @@ let hasRedirectedToLogin = false
 export const clearLocalSession = (): void => {
   clearAuthTokens()
   localStorage.removeItem('user_info')
+  window.dispatchEvent(new Event('auth:session-cleared'))
 }
 
 export const redirectToLoginOnce = (navigate: (path: string) => void): boolean => {

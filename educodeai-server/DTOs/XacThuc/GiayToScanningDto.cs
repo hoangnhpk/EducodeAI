@@ -15,6 +15,9 @@ namespace educodeai_server.DTOs.XacThuc
         [Required]
         [RegularExpression(@"^(CCCD|Passport)$", ErrorMessage = "Loại giấy tờ phải là CCCD hoặc Passport")]
         public string LoaiGiayTo { get; set; } = "CCCD";
+
+        [StringLength(255)]
+        public string? NguyenQuan { get; set; }
     }
 
     public class GiayToScanningResponse

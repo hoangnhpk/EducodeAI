@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { authService } from '../../../services/auth.service';
+import { clearLocalSession, redirectToLoginOnce } from '../../../utils/sessionTermination';
 import './bao-mat.css';
 
 const QuanLyPhienDangNhap: React.FC = () => {
+    const navigate = useNavigate();
     const [sessions, setSessions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showOtpDiv, setShowOtpDiv] = useState(false);
@@ -49,8 +52,12 @@ const QuanLyPhienDangNhap: React.FC = () => {
                 DanhSachMaPhien: logoutType === 'SINGLE' && selectedSessionId ? [selectedSessionId] : [],
                 OtpCode: otp
             });
+            if (logoutType === 'ALL') {
+                clearLocalSession();
+                redirectToLoginOnce(navigate);
+                return;
+            }
             Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đã đăng xuất thiết bị an toàn.', timer: 2000, showConfirmButton: false});
-            setShowOtpDiv(false);
             setOtp('');
             setSelectedSessionId(null);
             fetchSessions();

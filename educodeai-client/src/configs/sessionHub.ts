@@ -7,6 +7,7 @@ import { redirectToLoginOnce } from "../utils/sessionTermination";
 // accessTokenFactory (cách chuẩn SignalR); C.10 hoãn nên token vẫn ở localStorage.
 
 let connection: signalR.HubConnection | null = null;
+let sessionClearHandler: (() => void) | null = null;
 
 const getToken = () => getAuthTokens().accessToken || "";
 
@@ -27,7 +28,10 @@ const forceLogout = (title: string, message: string) => {
 };
 
 export const startSessionHub = async (): Promise<void> => {
-  if (connection) return;
+  if (connection) return
+  window.removeEventListener('auth:session-cleared', sessionClearHandler ?? (() => undefined))
+  sessionClearHandler = () => { void stopSessionHub() }
+  window.addEventListener('auth:session-cleared', sessionClearHandler)
   const token = getToken();
   if (!token) return;
 
@@ -70,6 +74,10 @@ export const startSessionHub = async (): Promise<void> => {
 };
 
 export const stopSessionHub = async (): Promise<void> => {
+  if (sessionClearHandler) {
+    window.removeEventListener('auth:session-cleared', sessionClearHandler)
+    sessionClearHandler = null
+  }
   if (!connection) return;
   const c = connection;
   connection = null;
