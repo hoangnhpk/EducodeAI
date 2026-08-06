@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/auth.service";
-import { clearAuthTokens } from "../../utils/authStorage";
+import { redirectToLoginOnce } from "../../utils/sessionTermination";
 
 export default function HeaderHocVien() {
   const navigate = useNavigate();
@@ -24,11 +24,8 @@ export default function HeaderHocVien() {
     try {
       await authService.logout();
     } finally {
-      clearAuthTokens();
-      localStorage.removeItem("user_info");
       setUser(null);
-      alert("Bạn đã đăng xuất thành công!");
-      navigate("/dang-nhap");
+      redirectToLoginOnce(navigate);
     }
   };
 
@@ -49,6 +46,9 @@ export default function HeaderHocVien() {
         className="navbar-toggler me-4"
         data-bs-toggle="collapse"
         data-bs-target="#navbarCollapse"
+        aria-controls="navbarCollapse"
+        aria-expanded="false"
+        aria-label="Mở menu điều hướng"
       >
         <span className="navbar-toggler-icon"></span>
       </button>
@@ -74,14 +74,15 @@ export default function HeaderHocVien() {
           {/* KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP */}
           {user ? (
             <div className="nav-item dropdown px-lg-4">
-              <a
-                href="#"
-                className="nav-link dropdown-toggle d-flex align-items-center"
+              <button
+                type="button"
+                className="nav-link dropdown-toggle d-flex align-items-center border-0 bg-transparent"
                 data-bs-toggle="dropdown"
-                onClick={(e) => e.preventDefault()}
+                aria-expanded="false"
+                aria-label="Mở menu tài khoản"
               >
                 <span className="fw-bold d-none d-lg-inline">{user.hoTen || user.name}</span>
-              </a>
+              </button>
 
               {/* DANH SÁCH MENU XỔ XUỐNG */}
               <div className="dropdown-menu dropdown-menu-end fade-down m-0 shadow-sm border-0">

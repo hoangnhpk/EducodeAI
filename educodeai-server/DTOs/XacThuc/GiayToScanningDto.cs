@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 
 namespace educodeai_server.DTOs.XacThuc
@@ -31,5 +32,16 @@ namespace educodeai_server.DTOs.XacThuc
         public string? DanToc { get; set; }
         public string? TonGiao { get; set; }
         public string? NguyenQuan { get; set; }
+
+        [JsonIgnore]
+        public string ContractVersion { get; set; } = "identity-scan.v2";
+        [JsonIgnore]
+        public string Status { get; set; } = "Rejected";
+        [JsonIgnore]
+        public string AssuranceLevel { get; set; } = "None";
+        [JsonIgnore]
+        public string? FailureCode { get; set; }
+        [JsonIgnore]
+        public string PolicyVersion { get; set; } = "cccd-policy.v1";
     }
 }

@@ -10,6 +10,7 @@ using educodeai_server.Services.Implement;
 using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CloudinaryDotNet;
@@ -21,6 +22,8 @@ using StackExchange.Redis;
 using educodeai_server.Hubs;
 using educodeai_server.Workers;
 using FFMpegCore;
+using educodeai_server.Services.RefreshTokens;
+using educodeai_server.Services.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -186,7 +189,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
 // Dịch vụ Xác thực và Captcha mới
-builder.Services.AddScoped<ICaptchaService, CaptchaService>();
+builder.Services.AddHttpClient<ICaptchaService, CaptchaService>();
 builder.Services.AddScoped<IXacThucService, XacThucService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 // Cache trạng thái user/session cho hot-path middleware (G.1); chạy trên IDistributedCache (Redis/memory fallback).
@@ -197,6 +200,18 @@ builder.Services.AddScoped<ISessionRealtimeNotifier, SessionRealtimeNotifier>();
 builder.Services.AddScoped<IOtpService, OtpService>();
 // Rate-limit phát/verify OTP theo purpose + identifier + IP (D.3); fail-open khi cache lỗi.
 builder.Services.AddScoped<IOtpRateLimiter, OtpRateLimiter>();
+builder.Services.Configure<RefreshTokenCleanupOptions>(builder.Configuration.GetSection("RefreshTokenCleanup"));
+builder.Services.AddSingleton<RefreshTokenCleanupService>();
+builder.Services.AddHostedService<RefreshTokenCleanupWorker>();
+builder.Services.Configure<RequestOriginOptions>(builder.Configuration.GetSection("Security:RequestOrigin"));
+builder.Services.AddSingleton<IValidateOptions<RequestOriginOptions>, RequestOriginOptionsValidator>();
+builder.Services.AddOptions<RequestOriginOptions>().ValidateOnStart();
+builder.Services.Configure<RefreshCookieOptions>(builder.Configuration.GetSection("Security:RefreshCookie"));
+builder.Services.Configure<TrustedProxyOptions>(options =>
+    options.Proxies = builder.Configuration.GetSection("Security:TrustedProxies").Get<string[]>() ?? []);
+builder.Services.AddSingleton<IValidateOptions<TrustedProxyOptions>, TrustedProxyOptionsValidator>();
+builder.Services.AddOptions<TrustedProxyOptions>().ValidateOnStart();
+builder.Services.AddSingleton<IRequestOriginValidator, RequestOriginValidator>();
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
@@ -335,14 +350,23 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://educodeai-client.vercel.app",
-                           "http://localhost:3000", "http://localhost:3001", "http://localhost:5173",
-                           "http://127.0.0.1:3000", "http://127.0.0.1:3001", "http://127.0.0.1:5173",
-                           "http://[::1]:3000", "http://[::1]:3001", "http://[::1]:5173")
+        var allowedOrigins = builder.Configuration.GetSection("Security:RequestOrigin:AllowedOrigins").Get<string[]>() ?? [];
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
     });
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    var proxies = builder.Configuration.GetSection("Security:TrustedProxies").Get<string[]>() ?? [];
+    foreach (var proxy in proxies)
+    {
+        if (System.Net.IPAddress.TryParse(proxy, out var address)) options.KnownProxies.Add(address);
+    }
 });
 
 // ==========================================
@@ -352,6 +376,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("RemoteLogoutOtpSend", httpContext => CreateRemoteLogoutLimiter(httpContext, 3));
+    options.AddPolicy("RemoteLogoutOtpVerify", httpContext => CreateRemoteLogoutLimiter(httpContext, 10));
     options.AddPolicy("QuetGiayToPolicy", httpContext =>
     {
         var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -366,6 +392,22 @@ builder.Services.AddRateLimiter(options =>
             });
     });
 });
+
+static System.Threading.RateLimiting.RateLimitPartition<string> CreateRemoteLogoutLimiter(HttpContext context, int permitLimit)
+{
+    var userId = context.User.FindFirst("id")?.Value ?? "anonymous";
+    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    var partition = $"{userId}:{ip}";
+    return System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        partition,
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
+        {
+            PermitLimit = permitLimit,
+            Window = TimeSpan.FromMinutes(5),
+            QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0
+        });
+}
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -607,6 +649,8 @@ if (app.Environment.IsDevelopment())
 // app.UseSwaggerUI();
 // Local frontend ch?y HTTP (http://localhost:3000), n?n kh?ng redirect preflight OPTIONS sang HTTPS ? Development.
 // Production v?n b?t bu?c HTTPS.
+// Forwarded headers must run before HTTPS redirection and security middleware.
+app.UseForwardedHeaders();
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();

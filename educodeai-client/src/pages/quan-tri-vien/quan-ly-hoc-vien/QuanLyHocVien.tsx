@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './QuanLyHocVien.css';
 import Swal from 'sweetalert2';
 import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
+import PasswordInput from '@/components/PasswordInput';
 import {
     BsCheckCircleFill, BsXCircleFill, BsPersonPlusFill, BsSearch,
     BsPencilSquare, BsTrashFill, BsPersonFill, BsExclamationTriangleFill,
@@ -480,11 +481,15 @@ export default function QuanLyHocVien() {
                                 {formErrors.email && <span className="qlhv-error-text">{formErrors.email}</span>}
                             </div>
 
-                            <div className="qlhv-form-group">
-                                <label>{modalMode === 'add' ? 'Mật khẩu' : 'Mật khẩu mới (Bỏ trống nếu không đổi)'}</label>
-                                <input type="password" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.matKhauMoi ? '#ef4444' : '' }} value={formData.matKhauMoi} onChange={e => { setFormData({ ...formData, matKhauMoi: e.target.value }); setFormErrors({ ...formErrors, matKhauMoi: '' }); }} />
-                                {formErrors.matKhauMoi && <span className="qlhv-error-text">{formErrors.matKhauMoi}</span>}
-                            </div>
+                            <PasswordInput
+                                id="quan-ly-hoc-vien-mat-khau"
+                                label={modalMode === 'add' ? 'Mật khẩu' : 'Mật khẩu mới (Bỏ trống nếu không đổi)'}
+                                autoComplete="new-password"
+                                className="qlhv-input"
+                                containerClassName="qlhv-form-group"
+                                value={formData.matKhauMoi}
+                                onChange={e => { setFormData({ ...formData, matKhauMoi: e.target.value }); setFormErrors({ ...formErrors, matKhauMoi: '' }); }}
+                            />
 
                             {/*  HIỂN THỊ CHỌN TRẠNG THÁI KHI Ở CHẾ ĐỘ SỬA */}
                             {modalMode === 'edit' && (

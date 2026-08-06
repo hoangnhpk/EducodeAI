@@ -46,6 +46,8 @@ namespace educodeai_server.Models
         // CÁC THƯỜNG CHO BẢO MẬT & OTP
         public DateTime? NgayDangNhapCuoi { get; set; }
 
+        public int SecurityVersion { get; set; }
+
         [StringLength(10)]
         public string? MaOTP { get; set; }
         public DateTime? ThoiGianHetHanOTP { get; set; }
