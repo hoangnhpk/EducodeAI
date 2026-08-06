@@ -5,6 +5,8 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import { authService } from '../../services/auth.service';
 import { DANH_MUC_NGAN_HANG_MAC_DINH } from '../../constants/danh-muc-ngan-hang-mac-dinh';
 import './DangKyGiangVien.css';
+import PasswordInput from '../../components/PasswordInput';
+import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
 
 type PaymentMethod = 'BANK' | 'PAYPAL' | 'PAYONEER';
 
@@ -200,7 +202,9 @@ export default function DangKyGiangVien() {
     );
   };
 
-  const normalizeDocNumber = (value: string) => value.replace(/\D/g, '');
+  const normalizeDocNumber = (value: string) => docType === 'cccd'
+    ? value.replace(/[\s.-]/g, '')
+    : value.trim().toUpperCase();
   const isUnreadableValue = (value?: string) => {
     if (!value) return true;
     const cleaned = value.trim();
@@ -409,7 +413,7 @@ export default function DangKyGiangVien() {
       const diaChi = payload?.diaChi || payload?.DiaChi || '';
       const quocTich = payload?.quocTich || payload?.QuocTich || '';
       const nguyenQuan = payload?.nguyenQuan || payload?.NguyenQuan || '';
-      const thanhCong = payload?.thanhCong ?? payload?.ThanhCong ?? true;
+      const thanhCong = payload?.thanhCong ?? payload?.ThanhCong ?? false;
 
       if (!thanhCong) {
         throw { response: { data: payload } };
@@ -425,7 +429,7 @@ export default function DangKyGiangVien() {
         'Ngày cấp': ngayCap || 'Không đọc được',
         'Nơi cấp': form.noiCap.trim() || 'Chưa nhập',
         'Địa chỉ': diaChi || 'Không đọc được',
-        'Quốc tịch': quocTich || 'Không đọc được'
+        'Quốc tịch': quocTich || 'Không đọc được',
       };
       if (!isUnreadableValue(nguyenQuan)) scannedInfo['Quê quán'] = nguyenQuan;
       // keep scanned number for mismatch check only
@@ -474,7 +478,7 @@ export default function DangKyGiangVien() {
       return;
     }
     setVerification((prev) => ({ ...prev, cccdStatus: 'verified' }));
-    Swal.fire('Đã xác nhận', 'Thông tin giấy tờ đã được xác nhận.', 'success');
+    Swal.fire('Đã xác nhận thông tin', 'Thông tin đã được người dùng kiểm tra; hệ thống sẽ đối chiếu lại ở máy chủ khi gửi hồ sơ.', 'success');
   };
 
   const handleResetIdentityUpload = () => {
@@ -585,33 +589,40 @@ export default function DangKyGiangVien() {
     onPick: (file: File | null) => void,
     errorKey: string,
     preview: string | null
-  ) => (
+  ) => {
+    const inputId = `dkgv-upload-${errorKey}`;
+    const errorId = `${inputId}-error`;
+    return (
     <div className="dkgv-upload-box-wrap">
-      <div className="dkgv-upload-box-label">{label}</div>
+      <label className="dkgv-upload-box-label" htmlFor={inputId}>{label}</label>
       <input
+        id={inputId}
         ref={inputRef}
         type="file"
-        accept="image/*"
-        hidden
+        accept="image/jpeg,image/png,image/webp"
+        className="visually-hidden"
+        aria-invalid={Boolean(errors[errorKey])}
+        aria-describedby={errors[errorKey] ? errorId : undefined}
         onChange={(e) => onPick(e.target.files?.[0] || null)}
       />
-      <div className={preview ? 'dkgv-upload-box dkgv-upload-has-preview' : 'dkgv-upload-box'} onClick={() => inputRef.current?.click()} role="button" tabIndex={0}>
+      <button type="button" className={preview ? 'dkgv-upload-box dkgv-upload-has-preview' : 'dkgv-upload-box'} onClick={() => inputRef.current?.click()}>
         {preview ? (
           <div className="dkgv-preview-container">
-            <img src={preview} alt={label} className="dkgv-preview-img" />
+            <img src={preview} alt={`Xem trước ${label.toLowerCase()}`} className="dkgv-preview-img" />
           </div>
         ) : (
           <>
-            <div className="dkgv-upload-box-icon"><i className="bi bi-image" /></div>
-            <div className="dkgv-upload-box-title">Kéo thả hoặc Nhấp để tải lên</div>
-            <div className="dkgv-upload-box-desc">Hỗ trợ JPG, PNG (Tối đa 5MB)</div>
+            <div className="dkgv-upload-box-icon" aria-hidden="true"><i className="bi bi-image" /></div>
+            <div className="dkgv-upload-box-title">Chọn ảnh để tải lên</div>
+            <div className="dkgv-upload-box-desc">Hỗ trợ JPG, PNG, WEBP (Tối đa 5MB)</div>
           </>
         )}
-      </div>
-      {file && <div className="small text-success mt-2">Đã chọn: {file.name}</div>}
-      {errors[errorKey] && <div className="text-danger small mt-1">{errors[errorKey]}</div>}
+      </button>
+      {file && <div className="small text-success mt-2" role="status">Đã chọn: {file.name}</div>}
+      {errors[errorKey] && <div id={errorId} className="text-danger small mt-1" role="alert">{errors[errorKey]}</div>}
     </div>
-  );
+    );
+  };
 
   return (
     <div className="dkgv-container dkgv-registration-page">
@@ -666,21 +677,24 @@ export default function DangKyGiangVien() {
             <>
               <div className="dkgv-avatar-upload">
                 <input
+                  id="dkgv-avatar"
                   ref={avatarInputRef}
                   type="file"
-                  accept="image/*"
-                  hidden
+                  accept="image/jpeg,image/png,image/webp"
+                  className="visually-hidden"
+                  aria-describedby={errors.anhDaiDien ? 'dkgv-avatar-error' : 'dkgv-avatar-help'}
+                  aria-invalid={Boolean(errors.anhDaiDien)}
                   onChange={(e) => handleImagePick(e.target.files?.[0] || null, 'anhDaiDien', avatarInputRef, 'anhDaiDien')}
                 />
-                <div className="dkgv-avatar-circle" onClick={() => avatarInputRef.current?.click()} role="button" tabIndex={0}>
+                <button type="button" className="dkgv-avatar-circle" onClick={() => avatarInputRef.current?.click()} aria-label="Chọn ảnh đại diện">
                   {previewAvatar ? <img src={previewAvatar} alt="Ảnh đại diện" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} /> : <i className="bi bi-camera dkgv-avatar-icon" />}
                   <div className="dkgv-avatar-edit"><i className="bi bi-pencil-fill" /></div>
-                </div>
+                </button>
                 <div className="dkgv-avatar-info">
                   <h5>Ảnh đại diện</h5>
-                  <p>Sử dụng ảnh chân dung rõ nét. Định dạng JPG, PNG, tối đa 5MB.</p>
-                  <button className="dkgv-btn-outline" type="button" onClick={() => avatarInputRef.current?.click()}>Tải ảnh lên</button>
-                  {errors.anhDaiDien && <div className="text-danger small mt-2">{errors.anhDaiDien}</div>}
+                  <p id="dkgv-avatar-help">Sử dụng ảnh chân dung rõ nét. Định dạng JPG, PNG, WEBP, tối đa 5MB.</p>
+                  <label className="dkgv-btn-outline" htmlFor="dkgv-avatar">Tải ảnh lên</label>
+                  {errors.anhDaiDien && <div id="dkgv-avatar-error" className="text-danger small mt-2" role="alert">{errors.anhDaiDien}</div>}
                 </div>
               </div>
 
@@ -691,7 +705,7 @@ export default function DangKyGiangVien() {
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label"><i className="bi bi-link-45deg me-2" />Link LinkedIn</label><input className="dkgv-form-control" placeholder="https://linkedin.com/in/username" maxLength={255} value={form.linkedInUrl} onChange={(e) => setField('linkedInUrl', e.target.value)} /></div></div>
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label"><i className="bi bi-globe2 me-2" />Portfolio / Website</label><input className="dkgv-form-control" placeholder="https://yourwebsite.com" maxLength={255} value={form.websiteUrl} onChange={(e) => setField('websiteUrl', e.target.value)} /></div></div>
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tài khoản</label><input className={`dkgv-form-control ${errors.taiKhoan ? 'is-invalid' : ''}`} placeholder="Tên tài khoản đăng nhập" maxLength={50} value={form.taiKhoan} onChange={(e) => setField('taiKhoan', e.target.value.replace(/\s/g, ''))} />{errors.taiKhoan && <div className="text-danger small mt-1">{errors.taiKhoan}</div>}</div></div>
-                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Mật khẩu</label><input type="password" className={`dkgv-form-control ${errors.matKhau ? 'is-invalid' : ''}`} placeholder="Mật khẩu tối thiểu 8 ký tự" maxLength={50} value={form.matKhau} onChange={(e) => setField('matKhau', e.target.value)} />{errors.matKhau && <div className="text-danger small mt-1">{errors.matKhau}</div>}</div></div>
+                <div className="col-md-6"><PasswordInput id="giang-vien-mat-khau" label="Mật khẩu" autoComplete="new-password" containerClassName="dkgv-form-group" inputClassName={`dkgv-form-control ${errors.matKhau ? 'is-invalid' : ''}`} placeholder="Mật khẩu tối thiểu 8 ký tự" maxLength={50} value={form.matKhau} onChange={(e) => setField('matKhau', e.target.value)} error={errors.matKhau} /></div>
                 <div className="col-md-6">
                   <div className="dkgv-form-group">
                     <label className="dkgv-form-label">Email {statusBadge(verification.emailStatus, 'email')}</label>
@@ -703,7 +717,7 @@ export default function DangKyGiangVien() {
                       <div className="mt-2">
                         <ReCAPTCHA
                           ref={emailCaptchaRef}
-                          sitekey="6Legm5csAAAAABr5FTIC25geZIxrxlmF5ORzuiYt"
+                          sitekey={RECAPTCHA_SITE_KEY || 'invalid-site-key'}
                           onChange={(token) => {
                             setEmailCaptchaToken(token || '');
                             if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
@@ -798,11 +812,11 @@ export default function DangKyGiangVien() {
               <div className="row g-3">
                 <div className="col-md-6">
                   <div className="dkgv-form-group">
-                    <label className="dkgv-form-label">Tên ngân hàng</label>
+                    <label id="dkgv-bank-label" className="dkgv-form-label" htmlFor="dkgv-bank-search">Tên ngân hàng</label>
                     <div className="dkgv-bank-select" ref={bankBoxRef}>
-                      <input className={`dkgv-form-control ${errors.tenNganHang ? 'is-invalid' : ''}`} placeholder="Tìm ngân hàng" value={bankKeyword} onFocus={() => setIsBankDropdownOpen(true)} onChange={(e) => handleBankSearch(e.target.value)} autoComplete="off" />
+                      <input id="dkgv-bank-search" role="combobox" aria-labelledby="dkgv-bank-label" aria-expanded={isBankDropdownOpen} aria-controls="dkgv-bank-listbox" aria-autocomplete="list" aria-invalid={Boolean(errors.tenNganHang)} aria-describedby={errors.tenNganHang ? 'dkgv-bank-error' : 'dkgv-bank-selection'} className={`dkgv-form-control ${errors.tenNganHang ? 'is-invalid' : ''}`} placeholder="Tìm ngân hàng" value={bankKeyword} onFocus={() => setIsBankDropdownOpen(true)} onChange={(e) => handleBankSearch(e.target.value)} autoComplete="off" />
                       {isBankDropdownOpen && (
-                        <div className="dkgv-bank-dropdown">
+                        <div id="dkgv-bank-listbox" className="dkgv-bank-dropdown" role="listbox" aria-label="Danh sách ngân hàng">
                           {filteredBanks.length > 0 ? filteredBanks.map((bank) => (
                             <button key={bank.ma} type="button" className={`dkgv-bank-option ${form.tenNganHang === bank.tenHienThi ? 'active' : ''}`} onClick={() => selectBank(bank.tenHienThi)}>
                               <span>{bank.tenHienThi}</span>

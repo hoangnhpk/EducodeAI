@@ -1,21 +1,20 @@
 import * as signalR from "@microsoft/signalr";
-import { clearAuthTokens, getAuthTokens } from "../utils/authStorage";
+import { getAuthTokens } from "../utils/authStorage";
+import { redirectToLoginOnce } from "../utils/sessionTermination";
 
 // Kết nối SignalR SessionHub (Phase G.9): nhận event revoke/khóa realtime để logout UI
 // ngay, thay cho việc polling mỗi 10 giây. Access token lấy từ localStorage qua
 // accessTokenFactory (cách chuẩn SignalR); C.10 hoãn nên token vẫn ở localStorage.
 
 let connection: signalR.HubConnection | null = null;
-let isForcingLogout = false;
 
 const getToken = () => getAuthTokens().accessToken || "";
 
 const forceLogout = (title: string, message: string) => {
-  if (isForcingLogout) return;
-  isForcingLogout = true;
+  if (!redirectToLoginOnce(() => undefined)) return;
 
-  void import("sweetalert2").then((Swal) => {
-    Swal.default.fire({
+  void import("sweetalert2")
+    .then((Swal) => Swal.default.fire({
       title,
       html: message,
       icon: "warning",
@@ -23,12 +22,8 @@ const forceLogout = (title: string, message: string) => {
       timerProgressBar: true,
       showConfirmButton: false,
       allowOutsideClick: false,
-    }).then(() => {
-      clearAuthTokens();
-      localStorage.removeItem("user_info");
-      window.location.href = "/dang-nhap";
-    });
-  });
+    }))
+    .finally(() => window.location.assign("/dang-nhap"));
 };
 
 export const startSessionHub = async (): Promise<void> => {
