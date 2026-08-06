@@ -152,7 +152,7 @@ try
         }
 
         builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
-        builder.Services.AddScoped<IRedisService, RedisService>();
+        builder.Services.AddSingleton<IRedisService, RedisService>();
 
         // Đăng ký Distributed Cache cho Redis
         builder.Services.AddStackExchangeRedisCache(options =>
@@ -165,7 +165,7 @@ try
     {
         var reason = !isRedisActive ? "turned OFF in appsettings" : "empty connection string";
         Console.WriteLine($"Redis is {reason} – using MemoryCache fallback");
-        builder.Services.AddScoped<IRedisService, FallbackRedisService>();
+        builder.Services.AddSingleton<IRedisService, FallbackRedisService>();
 
         // Đăng ký Distributed Memory Cache khi Redis không khả dụng
         builder.Services.AddDistributedMemoryCache();
@@ -174,7 +174,7 @@ try
 catch (Exception ex)
 {
     Console.WriteLine($"Redis setup failed, using MemoryCache fallback: {ex.Message}");
-    builder.Services.AddScoped<IRedisService, FallbackRedisService>();
+    builder.Services.AddSingleton<IRedisService, FallbackRedisService>();
 
     // Đăng ký Distributed Memory Cache khi Redis fail
     builder.Services.AddDistributedMemoryCache();
@@ -246,6 +246,8 @@ builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
 builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
 builder.Services.AddScoped<IQuanLyHocVienService,QuanLyHocVienService>();
+builder.Services.AddSingleton<IGiangVienReviewEmailQueue, GiangVienReviewEmailQueue>();
+builder.Services.AddHostedService<GiangVienReviewEmailWorker>();
 builder.Services.AddSingleton<LopHocEmailQueue>();
 builder.Services.AddHostedService<LopHocEmailWorker>();
 builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocService>();
