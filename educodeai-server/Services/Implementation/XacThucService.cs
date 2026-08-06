@@ -533,68 +533,57 @@ namespace educodeai_server.Services.Implementation
             var ipCurrent = httpContext?.Connection.RemoteIpAddress?.ToString();
             var uaCurrent = httpContext?.Request.Headers.UserAgent.ToString();
 
-            await using var rotationTransaction = await _context.Database.BeginTransactionAsync();
-            var rotationRolledBack = false;
-            try
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+            await executionStrategy.ExecuteAsync(async () =>
             {
-            // Chống double-spend: atomic claim revoke token cũ với điều kiện NgayThuHoi==null.
-            // Hai request đồng thời cùng token → chỉ request đầu flip được (rows=1); request thua (rows=0)
-            // buộc đăng nhập lại, không cấp token trùng family. UPDATE...WHERE ở tầng DB đóng hẳn cửa sổ race.
-            var claimed = await _context.RefreshTokens
-                .Where(r => r.MaRefreshToken == stored.MaRefreshToken && r.NgayThuHoi == null)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(r => r.NgayThuHoi, DateTime.UtcNow)
-                    .SetProperty(r => r.LyDoThuHoi, "ROTATED")
-                    .SetProperty(r => r.ReplacedByTokenHash, newMaterial.TokenHash)
-                    .SetProperty(r => r.IpThuHoi, ipCurrent));
-
-            if (claimed == 0)
-            {
-                await rotationTransaction.RollbackAsync();
-                rotationRolledBack = true;
-                var current = await _context.RefreshTokens
-                    .AsNoTracking()
-                    .SingleOrDefaultAsync(r => r.MaRefreshToken == stored.MaRefreshToken);
-
-                if (current != null
-                    && RefreshTokenRacePolicy.Classify(current, DateTime.UtcNow) == RefreshTokenDisposition.ReuseDetected)
+                await using var rotationTransaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    await RevokeRefreshFamilyForReuseAsync(current);
-                    ClearRefreshCookie();
-                    throw ApiException.AuthenticationFailed("Phiên làm việc đã bị vô hiệu hóa do phát hiện sử dụng lại token.");
+                    var claimed = await _context.RefreshTokens
+                        .Where(r => r.MaRefreshToken == stored.MaRefreshToken && r.NgayThuHoi == null)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(r => r.NgayThuHoi, DateTime.UtcNow)
+                            .SetProperty(r => r.LyDoThuHoi, "ROTATED")
+                            .SetProperty(r => r.ReplacedByTokenHash, newMaterial.TokenHash)
+                            .SetProperty(r => r.IpThuHoi, ipCurrent));
+
+                    if (claimed == 0)
+                    {
+                        await rotationTransaction.RollbackAsync();
+                        var current = await _context.RefreshTokens.AsNoTracking()
+                            .SingleOrDefaultAsync(r => r.MaRefreshToken == stored.MaRefreshToken);
+                        if (current != null && RefreshTokenRacePolicy.Classify(current, DateTime.UtcNow) == RefreshTokenDisposition.ReuseDetected)
+                        {
+                            await RevokeRefreshFamilyForReuseAsync(current);
+                            ClearRefreshCookie();
+                            throw ApiException.AuthenticationFailed("Phiên làm việc đã bị vô hiệu hóa do phát hiện sử dụng lại token.");
+                        }
+                        throw ApiException.AuthenticationFailed("Không thể làm mới phiên lúc này. Vui lòng thử lại.");
+                    }
+
+                    _context.RefreshTokens.Add(new RefreshTokenModel
+                    {
+                        MaNguoiDung = user.MaNguoiDung,
+                        MaPhien = phien.MaPhien,
+                        TokenHash = newMaterial.TokenHash,
+                        FamilyId = stored.FamilyId,
+                        Jti = newMaterial.Jti,
+                        ThoiGianHetHan = newMaterial.ExpiresAtUtc,
+                        NgayTao = DateTime.UtcNow,
+                        IpTao = ipCurrent,
+                        UserAgentTao = uaCurrent != null && uaCurrent.Length > 256 ? uaCurrent.Substring(0, 256) : uaCurrent
+                    });
+                    phien.ThoiGianHoatDongCuoi = DateTime.UtcNow;
+                    user.NgayDangNhapCuoi = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                    await rotationTransaction.CommitAsync();
                 }
-
-                throw ApiException.AuthenticationFailed("Không thể làm mới phiên lúc này. Vui lòng thử lại.");
-            }
-
-            var newToken = new RefreshTokenModel
-            {
-                MaNguoiDung = user.MaNguoiDung,
-                MaPhien = phien.MaPhien,
-                TokenHash = newMaterial.TokenHash,
-                FamilyId = stored.FamilyId,
-                Jti = newMaterial.Jti,
-                ThoiGianHetHan = newMaterial.ExpiresAtUtc,
-                NgayTao = DateTime.UtcNow,
-                IpTao = ipCurrent,
-                UserAgentTao = uaCurrent != null && uaCurrent.Length > 256 ? uaCurrent.Substring(0, 256) : uaCurrent
-            };
-            _context.RefreshTokens.Add(newToken);
-
-            phien.ThoiGianHoatDongCuoi = DateTime.UtcNow;
-            user.NgayDangNhapCuoi = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-            await rotationTransaction.CommitAsync();
-            }
-            catch
-            {
-                if (!rotationRolledBack)
+                catch
                 {
                     await rotationTransaction.RollbackAsync();
+                    throw;
                 }
-                throw;
-            }
+            });
 
             // K.1: audit refresh rotate thành công (không log giá trị token).
             _logger.LogInformation("Refresh token rotate cho user {UserId} phiên {MaPhien}.", user.MaNguoiDung, phien.MaPhien);
@@ -952,7 +941,7 @@ namespace educodeai_server.Services.Implementation
             if (r.DangXuatTatCa)
             {
                 targetSessions = await _context.PhienDangNhaps
-                    .Where(p => p.MaNguoiDung == userId && p.DangHoatDong && p.MaPhien != maPhienHienTai.Value)
+                    .Where(p => p.MaNguoiDung == userId && p.DangHoatDong)
                     .ToListAsync();
             }
             else if (r.DanhSachMaPhien is { Count: 1 })
@@ -981,37 +970,44 @@ namespace educodeai_server.Services.Implementation
                 throw ApiException.InvalidRequest(otpResult.ErrorMessage ?? "Mã OTP không chính xác hoặc đã hết hạn.");
 
             var ipThuHoi = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
-            var deactivatedSessionIds = new List<int>();
-            foreach (var session in targetSessions)
-            {
-                session.DangHoatDong = false;
-                session.TrustRevokedAtUtc = DateTime.UtcNow;
-                deactivatedSessionIds.Add(session.MaPhien);
-            }
+            var deactivatedSessionIds = targetSessions.Select(session => session.MaPhien).ToList();
+            var revokedAt = DateTime.UtcNow;
 
-            if (deactivatedSessionIds.Count > 0)
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+            await executionStrategy.ExecuteAsync(async () =>
             {
-                var tokens = await _context.RefreshTokens
-                    .Where(t => t.MaNguoiDung == userId
-                                && t.NgayThuHoi == null
-                                && t.MaPhien.HasValue
-                                && deactivatedSessionIds.Contains(t.MaPhien.Value))
-                    .ToListAsync();
-                foreach (var t in tokens)
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                foreach (var session in targetSessions)
                 {
-                    t.NgayThuHoi = DateTime.UtcNow;
-                    t.LyDoThuHoi = "REMOTE_LOGOUT";
-                    t.IpThuHoi = ipThuHoi;
+                    session.DangHoatDong = false;
+                    session.TrustRevokedAtUtc = revokedAt;
                 }
-            }
 
-            await _context.SaveChangesAsync();
+                if (deactivatedSessionIds.Count > 0)
+                {
+                    var tokens = await _context.RefreshTokens
+                        .Where(t => t.MaNguoiDung == userId
+                                    && t.NgayThuHoi == null
+                                    && t.MaPhien.HasValue
+                                    && deactivatedSessionIds.Contains(t.MaPhien.Value))
+                        .ToListAsync();
+                    foreach (var token in tokens)
+                    {
+                        token.NgayThuHoi = revokedAt;
+                        token.LyDoThuHoi = "REMOTE_LOGOUT";
+                        token.IpThuHoi = ipThuHoi;
+                    }
+                }
 
-            foreach (var maPhien in deactivatedSessionIds)
-            {
-                await _sessionStateCache.InvalidateSessionAsync(maPhien);
-                await _sessionRealtimeNotifier.SessionRevokedAsync(maPhien);
-            }
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            });
+
+            var cacheTasks = deactivatedSessionIds.Select(maPhien => _sessionStateCache.InvalidateSessionAsync(maPhien));
+            await Task.WhenAll(cacheTasks);
+
+            var revokeTasks = deactivatedSessionIds.Select(maPhien => _sessionRealtimeNotifier.SessionRevokedAsync(maPhien));
+            await Task.WhenAll(revokeTasks);
             if (deactivatedSessionIds.Count > 0)
                 await _sessionRealtimeNotifier.SessionListChangedAsync(userId);
 
@@ -1355,7 +1351,8 @@ namespace educodeai_server.Services.Implementation
             {
                 AnhMatTruoc = request.AnhGiayToMatTruoc,
                 AnhMatSau = request.AnhGiayToMatSau,
-                LoaiGiayTo = request.LoaiGiayTo.Trim()
+                LoaiGiayTo = request.LoaiGiayTo.Trim(),
+                NguyenQuan = request.NguyenQuan
             });
             if (!ketQuaQuet.ThanhCong || string.IsNullOrWhiteSpace(ketQuaQuet.SoGiayTo))
                 throw ApiException.InvalidRequest(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
@@ -1377,7 +1374,7 @@ namespace educodeai_server.Services.Implementation
                 noiCap = !string.IsNullOrWhiteSpace(request.NoiCap) ? request.NoiCap.Trim() : ketQuaQuet.NoiCap,
                 diaChi = ketQuaQuet.DiaChi,
                 quocTich = ketQuaQuet.QuocTich,
-                nguyenQuan = ketQuaQuet.NguyenQuan
+                nguyenQuan = !string.IsNullOrWhiteSpace(request.NguyenQuan) ? request.NguyenQuan.Trim() : ketQuaQuet.NguyenQuan
             }));
 
             // Chỉ avatar được lưu. Ảnh CCCD không được lưu ở bất kỳ thư mục nào.
