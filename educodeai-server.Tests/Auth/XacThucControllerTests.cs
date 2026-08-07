@@ -49,7 +49,7 @@ public sealed class XacThucControllerTests
         var expectedResult = new { token = "new-access-token" };
         var authService = new Mock<IXacThucService>();
         authService
-            .Setup(service => service.LamMoiTokenAsync(string.Empty, request.MaThietBi))
+            .Setup(service => service.LamMoiTokenAsync(request.MaThietBi))
             .ReturnsAsync(expectedResult);
         var controller = CreateController(authService.Object);
         controller.HttpContext.Request.Headers.Origin = "http://localhost:3000";
@@ -57,7 +57,7 @@ public sealed class XacThucControllerTests
         var actionResult = await controller.RefreshToken(request);
 
         Assert.Same(expectedResult, Assert.IsType<OkObjectResult>(actionResult).Value);
-        authService.Verify(service => service.LamMoiTokenAsync(string.Empty, "device-001"), Times.Once);
+        authService.Verify(service => service.LamMoiTokenAsync("device-001"), Times.Once);
     }
 
     [Fact]
@@ -70,8 +70,28 @@ public sealed class XacThucControllerTests
             () => controller.RefreshToken(new RefreshTokenRequest { MaThietBi = "device-001" }));
 
         authService.Verify(
-            service => service.LamMoiTokenAsync(It.IsAny<string>(), It.IsAny<string>()),
+            service => service.LamMoiTokenAsync(It.IsAny<string>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task LayDanhSachThietBi_UsesAuthenticatedUserWithoutClientFingerprint()
+    {
+        var expectedResult = new[] { new { maPhien = 42, isCurrentDevice = true } };
+        var authService = new Mock<IXacThucService>();
+        authService
+            .Setup(service => service.LayDanhSachThietBiAsync(7))
+            .ReturnsAsync(expectedResult);
+        var controller = CreateController(authService.Object);
+        controller.HttpContext.User = new System.Security.Claims.ClaimsPrincipal(
+            new System.Security.Claims.ClaimsIdentity(
+                new[] { new System.Security.Claims.Claim("id", "7") },
+                "TestAuth"));
+
+        var actionResult = await controller.LayDanhSachThietBi();
+
+        Assert.Same(expectedResult, Assert.IsType<OkObjectResult>(actionResult).Value);
+        authService.Verify(service => service.LayDanhSachThietBiAsync(7), Times.Once);
     }
 
     private static DangNhapRequest CreateValidLoginRequest() => new()
@@ -86,7 +106,10 @@ public sealed class XacThucControllerTests
     private static XacThucController CreateController(IXacThucService authService)
     {
         var scanningService = new Mock<IGiayToScanningService>();
-        var controller = new XacThucController(authService, scanningService.Object)
+        var originValidator = new Mock<educodeai_server.Services.Security.IRequestOriginValidator>();
+        originValidator.Setup(validator => validator.IsAllowed(It.IsAny<HttpRequest>()))
+            .Returns((HttpRequest request) => request.Headers.ContainsKey("Origin") || request.Headers.ContainsKey("Referer"));
+        var controller = new XacThucController(authService, scanningService.Object, originValidator.Object)
         {
             ControllerContext = new ControllerContext
             {

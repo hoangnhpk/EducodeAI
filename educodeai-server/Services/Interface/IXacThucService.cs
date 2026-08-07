@@ -12,7 +12,7 @@ namespace educodeai_server.Services.Interface
         Task<object> XacNhanThayTheThietBiAsync(XacNhanOtpRequest request);
         Task<object> DangNhapGoogleAsync(GoogleLoginRequest request, string maThietBi, string tenThietBi);
         Task<object> DangNhapFacebookAsync(FacebookDTO request, string maThietBi, string tenThietBi);
-        Task<object> LamMoiTokenAsync(string refreshToken, string maThietBi);
+        Task<object> LamMoiTokenAsync(string maThietBi);
 
         // --- CÁC HÀM ĐĂNG KÝ MỚI (Dùng Bộ nhớ tạm RAM) ---
         Task<bool> YeuCauDangKyAsync(DangKyRequest request, string ipAddress);
@@ -34,9 +34,9 @@ namespace educodeai_server.Services.Interface
         Task<bool> DoiMatKhauAsync(int maNguoiDung, DoiMatKhauRequest request);
 
         // --- CÁC HÀM QUẢN LÝ THIẾT BỊ ---
-        Task<object> LayDanhSachThietBiAsync(int maNguoiDung, string maThietBiHienTai);
+        Task<object> LayDanhSachThietBiAsync(int maNguoiDung);
         Task<bool> DangXuatAsync(int maNguoiDung, string maThietBi);
-        Task<bool> YeuCauOtpDangXuatTuXaAsync(int maNguoiDung);
+        Task<bool> YeuCauOtpDangXuatTuXaAsync(int maNguoiDung, string captchaToken);
         Task<bool> XacNhanDangXuatTuXaAsync(int maNguoiDung, DangXuatTuXaRequest request);
 
         // --- ĐỒNG BỘ TRẠNG THÁI PHIÊN (G.12): frontend gọi 1 lần khi reconnect SignalR ---

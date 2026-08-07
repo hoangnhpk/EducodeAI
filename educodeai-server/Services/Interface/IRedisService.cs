@@ -13,6 +13,7 @@ namespace educodeai_server.Services.Interface
 
         // Peek-then-trim: đọc không xóa (an toàn khi flush DB có thể thất bại)
         Task<IEnumerable<string>> DocDauListKhongXoaAsync(string key, int soLuong);
+        Task<IEnumerable<string>> LayTuDauListAsync(string key, int soLuong);
         Task CatDauListAsync(string key, int soLuong);
         IEnumerable<string> LayDanhSachKeyTheoPattern(string pattern);
 

@@ -6,7 +6,7 @@ namespace educodeai_server.DTOs.XacThuc
 {
     public class DangXuatTuXaRequest
     {
-        // Gỡ bỏ Captcha hoàn toàn
+        // CAPTCHA bắt buộc khi yêu cầu OTP đăng xuất từ xa.
         public string? CaptchaToken { get; set; }
 
         [JsonPropertyName("OtpCode")]

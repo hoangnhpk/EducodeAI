@@ -14,11 +14,16 @@ namespace educodeai_server.Controllers
     {
         private readonly IXacThucService _xacThucService;
         private readonly IGiayToScanningService _giayToScanningService;
+        private readonly educodeai_server.Services.Security.IRequestOriginValidator _originValidator;
 
-        public XacThucController(IXacThucService xacThucService, IGiayToScanningService giayToScanningService)
+        public XacThucController(
+            IXacThucService xacThucService,
+            IGiayToScanningService giayToScanningService,
+            educodeai_server.Services.Security.IRequestOriginValidator originValidator)
         {
             _xacThucService = xacThucService;
             _giayToScanningService = giayToScanningService;
+            _originValidator = originValidator;
         }
 
         #region 1. API ĐĂNG NHẬP
@@ -69,44 +74,12 @@ namespace educodeai_server.Controllers
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
-            if (!IsSameSiteRequest(HttpContext.Request))
+            if (!_originValidator.IsAllowed(HttpContext.Request))
             {
                 throw Helpers.ApiException.Forbidden("Yêu cầu không hợp lệ.");
             }
-            var result = await _xacThucService.LamMoiTokenAsync(string.Empty, request.MaThietBi);
+            var result = await _xacThucService.LamMoiTokenAsync(request.MaThietBi);
             return Ok(result);
-        }
-
-        private static bool IsSameSiteRequest(HttpRequest request)
-        {
-            var allowedOrigins = new[]
-            {
-                "https://educodeai-client.vercel.app",
-                "http://localhost:3000",
-                "http://localhost:3001",
-                "http://localhost:5173",
-                "http://127.0.0.1:3000",
-                "http://127.0.0.1:3001",
-                "http://127.0.0.1:5173",
-                "http://[::1]:3000",
-                "http://[::1]:3001",
-                "http://[::1]:5173"
-            };
-
-            var origin = request.Headers["Origin"].ToString();
-            if (!string.IsNullOrEmpty(origin))
-            {
-                return allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
-            }
-            var referer = request.Headers["Referer"].ToString();
-            if (!string.IsNullOrEmpty(referer))
-            {
-                return allowedOrigins.Any(a => referer.StartsWith(a, StringComparison.OrdinalIgnoreCase));
-            }
-            // Thiếu cả Origin lẫn Referer: fail-closed. Trình duyệt luôn gắn Origin cho POST
-            // cross-site (refresh chạy qua fetch/XHR) nên request hợp lệ không bị ảnh hưởng;
-            // chỉ chặn client không gửi header — tránh CSRF lợi dụng cookie SameSite=None.
-            return false;
         }
 
         [HttpPost("xac-nhan-otp")]
@@ -289,12 +262,12 @@ namespace educodeai_server.Controllers
 
         [Authorize]
         [HttpGet("danh-sach-thiet-bi")]
-        public async Task<IActionResult> LayDanhSachThietBi([FromQuery] string maThietBiHienTai)
+        public async Task<IActionResult> LayDanhSachThietBi()
         {
             try
             {
                 int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
-                var result = await _xacThucService.LayDanhSachThietBiAsync(userId, maThietBiHienTai);
+                var result = await _xacThucService.LayDanhSachThietBiAsync(userId);
                 return Ok(result);
             }
             catch (Exception)
@@ -368,12 +341,16 @@ namespace educodeai_server.Controllers
 
         [Authorize]
         [HttpPost("yeu-cau-otp-dang-xuat-tu-xa")]
-        public async Task<IActionResult> YeuCauOtpDangXuatTuXa()
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("RemoteLogoutOtpSend")]
+        public async Task<IActionResult> YeuCauOtpDangXuatTuXa([FromBody] DangXuatTuXaRequest? request)
         {
+            if (request is null)
+                return BadRequest(new { thanhCong = false, thongBao = "Nội dung yêu cầu không hợp lệ." });
+
             try
             {
                 int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
-                await _xacThucService.YeuCauOtpDangXuatTuXaAsync(userId);
+                await _xacThucService.YeuCauOtpDangXuatTuXaAsync(userId, request.CaptchaToken ?? string.Empty);
                 return Ok(new { message = "Mã OTP xác nhận đăng xuất từ xa đã được gửi đến email của bạn." });
             }
             catch (Exception)
@@ -384,8 +361,12 @@ namespace educodeai_server.Controllers
 
         [Authorize]
         [HttpPost("xac-nhan-dang-xuat-tu-xa")]
-        public async Task<IActionResult> XacNhanDangXuatTuXa([FromBody] DangXuatTuXaRequest request)
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("RemoteLogoutOtpVerify")]
+        public async Task<IActionResult> XacNhanDangXuatTuXa([FromBody] DangXuatTuXaRequest? request)
         {
+            if (request is null)
+                return BadRequest(new { thanhCong = false, thongBao = "Nội dung yêu cầu không hợp lệ." });
+
             try
             {
                 int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
@@ -433,7 +414,7 @@ namespace educodeai_server.Controllers
 
             try
             {
-                var result = await _giayToScanningService.QuetGiayToAsync(request);
+                var result = await _giayToScanningService.QuetGiayToAsync(request, HttpContext.RequestAborted);
                 if (!result.ThanhCong)
                     return BadRequest(result);
 
