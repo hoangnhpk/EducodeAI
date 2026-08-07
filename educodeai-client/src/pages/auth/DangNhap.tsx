@@ -289,14 +289,14 @@ const DangNhap: React.FC = () => {
                                                             }}
                                                             ux_mode="popup"
                                                             theme="outline"
-                                                            width="100%"
+                                                            width="560"
                                                         />
                                                     </div>
                                                 </div>
                                             </>
                                         )}
 
-                                        <div className="col-12 mt-4 d-flex justify-content-between align-items-center">
+                                        <div className="col-12 mt-4 d-flex justify-content-between align-items-center login-footer-links">
                                             <Link to="/" className="text-decoration-none fw-bold small" style={{ color: '#fb873f' }}>
                                                 <i className="bi bi-house-door-fill me-1"></i> Trang chủ
                                             </Link>
