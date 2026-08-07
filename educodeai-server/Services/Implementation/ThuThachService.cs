@@ -47,66 +47,80 @@ namespace educodeai_server.Services.Implementation
             var maTienDo = tienDo.MaTienDo;
             var expNhan = mau.ExpThuong;
 
-            await using var tx = await _context.Database.BeginTransactionAsync();
-            try
+            // DbContext bật EnableRetryOnFailure nên transaction phải chạy trong execution strategy,
+            // nếu không BeginTransactionAsync sẽ throw InvalidOperationException.
+            var strategy = _context.Database.CreateExecutionStrategy();
+            var tongExp = 0;
+            string? danhHieuMoi = null;
+
+            await strategy.ExecuteAsync(async () =>
             {
-                // Chỉ 1 request chuyển COMPLETED → CLAIMED; request song song nhận 0 dòng.
-                var claimedRows = await _context.TienDoNhiemVuTuans
-                    .Where(t => t.MaTienDo == maTienDo && t.TrangThai == StCompleted)
-                    .ExecuteUpdateAsync(s => s
-                        .SetProperty(t => t.TrangThai, StClaimed)
-                        .SetProperty(t => t.NgayNhanThuong, utcNow));
-
-                if (claimedRows == 0)
-                {
-                    var trangThai = await _context.TienDoNhiemVuTuans
-                        .AsNoTracking()
-                        .Where(t => t.MaTienDo == maTienDo)
-                        .Select(t => t.TrangThai)
-                        .FirstOrDefaultAsync();
-
-                    if (trangThai == StClaimed)
-                        throw new ApplicationException("Bạn đã nhận thưởng nhiệm vụ này rồi.");
-
-                    throw new ApplicationException("Nhiệm vụ chưa hoàn thành, chưa thể nhận thưởng.");
-                }
-
-                var expRows = await _context.NguoiDungGamifications
-                    .Where(g => g.MaNguoiDung == maNguoiDung)
-                    .ExecuteUpdateAsync(s => s.SetProperty(g => g.TongExp, g => g.TongExp + expNhan));
-
-                if (expRows == 0)
-                    throw new ApplicationException("Không tìm thấy hồ sơ gamification.");
-
-                var tongExp = await _context.NguoiDungGamifications
-                    .AsNoTracking()
-                    .Where(g => g.MaNguoiDung == maNguoiDung)
-                    .Select(g => g.TongExp)
-                    .FirstAsync();
-
-                var danhHieuMoi = await MoKhoaDanhHieuTheoExpAsync(maNguoiDung, tongExp);
-                await _context.SaveChangesAsync();
-                await tx.CommitAsync();
-
+                // Mỗi lần strategy thử lại phải bắt đầu từ tracker sạch, tránh nhân đôi
+                // danh hiệu đã Add ở lần thử trước.
                 _context.ChangeTracker.Clear();
+                danhHieuMoi = null;
 
-                var bang = await TaoBangNhiemVuAsync(maNguoiDung);
-                var bxh = await LayBangXepHangTuanAsync(maNguoiDung);
-
-                return new NhanThuongResponseDTO
+                await using var tx = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    ExpNhanDuoc = expNhan,
-                    TongExp = tongExp,
-                    DanhHieuMoiMoKhoa = danhHieuMoi,
-                    BangNhiemVu = bang,
-                    BangXepHang = bxh,
-                };
-            }
-            catch
+                    // Chỉ 1 request chuyển COMPLETED → CLAIMED; request song song nhận 0 dòng.
+                    var claimedRows = await _context.TienDoNhiemVuTuans
+                        .Where(t => t.MaTienDo == maTienDo && t.TrangThai == StCompleted)
+                        .ExecuteUpdateAsync(s => s
+                            .SetProperty(t => t.TrangThai, StClaimed)
+                            .SetProperty(t => t.NgayNhanThuong, utcNow));
+
+                    if (claimedRows == 0)
+                    {
+                        var trangThai = await _context.TienDoNhiemVuTuans
+                            .AsNoTracking()
+                            .Where(t => t.MaTienDo == maTienDo)
+                            .Select(t => t.TrangThai)
+                            .FirstOrDefaultAsync();
+
+                        if (trangThai == StClaimed)
+                            throw new ApplicationException("Bạn đã nhận thưởng nhiệm vụ này rồi.");
+
+                        throw new ApplicationException("Nhiệm vụ chưa hoàn thành, chưa thể nhận thưởng.");
+                    }
+
+                    var expRows = await _context.NguoiDungGamifications
+                        .Where(g => g.MaNguoiDung == maNguoiDung)
+                        .ExecuteUpdateAsync(s => s.SetProperty(g => g.TongExp, g => g.TongExp + expNhan));
+
+                    if (expRows == 0)
+                        throw new ApplicationException("Không tìm thấy hồ sơ gamification.");
+
+                    tongExp = await _context.NguoiDungGamifications
+                        .AsNoTracking()
+                        .Where(g => g.MaNguoiDung == maNguoiDung)
+                        .Select(g => g.TongExp)
+                        .FirstAsync();
+
+                    danhHieuMoi = await MoKhoaDanhHieuTheoExpAsync(maNguoiDung, tongExp);
+                    await _context.SaveChangesAsync();
+                    await tx.CommitAsync();
+                }
+                catch
+                {
+                    await tx.RollbackAsync();
+                    throw;
+                }
+            });
+
+            _context.ChangeTracker.Clear();
+
+            var bang = await TaoBangNhiemVuAsync(maNguoiDung);
+            var bxh = await LayBangXepHangTuanAsync(maNguoiDung);
+
+            return new NhanThuongResponseDTO
             {
-                await tx.RollbackAsync();
-                throw;
-            }
+                ExpNhanDuoc = expNhan,
+                TongExp = tongExp,
+                DanhHieuMoiMoKhoa = danhHieuMoi,
+                BangNhiemVu = bang,
+                BangXepHang = bxh,
+            };
         }
 
         public async Task<ThuThachTuanResponseDTO> DeoDanhHieuAsync(int maNguoiDung, int maDanhHieu)

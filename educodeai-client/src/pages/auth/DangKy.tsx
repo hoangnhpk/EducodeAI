@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import Swal from 'sweetalert2';
 // 1. IMPORT THƯ VIỆN CAPTCHA
 import ReCAPTCHA from "react-google-recaptcha";
+import { setAuthTokens } from '../../utils/authStorage';
+import PasswordInput from '../../components/PasswordInput';
+import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
 
 const RegisterPage = () => {
     const navigate = useNavigate();
 
     const [step, setStep] = useState<1 | 2>(1);
-    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -118,12 +120,12 @@ const RegisterPage = () => {
 
             // 2. Lấy dữ liệu Token và User từ response (tùy cấu trúc Backend của bạn)
             // Giả sử Backend trả về: { token: "...", refreshToken: "...", user: { ... } }
-            const { token, refreshToken, user } = response;
+            const { token, user } = response;
 
             if (token) {
                 // 3. Lưu vào localStorage để tạo "phiên đăng nhập"
-                localStorage.setItem('user_token', token);
-                localStorage.setItem('refresh_token', refreshToken);
+                setAuthTokens(token);
+                // Refresh token do backend đặt trong cookie HttpOnly; frontend không lưu/đọc.
                 localStorage.setItem('user_info', JSON.stringify(user));
 
                 // 4. Thông báo và điều hướng thẳng vào trang trong (ví dụ /)
@@ -197,14 +199,17 @@ const RegisterPage = () => {
                                     </div>
 
                                     <div className="col-12 text-start">
-                                        <div className="form-floating position-relative">
-                                            <input type={showPassword ? 'text' : 'password'} className={`form-control ${errors.password ? 'is-invalid' : ''}`} id="password" placeholder="Pass" value={formData.password} onChange={handleInputChange} />
-                                            <label>Mật khẩu</label>
-                                            <span className="position-absolute top-50 end-0 translate-middle-y me-3 text-muted" style={{ cursor: 'pointer', zIndex: 10 }} onClick={() => setShowPassword(!showPassword)}>
-                                                {showPassword ? <FaEyeSlash /> : <FaEye />}
-                                            </span>
-                                            {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                                        </div>
+                                        <PasswordInput
+                                            id="password"
+                                            label="Mật khẩu"
+                                            floating
+                                            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                                            placeholder="Mật khẩu"
+                                            value={formData.password}
+                                            onChange={handleInputChange}
+                                            autoComplete="new-password"
+                                            error={errors.password}
+                                        />
                                         {formData.password && (
                                             <div className="d-flex gap-1 mt-2" style={{ height: '4px' }}>
                                                 {[1, 2, 3, 4].map(i => <div key={i} className={`flex-fill rounded ${i <= strength ? (strength <= 2 ? 'bg-warning' : 'bg-success') : 'bg-light'}`} />)}
@@ -215,7 +220,7 @@ const RegisterPage = () => {
                                     {/* 5. GIAO DIỆN CAPTCHA THÊM VÀO ĐÂY */}
                                     <div className="col-12 mt-3 d-flex flex-column align-items-center">
                                         <ReCAPTCHA
-                                            sitekey="6Legm5csAAAAABr5FTIC25geZIxrxlmF5ORzuiYt" // <-- BẠN PHẢI THAY MÃ SITE KEY VÀO ĐÂY
+                                            sitekey={RECAPTCHA_SITE_KEY || 'invalid-site-key'}
                                             onChange={(token) => {
                                                 setCaptchaToken(token || '');
                                                 if (errors.captcha) setErrors((prev: any) => ({ ...prev, captcha: null }));

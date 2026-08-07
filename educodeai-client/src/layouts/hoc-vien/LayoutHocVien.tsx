@@ -1,11 +1,16 @@
+
 import { useEffect } from 'react';
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
+
+import { Outlet } from "react-router-dom";
+
 import HeaderHocVien from "@/layouts/hoc-vien/HeaderHocVien";
 import FooterHocVien from "@/layouts/hoc-vien/FooterHocVien";
 import "@/assets/styles/variables.css";
 import "@/assets/styles/hoc-vien-global.css";
 
 export default function LayoutHocVien() {
+
   const navigate = useNavigate();
   const location = useLocation();
   const hideFooter = location.pathname.includes('/sinh-do-an-ai') || 
@@ -54,6 +59,7 @@ useEffect(() => {
     const intervalId = setInterval(checkBanStatus, 10000); 
     return () => clearInterval(intervalId);
   }, [navigate]);
+
   return (
     <div className="hoc-vien-layout">
       <HeaderHocVien />

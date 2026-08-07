@@ -1,6 +1,7 @@
 import { useEffect, useState, memo } from "react";
 import { createPortal } from "react-dom";
 import { type NguoiDung } from "@/pages/quan-tri-vien/quan-ly-nguoi-dung/DuLieuNguoiDungDTO";
+import PasswordInput from "@/components/PasswordInput";
 
 type Props = {
     hienThi: boolean;
@@ -93,15 +94,15 @@ const ModalNguoiDung = memo(({
                 </div>
 
                 {!dangSua && (
-                    <div className="form-group">
-                        <label>Mật khẩu</label>
-                        <input
-                            type="password"
-                            placeholder="••••••••"
-                            value={matKhau}
-                            onChange={(e) => setMatKhau(e.target.value)}
-                        />
-                    </div>
+                    <PasswordInput
+                        id="admin-nguoi-dung-mat-khau"
+                        label="Mật khẩu"
+                        placeholder="••••••••"
+                        value={matKhau}
+                        onChange={(e) => setMatKhau(e.target.value)}
+                        autoComplete="new-password"
+                        containerClassName="form-group"
+                    />
                 )}
 
                 <div className="form-group">

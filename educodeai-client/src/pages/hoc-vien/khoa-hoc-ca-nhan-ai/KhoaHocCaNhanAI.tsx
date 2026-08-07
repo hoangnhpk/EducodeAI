@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { aiRoadmapService } from '@/services/aiRoadmap.service';
 import type { LoTrinhAICuaToiDTO } from './LoTrinhAICuaToiDTO';
-import './KhoaHocCaNhanAI.css';
+import { getAccessToken } from '../../../utils/authStorage';
 import { encodeId } from '@/utils/id-helper';
 import Swal from 'sweetalert2';
 
@@ -78,7 +78,7 @@ const KhoaHocCaNhanAI = () => {
                 const data = await aiRoadmapService.getAllLoTrinh();
                 setRoadmaps(data);
 
-                const token = localStorage.getItem('user_token');
+                const token = getAccessToken();
 
                 const resSaved = await fetch('https://localhost:7284/api/hocvien/kham-pha-lo-trinh/danh-sach-da-luu', {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -118,7 +118,7 @@ const KhoaHocCaNhanAI = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    const token = localStorage.getItem('user_token');
+                    const token = getAccessToken();
                     const response = await fetch(`https://localhost:7284/api/hocvien/kham-pha-lo-trinh/xoa-da-luu/${id}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -211,7 +211,7 @@ const KhoaHocCaNhanAI = () => {
                         <div className="roadmap-heading">
                             <h2 className="display-6 mb-1">Danh sách lộ trình phát triển</h2>
                             <p className="text-muted">Lộ trình được thiết kế riêng dựa trên mục tiêu và trình độ của sếp.</p>
-                            <Link to="/sinh-do-an-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold">Tạo lộ trình mới</Link>
+                            <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold">Tạo lộ trình mới</Link>
                         </div>
                         
                         <div className="roadmap-grid">

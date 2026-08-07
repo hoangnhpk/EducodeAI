@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
+import ReCAPTCHA from "react-google-recaptcha";
+import { setAuthTokens } from '../../utils/authStorage';
 
 import { FaArrowLeft } from 'react-icons/fa';
+import PasswordInput from '../../components/PasswordInput';
+import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
 
 const QuenMatKhau: React.FC = () => {
 
@@ -13,11 +17,13 @@ const QuenMatKhau: React.FC = () => {
     const [countdown, setCountdown] = useState(0);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [resetToken, setResetToken] = useState('');
     const [loading, setLoading] = useState(false);
     
     // State quản lý lỗi và thay thế thiết bị
     const [errors, setErrors] = useState<any>({});
     const [replaceDeviceInfo, setReplaceDeviceInfo] = useState<{ oldestDeviceName: string; email: string } | null>(null);
+    const [captchaToken, setCaptchaToken] = useState<string>('');
 
     useEffect(() => {
         if (countdown > 0) {
@@ -34,8 +40,8 @@ const QuenMatKhau: React.FC = () => {
             return;
         }
 
-        localStorage.setItem('user_token', res.token);
-        localStorage.setItem('refresh_token', res.refreshToken);
+        setAuthTokens(res.token);
+        // Refresh token do backend đặt trong cookie HttpOnly; frontend không lưu/đọc.
         localStorage.setItem('user_info', JSON.stringify(res.user));
         
         await Swal.fire({ 
@@ -65,35 +71,63 @@ const QuenMatKhau: React.FC = () => {
             setErrors({ email: 'Định dạng email không hợp lệ' });
             return;
         }
+        if (!captchaToken) {
+            setErrors({ captcha: 'Vui lòng xác thực bạn không phải robot' });
+            return;
+        }
 
         setLoading(true);
-        setErrors({}); 
+        setErrors({});
         setOtp('');
         try {
-            const res: any = await authService.forgotPasswordSendOtp(email);
+            const res: any = await authService.forgotPasswordSendOtp(email, captchaToken);
             if (res) {
                 setCountdown(120);
                 Swal.fire({ icon: 'success', text: "Mã xác thực đã được gửi tới email của bạn!", timer: 1500, showConfirmButton: false });
             }
         } catch (error: any) {
-            const errorMsg = error.response?.data?.message || "Email không tồn tại trên hệ thống!";
+            const errorMsg = error.response?.data?.error?.message
+                || error.response?.data?.message
+                || "Không thể gửi mã xác thực lúc này. Vui lòng thử lại sau.";
             setErrors({ email: errorMsg });
         } finally {
             setLoading(false);
         }
     };
 
-    // 2. Kiểm tra mã OTP khi người dùng nhập
+    // 2. Nhập mã OTP. Không tự chuyển bước chỉ vì đủ 6 chữ số:
+    // OTP chỉ được backend xác thực khi gửi yêu cầu đặt lại mật khẩu.
     const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
         setOtp(value);
-        setErrors({ ...errors, otp: null }); 
-        
-        if (value.length === 6) {
-            setTimeout(() => {
-                setErrors({});
-                setStep('reset');
-            }, 500);
+        setErrors((previous: any) => ({ ...previous, otp: null }));
+    };
+
+    const handleContinueToReset = async () => {
+        if (otp.length !== 6) {
+            setErrors((previous: any) => ({ ...previous, otp: 'Mã OTP phải gồm đúng 6 chữ số.' }));
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response: any = await authService.verifyForgotPasswordOtp(email, otp);
+            if (!response?.resetToken) {
+                throw new Error('Không nhận được phiên đặt lại mật khẩu.');
+            }
+
+            setResetToken(response.resetToken);
+            setErrors({});
+            setStep('reset');
+        } catch (error: any) {
+            setErrors((previous: any) => ({
+                ...previous,
+                otp: error.response?.data?.error?.message
+                    || error.response?.data?.message
+                    || 'Mã OTP không chính xác hoặc đã hết hạn.'
+            }));
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -113,7 +147,7 @@ const QuenMatKhau: React.FC = () => {
             const response: any = await authService.resetPassword({
                 Email: email,
                 NewPassword: password,
-                OtpCode: otp
+                ResetToken: resetToken
             });
 
             if (response.requiresLogoutOldest) {
@@ -222,6 +256,25 @@ const QuenMatKhau: React.FC = () => {
                                             </button>
                                         </div>
                                     </div>
+                                    <div className="col-12 mt-2 d-flex flex-column align-items-center">
+                                        <ReCAPTCHA
+                                            sitekey={RECAPTCHA_SITE_KEY || 'invalid-site-key'}
+                                            onChange={(token) => {
+                                                setCaptchaToken(token || '');
+                                                if (errors.captcha) setErrors((prev: any) => ({ ...prev, captcha: null }));
+                                            }}
+                                        />
+                                        {errors.captcha && <div className="text-danger small mt-1 text-center">{errors.captcha}</div>}
+                                    </div>
+                                    <div className="col-12 mt-3">
+                                        <button type="button"
+                                            className="btn btn-primary w-100 py-3 text-white fw-bold rounded-pill"
+                                            style={{ backgroundColor: '#fb873f', border: 'none' }}
+                                            onClick={handleContinueToReset}
+                                            disabled={otp.length !== 6 || loading}>
+                                            Tiếp tục đặt lại mật khẩu
+                                        </button>
+                                    </div>
                                     <div className="col-12 mt-3 text-center">
                                         <Link to="/dang-nhap" className="text-decoration-none small fw-bold" style={{color: '#fb873f'}}>Quay lại đăng nhập</Link>
                                     </div>
@@ -235,28 +288,30 @@ const QuenMatKhau: React.FC = () => {
                                 </div>
                                 <div className="row g-3 text-start">
                                     <div className="col-12">
-                                        <div className="form-floating">
-                                            <input type="password" 
-                                                className={`form-control ${errors.password ? 'is-invalid' : ''}`} 
-                                                placeholder="Pass"
-                                                value={password} 
-                                                onChange={(e) => { setPassword(e.target.value); setErrors({}); }} 
-                                            />
-                                            <label>Mật khẩu mới</label>
-                                            {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                                        </div>
+                                        <PasswordInput
+                                            id="reset-password"
+                                            label="Mật khẩu mới"
+                                            floating
+                                            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                                            placeholder="Mật khẩu mới"
+                                            value={password}
+                                            onChange={(e) => { setPassword(e.target.value); setErrors({}); }}
+                                            autoComplete="new-password"
+                                            error={errors.password}
+                                        />
                                     </div>
                                     <div className="col-12">
-                                        <div className="form-floating">
-                                            <input type="password" 
-                                                className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`} 
-                                                placeholder="Confirm"
-                                                value={confirmPassword} 
-                                                onChange={(e) => { setConfirmPassword(e.target.value); setErrors({}); }} 
-                                            />
-                                            <label>Nhập lại mật khẩu</label>
-                                            {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
-                                        </div>
+                                        <PasswordInput
+                                            id="reset-password-confirm"
+                                            label="Nhập lại mật khẩu"
+                                            floating
+                                            className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
+                                            placeholder="Nhập lại mật khẩu"
+                                            value={confirmPassword}
+                                            onChange={(e) => { setConfirmPassword(e.target.value); setErrors({}); }}
+                                            autoComplete="new-password"
+                                            error={errors.confirmPassword}
+                                        />
                                     </div>
                                     <button className="btn btn-primary w-100 py-3 mt-3 text-white fw-bold rounded-pill" 
                                         style={{backgroundColor: '#fb873f', border: 'none'}}

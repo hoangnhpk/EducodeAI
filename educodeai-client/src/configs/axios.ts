@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getDeviceInfo } from "../utils/deviceHelper";
+import { clearAuthTokens, getAuthTokens, setAuthTokens } from "../utils/authStorage";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -26,18 +27,11 @@ const processQueue = (error: any, token: string | null = null) => {
 // ======================
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("user_token");
+    const token = getAuthTokens().accessToken;
 
     // Gắn token nếu có
     if (token) {
       config.headers.Authorization = `Bearer ${token.trim()}`;
-    }
-
-    // 👉 ĐÃ THÊM: Gắn "kim bài miễn tử" cho Admin/Giảng viên
-    // Báo cho Cửa cuốn Middleware biết "Ta là Admin, cho ta qua!"
-    const currentPath = window.location.pathname.toLowerCase();
-    if (currentPath.includes('/quan-tri-vien')) {
-      config.headers["X-Bypass-Maintenance"] = "true";
     }
 
     if (config.data instanceof FormData) {
@@ -70,7 +64,7 @@ axiosClient.interceptors.response.use(
         import("sweetalert2").then((Swal) => {
           Swal.default.fire({
             title: "Tài khoản đã bị khóa!",
-            html: `Lý do: <b>${data.reason || "Vi phạm quy định hệ thống"}</b><br/>Hệ thống sẽ tự động đăng xuất sau <b>5</b> giây...`,
+            text: `Lý do: ${data.reason || "Vi phạm quy định hệ thống"}. Hệ thống sẽ tự động đăng xuất sau 5 giây...`,
             icon: "error",
             timer: 5000,
             timerProgressBar: true,
@@ -87,7 +81,8 @@ axiosClient.interceptors.response.use(
               clearInterval((Swal as any)._timerInterval);
             }
           }).then(() => {
-            localStorage.clear();
+            clearAuthTokens();
+            localStorage.removeItem("user_info");
             window.location.href = "/dang-nhap";
           });
         });
@@ -110,47 +105,19 @@ axiosClient.interceptors.response.use(
         originalRequest._retry = true;
         isRefreshing = true;
 
-        const refreshToken = localStorage.getItem("refresh_token");
         const { maThietBi } = getDeviceInfo();
 
-        if (!refreshToken) {
-          isRefreshing = false;
-          // Hiển thị thông báo và đếm ngược 3 giây
-          import("sweetalert2").then((Swal) => {
-            Swal.default.fire({
-              title: "Hết phiên đăng nhập!",
-              html: "Tài khoản của bạn đã được đăng xuất hoặc phiên làm việc đã hết hạn. Hệ thống sẽ chuyển hướng sau <b>3</b> giây...",
-              icon: "warning",
-              timer: 3000,
-              timerProgressBar: true,
-              showConfirmButton: false,
-              allowOutsideClick: false,
-              didOpen: () => {
-                const b = Swal.default.getHtmlContainer()?.querySelector("b");
-                let timerInterval = setInterval(() => {
-                  if (b) b.textContent = Math.ceil(Swal.default.getTimerLeft()! / 1000).toString();
-                }, 100);
-                (Swal as any)._timerInterval = timerInterval;
-              },
-              willClose: () => {
-                clearInterval((Swal as any)._timerInterval);
-              }
-            }).then(() => {
-              localStorage.clear();
-              window.location.href = "/dang-nhap";
-            });
-          });
-          return Promise.reject(error);
-        }
-
         try {
+          // Refresh token nằm trong cookie HttpOnly (JS không đọc được);
+          // gửi kèm tự động nhờ withCredentials. Không truyền token qua URL.
           const response: any = await axios.post(
-            `${import.meta.env.VITE_API_URL}/api/XacThuc/refresh-token?refreshToken=${refreshToken}&maThietBi=${maThietBi}`
+            `${import.meta.env.VITE_API_URL}/api/XacThuc/refresh-token`,
+            { maThietBi },
+            { withCredentials: true }
           );
-          
-          const { token, refreshToken: newRefreshToken } = response.data;
-          localStorage.setItem("user_token", token);
-          localStorage.setItem("refresh_token", newRefreshToken);
+
+          const { token } = response.data;
+          setAuthTokens(token);
 
           axiosClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
           processQueue(null, token);
@@ -165,9 +132,9 @@ axiosClient.interceptors.response.use(
           import("sweetalert2").then((Swal) => {
             Swal.default.fire({
               title: isLocked ? "Tài khoản bị khóa!" : "Hết phiên đăng nhập!",
-              html: isLocked 
-                ? `Lý do: <b>${errorData?.reason || "Vi phạm quy định"}</b>. Hệ thống sẽ chuyển hướng sau <b>5</b> giây...`
-                : "Phiên làm việc của bạn đã kết thúc. Hệ thống sẽ chuyển hướng sau <b>3</b> giây...",
+            text: isLocked
+                ? `Lý do: ${errorData?.reason || "Vi phạm quy định"}. Hệ thống sẽ chuyển hướng sau 5 giây...`
+                : "Phiên làm việc của bạn đã kết thúc. Hệ thống sẽ chuyển hướng sau 3 giây...",
               icon: "error",
               timer: isLocked ? 5000 : 3000,
               timerProgressBar: true,
@@ -184,7 +151,8 @@ axiosClient.interceptors.response.use(
                 clearInterval((Swal as any)._timerInterval);
               }
             }).then(() => {
-              localStorage.clear();
+              clearAuthTokens();
+              localStorage.removeItem("user_info");
               window.location.href = "/dang-nhap";
             });
           });
@@ -200,7 +168,6 @@ axiosClient.interceptors.response.use(
       window.dispatchEvent(new Event('BaoTriKhanCap'));
     }
 
-    console.error("❌ Lỗi API:", error.response?.status);
     return Promise.reject(error);
   }
 );
