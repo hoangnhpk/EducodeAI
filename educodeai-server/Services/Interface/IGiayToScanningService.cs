@@ -7,6 +7,6 @@ namespace educodeai_server.Services.Interface
         /// <summary>
         /// Quét OCR 2 mặt CCCD/Giấy tờ offline bằng Tesseract (fallback đọc QR code CCCD gắn chip).
         /// </summary>
-        Task<GiayToScanningResponse> QuetGiayToAsync(GiayToScanningRequest request);
+        Task<GiayToScanningResponse> QuetGiayToAsync(GiayToScanningRequest request, CancellationToken cancellationToken = default);
     }
 }

@@ -47,15 +47,11 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
           {/* Tên bài học hiển thị readonly */}
           <div className="col-12 mb-4">
             <label className="btth-label">Bài học đang chọn</label>
-            <div className="input-group">
-              <span className="input-group-text bg-light border-end-0" style={{ borderRadius: 'var(--radius-md) 0 0 var(--radius-md)' }}><i className="bi bi-journal-text" aria-hidden="true" /></span>
-              <input
-                type="text"
-                className="form-control border-start-0"
-                style={{ borderRadius: '0 var(--radius-md) var(--radius-md) 0', background: 'var(--bg-main)', fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}
-                value={tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
-                readOnly
-              />
+            <div className="selected-lesson-box">
+              <i className="bi bi-journal-text" aria-hidden="true" />
+              <span style={{ fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}>
+                {tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
+              </span>
             </div>
           </div>
 
@@ -117,7 +113,7 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
         <div className="mt-4 pt-2">
           <button
             type="submit"
-            className="btn w-100 py-3 d-flex align-items-center justify-content-center gap-2"
+            className="btn w-100 py-3 d-flex align-items-center justify-content-center gap-2 btth-generate-btn"
             style={{ borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '15px', background: 'var(--ai-accent)', color: 'var(--text-white)', boxShadow: 'var(--shadow-sm)' }}
             disabled={!baiHocId || isGenerating}
           >
