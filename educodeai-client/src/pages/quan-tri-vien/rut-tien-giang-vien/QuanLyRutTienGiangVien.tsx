@@ -327,7 +327,7 @@ export default function QuanLyRutTienGiangVien() {
                         <img
                           src={chiTiet.duongDanAnhQr}
                           alt="QR chuyển khoản"
-                          style={{ maxWidth: 280, height: "auto", border: "1px solid #e5e7eb", borderRadius: 8 }}
+                          style={{ maxWidth: 280, height: "auto", border: "1px solid var(--border-color)", borderRadius: 8 }}
                         />
                         <div className="mt-2">
                           <a href={chiTiet.duongDanAnhQr} target="_blank" rel="noreferrer" className="small">

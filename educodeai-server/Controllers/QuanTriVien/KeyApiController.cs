@@ -34,8 +34,10 @@ namespace educodeai_server.Controllers
             try
             {
                 var client = _httpClientFactory.CreateClient();
-                var url = $"https://generativelanguage.googleapis.com/v1beta/models?key={apiKey}";
-                var response = await client.GetAsync(url);
+                // Đưa key qua header x-goog-api-key thay vì query string để key không lọt vào access log/proxy.
+                var request = new HttpRequestMessage(HttpMethod.Get, "https://generativelanguage.googleapis.com/v1beta/models");
+                request.Headers.Add("x-goog-api-key", apiKey);
+                var response = await client.SendAsync(request);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -67,7 +69,6 @@ namespace educodeai_server.Controllers
                             ? dn.GetString() ?? ""
                             : m.GetProperty("name").GetString() ?? ""
                     })
-                    .Where(m => m.Name.StartsWith("models/gemini"))
                     .OrderBy(m => m.Name)
                     .ToList();
 

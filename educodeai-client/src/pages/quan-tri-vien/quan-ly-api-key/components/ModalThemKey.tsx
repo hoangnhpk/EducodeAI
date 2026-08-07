@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { KeyApiManage, KeyApiSummary, GeminiModel } from "../QuanLyApiKey.types";
 import axiosClient from "@/configs/axios";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface Props {
   isOpen: boolean;
@@ -24,6 +25,9 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
   const [modelList, setModelList] = useState<GeminiModel[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [fetchModelError, setFetchModelError] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useModalA11y(isOpen, onClose, panelRef);
 
   useEffect(() => {
     if (isOpen) {
@@ -75,7 +79,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
         headers: { "Content-Type": "application/json" },
       });
       if (res.length === 0) {
-        setFetchModelError("Không tìm thấy model Gemini nào cho key này.");
+        setFetchModelError("Không tìm thấy model sinh nội dung nào cho key này.");
       } else {
         setModelList(res);
         // Tự chọn model đầu tiên nếu chưa có
@@ -100,12 +104,19 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
 
   return (
     <>
-      <div className="modal-backdrop fade show" style={{ opacity: 0.5 }}></div>
+      <div className="modal-backdrop fade show" style={{ opacity: 0.5 }} onClick={() => !isSubmitting && onClose()}></div>
       <div className="modal fade show d-block" tabIndex={-1}>
         <div className="modal-dialog modal-dialog-centered modal-lg">
-          <div className="modal-content shadow-lg border-0 akm-modal" style={{ borderRadius: "12px" }}>
+          <div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="addKeyModalTitle"
+            className="modal-content shadow-lg border-0 akm-modal"
+            style={{ borderRadius: "12px" }}
+          >
             <div className="modal-header border-bottom-0 pb-0 pt-4 px-4">
-              <h5 className="modal-title fw-bold fs-5 text-dark">
+              <h5 id="addKeyModalTitle" className="modal-title fw-bold fs-5 text-dark">
                 {editData ? "Cập nhật API Key" : "Thêm API Key mới"}
               </h5>
               <button type="button" className="btn-close" onClick={onClose} disabled={isSubmitting}></button>

@@ -38,7 +38,16 @@ const IncomeSection = ({ tongQuan, theoThoiGian, theoKhoaHoc, nhomTheo, onNhomTh
   const topKhoaHocData = theoKhoaHoc.map((item, index) => ({
     tenKhoaHoc: item.tenKhoaHoc.length > 24 ? `${item.tenKhoaHoc.slice(0, 24)}...` : item.tenKhoaHoc,
     thucNhan: item.thucNhan,
-    fill: ['#2563eb', '#0ea5e9', '#06b6d4', '#14b8a6', '#22c55e', '#84cc16', '#f59e0b', '#f97316'][index % 8],
+    fill: [
+      'var(--primary)',
+      'var(--info)',
+      'var(--ai-accent)',
+      'var(--success)',
+      'var(--warning)',
+      'var(--primary-hover)',
+      'var(--info-strong)',
+      'var(--success-strong)',
+    ][index % 8],
   }));
 
   return (
@@ -95,7 +104,7 @@ const IncomeSection = ({ tongQuan, theoThoiGian, theoKhoaHoc, nhomTheo, onNhomTh
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={theoThoiGian}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eef2ff" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                 <XAxis dataKey="nhanThoiGian" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip
@@ -108,7 +117,7 @@ const IncomeSection = ({ tongQuan, theoThoiGian, theoKhoaHoc, nhomTheo, onNhomTh
                   type="monotone"
                   dataKey="thucNhan"
                   name="thucNhan"
-                  stroke="#16a34a"
+                  stroke="var(--success)"
                   strokeWidth={3}
                   dot={{ r: 4 }}
                 />
@@ -116,7 +125,7 @@ const IncomeSection = ({ tongQuan, theoThoiGian, theoKhoaHoc, nhomTheo, onNhomTh
                   type="monotone"
                   dataKey="phiNenTang"
                   name="phiNenTang"
-                  stroke="#f59e0b"
+                  stroke="var(--warning)"
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -132,7 +141,7 @@ const IncomeSection = ({ tongQuan, theoThoiGian, theoKhoaHoc, nhomTheo, onNhomTh
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topKhoaHocData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eef2ff" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
                 <XAxis dataKey="tenKhoaHoc" tick={{ fontSize: 12 }} interval={0} angle={-12} textAnchor="end" height={72} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip

@@ -108,6 +108,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false, isAI
               placeholder="Họ và tên"
               value={formData.hoTen}
               onChange={handleChange} maxLength={70}
+              aria-required="true"
             />
             <label className="required-field">Họ và tên</label>
             <div className="invalid-feedback">{errors.hoTen}</div>
@@ -121,6 +122,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false, isAI
               className={`form-select ${errors.trinhDo ? "is-invalid" : ""}`}
               value={formData.trinhDo}
               onChange={handleChange}
+              aria-required="true"
             >
               <option value="Người mới">Người mới bắt đầu</option>
               <option value="Trung cấp">Trung cấp</option>
@@ -138,6 +140,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false, isAI
               className="form-select"
               value={formData.phongCachHoc}
               onChange={handleChange}
+              aria-required="true"
             >
               <option value="video">Video và bài giảng</option>
               <option value="reading">Đọc sách và tài liệu</option>
@@ -193,6 +196,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false, isAI
               className="form-select"
               value={formData.thoiGianHoc}
               onChange={handleChange}
+              aria-required="true"
             >
               <option value="3">3 tháng</option>
               <option value="6">6 tháng</option>
@@ -209,6 +213,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false, isAI
               className="form-select"
               value={formData.mucDoCamKet}
               onChange={handleChange}
+              aria-required="true"
             >
               <option value="10">Part-time (5-10h/tuần)</option>
               <option value="30">Full-time (20-40h/tuần)</option>
@@ -265,7 +270,7 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false, isAI
         type="submit"
         className="btn btn-primary w-100 py-3 fw-bold text-uppercase shadow-sm"
         disabled={isSubmitting || !isAIAvailable}
-        style={!isAIAvailable ? { opacity: 0.6, cursor: 'not-allowed', background: '#94a3b8', borderColor: '#94a3b8' } : {}}
+        style={!isAIAvailable ? { opacity: 0.6, cursor: 'not-allowed', background: 'var(--text-light)', borderColor: 'var(--text-light)' } : {}}
       >
         {isSubmitting ? (
           <span><span className="spinner-border spinner-border-sm me-2" />Đang phân tích...</span>
