@@ -146,18 +146,29 @@ export const TabDanhGia: React.FC<Props> = ({ maKhoaHoc, maNguoiDung, daHoanThan
                 /* Chưa đánh giá → form */
                 <div className="cp-review-form-container">
                     <h5 style={{ marginBottom: '1rem', fontWeight: 600 }}>Gửi đánh giá của bạn</h5>
-                    <div className="cp-star-selector" onMouseLeave={() => setHoverRating(0)}>
+                    <div className="cp-star-selector" role="radiogroup" aria-label="Chọn số sao đánh giá" onMouseLeave={() => setHoverRating(0)}>
                         {[1, 2, 3, 4, 5].map(star => (
                             <i
                                 key={star}
                                 className={star <= (hoverRating || userRating) ? 'fas fa-star active' : 'fas fa-star'}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`${star} sao`}
+                                aria-pressed={star <= userRating}
                                 onMouseEnter={() => setHoverRating(star)}
                                 onClick={() => setUserRating(star)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        setUserRating(star);
+                                    }
+                                }}
                             />
                         ))}
                     </div>
                     <textarea
                         className="cp-review-textarea"
+                        aria-label="Nhận xét về khóa học"
                         placeholder="Chia sẻ cảm nhận của bạn về khóa học này..."
                         value={comment}
                         onChange={e => setComment(e.target.value)}

@@ -6,6 +6,8 @@ export default function QuanLyMaGiamGiaAdmin() {
   const [danhSach, setDanhSach] = useState<MaGiamGiaItemDTO[]>([]);
   const [khoaHocOptions, setKhoaHocOptions] = useState<KhoaHocApDungOptionDTO[]>([]);
   const [chonKhoaHoc, setChonKhoaHoc] = useState<number[]>([]);
+  const [dangTai, setDangTai] = useState(true);
+  const [loiTai, setLoiTai] = useState(false);
   const [form, setForm] = useState({
     code: "",
     tenChuongTrinh: "",
@@ -16,12 +18,21 @@ export default function QuanLyMaGiamGiaAdmin() {
   });
 
   const load = async () => {
-    const [ds, khoaHoc] = await Promise.all([
-      MaGiamGiaService.layDanhSachAdmin(),
-      MaGiamGiaService.layKhoaHocAdmin()
-    ]);
-    setDanhSach(ds);
-    setKhoaHocOptions(khoaHoc);
+    setDangTai(true);
+    setLoiTai(false);
+    try {
+      const [ds, khoaHoc] = await Promise.all([
+        MaGiamGiaService.layDanhSachAdmin(),
+        MaGiamGiaService.layKhoaHocAdmin()
+      ]);
+      setDanhSach(ds);
+      setKhoaHocOptions(khoaHoc);
+    } catch (error) {
+      console.error("Lỗi tải mã giảm giá:", error);
+      setLoiTai(true);
+    } finally {
+      setDangTai(false);
+    }
   };
 
   useEffect(() => {
@@ -113,7 +124,31 @@ export default function QuanLyMaGiamGiaAdmin() {
               <tr><th>Code</th><th>Loại</th><th>Giảm</th><th>Đã dùng</th><th>Phạm vi</th></tr>
             </thead>
             <tbody>
-              {danhSach.map((x) => (
+              {dangTai ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={`mgg-skeleton-${i}`}>
+                    <td colSpan={5}>
+                      <div className="placeholder-glow"><span className="placeholder col-12" style={{ height: 18, borderRadius: 6 }}></span></div>
+                    </td>
+                  </tr>
+                ))
+              ) : loiTai ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-4" style={{ color: 'var(--danger-strong)' }}>
+                    <i className="bi bi-exclamation-triangle d-block mb-2" style={{ fontSize: 24 }} aria-hidden="true"></i>
+                    Không tải được danh sách mã giảm giá.
+                    <div className="mt-2"><button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => void load()}>Thử lại</button></div>
+                  </td>
+                </tr>
+              ) : danhSach.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-4" style={{ color: 'var(--text-light)' }}>
+                    <i className="bi bi-ticket-perforated d-block mb-2" style={{ fontSize: 24 }} aria-hidden="true"></i>
+                    Chưa có mã giảm giá nào.
+                  </td>
+                </tr>
+              ) : (
+                danhSach.map((x) => (
                 <tr key={x.maVoucher}>
                   <td className="fw-semibold">{x.code}</td>
                   <td>{x.loaiGiamGia}</td>
@@ -121,7 +156,8 @@ export default function QuanLyMaGiamGiaAdmin() {
                   <td>{x.soLuongDaDung}/{x.soLuongToiDa || "∞"}</td>
                   <td><span className="badge bg-light text-dark border">{x.phamViApDung}</span></td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>

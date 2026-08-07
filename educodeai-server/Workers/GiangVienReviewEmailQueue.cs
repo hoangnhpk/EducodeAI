@@ -32,9 +32,7 @@ public sealed class GiangVienReviewEmailQueue : IGiangVienReviewEmailQueue
         try
         {
             await _redis.DayVaoCuoiListAsync(RedisKey, serialized);
-            var stored = await _redis.LayTuDauListAsync(RedisKey, 0);
-            // RedisService has no acknowledgement API; enqueue is considered accepted when no exception is raised.
-            if (stored is not null) return;
+            // RedisService reports write failures through logging; fallback is used only on exceptions.
         }
         catch (Exception ex) { _logger.LogWarning(ex, "Redis queue unavailable for email job {JobId}; using memory fallback.", job.Id); }
         await _memory.Writer.WriteAsync(job, cancellationToken);

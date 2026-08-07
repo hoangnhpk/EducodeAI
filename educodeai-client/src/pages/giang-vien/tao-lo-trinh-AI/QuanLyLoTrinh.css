@@ -1,13 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 /* =========================================
    CONTAINER VÀ GRID CHÍNH
    ========================================= */
 .quan-ly-container {
     padding: 2.5rem;
-    background-color: #f1f5f9;
+    background-color: var(--bg-main);
     min-height: 100vh;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-main);
 }
 
 .lo-trinh-grid {
@@ -19,8 +17,8 @@
 
 /* Card danh sách lộ trình */
 .lo-trinh-card {
-    background-color: #ffffff !important;
-    border: 2px solid #e2e8f0;
+    background-color: var(--bg-card) !important;
+    border: 2px solid var(--border-color);
     border-radius: 1.25rem;
     padding: 1.8rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -28,7 +26,7 @@
     flex-direction: column;
     justify-content: space-between;
     transition: all 0.3s ease;
-    border-left: 6px solid #2563eb; /* Vạch màu xanh nhận diện thương hiệu */
+    border-left: 6px solid var(--ai-accent); /* Vạch màu nhấn AI (tím) nhận diện tính năng AI */
 }
 
 .lo-trinh-card:hover {
@@ -41,7 +39,7 @@
     margin-top: 10px;
     font-size: 1.25rem;
     font-weight: 800;
-    color: #1e293b;
+    color: var(--text-main);
     line-height: 1.4;
 }
 
@@ -52,14 +50,14 @@
     align-items: center;
     margin-top: 1.5rem;
     padding-top: 1.2rem;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--border-light);
 }
 
 .id-tag {
     font-weight: 800;
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 0.85rem;
-    background: #f8fafc;
+    background: var(--bg-main);
     padding: 4px 10px;
     border-radius: 6px;
 }
@@ -71,8 +69,8 @@
 /* Nút Làm mới - Trắng tinh tế */
 .btn-refresh {
     background: white !important;
-    color: #475569 !important;
-    border: 1.5px solid #e2e8f0 !important;
+    color: var(--text-muted) !important;
+    border: 1.5px solid var(--border-color) !important;
     padding: 10px 20px !important;
     border-radius: 10px !important;
     font-weight: 700 !important;
@@ -81,14 +79,14 @@
 }
 
 .btn-refresh:hover {
-    background: #f8fafc !important;
-    border-color: #cbd5e1 !important;
-    color: #1e293b !important;
+    background: var(--bg-main) !important;
+    border-color: var(--text-light) !important;
+    color: var(--text-main) !important;
 }
 
 /* Nút Thêm Mới - Xanh lá chuyên nghiệp (Sếp yêu cầu) */
 .btn-save {
-    background: #10b981 !important; /* Màu xanh lá chuẩn Emerald */
+    background: var(--primary) !important; /* Màu xanh lá chuẩn Emerald */
     color: white !important;
     border: none !important;
     padding: 12px 25px !important;
@@ -102,15 +100,15 @@
 }
 
 .btn-save:hover {
-    background: #059669 !important;
+    background: var(--primary-hover) !important;
     transform: translateY(-2px);
     box-shadow: 0 10px 15px rgba(16, 185, 129, 0.4);
 }
 
 /* Nút Sửa/Xóa nhỏ trong Card */
 .btn-edit-small {
-    border: 2px solid #2563eb;
-    color: #2563eb;
+    border: 2px solid var(--ai-accent);
+    color: var(--ai-accent);
     font-weight: 700;
     padding: 6px 18px;
     border-radius: 8px;
@@ -120,13 +118,13 @@
 }
 
 .btn-edit-small:hover {
-    background: #2563eb;
+    background: var(--ai-accent);
     color: white;
 }
 
 .btn-delete {
-    border: 2px solid #ef4444;
-    color: #ef4444;
+    border: 2px solid var(--danger);
+    color: var(--danger);
     font-weight: 700;
     padding: 6px 18px;
     border-radius: 8px;
@@ -135,14 +133,14 @@
 }
 
 .btn-delete:hover {
-    background: #ef4444;
+    background: var(--danger);
     color: white;
 }
 
 /* Nút Hủy bỏ */
 .btn-cancel-pro {
-    background-color: #f1f5f9;
-    color: #475569;
+    background-color: var(--border-light);
+    color: var(--text-muted);
     padding: 12px 25px;
     border-radius: 12px;
     font-weight: 700;
@@ -182,7 +180,7 @@
 
 .modal-header-pro {
     padding: 25px 40px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-light);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -192,12 +190,12 @@
     padding: 30px 40px;
     overflow-y: auto;
     flex: 1;
-    background: #fcfcfd;
+    background: var(--bg-main);
 }
 
 .modal-footer-pro {
     padding: 20px 40px;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--border-light);
     display: flex;
     justify-content: flex-end;
     gap: 15px;
@@ -215,7 +213,7 @@
     padding: 15px 20px;
     border-radius: 16px;
     margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
@@ -228,8 +226,8 @@
 }
 
 .pro-step-num {
-    background: #eff6ff;
-    color: #2563eb;
+    background: var(--ai-accent-soft);
+    color: var(--ai-accent);
     width: 32px; height: 32px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -247,13 +245,13 @@
     cursor: pointer;
 }
 
-.st-req { background: #fee2e2 !important; color: #dc2626 !important; }
-.st-opt { background: #fef3c7 !important; color: #d97706 !important; }
+.st-req { background: var(--danger-soft) !important; color: var(--danger-strong) !important; }
+.st-opt { background: var(--warning-soft) !important; color: var(--warning-strong) !important; }
 
 /* Badge trạng thái ngoài Card */
 .badge-status {
-    background-color: #dcfce7;
-    color: #166534;
+    background-color: var(--success-soft);
+    color: var(--success-strong);
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.75rem;
@@ -263,7 +261,7 @@
 
 /* Nút xóa item khóa học */
 .btn-del-item {
-    color: #94a3b8;
+    color: var(--text-light);
     background: none;
     border: none;
     font-size: 1.2rem;
@@ -272,7 +270,7 @@
 }
 
 .btn-del-item:hover {
-    color: #ef4444;
+    color: var(--danger);
     transform: scale(1.1);
 }
 
@@ -288,7 +286,7 @@ button {
 
 /* Fix con số bị "kì" - tạo hình tròn số thứ tự cực chuẩn */
 .pro-step-num, .course-rank {
-    background: #2563eb !important;
+    background: var(--ai-accent) !important;
     color: white !important;
     width: 32px !important;
     height: 32px !important;
@@ -300,20 +298,20 @@ button {
     font-weight: 700 !important;
     font-family: 'Inter', sans-serif !important; /* Ép font cho con số */
     flex-shrink: 0;
-    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 4px 6px rgba(139, 92, 246, 0.2);
 }
 
 /* Làm đẹp ô Input và Select cho đồng bộ font */
 .input-pro {
     font-weight: 500;
-    color: #1e293b;
-    border: 1.5px solid #e2e8f0;
+    color: var(--text-main);
+    border: 1.5px solid var(--border-color);
 }
 
 .select-pro {
     font-size: 0.95rem;
     font-weight: 600;
-    color: #334155;
+    color: var(--text-main);
     cursor: pointer;
 }
 
@@ -368,7 +366,7 @@ button {
    ========================================= */
 .modal-header-pro {
     padding: 20px 30px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-light);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -377,7 +375,7 @@ button {
 
 .modal-header-pro h2 {
     font-weight: 800;
-    color: #1e293b;
+    color: var(--text-main);
     margin: 0;
     font-size: 1.5rem;
 }
@@ -389,10 +387,10 @@ button {
     right: 15px;
     width: 32px;
     height: 32px;
-    background: #f1f5f9; /* Nền xám nhạt */
+    background: var(--border-light); /* Nền xám nhạt */
     border: none;
     border-radius: 50%; /* Hình tròn */
-    color: #64748b;
+    color: var(--text-muted);
     font-size: 1.2rem;
     line-height: 32px;
     text-align: center;
@@ -405,8 +403,8 @@ button {
 }
 
 .close-x:hover {
-    background: #fee2e2; /* Nền đỏ nhạt khi hover */
-    color: #ef4444; /* Dấu X màu đỏ rực */
+    background: var(--danger-soft); /* Nền đỏ nhạt khi hover */
+    color: var(--danger); /* Dấu X màu đỏ rực */
     transform: rotate(90deg); /* Xoay nhẹ cho vui mắt */
 }
 
@@ -417,7 +415,7 @@ button {
     padding: 30px;
     overflow-y: auto;
     flex: 1;
-    background: #fbfcfd;
+    background: var(--bg-main);
 }
 
 /* Thẻ chứa mỗi chặng học - Có hình ảnh */
@@ -429,7 +427,7 @@ button {
     padding: 15px;
     border-radius: 12px;
     margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease;
 }
@@ -440,8 +438,8 @@ button {
 
 /* Số thứ tự chặng học */
 .pro-step-num {
-    background: #eff6ff;
-    color: #2563eb;
+    background: var(--ai-accent-soft);
+    color: var(--ai-accent);
     width: 28px; height: 28px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -455,7 +453,7 @@ button {
     height: 50px;
     border-radius: 8px;
     object-fit: cover; /* Đảm bảo ảnh không bị méo */
-    border: 1px solid #f1f5f9;
+    border: 1px solid var(--border-light);
 }
 
 /* Phần chứa tên và select */
@@ -469,7 +467,7 @@ button {
 /* Tên khóa học - Làm đậm lên */
 .course-info-select .course-name {
     font-weight: 700;
-    color: #1e293b;
+    color: var(--text-main);
     font-size: 0.95rem;
 }
 
@@ -477,16 +475,16 @@ button {
 .status-select {
     padding: 6px 10px;
     border-radius: 6px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    background: #f8fafc;
+    background: var(--bg-main);
 }
 
 /* Nút xóa chặng học */
 .btn-del-item {
-    color: #94a3b8;
+    color: var(--text-light);
     background: none;
     border: none;
     font-size: 1.1rem;
@@ -495,7 +493,7 @@ button {
 }
 
 .btn-del-item:hover {
-    color: #ef4444;
+    color: var(--danger);
 }
 
 /* =========================================
@@ -504,19 +502,19 @@ button {
 .form-input {
     width: 100%;
     padding: 12px;
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--border-color);
     border-radius: 10px;
     margin-top: 8px;
 }
 
 .form-input:focus {
-    border-color: #2563eb;
+    border-color: var(--ai-accent);
     outline: none;
 }
 
 .modal-footer-pro {
     padding: 20px 30px;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--border-light);
     display: flex;
     justify-content: flex-end;
     gap: 12px;
@@ -524,7 +522,7 @@ button {
 }
 
 .btn-save-pro {
-    background: #059669; /* Xanh lá cây cho nút chính */
+    background: var(--primary-hover); /* Xanh lá cây cho nút chính */
     color: white;
     border: none;
     padding: 12px 24px;
@@ -534,8 +532,8 @@ button {
 }
 
 .btn-cancel-pro {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--border-light);
+    color: var(--text-muted);
     border: none;
     padding: 12px 24px;
     border-radius: 10px;
@@ -544,8 +542,8 @@ button {
 }
 /* Nút xóa lộ trình ngoài Card danh sách */
 .btn-delete-small {
-    border: 2px solid #ef4444;
-    color: #ef4444;
+    border: 2px solid var(--danger);
+    color: var(--danger);
     font-weight: 700;
     padding: 6px 18px;
     border-radius: 8px;
@@ -555,7 +553,7 @@ button {
 }
 
 .btn-delete-small:hover {
-    background: #ef4444;
+    background: var(--danger);
     color: white;
     box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
 }
@@ -565,6 +563,6 @@ button {
     width: 6px;
 }
 .course-scroll-area::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
+    background: var(--border-color);
     border-radius: 10px;
 }

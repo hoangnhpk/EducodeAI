@@ -20,7 +20,7 @@ export const ExerciseFilter: React.FC<ExerciseFilterProps> = ({
     danhSachKhoaHocFilter
 }) => {
     return (
-        <div className="card mb-3" style={{ padding: 16 }}>
+        <div className="card mb-3 exercise-filter-bar" style={{ padding: 16 }}>
             <div className="row g-3">
                 <div className="col-md-4">
                     <input 
