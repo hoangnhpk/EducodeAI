@@ -288,7 +288,6 @@ const DangNhap: React.FC = () => {
                                                                 Swal.fire('Lỗi', `Google OAuth thất bại trước khi gọi API. Kiểm tra OAuth Client ID và Authorized JavaScript origins có ${currentOrigin}.`, 'error');
                                                             }}
                                                             ux_mode="popup"
-                                                            locale="vi"
                                                             theme="outline"
                                                             width="100%"
                                                         />

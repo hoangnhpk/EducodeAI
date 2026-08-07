@@ -664,6 +664,35 @@ body {
   display: block;
 }
 
+.password-input-toggle {
+  z-index: 6;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 50%;
+  background: transparent !important;
+  color: var(--primary) !important;
+  box-shadow: none !important;
+  line-height: 1;
+  appearance: none;
+}
+
+.password-input-toggle:hover,
+.password-input-toggle:active,
+.password-input-toggle:focus {
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--primary-hover) !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.password-input-toggle:focus-visible {
+  outline: 2px solid var(--primary) !important;
+  outline-offset: 2px;
+}
+
 .password-input-wrapper {
   position: relative;
 }
