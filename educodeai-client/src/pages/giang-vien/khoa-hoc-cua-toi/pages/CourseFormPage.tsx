@@ -293,7 +293,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
   return (
     <div className="khm-wrapper">
       <ToastContainer />
-      <div className="khm-page" style={{ maxWidth: 780 }}>
+      <div className="khm-page khm-course-form-page">
         {/* Breadcrumb */}
         <div className="khm-breadcrumb">
           <button onClick={onCancel}>Khóa học của tôi</button>
@@ -403,7 +403,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
                   <img
                     src={form.hinhAnh}
                     alt="Course Preview"
-                    style={{ maxHeight: '160px', borderRadius: '4px', border: '1px solid #ddd', objectFit: 'cover' }}
+                    style={{ maxHeight: '160px', borderRadius: '4px', border: '1px solid var(--khm-gray-200)', objectFit: 'cover' }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     onLoad={(e) => { (e.target as HTMLImageElement).style.display = 'block'; }}
                   />
@@ -458,7 +458,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
                       <iframe
                         src={preview.src}
                         title="Video giới thiệu khóa học"
-                        style={{ width: '100%', maxWidth: '520px', height: '292px', border: '1px solid #ddd', borderRadius: '8px' }}
+                        style={{ width: '100%', maxWidth: '520px', height: '292px', border: '1px solid var(--khm-gray-200)', borderRadius: '8px' }}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                       />
@@ -466,7 +466,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
                       <video
                         src={preview.src}
                         controls
-                        style={{ width: '100%', maxWidth: '520px', maxHeight: '292px', border: '1px solid #ddd', borderRadius: '8px', background: '#000' }}
+                        style={{ width: '100%', maxWidth: '520px', maxHeight: '292px', border: '1px solid var(--khm-gray-200)', borderRadius: '8px', background: '#000' }}
                       />
                     )}
                   </div>

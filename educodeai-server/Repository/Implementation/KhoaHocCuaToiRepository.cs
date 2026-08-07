@@ -20,6 +20,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocModel>> GetKhoaHocByGiangVienAsync(int maGiangVien)
         {
             return await _context.KhoaHocs
+                .AsNoTracking()
                 .Where(k => k.MaGiangVien == maGiangVien)
                 .Include(k => k.DangKyKhoaHocs)
                 .ToListAsync();
@@ -37,6 +38,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<KhoaHocModel?> GetKhoaHocDynamicStatsAsync(int maKhoaHoc, int maGiangVien)
         {
             return await _context.KhoaHocs
+                .AsNoTracking()
                 .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien)
                 .Include(k => k.DangKyKhoaHocs)
                     .ThenInclude(dk => dk.NguoiDung)
@@ -120,6 +122,12 @@ namespace educodeai_server.Repository.Implementation
         {
             _context.BaiHocs.Remove(baiHoc);
             return Task.CompletedTask;
+        }
+
+        public async Task<int> CountBaiHocByVideoPublicIdAsync(string publicId)
+        {
+            if (string.IsNullOrEmpty(publicId)) return 0;
+            return await _context.BaiHocs.CountAsync(b => b.VideoPublicId == publicId);
         }
 
         public async Task SaveChangesAsync()

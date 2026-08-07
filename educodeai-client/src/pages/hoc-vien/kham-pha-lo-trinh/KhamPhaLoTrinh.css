@@ -19,7 +19,7 @@
 .kp-header-title h1 {
     font-size: 2.2rem;
     font-weight: 900;
-    color: #1e293b;
+    color: var(--text-dark);
     margin-bottom: 8px;
 }
 
@@ -46,8 +46,18 @@
 
 .kp-search-input:focus {
     outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.kp-search-input:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.kp-search-input:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 /* Grid Lộ trình */
@@ -133,16 +143,16 @@
     color: #475569;
 }
 
-.kp-btn-view:hover { background: #e2e8f0; color: #1e293b; }
+.kp-btn-view:hover { background: #e2e8f0; color: var(--text-dark); }
 
 .kp-btn-save {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
     color: white;
 }
 
 .kp-btn-save:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+    background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-hover) 100%);
+    box-shadow: 0 4px 6px -1px rgba(246, 144, 80, 0.3);
 }
 
 /* Skeleton Loading (Hiệu ứng khi đang tải) */
@@ -286,7 +296,7 @@
 }
 
 .kp-course-info { flex: 1; }
-.kp-course-info h4 { margin: 0 0 5px 0; color: #1e293b; font-weight: 700; }
+.kp-course-info h4 { margin: 0 0 5px 0; color: var(--text-dark); font-weight: 700; }
 
 .badge-req {
     background: #fee2e2; color: #dc2626;
@@ -329,7 +339,7 @@
 
 .kp-timeline-item:hover {
     transform: translateX(5px);
-    border-color: #3b82f6;
+    border-color: var(--primary);
 }
 
 /* FIX ẢNH KHỔNG LỒ Ở ĐÂY SẾP NHÉ */
@@ -356,7 +366,7 @@
     margin: 0;
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--text-dark);
     line-height: 1.4;
 }
 

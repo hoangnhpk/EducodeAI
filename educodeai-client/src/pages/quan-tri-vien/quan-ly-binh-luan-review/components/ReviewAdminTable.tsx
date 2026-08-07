@@ -1,4 +1,3 @@
-import { CheckCircle2, Eye, MessageSquareText, ShieldX, Star, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import type { ReviewItem } from './ReviewAdmin.types';
 import { formatDate, getTrangThaiClass, getTrangThaiLabel, truncateText } from './review-admin.utils';
@@ -19,11 +18,11 @@ interface Props {
 const renderStars = (count: number) => (
   <div className="qtrv-stars-cell">
     {[1, 2, 3, 4, 5].map((star) => (
-      <Star
+      <i
         key={star}
-        size={14}
-        fill={star <= count ? '#f59e0b' : 'none'}
-        color={star <= count ? '#f59e0b' : '#d1d5db'}
+        className={star <= count ? 'fas fa-star' : 'far fa-star'}
+        style={{ color: star <= count ? 'var(--warning)' : 'var(--text-light)' }}
+        aria-hidden="true"
       />
     ))}
   </div>
@@ -53,7 +52,7 @@ export default function ReviewAdminTable({
   if (reviews.length === 0) {
     return (
       <div className="qtrv-table-state">
-        <MessageSquareText size={42} />
+        <i className="fas fa-comment-dots" style={{ fontSize: 42 }} aria-hidden="true" />
         <p>Không có đánh giá nào phù hợp bộ lọc hiện tại.</p>
       </div>
     );
@@ -120,8 +119,8 @@ export default function ReviewAdminTable({
                 </td>
                 <td>
                   <div className="qtrv-action-row">
-                    <button type="button" className="qtrv-icon-btn" onClick={() => onPreview(review)} title="Xem chi tiết">
-                      <Eye size={16} />
+                    <button type="button" className="qtrv-icon-btn" onClick={() => onPreview(review)} title="Xem chi tiết" aria-label="Xem chi tiết">
+                      <i className="fas fa-eye" aria-hidden="true" />
                     </button>
 
                     {review.trangThai !== 'DaDuyet' && (
@@ -130,8 +129,9 @@ export default function ReviewAdminTable({
                         className="qtrv-icon-btn success"
                         onClick={() => onApprove(review.id)}
                         title="Duyệt"
+                        aria-label="Duyệt"
                       >
-                        <CheckCircle2 size={16} />
+                        <i className="fas fa-circle-check" aria-hidden="true" />
                       </button>
                     )}
 
@@ -141,8 +141,9 @@ export default function ReviewAdminTable({
                         className="qtrv-icon-btn warning"
                         onClick={() => onReject(review.id)}
                         title="Từ chối"
+                        aria-label="Từ chối"
                       >
-                        <ShieldX size={16} />
+                        <i className="fas fa-shield-xmark" aria-hidden="true" />
                       </button>
                     )}
 
@@ -157,7 +158,7 @@ export default function ReviewAdminTable({
                           showCancelButton: true,
                           confirmButtonText: 'Xóa',
                           cancelButtonText: 'Hủy',
-                          confirmButtonColor: '#dc2626',
+                          confirmButtonColor: 'var(--danger)',
                         }).then((result) => {
                           if (result.isConfirmed) {
                             onDelete(review.id);
@@ -165,8 +166,9 @@ export default function ReviewAdminTable({
                         });
                       }}
                       title="Xóa"
+                      aria-label="Xóa"
                     >
-                      <Trash2 size={16} />
+                      <i className="fas fa-trash" aria-hidden="true" />
                     </button>
                   </div>
                 </td>
