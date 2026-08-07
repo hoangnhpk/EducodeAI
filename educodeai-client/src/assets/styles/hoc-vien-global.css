@@ -664,6 +664,81 @@ body {
   display: block;
 }
 
+.password-input-toggle {
+  z-index: 6;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 50%;
+  background: transparent !important;
+  color: var(--primary) !important;
+  box-shadow: none !important;
+  line-height: 1;
+  appearance: none;
+}
+
+.password-input-toggle:hover,
+.password-input-toggle:active,
+.password-input-toggle:focus {
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--primary-hover) !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.password-input-toggle:focus-visible {
+  outline: 2px solid var(--primary) !important;
+  outline-offset: 2px;
+}
+
+.google-login-button {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  overflow: visible;
+}
+
+.google-login-button > div {
+  width: 80% !important;
+  height: 64px !important;
+  transform: scaleX(1.25);
+  transform-origin: left center;
+  display: flex !important;
+  align-items: center;
+}
+
+.google-login-button > div > div {
+  width: 100% !important;
+  height: 64px !important;
+  display: flex !important;
+  align-items: center;
+}
+
+.google-login-button iframe {
+  width: 100% !important;
+  height: 64px !important;
+  min-height: 64px !important;
+  transform: none !important;
+}
+
+.login-footer-links {
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.dkgv-password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .password-input-wrapper {
   position: relative;
 }
