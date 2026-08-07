@@ -85,6 +85,21 @@ namespace educodeai_server.Services
             }
         }
 
+        public async Task<IEnumerable<string>> LayTuDauListAsync(string key, int soLuong)
+        {
+            try
+            {
+                if (soLuong <= 0) return Enumerable.Empty<string>();
+                var values = await _db.ListRangeAsync(key, 0, soLuong - 1);
+                return values.Select(v => v.ToString()).ToList();
+            }
+            catch (RedisConnectionException ex)
+            {
+                _logger.LogWarning(ex, "Redis unavailable – LayTuDauListAsync({Key}) returned empty", key);
+                return Enumerable.Empty<string>();
+            }
+        }
+
         public async Task CatDauListAsync(string key, int soLuong)
         {
             try { await _db.ListTrimAsync(key, soLuong, -1); }
