@@ -4,6 +4,22 @@ import { clearAuthTokens, getAuthTokens, setAuthTokens } from '../utils/authStor
 
 let bootstrapPromise: Promise<boolean> | null = null
 
+const persistRefreshUser = (user: unknown): void => {
+  if (!user || typeof user !== 'object') return
+  const source = user as Record<string, unknown>
+  const allowlisted = {
+    maNguoiDung: source.maNguoiDung ?? source.MaNguoiDung,
+    id: source.id ?? source.Id ?? source.maNguoiDung ?? source.MaNguoiDung,
+    taiKhoan: source.taiKhoan ?? source.TaiKhoan,
+    hoTen: source.hoTen ?? source.HoTen,
+    email: source.email ?? source.Email,
+    vaiTro: source.vaiTro ?? source.VaiTro,
+    anhDaiDien: source.anhDaiDien ?? source.AnhDaiDien
+  }
+  if (allowlisted.maNguoiDung == null && allowlisted.id == null) return
+  localStorage.setItem('user_info', JSON.stringify(allowlisted))
+}
+
 export const bootstrapAuth = (): Promise<boolean> => {
   if (getAuthTokens().accessToken) return Promise.resolve(true)
   if (bootstrapPromise) return bootstrapPromise
@@ -21,6 +37,7 @@ export const bootstrapAuth = (): Promise<boolean> => {
       const token = response.data?.token
       if (typeof token !== 'string' || !token.trim()) return false
       setAuthTokens(token)
+      persistRefreshUser(response.data?.user)
       return true
     })
     .catch(() => {

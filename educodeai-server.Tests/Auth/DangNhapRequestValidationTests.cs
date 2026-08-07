@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using educodeai_server.DTOs.XacThuc;
+using educodeai_server.Services.Security;
 
 namespace educodeai_server.Tests.Auth;
 
@@ -23,6 +24,37 @@ public sealed class DangNhapRequestValidationTests
     }
 
     [Fact]
+    public void DangNhapRequest_WithoutCaptcha_IsValidWhenOtherRequiredFieldsArePresent()
+    {
+        var request = new DangNhapRequest
+        {
+            TaiKhoan = "  StudentUser  ",
+            MatKhau = "StrongPassword123!",
+            MaThietBi = "device-001"
+        };
+
+        var validationResults = Validate(request);
+
+        Assert.DoesNotContain(validationResults, result =>
+            result.MemberNames.Contains(nameof(DangNhapRequest.CaptchaToken)));
+    }
+
+    [Fact]
+    public void NormalizeAccount_TrimsAndNormalizesCasing()
+    {
+        Assert.Equal("studentuser", PasswordLoginContract.NormalizeAccount("  StudentUser  "));
+    }
+
+    [Fact]
+    public void EnsureOtpDelivered_WhenEmailFails_ThrowsActionableError()
+    {
+        var exception = Assert.Throws<educodeai_server.Helpers.ApiException>(() =>
+            PasswordLoginContract.EnsureOtpDelivered(false));
+
+        Assert.Contains("không thể gửi", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void DangNhapRequest_MissingRequiredFields_ReturnsValidationErrors()
     {
         var request = new DangNhapRequest();
@@ -31,7 +63,7 @@ public sealed class DangNhapRequestValidationTests
 
         Assert.Contains(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.TaiKhoan)));
         Assert.Contains(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.MatKhau)));
-        Assert.Contains(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.CaptchaToken)));
+        Assert.DoesNotContain(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.CaptchaToken)));
         Assert.Contains(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.MaThietBi)));
     }
 
