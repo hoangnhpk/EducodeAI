@@ -3,7 +3,7 @@
 }
 
 .ai-color {
-    color: #fb873f;
+    color: var(--primary);
 }
 
 .textarea-height {
@@ -12,7 +12,7 @@
 
 .ai-info-box {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 2px solid #fb873f;
+    border: 2px solid var(--primary);
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 30px;
@@ -36,7 +36,7 @@
 
 .ai-info-box ul li:before {
     content: "•";
-    color: #fb873f;
+    color: var(--primary);
     font-weight: bold;
     position: absolute;
     left: 0;
@@ -44,7 +44,7 @@
 
 /* AI Roadmap Styles */
 #aiResult .card {
-    border: 1px solid #fb873f;
+    border: 1px solid var(--primary);
     transition: transform 0.3s ease;
 }
 
@@ -54,12 +54,12 @@
 }
 
 #aiResult .card-title {
-    color: #fb873f;
+    color: var(--primary);
 }
 
 .ai-info-box {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 2px solid #fb873f;
+    border: 2px solid var(--primary);
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 30px;
@@ -68,7 +68,7 @@
 .ai-info-box .ai-icon {
     font-size: 2rem;
     margin-bottom: 10px;
-    color: #fb873f;
+    color: var(--primary);
 }
 
 .ai-info-box ul {
@@ -84,7 +84,7 @@
 
 .ai-info-box ul li:before {
     content: "•";
-    color: #fb873f;
+    color: var(--primary);
     font-weight: bold;
     position: absolute;
     left: 0;
@@ -135,7 +135,7 @@
     content: "✓";
     position: absolute;
     left: 0;
-    color: #fb873f;
+    color: var(--primary);
     font-weight: bold;
 }
 
@@ -157,14 +157,14 @@
 /* Required field indicator */
 .required-field::after {
     content: " *";
-    color: #dc3545;
+    color: var(--danger);
     font-weight: bold;
 }
 
 /* Validation styles */
 .form-control.is-invalid,
 .form-select.is-invalid {
-    border-color: #dc3545;
+    border-color: var(--danger);
     padding-right: calc(1.5em + 0.75rem);
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6 .4.4.4-.4m0 4.8-.4-.4-.4.4'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
@@ -177,7 +177,7 @@
     width: 100%;
     margin-top: 0.25rem;
     font-size: 0.875em;
-    color: #dc3545;
+    color: var(--danger);
 }
 
 .form-control.is-invalid~.invalid-feedback,
@@ -194,7 +194,7 @@
 .timeline {
   position: relative;
   margin-left: 20px;
-  border-left: 3px solid #fb873f;
+  border-left: 3px solid var(--primary);
   padding-left: 20px;
 }
 
@@ -210,13 +210,13 @@
   top: 5px;
   width: 12px;
   height: 12px;
-  background-color: #fb873f;
+  background-color: var(--primary);
   border-radius: 50%;
 }
 
 .timeline-time {
   font-weight: 600;
-  color: #fb873f;
+  color: var(--primary);
   margin-bottom: 5px;
 }
 
@@ -230,7 +230,7 @@
 /* Thêm style cho Giai đoạn */
 .phase-header {
     background: #fff !important;
-    border-color: #fb873f !important; /* Màu cam chủ đạo */
+    border-color: var(--primary) !important; /* Màu cam chủ đạo */
     position: relative;
     transition: all 0.3s;
 }
@@ -248,14 +248,14 @@
 .timeline {
     margin-left: 15px !important;
     padding-left: 25px !important;
-    border-left: 2px dashed #fb873f !important; /* Đổi thành nét đứt cho nghệ */
+    border-left: 2px dashed var(--primary) !important; /* Đổi thành nét đứt cho nghệ */
 }
 
 /* Chỉnh lại chấm tròn timeline cho khớp */
 .timeline-item::before {
     left: -32px !important; /* Căn chỉnh lại vị trí chấm tròn */
     background-color: #fff !important;
-    border: 3px solid #fb873f;
+    border: 3px solid var(--primary);
     width: 14px;
     height: 14px;
 }

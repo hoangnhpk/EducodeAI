@@ -49,7 +49,7 @@ export default function SidebarQuanTriVienMoi() {
           {choDuyetCount > 0 && (
             <span style={{
               marginLeft: 'auto',
-              backgroundColor: '#fb873f',
+              backgroundColor: 'var(--primary)',
               color: '#fff',
               borderRadius: '999px',
               padding: '0 8px',
