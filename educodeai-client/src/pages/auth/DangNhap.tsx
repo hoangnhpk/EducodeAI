@@ -3,7 +3,6 @@ import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import FacebookLogin from '@greatsumini/react-facebook-login';
 import { getDeviceInfo } from '../../utils/deviceHelper';
 import { FaArrowLeft } from 'react-icons/fa';
 import ReCAPTCHA from "react-google-recaptcha";
@@ -31,7 +30,6 @@ const DangNhap: React.FC = () => {
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "335320969122-3e5a0uoj7scbhmgi83utlesvf5rbrtdt.apps.googleusercontent.com";
-    const FACEBOOK_APP_ID = "994470786348116";
     
     const redirectByUserRole = (user: LoginUser) => {
         const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
@@ -266,7 +264,7 @@ const DangNhap: React.FC = () => {
                                                     <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted">Hoặc đăng nhập với</span>
                                                 </div>
 
-                                                <div className="col-12 d-flex gap-2">
+                                                <div className="col-12 d-flex">
                                                     <div className="w-100">
                                                         <GoogleLogin
                                                             onSuccess={async (credentialResponse) => {
@@ -290,40 +288,9 @@ const DangNhap: React.FC = () => {
                                                                 Swal.fire('Lỗi', `Google OAuth thất bại trước khi gọi API. Kiểm tra OAuth Client ID và Authorized JavaScript origins có ${currentOrigin}.`, 'error');
                                                             }}
                                                             ux_mode="popup"
+                                                            locale="vi"
                                                             theme="outline"
                                                             width="100%"
-                                                        />
-                                                    </div>
-                                                    <div className="w-100">
-                                                        <FacebookLogin
-                                                            appId={FACEBOOK_APP_ID}
-                                                            scope="public_profile,email"
-                                                            fields="name,email,picture"
-                                                            onSuccess={async (response: any) => {
-                                                                try {
-                                                                    setIsLoading(true);
-                                                                    const { maThietBi, tenThietBi } = getDeviceInfo();
-                                                                    // E.6: gửi access token thô để backend verify với Graph API.
-                                                                    const fbResponse: any = await authService.facebookLogin(
-                                                                        { accessToken: response.accessToken },
-                                                                        maThietBi, tenThietBi);
-                                                                    await handleLoginResponse(fbResponse);
-                                                                } catch (error: any) {
-                                                                    const msg = error.response?.data?.message || error.message || 'Đăng nhập Facebook thất bại';
-                                                                    Swal.fire('Lỗi', msg, 'error');
-                                                                } finally {
-                                                                    setIsLoading(false);
-                                                                }
-                                                            }}
-                                                            onFail={(error) => {
-                                                                console.error('FB Login Fail:', error);
-                                                                Swal.fire('Lỗi', 'Kết nối với Facebook thất bại', 'error');
-                                                            }}
-                                                            render={({ onClick }) => (
-                                                                <button onClick={onClick} className="btn btn-outline-primary w-100 py-2 fw-bold rounded-3 d-flex align-items-center justify-content-center" style={{ height: '40px', borderColor: '#dee2e6', color: '#666' }}>
-                                                                    <i className="bi bi-facebook me-2" style={{ color: '#1877F2' }}></i> Facebook
-                                                                </button>
-                                                            )}
                                                         />
                                                     </div>
                                                 </div>
