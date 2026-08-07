@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import TongQuan from "./tong-quan";
-import KhoaHocCuaToi from "../khoa-hoc-cua-toi/KhoaHocCuaToiHocVien";
 import CaiDat from "./cai-dat";
 import {
   getHoSoHocVien,
@@ -9,7 +8,7 @@ import {
 
 import "./ho-so-hoc-vien.css";
 
-type TabType = "tong-quan" | "khoa-hoc" | "cai-dat";
+type TabType = "tong-quan" | "cai-dat";
 
 const HoSoHocVien = () => {
   const [activeTab, setActiveTab] = useState<TabType>("tong-quan");
@@ -18,19 +17,15 @@ const HoSoHocVien = () => {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    console.log("🚀 Component mounted - Bắt đầu fetch data...");
-    
     getHoSoHocVien()
       .then((res) => {
-        console.log("✅ Hồ sơ học viên nhận được:", res);
         setData(res);
       })
       .catch((err) => {
-        console.error("❌ Lỗi lấy hồ sơ học viên:", err);
+        console.error("Lỗi lấy hồ sơ học viên:", err);
         setError(err.message || "Có lỗi xảy ra");
       })
       .finally(() => {
-        console.log("🏁 Hoàn thành fetch data");
         setLoading(false);
       });
   }, []);
@@ -47,7 +42,7 @@ const HoSoHocVien = () => {
   if (error) {
     return (
       <div className="error">
-        <p>❌ Lỗi Rồi: {error}</p>
+        <p>Lỗi: {error}</p>
         <button onClick={() => window.location.reload()}>
           Thử lại
         </button>
@@ -58,7 +53,7 @@ const HoSoHocVien = () => {
   if (!data) {
     return (
       <div className="no-data">
-        <p>⚠️ Không có dữ liệu</p>
+        <p>Không có dữ liệu</p>
         <button onClick={() => window.location.reload()}>
           Tải lại
         </button>
@@ -70,8 +65,6 @@ const HoSoHocVien = () => {
     switch (activeTab) {
       case "tong-quan":
         return <TongQuan data={data} />;
-      case "khoa-hoc":
-        return <KhoaHocCuaToi />;
       case "cai-dat":
         return <CaiDat />;
       default:
@@ -81,7 +74,6 @@ const HoSoHocVien = () => {
 
   return (
     <div className="hoc-vien-page">
-      {/* TABS */}
       <div className="tabs-navigation">
         <button
           className={`tab-btn ${activeTab === "tong-quan" ? "active" : ""}`}
@@ -89,14 +81,6 @@ const HoSoHocVien = () => {
         >
           <span className="tab-icon">👤</span>
           Tổng Quan
-        </button>
-
-        <button
-          className={`tab-btn ${activeTab === "khoa-hoc" ? "active" : ""}`}
-          onClick={() => setActiveTab("khoa-hoc")}
-        >
-          <span className="tab-icon">📚</span>
-          Khóa Học
         </button>
 
         <button
@@ -108,7 +92,6 @@ const HoSoHocVien = () => {
         </button>
       </div>
 
-      {/* CONTENT */}
       <div className="tab-content">{renderContent()}</div>
     </div>
   );
