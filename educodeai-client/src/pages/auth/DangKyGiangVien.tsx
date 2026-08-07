@@ -5,6 +5,7 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import { authService } from '../../services/auth.service';
 import { DANH_MUC_NGAN_HANG_MAC_DINH } from '../../constants/danh-muc-ngan-hang-mac-dinh';
 import './DangKyGiangVien.css';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 type PaymentMethod = 'BANK' | 'PAYPAL' | 'PAYONEER';
 
@@ -86,6 +87,8 @@ export default function DangKyGiangVien() {
   const backInputRef = useRef<HTMLInputElement | null>(null);
   const bankBoxRef = useRef<HTMLDivElement | null>(null);
   const emailCaptchaRef = useRef<ReCAPTCHA | null>(null);
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     hoTen: '',
@@ -691,7 +694,7 @@ export default function DangKyGiangVien() {
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label"><i className="bi bi-link-45deg me-2" />Link LinkedIn</label><input className="dkgv-form-control" placeholder="https://linkedin.com/in/username" maxLength={255} value={form.linkedInUrl} onChange={(e) => setField('linkedInUrl', e.target.value)} /></div></div>
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label"><i className="bi bi-globe2 me-2" />Portfolio / Website</label><input className="dkgv-form-control" placeholder="https://yourwebsite.com" maxLength={255} value={form.websiteUrl} onChange={(e) => setField('websiteUrl', e.target.value)} /></div></div>
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tài khoản</label><input className={`dkgv-form-control ${errors.taiKhoan ? 'is-invalid' : ''}`} placeholder="Tên tài khoản đăng nhập" maxLength={50} value={form.taiKhoan} onChange={(e) => setField('taiKhoan', e.target.value.replace(/\s/g, ''))} />{errors.taiKhoan && <div className="text-danger small mt-1">{errors.taiKhoan}</div>}</div></div>
-                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Mật khẩu</label><input type="password" className={`dkgv-form-control ${errors.matKhau ? 'is-invalid' : ''}`} placeholder="Mật khẩu tối thiểu 8 ký tự" maxLength={50} value={form.matKhau} onChange={(e) => setField('matKhau', e.target.value)} />{errors.matKhau && <div className="text-danger small mt-1">{errors.matKhau}</div>}</div></div>
+                <div className="col-md-6"><div className="dkgv-form-group position-relative"><label className="dkgv-form-label">Mật khẩu</label><input type={showPassword ? 'text' : 'password'} className={`dkgv-form-control ${errors.matKhau ? 'is-invalid' : ''}`} placeholder="Mật khẩu tối thiểu 8 ký tự" maxLength={50} value={form.matKhau} onChange={(e) => setField('matKhau', e.target.value)} /><button type="button" className="password-input-toggle dkgv-password-toggle" aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowPassword((visible) => !visible)}>{showPassword ? <FaEyeSlash /> : <FaEye />}</button>{errors.matKhau && <div className="text-danger small mt-1">{errors.matKhau}</div>}</div></div>
                 <div className="col-md-6">
                   <div className="dkgv-form-group">
                     <label className="dkgv-form-label">Email {statusBadge(verification.emailStatus, 'email')}</label>

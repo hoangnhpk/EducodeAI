@@ -265,7 +265,7 @@ const DangNhap: React.FC = () => {
                                                 </div>
 
                                                 <div className="col-12 d-flex">
-                                                    <div className="w-100">
+                                                    <div className="w-100 google-login-button">
                                                         <GoogleLogin
                                                             onSuccess={async (credentialResponse) => {
                                                                 try {
