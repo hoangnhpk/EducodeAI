@@ -693,6 +693,20 @@ body {
   outline-offset: 2px;
 }
 
+.google-login-button > div {
+  width: 100% !important;
+}
+
+.google-login-button iframe {
+  min-height: 52px !important;
+}
+
+.dkgv-password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 2.25rem;
+}
+
 .password-input-wrapper {
   position: relative;
 }
