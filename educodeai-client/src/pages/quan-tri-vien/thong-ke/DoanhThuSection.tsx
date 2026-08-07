@@ -36,6 +36,15 @@ const NHOM_LABELS: Record<NhomDoanhThuTheoThoiGian, string> = {
   year: 'Năm',
 };
 
+// Màu series biểu đồ recharts (SVG attribute — var() không resolve ở đây) — gom về một chỗ.
+const CHART_COLORS = {
+  tongDoanhThu: '#f69050',
+  phiNenTang: '#f59e0b',
+  thucNhanGV: '#16a34a',
+  dotFill: '#ffffff',
+  grid: '#f3f4f6',
+};
+
 export default function DoanhThuSection({
   tongQuan,
   theoThoiGian,
@@ -54,7 +63,7 @@ export default function DoanhThuSection({
     <div className="adm-revenue card border-0 shadow-sm">
       <div className="adm-revenue__header">
         <h2 className="adm-revenue__title">
-          <i className="bi bi-cash-stack" style={{ marginRight: '8px', color: '#059669' }} />
+          <i className="bi bi-cash-stack" style={{ marginRight: '8px', color: 'var(--success)' }} />
           Thống kê doanh thu
         </h2>
       </div>
@@ -112,7 +121,7 @@ export default function DoanhThuSection({
         ) : (
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={chartData} margin={{ top: 12, right: 20, left: 8, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
               <XAxis dataKey="label" tick={{ fontSize: 12 }} angle={nhomTheo === 'day' ? -35 : -15} textAnchor="end" height={50} />
               <YAxis
                 tick={{ fontSize: 12 }}
@@ -122,11 +131,11 @@ export default function DoanhThuSection({
               />
               <Tooltip
                 contentStyle={{
-                  background: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '10px',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-md)',
                   padding: '10px 12px',
-                  boxShadow: '0 10px 30px rgba(2, 6, 23, 0.10)',
+                  boxShadow: 'var(--shadow-lg)',
                 }}
                 formatter={(value: unknown, name?: string) => {
                   const labels: Record<string, string> = {
@@ -151,26 +160,26 @@ export default function DoanhThuSection({
                 type="monotone"
                 dataKey="tongDoanhThu"
                 name="tongDoanhThu"
-                stroke="#f69050"
+                stroke={CHART_COLORS.tongDoanhThu}
                 strokeWidth={3}
-                dot={{ r: 3.5, strokeWidth: 2, stroke: '#f69050', fill: '#fff' }}
+                dot={{ r: 3.5, strokeWidth: 2, stroke: CHART_COLORS.tongDoanhThu, fill: CHART_COLORS.dotFill }}
                 activeDot={{ r: 5.5 }}
               />
               <Line
                 type="monotone"
                 dataKey="phiNenTang"
                 name="phiNenTang"
-                stroke="#f59e0b"
+                stroke={CHART_COLORS.phiNenTang}
                 strokeWidth={2}
-                dot={{ r: 3, strokeWidth: 2, stroke: '#f59e0b', fill: '#fff' }}
+                dot={{ r: 3, strokeWidth: 2, stroke: CHART_COLORS.phiNenTang, fill: CHART_COLORS.dotFill }}
               />
               <Line
                 type="monotone"
                 dataKey="thucNhanGV"
                 name="thucNhanGV"
-                stroke="#16a34a"
+                stroke={CHART_COLORS.thucNhanGV}
                 strokeWidth={2}
-                dot={{ r: 3, strokeWidth: 2, stroke: '#16a34a', fill: '#fff' }}
+                dot={{ r: 3, strokeWidth: 2, stroke: CHART_COLORS.thucNhanGV, fill: CHART_COLORS.dotFill }}
               />
             </LineChart>
           </ResponsiveContainer>

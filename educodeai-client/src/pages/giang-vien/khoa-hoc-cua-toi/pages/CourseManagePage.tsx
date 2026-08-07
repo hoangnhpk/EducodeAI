@@ -15,7 +15,7 @@ const getGiangVienId = (): number => {
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 const getImageUrl = (url?: string) => {
-  if (!url) return 'https://placehold.co/600x200/6366f1/white?text=Khóa+Học';
+  if (!url) return 'https://placehold.co/600x200/f69050/white?text=Khóa+Học';
   if (url.startsWith('http')) return url;
   if (url.startsWith('/')) return `${BASE_URL}${url}`;
   return `/img/${url}`;
@@ -50,6 +50,8 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
   const [confirmCertToggle, setConfirmCertToggle] = useState<'enable' | 'disable' | null>(null);
   const [generatingAI, setGeneratingAI] = useState(false);
   const [showQuizEditor, setShowQuizEditor] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const loadDetail = useCallback(async () => {
     try {
@@ -141,14 +143,17 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
 
 
 
-  const handleDelete = async () => {
-    if (!window.confirm("Bạn có chắc chắn muốn đưa khóa học này vào thùng rác? Học viên sẽ không thể truy cập nữa.")) return;
+  const handleConfirmDelete = async () => {
     try {
+      setDeleting(true);
       await api.xoaKhoaHoc(maGiangVien, maKhoaHoc);
       showToast('success', 'Khóa học đã được xóa mềm.');
+      setConfirmDelete(false);
       onBack();
     } catch {
       showToast('error', 'Lỗi xóa khóa học.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -186,7 +191,7 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
             src={getImageUrl(detail.hinhAnh)}
             alt={detail.tenKhoaHoc}
             style={{ width: 160, height: 100, objectFit: 'cover', borderRadius: 10, flexShrink: 0, background: 'var(--khm-gray-100)' }}
-            onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x200/6366f1/white?text=Khóa+Học'; }}
+            onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x200/f69050/white?text=Khóa+Học'; }}
           />
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -493,7 +498,7 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 16, color: 'var(--khm-gray-800)' }}>Thao tác nguy hiểm</h4>
                   <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
 
-                    <button className="khm-btn khm-btn-danger-ghost" onClick={() => void handleDelete()}>
+                    <button className="khm-btn khm-btn-danger-ghost" onClick={() => setConfirmDelete(true)}>
                       🗑️ Đưa vào thùng rác
                     </button>
                   </div>
@@ -525,6 +530,18 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
         isLoading={savingCert}
         onConfirm={() => void handleConfirmCertToggle()}
         onCancel={() => setConfirmCertToggle(null)}
+      />
+
+      {/* Delete course confirmation */}
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        title="Đưa khóa học vào thùng rác?"
+        message="Bạn có chắc chắn muốn đưa khóa học này vào thùng rác? Học viên sẽ không thể truy cập nữa."
+        confirmText="Đưa vào thùng rác"
+        variant="danger"
+        isLoading={deleting}
+        onConfirm={() => void handleConfirmDelete()}
+        onCancel={() => setConfirmDelete(false)}
       />
 
       {/* Quiz Editor Modal */}
