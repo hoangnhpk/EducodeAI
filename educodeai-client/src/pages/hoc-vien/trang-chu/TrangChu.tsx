@@ -25,6 +25,47 @@ const parseKyNangTags = (raw?: string): string[] => {
     return raw.split(',').map((item) => item.trim()).filter(Boolean);
 };
 
+const CourseRating: React.FC<{ level: string; rating: number }> = ({ level, rating }) => (
+    <div className="course-card-rating">
+        <span className="course-level-badge"><i className="fa fa-layer-group" aria-hidden="true" /> {level}</span>
+        <span className="course-rating-value"><i className="fa fa-star" aria-hidden="true" /> {rating.toFixed(1)}</span>
+    </div>
+);
+
+const TagList: React.FC<{ tags: string[]; courseId: number }> = ({ tags, courseId }) => {
+    const visibleTags = tags.slice(0, 3);
+    const hiddenTagCount = tags.length - visibleTags.length;
+    if (!tags.length) return <div className="course-skill-tags"><span className="course-skill-tag course-skill-tag--empty">Đang cập nhật...</span></div>;
+    return <div className="course-skill-tags">
+        {visibleTags.map((tag, index) => <span key={`${courseId}-${tag}-${index}`} className="course-skill-tag">{tag}</span>)}
+        {hiddenTagCount > 0 && <span className="course-skill-tag course-skill-tag--more">+{hiddenTagCount}</span>}
+    </div>;
+};
+
+const CourseCard: React.FC<{ course: IKhoaHoc }> = ({ course: kh }) => {
+    const isFree = laKhoaHocMienPhi(kh.donViTienTe);
+    const detailUrl = `/khoa-hoc/${kh.maKhoaHoc}`;
+    const learnUrl = `/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`;
+    return <article className="course-card">
+        <div className="course-card-thumbnail">
+            <img src={`/img/${kh.hinhAnh}`} alt={kh.tenKhoaHoc} className="course-img" onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=500&q=80'; }} />
+            <span className="course-card-category">{kh.linhVuc}</span>
+        </div>
+        <div className="course-card-body">
+            <CourseRating level={kh.trinhDo} rating={kh.diemDanhGiaTB} />
+            <h3 className="course-card-title">{kh.tenKhoaHoc}</h3>
+            <TagList tags={parseKyNangTags(kh.kyNangChinh)} courseId={kh.maKhoaHoc} />
+            <div className="course-card-footer">
+                <div className="course-duration"><i className="fa fa-clock" aria-hidden="true" /> {kh.thoiLuongGio} giờ học</div>
+                <div className="course-card-actions">
+                    <Link to={detailUrl} className="btn-course-detail">Chi tiết</Link>
+                    {kh.khoaHocDaDangKy ? <Link to={learnUrl} className="btn-course-continue"><i className="fa fa-play-circle" aria-hidden="true" /> Tiếp tục học</Link> : isFree ? <Link to={`/mua-khoa-hoc/${kh.maKhoaHoc}`} className="btn-course-buy btn-course-buy--full">Học ngay</Link> : <><Link to={learnUrl} className="btn-course-trial">Học thử</Link><Link to={`/mua-khoa-hoc/${kh.maKhoaHoc}`} className="btn-course-buy">Mua ngay</Link></>}
+                </div>
+            </div>
+        </div>
+    </article>;
+};
+
 const TrangChu: React.FC = () => {
     const [courses, setCourses] = useState<IKhoaHoc[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -314,88 +355,11 @@ const TrangChu: React.FC = () => {
                                 </div>
                             ))
                         ) : courses.length > 0 ? (
-                            courses.map((kh) => {
-                                const skillTags = parseKyNangTags(kh.kyNangChinh);
-                                const visibleTags = skillTags.slice(0, 3);
-                                const hiddenTagCount = skillTags.length - visibleTags.length;
-
-                                return (
-                                <div key={kh.maKhoaHoc} className="col-md-6 col-lg-3">
-                                    <div className="course-card card h-100 border-0 rounded-4 shadow-sm overflow-hidden transition-all">
-                                        <div className="position-relative overflow-hidden" style={{ height: '200px' }}>
-                                            <img
-                                                src={`/img/${kh.hinhAnh}`}
-                                                alt={kh.tenKhoaHoc}
-                                                className="w-100 h-100 object-fit-cover course-img"
-                                                onError={(e) => (e.currentTarget.src = 'https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=500&q=80')}
-                                            />
-                                            <div className="position-absolute top-0 start-0 m-3">
-                                                <span className="badge bg-dark px-3 py-2 text-uppercase tracking-wider rounded-3 opacity-75">
-                                                    {kh.linhVuc}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="card-body p-4 d-flex flex-column">
-                                            <div className="d-flex justify-content-between align-items-center mb-3">
-                                                <span className="badge bg-primary-subtle text-primary fw-bold px-2 py-1"><i className="fa fa-layer-group me-1"></i> {kh.trinhDo}</span>
-                                                <span className="fw-bold text-dark"><i className="fa fa-star text-warning me-1"></i> {kh.diemDanhGiaTB}</span>
-                                            </div>
-                                            <h5 className="card-title fw-bold text-dark line-clamp-2 mb-3">{kh.tenKhoaHoc}</h5>
-                                            <div className="course-skill-tags mb-3">
-                                                {skillTags.length === 0 ? (
-                                                    <span className="course-skill-tag course-skill-tag--empty">Đang cập nhật...</span>
-                                                ) : (
-                                                    <>
-                                                        {visibleTags.map((tag, index) => (
-                                                            <span key={`${kh.maKhoaHoc}-${tag}-${index}`} className="course-skill-tag">{tag}</span>
-                                                        ))}
-                                                        {hiddenTagCount > 0 && (
-                                                            <span className="course-skill-tag course-skill-tag--more">+{hiddenTagCount}</span>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                            <div className="mt-auto">
-                                                <div className="d-flex align-items-center text-muted small mb-3">
-                                                    <i className="fa fa-clock text-primary me-2"></i> {kh.thoiLuongGio} giờ học
-                                                </div>
-                                                {kh.khoaHocDaDangKy ? (
-                                                    <div className="course-card-actions">
-                                                        <Link to={`/khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-course-detail">
-                                                            Chi tiết
-                                                        </Link>
-                                                        <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-success rounded-3 fw-bold text-center flex-grow-1" style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                            <i className="fa fa-play-circle me-2"></i> Tiếp tục học
-                                                        </Link>
-                                                    </div>
-                                                ) : (
-
-                                                    <div className="course-card-actions">
-                                                        <Link to={`/khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-course-detail">
-                                                            Chi tiết
-                                                        </Link>
-                                                        {laKhoaHocMienPhi(kh.donViTienTe) ? (
-                                                            <Link to={`/mua-khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-course-buy btn-course-buy--full">
-                                                                Học ngay
-                                                            </Link>
-                                                        ) : (
-                                                            <>
-                                                                <Link to={`/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`} className="btn btn-course-trial">
-                                                                    Học thử
-                                                                </Link>
-                                                                <Link to={`/mua-khoa-hoc/${kh.maKhoaHoc}`} className="btn btn-course-buy">
-                                                                    Mua ngay
-                                                                </Link>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
+                            courses.map((kh) => (
+                                <div key={kh.maKhoaHoc} className="col-md-6 col-lg-3 d-flex">
+                                    <CourseCard course={kh} />
                                 </div>
-                                );
-                            })
+                            ))
                         ) : (
                             <div className="text-center w-100 py-5">
                                 <div className="display-1 text-muted mb-3"><i className="fas fa-search-minus"></i></div>
@@ -705,103 +669,37 @@ const TrangChu: React.FC = () => {
                 .category-card:hover .icon-wrapper { transform: scale(1.1); }
 
                 /* Course Card */
-                .course-card {
-                    transition: transform 0.3s ease, box-shadow 0.3s ease;
-                }
-                .course-card:hover {
-                    transform: translateY(-8px);
-                    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1) !important;
-                }
-                .course-img { transition: transform 0.5s ease; }
+                .course-card { width: 100%; height: 100%; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--border-light); border-radius: 1rem; overflow: hidden; box-shadow: 0 .125rem .5rem rgba(17,24,39,.06); transition: transform .3s ease, box-shadow .3s ease; }
+                .course-card:hover { transform: translateY(-4px); box-shadow: 0 1rem 2rem rgba(17,24,39,.12); }
+                .course-card-thumbnail { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: var(--bg-main); }
+                .course-img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
                 .course-card:hover .course-img { transform: scale(1.05); }
-                .course-skill-tags {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 0.4rem;
-                    min-height: 1.75rem;
-                }
-                .course-skill-tag {
-                    display: inline-flex;
-                    align-items: center;
-                    max-width: 100%;
-                    padding: 0.25rem 0.65rem;
-                    border-radius: 50rem;
-                    font-size: 0.72rem;
-                    font-weight: 600;
-                    line-height: 1.2;
-                    background: var(--primary-soft);
-                    color: var(--primary-dark);
-                    border: 1px solid rgba(246, 144, 80, 0.22);
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                .course-skill-tag--more {
-                    background: var(--border-light);
-                    color: var(--text-muted);
-                    border-color: var(--border-color);
-                }
-                .course-skill-tag--empty {
-                    background: var(--bg-main);
-                    color: var(--text-light);
-                    border-color: var(--border-color);
-                    font-weight: 500;
-                }
-                .line-clamp-2 {
-                    display: -webkit-box;
-                    -webkit-line-clamp: 2;
-                    -webkit-box-orient: vertical;
-                    overflow: hidden;
-                    min-height: 3rem;
-                }
-                .course-card-actions {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 0.5rem;
-                }
-                .course-card-actions .btn {
-                    border-radius: 0.65rem;
-                    font-weight: 700;
-                    font-size: 0.8125rem;
-                    padding: 0.55rem 0.5rem;
-                    white-space: nowrap;
-                    text-align: center;
-                    line-height: 1.2;
-                }
-                .btn-course-detail {
-                    grid-column: 1 / -1;
-                    background: #fff;
-                    border: 1px solid var(--border-color);
-                    color: var(--text-main);
-                }
-                .btn-course-detail:hover {
-                    background: var(--bg-main);
-                    border-color: var(--text-light);
-                    color: var(--text-main);
-                }
-                .btn-course-trial {
-                    background: #fff;
-                    border: 1px solid var(--primary);
-                    color: var(--primary);
-                }
-                .btn-course-trial:hover {
-                    background: rgba(246, 144, 80, 0.08);
-                    color: var(--primary-hover);
-                }
-                .btn-course-buy {
-                    background: var(--primary);
-                    border: 1px solid var(--primary);
-                    color: #fff;
-                    box-shadow: 0 4px 10px rgba(246, 144, 80, 0.25);
-                }
-                .btn-course-buy:hover {
-                    background: var(--primary-hover);
-                    border-color: var(--primary-hover);
-                    color: #fff;
-                }
-                .btn-course-buy--full {
-                    grid-column: 1 / -1;
-                }
+                .course-card-category { position: absolute; top: .75rem; left: .75rem; max-width: calc(100% - 1.5rem); padding: .4rem .65rem; border-radius: .45rem; background: rgba(17,24,39,.78); color: #fff; font-size: .65rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .course-card-body { display: flex; flex: 1; flex-direction: column; gap: .85rem; padding: 1.25rem; min-width: 0; }
+                .course-card-rating { display: flex; align-items: center; justify-content: space-between; gap: .5rem; color: var(--text-main); font-size: .75rem; font-weight: 700; }
+                .course-level-badge { max-width: 70%; padding: .3rem .5rem; border-radius: .4rem; background: var(--primary-soft); color: var(--primary-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .course-rating-value { white-space: nowrap; }
+                .course-rating-value i { color: var(--warning); }
+                .course-card-title { display: -webkit-box; min-height: 3rem; margin: 0; overflow: hidden; color: var(--text-main); font-size: 1rem; font-weight: 700; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+                .course-skill-tags { display: flex; flex-wrap: wrap; gap: .375rem; min-height: 1.75rem; }
+                .course-skill-tag { display: inline-flex; align-items: center; max-width: 100%; padding: .25rem .6rem; border: 1px solid rgba(246,144,80,.22); border-radius: 50rem; background: var(--primary-soft); color: var(--primary-dark); font-size: .72rem; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .course-skill-tag--more { border-color: var(--border-color); background: var(--border-light); color: var(--text-muted); }
+                .course-skill-tag--empty { border-color: var(--border-color); background: var(--bg-main); color: var(--text-light); font-weight: 500; }
+                .course-card-footer { display: flex; flex: 1; flex-direction: column; justify-content: flex-end; gap: .75rem; margin-top: auto; }
+                .course-duration { color: var(--text-muted); font-size: .8rem; }
+                .course-duration i { margin-right: .4rem; color: var(--primary); }
+                .course-card-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+                .course-card-actions a { display: flex; min-height: 2.65rem; align-items: center; justify-content: center; border-radius: .65rem; font-size: .8rem; font-weight: 700; line-height: 1.2; padding: .55rem .5rem; text-align: center; text-decoration: none; white-space: nowrap; }
+                .btn-course-detail { grid-column: 1 / -1; border: 1px solid var(--border-color); background: #fff; color: var(--text-main); }
+                .btn-course-detail:hover { border-color: var(--text-light); background: var(--bg-main); color: var(--text-main); }
+                .btn-course-trial { border: 1px solid var(--primary); background: #fff; color: var(--primary); }
+                .btn-course-trial:hover { background: rgba(246,144,80,.08); color: var(--primary-hover); }
+                .btn-course-buy { border: 1px solid var(--primary); background: var(--primary); color: #fff; box-shadow: 0 4px 10px rgba(246,144,80,.25); }
+                .btn-course-buy:hover { border-color: var(--primary-hover); background: var(--primary-hover); color: #fff; }
+                .btn-course-buy--full, .btn-course-continue { grid-column: 1 / -1; }
+                .btn-course-continue { border: 1px solid #059669; background: #059669; color: #fff; }
+                .btn-course-continue:hover { border-color: #047857; background: #047857; color: #fff; }
+                @media (prefers-reduced-motion: reduce) { .course-card, .course-img { transition: none; } .course-card:hover { transform: none; } .course-card:hover .course-img { transform: none; } }
 
                 /* Instructor Card */
                 .instructor-card:hover {
