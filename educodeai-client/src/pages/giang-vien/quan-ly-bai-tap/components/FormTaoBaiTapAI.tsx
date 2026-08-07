@@ -32,12 +32,12 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
 
   return (
     <div className="btth-section-block mb-4 shadow-sm border-0">
-      <div className="d-flex align-items-center mb-4 pb-3 border-bottom" style={{ borderBottomColor: '#f1f5f9 !important' }}>
-        <div className="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
-          <i className="bi bi-robot fs-5 text-primary" />
+      <div className="d-flex align-items-center mb-4 pb-3 border-bottom">
+        <div className="p-2 rounded-3 me-3" style={{ background: 'var(--ai-accent-soft)' }}>
+          <i className="bi bi-robot fs-5" style={{ color: 'var(--ai-accent)' }} aria-hidden="true" />
         </div>
         <div>
-          <h5 className="m-0 fw-bold" style={{ color: '#1e293b' }}>Bước 2: Cấu hình và Sinh bài tập bằng AI</h5>
+          <h5 className="m-0 fw-bold" style={{ color: 'var(--text-main)' }}>Bước 2: Cấu hình và Sinh bài tập bằng AI</h5>
           <p className="m-0 text-muted" style={{ fontSize: '12px' }}>Tùy chỉnh yêu cầu để AI soạn thảo nội dung phù hợp nhất</p>
         </div>
       </div>
@@ -47,15 +47,11 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
           {/* Tên bài học hiển thị readonly */}
           <div className="col-12 mb-4">
             <label className="btth-label">Bài học đang chọn</label>
-            <div className="input-group">
-              <span className="input-group-text bg-light border-end-0" style={{ borderRadius: '10px 0 0 10px' }}><i className="bi bi-journal-text" /></span>
-              <input
-                type="text"
-                className="form-control border-start-0"
-                style={{ borderRadius: '0 10px 10px 0', background: '#f8fafc', fontWeight: 600, color: baiHocId ? '#0F172A' : '#94A3B8' }}
-                value={tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
-                readOnly
-              />
+            <div className="selected-lesson-box">
+              <i className="bi bi-journal-text" aria-hidden="true" />
+              <span style={{ fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}>
+                {tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
+              </span>
             </div>
           </div>
 
@@ -117,8 +113,8 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
         <div className="mt-4 pt-2">
           <button
             type="submit"
-            className="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2"
-            style={{ borderRadius: '12px', fontWeight: 700, fontSize: '15px', boxShadow: '0 4px 6px -1px rgba(14, 165, 233, 0.2)' }}
+            className="btn w-100 py-3 d-flex align-items-center justify-content-center gap-2 btth-generate-btn"
+            style={{ borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '15px', background: 'var(--ai-accent)', color: 'var(--text-white)', boxShadow: 'var(--shadow-sm)' }}
             disabled={!baiHocId || isGenerating}
           >
             {isGenerating ? (
@@ -128,7 +124,7 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
               </>
             ) : (
               <>
-                <i className="bi bi-magic fs-5" />
+                <i className="fas fa-wand-magic-sparkles fs-5" aria-hidden="true" />
                 Dùng AI sinh bài tập ngay
               </>
             )}

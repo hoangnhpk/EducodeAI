@@ -1,0 +1,254 @@
+/* =========================================
+   TangKhoaHoc.css — style riêng trang Tặng khóa học
+   (bám variables.css; không phụ thuộc module khác)
+   ========================================= */
+
+/* Container full-width — KHÔNG bó giữa, đồng bộ các trang GV khác */
+.tkh-container {
+  padding: 24px;
+  background: var(--bg-main);
+  min-height: calc(100vh - 80px);
+  color: var(--text-dark);
+}
+
+/* Header */
+.tkh-header { margin-bottom: 24px; }
+.tkh-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
+  margin: 0 0 6px;
+}
+.tkh-subtitle {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Panel bọc chung (card lớn) */
+.tkh-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+}
+.tkh-panel + .tkh-panel { margin-top: 20px; }
+
+.tkh-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 4px;
+}
+.tkh-panel-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+
+/* Lưới card khóa học */
+.tkh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Card khóa học */
+.tkh-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+.tkh-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+/* Tên khóa học — giới hạn 2 dòng để mọi card đều chiều cao */
+.tkh-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.4;
+  margin: 0 0 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.4em * 2);
+}
+
+/* Dòng mã + giá */
+.tkh-card-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.tkh-card-price {
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+/* Đẩy nút xuống đáy để các card thẳng hàng */
+.tkh-card-spacer { flex: 1; }
+
+/* Nút CTA chính — cam đặc */
+.tkh-btn-tang {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  background: var(--primary);
+  color: var(--text-white);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+.tkh-btn-tang:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  box-shadow: var(--shadow-md);
+}
+.tkh-btn-tang:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Trạng thái rỗng / đang tải */
+.tkh-placeholder {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.tkh-placeholder i {
+  display: block;
+  font-size: 32px;
+  color: var(--text-light);
+  margin-bottom: 12px;
+}
+
+/* === Lịch sử: header panel + form tìm kiếm === */
+.tkh-history-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.tkh-history-heading { min-width: 260px; }
+.tkh-history-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 4px;
+}
+.tkh-history-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+.tkh-search-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 260px;
+  max-width: 520px;
+}
+.tkh-search-field {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.tkh-search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--text-light);
+  pointer-events: none;
+}
+.tkh-search-form .tkh-search-field .tkh-search-input {
+  flex: 1;
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  outline: none;
+  font-size: 14px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.tkh-search-form .tkh-search-field .tkh-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+.tkh-btn-filter {
+  padding: 10px 18px;
+  background: var(--primary);
+  color: var(--text-white);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+.tkh-btn-filter:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+
+/* === Bảng lịch sử === */
+.tkh-table-scroll { overflow-x: auto; }
+.tkh-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tkh-table th {
+  background: var(--bg-main);
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+.tkh-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+  font-size: 14px;
+  color: var(--text-main);
+}
+.tkh-table tbody tr:last-child td { border-bottom: none; }
+.tkh-table tbody tr:hover { background: var(--primary-soft); }
+.tkh-table-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--text-muted);
+}
+.tkh-cell-sub {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tkh-card, .tkh-btn-tang { transition: none; }
+  .tkh-card:hover { transform: none; }
+}
