@@ -188,8 +188,20 @@ namespace educodeai_server.Helpers
 
             var text = root["candidates"]?
                 .First?["content"]?["parts"]?
-                .Select(p => p?["text"]?.ToString())
-                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+                .OfType<JObject>()
+                .Where(p => p["thought"]?.Value<bool>() != true)
+                .Select(p => p["text"]?.ToString())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .LastOrDefault();
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                text = root["candidates"]?
+                    .First?["content"]?["parts"]?
+                    .Select(p => p?["text"]?.ToString())
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .LastOrDefault();
+            }
 
             if (string.IsNullOrWhiteSpace(text))
                 throw new Exception("Khong tim thay noi dung text tu Gemini");

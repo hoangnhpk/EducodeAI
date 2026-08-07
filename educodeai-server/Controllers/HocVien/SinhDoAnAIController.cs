@@ -14,10 +14,12 @@ namespace educodeai_server.Controllers.HocVien
     public class SinhDoAnAIController : ControllerBase
     {
         private readonly ISinhDoAnAIService _sinhDoAnAIService;
+        private readonly ILogger<SinhDoAnAIController> _logger;
 
-        public SinhDoAnAIController(ISinhDoAnAIService sinhDoAnAIService)
+        public SinhDoAnAIController(ISinhDoAnAIService sinhDoAnAIService, ILogger<SinhDoAnAIController> logger)
         {
             _sinhDoAnAIService = sinhDoAnAIService;
+            _logger = logger;
         }
 
         // ============================================================
@@ -75,6 +77,7 @@ namespace educodeai_server.Controllers.HocVien
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Lỗi khi nộp đồ án");
                 return StatusCode(500, new { message = "Lỗi khi nộp đồ án", details = ex.Message });
             }
         }

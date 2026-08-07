@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate, Outlet } from "react-router-dom";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import HeaderHocVien from "@/layouts/hoc-vien/HeaderHocVien";
 import FooterHocVien from "@/layouts/hoc-vien/FooterHocVien";
 import "@/assets/styles/variables.css";
@@ -7,6 +7,10 @@ import "@/assets/styles/hoc-vien-global.css";
 
 export default function LayoutHocVien() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const hideFooter = location.pathname.includes('/sinh-do-an-ai') || 
+                     location.pathname.includes('/phong-van-ai') || 
+                     location.pathname.includes('/phong-van-do-an');
 
 useEffect(() => {
     const checkBanStatus = async () => {
@@ -54,7 +58,7 @@ useEffect(() => {
     <div className="hoc-vien-layout">
       <HeaderHocVien />
       <Outlet />
-      <FooterHocVien />
+      {!hideFooter && <FooterHocVien />}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using educodeai_server.Data;
@@ -11,9 +12,11 @@ using educodeai_server.Data;
 namespace educodeai_server.Migrations
 {
     [DbContext(typeof(EduCodeAIDbContext))]
-    partial class EduCodeAIDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260807111204_AddIndependentInterviewNotes")]
+    partial class AddIndependentInterviewNotes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,7 +55,7 @@ namespace educodeai_server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AIBalanceHolds", (string)null);
+                    b.ToTable("AIBalanceHolds");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.ApiKeyAuditLog", b =>
@@ -92,7 +95,7 @@ namespace educodeai_server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApiKeyAuditLogs", (string)null);
+                    b.ToTable("ApiKeyAuditLogs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.BaiHocModel", b =>
@@ -168,7 +171,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaChuong");
 
-                    b.ToTable("BaiHocs", (string)null);
+                    b.ToTable("BaiHocs");
 
                     b.HasData(
                         new
@@ -2393,7 +2396,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaBaiHoc");
 
-                    b.ToTable("BaiTaps", (string)null);
+                    b.ToTable("BaiTaps");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.BaiTapThucHanhModel", b =>
@@ -2443,7 +2446,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaBaiTap")
                         .IsUnique();
 
-                    b.ToTable("BaiTapThucHanhs", (string)null);
+                    b.ToTable("BaiTapThucHanhs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.BaiTap_QuizModel", b =>
@@ -2478,7 +2481,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaBaiTap")
                         .IsUnique();
 
-                    b.ToTable("BaiTap_Quizs", (string)null);
+                    b.ToTable("BaiTap_Quizs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.BinhLuanModel", b =>
@@ -2513,7 +2516,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.ToTable("BinhLuans", (string)null);
+                    b.ToTable("BinhLuans");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.CauHinhHeThongModel", b =>
@@ -2536,7 +2539,7 @@ namespace educodeai_server.Migrations
 
                     b.HasKey("MaKhoa");
 
-                    b.ToTable("CauHinhs", (string)null);
+                    b.ToTable("CauHinhs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.ChiTietDonHangModel", b =>
@@ -2568,7 +2571,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaKhoaHoc");
 
-                    b.ToTable("ChiTietDonHangs", (string)null);
+                    b.ToTable("ChiTietDonHangs");
 
                     b.HasData(
                         new
@@ -2636,7 +2639,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiDung", "MaDoAn")
                         .IsUnique();
 
-                    b.ToTable("ChungChiDoAns", (string)null);
+                    b.ToTable("ChungChiDoAns");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.ChungChiKhoaHocModel", b =>
@@ -2690,7 +2693,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiDung", "MaKhoaHoc")
                         .IsUnique();
 
-                    b.ToTable("ChungChiKhoaHocs", (string)null);
+                    b.ToTable("ChungChiKhoaHocs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.ChuongHocModel", b =>
@@ -2716,7 +2719,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaKhoaHoc");
 
-                    b.ToTable("ChuongHocs", (string)null);
+                    b.ToTable("ChuongHocs");
 
                     b.HasData(
                         new
@@ -3017,7 +3020,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.ToTable("DangKyKhoaHocs", (string)null);
+                    b.ToTable("DangKyKhoaHocs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.DanhGiaModel", b =>
@@ -3056,7 +3059,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiDung", "MaKhoaHoc")
                         .IsUnique();
 
-                    b.ToTable("DanhGias", (string)null);
+                    b.ToTable("DanhGias");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.DanhHieuModel", b =>
@@ -3089,7 +3092,7 @@ namespace educodeai_server.Migrations
 
                     b.HasKey("MaDanhHieu");
 
-                    b.ToTable("DanhHieus", (string)null);
+                    b.ToTable("DanhHieus");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.DoAnThucChienModel", b =>
@@ -3151,7 +3154,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung", "NgayNop");
 
-                    b.ToTable("DoAnThucChiens", (string)null);
+                    b.ToTable("DoAnThucChiens");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.DoanhThuGiangVienModel", b =>
@@ -3191,7 +3194,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaGiangVien");
 
-                    b.ToTable("DoanhThuGiangViens", (string)null);
+                    b.ToTable("DoanhThuGiangViens");
 
                     b.HasData(
                         new
@@ -3272,7 +3275,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaVoucher");
 
-                    b.ToTable("DonHangKhoaHocs", (string)null);
+                    b.ToTable("DonHangKhoaHocs");
 
                     b.HasData(
                         new
@@ -3337,7 +3340,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.ToTable("GhiChuAIs", (string)null);
+                    b.ToTable("GhiChuAIs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.GhiChuBaiHocModel", b =>
@@ -3371,7 +3374,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.ToTable("GhiChuBaiHocs", (string)null);
+                    b.ToTable("GhiChuBaiHocs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.GiangVienQuotaModel", b =>
@@ -3396,7 +3399,7 @@ namespace educodeai_server.Migrations
 
                     b.HasKey("MaGiangVien");
 
-                    b.ToTable("GiangVienQuotas", (string)null);
+                    b.ToTable("GiangVienQuotas");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.GiaoDichThanhToanModel", b =>
@@ -3447,7 +3450,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaThamChieuNgoai")
                         .IsUnique();
 
-                    b.ToTable("GiaoDichThanhToans", (string)null);
+                    b.ToTable("GiaoDichThanhToans");
 
                     b.HasData(
                         new
@@ -3609,7 +3612,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiDung")
                         .IsUnique();
 
-                    b.ToTable("HoSoDangKyGiangViens", (string)null);
+                    b.ToTable("HoSoDangKyGiangViens");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.HoTroRutTienGiangVienModel", b =>
@@ -3664,7 +3667,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaYeuCauRutTien", "TrangThaiHoTro");
 
-                    b.ToTable("HoTroRutTienGiangViens", (string)null);
+                    b.ToTable("HoTroRutTienGiangViens");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.KetQuaKiemTraChungChiModel", b =>
@@ -3706,7 +3709,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.ToTable("KetQuaKiemTraChungChis", (string)null);
+                    b.ToTable("KetQuaKiemTraChungChis");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.KetQuaLamBaiModel", b =>
@@ -3742,7 +3745,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.ToTable("KetQuaLamBais", (string)null);
+                    b.ToTable("KetQuaLamBais");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.KeyAPIModel", b =>
@@ -3806,7 +3809,7 @@ namespace educodeai_server.Migrations
 
                     b.HasKey("ID");
 
-                    b.ToTable("KeyAPIs", (string)null);
+                    b.ToTable("KeyAPIs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.KhoaHocModel", b =>
@@ -3914,7 +3917,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaGiangVien");
 
-                    b.ToTable("KhoaHocs", null, t =>
+                    b.ToTable("KhoaHocs", t =>
                         {
                             t.HasCheckConstraint("CK_KhoaHocs_GiaKhoaHoc_Range", "\"GiaKhoaHoc\" >= 10000 AND \"GiaKhoaHoc\" <= 15000");
                         });
@@ -4130,7 +4133,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaGiangVien");
 
-                    b.ToTable("LichSuNapTienAIs", (string)null);
+                    b.ToTable("LichSuNapTienAIs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.LichSuPhongVanModel", b =>
@@ -4181,7 +4184,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.ToTable("LichSuPhongVans", (string)null);
+                    b.ToTable("LichSuPhongVans");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.LoTrinhAIModel", b =>
@@ -4214,7 +4217,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.ToTable("LoTrinhAIs", (string)null);
+                    b.ToTable("LoTrinhAIs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.MaGiamGiaKhoaHocModel", b =>
@@ -4238,7 +4241,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaVoucher", "MaKhoaHoc")
                         .IsUnique();
 
-                    b.ToTable("MaGiamGiaKhoaHocs", (string)null);
+                    b.ToTable("MaGiamGiaKhoaHocs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.MaGiamGiaModel", b =>
@@ -4311,7 +4314,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiTao");
 
-                    b.ToTable("MaGiamGias", (string)null);
+                    b.ToTable("MaGiamGias");
 
                     b.HasData(
                         new
@@ -4408,7 +4411,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiTang", "TrangThai", "CreatedAt");
 
-                    b.ToTable("MaQuaTangHocViens", (string)null);
+                    b.ToTable("MaQuaTangHocViens");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.MauNhiemVuTuanModel", b =>
@@ -4458,7 +4461,7 @@ namespace educodeai_server.Migrations
 
                     b.HasKey("MaMau");
 
-                    b.ToTable("MauNhiemVuTuans", (string)null);
+                    b.ToTable("MauNhiemVuTuans");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.NguoiDungDanhHieuModel", b =>
@@ -4485,7 +4488,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiDung", "MaDanhHieu")
                         .IsUnique();
 
-                    b.ToTable("NguoiDungDanhHieus", (string)null);
+                    b.ToTable("NguoiDungDanhHieus");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.NguoiDungGamificationModel", b =>
@@ -4503,7 +4506,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaDanhHieuDangDeo");
 
-                    b.ToTable("NguoiDungGamifications", (string)null);
+                    b.ToTable("NguoiDungGamifications");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.NguoiDungModel", b =>
@@ -4586,7 +4589,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("TaiKhoan")
                         .IsUnique();
 
-                    b.ToTable("NguoiDungs", (string)null);
+                    b.ToTable("NguoiDungs");
 
                     b.HasData(
                         new
@@ -4658,7 +4661,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("ID_Key");
 
-                    b.ToTable("NhatKySuDungs", (string)null);
+                    b.ToTable("NhatKySuDungs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.PhienDangNhapModel", b =>
@@ -4699,7 +4702,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiDung");
 
-                    b.ToTable("PhienDangNhap", (string)null);
+                    b.ToTable("PhienDangNhap");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.QuaTangKhoaHocModel", b =>
@@ -4747,7 +4750,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaNguoiTang", "MaKhoaHoc", "CreatedAt");
 
-                    b.ToTable("QuaTangKhoaHocs", (string)null);
+                    b.ToTable("QuaTangKhoaHocs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.TestCaseThucHanhModel", b =>
@@ -4788,7 +4791,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaBaiTapThucHanh");
 
-                    b.ToTable("TestCaseThucHanhs", (string)null);
+                    b.ToTable("TestCaseThucHanhs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.ThongBaoEmailThanhToanModel", b =>
@@ -4838,7 +4841,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaDonHang", "LoaiThongBao", "EmailNhan")
                         .IsUnique();
 
-                    b.ToTable("ThongBaoEmailThanhToans", (string)null);
+                    b.ToTable("ThongBaoEmailThanhToans");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.TienDoBaiHocModel", b =>
@@ -4871,7 +4874,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiDung", "MaBaiHoc")
                         .IsUnique();
 
-                    b.ToTable("TienDoBaiHocs", (string)null);
+                    b.ToTable("TienDoBaiHocs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.TienDoNhiemVuTuanModel", b =>
@@ -4909,7 +4912,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiDung", "MaMau", "DauChuKy")
                         .IsUnique();
 
-                    b.ToTable("TienDoNhiemVuTuans", (string)null);
+                    b.ToTable("TienDoNhiemVuTuans");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.VideoChapterModel", b =>
@@ -4941,7 +4944,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaBaiHoc");
 
-                    b.ToTable("VideoChapters", (string)null);
+                    b.ToTable("VideoChapters");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.VideoQuizModel", b =>
@@ -4987,7 +4990,7 @@ namespace educodeai_server.Migrations
 
                     b.HasIndex("MaChapter");
 
-                    b.ToTable("VideoQuizs", (string)null);
+                    b.ToTable("VideoQuizs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.WebhookLogModel", b =>
@@ -5010,7 +5013,7 @@ namespace educodeai_server.Migrations
 
                     b.HasKey("NotificationId");
 
-                    b.ToTable("WebhookLogs", (string)null);
+                    b.ToTable("WebhookLogs");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.YeuCauRutTienGiangVienModel", b =>
@@ -5097,7 +5100,7 @@ namespace educodeai_server.Migrations
                     b.HasIndex("NoiDungChuyenKhoan")
                         .IsUnique();
 
-                    b.ToTable("YeuCauRutTienGiangViens", null, t =>
+                    b.ToTable("YeuCauRutTienGiangViens", t =>
                         {
                             t.HasCheckConstraint("CK_YeuCauRutTienGiangVien_SoTienYeuCau_Duong", "\"SoTienYeuCau\" > 0");
                         });

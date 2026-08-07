@@ -59,6 +59,9 @@ public static class DatabaseSchemaSync
                 "Payload" jsonb NOT NULL,
                 "ProcessedAt" timestamp with time zone NOT NULL DEFAULT now()
             );
+
+            ALTER TABLE "LichSuPhongVans" ADD COLUMN IF NOT EXISTS "CapNhatGhiChuLuc" timestamp with time zone NULL;
+            ALTER TABLE "LichSuPhongVans" ADD COLUMN IF NOT EXISTS "GhiChu" character varying(5000) NOT NULL DEFAULT '';
             """,
             cancellationToken);
     }

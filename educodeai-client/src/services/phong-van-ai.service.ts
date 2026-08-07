@@ -29,6 +29,18 @@ export interface AnswerPhongVanResponse {
     isFinished: boolean;
     nhanXetCauTruoc: string;
     cauHoiTiepTheo: string;
+    tinNhanAI: string;
+}
+
+export interface PhongVanSession {
+    maPhongVan: number;
+    viTriUngTuyen: string;
+    capDo: string;
+    tinhCachAI: TinhCachAI;
+    soLuongCauHoi: number;
+    trangThai: number;
+    ghiChu: string;
+    lichSuChat: PhongVanDocLapTurn[];
 }
 
 export interface PhongVanDocLapTurn {
@@ -58,17 +70,40 @@ export interface LichSuPhongVan {
     ngayPhongVan: Date;
 }
 
+interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    message?: string;
+}
+
+const unwrapResponse = <T>(response: unknown): T => {
+    const result = response as ApiResponse<T>;
+    return result?.data ?? response as T;
+};
+
 export const PhongVanAIService = {
     startInterview: async (request: StartPhongVanRequest) => {
-        return await axiosClient.post<StartPhongVanResponse>('/api/PhongVanAI/start', request);
+        const response = await axiosClient.post<unknown>('/api/PhongVanAI/start', request);
+        return unwrapResponse<StartPhongVanResponse>(response);
     },
     answerQuestion: async (request: AnswerPhongVanRequest) => {
-        return await axiosClient.post<AnswerPhongVanResponse>('/api/PhongVanAI/answer', request);
+        const response = await axiosClient.post<unknown>('/api/PhongVanAI/answer', request);
+        return unwrapResponse<AnswerPhongVanResponse>(response);
     },
     endInterview: async (maPhongVan: number) => {
-        return await axiosClient.post<EndPhongVanResponse>(`/api/PhongVanAI/end/${maPhongVan}`);
+        const response = await axiosClient.post<unknown>(`/api/PhongVanAI/end/${maPhongVan}`);
+        return unwrapResponse<EndPhongVanResponse>(response);
+    },
+    getInterview: async (maPhongVan: number) => {
+        const response = await axiosClient.get<unknown>(`/api/PhongVanAI/${maPhongVan}`);
+        return unwrapResponse<PhongVanSession>(response);
+    },
+    updateNote: async (maPhongVan: number, ghiChu: string) => {
+        const response = await axiosClient.put<unknown>(`/api/PhongVanAI/${maPhongVan}/note`, { ghiChu });
+        return unwrapResponse<{ success: boolean }>(response);
     },
     getHistory: async () => {
-        return await axiosClient.get<LichSuPhongVan[]>('/api/PhongVanAI/history');
+        const response = await axiosClient.get<unknown>('/api/PhongVanAI/history');
+        return unwrapResponse<LichSuPhongVan[]>(response);
     }
 };

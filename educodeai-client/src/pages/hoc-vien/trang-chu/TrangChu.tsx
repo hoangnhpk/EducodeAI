@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import { encodeId } from "@/utils/id-helper";
 import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
+import { jobOpenings } from './data/jobOpenings';
 
 interface IKhoaHoc {
     maKhoaHoc: number;
@@ -198,7 +199,9 @@ const TrangChu: React.FC = () => {
                 document.body
             )}
 
-            {/* 4. Features - Hệ sinh thái AI */}
+
+
+            {/* 5. Features - Hệ sinh thái AI */}
             <section id="features-section" className="py-5 bg-light">
                 <div className="container py-5">
                     <div className="text-center mb-5">
