@@ -118,33 +118,49 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 
 .student-header h3 {
+  margin: 0;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--text-dark);
 }
 
 /* ===== SEARCH ===== */
 .search-box {
   position: relative;
+  min-width: 240px;
+  flex: 0 1 280px;
 }
 
 .search-box svg,
 .search-box > i {
   position: absolute;
-  left: 10px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-light);
+  pointer-events: none;
+  font-size: 13px;
 }
 
 .search-box input {
-  padding: 8px 12px 8px 36px;
+  width: 100%;
+  padding: 9px 12px 9px 36px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 14px;
   outline: none;
+}
+
+.search-box input::placeholder {
+  color: var(--text-light);
 }
 
 .search-box input:focus {

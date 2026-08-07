@@ -88,12 +88,13 @@ export default function KhongGianHocTap() {
     <div className="kght-page">
       <div className="kght-hero">
         <div className="kght-hero__row">
-          <div>
+          <div className="kght-hero__copy">
+            <p className="kght-kicker">Không gian của bạn</p>
             <h1 className="kght-title">Không gian học tập</h1>
             <p className="kght-lead">
               {viewMode === 'map'
-                ? 'Bản đồ lộ trình — theo dõi thứ tự khóa học và bước tiếp theo.'
-                : 'Các khóa học bạn đã đăng ký và tiến độ hoàn thành.'}
+                ? 'Theo dõi lộ trình, thứ tự khóa học và bước tiếp theo trên bản đồ kỹ năng.'
+                : 'Tiếp tục hành trình đã đăng ký — theo dõi tiến độ và chọn khóa học để học tiếp.'}
             </p>
           </div>
           <div className="kght-view-toggle" role="group" aria-label="Chế độ hiển thị">
@@ -102,14 +103,14 @@ export default function KhongGianHocTap() {
               className={`kght-view-toggle__btn${viewMode === 'list' ? ' is-active' : ''}`}
               onClick={() => setView('list')}
             >
-              <i className="bi bi-grid-3x3-gap" /> Danh sách
+              <i className="bi bi-grid-3x3-gap" aria-hidden="true" /> Danh sách
             </button>
             <button
               type="button"
               className={`kght-view-toggle__btn${viewMode === 'map' ? ' is-active' : ''}`}
               onClick={() => setView('map')}
             >
-              <i className="bi bi-diagram-3" /> Bản đồ
+              <i className="bi bi-diagram-3" aria-hidden="true" /> Bản đồ
             </button>
           </div>
         </div>
@@ -134,7 +135,8 @@ export default function KhongGianHocTap() {
 
           {!loading && !error && courses.length === 0 && (
             <div className="kght-state">
-              <p>Bạn chưa đăng ký khóa học nào.</p>
+              <p className="kght-state__title">Chưa có khóa học nào</p>
+              <p>Đăng ký một khóa học để bắt đầu không gian học tập của bạn.</p>
               <Link to="/" className="kght-btn kght-btn--ghost">
                 Khám phá khóa học
               </Link>
@@ -145,39 +147,39 @@ export default function KhongGianHocTap() {
             <div className="kght-list">
               <div className="kght-stat-row" role="group" aria-label="Thống kê khóa học">
                 <div className="kght-stat-card kght-stat-card--total">
-                  <div className="kght-stat-card__icon" aria-hidden>
-                    <i className="bi bi-journal-bookmark-fill" />
+                  <div className="kght-stat-card__icon" aria-hidden="true">
+                    <i className="bi bi-journal-bookmark" />
                   </div>
                   <div className="kght-stat-card__content">
+                    <span className="kght-stat-card__label">Đã đăng ký</span>
                     <span className="kght-stat-card__value">{listSummary.total}</span>
-                    <span className="kght-stat-card__label">Khóa đã đăng ký</span>
                   </div>
                 </div>
                 <div className="kght-stat-card kght-stat-card--learning">
-                  <div className="kght-stat-card__icon" aria-hidden>
-                    <i className="bi bi-play-circle-fill" />
+                  <div className="kght-stat-card__icon" aria-hidden="true">
+                    <i className="bi bi-play-circle" />
                   </div>
                   <div className="kght-stat-card__content">
-                    <span className="kght-stat-card__value">{listSummary.dangHoc}</span>
                     <span className="kght-stat-card__label">Đang học</span>
+                    <span className="kght-stat-card__value">{listSummary.dangHoc}</span>
                   </div>
                 </div>
                 <div className="kght-stat-card kght-stat-card--done">
-                  <div className="kght-stat-card__icon" aria-hidden>
-                    <i className="bi bi-patch-check-fill" />
+                  <div className="kght-stat-card__icon" aria-hidden="true">
+                    <i className="bi bi-patch-check" />
                   </div>
                   <div className="kght-stat-card__content">
-                    <span className="kght-stat-card__value">{listSummary.hoanThanh}</span>
                     <span className="kght-stat-card__label">Hoàn thành</span>
+                    <span className="kght-stat-card__value">{listSummary.hoanThanh}</span>
                   </div>
                 </div>
                 <div className="kght-stat-card kght-stat-card--avg">
-                  <div className="kght-stat-card__icon" aria-hidden>
+                  <div className="kght-stat-card__icon" aria-hidden="true">
                     <i className="bi bi-graph-up-arrow" />
                   </div>
                   <div className="kght-stat-card__content">
-                    <span className="kght-stat-card__value">{listSummary.tb}%</span>
                     <span className="kght-stat-card__label">Tiến độ trung bình</span>
+                    <span className="kght-stat-card__value">{listSummary.tb}%</span>
                   </div>
                   <div
                     className="kght-stat-card__bar"
@@ -189,6 +191,11 @@ export default function KhongGianHocTap() {
                     <div className="kght-stat-card__bar-fill" style={{ width: `${listSummary.tb}%` }} />
                   </div>
                 </div>
+              </div>
+
+              <div className="kght-section-head">
+                <h2 className="kght-section-title">Khóa học của bạn</h2>
+                <p className="kght-section-desc">{listSummary.total} khóa trong thư viện học tập</p>
               </div>
 
               <div className="kght-list-grid">
@@ -214,9 +221,11 @@ export default function KhongGianHocTap() {
                     kh.tongSoBaiHoc > 0
                       ? `${kh.soBaiDaHoc}/${kh.tongSoBaiHoc} bài`
                       : 'Chưa có bài học';
+                  const ctaLabel =
+                    status === 'done' ? 'Xem lại' : status === 'learning' ? 'Tiếp tục học' : 'Bắt đầu học';
 
                   return (
-                    <article key={kh.maKhoaHoc} className="kght-course-card">
+                    <article key={kh.maKhoaHoc} className={`kght-course-card kght-course-card--${status}`}>
                       <Link to={hrefHoc} className="kght-course-card__link">
                         <div className="kght-course-card__media">
                           <img
@@ -224,8 +233,6 @@ export default function KhongGianHocTap() {
                             alt=""
                             loading="lazy"
                             onError={(e) => {
-                              // Chặn vòng lặp: defaultImg là ảnh ngoài, nếu chính nó lỗi thì
-                              // gán lại cùng src sẽ khiến onError bắn liên tục.
                               if (e.currentTarget.dataset.fallback === '1') return;
                               e.currentTarget.dataset.fallback = '1';
                               e.currentTarget.src = defaultImg;
@@ -234,12 +241,20 @@ export default function KhongGianHocTap() {
                           <span className={`kght-course-card__badge kght-course-card__badge--${status}`}>
                             {statusLabel}
                           </span>
-                          <span className="kght-course-card__pct-ring">{pct}%</span>
+                          <div
+                            className="kght-course-card__pct-ring"
+                            style={{
+                              background: `conic-gradient(var(--primary) ${pct * 3.6}deg, rgba(255,255,255,0.28) 0)`,
+                            }}
+                            aria-hidden="true"
+                          >
+                            <span>{pct}%</span>
+                          </div>
                         </div>
                         <div className="kght-course-card__body">
                           <h2 className="kght-course-card__title">{kh.tenKhoaHoc}</h2>
                           <p className="kght-course-card__meta">
-                            <i className="bi bi-journal-text" aria-hidden /> {baiLabel}
+                            <i className="bi bi-journal-text" aria-hidden="true" /> {baiLabel}
                           </p>
                           <div className="kght-course-card__progress-row">
                             <div
@@ -254,8 +269,8 @@ export default function KhongGianHocTap() {
                             <span className="kght-course-card__pct-text">{pct}%</span>
                           </div>
                           <span className="kght-course-card__cta">
-                            {status === 'done' ? 'Xem lại' : 'Học ngay'}
-                            <i className="bi bi-arrow-right" aria-hidden />
+                            {ctaLabel}
+                            <i className="bi bi-arrow-right" aria-hidden="true" />
                           </span>
                         </div>
                       </Link>
