@@ -84,6 +84,13 @@ namespace educodeai_server.Services.Implementation
                     tr.ErrorMessage = runResult?.error ?? "Lỗi gọi API biên dịch.";
                     tr.ActualOutput = runResult?.output ?? "";
                     isAllPassed = false;
+
+                    // Không tiếp tục tạo thêm container khi dịch vụ chấm đang quá tải.
+                    if (runResult?.statusCode == 503 || tr.ErrorMessage.Contains("[INFRA]", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ketQuaOut.ThanhCong = false;
+                        break;
+                    }
                 }
                 else
                 {

@@ -1,4 +1,5 @@
 using educodeai_server.DTOs.BaiTap;
+using System.Net;
 using System.Text.Json;
 
 namespace educodeai_server.Services.Implementation
@@ -6,17 +7,17 @@ namespace educodeai_server.Services.Implementation
     public class BaiTapService
     {
         private readonly HttpClient _httpClient;
+        private const int MaxAttempts = 3;
 
         public BaiTapService(HttpClient httpClient)
         {
             _httpClient = httpClient;
+            _httpClient.Timeout = TimeSpan.FromSeconds(30);
         }
 
         public async Task<JDoodleResponseDTO?> ExecuteCodeAsync(string ngonNgu, string code, string input = "")
         {
             var lang = ngonNgu.ToLower().Trim();
-
-            // Compiler names chính xác từ Wandbox API (https://wandbox.org/api/list.json)
             string compiler;
             if      (lang == "python" || lang == "python3")                     compiler = "cpython-3.12.7";
             else if (lang == "c++" || lang == "cpp")                            compiler = "gcc-13.2.0";
@@ -32,56 +33,89 @@ namespace educodeai_server.Services.Implementation
             else if (lang == "swift")                                            compiler = "swift-6.0.1";
             else if (lang == "scala")                                            compiler = "scala-3.5.1";
             else if (lang == "r")                                                compiler = "r-4.4.1";
-            else if (lang == "kotlin")                                           compiler = "groovy-4.0.23"; 
+            else if (lang == "kotlin")                                           compiler = "groovy-4.0.23";
             else                                                                 compiler = "cpython-3.12.7";
 
-            var requestPayload = new
+            var requestPayload = new { compiler, code, stdin = input };
+            for (var attempt = 1; attempt <= MaxAttempts; attempt++)
             {
-                compiler,
-                code,
-                stdin = input
-            };
-
-            try
-            {
-                var request = new HttpRequestMessage(HttpMethod.Post, "https://wandbox.org/api/compile.json");
-                request.Content = JsonContent.Create(requestPayload);
-                request.Headers.Add("Accept", "application/json");
-
-                var response = await _httpClient.SendAsync(request);
-
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+                    using var request = new HttpRequestMessage(HttpMethod.Post, "https://wandbox.org/api/compile.json")
+                    {
+                        Content = JsonContent.Create(requestPayload)
+                    };
+                    request.Headers.Add("Accept", "application/json");
+                    using var response = await _httpClient.SendAsync(request);
+                    var body = await response.Content.ReadAsStringAsync();
 
-                    var programOutput = json.TryGetProperty("program_output", out var po) ? po.GetString() ?? "" : "";
-                    var programError  = json.TryGetProperty("program_error",  out var pe) ? pe.GetString() ?? "" : "";
-                    var compilerError = json.TryGetProperty("compiler_error", out var ce) ? ce.GetString() ?? "" : "";
-                    var statusStr     = json.TryGetProperty("status",         out var st) ? st.GetString() ?? "0" : "0";
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"[Wandbox] {(int)response.StatusCode}: {body}");
+                        if (IsTransient(response.StatusCode) && attempt < MaxAttempts)
+                        {
+                            await Task.Delay(TimeSpan.FromMilliseconds(300 * attempt));
+                            continue;
+                        }
+                        return InfrastructureError($"Wandbox không sẵn sàng (HTTP {(int)response.StatusCode}).");
+                    }
 
-                    bool hasCompileError = !string.IsNullOrWhiteSpace(compilerError);
-                    bool success = statusStr == "0" && !hasCompileError;
-                    var output   = !string.IsNullOrWhiteSpace(programOutput) ? programOutput
-                                 : !string.IsNullOrWhiteSpace(compilerError) ? compilerError
-                                 : programError;
+                    using var json = JsonDocument.Parse(body);
+                    var root = json.RootElement;
+                    var programOutput = Get(root, "program_output");
+                    var programError = Get(root, "program_error");
+                    var compilerError = Get(root, "compiler_error");
+                    var status = Get(root, "status", "0");
+                    var runtimeError = !string.IsNullOrWhiteSpace(programError) && IsInfrastructureError(programError);
 
+                    if (runtimeError && attempt < MaxAttempts)
+                    {
+                        await Task.Delay(TimeSpan.FromMilliseconds(300 * attempt));
+                        continue;
+                    }
+
+                    var output = !string.IsNullOrWhiteSpace(programOutput) ? programOutput
+                               : !string.IsNullOrWhiteSpace(compilerError) ? compilerError : programError;
                     return new JDoodleResponseDTO
                     {
-                        output     = output.TrimEnd(),
-                        statusCode = success ? 200 : 400,
-                        error      = !string.IsNullOrWhiteSpace(compilerError) ? compilerError : programError
+                        output = output.TrimEnd(),
+                        statusCode = runtimeError ? 503 : status == "0" && string.IsNullOrWhiteSpace(compilerError) ? 200 : 400,
+                        error = runtimeError ? $"[INFRA] {programError}" : !string.IsNullOrWhiteSpace(compilerError) ? compilerError : programError
                     };
                 }
-
-                var errorMsg = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[Lỗi Wandbox] {response.StatusCode}: {errorMsg}");
-                return null;
+                catch (TaskCanceledException) when (attempt < MaxAttempts)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(300 * attempt));
+                }
+                catch (HttpRequestException ex) when (attempt < MaxAttempts)
+                {
+                    Console.WriteLine($"[Wandbox retry {attempt}] {ex.Message}");
+                    await Task.Delay(TimeSpan.FromMilliseconds(300 * attempt));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Lỗi gọi Wandbox API: " + ex.Message);
+                    return InfrastructureError("Không thể kết nối máy chủ chấm code.");
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Lỗi gọi Wandbox API: " + ex.Message);
-                return null;
-            }
+            return InfrastructureError("Máy chủ chấm code đang quá tải, vui lòng thử lại.");
         }
+
+        private static string Get(JsonElement root, string name, string fallback = "") =>
+            root.TryGetProperty(name, out var value) ? value.GetString() ?? fallback : fallback;
+
+        private static bool IsTransient(HttpStatusCode status) => status == HttpStatusCode.TooManyRequests || (int)status >= 500;
+
+        private static bool IsInfrastructureError(string error) =>
+            error.Contains("OCI runtime", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Resource temporarily unavailable", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("crun:", StringComparison.OrdinalIgnoreCase);
+
+        private static JDoodleResponseDTO InfrastructureError(string message) => new()
+        {
+            statusCode = 503,
+            error = "[INFRA] " + message,
+            output = message
+        };
     }
 }

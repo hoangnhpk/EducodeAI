@@ -230,14 +230,24 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                     Swal.fire({ title: 'Sai kết quả!', text: 'Kiểm tra lại code của bạn.', icon: 'error', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
                 }
             } else {
-                Swal.fire({ title: 'Lỗi', text: 'Lỗi biên dịch máy chủ', icon: 'error', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
-                setTestResults(duLieu.testCases.map(() => ({ status: 'fail', output: 'Lỗi chấm điểm', error: 'Lỗi Call IDE' })));
+                const infrastructureError = data.results.find(r => r.errorMessage?.includes('[INFRA]'))?.errorMessage;
+                Swal.fire({
+                    title: infrastructureError ? 'Máy chủ chấm đang quá tải' : 'Lỗi biên dịch máy chủ',
+                    text: infrastructureError?.replace('[INFRA]', '').trim() || 'Vui lòng thử lại sau.',
+                    icon: 'error', toast: true, position: 'top-end', timer: 4000, showConfirmButton: false
+                });
+                setTestResults(duLieu.testCases.map(() => ({ status: 'fail', output: 'Chưa thể chấm bài', error: infrastructureError || 'Lỗi Call IDE' })));
             }
 
         } catch (err: unknown) {
             const error = err as any;
-            Swal.fire({ title: 'Lỗi API', text: error.response?.data?.message || 'Gặp sự cố khi chấm điểm.', icon: 'error', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
-            setTestResults(duLieu.testCases.map(() => ({ status: 'fail', output: 'Lỗi mạng khi gọi API submit.' })));
+            const isUnavailable = error.response?.status === 503;
+            Swal.fire({
+                title: isUnavailable ? 'Máy chủ chấm đang quá tải' : 'Lỗi API',
+                text: isUnavailable ? 'Vui lòng đợi một chút rồi nộp lại bài.' : (error.response?.data?.message || 'Gặp sự cố khi chấm điểm.'),
+                icon: 'error', toast: true, position: 'top-end', timer: 4000, showConfirmButton: false
+            });
+            setTestResults(duLieu.testCases.map(() => ({ status: 'fail', output: 'Chưa thể chấm bài', error: isUnavailable ? 'Máy chủ chấm code đang quá tải.' : 'Lỗi mạng khi gọi API submit.' })));
         } finally {
             setIsSubmitting(false);
         }
