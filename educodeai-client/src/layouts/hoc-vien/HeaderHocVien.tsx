@@ -27,7 +27,6 @@ export default function HeaderHocVien() {
       clearAuthTokens();
       localStorage.removeItem("user_info");
       setUser(null);
-      alert("Bạn đã đăng xuất thành công!");
       navigate("/dang-nhap");
     }
   };

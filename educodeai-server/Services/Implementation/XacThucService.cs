@@ -215,7 +215,23 @@ namespace educodeai_server.Services.Implementation
             _logger.LogInformation("Đăng nhập thành công cho user {UserId}.", user!.MaNguoiDung);
 
             var activeSessions = user!.DanhSachPhienDangNhap.Where(p => p.DangHoatDong).ToList();
-            var currentSession = activeSessions.FirstOrDefault(p => p.MaThietBi == request.MaThietBi);
+            var currentSession = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == request.MaThietBi);
+            var isTrustedDevice = currentSession?.TrustedUntilUtc > DateTime.UtcNow
+                && currentSession.TrustRevokedAtUtc == null;
+
+            // Phiên đã xác minh OTP trước đó vẫn được tin cậy sau khi người dùng đăng xuất.
+            // Đăng xuất chỉ kết thúc phiên hiện tại, không buộc xác minh lại cùng thiết bị.
+            if (currentSession != null && !currentSession.DangHoatDong && isTrustedDevice)
+            {
+                return await XuLyDangNhapThanhCongAsync(user, request.MaThietBi, request.TenThietBi);
+            }
+
+            // Nếu thiết bị đã tồn tại nhưng chưa được tin cậy, không coi là thiết bị mới
+            // đã xác minh; yêu cầu OTP lại để tránh bypass bằng mã thiết bị cũ.
+            if (currentSession != null && !currentSession.DangHoatDong)
+            {
+                currentSession = null;
+            }
 
             // Náº¿u thiáº¿t bá»‹ nÃ y CHÆ¯A Tá»ªNG Ä‘Äƒng nháº­p (hoáº·c Ä‘Ã£ bá»‹ Ä‘Äƒng xuáº¥t/xÃ³a phiÃªn)
             if (currentSession == null)
@@ -622,12 +638,17 @@ namespace educodeai_server.Services.Implementation
                     TenThietBi = deviceName, 
                     ThoiGianDangNhap = DateTime.UtcNow,
                     ThoiGianHoatDongCuoi = DateTime.UtcNow,
-                    DangHoatDong = true
+                    DangHoatDong = true,
+                    TrustedUntilUtc = DateTime.UtcNow.AddDays(30),
+                    LastVerifiedAtUtc = DateTime.UtcNow
                 }; 
                 _context.PhienDangNhaps.Add(phien); 
             } else {
                 // Náº¿u thiáº¿t bá»‹ cÅ© quay láº¡i (ká»ƒ cáº£ khi Ä‘Ã£ xÃ³a cache trÃ¬nh duyá»‡t nhá» Fingerprint)
-                phien.ThoiGianHoatDongCuoi = DateTime.UtcNow; 
+                phien.ThoiGianHoatDongCuoi = DateTime.UtcNow;
+                phien.TrustRevokedAtUtc = null;
+                phien.TrustedUntilUtc ??= DateTime.UtcNow.AddDays(30);
+                phien.LastVerifiedAtUtc ??= DateTime.UtcNow;
                 phien.DangHoatDong = true;
                 phien.TenThietBi = deviceName; // LuÃ´n cáº­p nháº­t tÃªn thiáº¿t bá»‹ má»›i nháº¥t
             }
@@ -926,6 +947,13 @@ namespace educodeai_server.Services.Implementation
                 throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác.");
 
             var payload = JsonSerializer.Deserialize<ThietBiOtpPayload>(verify.PayloadJson ?? "{}")!;
+            var session = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == payload.MaThietBi);
+            if (session != null)
+            {
+                session.TrustRevokedAtUtc = null;
+                session.TrustedUntilUtc = DateTime.UtcNow.AddDays(30);
+                session.LastVerifiedAtUtc = DateTime.UtcNow;
+            }
             return await XuLyDangNhapThanhCongAsync(user, payload.MaThietBi, payload.TenThietBi);
         }
 
