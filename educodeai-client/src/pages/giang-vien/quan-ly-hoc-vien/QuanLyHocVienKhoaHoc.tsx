@@ -573,8 +573,8 @@ export default function QuanLyHocVienKhoaHoc() {
 
       <div className="qllh-filter-bar">
         <div className="qllh-search-form">
-          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-            <i className="bi bi-search" style={{ position: 'absolute', left: '14px', color: '#94a3b8' }} aria-hidden="true" />
+          <div className="qllh-search-wrap">
+            <i className="bi bi-search qllh-search-icon" aria-hidden="true" />
             <input
               type="search"
               placeholder="Tìm theo Họ tên hoặc Email học viên..."

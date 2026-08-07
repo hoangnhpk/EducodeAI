@@ -167,9 +167,29 @@
   z-index: 2;
 }
 .qllh-search-form > div { min-width: 0; }
-.qllh-search-input {
+.qllh-search-wrap {
+  position: relative;
   flex: 1;
-  padding: 11px 14px 11px 40px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.qllh-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+/* Specificity cao hơn rule global trong UI_GiangVien_QuanTriVien_Kit.css */
+.qllh-filter-bar input.qllh-search-input {
+  flex: 1;
+  width: 100%;
+  padding: 11px 14px 11px 42px;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
   border-radius: 10px;
@@ -177,7 +197,7 @@
   font-size: 14px;
   transition: all 0.18s ease;
 }
-.qllh-search-input:focus {
+.qllh-filter-bar input.qllh-search-input:focus {
   background: #ffffff;
   border-color: #93c5fd;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);

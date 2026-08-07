@@ -227,7 +227,44 @@
 
 /* Forms */
 .dkgv-form-group {
+  position: relative;
   margin-bottom: 25px;
+}
+
+.dkgv-password-toggle {
+  position: absolute !important;
+  right: 0.5rem;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--dkgv-orange, #f97316) !important;
+  box-shadow: none !important;
+  line-height: 1;
+}
+
+.dkgv-password-field {
+  position: relative;
+  width: 100%;
+}
+
+.dkgv-password-field .dkgv-form-control {
+  padding-right: 52px;
+}
+
+.dkgv-password-toggle {
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .dkgv-form-label {
