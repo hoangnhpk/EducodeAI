@@ -8,9 +8,7 @@ export const bootstrapAuth = (): Promise<boolean> => {
   if (getAuthTokens().accessToken) return Promise.resolve(true)
   if (bootstrapPromise) return bootstrapPromise
 
-  // Không xóa access token đang có: Google/Facebook có thể hoàn tất đăng nhập
-  // trong lúc request bootstrap ban đầu vẫn đang chờ cookie refresh.
-  if (getAuthTokens().accessToken) return Promise.resolve(true)
+  clearAuthTokens()
   const { maThietBi } = getDeviceInfo()
 
   bootstrapPromise = axios
@@ -26,12 +24,8 @@ export const bootstrapAuth = (): Promise<boolean> => {
       return true
     })
     .catch(() => {
-      // Không xóa phiên vừa được tạo bởi đăng nhập Google/Facebook trong lúc
-      // request bootstrap cũ còn đang hoàn tất.
-      if (!getAuthTokens().accessToken) {
-        clearAuthTokens()
-        localStorage.removeItem('user_info')
-      }
+      clearAuthTokens()
+      localStorage.removeItem('user_info')
       return false
     })
     .finally(() => {
