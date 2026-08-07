@@ -182,6 +182,9 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
             }
         };
 
+        setAiDoctorOpen(false);
+        setAiDoctorResult(null);
+        setAiDoctorLoading(false);
         void fetchDuLieu();
     }, [maBaiTap]);
 
@@ -194,6 +197,9 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
         }
 
         setIsSubmitting(true);
+        setAiDoctorOpen(false);
+        setAiDoctorResult(null);
+        setAiDoctorLoading(false);
 
         // Cập nhật giao diện: Tất cả tab chuyển sang running
         setTestResults(duLieu.testCases.map(() => ({ status: 'running', output: 'Đang gửi code lên máy chủ...' })));
