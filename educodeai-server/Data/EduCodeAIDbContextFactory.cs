@@ -13,7 +13,6 @@ namespace educodeai_server.Data
                 .SetBasePath(basePath)
                 .AddJsonFile("appsettings.json", optional: false)
                 .AddJsonFile("appsettings.Development.json", optional: true)
-                .AddUserSecrets<EduCodeAIDbContextFactory>(optional: true)
                 .AddEnvironmentVariables()
                 .Build();
 

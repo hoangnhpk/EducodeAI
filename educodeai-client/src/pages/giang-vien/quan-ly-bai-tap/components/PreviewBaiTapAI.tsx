@@ -52,7 +52,7 @@ export default function PreviewBaiTapAI({ data, onSave, onCancel, isSaving, edit
   };
 
   return (
-    <div style={{ background: 'var(--bg-main)' }}>
+    <div style={{ background: '#f8fafc' }}>
       {/* 
           REMOVED OLD HEADER: 
           Previously had a bg-white sticky-top header here. 
@@ -64,10 +64,10 @@ export default function PreviewBaiTapAI({ data, onSave, onCancel, isSaving, edit
           {/* Metadata Row - Lean & Clean */}
           <div className="bg-white p-4 rounded-4 shadow-sm d-flex align-items-center gap-4 flex-wrap border">
             <div style={{ flex: 1, minWidth: '350px' }}>
-              <label className="text-uppercase fw-bold mb-1" style={{ fontSize: '11px', color: 'var(--text-light)', letterSpacing: '0.05em' }}>Tiêu đề bài tập</label>
+              <label className="text-uppercase fw-bold mb-1" style={{ fontSize: '11px', color: '#94a3b8', letterSpacing: '0.05em' }}>Tiêu đề bài tập</label>
               <input
                 className="form-control border-0 p-0 fw-bold"
-                style={{ fontSize: '22px', boxShadow: 'none', background: 'transparent', color: 'var(--text-main)' }}
+                style={{ fontSize: '22px', boxShadow: 'none', background: 'transparent', color: '#0f172a' }}
                 value={localData?.metadata?.title || ''}
                 onChange={(e) => handleMetaUpdate('title', e.target.value)}
                 disabled={!editable}
@@ -76,13 +76,13 @@ export default function PreviewBaiTapAI({ data, onSave, onCancel, isSaving, edit
             </div>
             <div className="d-flex gap-4 border-start ps-4 align-items-center">
               <div>
-                <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Ngôn ngữ</label>
-                <div className="px-3 py-2 fw-bold text-center" style={{ borderRadius: 'var(--radius-md)', fontSize: '14px', minWidth: '80px', background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}>
+                <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: '#64748b', letterSpacing: '0.05em' }}>Ngôn ngữ</label>
+                <div className="bg-primary bg-opacity-10 text-primary px-3 py-2 fw-bold text-center" style={{ borderRadius: '10px', fontSize: '14px', minWidth: '80px' }}>
                   {localData?.metadata?.language}
                 </div>
               </div>
               <div style={{ minWidth: '120px' }}>
-                <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Mức độ</label>
+                <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: '#64748b', letterSpacing: '0.05em' }}>Mức độ</label>
                 {getDifficultyBadge(localData?.metadata?.difficulty || 'Dễ')}
               </div>
             </div>
@@ -94,11 +94,11 @@ export default function PreviewBaiTapAI({ data, onSave, onCancel, isSaving, edit
                 <div className="bg-success bg-opacity-10 text-success p-2 rounded-3 me-3">
                   <i className="bi bi-markdown fs-5" />
                 </div>
-                <h5 className="m-0 fw-bold" style={{ color: 'var(--text-main)' }}>Mô tả đề bài</h5>
+                <h5 className="m-0 fw-bold" style={{ color: '#1e293b' }}>Mô tả đề bài</h5>
               </div>
               <textarea
                 className="form-control border-0"
-                style={{ minHeight: '400px', fontSize: '16px', lineHeight: '1.8', background: 'var(--bg-main)', borderRadius: 'var(--radius-md)', padding: '20px', color: 'var(--text-main)' }}
+                style={{ minHeight: '400px', fontSize: '16px', lineHeight: '1.8', background: '#fcfcfc', borderRadius: '12px', padding: '20px', color: '#334155' }}
                 value={localData?.problemContent?.description || ''}
                 onChange={(e) => handleProblemUpdate('description', e.target.value)}
                 disabled={!editable}
@@ -112,7 +112,7 @@ export default function PreviewBaiTapAI({ data, onSave, onCancel, isSaving, edit
                 <div className="bg-primary bg-opacity-10 text-primary p-2 rounded-3 me-3">
                   <i className="bi bi-code-square fs-5" />
                 </div>
-                <h5 className="m-0 fw-bold" style={{ color: 'var(--text-main)' }}>Lời giải mẫu</h5>
+                <h5 className="m-0 fw-bold" style={{ color: '#1e293b' }}>Lời giải mẫu</h5>
               </div>
               <textarea
                 className="form-control font-monospace border-0"
@@ -130,11 +130,11 @@ export default function PreviewBaiTapAI({ data, onSave, onCancel, isSaving, edit
                 <div className="bg-warning bg-opacity-10 text-warning p-2 rounded-3 me-3">
                   <i className="bi bi-lightbulb fs-5" />
                 </div>
-                <h5 className="m-0 fw-bold" style={{ color: 'var(--text-main)' }}>Gợi ý & Giải thích thuật toán</h5>
+                <h5 className="m-0 fw-bold" style={{ color: '#1e293b' }}>Gợi ý & Giải thích thuật toán</h5>
               </div>
               <textarea
                 className="form-control border-0"
-                style={{ height: '220px', fontSize: '15px', background: 'var(--warning-soft)', color: 'var(--warning-strong)', borderRadius: 'var(--radius-md)', padding: '20px', lineHeight: '1.6' }}
+                style={{ height: '220px', fontSize: '15px', background: '#fffbeb', color: '#92400e', borderRadius: '12px', padding: '20px', lineHeight: '1.6' }}
                 value={localData?.solution?.explanation || ''}
                 onChange={(e) => handleSolutionUpdate('explanation', e.target.value)}
                 disabled={!editable}

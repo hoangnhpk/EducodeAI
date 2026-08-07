@@ -1,3 +1,4 @@
+import { RefreshCw, Search } from 'lucide-react';
 import type { ReviewCourseInfo, ReviewFilterParams, ReviewSource } from './ReviewAdmin.types';
 
 interface Props {
@@ -25,7 +26,7 @@ export default function ReviewAdminFilters({
     <section className="qtrv-filters-card">
       {/* Search Box */}
       <div className="qtrv-search-box">
-        <i className="fas fa-magnifying-glass" aria-hidden="true" />
+        <Search size={15} />
         <input
           type="text"
           placeholder="Tìm theo học viên, khóa học..."
@@ -85,7 +86,7 @@ export default function ReviewAdminFilters({
           {source === 'mock' ? 'Demo' : 'Dữ liệu API'}
         </span>
         <button type="button" className="qtrv-refresh-btn" onClick={onRefresh} disabled={loading}>
-          <i className={`fas fa-arrows-rotate ${loading ? 'fa-spin' : ''}`} aria-hidden="true" />
+          <RefreshCw size={14} className={loading ? 'spin' : ''} />
           Làm mới
         </button>
       </div>

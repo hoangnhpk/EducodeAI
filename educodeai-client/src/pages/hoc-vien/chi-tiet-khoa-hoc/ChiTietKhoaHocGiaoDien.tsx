@@ -209,15 +209,15 @@ const ChiTietKhoaHocGiaoDien = () => {
                 <div className="ctgd-instructor-headline">Chuyên gia Khoa học Dữ liệu tại TechCorp & Giảng viên Đại học</div>
                 <div className="ctgd-instructor-stats">
                   <div className="ctgd-instructor-stats-item">
-                    <i className="fas fa-star" style={{color: 'var(--primary)'}}></i>
+                    <i className="fas fa-star" style={{color: '#f69050'}}></i>
                     <span>4.9 Xếp hạng</span>
                   </div>
                   <div className="ctgd-instructor-stats-item">
-                    <i className="fas fa-user-friends" style={{color: 'var(--primary)'}}></i>
+                    <i className="fas fa-user-friends" style={{color: '#f69050'}}></i>
                     <span>250,000 Học viên</span>
                   </div>
                   <div className="ctgd-instructor-stats-item">
-                    <i className="fas fa-play-circle" style={{color: 'var(--primary)'}}></i>
+                    <i className="fas fa-play-circle" style={{color: '#f69050'}}></i>
                     <span>15 Khóa học</span>
                   </div>
                 </div>
@@ -260,7 +260,7 @@ const ChiTietKhoaHocGiaoDien = () => {
                       <div className="ctgd-review-bar-fill" style={{ width: `${item.percent}%` }}></div>
                     </div>
                     <div className="ctgd-review-bar-label">
-                      <i className="fas fa-star" style={{ color: 'var(--primary)', fontSize: '12px', marginRight: '4px' }}></i>
+                      <i className="fas fa-star" style={{ color: '#f69050', fontSize: '12px', marginRight: '4px' }}></i>
                       {item.stars} sao
                     </div>
                   </div>

@@ -6,8 +6,6 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { setAuthTokens } from '../../utils/authStorage';
 
 import { FaArrowLeft } from 'react-icons/fa';
-import PasswordInput from '../../components/PasswordInput';
-import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
 
 const QuenMatKhau: React.FC = () => {
 
@@ -258,7 +256,7 @@ const QuenMatKhau: React.FC = () => {
                                     </div>
                                     <div className="col-12 mt-2 d-flex flex-column align-items-center">
                                         <ReCAPTCHA
-                                            sitekey={RECAPTCHA_SITE_KEY || 'invalid-site-key'}
+                                            sitekey="6Legm5csAAAAABr5FTIC25geZIxrxlmF5ORzuiYt"
                                             onChange={(token) => {
                                                 setCaptchaToken(token || '');
                                                 if (errors.captcha) setErrors((prev: any) => ({ ...prev, captcha: null }));
@@ -288,30 +286,28 @@ const QuenMatKhau: React.FC = () => {
                                 </div>
                                 <div className="row g-3 text-start">
                                     <div className="col-12">
-                                        <PasswordInput
-                                            id="reset-password"
-                                            label="Mật khẩu mới"
-                                            floating
-                                            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                                            placeholder="Mật khẩu mới"
-                                            value={password}
-                                            onChange={(e) => { setPassword(e.target.value); setErrors({}); }}
-                                            autoComplete="new-password"
-                                            error={errors.password}
-                                        />
+                                        <div className="form-floating">
+                                            <input type="password" 
+                                                className={`form-control ${errors.password ? 'is-invalid' : ''}`} 
+                                                placeholder="Pass"
+                                                value={password} 
+                                                onChange={(e) => { setPassword(e.target.value); setErrors({}); }} 
+                                            />
+                                            <label>Mật khẩu mới</label>
+                                            {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                                        </div>
                                     </div>
                                     <div className="col-12">
-                                        <PasswordInput
-                                            id="reset-password-confirm"
-                                            label="Nhập lại mật khẩu"
-                                            floating
-                                            className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
-                                            placeholder="Nhập lại mật khẩu"
-                                            value={confirmPassword}
-                                            onChange={(e) => { setConfirmPassword(e.target.value); setErrors({}); }}
-                                            autoComplete="new-password"
-                                            error={errors.confirmPassword}
-                                        />
+                                        <div className="form-floating">
+                                            <input type="password" 
+                                                className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`} 
+                                                placeholder="Confirm"
+                                                value={confirmPassword} 
+                                                onChange={(e) => { setConfirmPassword(e.target.value); setErrors({}); }} 
+                                            />
+                                            <label>Nhập lại mật khẩu</label>
+                                            {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+                                        </div>
                                     </div>
                                     <button className="btn btn-primary w-100 py-3 mt-3 text-white fw-bold rounded-pill" 
                                         style={{backgroundColor: '#fb873f', border: 'none'}}

@@ -291,28 +291,10 @@ const TrangChu: React.FC = () => {
 
                     <div className="row g-4">
                         {isLoading ? (
-                            Array.from({ length: 8 }).map((_, i) => (
-                                <div key={`skeleton-${i}`} className="col-md-6 col-lg-3" aria-hidden="true">
-                                    <div className="course-card card h-100 border-0 overflow-hidden">
-                                        <div className="course-skeleton-thumb skeleton-shimmer" />
-                                        <div className="card-body p-4 d-flex flex-column">
-                                            <div className="d-flex justify-content-between mb-3">
-                                                <span className="course-skeleton-line skeleton-shimmer" style={{ width: '35%' }} />
-                                                <span className="course-skeleton-line skeleton-shimmer" style={{ width: '20%' }} />
-                                            </div>
-                                            <span className="course-skeleton-line skeleton-shimmer mb-2" style={{ width: '90%' }} />
-                                            <span className="course-skeleton-line skeleton-shimmer mb-3" style={{ width: '60%' }} />
-                                            <div className="d-flex gap-2 mb-3">
-                                                <span className="course-skeleton-pill skeleton-shimmer" />
-                                                <span className="course-skeleton-pill skeleton-shimmer" />
-                                            </div>
-                                            <div className="mt-auto">
-                                                <span className="course-skeleton-btn skeleton-shimmer" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
+                            <div className="text-center w-100 py-5">
+                                <div className="spinner-border text-primary fs-4" style={{ width: '3rem', height: '3rem' }} role="status"></div>
+                                <p className="mt-3 text-muted fw-bold">Đang tải khoá học...</p>
+                            </div>
                         ) : courses.length > 0 ? (
                             courses.map((kh) => {
                                 const skillTags = parseKyNangTags(kh.kyNangChinh);
@@ -399,17 +381,8 @@ const TrangChu: React.FC = () => {
                         ) : (
                             <div className="text-center w-100 py-5">
                                 <div className="display-1 text-muted mb-3"><i className="fas fa-search-minus"></i></div>
-                                <h4 className="text-dark fw-bold mb-2">Không tìm thấy khóa học nào phù hợp!</h4>
-                                <p className="text-muted mb-4 mx-auto" style={{ maxWidth: '420px' }}>
-                                    {searchTerm
-                                        ? `Không có kết quả cho "${searchTerm}". Thử từ khóa khác hoặc xóa bộ lọc để xem tất cả khóa học.`
-                                        : 'Hiện chưa có khóa học nào. Vui lòng quay lại sau.'}
-                                </p>
-                                {searchTerm && (
-                                    <button className="btn btn-outline-primary rounded-pill px-4" onClick={() => setSearchTerm('')}>
-                                        <i className="fa fa-rotate-left me-2"></i>Xóa bộ lọc
-                                    </button>
-                                )}
+                                <h4 className="text-dark fw-bold mb-3">Không tìm thấy khóa học nào phù hợp!</h4>
+                                <button className="btn btn-outline-primary rounded-pill px-4" onClick={() => setSearchTerm('')}>Xóa bộ lọc</button>
                             </div>
                         )}
                     </div>
@@ -442,8 +415,8 @@ const TrangChu: React.FC = () => {
                                     <h5 className="fw-bold text-dark">{gv.name}</h5>
                                     <p className="text-primary fw-bold small mb-4">{gv.role}</p>
                                     <div className="d-flex justify-content-center gap-2">
-                                        <a href="#" aria-label={`LinkedIn của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-linkedin-in" aria-hidden="true"></i></a>
-                                        <a href="#" aria-label={`GitHub của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-github" aria-hidden="true"></i></a>
+                                        <a href="#" className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-linkedin-in"></i></a>
+                                        <a href="#" className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-github"></i></a>
                                     </div>
                                 </div>
                             </div>
@@ -490,7 +463,7 @@ const TrangChu: React.FC = () => {
             <section className="py-5 bg-primary">
                 <div className="container py-4">
                     <div className="bg-white rounded-4 p-5 p-md-5 d-flex flex-column flex-md-row align-items-center justify-content-between shadow-lg position-relative overflow-hidden">
-                        <div className="position-absolute" style={{ right: '-50px', top: '-50px', width: '250px', height: '250px', background: 'rgba(246, 144, 80, 0.1)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }}></div>
+                        <div className="position-absolute" style={{ right: '-50px', top: '-50px', width: '250px', height: '250px', background: 'rgba(251, 135, 63, 0.1)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }}></div>
                         <div className="text-center text-md-start mb-4 mb-md-0 position-relative z-index-1">
                             <h2 className="display-6 fw-bold text-dark mb-3">Bạn muốn truyền cảm hứng?</h2>
                             <p className="text-muted fs-5 mb-0" style={{ maxWidth: '600px' }}>Trở thành giảng viên trên EduCode để chia sẻ kiến thức, xây dựng thương hiệu cá nhân và tạo thu nhập thụ động.</p>
@@ -535,9 +508,9 @@ const TrangChu: React.FC = () => {
                 .hero-badge {
                     padding: 0.35rem 1rem;
                     border-radius: 50rem;
-                    background: rgba(246, 144, 80, 0.2);
-                    color: var(--primary);
-                    border: 1px solid rgba(246, 144, 80, 0.3);
+                    background: rgba(251, 135, 63, 0.2);
+                    color: #fb873f;
+                    border: 1px solid rgba(251, 135, 63, 0.3);
                     font-size: 0.875rem;
                     text-transform: uppercase;
                     letter-spacing: 0.1em;
@@ -549,7 +522,7 @@ const TrangChu: React.FC = () => {
                     height: 12px;
                     bottom: -4px;
                     left: 0;
-                    color: rgba(246, 144, 80, 0.4);
+                    color: rgba(251, 135, 63, 0.4);
                 }
                 .hero-cta-group {
                     display: flex;
@@ -576,14 +549,14 @@ const TrangChu: React.FC = () => {
                     transition: all 0.25s ease;
                 }
                 .hero-cta-btn--primary {
-                    background: var(--primary);
-                    border-color: var(--primary);
+                    background: #0d6efd;
+                    border-color: #0d6efd;
                     color: #fff;
-                    box-shadow: 0 10px 24px rgba(246, 144, 80, 0.35);
+                    box-shadow: 0 10px 24px rgba(13, 110, 253, 0.35);
                 }
                 .hero-cta-btn--primary:hover {
-                    background: var(--primary-hover);
-                    border-color: var(--primary-hover);
+                    background: #0b5ed7;
+                    border-color: #0b5ed7;
                     color: #fff;
                     transform: translateY(-1px);
                 }
@@ -606,7 +579,7 @@ const TrangChu: React.FC = () => {
                 }
                 .home-search-bar {
                     background: #fff;
-                    border-bottom: 1px solid var(--border-color);
+                    border-bottom: 1px solid #e2e8f0;
                     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
                     padding: 0.85rem 0;
                 }
@@ -620,21 +593,21 @@ const TrangChu: React.FC = () => {
                     display: flex;
                     align-items: center;
                     background: #fff;
-                    border: 2px solid var(--border-color);
+                    border: 2px solid #e2e8f0;
                     border-radius: 50rem;
                     height: 3.5rem;
                     overflow: hidden;
                     transition: all 0.3s ease;
                 }
                 .search-bar-modern:focus-within {
-                    border-color: var(--primary);
+                    border-color: #fb873f;
                     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
                 }
                 .search-icon {
                     width: 3.5rem;
                     display: grid;
                     place-items: center;
-                    color: var(--text-light);
+                    color: #94a3b8;
                     font-size: 1.1rem;
                 }
                 .search-input {
@@ -643,40 +616,32 @@ const TrangChu: React.FC = () => {
                     border: none;
                     outline: none;
                     font-weight: 600;
-                    color: var(--text-main);
-                }
-                .search-input:focus-visible {
-                    outline: 2px solid var(--primary);
-                    outline-offset: 2px;
-                }
-                .search-input:focus-visible {
-                    outline: 2px solid var(--primary);
-                    outline-offset: -2px;
+                    color: #334155;
                 }
                 .clear-btn {
                     width: 3.5rem;
                     height: 100%;
                     background: none;
                     border: none;
-                    color: var(--text-light);
+                    color: #94a3b8;
                     cursor: pointer;
                     display: grid;
                     place-items: center;
                 }
-                .clear-btn:hover { color: var(--primary); }
+                .clear-btn:hover { color: #fb873f; }
 
                 /* Stats */
                 .stat-item {
-                    border-right: 1px solid var(--border-light);
+                    border-right: 1px solid #f1f5f9;
                 }
                 @media (max-width: 768px) {
-                    .stat-item { border-right: none; border-bottom: 1px solid var(--border-light); padding-bottom: 1rem; }
+                    .stat-item { border-right: none; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem; }
                 }
 
                 /* Feature Card */
                 .feature-card {
                     transition: all 0.4s ease;
-                    border: 1px solid var(--border-light);
+                    border: 1px solid #f1f5f9;
                 }
                 .feature-card:hover {
                     transform: translateY(-8px);
@@ -697,10 +662,10 @@ const TrangChu: React.FC = () => {
 
                 /* Category Card */
                 .category-card:hover {
-                    border-color: var(--primary) !important;
+                    border-color: #fb873f !important;
                     transform: translateY(-5px);
                 }
-                .category-card:hover h5 { color: var(--primary) !important; }
+                .category-card:hover h5 { color: #fb873f !important; }
                 .icon-wrapper { transition: all 0.3s ease; }
                 .category-card:hover .icon-wrapper { transform: scale(1.1); }
 
@@ -729,22 +694,22 @@ const TrangChu: React.FC = () => {
                     font-size: 0.72rem;
                     font-weight: 600;
                     line-height: 1.2;
-                    background: var(--primary-soft);
-                    color: var(--primary-dark);
-                    border: 1px solid rgba(246, 144, 80, 0.22);
+                    background: rgba(251, 135, 63, 0.1);
+                    color: #c2410c;
+                    border: 1px solid rgba(251, 135, 63, 0.22);
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
                 .course-skill-tag--more {
-                    background: var(--border-light);
-                    color: var(--text-muted);
-                    border-color: var(--border-color);
+                    background: #f1f5f9;
+                    color: #64748b;
+                    border-color: #e2e8f0;
                 }
                 .course-skill-tag--empty {
-                    background: var(--bg-main);
-                    color: var(--text-light);
-                    border-color: var(--border-color);
+                    background: #f8fafc;
+                    color: #94a3b8;
+                    border-color: #e2e8f0;
                     font-weight: 500;
                 }
                 .line-clamp-2 {
@@ -771,32 +736,32 @@ const TrangChu: React.FC = () => {
                 .btn-course-detail {
                     grid-column: 1 / -1;
                     background: #fff;
-                    border: 1px solid var(--border-color);
-                    color: var(--text-main);
+                    border: 1px solid #cbd5e1;
+                    color: #334155;
                 }
                 .btn-course-detail:hover {
-                    background: var(--bg-main);
-                    border-color: var(--text-light);
-                    color: var(--text-main);
+                    background: #f8fafc;
+                    border-color: #94a3b8;
+                    color: #0f172a;
                 }
                 .btn-course-trial {
                     background: #fff;
-                    border: 1px solid var(--primary);
-                    color: var(--primary);
+                    border: 1px solid #fb873f;
+                    color: #fb873f;
                 }
                 .btn-course-trial:hover {
-                    background: rgba(246, 144, 80, 0.08);
-                    color: var(--primary-hover);
+                    background: rgba(251, 135, 63, 0.08);
+                    color: #e86f24;
                 }
                 .btn-course-buy {
-                    background: var(--primary);
-                    border: 1px solid var(--primary);
+                    background: #fb873f;
+                    border: 1px solid #fb873f;
                     color: #fff;
-                    box-shadow: 0 4px 10px rgba(246, 144, 80, 0.25);
+                    box-shadow: 0 4px 10px rgba(251, 135, 63, 0.25);
                 }
                 .btn-course-buy:hover {
-                    background: var(--primary-hover);
-                    border-color: var(--primary-hover);
+                    background: #e86f24;
+                    border-color: #e86f24;
                     color: #fff;
                 }
                 .btn-course-buy--full {
@@ -812,79 +777,19 @@ const TrangChu: React.FC = () => {
                 .instructor-img { transition: transform 0.3s ease; }
                 .instructor-card:hover .instructor-img { transform: scale(1.1); }
                 .social-icon { width: 36px; height: 36px; transition: all 0.3s ease; text-decoration: none; }
-                .social-icon:hover { background: var(--primary) !important; color: #fff !important; }
+                .social-icon:hover { background: #fb873f !important; color: #fff !important; }
 
-                .hover-primary:hover { color: var(--primary) !important; }
+                .hover-primary:hover { color: #fb873f !important; }
 
                 /* Colors */
-                .bg-primary-subtle { background-color: var(--primary-soft) !important; }
-                .text-primary { color: var(--primary) !important; }
+                .bg-primary-subtle { background-color: rgba(251, 135, 63, 0.1) !important; }
+                .text-primary { color: #fb873f !important; }
 
                 /* Button specific sizing */
                 .hero-btn {
                     width: 250px !important;
                     height: 56px !important;
                     font-size: 1.1rem !important;
-                }
-
-                /* Course Skeleton (loading) */
-                .course-skeleton-thumb {
-                    height: 200px;
-                    width: 100%;
-                }
-                .course-skeleton-line {
-                    display: block;
-                    height: 0.85rem;
-                    border-radius: var(--radius-sm);
-                }
-                .course-skeleton-pill {
-                    display: inline-block;
-                    height: 1.35rem;
-                    width: 4.5rem;
-                    border-radius: 50rem;
-                }
-                .course-skeleton-btn {
-                    display: block;
-                    height: 42px;
-                    width: 100%;
-                    border-radius: var(--radius-md);
-                }
-                .skeleton-shimmer {
-                    background: linear-gradient(
-                        90deg,
-                        var(--border-light) 25%,
-                        var(--border-color) 37%,
-                        var(--border-light) 63%
-                    );
-                    background-size: 400% 100%;
-                    animation: skeleton-loading 1.4s ease infinite;
-                }
-                @keyframes skeleton-loading {
-                    0% { background-position: 100% 50%; }
-                    100% { background-position: 0 50%; }
-                }
-                @media (prefers-reduced-motion: reduce) {
-                    .skeleton-shimmer { animation: none; }
-                    .hero-cta-btn,
-                    .feature-card,
-                    .course-card,
-                    .course-img,
-                    .category-card,
-                    .instructor-card,
-                    .instructor-img,
-                    .icon-box,
-                    .icon-wrapper,
-                    .social-icon,
-                    .feature-link {
-                        transition: none !important;
-                    }
-                    .feature-card:hover,
-                    .course-card:hover,
-                    .category-card:hover,
-                    .instructor-card:hover,
-                    .hero-cta-btn:hover {
-                        transform: none !important;
-                    }
                 }
             `}</style>
         </div>

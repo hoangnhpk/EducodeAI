@@ -16,31 +16,7 @@ body {
   color: var(--text-main);
 }
 
-.password-input-toggle {
-  z-index: 6;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--primary);
-  box-shadow: none;
-  line-height: 1;
-}
-
-.password-input-toggle:hover,
-.password-input-toggle:active {
-  border: 0;
-  background: transparent;
-  color: var(--primary-hover);
-  box-shadow: none;
-}
-
-.password-input-toggle:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
+/* ========== UTILITIES ========== */
 .fw-medium {
   font-weight: var(--font-weight-semibold) !important;
 }

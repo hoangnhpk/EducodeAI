@@ -46,40 +46,7 @@ const DanhSachNguoiDung = memo(({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai 
     };
 
     if (dangTai) {
-        return (
-            <div className="table-responsive" aria-busy="true" aria-live="polite">
-                <table className="user-table">
-                    <thead>
-                        <tr>
-                            <th style={{ width: '25%' }}>Người dùng</th>
-                            <th style={{ width: '25%' }}>Email</th>
-                            <th style={{ width: '15%' }}>Vai trò</th>
-                            <th style={{ width: '120px' }}>Ngày tạo</th>
-                            <th style={{ width: '20%' }}>Trạng thái</th>
-                            <th style={{ width: '120px', textAlign: 'center' }}>Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <tr key={`skeleton-${i}`}>
-                                <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <span className="qlnv-skeleton qlnv-skeleton--avatar" />
-                                        <span className="qlnv-skeleton qlnv-skeleton--text" style={{ width: '60%' }} />
-                                    </div>
-                                </td>
-                                <td><span className="qlnv-skeleton qlnv-skeleton--text" style={{ width: '80%' }} /></td>
-                                <td><span className="qlnv-skeleton qlnv-skeleton--pill" /></td>
-                                <td><span className="qlnv-skeleton qlnv-skeleton--text" style={{ width: '70%' }} /></td>
-                                <td><span className="qlnv-skeleton qlnv-skeleton--pill" /></td>
-                                <td><span className="qlnv-skeleton qlnv-skeleton--text" style={{ width: '90%' }} /></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                <span className="visually-hidden">Đang tải danh sách người dùng...</span>
-            </div>
-        );
+        return <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>Đang tải danh sách người dùng...</div>;
     }
 
     return (
@@ -99,8 +66,7 @@ const DanhSachNguoiDung = memo(({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai 
                     <tbody>
                         {duLieu.length === 0 ? (
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
-                                    <i className="bi bi-people" style={{ fontSize: 28, display: 'block', marginBottom: 8, color: 'var(--text-light)' }} aria-hidden="true"></i>
+                                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
                                     Không tìm thấy người dùng nào
                                 </td>
                             </tr>
@@ -111,28 +77,28 @@ const DanhSachNguoiDung = memo(({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai 
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                             {u.anhDaiDien
                                                 ? <img src={u.anhDaiDien} alt={u.hoTen}
-                                                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-light)' }} />
+                                                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid #f1f5f9' }} />
                                                 : <div style={{
                                                     width: 32, height: 32, borderRadius: '50%',
-                                                    background: 'var(--border-light)', color: 'var(--text-muted)',
+                                                    background: '#f1f5f9', color: '#64748b', 
                                                     display: 'flex', alignItems: 'center',
                                                     justifyContent: 'center', fontWeight: 700, fontSize: 13
                                                 }}>
                                                     {u.hoTen ? u.hoTen[0].toUpperCase() : '?'}
                                                 </div>
                                             }
-                                            <span style={{ fontWeight: 600, color: 'var(--text-dark)' }}>
+                                            <span style={{ fontWeight: 600, color: '#1e293b' }}>
                                                 {u.hoTen}
                                             </span>
                                         </div>
                                     </td>
-                                    <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{u.email}</td>
+                                    <td style={{ color: '#64748b', fontSize: '13px' }}>{u.email}</td>
                                     <td>
                                         <span className={`badge-role ${getRoleClass(u.vaiTro)}`}>
                                             {u.vaiTro}
                                         </span>
                                     </td>
-                                    <td style={{ color: 'var(--text-light)', fontSize: '12px' }}>
+                                    <td style={{ color: '#94a3b8', fontSize: '12px' }}>
                                         {u.ngayTao ? new Date(u.ngayTao).toLocaleDateString('vi-VN') : '—'}
                                     </td>
                                     <td>

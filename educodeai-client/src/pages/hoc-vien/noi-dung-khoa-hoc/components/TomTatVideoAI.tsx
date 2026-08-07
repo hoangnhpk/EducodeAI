@@ -15,8 +15,6 @@ interface VideoSummaryProps {
 export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, linkVideo, tieuDe }) => {
     const [ketQuaTomTat, setKetQuaTomTat] = useState<string | null>(null);
     const [dangXuLy, setDangXuLy] = useState(false);
-    const [loi, setLoi] = useState(false);
-    const [daCopy, setDaCopy] = useState(false);
 
     const storageKey = `ai_summary_lesson_${maBaiHoc}`;
 
@@ -27,13 +25,10 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
         } else {
             setKetQuaTomTat(null);
         }
-        setLoi(false);
-        setDaCopy(false);
     }, [maBaiHoc]);
 
     const xuLyTomTatVideo = async () => {
         setDangXuLy(true);
-        setLoi(false);
         try {
             let videoId = "";
             if (linkVideo) {
@@ -55,20 +50,9 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
 
         } catch (error) {
             console.error("Lỗi tóm tắt video:", error);
-            setLoi(true);
+            setKetQuaTomTat("❌ Đã có lỗi xảy ra khi gọi AI. Vui lòng thử lại sau.");
         } finally {
             setDangXuLy(false);
-        }
-    };
-
-    const xuLyCopy = async () => {
-        if (!ketQuaTomTat) return;
-        try {
-            await navigator.clipboard.writeText(ketQuaTomTat);
-            setDaCopy(true);
-            setTimeout(() => setDaCopy(false), 2000);
-        } catch (err) {
-            console.error("Không thể sao chép:", err);
         }
     };
 
@@ -89,50 +73,29 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
 
     return (
         <div className="ai-summary-container">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
-                    <i className="fas fa-book-open me-2" style={{ color: 'var(--primary)' }}></i>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, color: '#1e293b' }}>
+                    <i className="fas fa-book-open me-2" style={{ color: '#f69050' }}></i>
                     Tài liệu & Tóm tắt
                 </h3>
 
-                {!ketQuaTomTat && !dangXuLy && !loi && (
+                {!ketQuaTomTat && !dangXuLy && (
                     <button className="btn-ai-summarize" onClick={xuLyTomTatVideo}>
                         <i className="fas fa-magic me-1"></i> Tóm tắt Video bằng AI
                     </button>
                 )}
 
-                {ketQuaTomTat && !dangXuLy && (
-                    <button
-                        className="btn-ai-summarize"
-                        onClick={xuLyCopy}
-                        aria-label="Sao chép kết quả tóm tắt"
-                    >
-                        <i className={daCopy ? 'fas fa-check me-1' : 'fas fa-copy me-1'}></i>
-                        {daCopy ? 'Đã sao chép' : 'Sao chép'}
+                {/* {ketQuaTomTat && !dangXuLy && (
+                    <button onClick={handleLamMoi} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '13px' }}>
+                        <i className="fas fa-sync-alt me-1"></i> Tóm tắt lại
                     </button>
-                )}
+                )} */}
             </div>
 
             {dangXuLy && (
                 <div className="ai-loading-pulse" style={{ marginTop: '20px' }}>
-                    <i className="fas fa-brain fa-spin me-2" style={{ color: 'var(--primary)' }}></i>
+                    <i className="fas fa-brain fa-spin me-2" style={{ color: '#f69050' }}></i>
                     EduCode AI đang phân tích video, vui lòng chờ giây lát...
-                </div>
-            )}
-
-            {loi && !dangXuLy && (
-                <div style={{
-                    marginTop: '20px', padding: '16px', background: 'var(--danger-soft)',
-                    borderRadius: '8px', border: '1px solid var(--danger)', color: 'var(--danger-strong)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px'
-                }}>
-                    <span>
-                        <i className="fas fa-exclamation-triangle me-2"></i>
-                        Đã có lỗi xảy ra khi gọi AI. Vui lòng thử lại.
-                    </span>
-                    <button className="btn-ai-summarize" onClick={xuLyTomTatVideo}>
-                        <i className="fas fa-sync-alt me-1"></i> Thử lại
-                    </button>
                 </div>
             )}
 
@@ -165,7 +128,7 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
                                             backgroundColor: '#f1f5f9',
                                             padding: '2px 6px',
                                             borderRadius: '4px',
-                                            color: 'var(--danger)',
+                                            color: '#e11d48',
                                             fontFamily: 'monospace'
                                         }}>
                                             {children}
@@ -179,11 +142,11 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
                     </div>
 
                     <div style={{
-                        marginTop: '15px', padding: '12px 16px', backgroundColor: 'var(--primary-soft)',
-                        borderRadius: '8px', border: '1px dashed var(--primary)', fontSize: '14px',
-                        color: 'var(--primary-dark)', display: 'flex', alignItems: 'center', gap: '10px'
+                        marginTop: '15px', padding: '12px 16px', backgroundColor: '#fff7ed',
+                        borderRadius: '8px', border: '1px dashed #f69050', fontSize: '14px',
+                        color: '#7c2d12', display: 'flex', alignItems: 'center', gap: '10px'
                     }}>
-                        <i className="fas fa-comment-dots" style={{ color: 'var(--primary)', fontSize: '18px' }}></i>
+                        <i className="fas fa-comment-dots" style={{ color: '#f69050', fontSize: '18px' }}></i>
                         <span>
                             Bạn chưa hiểu rõ ý nào trong bản tóm tắt?
                             <strong> Hãy hỏi Trợ lý AI</strong> ở góc dưới bên phải để được giải thích chi tiết nhé!
@@ -192,8 +155,8 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
                 </>
             )}
 
-            {!ketQuaTomTat && !dangXuLy && !loi && (
-                <div style={{ marginTop: '20px', color: 'var(--text-muted)', fontSize: '14px', fontStyle: 'italic' }}>
+            {!ketQuaTomTat && !dangXuLy && (
+                <div style={{ marginTop: '20px', color: '#64748b', fontSize: '14px', fontStyle: 'italic' }}>
                     Nhấn nút phía trên để AI giúp bạn tóm tắt nội dung chính của video này.
                 </div>
             )}

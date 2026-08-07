@@ -87,7 +87,7 @@ a.cp-back:active {
 a.cp-back:hover {
     background-color: #ffffff;
     /* Trắng đặc */
-    color: var(--primary) !important;
+    color: #f69050 !important;
     /* Icon đổi sang màu cam giống màu nền */
     transform: translateX(-3px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -470,7 +470,7 @@ a.cp-back:hover {
 .cp-notes-textarea:focus {
     outline: none;
     border-color: var(--cp-primary);
-    box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.12);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
 .cp-notes-actions {
@@ -814,12 +814,6 @@ a.cp-back:hover {
     line-height: 1.5;
     resize: none;
     outline: none;
-}
-
-.cp-ide-textarea:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: -2px;
-    box-shadow: inset 0 0 0 1px var(--primary);
 }
 
 /* Khu vực bài kiểm tra */

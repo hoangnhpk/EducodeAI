@@ -23,7 +23,12 @@ public sealed class GiangVienReviewEmailQueue : IGiangVienReviewEmailQueue
     private readonly IDataProtector _protector;
     private readonly ILogger<GiangVienReviewEmailQueue> _logger;
 
-    public GiangVienReviewEmailQueue(IRedisService redis, IDataProtectionProvider protectionProvider, ILogger<GiangVienReviewEmailQueue> logger) { _redis = redis; _protector = protectionProvider.CreateProtector("EduCodeAI.EmailQueue.v1"); _logger = logger; }
+    public GiangVienReviewEmailQueue(IRedisService redis, IDataProtectionProvider protectionProvider, ILogger<GiangVienReviewEmailQueue> logger)
+    {
+        _redis = redis;
+        _protector = protectionProvider.CreateProtector("EduCodeAI.EmailQueue.v1");
+        _logger = logger;
+    }
 
     public async Task EnqueueAsync(GiangVienReviewEmailPayload payload, CancellationToken cancellationToken = default)
     {
@@ -32,9 +37,12 @@ public sealed class GiangVienReviewEmailQueue : IGiangVienReviewEmailQueue
         try
         {
             await _redis.DayVaoCuoiListAsync(RedisKey, serialized);
-            // RedisService reports write failures through logging; fallback is used only on exceptions.
         }
-        catch (Exception ex) { _logger.LogWarning(ex, "Redis queue unavailable for email job {JobId}; using memory fallback.", job.Id); }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Redis queue unavailable for email job {JobId}; using memory fallback.", job.Id);
+        }
+
         await _memory.Writer.WriteAsync(job, cancellationToken);
     }
 

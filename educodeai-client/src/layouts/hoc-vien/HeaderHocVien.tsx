@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/auth.service";
-import { redirectToLoginOnce } from "../../utils/sessionTermination";
+import { clearAuthTokens } from "../../utils/authStorage";
 
 export default function HeaderHocVien() {
   const navigate = useNavigate();
@@ -24,8 +24,10 @@ export default function HeaderHocVien() {
     try {
       await authService.logout();
     } finally {
+      clearAuthTokens();
+      localStorage.removeItem("user_info");
       setUser(null);
-      redirectToLoginOnce(navigate);
+      navigate("/dang-nhap");
     }
   };
 
@@ -46,9 +48,6 @@ export default function HeaderHocVien() {
         className="navbar-toggler me-4"
         data-bs-toggle="collapse"
         data-bs-target="#navbarCollapse"
-        aria-controls="navbarCollapse"
-        aria-expanded="false"
-        aria-label="Mở menu điều hướng"
       >
         <span className="navbar-toggler-icon"></span>
       </button>
@@ -74,15 +73,14 @@ export default function HeaderHocVien() {
           {/* KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP */}
           {user ? (
             <div className="nav-item dropdown px-lg-4">
-              <button
-                type="button"
-                className="nav-link dropdown-toggle d-flex align-items-center border-0 bg-transparent"
+              <a
+                href="#"
+                className="nav-link dropdown-toggle d-flex align-items-center"
                 data-bs-toggle="dropdown"
-                aria-expanded="false"
-                aria-label="Mở menu tài khoản"
+                onClick={(e) => e.preventDefault()}
               >
                 <span className="fw-bold d-none d-lg-inline">{user.hoTen || user.name}</span>
-              </button>
+              </a>
 
               {/* DANH SÁCH MENU XỔ XUỐNG */}
               <div className="dropdown-menu dropdown-menu-end fade-down m-0 shadow-sm border-0">
@@ -94,6 +92,9 @@ export default function HeaderHocVien() {
                 </Link>
                 <Link to="/thu-thach-hoc-tap" className="dropdown-item">
                   Thử thách học tập
+                </Link>
+                <Link to="/hoc-vien/khoa-hoc-cua-toi" className="dropdown-item">
+                  Khóa học của tôi
                 </Link>
                 <Link to="/hoc-vien/nhap-ma-qua-tang" className="dropdown-item">
                   Nhập mã quà tặng

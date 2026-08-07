@@ -1,4 +1,5 @@
-﻿import type { HocVien } from "./Types";
+﻿import { Trophy } from "lucide-react";
+import type { HocVien } from "./Types";
 import "./css/top-students.css";
 
 interface Props {
@@ -16,7 +17,7 @@ const TopStudents = ({ students }: Props) => {
   return (
     <div className="top-students-card">
       <div className="top-students-header">
-        <i className="fas fa-trophy" aria-hidden="true" style={{ color: "var(--warning)" }} />
+        <Trophy color="#facc15" size={20} />
         Top học viên xuất sắc
       </div>
 
@@ -28,7 +29,7 @@ const TopStudents = ({ students }: Props) => {
             <div className="top-info">
               <strong>{getName(hocVien)}</strong>
               <span>{hocVien.email?.trim() || "—"}</span>
-              <small style={{ color: "var(--success)", fontSize: "12px" }}>
+              <small style={{ color: "#10b981", fontSize: "12px" }}>
                 Hoàn thành: {getProgress(hocVien).toFixed(1)}%
               </small>
             </div>
@@ -40,7 +41,7 @@ const TopStudents = ({ students }: Props) => {
         ))}
 
         {topStudents.length === 0 && (
-          <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "20px" }}>
+          <p style={{ textAlign: "center", color: "#6b7280", padding: "20px" }}>
             Chưa có dữ liệu
           </p>
         )}

@@ -68,7 +68,7 @@ const StatCards = ({ thongKe }: Props) => {
               </div>
               <p className="akm-stat-sub mb-0 mt-2">
                 <i className="bi bi-clock me-1"></i>
-                Cập nhật lúc {new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                Cập nhật lúc 23:45 (GMT+7)
               </p>
             </div>
           </div>

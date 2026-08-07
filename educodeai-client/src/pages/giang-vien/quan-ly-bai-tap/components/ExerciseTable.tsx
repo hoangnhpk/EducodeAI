@@ -4,7 +4,7 @@ import type { DanhSachBaiTapDTO } from '../types';
 interface ExerciseTableProps {
     isLoading: boolean;
     danhSachHienThi: DanhSachBaiTapDTO[];
-    onViewClick: (item: DanhSachBaiTapDTO, trigger: HTMLButtonElement) => void;
+    onViewClick: (maBaiTap: number) => void;
     onDeleteClick: (maBaiTap: number, tenBaiTap: string) => void;
     onCreateClick: () => void;
 }
@@ -17,7 +17,7 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
     onCreateClick
 }) => {
     return (
-        <div className="table-container" style={{ overflowX: 'auto' }}>
+        <div className="table-container">
             <table className="table">
                 <thead>
                     <tr>
@@ -27,13 +27,13 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
                         <th>Chương</th>
                         <th>Bài học</th>
                         <th>Trạng thái</th>
-                        <th className="exercise-actions-column">Hành động</th>
+                        <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
                     {isLoading ? (
                         <tr>
-                            <td colSpan={7} style={{ textAlign: 'center', padding: '30px', color: 'var(--primary-dark)', fontWeight: 600 }}>
+                            <td colSpan={7} style={{ textAlign: 'center', padding: '30px', color: '#0066FF', fontWeight: 600 }}>
                                 <i className="bi bi-arrow-repeat" style={{ animation: 'spin 1s linear infinite', display: 'inline-block', marginRight: '8px' }}></i>
                                 Đang tải dữ liệu...
                             </td>
@@ -42,7 +42,7 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
                         <tr className="empty-row">
                             <td colSpan={7} style={{ textAlign: 'center', padding: '60px 20px' }}>
                                 <div className="d-flex flex-column align-items-center justify-content-center opacity-75">
-                                    <i className="bi bi-folder-x mb-3" style={{ fontSize: '48px', color: 'var(--text-light)' }} aria-hidden="true"></i>
+                                    <i className="bi bi-folder-x mb-3" style={{ fontSize: '48px', color: '#94a3b8' }}></i>
                                     <h5 className="fw-bold mb-2 text-secondary">Chưa có bài tập nào</h5>
                                     <p className="text-muted mb-4" style={{ fontSize: '14px', maxWidth: '300px' }}>Hiện tại danh sách bài tập đang trống. Hãy bắt đầu thiết kế bài tập lập trình hoặc câu hỏi trắc nghiệm mới bằng AI nhé!</p>
                                     <button className="btn btn-primary px-4 py-2" style={{ borderRadius: '10px', fontWeight: 600 }} onClick={onCreateClick}>
@@ -80,9 +80,9 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
                                         {baiTap.trangThai}
                                     </span>
                                 </td>
-                                <td className="exercise-actions-column">
+                                <td>
                                     <div className="actions-group">
-                                        <button className="action-btn view-btn" onClick={(event) => onViewClick(baiTap, event.currentTarget)}>
+                                        <button className="action-btn view-btn" onClick={() => onViewClick(baiTap.maBaiTap)}>
                                             <i className="bi bi-eye"></i> Xem
                                         </button>
                                         <button className="action-btn delete-btn"

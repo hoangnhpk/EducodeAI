@@ -264,7 +264,7 @@ export default function RutTienGiangVien() {
             <div
               className="card h-100 border-primary border-2 shadow-sm overflow-hidden"
               style={{
-                background: "linear-gradient(145deg, var(--bg-card) 0%, var(--primary-soft) 100%)"
+                background: "linear-gradient(145deg, #f8fafc 0%, #eff6ff 48%, #e0f2fe 100%)"
               }}
             >
               <div className="card-body p-3 p-md-4 d-flex flex-column">
@@ -289,7 +289,7 @@ export default function RutTienGiangVien() {
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body p-3 p-md-4">
         <h3 className="h5 fw-bold mb-2">Tài khoản nhận tiền (mỗi giảng viên chỉ 1 tài khoản)</h3>
-        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+        <p style={{ fontSize: 13, color: "#555" }}>
           Vui lòng nhập đúng ngân hàng, số tài khoản và tên chủ tài khoản để admin chuyển khoản. Hệ thống không tra cứu
           STK qua bên thứ ba.
         </p>
@@ -357,7 +357,7 @@ export default function RutTienGiangVien() {
         )}
 
         {daCoTaiKhoanNhanTien && (
-          <p style={{ marginTop: 8, color: "var(--warning-strong)" }}>
+          <p style={{ marginTop: 8, color: "#b45309" }}>
             Bạn đã có tài khoản nhận tiền. Muốn đổi tài khoản, vui lòng xóa tài khoản hiện tại trước.
           </p>
         )}

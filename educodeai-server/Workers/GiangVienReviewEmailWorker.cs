@@ -11,7 +11,14 @@ public sealed class GiangVienReviewEmailWorker : BackgroundService
     private readonly IRedisService _redis;
     private readonly IDataProtector _protector;
     private readonly ILogger<GiangVienReviewEmailWorker> _logger;
-    public GiangVienReviewEmailWorker(IGiangVienReviewEmailQueue queue, IRedisService redis, IDataProtectionProvider protectionProvider, ILogger<GiangVienReviewEmailWorker> logger) { _queue = queue; _redis = redis; _protector = protectionProvider.CreateProtector("EduCodeAI.EmailQueue.v1"); _logger = logger; }
+
+    public GiangVienReviewEmailWorker(IGiangVienReviewEmailQueue queue, IRedisService redis, IDataProtectionProvider protectionProvider, ILogger<GiangVienReviewEmailWorker> logger)
+    {
+        _queue = queue;
+        _redis = redis;
+        _protector = protectionProvider.CreateProtector("EduCodeAI.EmailQueue.v1");
+        _logger = logger;
+    }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.WhenAll(RunRedisAsync(stoppingToken), RunMemoryAsync(stoppingToken));
 
