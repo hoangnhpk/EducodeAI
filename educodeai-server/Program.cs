@@ -23,6 +23,7 @@ using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using educodeai_server.Hubs;
 using educodeai_server.Workers;
+using educodeai_server.Exceptions;
 using FFMpegCore;
 using educodeai_server.Services.RefreshTokens;
 using educodeai_server.Services.Security;
@@ -422,6 +423,8 @@ static System.Threading.RateLimiting.RateLimitPartition<string> CreateRemoteLogo
 }
 
 builder.Services.AddControllers();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -668,6 +671,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 app.UseStaticFiles();
+
+// Global exception handler phải đứng trước các middleware xử lý request.
+app.UseExceptionHandler();
 
 // CORS: phải đặt sau UseRouting và trước UseAuthentication/UseAuthorization
 // (https://learn.microsoft.com/en-us/aspnet/core/security/cors)

@@ -36,21 +36,13 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpGet("chi-tiet/{maKhoaHoc}")]
         public async Task<IActionResult> GetChiTiet(int maKhoaHoc)
         {
-            try
-            {
-                var maGiangVien = GetMaGiangVien();
-                if (maGiangVien == 0) return Unauthorized();
-                
-                var result = await _service.GetChiTietKhoaHocAsync(maKhoaHoc, maGiangVien);
-                if (result == null)
-                    return NotFound(new { success = false, message = "Không tìm thấy khóa học" });
-                return Ok(new { success = true, data = result });
-            }
-            catch (Exception ex)
-            {
-                System.IO.File.WriteAllText("error_500.txt", ex.ToString());
-                throw;
-            }
+            var maGiangVien = GetMaGiangVien();
+            if (maGiangVien == 0) return Unauthorized();
+
+            var result = await _service.GetChiTietKhoaHocAsync(maKhoaHoc, maGiangVien);
+            if (result == null)
+                return NotFound(new { success = false, message = "Không tìm thấy khóa học" });
+            return Ok(new { success = true, data = result });
         }
 
         [HttpPost("tao-moi")]

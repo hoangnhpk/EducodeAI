@@ -382,6 +382,7 @@ const SinhDoAnAI: React.FC = () => {
             const res = await axiosInstance.post<{ maDoAn: number; cauHoiDauTien: string; message: string }>(
                 '/api/SinhDoAnAI/nop-do-an',
                 {
+                    maDoAn: resultData.maDoAn || undefined,
                     tenDoAn: resultData.tenDoAn,
                     moTa: resultData.moTa,
                     yeuCauChucNang: resultData.yeuCauChucNang.map((f: any) => typeof f === 'string' ? f : (f.tenChucNang || f.TenChucNang || '')),
@@ -394,6 +395,10 @@ const SinhDoAnAI: React.FC = () => {
                 }
             ) as any;
             const { sessionId, cauHoiDauTien } = res;
+            sessionStorage.setItem(`phongvan-do-an-${sessionId}`, JSON.stringify({
+                tenDoAn: resultData.tenDoAn,
+                cauHoiDauTien,
+            }));
             // Chuyển sang phòng phỏng vấn, truyền state qua router
             navigate(`/phong-van-do-an/${sessionId}`, {
                 state: { tenDoAn: resultData.tenDoAn, cauHoiDauTien }

@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaArrowLeft } from 'react-icons/fa';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
-
-import { useNavigate, useSearchParams } from 'react-router-dom';
-
 import type { StartPhongVanRequest } from '../../../services/phong-van-ai.service';
 import {
     PhongVanAIService,
@@ -24,7 +21,7 @@ interface IMessage {
 
 const TypewriterText = ({ content, onComplete, scrollRef }: { content: string, onComplete: () => void, scrollRef: React.RefObject<HTMLDivElement | null> }) => {
     const [displayedText, setDisplayedText] = useState("");
-
+    
     useEffect(() => {
         let i = 0;
         setDisplayedText("");
@@ -54,17 +51,17 @@ const INTERVIEWER = {
 
 const PhongVanAI: React.FC = () => {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const requestedPosition = searchParams.get('viTri')?.trim();
-
+    const location = useLocation();
+    const requestedPosition = location.state?.chuyenNganh || '';
+    
     // --- SETUP STATE ---
     const [setupMode, setSetupMode] = useState(true);
-    const [viTri, setViTri] = useState(requestedPosition || 'Backend Developer');
+    const [viTri, setViTri] = useState('Backend Developer');
     const [capDo, setCapDo] = useState('Junior');
     const [tinhCach, setTinhCach] = useState<TinhCachAI>(TinhCachAI.Normal);
     const [soLuongCauHoi] = useState(3);
     const [isStarting, setIsStarting] = useState(false);
-
+    
     // --- INTERVIEW STATE ---
     const [maPhongVan, setMaPhongVan] = useState<number | null>(null);
     const chatBoxRef = useRef<HTMLDivElement>(null);
@@ -79,9 +76,9 @@ const PhongVanAI: React.FC = () => {
     const [isInterviewerTyping, setIsInterviewerTyping] = useState(false);
     const [showEndModal, setShowEndModal] = useState(false);
     const [questionCount, setQuestionCount] = useState(1);
-
+    
     const [messages, setMessages] = useState<IMessage[]>([]);
-
+    
     const [finalResult, setFinalResult] = useState<{
         diemSo: number;
         danhGiaChung: string;
@@ -91,18 +88,6 @@ const PhongVanAI: React.FC = () => {
     } | null>(null);
     const [interviewFinished, setInterviewFinished] = useState(false);
     const [isLoadingResult, setIsLoadingResult] = useState(false);
-    const [voiceEnabled, setVoiceEnabled] = useState(true);
-    const [showVoiceWarning, setShowVoiceWarning] = useState(false);
-
-    // Load voices once to ensure they are available
-    useEffect(() => {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.getVoices();
-            window.speechSynthesis.onvoiceschanged = () => {
-                window.speechSynthesis.getVoices();
-            };
-        }
-    }, []);
 
     // Timer
     useEffect(() => {
@@ -136,24 +121,21 @@ const PhongVanAI: React.FC = () => {
                 soLuongCauHoi
             };
             const res = await PhongVanAIService.startInterview(req);
-            if (!res?.maPhongVan || !res.cauHoiDauTien) {
-                throw new Error('Máy chủ không trả về dữ liệu phiên phỏng vấn hợp lệ.');
+            if (res && res.maPhongVan) {
+                setMaPhongVan(res.maPhongVan);
+                setMessages([
+                    {
+                        id: 'msg-first',
+                        role: 'ai',
+                        content: res.cauHoiDauTien,
+                        timestamp: new Date(),
+                        isTyping: true
+                    }
+                ]);
+                setSetupMode(false);
+                setIsSpeaking(true);
+                setTimeout(() => setIsSpeaking(false), 4000);
             }
-
-            setMaPhongVan(res.maPhongVan);
-            setMessages([
-                {
-                    id: 'msg-first',
-                    role: 'ai',
-                    content: res.cauHoiDauTien,
-                    timestamp: new Date(),
-                    isTyping: true
-                }
-            ]);
-            setSetupMode(false);
-            setIsSpeaking(true);
-            speakText(res.cauHoiDauTien);
-            setTimeout(() => setIsSpeaking(false), 4000);
         } catch (error: any) {
             await Swal.fire('Lỗi', error.message || 'Không thể bắt đầu phiên phỏng vấn.', 'error');
         } finally {
@@ -183,25 +165,24 @@ const PhongVanAI: React.FC = () => {
                 maPhongVan,
                 cauTraLoi: trimmed
             });
-
+            
             if (res && (res.nhanXetCauTruoc || res.cauHoiTiepTheo)) {
                 setIsInterviewerTyping(false);
                 setIsSpeaking(true);
-                setQuestionCount(c => c + 1);
-
+                setQuestionCount(c => Math.min(c + 1, soLuongCauHoi));
+                
                 const data = res;
                 const aiResponse: IMessage = {
                     id: 'msg-' + Date.now(),
                     role: 'ai',
-                    content: data.tinNhanAI || (data.nhanXetCauTruoc + (data.cauHoiTiepTheo ? '\n\n' + data.cauHoiTiepTheo : '')),
+                    content: data.nhanXetCauTruoc + (data.cauHoiTiepTheo ? '\n\n' + data.cauHoiTiepTheo : ''),
                     timestamp: new Date(),
                     isTyping: true
                 };
-
+                
                 setMessages(prev => [...prev, aiResponse]);
-                speakText(aiResponse.content);
                 setTimeout(() => setIsSpeaking(false), 5000);
-
+                
                 if (data.isFinished) {
                     setInterviewFinished(true);
                 }
@@ -217,8 +198,9 @@ const PhongVanAI: React.FC = () => {
             navigate('/');
             return;
         }
+
         setShowEndModal(false);
-        navigate('/');
+        await handleGetResult();
     };
 
     const handleGetResult = async () => {
@@ -239,72 +221,6 @@ const PhongVanAI: React.FC = () => {
             await Swal.fire('Lỗi', error.message || 'Lỗi khi lấy kết quả.', 'error');
         } finally {
             setIsLoadingResult(false);
-        }
-    };
-
-
-
-    const speakText = (text: string) => {
-        if (!voiceEnabled) return;
-        window.speechSynthesis.cancel();
-
-        let hasSpoken = false;
-
-        const trySpeak = () => {
-            if (hasSpoken) return;
-            const voices = window.speechSynthesis.getVoices();
-            if (voices.length === 0 && 'speechSynthesis' in window) return;
-
-            hasSpoken = true;
-
-            const vietnameseVoice = voices.find(voice =>
-                voice.lang.toLowerCase().includes('vi') || /vietnamese|tiếng việt/i.test(voice.name)
-            );
-
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'vi-VN';
-
-            if (vietnameseVoice) {
-                utterance.voice = vietnameseVoice;
-                window.speechSynthesis.speak(utterance);
-                setShowVoiceWarning(false);
-            } else {
-                // Fallback dùng Backend API Proxy gọi Google TTS
-                const playBackendTTS = () => {
-                    // Split text into chunks by punctuation to avoid 200 char limits
-                    const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
-                    let i = 0;
-
-                    const playNext = () => {
-                        if (i >= sentences.length) return;
-                        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5210';
-                        const url = `${baseUrl}/api/PhongVanAI/tts?text=${encodeURIComponent(sentences[i].trim())}`;
-                        const audio = new Audio(url);
-                        audio.onended = playNext;
-                        audio.onerror = () => playNext(); // Bỏ qua nếu lỗi
-                        audio.play().catch(e => {
-                            console.error("Lỗi Backend TTS fallback", e);
-                            playNext();
-                        });
-                        i++;
-                    };
-                    playNext();
-                };
-                playBackendTTS();
-                setShowVoiceWarning(false);
-            }
-        };
-
-        if ('speechSynthesis' in window && window.speechSynthesis.getVoices().length === 0) {
-            window.speechSynthesis.onvoiceschanged = trySpeak;
-
-            setTimeout(() => {
-                if (!hasSpoken) {
-                    trySpeak();
-                }
-            }, 1000);
-        } else {
-            trySpeak();
         }
     };
 
@@ -379,19 +295,17 @@ const PhongVanAI: React.FC = () => {
 
     if (setupMode) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f8f9fa' }}>
-                <div style={{ background: '#ffffff', padding: '40px', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' }}>
-                    <h2 style={{ color: '#1e293b', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>🚀 Thiết lập phỏng vấn AI</h2>
-                    <p style={{ color: '#64748b', textAlign: 'center', marginBottom: '32px' }}>Tùy chỉnh thông số phiên phỏng vấn của bạn</p>
-
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--bg-main)' }}>
+                <div style={{ background: 'var(--bg-card)', padding: '40px', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: 'var(--shadow-lg)' }}>
+                    <h2 style={{ color: 'var(--text-main)', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>🚀 Thiết lập phỏng vấn AI</h2>
+                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: '32px' }}>Tùy chỉnh thông số phiên phỏng vấn của bạn</p>
+                    
                     <div style={{ marginBottom: '20px' }}>
-
-                        <label style={{ display: 'block', color: '#334155', marginBottom: '8px', fontWeight: '500' }}>Vị trí ứng tuyển</label>
-                        <select value={viTri} onChange={e => setViTri(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#1e293b', outline: 'none' }}>
+                        <label htmlFor="pv-viTri" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Vị trí ứng tuyển</label>
+                        <select id="pv-viTri" value={viTri} onChange={e => setViTri(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', outline: 'none' }}>
                             {requestedPosition && !['Backend Developer', 'Frontend Developer', 'Fullstack Developer', 'Mobile Developer', 'DevOps Engineer', 'Data Engineer', 'QA/Tester', 'UI/UX Designer', 'Business Analyst', 'Project Manager'].includes(requestedPosition) && (
                                 <option value={requestedPosition}>{requestedPosition}</option>
                             )}
-
                             <option value="Backend Developer">Backend Developer</option>
                             <option value="Frontend Developer">Frontend Developer</option>
                             <option value="Fullstack Developer">Fullstack Developer</option>
@@ -404,10 +318,10 @@ const PhongVanAI: React.FC = () => {
                             <option value="Project Manager">Project Manager</option>
                         </select>
                     </div>
-
+                    
                     <div style={{ marginBottom: '20px' }}>
-                        <label htmlFor="pv-capDo" style={{ display: 'block', color: '#334155', marginBottom: '8px', fontWeight: '500' }}>Cấp độ</label>
-                        <select id="pv-capDo" value={capDo} onChange={e => setCapDo(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#1e293b', outline: 'none' }}>
+                        <label htmlFor="pv-capDo" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Cấp độ</label>
+                        <select id="pv-capDo" value={capDo} onChange={e => setCapDo(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', outline: 'none' }}>
                             <option value="Intern">Intern</option>
                             <option value="Fresher">Fresher</option>
                             <option value="Junior">Junior</option>
@@ -417,8 +331,8 @@ const PhongVanAI: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '20px' }}>
-                        <label htmlFor="pv-tinhCach" style={{ display: 'block', color: '#334155', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
-                        <select id="pv-tinhCach" value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value) as TinhCachAI)} style={{ width: '100%', padding: '12px 16px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#1e293b', outline: 'none' }}>
+                        <label htmlFor="pv-tinhCach" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
+                        <select id="pv-tinhCach" value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value) as TinhCachAI)} style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', outline: 'none' }}>
                             <option value={TinhCachAI.Friendly}>Thân thiện (Hướng dẫn)</option>
                             <option value={TinhCachAI.Normal}>Bình thường (Tiêu chuẩn)</option>
                             <option value={TinhCachAI.Strict}>Khó tính (Xoáy sâu vào lỗi sai)</option>
@@ -426,8 +340,8 @@ const PhongVanAI: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '32px' }}>
-                        <label htmlFor="pv-soCauHoi" style={{ display: 'block', color: '#334155', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
-                        <input id="pv-soCauHoi" type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#94a3b8', outline: 'none', cursor: 'not-allowed' }} />
+                        <label htmlFor="pv-soCauHoi" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
+                        <input id="pv-soCauHoi" type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-light)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-muted)', outline: 'none', cursor: 'not-allowed' }} />
                     </div>
 
                     <button onClick={handleStart} disabled={isStarting} style={{ width: '100%', padding: '14px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: isStarting ? 'not-allowed' : 'pointer', opacity: isStarting ? 0.7 : 1 }}>
@@ -534,11 +448,8 @@ const PhongVanAI: React.FC = () => {
                         </span>
                     </div>
                     <div className="iv-header-right">
-                        <button className={`iv-btn-end ${voiceEnabled ? 'ai-on' : 'ai-off'}`} onClick={() => setVoiceEnabled(v => !v)}>
-                            {voiceEnabled ? '🔊 Đang bật AI' : '🔈 Đã tắt AI'}
-                        </button>
-                        <button className="iv-btn-end end-btn" onClick={() => setShowEndModal(true)}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        <button className="iv-btn-end" onClick={() => setShowEndModal(true)}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                             Kết thúc
                         </button>
                     </div>
@@ -546,14 +457,6 @@ const PhongVanAI: React.FC = () => {
 
                 {/* ─── MAIN CONTENT ─── */}
                 <main id="interview-main">
-                    {/* Cảnh báo thiếu Voice */}
-                    {showVoiceWarning && (
-                        <div style={{ position: 'absolute', top: 60, left: 0, right: 0, zIndex: 50, background: '#f59e0b', color: '#fff', padding: '8px 24px', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>⚠️ <b>Cảnh báo:</b> Trình duyệt/Máy tính của bạn chưa được cài đặt gói giọng nói Tiếng Việt. AI sẽ phát âm bằng tiếng Anh. Vui lòng cài đặt "Vietnamese Voice" trong cài đặt máy tính (Settings {'>'} Time & Language) để nghe chuẩn xác hơn.</span>
-                            <button onClick={() => setShowVoiceWarning(false)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16 }}>×</button>
-                        </div>
-                    )}
-
                     {/* LEFT: Interviewer Video + Chat */}
                     <div id="interview-left">
                         {/* Interviewer "Camera" Card */}
@@ -576,12 +479,12 @@ const PhongVanAI: React.FC = () => {
                                     <div className="iv-cam-status">
                                         {isSpeaking ? (
                                             <span className="iv-speaking-badge">
-                                                <span className="iv-eq"><span /><span /><span /><span /></span>
+                                                <span className="iv-eq"><span/><span/><span/><span/></span>
                                                 Đang nói
                                             </span>
                                         ) : isInterviewerTyping ? (
                                             <span className="iv-thinking-badge">
-                                                <span className="iv-dot-bounce"><span /><span /><span /></span>
+                                                <span className="iv-dot-bounce"><span/><span/><span/></span>
                                                 Đang suy nghĩ...
                                             </span>
                                         ) : (
@@ -597,7 +500,7 @@ const PhongVanAI: React.FC = () => {
                             <div className="iv-self-inner">
                                 {isRecording && <div className="iv-rec-ring" />}
                                 <div className="iv-self-avatar">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                 </div>
                             </div>
                             <div className="iv-self-label">
@@ -632,13 +535,13 @@ const PhongVanAI: React.FC = () => {
                                             </div>
                                             <div className="iv-msg-content">
                                                 {msg.isTyping ? (
-                                                    <TypewriterText
-                                                        content={msg.content}
+                                                    <TypewriterText 
+                                                        content={msg.content} 
                                                         scrollRef={chatBoxRef}
                                                         onComplete={() => {
-                                                            setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isTyping: false } : m));
+                                                            setMessages(prev => prev.map(m => m.id === msg.id ? {...m, isTyping: false} : m));
                                                             setIsSpeaking(false);
-                                                        }}
+                                                        }} 
                                                     />
                                                 ) : (
                                                     <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
@@ -660,28 +563,28 @@ const PhongVanAI: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-
+                            
                             {/* Input hoặc nút kết thúc */}
                             {interviewFinished ? (
                                 <div className="iv-finished-area">
                                     <div className="iv-finished-msg">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                                         Buổi phỏng vấn đã hoàn thành!
                                     </div>
                                     <div className="iv-finished-actions">
                                         <button className="iv-btn-end" onClick={() => navigate('/')}>
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                                             Kết thúc
                                         </button>
                                         <button className="iv-btn-result" onClick={handleGetResult} disabled={isLoadingResult}>
                                             {isLoadingResult ? (
                                                 <>
-                                                    <span className="iv-dot-bounce"><span /><span /><span /></span>
+                                                    <span className="iv-dot-bounce"><span/><span/><span/></span>
                                                     AI đang chấm điểm...
                                                 </>
                                             ) : (
                                                 <>
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                                                     Nhận kết quả
                                                 </>
                                             )}
@@ -691,7 +594,7 @@ const PhongVanAI: React.FC = () => {
                             ) : (
                                 <div className="iv-chat-input-area">
                                     <div className="iv-input-wrapper">
-                                        <textarea
+                                        <textarea 
                                             className="iv-textarea"
                                             ref={inputRef}
                                             value={inputText}
@@ -709,9 +612,9 @@ const PhongVanAI: React.FC = () => {
                                             aria-label={isRecording ? 'Dừng ghi âm' : 'Nói để nhập câu trả lời'}
                                         >
                                             {isRecording ? (
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
                                             ) : (
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="8" y1="22" x2="16" y2="22" /></svg>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
                                             )}
                                         </button>
                                         <button
@@ -720,7 +623,7 @@ const PhongVanAI: React.FC = () => {
                                             disabled={!inputText.trim() || isInterviewerTyping || isSpeaking}
                                             aria-label="Gửi câu trả lời"
                                         >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                         </button>
                                     </div>
                                 </div>
@@ -735,7 +638,7 @@ const PhongVanAI: React.FC = () => {
                 <div className="iv-modal-overlay">
                     <div className="iv-modal">
                         <div className="iv-modal-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                         </div>
                         <h3>Kết thúc phỏng vấn?</h3>
                         <p>Bạn có chắc chắn muốn kết thúc buổi phỏng vấn sớm? AI sẽ tổng hợp điểm dựa trên những câu hỏi đã hoàn thành.</p>
@@ -747,17 +650,16 @@ const PhongVanAI: React.FC = () => {
                 </div>
             )}
 
-            <style>{`
+<style>{`
                 /* ── RESET & BASE ── */
                 #interview-room-root {
                     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-                    background: var(--bg-main, #f9fafb);
-                    color: var(--text-main, #111827);
+                    background: #0a0d14;
+                    color: #e2e8f0;
                     display: flex;
                     flex-direction: column;
-                    height: calc(100vh - 74px);
+                    height: 100vh;
                     overflow: hidden;
-                    margin-bottom: 20px;
                 }
 
                 /* ── HEADER ── */
@@ -767,8 +669,8 @@ const PhongVanAI: React.FC = () => {
                     justify-content: space-between;
                     padding: 0 24px;
                     height: 60px;
-                    background: rgba(255, 255, 255, 0.95);
-                    border-bottom: 1px solid var(--border-color, #e5e7eb);
+                    background: rgba(15, 20, 35, 0.95);
+                    border-bottom: 1px solid rgba(255,255,255,0.07);
                     flex-shrink: 0;
                     backdrop-filter: blur(12px);
                     z-index: 10;
@@ -776,20 +678,20 @@ const PhongVanAI: React.FC = () => {
                 .iv-header-left { display: flex; align-items: center; gap: 12px; }
                 .iv-logo-dot {
                     width: 10px; height: 10px;
-                    background: #f69050;
+                    background: #6366f1;
                     border-radius: 50%;
-                    box-shadow: 0 0 12px rgba(246,144,80,0.5);
+                    box-shadow: 0 0 12px #6366f1;
                 }
-                .iv-header-title { font-size: 15px; font-weight: 700; display: block; color: var(--text-main, #111827); }
-                .iv-header-sub { font-size: 11px; color: var(--text-muted, #6b7280); display: block; margin-top: 1px; }
+                .iv-header-title { font-size: 15px; font-weight: 700; display: block; color: #f1f5f9; }
+                .iv-header-sub { font-size: 11px; color: #64748b; display: block; margin-top: 1px; }
                 .iv-header-center {}
                 .iv-timer {
                     display: flex; align-items: center; gap: 8px;
                     font-size: 13px; font-weight: 600;
-                    color: var(--text-muted, #6b7280);
-                    background: rgba(246,144,80,0.06);
+                    color: #94a3b8;
+                    background: rgba(255,255,255,0.05);
                     padding: 6px 14px; border-radius: 20px;
-                    border: 1px solid rgba(246,144,80,0.15);
+                    border: 1px solid rgba(255,255,255,0.08);
                 }
                 .iv-timer-dot {
                     width: 7px; height: 7px;
@@ -801,34 +703,18 @@ const PhongVanAI: React.FC = () => {
                     0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
                     50% { opacity: 0.6; box-shadow: 0 0 0 5px rgba(239,68,68,0); }
                 }
-                .iv-header-right { display: flex; align-items: center; gap: 10px; }
+                .iv-header-right {}
                 .iv-btn-end {
                     display: flex; align-items: center; gap: 7px;
                     padding: 8px 18px; border-radius: 8px;
+                    background: rgba(239,68,68,0.12);
+                    color: #f87171;
+                    border: 1px solid rgba(239,68,68,0.3);
                     font-size: 13px; font-weight: 600;
                     cursor: pointer;
                     transition: all 0.2s;
-                    white-space: nowrap;
                 }
-                .iv-btn-end.ai-on {
-                    background: rgba(16,185,129,0.1);
-                    color: #059669;
-                    border: 1px solid rgba(16,185,129,0.25);
-                }
-                .iv-btn-end.ai-on:hover { background: rgba(16,185,129,0.15); }
-                .iv-btn-end.ai-off {
-                    background: var(--bg-main, #f9fafb);
-                    color: var(--text-muted, #6b7280);
-                    border: 1px solid var(--border-color, #e5e7eb);
-                }
-                .iv-btn-end.ai-off:hover { background: rgba(246,144,80,0.06); color: var(--text-main, #111827); border-color: rgba(246,144,80,0.25); }
-                
-                .iv-btn-end.end-btn {
-                    background: rgba(239,68,68,0.06);
-                    color: #ef4444;
-                    border: 1px solid rgba(239,68,68,0.2);
-                }
-                .iv-btn-end.end-btn:hover { background: rgba(239,68,68,0.12); }
+                .iv-btn-end:hover { background: rgba(239,68,68,0.25); color: #fca5a5; }
 
                 /* ── MAIN LAYOUT ── */
                 #interview-main {
@@ -845,7 +731,7 @@ const PhongVanAI: React.FC = () => {
                     width: 380px;
                     flex-shrink: 0;
                     overflow: hidden;
-                    border-right: 1px solid var(--border-color, #e5e7eb);
+                    border-right: 1px solid rgba(255,255,255,0.06);
                 }
 
                 /* ── INTERVIEWER CAM CARD ── */
@@ -853,15 +739,15 @@ const PhongVanAI: React.FC = () => {
                     flex: 1;
                     position: relative;
                     overflow: hidden;
-                    border-bottom: 1px solid var(--border-color, #e5e7eb);
+                    border-bottom: 1px solid rgba(255,255,255,0.06);
                     transition: box-shadow 0.4s;
                 }
                 .iv-cam-card.is-speaking {
-                    box-shadow: inset 0 0 0 2px rgba(246,144,80,0.5);
+                    box-shadow: inset 0 0 0 2px rgba(99,102,241,0.5);
                 }
                 .iv-cam-bg {
                     width: 100%; height: 100%;
-                    background: linear-gradient(135deg, #fef3e8 0%, #fff7ed 50%, #fef3e8 100%);
+                    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -878,13 +764,13 @@ const PhongVanAI: React.FC = () => {
                 }
                 .iv-blob-1 {
                     width: 300px; height: 300px;
-                    background: #f69050;
+                    background: #6366f1;
                     top: -100px; left: -100px;
                     animation: float1 8s ease-in-out infinite;
                 }
                 .iv-blob-2 {
                     width: 200px; height: 200px;
-                    background: #fbbf24;
+                    background: #8b5cf6;
                     bottom: -60px; right: -40px;
                     animation: float2 10s ease-in-out infinite;
                 }
@@ -901,14 +787,14 @@ const PhongVanAI: React.FC = () => {
                     position: absolute;
                     width: 120px; height: 120px;
                     border-radius: 50%;
-                    border: 2px solid rgba(246,144,80,0.3);
+                    border: 2px solid rgba(99,102,241,0.3);
                     animation: none;
                     opacity: 0;
                     transition: opacity 0.3s;
                 }
                 .iv-avatar-ring.iv-ring-2 {
                     width: 145px; height: 145px;
-                    border-color: rgba(246,144,80,0.15);
+                    border-color: rgba(99,102,241,0.15);
                 }
                 .iv-avatar-wrap.speaking .iv-avatar-ring {
                     opacity: 1;
@@ -924,11 +810,11 @@ const PhongVanAI: React.FC = () => {
                 .iv-avatar {
                     width: 96px; height: 96px;
                     border-radius: 50%;
-                    background: linear-gradient(135deg, #f69050, #e67e22);
+                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
                     display: flex; align-items: center; justify-content: center;
                     font-size: 28px; font-weight: 800; color: white;
-                    border: 3px solid rgba(255,255,255,0.3);
-                    box-shadow: 0 8px 32px rgba(246,144,80,0.35);
+                    border: 3px solid rgba(255,255,255,0.15);
+                    box-shadow: 0 8px 32px rgba(99,102,241,0.4);
                     position: relative; z-index: 1;
                 }
 
@@ -952,9 +838,9 @@ const PhongVanAI: React.FC = () => {
                 .iv-speaking-badge, .iv-thinking-badge, .iv-idle-badge { white-space: nowrap; }
                 .iv-speaking-badge {
                     display: flex; align-items: center; gap: 8px;
-                    background: rgba(246,144,80,0.2);
-                    border: 1px solid rgba(246,144,80,0.4);
-                    color: #e67e22;
+                    background: rgba(99,102,241,0.25);
+                    border: 1px solid rgba(99,102,241,0.5);
+                    color: #a5b4fc;
                     padding: 5px 12px; border-radius: 20px;
                     font-size: 12px; font-weight: 600;
                     backdrop-filter: blur(8px);
@@ -980,7 +866,7 @@ const PhongVanAI: React.FC = () => {
                 /* Equalizer (speaking animation) */
                 .iv-eq { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
                 .iv-eq span {
-                    width: 3px; background: #f69050; border-radius: 2px;
+                    width: 3px; background: #a5b4fc; border-radius: 2px;
                     animation: eq 0.8s ease-in-out infinite;
                 }
                 .iv-eq span:nth-child(1) { height: 6px; animation-delay: 0s; }
@@ -1053,7 +939,7 @@ const PhongVanAI: React.FC = () => {
                     flex-shrink: 0;
                 }
                 .iv-msg-avatar.ai {
-                    background: linear-gradient(135deg, #f69050, #e67e22);
+                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
                     color: white;
                 }
                 .iv-msg-avatar.user {
@@ -1080,18 +966,15 @@ const PhongVanAI: React.FC = () => {
                     max-width: 100%;
                 }
                 .iv-msg-bubble.ai {
-                    background: white;
-                    border: 1px solid var(--border-color, #e5e7eb);
-                    color: var(--text-main, #111827);
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    color: #e2e8f0;
                     border-top-left-radius: 4px;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
                 }
                 .iv-msg-bubble.user {
-
-                    background: linear-gradient(135deg, #f69050, #e67e22);
-                    border: 1px solid rgba(246,144,80,0.3);
-                    color: white;
-
+                    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+                    border: 1px solid rgba(59,130,246,0.3);
+                    color: #dbeafe;
                     border-top-right-radius: 4px;
                 }
                 .iv-typing-bubble {
@@ -1130,7 +1013,7 @@ const PhongVanAI: React.FC = () => {
                     flex: 1;
                     display: flex;
                     flex-direction: column;
-                    background: var(--bg-main, #f9fafb);
+                    background: #0a0d14;
                     overflow: hidden;
                     padding: 20px;
                     gap: 16px;
@@ -1141,8 +1024,8 @@ const PhongVanAI: React.FC = () => {
                 .iv-self-cam {
                     flex: 1;
                     overflow: hidden;
-                    border-top: 1px solid var(--border-color, #e5e7eb);
-                    background: linear-gradient(135deg, #fff7ed, #fef3e8);
+                    border-top: 1px solid rgba(255,255,255,0.06);
+                    background: linear-gradient(135deg, #0f172a, #1e293b);
                     position: relative;
                     display: flex;
                     flex-direction: column;
@@ -1186,20 +1069,19 @@ const PhongVanAI: React.FC = () => {
 
                 /* Info Panel */
                 .iv-info-panel {
-                    background: white;
-                    border: 1px solid var(--border-color, #e5e7eb);
+                    background: rgba(255,255,255,0.03);
+                    border: 1px solid rgba(255,255,255,0.07);
                     border-radius: 12px;
                     padding: 14px 16px;
                     display: flex;
                     flex-direction: column;
                     gap: 10px;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
                 }
                 .iv-info-row {
                     display: flex; align-items: center; gap: 8px;
-                    font-size: 13px; color: var(--text-muted, #6b7280);
+                    font-size: 13px; color: #64748b;
                 }
-                .iv-info-row strong { color: var(--text-main, #111827); }
+                .iv-info-row strong { color: #cbd5e1; }
                 .text-ok { color: #34d399 !important; }
 
                 /* Divider */
@@ -1210,7 +1092,7 @@ const PhongVanAI: React.FC = () => {
                 }
                 .iv-divider::before, .iv-divider::after {
                     content: ''; flex: 1;
-                    height: 1px; background: var(--border-color, #e5e7eb);
+                    height: 1px; background: rgba(255,255,255,0.07);
                 }
 
                 /* Input Area */
@@ -1222,10 +1104,10 @@ const PhongVanAI: React.FC = () => {
                 }
                 .iv-textarea {
                     flex: 1;
-                    background: white;
-                    border: 1px solid var(--border-color, #e5e7eb);
+                    background: rgba(255,255,255,0.04);
+                    border: 1px solid rgba(255,255,255,0.1);
                     border-radius: 14px;
-                    color: var(--text-main, #111827);
+                    color: #e2e8f0;
                     font-size: 13.5px;
                     line-height: 1.6;
                     padding: 14px 16px;
@@ -1234,11 +1116,11 @@ const PhongVanAI: React.FC = () => {
                     transition: border-color 0.2s, box-shadow 0.2s;
                     box-sizing: border-box;
                 }
-                .iv-textarea::placeholder { color: #9ca3af; }
+                .iv-textarea::placeholder { color: #475569; }
                 .iv-textarea:focus {
                     outline: none;
-                    border-color: rgba(246,144,80,0.5);
-                    box-shadow: 0 0 0 3px rgba(246,144,80,0.1);
+                    border-color: rgba(99,102,241,0.5);
+                    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
                 }
                 .iv-textarea:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -1246,15 +1128,15 @@ const PhongVanAI: React.FC = () => {
                 .iv-btn-mic {
                     display: flex; align-items: center; gap: 7px;
                     padding: 10px 14px; border-radius: 10px;
-                    background: var(--bg-main, #f9fafb);
-                    border: 1px solid var(--border-color, #e5e7eb);
-                    color: var(--text-muted, #6b7280);
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    color: #94a3b8;
                     font-size: 13px; font-weight: 600;
                     cursor: pointer;
                     transition: all 0.2s;
                     white-space: nowrap;
                 }
-                .iv-btn-mic:hover { background: rgba(246,144,80,0.06); color: var(--text-main, #111827); }
+                .iv-btn-mic:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
                 .iv-btn-mic.active {
                     background: rgba(239,68,68,0.15);
                     border-color: rgba(239,68,68,0.4);
@@ -1270,7 +1152,7 @@ const PhongVanAI: React.FC = () => {
                     width: 44px; height: 44px;
                     display: flex; align-items: center; justify-content: center;
                     border-radius: 14px;
-                    background: linear-gradient(135deg, #f69050, #e67e22);
+                    background: linear-gradient(135deg, #6366f1, #7c3aed);
                     border: none;
                     color: white;
                     cursor: pointer;
@@ -1278,7 +1160,7 @@ const PhongVanAI: React.FC = () => {
                 }
                 .iv-btn-send:hover:not(:disabled) { 
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 20px rgba(246,144,80,0.35);
+                    box-shadow: 0 4px 20px rgba(99,102,241,0.4);
                 }
                 .iv-btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -1309,15 +1191,15 @@ const PhongVanAI: React.FC = () => {
                 }
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 .iv-modal {
-                    background: white;
-                    border: 1px solid var(--border-color, #e5e7eb);
+                    background: #1e293b;
+                    border: 1px solid rgba(255,255,255,0.1);
                     border-radius: 20px;
                     padding: 32px;
                     max-width: 380px;
                     width: 90%;
                     text-align: center;
                     animation: slideUp 0.25s ease;
-                    box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+                    box-shadow: 0 25px 60px rgba(0,0,0,0.5);
                 }
                 @keyframes slideUp {
                     from { transform: translateY(20px); opacity: 0; }
@@ -1330,8 +1212,8 @@ const PhongVanAI: React.FC = () => {
                     display: flex; align-items: center; justify-content: center;
                     margin: 0 auto 16px;
                 }
-                .iv-modal h3 { font-size: 18px; font-weight: 700; color: var(--text-main, #111827); margin: 0 0 8px; }
-                .iv-modal p { font-size: 13.5px; color: var(--text-muted, #6b7280); margin: 0 0 24px; line-height: 1.6; }
+                .iv-modal h3 { font-size: 18px; font-weight: 700; color: #f1f5f9; margin: 0 0 8px; }
+                .iv-modal p { font-size: 13.5px; color: #94a3b8; margin: 0 0 24px; line-height: 1.6; }
                 .iv-modal-actions { display: flex; gap: 10px; }
                 .iv-modal-btn {
                     flex: 1; padding: 11px; border-radius: 10px;
@@ -1340,9 +1222,9 @@ const PhongVanAI: React.FC = () => {
                     transition: all 0.2s;
                 }
                 .iv-modal-btn.cancel {
-                    background: var(--bg-main, #f9fafb);
-                    color: var(--text-main, #111827);
-                    border: 1px solid var(--border-color, #e5e7eb);
+                    background: rgba(255,255,255,0.06);
+                    color: #cbd5e1;
+                    border: 1px solid rgba(255,255,255,0.1);
                 }
                 .iv-modal-btn.cancel:hover { background: rgba(255,255,255,0.1); }
                 .iv-modal-btn.confirm {
@@ -1405,7 +1287,7 @@ const PhongVanAI: React.FC = () => {
                     gap: 8px;
                     padding: 14px 20px;
                     border-radius: 12px;
-                    background: linear-gradient(135deg, #f69050, #e67e22);
+                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
                     border: none;
                     color: white;
                     font-size: 14px;
@@ -1415,7 +1297,7 @@ const PhongVanAI: React.FC = () => {
                 }
                 .iv-btn-result:hover:not(:disabled) {
                     transform: translateY(-1px);
-                    box-shadow: 0 6px 24px rgba(246, 144, 80, 0.35);
+                    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
                 }
                 .iv-btn-result:disabled {
                     opacity: 0.7;
@@ -1435,8 +1317,8 @@ const PhongVanAI: React.FC = () => {
                     width: 100px;
                     height: 100px;
                     border-radius: 50%;
-                    background: linear-gradient(135deg, rgba(246, 144, 80, 0.1), rgba(230, 126, 34, 0.1));
-                    border: 3px solid #f69050;
+                    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+                    border: 3px solid #6366f1;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
@@ -1450,7 +1332,7 @@ const PhongVanAI: React.FC = () => {
                 .iv-result-score-num {
                     font-size: 32px;
                     font-weight: 800;
-                    color: #f69050;
+                    color: #a5b4fc;
                     line-height: 1;
                 }
                 .iv-result-score-label {
@@ -1460,17 +1342,16 @@ const PhongVanAI: React.FC = () => {
                 }
                 .iv-result-review {
                     text-align: left;
-                    background: white;
-                    border: 1px solid var(--border-color, #e5e7eb);
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.07);
                     border-radius: 12px;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
                     padding: 16px;
                     margin-bottom: 20px;
                     max-height: 250px;
                     overflow-y: auto;
                     font-size: 13.5px;
                     line-height: 1.7;
-                    color: var(--text-main, #111827);
+                    color: #cbd5e1;
                 }
                 .iv-result-review::-webkit-scrollbar { width: 4px; }
                 .iv-result-review::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }

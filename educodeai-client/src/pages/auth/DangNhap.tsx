@@ -12,7 +12,7 @@ import { setAuthTokens } from '../../utils/authStorage';
 const DangNhap: React.FC = () => {
     const navigate = useNavigate();
     const recaptchaRef = useRef<any>(null);
-
+    
     // State quản lý luồng
     const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Login, 2: OTP, 3: Replace Device
     const [isLoading, setIsLoading] = useState(false);
@@ -23,15 +23,15 @@ const DangNhap: React.FC = () => {
     const [emailOrUsername, setEmailOrUsername] = useState('');
     const [password, setPassword] = useState('');
     const [otp, setOtp] = useState('');
-    const [showCaptcha, setShowCaptcha] = useState(false);
+    const [showCaptcha, setShowCaptcha] = useState(false); 
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "335320969122-3e5a0uoj7scbhmgi83utlesvf5rbrtdt.apps.googleusercontent.com";
     const FACEBOOK_APP_ID = "994470786348116";
-
+    
     const redirectByUserRole = (user: any) => {
         const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
-        if (role === 0) navigate('/quan-tri-vien');
+        if (role === 0) navigate('/quan-tri-vien'); 
         else if (role === 1) navigate('/giang-vien');
         else navigate('/');
         window.location.reload();
@@ -51,7 +51,7 @@ const DangNhap: React.FC = () => {
         try {
             // Mặc định captcha sẽ là "SKIP_CAPTCHA" nếu tham số token không được truyền
             const response: any = await authService.login(emailOrUsername, password, token || "SKIP_CAPTCHA");
-
+            
             if (response.requiresOtp) {
                 setStep(2);
                 Swal.fire({ icon: 'info', title: 'Thiết bị mới', text: response.message, timer: 2000, showConfirmButton: false });
@@ -66,7 +66,7 @@ const DangNhap: React.FC = () => {
             } else if (response.requiresCaptcha) {
                 // KÍCH HOẠT CAPTCHA SAU 3 LẦN SAI
                 setShowCaptcha(true);
-                setErrors({ identifier: response.message });
+                setErrors({ identifier: response.message }); 
                 Swal.fire({ icon: 'warning', title: 'Xác thực bảo mật', text: response.message });
             } else if (response.token) {
                 handleLoginSuccess(response);
@@ -75,12 +75,12 @@ const DangNhap: React.FC = () => {
             const errorMsg = error.response?.data?.message || "Tài khoản hoặc mật khẩu không chính xác!";
             setErrors({ identifier: errorMsg });
             setCaptchaToken(null);
-
+            
             // LUÔN RESET CAPTCHA KHI CÓ LỖI (để người dùng không bị kẹt dấu tích xanh)
             if (recaptchaRef.current) {
                 recaptchaRef.current.reset();
             }
-
+            
             if (errorMsg.includes("thành công")) {
                 // ĐÁP ỨNG YÊU CẦU: Nếu đã xác minh Captcha xong nhưng sai pass, ẩn Captcha và bắt nhập lại
                 setShowCaptcha(false);
@@ -112,7 +112,7 @@ const DangNhap: React.FC = () => {
         setCaptchaToken(token);
         if (token) {
             // Bỏ qua new Event('submit'), gọi thẳng hàm xử lý API với token mới nhận được
-            await performLogin(token);
+             await performLogin(token);
         }
     };
 
@@ -169,8 +169,8 @@ const DangNhap: React.FC = () => {
 
     return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <div className="min-vh-100 d-flex align-items-center justify-content-center py-5"
-                style={{
+            <div className="min-vh-100 d-flex align-items-center justify-content-center py-5" 
+                style={{ 
                     backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/img/carousel-1.jpg")',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
@@ -179,7 +179,7 @@ const DangNhap: React.FC = () => {
                 <div className="container">
                     <div className="row g-4 justify-content-center">
                         <div className="col-lg-5 shadow-lg p-4 bg-white rounded-4 animate__animated animate__fadeIn">
-
+                            
                             {step === 1 ? (
                                 <form onSubmit={handleLogin} noValidate>
                                     <div className="text-center mb-4">
@@ -196,7 +196,7 @@ const DangNhap: React.FC = () => {
                                         <div className="col-12 text-start">
                                             <div className="form-floating">
                                                 <input type="text" className={`form-control ${errors.identifier ? 'is-invalid' : ''}`}
-                                                    placeholder="Tài khoản hoặc Email" value={emailOrUsername} onChange={(e) => { setEmailOrUsername(e.target.value); setErrors({}) }} disabled={isLoading} />
+                                                    placeholder="Tài khoản hoặc Email" value={emailOrUsername} onChange={(e) => {setEmailOrUsername(e.target.value); setErrors({})}} disabled={isLoading} />
                                                 <label>Email của bạn</label>
                                                 {errors.identifier && <div className="invalid-feedback">{errors.identifier}</div>}
                                             </div>
@@ -205,7 +205,7 @@ const DangNhap: React.FC = () => {
                                         <div className="col-12 text-start">
                                             <div className="form-floating">
                                                 <input type="password" className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                                                    placeholder="Mật khẩu" value={password} onChange={(e) => { setPassword(e.target.value); setErrors({}) }} disabled={isLoading} />
+                                                    placeholder="Mật khẩu" value={password} onChange={(e) => {setPassword(e.target.value); setErrors({})}} disabled={isLoading} />
                                                 <label>Mật khẩu</label>
                                                 {errors.password && <div className="invalid-feedback">{errors.password}</div>}
                                             </div>
@@ -227,8 +227,8 @@ const DangNhap: React.FC = () => {
                                         )}
 
                                         <div className="col-12">
-                                            <button className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill"
-                                                type="submit" style={{ backgroundColor: '#fb873f' }}
+                                            <button className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill" 
+                                                type="submit" style={{ backgroundColor: '#fb873f' }} 
                                                 disabled={isLoading || (showCaptcha && !captchaToken)}>
                                                 {isLoading ? "Đang xử lý..." : "Tiếp theo"}
                                             </button>
@@ -241,10 +241,8 @@ const DangNhap: React.FC = () => {
                                                     <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted">Hoặc đăng nhập với</span>
                                                 </div>
 
-
-                                                <div className="col-12 d-flex">
-                                                    <div className="w-100 google-login-button">
-
+                                                <div className="col-12 d-flex gap-2">
+                                                    <div className="w-100">
                                                         <GoogleLogin
                                                             onSuccess={async (credentialResponse) => {
                                                                 try {
@@ -267,7 +265,7 @@ const DangNhap: React.FC = () => {
                                                             }}
                                                             ux_mode="popup"
                                                             theme="outline"
-                                                            width="560"
+                                                            width="100%"
                                                         />
                                                     </div>
                                                     <div className="w-100">
@@ -306,7 +304,7 @@ const DangNhap: React.FC = () => {
                                             </>
                                         )}
 
-                                        <div className="col-12 mt-4 d-flex justify-content-between align-items-center login-footer-links">
+                                        <div className="col-12 mt-4 d-flex justify-content-between align-items-center">
                                             <Link to="/" className="text-decoration-none fw-bold small" style={{ color: '#fb873f' }}>
                                                 <i className="bi bi-house-door-fill me-1"></i> Trang chủ
                                             </Link>
@@ -325,21 +323,21 @@ const DangNhap: React.FC = () => {
                                         {step === 3 ? "Xác nhận thay thế" : "Xác thực thiết bị"}
                                     </h2>
                                     <p className="small text-muted">
-                                        {step === 3
+                                        {step === 3 
                                             ? `Nhập mã OTP để xác nhận đăng xuất thiết bị ${replaceDeviceInfo?.oldestDeviceName} và đăng nhập thiết bị này.`
                                             : "Vui lòng nhập mã OTP vừa được gửi đến Email của bạn để đăng nhập trên thiết bị này."}
                                     </p>
-
+                                    
                                     <div className="form-floating my-4 text-start">
-                                        <input type="text" className={`form-control text-center fs-3 fw-bold ${errors.otp ? 'is-invalid' : ''}`}
+                                        <input type="text" className={`form-control text-center fs-3 fw-bold ${errors.otp ? 'is-invalid' : ''}`} 
                                             maxLength={6} value={otp} autoFocus onChange={(e) => { setOtp(e.target.value.replace(/[^0-9]/g, '')); setErrors({}); }} />
                                         <label>Nhập mã 6 chữ số</label>
                                         {errors.otp && <div className="invalid-feedback text-center">{errors.otp}</div>}
                                     </div>
 
-                                    <button className="btn btn-primary w-100 py-3 mb-3 text-white border-0 fw-bold rounded-pill"
-                                        style={{ backgroundColor: '#fb873f' }}
-                                        onClick={step === 3 ? handleVerifyReplaceDevice : handleVerifyOtp}
+                                    <button className="btn btn-primary w-100 py-3 mb-3 text-white border-0 fw-bold rounded-pill" 
+                                        style={{ backgroundColor: '#fb873f' }} 
+                                        onClick={step === 3 ? handleVerifyReplaceDevice : handleVerifyOtp} 
                                         disabled={otp.length !== 6 || isLoading}>
                                         {isLoading ? <span className="spinner-border spinner-border-sm"></span> : "Xác nhận và Đăng nhập"}
                                     </button>

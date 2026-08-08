@@ -49,10 +49,22 @@ Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện hướng
 3. TRẢ VỀ DUY NHẤT một câu hỏi ngắn gọn (tối đa 2-3 câu). KHÔNG suy nghĩ, KHÔNG giải thích, KHÔNG in ra kịch bản, danh sách, hay các lựa chọn.
 4. KHÔNG ĐƯỢC viết tiếng Anh, KHÔNG liệt kê Option, KHÔNG dùng format Role/Personality/Constraint.";
 
-            // Câu mở đầu cố định để bảo đảm luôn hiển thị bằng tiếng Việt.
-            // Không gọi Gemini ở bước này vì Gemini đôi khi trả về nội dung meta bằng tiếng Anh.
-            string cauHoiDauTien =
-                $"Bạn có thể giới thiệu ngắn gọn về kinh nghiệm và kỹ năng phù hợp với vị trí {request.ViTriUngTuyen} không?";
+            var rawResponse = await _geminiService.GenerateAsync(prompt);
+            string cauHoiDauTien = "";
+            try {
+                cauHoiDauTien = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse).Replace("*", "").Trim();
+                if (cauHoiDauTien.Length > 200 && cauHoiDauTien.Contains("?")) 
+                {
+                    var sentences = cauHoiDauTien.Split(new[] { '.', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    var questionSentence = sentences.LastOrDefault(s => s.Contains("?"));
+                    if (!string.IsNullOrWhiteSpace(questionSentence))
+                    {
+                        cauHoiDauTien = questionSentence.Trim();
+                    }
+                }
+            } catch {
+                cauHoiDauTien = "Xin lỗi, hiện tại tôi đang gặp vấn đề trong việc đưa ra câu hỏi. Bạn có thể tự giới thiệu về bản thân được không?";
+            }
 
             var turnList = new List<PhongVanDocLapTurnDto>
             {
@@ -76,6 +88,7 @@ Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện hướng
 
             if (lichSu == null) throw new Exception("Không tìm thấy phiên phỏng vấn.");
             if (lichSu.TrangThai == TrangThaiPhongVan.Completed) throw new Exception("Phiên phỏng vấn đã kết thúc.");
+            if (string.IsNullOrWhiteSpace(request.CauTraLoi)) throw new ArgumentException("Câu trả lời không được để trống.");
 
             var chatHistory = JsonSerializer.Deserialize<List<PhongVanDocLapTurnDto>>(lichSu.ChiTietChatJSON) ?? new List<PhongVanDocLapTurnDto>();
             
@@ -92,52 +105,49 @@ Tính cách của bạn: {lichSu.TinhCachAI}.
 Dưới đây là lịch sử cuộc trò chuyện:
 {chatContext}
 
-Ứng viên vừa trả lời câu hỏi gần nhất. Nhiệm vụ của bạn:
-1. Đưa ra nhận xét ngắn gọn (2-3 câu) về câu trả lời của ứng viên bằng TIẾNG VIỆT.
-{(isFinished ? "2. Đây là câu hỏi cuối cùng, bạn không cần hỏi thêm gì nữa. Kết thúc bằng câu: 'Cảm ơn bạn, buổi phỏng vấn kết thúc tại đây.'" : "2. Đưa ra CÂU HỎI TIẾP THEO ngắn gọn (1-2 câu) cho ứng viên bằng TIẾNG VIỆT.")}
+Hãy đánh giá câu trả lời gần nhất và trả về đúng JSON:
+{{
+    ""nhanXetCauTruoc"": ""Nhận xét ngắn gọn 2-3 câu bằng tiếng Việt"",
+    ""cauHoiTiepTheo"": ""{(isFinished ? "" : "Câu hỏi tiếp theo ngắn gọn bằng tiếng Việt")}""
+}}
+Yêu cầu:
+- Chỉ trả về JSON, không markdown hoặc giải thích thêm.
+- Toàn bộ nội dung bằng tiếng Việt.
+- {(isFinished ? "Đây là câu cuối, cauHoiTiepTheo bắt buộc là chuỗi rỗng và nhận xét kết thúc bằng lời cảm ơn." : "cauHoiTiepTheo phải là một câu hỏi mới, phù hợp với lịch sử phỏng vấn.")}";
 
-=== YÊU CẦU BẮT BUỘC ===
-- BẮT BUỘC trả lời 100% bằng TIẾNG VIỆT. CẤM dùng tiếng Anh.
-- Trả lời ngắn gọn, tự nhiên như đang nói chuyện. Tối đa 5-6 câu.
-- KHÔNG sử dụng JSON. KHÔNG in ra kịch bản. KHÔNG liệt kê Role/Personality/Context.
-- KHÔNG dùng format có dấu * hoặc markdown.";
-
-            var rawResponse = await _geminiService.GenerateAsync(prompt);
-            string nhanXet = "";
-            try {
-                nhanXet = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse)
-                    .Replace("*", "")
-                    .Trim();
-
-                // Loại bỏ các câu trả lời dạng meta mà model đôi khi chèn vào.
-                nhanXet = System.Text.RegularExpressions.Regex.Replace(
-                    nhanXet,
-                    @"(?im)^\s*(no\s+markdown(?:/asterisks)?\s*\??\s*(yes)?|markdown\s*/\s*asterisks\s*\??\s*(yes|no)?)\s*[.!]?\s*$",
-                    ""
-                ).Trim();
-            } catch {
-                nhanXet = "Cảm ơn bạn đã trả lời. " + (isFinished ? "Chúng ta kết thúc phỏng vấn ở đây." : "Hãy tiếp tục với câu hỏi khác nhé.");
-            }
-
-            if (string.IsNullOrWhiteSpace(nhanXet) || !nhanXet.Any(c => c >= 'À' && c <= 'ỹ'))
+            var rawResponse = await _geminiService.GenerateAsync(prompt, true);
+            string nhanXet;
+            string cauHoiTiepTheo;
+            try
             {
+                var responseText = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse);
+                var json = ChuanHoaJsonTuAIHelper.ExtractJson(responseText);
+                var aiResponse = JsonSerializer.Deserialize<JsonElement>(json);
+                nhanXet = aiResponse.GetProperty("nhanXetCauTruoc").GetString()?.Trim() ?? "";
+                cauHoiTiepTheo = isFinished
+                    ? ""
+                    : aiResponse.GetProperty("cauHoiTiepTheo").GetString()?.Trim() ?? "";
+
+                if (string.IsNullOrWhiteSpace(nhanXet))
+                    throw new JsonException("AI không trả về nhận xét.");
+                if (!isFinished && string.IsNullOrWhiteSpace(cauHoiTiepTheo))
+                    throw new JsonException("AI không trả về câu hỏi tiếp theo.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi phân tích câu trả lời phỏng vấn. RawResponse: {Raw}", rawResponse);
                 nhanXet = isFinished
                     ? "Cảm ơn bạn đã trả lời. Buổi phỏng vấn kết thúc tại đây."
-                    : "Cảm ơn bạn đã chia sẻ. Câu trả lời của bạn đã được ghi nhận.";
+                    : "Cảm ơn bạn đã trả lời. Hãy tiếp tục thể hiện rõ cách suy nghĩ và kinh nghiệm của bạn.";
+                cauHoiTiepTheo = isFinished
+                    ? ""
+                    : "Bạn có thể chia sẻ một tình huống thực tế mà bạn đã áp dụng kiến thức này không?";
             }
 
-            string cauHoiTiepTheo = "";
-            if (!isFinished)
-            {
-                // Chỉ lấy câu hỏi tiếng Việt, tránh bắt nhầm các dòng meta tiếng Anh của model.
-                var cauHoiUngVien = nhanXet
-                    .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(x => x.Trim().TrimStart('-', '•', ' '))
-                    .FirstOrDefault(x => x.Contains('?') && x.Any(c => c >= 'À' && c <= 'ỹ'));
-                cauHoiTiepTheo = cauHoiUngVien ?? "Bạn có thể chia sẻ thêm một ví dụ thực tế về kỹ năng này không?";
-            }
+            var aiMessage = isFinished
+                ? nhanXet
+                : $"{nhanXet}\n\n{cauHoiTiepTheo}";
 
-            var aiMessage = nhanXet;
             var aiTurn = new PhongVanDocLapTurnDto
             {
                 Role = "ai",
@@ -153,8 +163,7 @@ Dưới đây là lịch sử cuộc trò chuyện:
             {
                 IsFinished = isFinished,
                 NhanXetCauTruoc = nhanXet,
-                CauHoiTiepTheo = cauHoiTiepTheo,
-                TinNhanAI = aiMessage
+                CauHoiTiepTheo = cauHoiTiepTheo
             };
         }
 
@@ -241,33 +250,6 @@ Yêu cầu:
                 LoiKhuyen = loiKhuyen,
                 LichSuChat = chatHistory
             };
-        }
-
-        public async Task<PhongVanSessionDto> GetInterviewAsync(int userId, int maPhongVan)
-        {
-            var lichSu = await _context.LichSuPhongVans.FirstOrDefaultAsync(x => x.MaPhongVan == maPhongVan && x.MaNguoiDung == userId)
-                ?? throw new Exception("Không tìm thấy phiên phỏng vấn.");
-            return new PhongVanSessionDto
-            {
-                MaPhongVan = lichSu.MaPhongVan,
-                ViTriUngTuyen = lichSu.ViTriUngTuyen,
-                CapDo = lichSu.CapDo,
-                TinhCachAI = lichSu.TinhCachAI,
-                SoLuongCauHoi = lichSu.SoLuongCauHoi,
-                TrangThai = lichSu.TrangThai,
-                GhiChu = lichSu.GhiChu,
-                LichSuChat = JsonSerializer.Deserialize<List<PhongVanDocLapTurnDto>>(lichSu.ChiTietChatJSON) ?? new()
-            };
-        }
-
-        public async Task UpdateNoteAsync(int userId, int maPhongVan, string ghiChu)
-        {
-            if (ghiChu.Length > 5000) throw new Exception("Ghi chú không được vượt quá 5000 ký tự.");
-            var lichSu = await _context.LichSuPhongVans.FirstOrDefaultAsync(x => x.MaPhongVan == maPhongVan && x.MaNguoiDung == userId)
-                ?? throw new Exception("Không tìm thấy phiên phỏng vấn.");
-            lichSu.GhiChu = ghiChu.Trim();
-            lichSu.CapNhatGhiChuLuc = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
         }
 
         public async Task<List<LichSuPhongVanModel>> GetInterviewHistoryAsync(int userId)

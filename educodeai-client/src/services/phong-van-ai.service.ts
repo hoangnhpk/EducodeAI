@@ -29,18 +29,6 @@ export interface AnswerPhongVanResponse {
     isFinished: boolean;
     nhanXetCauTruoc: string;
     cauHoiTiepTheo: string;
-    tinNhanAI: string;
-}
-
-export interface PhongVanSession {
-    maPhongVan: number;
-    viTriUngTuyen: string;
-    capDo: string;
-    tinhCachAI: TinhCachAI;
-    soLuongCauHoi: number;
-    trangThai: number;
-    ghiChu: string;
-    lichSuChat: PhongVanDocLapTurn[];
 }
 
 export interface PhongVanDocLapTurn {
@@ -70,40 +58,39 @@ export interface LichSuPhongVan {
     ngayPhongVan: Date;
 }
 
-interface ApiResponse<T> {
+type ApiEnvelope<T> = {
     success: boolean;
-    data: T;
+    data?: T;
     message?: string;
-}
+};
 
-const unwrapResponse = <T>(response: unknown): T => {
-    const result = response as ApiResponse<T>;
-    return result?.data ?? response as T;
+const unwrapResponse = <T>(response: T | ApiEnvelope<T>): T => {
+    if (typeof response === 'object' && response !== null && 'success' in response) {
+        const envelope = response as ApiEnvelope<T>;
+        if (!envelope.success || envelope.data === undefined) {
+            throw new Error(envelope.message || 'Phản hồi từ máy chủ không hợp lệ.');
+        }
+        return envelope.data;
+    }
+
+    return response as T;
 };
 
 export const PhongVanAIService = {
     startInterview: async (request: StartPhongVanRequest) => {
-        const response = await axiosClient.post<unknown>('/api/PhongVanAI/start', request);
-        return unwrapResponse<StartPhongVanResponse>(response);
+        const response = await axiosClient.post<StartPhongVanResponse | ApiEnvelope<StartPhongVanResponse>>('/api/PhongVanAI/start', request);
+        return unwrapResponse(response);
     },
     answerQuestion: async (request: AnswerPhongVanRequest) => {
-        const response = await axiosClient.post<unknown>('/api/PhongVanAI/answer', request);
-        return unwrapResponse<AnswerPhongVanResponse>(response);
+        const response = await axiosClient.post<AnswerPhongVanResponse | ApiEnvelope<AnswerPhongVanResponse>>('/api/PhongVanAI/answer', request);
+        return unwrapResponse(response);
     },
     endInterview: async (maPhongVan: number) => {
-        const response = await axiosClient.post<unknown>(`/api/PhongVanAI/end/${maPhongVan}`);
-        return unwrapResponse<EndPhongVanResponse>(response);
-    },
-    getInterview: async (maPhongVan: number) => {
-        const response = await axiosClient.get<unknown>(`/api/PhongVanAI/${maPhongVan}`);
-        return unwrapResponse<PhongVanSession>(response);
-    },
-    updateNote: async (maPhongVan: number, ghiChu: string) => {
-        const response = await axiosClient.put<unknown>(`/api/PhongVanAI/${maPhongVan}/note`, { ghiChu });
-        return unwrapResponse<{ success: boolean }>(response);
+        const response = await axiosClient.post<EndPhongVanResponse | ApiEnvelope<EndPhongVanResponse>>(`/api/PhongVanAI/end/${maPhongVan}`);
+        return unwrapResponse(response);
     },
     getHistory: async () => {
-        const response = await axiosClient.get<unknown>('/api/PhongVanAI/history');
-        return unwrapResponse<LichSuPhongVan[]>(response);
+        const response = await axiosClient.get<LichSuPhongVan[] | ApiEnvelope<LichSuPhongVan[]>>('/api/PhongVanAI/history');
+        return unwrapResponse(response);
     }
 };

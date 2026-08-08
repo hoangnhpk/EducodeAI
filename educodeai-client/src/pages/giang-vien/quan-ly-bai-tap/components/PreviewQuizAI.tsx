@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { CauHoiQuizDTO, QuizAIData, CreateQuizDTO } from '../types';
+import './PreviewQuizAI.css';
 
 const DAP_AN_LABELS = ['A', 'B', 'C', 'D'];
 
@@ -65,18 +66,20 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
         <div className="d-flex flex-column gap-4" style={{ maxWidth: '1000px', margin: '0 auto' }}>
 
           {/* Header info */}
-          <div className="bg-white p-4 rounded-4 shadow-sm border d-flex align-items-center gap-4 flex-wrap">
-            <div style={{ flex: 1 }}>
+          <div className="bg-white p-4 rounded-4 shadow-sm border quiz-preview-header">
+            <div className="quiz-preview-title">
               <label className="text-uppercase fw-bold mb-1" style={{ fontSize: '11px', color: 'var(--text-light)', letterSpacing: '0.05em' }}>Tên Quiz</label>
               <p className="fw-bold m-0" style={{ fontSize: '20px', color: 'var(--text-main)' }}>{data?.['Tiêu đề'] || 'Quiz AI'}</p>
             </div>
-            <div className="border-start ps-4">
-              <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Độ khó</label>
-              {getDifficultyBadge(data?.['Độ khó'] || 'Trung bình')}
-            </div>
-            <div className="border-start ps-4">
-              <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Số câu</label>
-              <span className="fw-bold" style={{ fontSize: '20px', color: 'var(--ai-accent)' }}>{localCauHois.length}</span>
+            <div className="quiz-preview-meta">
+              <div className="quiz-preview-stat">
+                <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Độ khó</label>
+                {getDifficultyBadge(data?.['Độ khó'] || 'Trung bình')}
+              </div>
+              <div className="quiz-preview-stat">
+                <label className="text-uppercase fw-bold mb-1 d-block" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Số câu</label>
+                <span className="fw-bold" style={{ fontSize: '20px', color: 'var(--ai-accent)' }}>{localCauHois.length}</span>
+              </div>
             </div>
           </div>
 
@@ -88,25 +91,25 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
               </div>
               <h5 className="m-0 fw-bold" style={{ color: 'var(--text-dark)' }}>Cài đặt Quiz</h5>
             </div>
-            <div className="row g-3">
-              <div className="col-md-3">
+            <div className="quiz-settings-grid">
+              <div>
                 <label className="btth-label">Thời gian (phút)</label>
                 <input type="number" className="form-control" value={thoiGian}
                   onChange={e => setThoiGian(Number(e.target.value))} min={5} max={180} />
               </div>
-              <div className="col-md-3">
+              <div>
                 <label className="btth-label">Điểm cần đạt (%)</label>
                 <input type="number" className="form-control" value={diemCanDat}
                   onChange={e => setDiemCanDat(Number(e.target.value))} min={0} max={100} />
               </div>
-              <div className="col-md-3 d-flex flex-column justify-content-end pb-1">
+              <div className="quiz-setting-toggle">
                 <div className="form-check form-switch">
                   <input className="form-check-input" type="checkbox" checked={choPhepLamLai}
                     onChange={e => setChoPhepLamLai(e.target.checked)} id="sw-lamLai" />
                   <label className="form-check-label fw-semibold" htmlFor="sw-lamLai">Cho phép làm lại</label>
                 </div>
               </div>
-              <div className="col-md-3 d-flex flex-column justify-content-end pb-1">
+              <div className="quiz-setting-toggle">
                 <div className="form-check form-switch">
                   <input className="form-check-input" type="checkbox" checked={daoCauHoi}
                     onChange={e => setDaoCauHoi(e.target.checked)} id="sw-dao" />
@@ -132,7 +135,7 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
               {localCauHois.map((cau, qIdx) => (
                 <div key={qIdx} className="p-4 rounded-3 border" style={{ background: 'var(--bg-main)' }}>
                   {/* Header câu hỏi */}
-                  <div className="d-flex align-items-start gap-3 mb-3">
+                  <div className="quiz-question-header">
                     <span className="fw-bold px-3 py-2 rounded-3 flex-shrink-0"
                       style={{ background: 'var(--ai-accent)', color: 'white', fontSize: '14px', minWidth: '42px', textAlign: 'center' }}>
                       {qIdx + 1}
@@ -143,7 +146,7 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
                       value={cau.NoiDung}
                       onChange={e => handleNoiDungChange(qIdx, e.target.value)}
                     />
-                    <button className="btn btn-sm btn-light text-danger flex-shrink-0" onClick={() => handleXoaCau(qIdx)}
+                    <button className="btn btn-sm quiz-question-delete flex-shrink-0" onClick={() => handleXoaCau(qIdx)}
                       title="Xóa câu này">
                       <i className="bi bi-trash" />
                     </button>
@@ -156,10 +159,10 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
                       const isCorrect = cau.DapAnDung === label;
                       return (
                         <div key={aIdx} className="col-md-6">
-                          <div className={`d-flex align-items-center gap-2 p-2 rounded-3 border ${isCorrect ? 'border-success bg-success bg-opacity-10' : 'bg-white'}`}
+                          <div className={`quiz-answer-option ${isCorrect ? 'border-success bg-success bg-opacity-10' : 'bg-white'}`}
                             style={{ cursor: 'pointer' }}
                             onClick={() => handleDapAnChange(qIdx, label)}>
-                            <span className={`fw-bold px-2 py-1 rounded-2 flex-shrink-0 ${isCorrect ? 'bg-success text-white' : 'bg-light text-secondary'}`}
+                            <span className={`quiz-answer-label ${isCorrect ? 'bg-success text-white' : 'bg-light text-secondary'}`}
                               style={{ fontSize: '13px', minWidth: '28px', textAlign: 'center' }}>
                               {label}
                             </span>
@@ -178,7 +181,7 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
                     })}
                   </div>
 
-                  <div className="ms-5 mt-2">
+                  <div className="quiz-answer-help ms-5">
                     <small className="text-muted">Click vào đáp án để chọn đáp án đúng</small>
                   </div>
                 </div>
@@ -187,7 +190,7 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
           </div>
 
           {/* Action buttons */}
-          <div className="d-flex justify-content-end gap-3 pt-2 border-top">
+          <div className="quiz-preview-actions">
             <button className="btn btn-light px-5 py-3 fw-bold" onClick={onCancel}
               disabled={isSaving} style={{ borderRadius: '12px' }}>
               Huỷ bỏ

@@ -1,568 +1,635 @@
-/* =========================================
-   CONTAINER VÀ GRID CHÍNH
-   ========================================= */
-.quan-ly-container {
-    padding: 2.5rem;
-    background-color: var(--bg-main);
-    min-height: 100vh;
-    font-family: var(--font-main);
+/* ===== Quản lý lộ trình AI (giảng viên) — scoped ql-lt-* ===== */
+
+.ql-lt-page {
+  padding: 4px 0 32px;
+  min-height: calc(100vh - 140px);
+  font-family: var(--font-main);
+  color: var(--text-main);
 }
 
-.lo-trinh-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2rem;
-    margin-top: 2rem;
+.ql-lt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
 }
 
-/* Card danh sách lộ trình */
-.lo-trinh-card {
-    background-color: var(--bg-card) !important;
-    border: 2px solid var(--border-color);
-    border-radius: 1.25rem;
-    padding: 1.8rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    transition: all 0.3s ease;
-    border-left: 6px solid var(--ai-accent); /* Vạch màu nhấn AI (tím) nhận diện tính năng AI */
+.ql-lt-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
 }
 
-.lo-trinh-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+.ql-lt-header p {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
 }
 
-/* Header & Title của Card */
-.card-title {
-    margin-top: 10px;
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: var(--text-main);
-    line-height: 1.4;
+.ql-lt-btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--text-white);
+  background: linear-gradient(135deg, var(--ai-accent), var(--ai-accent-hover));
+  box-shadow: 0 8px 16px rgba(139, 92, 246, 0.22);
+  transition: transform 0.2s ease, filter 0.2s ease;
+  white-space: nowrap;
 }
 
-/* Footer của Card - Fix lỗi ID */
-.card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1.5rem;
-    padding-top: 1.2rem;
-    border-top: 1px solid var(--border-light);
+.ql-lt-btn-add:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
 }
 
-.id-tag {
-    font-weight: 800;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    background: var(--bg-main);
-    padding: 4px 10px;
-    border-radius: 6px;
+.ql-lt-btn-add:focus-visible {
+  outline: 2px solid var(--ai-accent);
+  outline-offset: 2px;
 }
 
-/* =========================================
-   HỆ THỐNG NÚT BẤM (BUTTONS)
-   ========================================= */
-
-/* Nút Làm mới - Trắng tinh tế */
-.btn-refresh {
-    background: white !important;
-    color: var(--text-muted) !important;
-    border: 1.5px solid var(--border-color) !important;
-    padding: 10px 20px !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
-    cursor: pointer;
-    transition: all 0.2s ease;
+/* ===== Grid ===== */
+.ql-lt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
 }
 
-.btn-refresh:hover {
-    background: var(--bg-main) !important;
-    border-color: var(--text-light) !important;
-    color: var(--text-main) !important;
+.ql-lt-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 56px 20px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
 }
 
-/* Nút Thêm Mới - Xanh lá chuyên nghiệp (Sếp yêu cầu) */
-.btn-save {
-    background: var(--primary) !important; /* Màu xanh lá chuẩn Emerald */
-    color: white !important;
-    border: none !important;
-    padding: 12px 25px !important;
-    border-radius: 12px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+.ql-lt-state strong {
+  display: block;
+  margin-top: 10px;
+  color: var(--text-main);
+  font-size: 1rem;
 }
 
-.btn-save:hover {
-    background: var(--primary-hover) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px rgba(16, 185, 129, 0.4);
+.ql-lt-state span {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.875rem;
 }
 
-/* Nút Sửa/Xóa nhỏ trong Card */
-.btn-edit-small {
-    border: 2px solid var(--ai-accent);
-    color: var(--ai-accent);
-    font-weight: 700;
-    padding: 6px 18px;
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-    transition: 0.2s;
+.ql-lt-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--ai-accent);
+  border-radius: 50%;
+  margin: 0 auto;
+  animation: ql-lt-spin 0.7s linear infinite;
 }
 
-.btn-edit-small:hover {
-    background: var(--ai-accent);
-    color: white;
+@keyframes ql-lt-spin {
+  to { transform: rotate(360deg); }
 }
 
-.btn-delete {
-    border: 2px solid var(--danger);
-    color: var(--danger);
-    font-weight: 700;
-    padding: 6px 18px;
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
+/* ===== Card ===== */
+.ql-lt-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  border-left: 4px solid var(--ai-accent);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.btn-delete:hover {
-    background: var(--danger);
-    color: white;
+.ql-lt-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
 }
 
-/* Nút Hủy bỏ */
-.btn-cancel-pro {
-    background-color: var(--border-light);
-    color: var(--text-muted);
-    padding: 12px 25px;
-    border-radius: 12px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
+.ql-lt-card-body {
+  padding: 18px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
 }
 
-/* =========================================
-   MODAL - FIX LỖI VÀ MỞ RỘNG
-   ========================================= */
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(8px); /* Làm mờ nền cực đẹp */
-    display: flex; align-items: center; justify-content: center;
-    z-index: 2000;
+.ql-lt-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
 }
 
-/* Mở rộng Modal lên 900px */
-.pro-modal-v2 {
-    width: 900px; 
-    background: white;
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
-    animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+.ql-lt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: var(--success-soft);
+  color: var(--success-strong);
+  white-space: nowrap;
 }
 
-@keyframes modalScaleUp {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
+.ql-lt-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
-.modal-header-pro {
-    padding: 25px 40px;
-    border-bottom: 1px solid var(--border-light);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.ql-lt-author {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 55%;
+  text-align: right;
 }
 
-.modal-body-pro {
-    padding: 30px 40px;
-    overflow-y: auto;
-    flex: 1;
-    background: var(--bg-main);
+.ql-lt-card-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  line-height: 1.35;
+  word-break: break-word;
 }
 
-.modal-footer-pro {
-    padding: 20px 40px;
-    border-top: 1px solid var(--border-light);
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    background: white;
+.ql-lt-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
 }
 
-/* =========================================
-   THIẾT KẾ CHẶNG HỌC (COURSE ITEMS)
-   ========================================= */
-.course-item-card {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    background: white;
-    padding: 15px 20px;
-    border-radius: 16px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+.ql-lt-meta-item {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  font-weight: 600;
 }
 
-.course-img-small {
-    width: 65px;
-    height: 65px;
-    border-radius: 12px;
-    object-fit: cover;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.ql-lt-id {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--bg-main);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
 }
 
-.pro-step-num {
-    background: var(--ai-accent-soft);
-    color: var(--ai-accent);
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900;
-    flex-shrink: 0;
+.ql-lt-card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--border-color);
+  background: #fcfcfd;
 }
 
-/* Trạng thái Bắt buộc / Nâng cao */
-.status-select {
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
+.ql-lt-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
-.st-req { background: var(--danger-soft) !important; color: var(--danger-strong) !important; }
-.st-opt { background: var(--warning-soft) !important; color: var(--warning-strong) !important; }
-
-/* Badge trạng thái ngoài Card */
-.badge-status {
-    background-color: var(--success-soft);
-    color: var(--success-strong);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
+.ql-lt-action--view {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
 }
 
-/* Nút xóa item khóa học */
-.btn-del-item {
-    color: var(--text-light);
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: 0.2s;
+.ql-lt-action--view:hover {
+  border-color: var(--text-light);
+  color: var(--text-main);
+  background: var(--bg-main);
 }
 
-.btn-del-item:hover {
-    color: var(--danger);
-    transform: scale(1.1);
+.ql-lt-action--edit {
+  background: var(--ai-accent-soft);
+  border: 1px solid transparent;
+  color: var(--ai-accent-hover);
 }
 
-.quan-ly-container, 
-.pro-modal-v2, 
-.input-pro, 
-.select-pro, 
-.status-select,
-button {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-    letter-spacing: -0.01em; /* Giúp chữ nhìn khít và sang hơn */
+.ql-lt-action--edit:hover {
+  background: var(--ai-accent);
+  color: var(--text-white);
 }
 
-/* Fix con số bị "kì" - tạo hình tròn số thứ tự cực chuẩn */
-.pro-step-num, .course-rank {
-    background: var(--ai-accent) !important;
-    color: white !important;
-    width: 32px !important;
-    height: 32px !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    font-family: 'Inter', sans-serif !important; /* Ép font cho con số */
-    flex-shrink: 0;
-    box-shadow: 0 4px 6px rgba(139, 92, 246, 0.2);
+.ql-lt-action--delete {
+  background: var(--bg-card);
+  border: 1px solid var(--danger);
+  color: var(--danger);
 }
 
-/* Làm đẹp ô Input và Select cho đồng bộ font */
-.input-pro {
-    font-weight: 500;
-    color: var(--text-main);
-    border: 1.5px solid var(--border-color);
+.ql-lt-action--delete:hover {
+  background: var(--danger);
+  color: var(--text-white);
 }
 
-.select-pro {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-main);
-    cursor: pointer;
+/* ===== Modal ===== */
+.ql-lt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
 }
 
-/* Fix tiêu đề bị thô */
-.modal-header-pro h2 {
-    font-weight: 800;
-    letter-spacing: -0.02em;
+.ql-lt-modal {
+  width: min(800px, 100%);
+  max-height: 90vh;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: ql-lt-modal-in 0.22s ease-out;
 }
 
-/* Badge trạng thái nhìn cho "mượt" */
-.status-select {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 13px !important;
-    letter-spacing: 0.02em;
-    text-transform: none; /* Không để in hoa hết nhìn sẽ thanh thoát hơn */
-}
-/* =========================================
-   1. MODAL CƠ BẢN VÀ OVERLAY (GIAO DIỆN CHÍNH)
-   ========================================= */
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(15, 23, 42, 0.7); /* Nền tối sang trọng */
-    backdrop-filter: blur(5px); /* Làm mờ nền phía sau */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
+.ql-lt-modal--sm {
+  width: min(640px, 100%);
 }
 
-/* Modal Pro V2 - Bo góc lớn và rộng rãi */
-.pro-modal-v2 {
-    width: 750px; /* Tăng độ rộng để chứa ảnh đẹp hơn */
-    background: white;
-    border-radius: 20px;
-    display: flex;
-    flex-direction: column;
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    animation: modalFadeIn 0.3s ease-out;
+@keyframes ql-lt-modal-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes modalFadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+.ql-lt-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-/* =========================================
-   2. CSS MỚI CHO NÚT DẤU X (CLOSE BUTTON)
-   ========================================= */
-.modal-header-pro {
-    padding: 20px 30px;
-    border-bottom: 1px solid var(--border-light);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative; /* Để định vị nút X */
+.ql-lt-modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-dark);
 }
 
-.modal-header-pro h2 {
-    font-weight: 800;
-    color: var(--text-main);
-    margin: 0;
-    font-size: 1.5rem;
+.ql-lt-modal-header p {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
 }
 
-/* NÚT DẤU X ĐÃ ĐƯỢC "ĐỘ" */
-.close-x {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 32px;
-    height: 32px;
-    background: var(--border-light); /* Nền xám nhạt */
-    border: none;
-    border-radius: 50%; /* Hình tròn */
-    color: var(--text-muted);
-    font-size: 1.2rem;
-    line-height: 32px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
+.ql-lt-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--border-light, #f3f4f6);
+  color: var(--text-muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
-.close-x:hover {
-    background: var(--danger-soft); /* Nền đỏ nhạt khi hover */
-    color: var(--danger); /* Dấu X màu đỏ rực */
-    transform: rotate(90deg); /* Xoay nhẹ cho vui mắt */
+.ql-lt-close:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+  transform: rotate(90deg);
 }
 
-/* =========================================
-   3. CSS MỚI CHO ITEM CÓ HÌNH ẢNH DƯỚI TÊN
-   ========================================= */
-.modal-body-pro {
-    padding: 30px;
-    overflow-y: auto;
-    flex: 1;
-    background: var(--bg-main);
+.ql-lt-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  background: var(--bg-main);
+  flex: 1;
 }
 
-/* Thẻ chứa mỗi chặng học - Có hình ảnh */
-.course-item-card {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background: white;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease;
+.ql-lt-field {
+  margin-bottom: 20px;
 }
 
-.course-item-card:hover {
-    transform: translateY(-2px); /* Hiệu ứng nổi lên khi hover */
+.ql-lt-field label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  margin-bottom: 8px;
 }
 
-/* Số thứ tự chặng học */
-.pro-step-num {
-    background: var(--ai-accent-soft);
-    color: var(--ai-accent);
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 0.8rem;
-    flex-shrink: 0;
+.ql-lt-field label span {
+  color: var(--danger);
 }
 
-/* Hình ảnh khóa học con - Đã thêm vào */
-.course-img-small {
-    width: 50px;
-    height: 50px;
-    border-radius: 8px;
-    object-fit: cover; /* Đảm bảo ảnh không bị méo */
-    border: 1px solid var(--border-light);
+.ql-lt-input,
+.ql-lt-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 0.925rem;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Phần chứa tên và select */
-.course-info-select {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+.ql-lt-input:focus,
+.ql-lt-select:focus {
+  border-color: var(--ai-accent);
+  box-shadow: 0 0 0 3px var(--ai-accent-soft);
 }
 
-/* Tên khóa học - Làm đậm lên */
-.course-info-select .course-name {
-    font-weight: 700;
-    color: var(--text-main);
-    font-size: 0.95rem;
+.ql-lt-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--border-color);
 }
 
-/* Ô chọn trạng thái (Bắt buộc/Tự chọn) */
-.status-select {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: var(--bg-main);
+.ql-lt-section-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-dark);
 }
 
-/* Nút xóa chặng học */
-.btn-del-item {
-    color: var(--text-light);
-    background: none;
-    border: none;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: color 0.2s;
+.ql-lt-btn-ghost {
+  border: none;
+  background: var(--ai-accent-soft);
+  color: var(--ai-accent-hover);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.btn-del-item:hover {
-    color: var(--danger);
+.ql-lt-btn-ghost:hover {
+  filter: brightness(0.97);
 }
 
-/* =========================================
-   4. CÁC THÀNH PHẦN KHÁC (FOOTER, INPUT)
-   ========================================= */
-.form-input {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    margin-top: 8px;
+.ql-lt-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
-.form-input:focus {
-    border-color: var(--ai-accent);
-    outline: none;
+.ql-lt-scroll::-webkit-scrollbar {
+  width: 6px;
 }
 
-.modal-footer-pro {
-    padding: 20px 30px;
-    border-top: 1px solid var(--border-light);
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background: white;
+.ql-lt-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
 }
 
-.btn-save-pro {
-    background: var(--primary-hover); /* Xanh lá cây cho nút chính */
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
+.ql-lt-empty-box {
+  text-align: center;
+  padding: 36px 16px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
-.btn-cancel-pro {
-    background: var(--border-light);
-    color: var(--text-muted);
-    border: none;
-    padding: 12px 24px;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
-}
-/* Nút xóa lộ trình ngoài Card danh sách */
-.btn-delete-small {
-    border: 2px solid var(--danger);
-    color: var(--danger);
-    font-weight: 700;
-    padding: 6px 18px;
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-    transition: all 0.2s;
+.ql-lt-course {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
 }
 
-.btn-delete-small:hover {
-    background: var(--danger);
-    color: white;
-    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+.ql-lt-course--preview {
+  border-left: 4px solid var(--ai-accent);
 }
 
-/* Tinh chỉnh cho Modal scroll */
-.course-scroll-area::-webkit-scrollbar {
-    width: 6px;
+.ql-lt-rank {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ai-accent);
+  color: var(--text-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  flex-shrink: 0;
 }
-.course-scroll-area::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 10px;
+
+.ql-lt-course-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+  background: var(--bg-main);
+}
+
+.ql-lt-course-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ql-lt-course-fields > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ql-lt-course-fields > div:first-child {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.ql-lt-course-fields > div:nth-child(2) {
+  flex: 0 0 130px;
+}
+
+.ql-lt-course-fields label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.ql-lt-st-req {
+  background: var(--danger-soft) !important;
+  color: var(--danger-strong) !important;
+  border-color: transparent !important;
+}
+
+.ql-lt-st-opt {
+  background: var(--warning-soft) !important;
+  color: var(--warning-strong) !important;
+  border-color: transparent !important;
+}
+
+.ql-lt-btn-icon {
+  border: none;
+  background: transparent;
+  color: var(--text-light);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 8px;
+  line-height: 1;
+  align-self: flex-end;
+}
+
+.ql-lt-btn-icon:hover {
+  color: var(--danger);
+}
+
+.ql-lt-course-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.ql-lt-chip {
+  display: inline-flex;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--success-soft);
+  color: var(--success-strong);
+}
+
+.ql-lt-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.ql-lt-btn-cancel,
+.ql-lt-btn-save {
+  border: none;
+  padding: 11px 22px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.ql-lt-btn-cancel {
+  background: var(--border-light, #f3f4f6);
+  color: var(--text-main);
+}
+
+.ql-lt-btn-cancel:hover {
+  background: var(--border-color);
+}
+
+.ql-lt-btn-save {
+  background: var(--success);
+  color: var(--text-white);
+}
+
+.ql-lt-btn-save:hover {
+  background: var(--success-strong);
+}
+
+@media (max-width: 640px) {
+  .ql-lt-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .ql-lt-course {
+    flex-wrap: wrap;
+  }
+
+  .ql-lt-course-fields > div:nth-child(2) {
+    flex: 1 1 120px;
+  }
+
+  .ql-lt-card-actions {
+    flex-wrap: wrap;
+  }
+
+  .ql-lt-action {
+    flex: 1 1 calc(50% - 8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ql-lt-card,
+  .ql-lt-btn-add,
+  .ql-lt-close,
+  .ql-lt-modal,
+  .ql-lt-spinner {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .ql-lt-card:hover,
+  .ql-lt-btn-add:hover,
+  .ql-lt-close:hover {
+    transform: none !important;
+  }
 }

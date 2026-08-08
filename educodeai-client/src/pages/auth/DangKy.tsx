@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
-
-
+import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import Swal from 'sweetalert2';
 // 1. IMPORT THƯ VIỆN CAPTCHA
 import ReCAPTCHA from "react-google-recaptcha";
 import { setAuthTokens } from '../../utils/authStorage';
-
-import { FaArrowLeft } from 'react-icons/fa';
 import PasswordInput from '../../components/PasswordInput';
 import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
-
 
 const RegisterPage = () => {
     const navigate = useNavigate();
@@ -160,8 +156,8 @@ const RegisterPage = () => {
     };
 
     return (
-        <div className="min-vh-100 d-flex align-items-center justify-content-center py-5"
-            style={{
+        <div className="min-vh-100 d-flex align-items-center justify-content-center py-5" 
+            style={{ 
                 backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/img/carousel-1.jpg")',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -208,11 +204,10 @@ const RegisterPage = () => {
                                             label="Mật khẩu"
                                             floating
                                             className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-
-                                            placeholder="Pass"
+                                            placeholder="Mật khẩu"
                                             value={formData.password}
-                                            onChange={(e) => handleInputChange(e)}
-
+                                            onChange={handleInputChange}
+                                            autoComplete="new-password"
                                             error={errors.password}
                                         />
                                         {formData.password && (
@@ -274,9 +269,9 @@ const RegisterPage = () => {
                                     Đã có tài khoản? <Link className="text-decoration-none fw-bold" style={{ color: '#fb873f' }} to="/dang-nhap">Đăng nhập</Link>
                                 </p>
                             </div>
-
+                            
                             <hr className="w-100 my-1 text-muted" />
-
+                            
                             <div className="text-center w-100">
                                 <p className="mb-0 small text-muted">
                                     Bạn là chuyên gia? <Link className="text-decoration-none fw-bold ms-1" style={{ color: '#fb873f' }} to="/dang-ky-giang-vien">Đăng ký tài khoản giảng viên</Link>

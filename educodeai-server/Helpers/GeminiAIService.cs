@@ -35,7 +35,7 @@ namespace educodeai_server.Helpers
             _rateLimitService = rateLimitService;
             _logger = logger;
             _secretKey = config["ApiSecurity:SecretKey"] ?? throw new Exception("Chưa cấu hình SecretKey!");
-            _modelName = config["GeminiAI:Model"] ?? "gemini-1.5-flash";
+            _modelName = config["GeminiAI:Model"] ?? "gemini-1.5-flash-latest";
         }
 
         private async Task<List<string>> LayDanhSachKeyHopLeTuRedisAsync()
@@ -227,6 +227,9 @@ namespace educodeai_server.Helpers
                     if (string.IsNullOrWhiteSpace(modelSuDung) || modelSuDung.Equals("All", StringComparison.OrdinalIgnoreCase)) modelSuDung = _modelName;
                     else if (modelSuDung.StartsWith("models/")) modelSuDung = modelSuDung.Substring(7);
 
+                    // HOTFIX: Google changed model aliases, force standard model name
+                    if (modelSuDung.Contains("gemini-1.5-flash") || modelSuDung == "gemini-pro") modelSuDung = "gemini-2.5-flash";
+
                     string requestUrl = $"v1beta/models/{modelSuDung}:generateContent?key={rawKey}";
 
                     var parts = currentRedisKey.Split(':');
@@ -285,6 +288,7 @@ namespace educodeai_server.Helpers
                                 {
                                     Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {actualTokens} tokens.");
                                 }
+
 
                                 await LuuLogVaoRedisQueue(currentRedisKey, actualTokens, (int)response.StatusCode, requestUrl);
                             }
