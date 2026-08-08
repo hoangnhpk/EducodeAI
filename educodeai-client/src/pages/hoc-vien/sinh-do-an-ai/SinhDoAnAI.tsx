@@ -951,7 +951,7 @@ const SinhDoAnAI: React.FC = () => {
                                                                     value={featureInputs[idx]?.khoKhan || ''}
                                                                     onChange={e => setFeatureInputs(prev => ({ ...prev, [idx]: { ...prev[idx], khoKhan: e.target.value } }))}
                                                                     rows={2}
-                                                                    style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.75rem', color: '#e2e8f0', fontSize: '0.85rem', resize: 'vertical' }}
+                                                                    style={{ width: '100%', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', padding: '0.75rem', color: 'var(--text-main, #111827)', fontSize: '0.85rem', resize: 'vertical' }}
                                                                 />
                                                             </div>
 
@@ -965,7 +965,7 @@ const SinhDoAnAI: React.FC = () => {
                                                                     value={featureInputs[idx]?.suaDoi || ''}
                                                                     onChange={e => setFeatureInputs(prev => ({ ...prev, [idx]: { ...prev[idx], suaDoi: e.target.value } }))}
                                                                     rows={2}
-                                                                    style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.75rem', color: '#e2e8f0', fontSize: '0.85rem', resize: 'vertical' }}
+                                                                    style={{ width: '100%', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', padding: '0.75rem', color: 'var(--text-main, #111827)', fontSize: '0.85rem', resize: 'vertical' }}
                                                                 />
                                                             </div>
 
@@ -1067,7 +1067,7 @@ const SinhDoAnAI: React.FC = () => {
                                             value={khoKhan}
                                             onChange={e => setKhoKhan(e.target.value)}
                                             rows={2}
-                                            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '0.75rem', color: '#e2e8f0', fontSize: '0.85rem', resize: 'vertical' }}
+                                            style={{ width: '100%', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', padding: '0.75rem', color: 'var(--text-main, #111827)', fontSize: '0.85rem', resize: 'vertical' }}
                                         />
                                     </div>
 

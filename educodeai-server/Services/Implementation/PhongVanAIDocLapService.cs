@@ -67,16 +67,13 @@ namespace educodeai_server.Services.Implementation
             await _context.SaveChangesAsync();
 
             string prompt = $@"
-Bạn là một chuyên gia phỏng vấn tuyển dụng NGƯỜI VIỆT NAM.
-Vị trí ứng tuyển: {request.ViTriUngTuyen}
-Cấp độ: {request.CapDo}
-Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện hướng dẫn, Strict = Khó tính xoáy sâu vào lỗi sai, Normal = Bình thường).
+Đóng vai là một nhà tuyển dụng người VIỆT NAM, đang phỏng vấn ứng viên cho vị trí: {request.ViTriUngTuyen} (Cấp độ: {request.CapDo}).
+Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện, Strict = Khó tính, Normal = Bình thường).
 
-=== YÊU CẦU BẮT BUỘC ===
-1. BẮT BUỘC trả lời hoàn toàn bằng TIẾNG VIỆT. KHÔNG ĐƯỢC dùng tiếng Anh.
-2. Bạn ĐANG TRONG CUỘC HỘI THOẠI TRỰC TIẾP với ứng viên. Hãy đóng vai và đưa ra CÂU HỎI ĐẦU TIÊN ngay lập tức.
-3. TRẢ VỀ DUY NHẤT một câu hỏi ngắn gọn (tối đa 2-3 câu). KHÔNG suy nghĩ, KHÔNG giải thích, KHÔNG in ra kịch bản, danh sách, hay các lựa chọn.
-4. KHÔNG ĐƯỢC viết tiếng Anh, KHÔNG liệt kê Option, KHÔNG dùng format Role/Personality/Constraint.";
+Nhiệm vụ của bạn lúc này: Hãy đưa ra câu hỏi đầu tiên bằng tiếng Việt để bắt đầu buổi phỏng vấn (có thể chào hỏi ngắn gọn rồi hỏi thẳng vào chuyên môn).
+Lưu ý RẤT QUAN TRỌNG:
+- Bạn phải phản hồi bằng tiếng Việt 100%.
+- Chỉ đưa ra duy nhất câu hỏi của bạn. Không suy nghĩ, không giải thích, không ghi thêm bất kỳ chữ nào ngoài câu hỏi.";
 
             var rawResponse = await _geminiService.GenerateAsync(prompt);
             string cauHoiDauTien = "";
@@ -129,15 +126,16 @@ Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện hướng
             string chatContext = string.Join("\n", chatHistory.Select(x => $"{(x.Role == "ai" ? "Người phỏng vấn" : "Ứng viên")}: {x.Message}"));
 
             string prompt = $@"
-Bạn là người phỏng vấn VIỆT NAM, đang phỏng vấn ứng viên cho vị trí: {lichSu.ViTriUngTuyen} (Cấp độ: {lichSu.CapDo}).
+Đóng vai là nhà tuyển dụng người VIỆT NAM, đang phỏng vấn ứng viên cho vị trí: {lichSu.ViTriUngTuyen} (Cấp độ: {lichSu.CapDo}).
 Tính cách của bạn: {lichSu.TinhCachAI}.
-Dưới đây là lịch sử cuộc trò chuyện:
+Dưới đây là lịch sử cuộc trò chuyện từ trước đến nay:
 {chatContext}
 
-Hãy đánh giá câu trả lời gần nhất và trả về đúng JSON:
+Nhiệm vụ của bạn: Hãy đánh giá câu trả lời gần nhất của ứng viên và đưa ra câu hỏi tiếp theo.
+Bắt buộc phải trả về đúng định dạng JSON như sau, và toàn bộ giá trị bên trong phải bằng TIẾNG VIỆT 100%:
 {{
-    ""nhanXetCauTruoc"": ""Nhận xét ngắn gọn 2-3 câu bằng tiếng Việt"",
-    ""cauHoiTiepTheo"": ""{(isFinished ? "" : "Câu hỏi tiếp theo ngắn gọn bằng tiếng Việt")}""
+    ""nhanXetCauTruoc"": ""Nhận xét ngắn gọn 1-2 câu về câu trả lời của ứng viên"",
+    ""cauHoiTiepTheo"": ""{(isFinished ? "" : "Câu hỏi chuyên môn tiếp theo ngắn gọn")}""
 }}
 Yêu cầu:
 - Chỉ trả về JSON, không markdown hoặc giải thích thêm.
