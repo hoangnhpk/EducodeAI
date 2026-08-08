@@ -163,7 +163,7 @@ const QuanLyNguoiDung = () => {
     const handleThayDoiTrangThai = useCallback((v: any) => { setTrangThaiLoc(v); setTrangHienTai(1); }, []);
 
     return (
-        <div className="user-management-container">
+        <div className="user-management-container qtv-page-content">
             <h2 className="page-title">Quản lý người dùng</h2>
             <ThanhCongCu tuKhoa={tuKhoa} onThayDoiTuKhoa={handleThayDoiTuKhoa} vaiTroLoc={vaiTroLoc} onThayDoiVaiTro={handleThayDoiVaiTro} trangThaiLoc={trangThaiLoc} onThayDoiTrangThai={handleThayDoiTrangThai} onThemMoi={handleThemMoi} />
             {loi ? (

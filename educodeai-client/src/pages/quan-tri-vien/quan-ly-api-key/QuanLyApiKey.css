@@ -4,10 +4,7 @@
 
 /* ── Page wrapper ──────────────────────────────────────────────────────── */
 .akm-page {
-  padding: 36px 40px;
-  min-height: 100%;
   font-family: var(--font-main);
-  background: var(--bg-main);
 }
 
 /* ── Mới: Header & Page Title ──────────────────────────────────────────── */

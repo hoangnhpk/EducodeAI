@@ -51,7 +51,7 @@ import QuanLyMaGiamGiaGiangVien from "@/pages/giang-vien/ma-giam-gia/QuanLyMaGia
 
 import QuanLyReviewMoi from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReviewMoi";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
-import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
+import TangKhoaHoc from "../pages/quan-tri-vien/tang-khoa-hoc/TangKhoaHoc";
 import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
 import CauHinhHeThong from "../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeThong";
 import ThongKeAdmin from "@/pages/quan-tri-vien/thong-ke/ThongKeAdmin";
@@ -156,7 +156,7 @@ export default function AppRouter() {
             <Route path="thong-ke" element={<ThongKeAdmin />} />
             <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
             <Route path="quan-ly-binh-luan-review" element={<QuanLyReviewMoi />} />
-            <Route path="quan-ly-hoc-vien" element={<QuanLyHocVien />} />
+            <Route path="tang-khoa-hoc" element={<TangKhoaHoc />} />
             <Route path="quan-ly-api-key" element={<QuanLyApiKey />} />
             <Route path="cau-hinh-he-thong" element={<CauHinhHeThong />} />
             <Route path="rut-tien-giang-vien" element={<QuanLyRutTienGiangVien />} />

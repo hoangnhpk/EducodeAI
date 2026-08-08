@@ -165,7 +165,13 @@
   gap: 20px;
 }
 
-/* ===== RESPONSIVE ===== */
+/* ===== PAGE CONTENT QTV DÙNG CHUNG ===== */
+.qtv-page-content {
+  padding: 36px 40px;
+  min-height: 100%;
+  background: #F9FAFB;
+}
+
 @media (max-width: 768px) {
   .layout-giang-vien,
   .layout-qtv {
