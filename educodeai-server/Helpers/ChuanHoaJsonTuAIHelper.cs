@@ -187,10 +187,29 @@ namespace educodeai_server.Helpers
                 return LamSachLeakedPromptHeaders(outputAI);
             }
 
+
+            var text = root["candidates"]?
+                .First?["content"]?["parts"]?
+                .OfType<JObject>()
+                .Where(p => p["thought"]?.Value<bool>() != true)
+                .Select(p => p["text"]?.ToString())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .LastOrDefault();
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                text = root["candidates"]?
+                    .First?["content"]?["parts"]?
+                    .Select(p => p?["text"]?.ToString())
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .LastOrDefault();
+            }
+
             var parts = root["candidates"]?
                 .FirstOrDefault()?["content"]?["parts"]?
                 .OfType<JObject>()
                 .ToList();
+
 
             if (parts == null || parts.Count == 0)
             {

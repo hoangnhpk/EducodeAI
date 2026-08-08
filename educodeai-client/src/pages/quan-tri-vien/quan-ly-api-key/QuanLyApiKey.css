@@ -193,12 +193,17 @@
 }
 
 .akm-search-group .form-control:hover {
-  border-color: var(--primary-light);
+  border-color: var(--primary-dark);
 }
 
 .akm-search-group .form-control:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.12);
+}
+
+.akm-search-group .form-control:focus-visible {
+  outline: 2px solid var(--primary-dark);
+  outline-offset: 2px;
 }
 
 .akm-refresh-btn {
@@ -214,7 +219,25 @@
   white-space: nowrap;
 }
 
-/* ── Table ─────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .akm-pool-tools {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .akm-search-group {
+    flex: 1 1 100%;
+    width: 100% !important;
+  }
+
+  .akm-refresh-btn {
+    flex: 0 0 auto;
+  }
+}
+
+
 .akm-tbl thead th {
   font-size: 12px;
   font-weight: var(--font-weight-semibold);

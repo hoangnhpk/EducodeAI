@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Data;
 using educodeai_server.Models;
@@ -44,6 +44,8 @@ namespace educodeai_server.Repository.Implementation
                         KyNangChinh = x.KyNangChinh,
                         GiaKhoaHoc = x.GiaKhoaHoc,
                         DonViTienTe = x.DonViTienTe,
+                        MaGiangVien = x.MaGiangVien,
+                        TenGiangVien = x.GiangVien != null ? x.GiangVien.HoTen : "EduCode",
                         KhoaHocDaDangKy = maNguoiDung > 0
                               ? _context.DangKyKhoaHocs.Any(dk => dk.MaKhoaHoc == x.MaKhoaHoc && dk.MaNguoiDung == maNguoiDung)
                               : false

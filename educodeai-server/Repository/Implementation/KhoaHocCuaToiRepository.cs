@@ -20,6 +20,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<List<KhoaHocModel>> GetKhoaHocByGiangVienAsync(int maGiangVien)
         {
             return await _context.KhoaHocs
+                .AsNoTracking()
                 .Where(k => k.MaGiangVien == maGiangVien)
                 .Include(k => k.DangKyKhoaHocs)
                 .ToListAsync();
@@ -37,6 +38,7 @@ namespace educodeai_server.Repository.Implementation
         public async Task<KhoaHocModel?> GetKhoaHocDynamicStatsAsync(int maKhoaHoc, int maGiangVien)
         {
             return await _context.KhoaHocs
+                .AsNoTracking()
                 .Where(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien)
                 .Include(k => k.DangKyKhoaHocs)
                     .ThenInclude(dk => dk.NguoiDung)

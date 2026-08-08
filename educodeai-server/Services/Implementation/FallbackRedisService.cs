@@ -188,6 +188,25 @@ namespace educodeai_server.Services
             }
         }
 
+        public Task<IEnumerable<string>> LayTuDauListAsync(string key, int soLuong)
+        {
+            try
+            {
+                if (soLuong <= 0) return Task.FromResult<IEnumerable<string>>(Enumerable.Empty<string>());
+                var listKey = $"list:{key}";
+                if (_memoryCache.TryGetValue(listKey, out List<string>? list) && list != null)
+                {
+                    return Task.FromResult<IEnumerable<string>>(list.Take(soLuong).ToList());
+                }
+                return Task.FromResult<IEnumerable<string>>(Enumerable.Empty<string>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading list from MemoryCache for key: {Key}", key);
+                return Task.FromResult<IEnumerable<string>>(Enumerable.Empty<string>());
+            }
+        }
+
         public Task CatDauListAsync(string key, int soLuong)
         {
             try

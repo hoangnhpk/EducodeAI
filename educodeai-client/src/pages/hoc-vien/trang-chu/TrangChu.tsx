@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import { encodeId } from "@/utils/id-helper";
 import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
+import { jobOpenings } from './data/jobOpenings';
 
 interface IKhoaHoc {
     maKhoaHoc: number;
@@ -71,15 +72,20 @@ const TrangChu: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [isSearchPinned, setIsSearchPinned] = useState(false);
-    const [navbarBottom, setNavbarBottom] = useState(0);
     const searchPlaceholderRef = useRef<HTMLDivElement>(null);
     const searchBarHeightRef = useRef(0);
+    const [danhGiaTrangChu, setDanhGiaTrangChu] = useState<any[]>([]);
+    const [displayedReviews, setDisplayedReviews] = useState<any[]>([]);
+    const [reviewFading, setReviewFading] = useState(false);
+    const [giangVienTieuBieu, setGiangVienTieuBieu] = useState<any[]>([]);
+    const [filterMaGV, setFilterMaGV] = useState<number | null>(null);
+    const [filterTenGV, setFilterTenGV] = useState<string>('');
 
-    const loadData = async (search: string = '') => {
+    const loadData = async (search: string = '', maGV: number | null = null) => {
         setIsLoading(true);
         try {
             const data = await axiosInstance.get<IKhoaHoc[]>('api/KhoaHoc/all', {
-                params: { search: search }
+                params: { search: search, maGiangVien: maGV }
             });
             setCourses(data);
         } catch (error) {
@@ -92,16 +98,54 @@ const TrangChu: React.FC = () => {
 
     useEffect(() => {
         const delay = setTimeout(() => {
-            loadData(searchTerm);
+            loadData(searchTerm, filterMaGV);
         }, 500);
         return () => clearTimeout(delay);
-    }, [searchTerm]);
+    }, [searchTerm, filterMaGV]);
+
+    // Lấy đánh giá thực tế và giảng viên tiêu biểu từ DB để hiển thị trên trang chủ
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [danhGiaRes, giangVienRes] = await Promise.all([
+                    axiosInstance.get<any[]>('api/hocvien/chitietkhoahoc/danh-gia-trang-chu?soLuong=10'),
+                    axiosInstance.get<any[]>('api/hocvien/chitietkhoahoc/giang-vien-tieu-bieu?soLuong=4')
+                ]);
+                setDanhGiaTrangChu(danhGiaRes);
+                setGiangVienTieuBieu(giangVienRes);
+            } catch (err) {
+                console.error('Lỗi lấy dữ liệu trang chủ:', err);
+            }
+        };
+        fetchData();
+    }, []);
+
+    // Hiển thị 3 đánh giá ngẫu nhiên ban đầu
+    useEffect(() => {
+        if (danhGiaTrangChu.length > 0 && displayedReviews.length === 0) {
+            const shuffled = [...danhGiaTrangChu].sort(() => Math.random() - 0.5);
+            setDisplayedReviews(shuffled.slice(0, 3));
+        }
+    }, [danhGiaTrangChu]);
+
+    // Xáo trộn 3 đánh giá mỗi 30 giây với hiệu ứng
+    useEffect(() => {
+        if (danhGiaTrangChu.length <= 3) return;
+        const interval = setInterval(() => {
+            setReviewFading(true);
+            setTimeout(() => {
+                const shuffled = [...danhGiaTrangChu].sort(() => Math.random() - 0.5);
+                setDisplayedReviews(shuffled.slice(0, 3));
+                setReviewFading(false);
+            }, 700);
+        }, 30000);
+        return () => clearInterval(interval);
+    }, [danhGiaTrangChu]);
 
     useEffect(() => {
         const updateSearchBar = () => {
             const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
             const bottom = navbar ? Math.max(navbar.getBoundingClientRect().bottom, 0) : 0;
-            setNavbarBottom(bottom);
 
             const placeholder = searchPlaceholderRef.current;
             const scrollY = window.scrollY;
@@ -179,7 +223,15 @@ const TrangChu: React.FC = () => {
                             </p>
 
                             <div className="hero-cta-group">
-                                <a href="#courses-section" className="hero-cta-btn hero-cta-btn--primary">
+                                <a href="#courses-section" className="hero-cta-btn hero-cta-btn--primary" onClick={(e) => {
+                                    e.preventDefault();
+                                    const el = document.getElementById('courses-section');
+                                    if (el) {
+                                        const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
+                                        const offset = navbar ? navbar.offsetHeight + 10 : 70;
+                                        window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
+                                    }
+                                }}>
                                     <span>Khám phá khóa học</span>
                                     <i className="fa fa-arrow-right" aria-hidden="true"></i>
                                 </a>
@@ -217,30 +269,9 @@ const TrangChu: React.FC = () => {
                 </div>
             </section>
 
-            {/* 3. Search Bar — ghim ngay dưới navbar khi cuộn */}
-            <div
-                ref={searchPlaceholderRef}
-                className="home-search-wrapper"
-                aria-hidden={isSearchPinned}
-            >
-                {isSearchPinned ? (
-                    <div style={{ height: searchBarHeightRef.current }} />
-                ) : (
-                    <div className="home-search-bar">{renderSearchBar()}</div>
-                )}
-            </div>
 
-            {isSearchPinned && createPortal(
-                <div
-                    className="home-search-bar home-search-bar--pinned"
-                    style={{ top: navbarBottom }}
-                >
-                    {renderSearchBar()}
-                </div>,
-                document.body
-            )}
 
-            {/* 4. Features - Hệ sinh thái AI */}
+            {/* 5. Features - Hệ sinh thái AI */}
             <section id="features-section" className="py-5 bg-light">
                 <div className="container py-5">
                     <div className="text-center mb-5">
@@ -290,6 +321,30 @@ const TrangChu: React.FC = () => {
                 </div>
             </section>
 
+            {/* 3. Search Bar — ghim trên cùng khi cuộn, ghi đè header */}
+            <div
+                ref={searchPlaceholderRef}
+                className="home-search-wrapper"
+                aria-hidden={isSearchPinned}
+            >
+                {isSearchPinned ? (
+                    <div style={{ height: searchBarHeightRef.current }} />
+                ) : (
+                    <div className="home-search-bar my-4">{renderSearchBar()}</div>
+                )}
+            </div>
+
+            {isSearchPinned && createPortal(
+                <div
+                    className="home-search-bar home-search-bar--pinned"
+                    style={{ top: 0, zIndex: 1050, background: '#fff', paddingTop: '10px', paddingBottom: '10px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                >
+                    {renderSearchBar()}
+                </div>,
+                document.body
+            )}
+
+
             {/* 5. Categories */}
             <section className="py-5 bg-white border-top">
                 <div className="container py-4">
@@ -308,7 +363,17 @@ const TrangChu: React.FC = () => {
                             { name: "MySQL", icon: "fa-solid fa-database", color: "text-secondary", bg: "bg-secondary-subtle" },
                             { name: "UI/UX", icon: "fa-solid fa-pen-nib", color: "text-success", bg: "bg-success-subtle" }
                         ].map((cat, index) => (
-                            <div key={index} className="col-6 col-md-3 col-lg-2" onClick={() => setSearchTerm(cat.name)}>
+                            <div key={index} className="col-6 col-md-3 col-lg-2" onClick={() => {
+                                setSearchTerm(cat.name);
+                                setTimeout(() => {
+                                    const el = document.getElementById('courses-section');
+                                    if (el) {
+                                        const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
+                                        const offset = navbar ? navbar.offsetHeight + 10 : 70;
+                                        window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
+                                    }
+                                }, 100);
+                            }}>
                                 <div className="category-card text-center p-4 bg-white border rounded-4 cursor-pointer transition-all h-100">
                                     <div className={`icon-wrapper d-inline-flex align-items-center justify-content-center rounded-4 fs-2 mb-3 ${cat.bg} ${cat.color}`} style={{ width: '60px', height: '60px' }}>
                                         <i className={cat.icon}></i>
@@ -327,7 +392,7 @@ const TrangChu: React.FC = () => {
                     <div className="text-center mb-5">
                         <h6 className="section-eyebrow mb-3">Hành trình tri thức</h6>
                         <h2 className="display-6 fw-bold text-dark mb-4">
-                            {searchTerm ? `Kết quả cho: "${searchTerm}"` : "Khám Phá Các Khóa Học"}
+                            {filterMaGV && filterTenGV ? `Khóa học của giảng viên: ${filterTenGV}` : (searchTerm ? `Kết quả cho: "${searchTerm}"` : "Khám Phá Các Khóa Học")}
                         </h2>
                     </div>
 
@@ -366,87 +431,176 @@ const TrangChu: React.FC = () => {
                                 <div className="display-1 text-muted mb-3"><i className="fas fa-search-minus"></i></div>
                                 <h4 className="text-dark fw-bold mb-2">Không tìm thấy khóa học nào phù hợp!</h4>
                                 <p className="text-muted mb-4 mx-auto" style={{ maxWidth: '420px' }}>
-                                    {searchTerm
-                                        ? `Không có kết quả cho "${searchTerm}". Thử từ khóa khác hoặc xóa bộ lọc để xem tất cả khóa học.`
+                                    {filterMaGV || searchTerm
+                                        ? `Không có kết quả. Thử từ khóa khác hoặc xóa bộ lọc để xem tất cả khóa học.`
                                         : 'Hiện chưa có khóa học nào. Vui lòng quay lại sau.'}
                                 </p>
-                                {searchTerm && (
-                                    <button className="btn btn-outline-primary rounded-pill px-4" onClick={() => setSearchTerm('')}>
-                                        <i className="fa fa-rotate-left me-2"></i>Xóa bộ lọc
+                                {(filterMaGV || searchTerm) && (
+                                    <button className="btn btn-outline-primary rounded-pill px-4" onClick={() => { setSearchTerm(''); setFilterMaGV(null); setFilterTenGV(''); }}>
+                                        <i className="fa fa-list me-2"></i>Xem tất cả
                                     </button>
                                 )}
                             </div>
                         )}
                     </div>
+
+                    {filterMaGV && courses.length > 0 && (
+                        <div className="text-center mt-5">
+                            <button className="btn btn-outline-primary rounded-pill px-5 py-2" onClick={() => { setSearchTerm(''); setFilterMaGV(null); setFilterTenGV(''); }}>
+                                <i className="fa fa-list me-2"></i>Xem tất cả khóa học
+                            </button>
+                        </div>
+                    )}
                 </div>
             </section>
 
             {/* 7. Top Instructors */}
             <section className="py-5 bg-white border-top">
                 <div className="container py-5">
-                    <div className="d-flex justify-content-between align-items-end mb-5">
-                        <div>
-                            <h6 className="section-eyebrow mb-3">Đội ngũ chuyên gia</h6>
-                            <h2 className="display-6 fw-bold text-dark m-0">Giảng viên tiêu biểu</h2>
-                        </div>
-                        <a href="#" className="fw-bold text-muted text-decoration-none hover-primary d-none d-md-block">Xem tất cả <i className="fas fa-arrow-right ms-1"></i></a>
+                    <div className="text-center mb-5">
+                        <h6 className="section-eyebrow mb-3">Đội ngũ chuyên gia</h6>
+                        <h2 className="display-6 fw-bold text-dark m-0">Giảng viên tiêu biểu</h2>
                     </div>
 
                     <div className="row g-4">
-                        {[
-                            { name: "Nguyễn Quốc Hùng", role: "Senior .NET Developer", bg: "0D8ABC" },
-                            { name: "Nguyễn Tấn Nhật Khôi", role: "System Architect", bg: "fb873f" },
-                            { name: "Nguyễn Huy Hoàng", role: "Frontend Lead", bg: "22c55e" },
-                            { name: "Nguyễn Xuân Âu", role: "Cloud & DevOps", bg: "a855f7" }
-                        ].map((gv, index) => (
-                            <div key={index} className="col-md-6 col-lg-3">
-                                <div className="instructor-card bg-light rounded-4 border p-4 text-center transition-all h-100">
-                                    <div className="instructor-img-wrap mx-auto mb-4">
-                                        <img src={`https://ui-avatars.com/api/?name=${gv.name.replace(/ /g, '+')}&background=${gv.bg}&color=fff&size=200`} alt={gv.name} className="rounded-circle shadow-sm border border-4 border-white instructor-img" style={{ width: '100px', height: '100px' }} />
-                                    </div>
-                                    <h5 className="fw-bold text-dark">{gv.name}</h5>
-                                    <p className="text-primary fw-bold small mb-4">{gv.role}</p>
-                                    <div className="d-flex justify-content-center gap-2">
-                                        <a href="#" aria-label={`LinkedIn của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-linkedin-in" aria-hidden="true"></i></a>
-                                        <a href="#" aria-label={`GitHub của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-github" aria-hidden="true"></i></a>
+                        {(giangVienTieuBieu.length > 0 ? giangVienTieuBieu : []).map((gv, index) => {
+                            const colors = ['#0D8ABC', '#fb873f', '#22c55e', '#a855f7'];
+                            const bgColor = colors[index % colors.length];
+                            const hoTen = gv.hoTen || 'Ẩn danh';
+                            const initials = hoTen.split(' ').map((w: string) => w[0]).join('').slice(-2).toUpperCase();
+                            const avatarSrc = gv.anhDaiDien;
+                            const hasAvatar = avatarSrc && !avatarSrc.includes('default') && avatarSrc.startsWith('http');
+
+                            return (
+                                <div key={gv.maGiangVien || index} className="col-md-6 col-lg-3">
+                                    <div className="instructor-card bg-light rounded-4 border p-4 text-center transition-all h-100 position-relative">
+                                        <div className="position-absolute top-0 end-0 mt-3 me-3 bg-warning text-dark px-2 py-1 rounded-pill fw-bold" style={{ fontSize: '12px' }}>
+                                            <i className="fas fa-star me-1"></i>
+                                            {gv.diemTrungBinh ? gv.diemTrungBinh.toFixed(1) : "5.0"}
+                                        </div>
+                                        <div className="instructor-img-wrap mx-auto mb-4 mt-2">
+                                            {hasAvatar ? (
+                                                <img src={avatarSrc} alt={hoTen} className="rounded-circle shadow-sm border border-4 border-white instructor-img" style={{ width: '100px', height: '100px', objectFit: 'cover' }} />
+                                            ) : (
+                                                <div className="rounded-circle shadow-sm border border-4 border-white instructor-img d-flex align-items-center justify-content-center mx-auto" style={{ width: '100px', height: '100px', background: bgColor, color: '#fff', fontSize: '32px', fontWeight: 'bold' }}>
+                                                    {initials}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <h5 className="fw-bold text-dark">{hoTen}</h5>
+                                        <p className="text-primary fw-bold small mb-2">{gv.chuyenMon}</p>
+                                        <p className="text-muted small mb-3">{gv.tongKhoaHoc} Khóa học xuất bản</p>
+                                        <button 
+                                            className="btn btn-outline-primary rounded-pill px-4 py-2 mt-auto"
+                                            onClick={() => {
+                                                setSearchTerm('');
+                                                setFilterMaGV(gv.maGiangVien);
+                                                setFilterTenGV(hoTen);
+                                                setTimeout(() => {
+                                                    const el = document.getElementById('courses-section');
+                                                    if (el) {
+                                                        const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
+                                                        const offset = navbar ? navbar.offsetHeight + 10 : 70;
+                                                        window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
+                                                    }
+                                                }, 100);
+                                            }}
+                                        >
+                                            <i className="fas fa-search me-2"></i>Xem khóa học
+                                        </button>
                                     </div>
                                 </div>
+                            );
+                        })}
+                        {giangVienTieuBieu.length === 0 && (
+                            <div className="col-12 text-center py-4">
+                                <p className="text-secondary fs-5 mb-0">Chưa có giảng viên tiêu biểu.</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             </section>
 
             {/* 8. Reviews */}
-            <section className="py-5 text-white position-relative overflow-hidden bg-dark">
+            <section className="py-5 position-relative overflow-hidden bg-light border-top">
                 <div className="container py-5 position-relative z-index-1">
                     <div className="text-center mb-5">
                         <h6 className="section-eyebrow mb-3">Đánh giá thực tế</h6>
-                        <h2 className="display-6 fw-bold m-0">Học viên nói gì về EduCode?</h2>
+                        <h2 className="display-6 fw-bold m-0 text-dark">Học viên nói gì về EduCode?</h2>
                     </div>
 
                     <div className="row g-4">
-                        {[
-                            { name: "Trần Minh", role: "Fresher Backend", quote: "Nhờ tính năng giả lập phỏng vấn AI, mình đã tự tin hơn rất nhiều khi deal lương thực tế. Các câu hỏi AI đưa ra cực kỳ sát với Technical Interview." },
-                            { name: "Vy Văn Khiến", role: "Sinh viên CNTT", quote: "Code trực tiếp trên trình duyệt và được hệ thống test case ẩn tự động chấm điểm. Cảm giác như đang làm bài thi LeetCode vậy!" },
-                            { name: "Thu Hoài", role: "Frontend ReactJS", quote: "Giao diện website cực kỳ thân thiện. Chức năng AI sinh đồ án giúp mình tiết kiệm hàng tuần trời ngồi suy nghĩ đề tài làm dự án cuối khóa." }
-                        ].map((review, i) => (
-                            <div key={i} className="col-md-4">
-                                <div className="review-card bg-dark bg-opacity-50 p-4 rounded-4 border border-secondary h-100">
-                                    <div className="text-warning mb-3">
-                                        <i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i>
-                                    </div>
-                                    <p className="text-light opacity-75 fst-italic mb-4">"{review.quote}"</p>
-                                    <div className="d-flex align-items-center gap-3 mt-auto">
-                                        <img src={`https://ui-avatars.com/api/?name=${review.name.replace(/ /g, '+')}&background=random`} alt="User" className="rounded-circle" style={{ width: '48px', height: '48px' }} />
-                                        <div>
-                                            <h6 className="fw-bold m-0 text-white">{review.name}</h6>
-                                            <small className="text-secondary">{review.role}</small>
+                        {(displayedReviews.length > 0 ? displayedReviews : []).map((review: any, i: number) => {
+                            const hoTen = review.nguoiDung?.hoTen || 'Ẩn danh';
+                            const initials = hoTen.split(' ').map((w: string) => w[0]).join('').slice(-2).toUpperCase();
+                            const avatarColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
+                            const bgColor = avatarColors[(review.maDanhGia || i) % avatarColors.length];
+                            const avatarSrc = review.nguoiDung?.anhDaiDien;
+                            const hasAvatar = avatarSrc && !avatarSrc.includes('default') && avatarSrc.startsWith('http');
+
+                            return (
+                                <div key={`review-${review.maDanhGia}-${i}`} className={`col-md-4 review-rotate-wrapper ${reviewFading ? 'review-exit' : 'review-enter'}`}
+                                     style={{ animationDelay: `${i * 150}ms` }}>
+                                    <div className="review-card p-4 rounded-4 h-100 d-flex flex-column position-relative bg-white" style={{
+                                        border: '1px solid rgba(0,0,0,0.05)',
+                                        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
+                                    }}>
+                                        {/* Quote icon */}
+                                        <div style={{ position: 'absolute', top: '16px', right: '20px', fontSize: '40px', opacity: 0.05, color: '#000', fontFamily: 'Georgia, serif' }}>"</div>
+
+                                        {/* Stars */}
+                                        <div className="mb-3" style={{ fontSize: '16px', letterSpacing: '2px' }}>
+                                            {Array.from({ length: 5 }).map((_, s) => (
+                                                <i key={s} className="fas fa-star" style={{ color: s < review.soSao ? '#fbbf24' : '#e5e7eb' }}></i>
+                                            ))}
+                                        </div>
+
+                                        {/* Review content */}
+                                        <p className="mb-3 flex-grow-1" style={{ color: '#4b5563', fontStyle: 'italic', lineHeight: '1.7', fontSize: '15px' }}>
+                                            "{review.nhanXet}"
+                                        </p>
+
+                                        {/* Course info */}
+                                        <div className="mb-3 p-2 rounded-3 bg-white border">
+                                            <div className="d-flex align-items-center gap-2 mb-1">
+                                                <i className="fas fa-book-open" style={{ color: '#3b82f6', fontSize: '12px' }}></i>
+                                                <small style={{ color: '#1e40af', fontWeight: 500 }}>{review.khoaHoc?.tenKhoaHoc || 'Khóa học'}</small>
+                                            </div>
+                                            <div className="d-flex align-items-center gap-2">
+                                                <i className="fas fa-chalkboard-teacher" style={{ color: '#8b5cf6', fontSize: '12px' }}></i>
+                                                <small style={{ color: '#5b21b6' }}>GV: {review.khoaHoc?.giangVien || 'Chưa rõ'}</small>
+                                            </div>
+                                        </div>
+
+                                        {/* User info */}
+                                        <div className="d-flex align-items-center gap-3 mt-auto pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                                            {hasAvatar ? (
+                                                <img src={avatarSrc} alt={hoTen} className="rounded-circle shadow-sm" style={{ width: '44px', height: '44px', objectFit: 'cover', border: '2px solid #fff' }} />
+                                            ) : (
+                                                <div className="rounded-circle shadow-sm d-flex align-items-center justify-content-center" style={{
+                                                    width: '44px', height: '44px', minWidth: '44px',
+                                                    background: bgColor,
+                                                    color: '#fff', fontWeight: 700, fontSize: '15px',
+                                                    border: '2px solid #fff'
+                                                }}>
+                                                    {initials}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <h6 className="fw-bold m-0 text-dark" style={{ fontSize: '14px' }}>{hoTen}</h6>
+                                                <small className="text-muted" style={{ fontSize: '12px' }}>Học viên EduCode</small>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            );
+                        })}
+                        {danhGiaTrangChu.length === 0 && (
+                            <div className="col-12 text-center py-4">
+                                <p className="text-secondary fs-5 mb-0">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             </section>

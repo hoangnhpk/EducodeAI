@@ -10,8 +10,7 @@ namespace educodeai_server.DTOs.XacThuc
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
         public string MatKhau { get; set; }
 
-        [Required(ErrorMessage = "Thiếu mã xác minh Captcha.")]
-        public string CaptchaToken { get; set; }
+        public string? CaptchaToken { get; set; }
 
         [Required(ErrorMessage = "Không nhận diện được thiết bị.")]
         public string MaThietBi { get; set; }
