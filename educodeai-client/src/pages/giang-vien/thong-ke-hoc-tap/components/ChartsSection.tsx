@@ -19,17 +19,17 @@ interface Props {
 const ChartsSection = ({ trangThaiData }: Props) => {
   // ================== MAP COLORS ==================
   const statusColorMap: Record<string, string> = {
-    "Hoàn thành": "#10b981",
-    "Đang học": "#3b82f6",
-    "Chưa bắt đầu": "#f59e0b",
-    "Nguy cơ bỏ học": "#ef4444",
+    "Hoàn thành": "var(--success)",
+    "Đang học": "var(--info)",
+    "Chưa bắt đầu": "var(--warning)",
+    "Nguy cơ bỏ học": "var(--danger)",
   };
 
   // ================== TRANSFORM DATA FOR CHART ==================
   const statusData = trangThaiData.map((item) => ({
     name: item.trangThai,
     value: item.soLuong,
-    color: statusColorMap[item.trangThai] || "#6b7280",
+    color: statusColorMap[item.trangThai] || "var(--text-muted)",
   }));
 
   // ================== MOCK PROGRESS DATA (nếu backend chưa có API) ==================
@@ -52,32 +52,32 @@ const ChartsSection = ({ trangThaiData }: Props) => {
         <h5 className="chart-title blue">Trạng thái học viên</h5>
 
         {statusData.length === 0 ? (
-          <div style={{ 
-            height: 280, 
-            display: 'flex', 
-            alignItems: 'center', 
+          <div style={{
+            height: 280,
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'center',
-            color: '#6b7280' 
+            color: 'var(--text-muted)'
           }}>
             Chưa có dữ liệu
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={statusData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
-                dataKey="name" 
-                tick={{ fontSize: 12 }} 
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 12 }}
                 angle={-15}
                 textAnchor="end"
                 height={60}
               />
               <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{
-                  background: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
                   padding: '8px 12px'
                 }}
               />
@@ -97,14 +97,14 @@ const ChartsSection = ({ trangThaiData }: Props) => {
 
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={progressData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
             <XAxis dataKey="week" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip 
+            <Tooltip
               contentStyle={{
-                background: '#fff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
                 padding: '8px 12px'
               }}
               formatter={(value?: number) => [`${value}%`, 'Tiến độ']}
@@ -112,9 +112,9 @@ const ChartsSection = ({ trangThaiData }: Props) => {
             <Line
               type="monotone"
               dataKey="value"
-              stroke="#10b981"
+              stroke="var(--success)"
               strokeWidth={3}
-              dot={{ fill: "#10b981", r: 5 }}
+              dot={{ fill: "var(--success)", r: 5 }}
             />
           </LineChart>
         </ResponsiveContainer>

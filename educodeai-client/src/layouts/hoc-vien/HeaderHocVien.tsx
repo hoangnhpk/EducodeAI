@@ -25,7 +25,11 @@ export default function HeaderHocVien() {
       await authService.logout();
     } finally {
       setUser(null);
+
       redirectToLoginOnce(navigate);
+
+      navigate("/dang-nhap");
+
     }
   };
 

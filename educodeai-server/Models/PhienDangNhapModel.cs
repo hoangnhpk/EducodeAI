@@ -35,5 +35,8 @@ namespace educodeai_server.Models
 
         public int TrustVersion { get; set; }
 
-        public DateTime? LastVerifiedAtUtc { get; set; }    }
+
+        public DateTime? LastVerifiedAtUtc { get; set; }
+    }
+
 }

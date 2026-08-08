@@ -27,17 +27,17 @@ const DoiMatKhau: React.FC = () => {
                 MatKhauCu: formData.oldPass,
                 MatKhauMoi: formData.newPass
             });
-            
-            Swal.fire({ 
-                icon: 'success', 
-                title: 'Thành công!', 
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
                 text: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.',
                 confirmButtonText: 'Đăng nhập lại',
                 confirmButtonColor: '#fb873f'
             }).then(() => {
                 localStorage.removeItem('user_token');
                 localStorage.removeItem('user_info');
-                window.location.href = '/dang-nhap'; 
+                window.location.href = '/dang-nhap';
             });
 
         } catch (error: any) {
@@ -51,12 +51,23 @@ const DoiMatKhau: React.FC = () => {
         <div className="container py-5" style={{ maxWidth: '500px' }}>
             <div className="card shadow border-0 rounded-4 p-4">
                 <h3 className="mb-4 text-center fw-bold text-orange" style={{ color: '#fb873f' }}>Đổi Mật Khẩu</h3>
-                
+
                 <form onSubmit={handleChangePassword} className="animate__animated animate__fadeIn">
-                    <PasswordInput id="bao-mat-mat-khau-cu" label="Mật khẩu hiện tại" autoComplete="current-password" containerClassName="mb-3" floating value={formData.oldPass} onChange={e => setFormData({...formData, oldPass: e.target.value})} required />
-                    <PasswordInput id="bao-mat-mat-khau-moi" label="Mật khẩu mới" autoComplete="new-password" containerClassName="mb-3" floating value={formData.newPass} onChange={e => setFormData({...formData, newPass: e.target.value})} required />
-                    <PasswordInput id="bao-mat-mat-khau-xac-nhan" label="Nhập lại mật khẩu mới" autoComplete="new-password" containerClassName="mb-4" floating value={formData.confirmPass} onChange={e => setFormData({...formData, confirmPass: e.target.value})} required />
-                    <button className="btn btn-orange w-100 py-3 fw-bold rounded-pill text-white border-0" 
+
+                    <div className="form-floating mb-3">
+                        <input type="password" aria-label="Mật khẩu hiện tại" className="form-control" placeholder="Cũ" value={formData.oldPass} onChange={e => setFormData({ ...formData, oldPass: e.target.value })} required />
+                        <label>Mật khẩu hiện tại</label>
+                    </div>
+                    <div className="form-floating mb-3">
+                        <input type="password" aria-label="Mật khẩu mới" className="form-control" placeholder="Mới" value={formData.newPass} onChange={e => setFormData({ ...formData, newPass: e.target.value })} required />
+                        <label>Mật khẩu mới</label>
+                    </div>
+                    <div className="form-floating mb-4">
+                        <input type="password" aria-label="Nhập lại mật khẩu mới" className="form-control" placeholder="Xác nhận" value={formData.confirmPass} onChange={e => setFormData({ ...formData, confirmPass: e.target.value })} required />
+                        <label>Nhập lại mật khẩu mới</label>
+                    </div>
+
+                    <button className="btn btn-orange w-100 py-3 fw-bold rounded-pill text-white border-0"
                         style={{ backgroundColor: '#fb873f' }} type="submit" disabled={loading}>
                         {loading ? <span className="spinner-border spinner-border-sm"></span> : 'Lưu thay đổi'}
                     </button>

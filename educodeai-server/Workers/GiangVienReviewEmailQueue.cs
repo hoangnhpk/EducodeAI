@@ -18,12 +18,21 @@ public interface IGiangVienReviewEmailQueue
 public sealed class GiangVienReviewEmailQueue : IGiangVienReviewEmailQueue
 {
     public const string RedisKey = "EduCodeAI:EmailQueue:GiangVienReview:v1";
-    private readonly IRedisService _redis;
+
+    private readonly IServiceScopeFactory _scopeFactory;
+
     private readonly Channel<GiangVienReviewEmailJob> _memory = Channel.CreateBounded<GiangVienReviewEmailJob>(new BoundedChannelOptions(500) { FullMode = BoundedChannelFullMode.Wait, SingleReader = false });
     private readonly IDataProtector _protector;
     private readonly ILogger<GiangVienReviewEmailQueue> _logger;
 
-    public GiangVienReviewEmailQueue(IRedisService redis, IDataProtectionProvider protectionProvider, ILogger<GiangVienReviewEmailQueue> logger) { _redis = redis; _protector = protectionProvider.CreateProtector("EduCodeAI.EmailQueue.v1"); _logger = logger; }
+
+    public GiangVienReviewEmailQueue(IServiceScopeFactory scopeFactory, IDataProtectionProvider protectionProvider, ILogger<GiangVienReviewEmailQueue> logger)
+    {
+        _scopeFactory = scopeFactory;
+        _protector = protectionProvider.CreateProtector("EduCodeAI.EmailQueue.v1");
+        _logger = logger;
+    }
+
 
     public async Task EnqueueAsync(GiangVienReviewEmailPayload payload, CancellationToken cancellationToken = default)
     {
@@ -31,12 +40,17 @@ public sealed class GiangVienReviewEmailQueue : IGiangVienReviewEmailQueue
         var serialized = JsonSerializer.Serialize(job);
         try
         {
-            await _redis.DayVaoCuoiListAsync(RedisKey, serialized);
-            var stored = await _redis.LayTuDauListAsync(RedisKey, 0);
-            // RedisService has no acknowledgement API; enqueue is considered accepted when no exception is raised.
-            if (stored is not null) return;
+
+            using var scope = _scopeFactory.CreateScope();
+            var redis = scope.ServiceProvider.GetRequiredService<IRedisService>();
+            await redis.DayVaoCuoiListAsync(RedisKey, serialized);
         }
-        catch (Exception ex) { _logger.LogWarning(ex, "Redis queue unavailable for email job {JobId}; using memory fallback.", job.Id); }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Redis queue unavailable for email job {JobId}; using memory fallback.", job.Id);
+        }
+
+
         await _memory.Writer.WriteAsync(job, cancellationToken);
     }
 

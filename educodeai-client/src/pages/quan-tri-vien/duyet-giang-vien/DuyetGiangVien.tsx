@@ -1,8 +1,9 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { HoSoGiangVienAdminService } from "@/services/ho-so-giang-vien-admin.service";
 import type { HoSoGiangVienListItem, HoSoGiangVienDetail } from "@/services/ho-so-giang-vien-admin.service";
-import "../quan-ly-nguoi-dung/QuanLyNguoiDung.css";
+import "../../../assets/styles/LayoutDashboard.css";
 
 const TRANG_THAI_OPTIONS = [
   { value: "", label: "Tất cả trạng thái" },
@@ -74,6 +75,13 @@ export default function DuyetGiangVien() {
   const [maHoSoTuChoi, setMaHoSoTuChoi] = useState<number | null>(null);
   const [lyDoTuChoi, setLyDoTuChoi] = useState("");
 
+  const chiTietModalRef = useRef<HTMLDivElement>(null);
+  const boSungModalRef = useRef<HTMLDivElement>(null);
+  const tuChoiModalRef = useRef<HTMLDivElement>(null);
+  useModalA11y(moModal && !!chiTiet, () => setMoModal(false), chiTietModalRef);
+  useModalA11y(maHoSoBoSung !== null, () => { setMaHoSoBoSung(null); setNoiDungBoSung(""); }, boSungModalRef);
+  useModalA11y(maHoSoTuChoi !== null, () => { setMaHoSoTuChoi(null); setLyDoTuChoi(""); }, tuChoiModalRef);
+
   const taiDanhSach = async (tt?: string) => {
     try {
       setDangTai(true);
@@ -116,7 +124,7 @@ export default function DuyetGiangVien() {
       showCancelButton: true,
       confirmButtonText: "Duyệt",
       cancelButtonText: "Huỷ",
-      confirmButtonColor: "#28a745"
+      confirmButtonColor: "var(--success)"
     });
     if (!confirm.isConfirmed) return;
 
@@ -200,7 +208,7 @@ export default function DuyetGiangVien() {
 
   const baseUrl = import.meta.env.VITE_API_URL || "";
   return (
-    <div className="container-fluid py-4">
+    <div className="qtv-page-content">
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
         <h3 className="fw-bold mb-0">Duyệt hồ sơ đăng ký giảng viên</h3>
       </div>
@@ -220,11 +228,11 @@ export default function DuyetGiangVien() {
       </div>
 
       {dangTai ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
           Đang tải danh sách hồ sơ...
         </div>
       ) : danhSach.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-light)' }}>
           Không tìm thấy hồ sơ nào
         </div>
       ) : (
@@ -251,30 +259,30 @@ export default function DuyetGiangVien() {
                           <img
                             src={`${baseUrl}${hs.anhDaiDienUrl}`}
                             alt={hs.hoTen}
-                            style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid #f1f5f9', flexShrink: 0 }}
+                            style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-light)', flexShrink: 0 }}
                           />
                         ) : (
                           <div style={{
                             width: 32, height: 32, borderRadius: '50%',
-                            background: '#f1f5f9', color: '#64748b',
+                            background: 'var(--border-light)', color: 'var(--text-muted)',
                             display: 'flex', alignItems: 'center',
                             justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0
                           }}>
                             {hs.hoTen ? hs.hoTen[0].toUpperCase() : '?'}
                           </div>
                         )}
-                        <span style={{ ...ellipsisStyle, fontWeight: 600, color: '#1e293b' }} title={hs.hoTen}>
+                        <span style={{ ...ellipsisStyle, fontWeight: 600, color: 'var(--text-dark)' }} title={hs.hoTen}>
                           {hs.hoTen}
                         </span>
                       </div>
                     </td>
-                    <td style={{ color: '#64748b', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={hs.email}>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={hs.email}>
                       {hs.email}
                     </td>
-                    <td style={{ color: '#64748b', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={hs.linhVucGiangDay}>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={hs.linhVucGiangDay}>
                       {hs.linhVucGiangDay}
                     </td>
-                    <td style={{ color: '#94a3b8', fontSize: '12px' }}>
+                    <td style={{ color: 'var(--text-light)', fontSize: '12px' }}>
                       {new Date(hs.ngayTao).toLocaleDateString('vi-VN')}
                     </td>
                     <td>
@@ -314,7 +322,7 @@ export default function DuyetGiangVien() {
       {/* MODAL Y?U C?U B? SUNG */}
       {maHoSoBoSung && (
         <div className="qlnv-modal-overlay" onClick={(event) => event.target === event.currentTarget && dongModalBoSung()}>
-          <div className="qlnv-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
+          <div className="qlnv-modal-card" ref={boSungModalRef} role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
             <div className="modal-title">Yêu cầu bổ sung hồ sơ</div>
             <div className="form-group">
                             <textarea
@@ -335,7 +343,7 @@ export default function DuyetGiangVien() {
       {/* MODAL T? CH?I */}
       {maHoSoTuChoi && (
         <div className="qlnv-modal-overlay" onClick={(event) => event.target === event.currentTarget && dongModalTuChoi()}>
-          <div className="qlnv-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
+          <div className="qlnv-modal-card" ref={tuChoiModalRef} role="dialog" aria-modal="true" style={{ maxWidth: 560 }}>
             <div className="modal-title">Lý do từ chối</div>
             <div className="form-group">
                             <textarea
@@ -349,7 +357,7 @@ export default function DuyetGiangVien() {
               <button className="btn-cancel" onClick={dongModalTuChoi}>Huỷ</button>
               <button
                 className="btn-save"
-                style={{ background: "#ef4444", boxShadow: "0 8px 20px rgba(239, 68, 68, 0.28)" }}
+                style={{ background: "var(--danger)", boxShadow: "0 8px 20px rgba(239, 68, 68, 0.28)" }}
                 onClick={guiTuChoi}
               >
                 Từ chối
@@ -362,7 +370,7 @@ export default function DuyetGiangVien() {
       {/* MODAL CHI TIẾT */}
       {moModal && chiTiet && (
         <div className="qlnv-modal-overlay" onClick={(event) => event.target === event.currentTarget && setMoModal(false)}>
-          <div className="qlnv-modal-card" role="dialog" aria-modal="true" style={{ maxWidth: 760 }}>
+          <div className="qlnv-modal-card" ref={chiTietModalRef} role="dialog" aria-modal="true" style={{ maxWidth: 760 }}>
             <div className="modal-title">Chi tiết hồ sơ: {chiTiet.hoTen}</div>
             <div style={{ maxHeight: "65vh", overflowY: "auto", paddingRight: 4 }}>
                 <div className="row g-3">
@@ -459,7 +467,7 @@ export default function DuyetGiangVien() {
                     </button>
                     <button
                       className="btn-cancel"
-                      style={{ borderColor: "#ef4444", color: "#ef4444" }}
+                      style={{ borderColor: "var(--danger)", color: "var(--danger)" }}
                       onClick={() => xacNhanTuChoi(chiTiet.maHoSoDangKyGiangVien)}
                     >
                       <i className="bi bi-x-lg" /> Từ chối

@@ -30,7 +30,9 @@
 }
 
 .gv-sidebar-header svg,
-.qtv-sidebar-header svg {
+.qtv-sidebar-header svg,
+.gv-sidebar-header h2 > i,
+.qtv-sidebar-header h2 > i {
   font-size: 22px;
 }
 
@@ -67,8 +69,13 @@
 }
 
 .gv-nav-link svg,
-.qtv-nav-link svg {
+.qtv-nav-link svg,
+.gv-nav-link > i,
+.qtv-nav-link > i {
   font-size: 18px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .gv-nav-link:hover,
@@ -88,7 +95,7 @@
 .qtv-nav-link.active {
   background: rgba(255, 255, 255, 0.25);
   color: white;
-  border-left: 3px solid #fef08a;
+  border-left: 3px solid var(--sidebar-active-border);
   padding-left: 11px;
 }
 
@@ -158,7 +165,13 @@
   gap: 20px;
 }
 
-/* ===== RESPONSIVE ===== */
+/* ===== PAGE CONTENT QTV DÙNG CHUNG ===== */
+.qtv-page-content {
+  padding: 36px 40px;
+  min-height: 100%;
+  background: #F9FAFB;
+}
+
 @media (max-width: 768px) {
   .layout-giang-vien,
   .layout-qtv {

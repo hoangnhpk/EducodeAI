@@ -30,12 +30,12 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
 
   return (
     <div className="bg-white rounded-4 border overflow-hidden shadow-sm">
-      <div className="px-4 py-3 d-flex justify-content-between align-items-center" style={{ borderBottom: '1px solid #f1f5f9', background: '#fff' }}>
+      <div className="px-4 py-3 d-flex justify-content-between align-items-center" style={{ borderBottom: '1px solid var(--border-light)', background: 'var(--bg-card)' }}>
         <div className="d-flex align-items-center">
-           <div className="bg-primary bg-opacity-10 p-2 rounded-3 me-3">
-              <i className="bi bi-terminal text-primary fs-5" />
+           <div className="p-2 rounded-3 me-3" style={{ background: 'var(--ai-accent-soft)' }}>
+              <i className="bi bi-terminal fs-5" style={{ color: 'var(--ai-accent)' }} aria-hidden="true" />
            </div>
-           <h5 className="m-0 fw-bold" style={{ color: '#1e293b' }}>
+           <h5 className="m-0 fw-bold" style={{ color: 'var(--text-main)' }}>
             Bộ test case kiểm thử ({testCases.length})
            </h5>
         </div>
@@ -47,13 +47,13 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
       </div>
       <div className="table-responsive">
         <table className="table align-middle table-hover mb-0" style={{ tableLayout: 'fixed' }}>
-          <thead style={{ background: '#f8fafc' }}>
-            <tr style={{ fontSize: '11px', textTransform: 'uppercase', color: '#64748B', letterSpacing: '0.05em' }}>
-              <th className="ps-4" style={{ width: '38%', fontWeight: 700, borderBottom: '1px solid #f1f5f9' }}>Dữ liệu đầu vào (Input)</th>
-              <th style={{ width: '38%', fontWeight: 700, borderBottom: '1px solid #f1f5f9' }}>Kết quả mong đợi (Output)</th>
-              <th className="text-center" style={{ width: '110px', fontWeight: 700, borderBottom: '1px solid #f1f5f9' }}>Loại</th>
-              <th className="text-center" style={{ width: '85px', fontWeight: 700, borderBottom: '1px solid #f1f5f9' }}>Điểm</th>
-              {editable && <th className="text-center" style={{ width: '60px', borderBottom: '1px solid #f1f5f9' }}></th>}
+          <thead style={{ background: 'var(--bg-main)' }}>
+            <tr style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+              <th className="ps-4" style={{ width: '38%', fontWeight: 700, borderBottom: '1px solid var(--border-light)' }}>Dữ liệu đầu vào (Input)</th>
+              <th style={{ width: '38%', fontWeight: 700, borderBottom: '1px solid var(--border-light)' }}>Kết quả mong đợi (Output)</th>
+              <th className="text-center" style={{ width: '110px', fontWeight: 700, borderBottom: '1px solid var(--border-light)' }}>Loại</th>
+              <th className="text-center" style={{ width: '85px', fontWeight: 700, borderBottom: '1px solid var(--border-light)' }}>Điểm</th>
+              {editable && <th className="text-center" style={{ width: '60px', borderBottom: '1px solid var(--border-light)' }}></th>}
             </tr>
           </thead>
           <tbody>
@@ -67,11 +67,11 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
               testCases.map((tc, idx) => {
                 const outputDisplay = tc.output || tc.expectedOutput || '';
                 return (
-                  <tr key={idx} style={{ borderBottom: '1px solid #f8fafc' }}>
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
                     <td className="ps-4">
                       <textarea
                         className="form-control font-monospace"
-                        style={{ height: '75px', fontSize: '13px', background: '#FDFDFD', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' }}
+                        style={{ height: '75px', fontSize: '13px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '10px' }}
                         value={tc.input}
                         onChange={(e) => handleUpdate(idx, 'input', e.target.value)}
                         disabled={!editable}
@@ -81,7 +81,7 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
                     <td>
                       <textarea
                         className="form-control font-monospace"
-                        style={{ height: '75px', fontSize: '13px', background: '#F8FAFC', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' }}
+                        style={{ height: '75px', fontSize: '13px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '10px' }}
                         value={outputDisplay}
                         onChange={(e) => handleUpdate(idx, 'output', e.target.value)}
                         disabled={!editable}
@@ -91,7 +91,7 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
                     <td className="text-center">
                       <select
                         className="form-select form-select-sm"
-                        style={{ fontSize: '12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
+                        style={{ fontSize: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}
                         value={tc.isHidden ? 'Hidden' : 'Public'}
                         onChange={(e) => handleUpdate(idx, 'isHidden', e.target.value === 'Hidden')}
                         disabled={!editable}
@@ -104,7 +104,7 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
                       <input
                         type="number"
                         className="form-control form-control-sm text-center fw-bold"
-                        style={{ fontSize: '13px', borderRadius: '6px', border: '1px solid #e2e8f0', color: '#0ea5e9' }}
+                        style={{ fontSize: '13px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', color: 'var(--info)' }}
                         value={tc.score}
                         onChange={(e) => handleUpdate(idx, 'score', Number(e.target.value))}
                         disabled={!editable}
@@ -130,12 +130,12 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
         </table>
       </div>
       {testCases.length > 0 && (
-         <div className="card-footer bg-white py-2 px-4 border-0 d-flex justify-content-end align-items-center gap-3" style={{ borderTop: '1px solid #f1f5f9' }}>
-            <span style={{ fontSize: '12px', color: '#64748B' }}>
-               Tổng điểm: <strong style={{ color: '#0ea5e9', fontSize: '14px' }}>{testCases.reduce((sum, tc) => sum + (tc.score || 0), 0)}</strong>
+         <div className="card-footer bg-white py-2 px-4 border-0 d-flex justify-content-end align-items-center gap-3" style={{ borderTop: '1px solid var(--border-light)' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+               Tổng điểm: <strong style={{ color: 'var(--info)', fontSize: '14px' }}>{testCases.reduce((sum, tc) => sum + (tc.score || 0), 0)}</strong>
             </span>
-            <span style={{ height: '12px', width: '1px', background: '#e2e8f0' }}></span>
-            <span style={{ fontSize: '12px', color: '#64748B' }}>
+            <span style={{ height: '12px', width: '1px', background: 'var(--border-color)' }}></span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                Số test case: <strong>{testCases.length}</strong>
             </span>
          </div>

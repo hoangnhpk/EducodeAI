@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+
 import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import type { StartPhongVanRequest } from '../../../services/phong-van-ai.service';
 import {
     PhongVanAIService,
@@ -20,7 +22,7 @@ interface IMessage {
 
 const TypewriterText = ({ content, onComplete, scrollRef }: { content: string, onComplete: () => void, scrollRef: React.RefObject<HTMLDivElement | null> }) => {
     const [displayedText, setDisplayedText] = useState("");
-    
+
     useEffect(() => {
         let i = 0;
         setDisplayedText("");
@@ -60,7 +62,7 @@ const PhongVanAI: React.FC = () => {
     const [tinhCach, setTinhCach] = useState<TinhCachAI>(TinhCachAI.Normal);
     const [soLuongCauHoi] = useState(3);
     const [isStarting, setIsStarting] = useState(false);
-    
+
     // --- INTERVIEW STATE ---
     const [maPhongVan, setMaPhongVan] = useState<number | null>(null);
     const chatBoxRef = useRef<HTMLDivElement>(null);
@@ -75,9 +77,9 @@ const PhongVanAI: React.FC = () => {
     const [isInterviewerTyping, setIsInterviewerTyping] = useState(false);
     const [showEndModal, setShowEndModal] = useState(false);
     const [questionCount, setQuestionCount] = useState(1);
-    
+
     const [messages, setMessages] = useState<IMessage[]>([]);
-    
+
     const [finalResult, setFinalResult] = useState<{
         diemSo: number;
         danhGiaChung: string;
@@ -151,7 +153,7 @@ const PhongVanAI: React.FC = () => {
             speakText(res.cauHoiDauTien);
             setTimeout(() => setIsSpeaking(false), 4000);
         } catch (error: any) {
-            window.alert('Lỗi: ' + (error.message || 'Không thể bắt đầu phiên phỏng vấn.'));
+            await Swal.fire('Lỗi', error.message || 'Không thể bắt đầu phiên phỏng vấn.', 'error');
         } finally {
             setIsStarting(false);
         }
@@ -179,12 +181,12 @@ const PhongVanAI: React.FC = () => {
                 maPhongVan,
                 cauTraLoi: trimmed
             });
-            
+
             if (res && (res.nhanXetCauTruoc || res.cauHoiTiepTheo)) {
                 setIsInterviewerTyping(false);
                 setIsSpeaking(true);
                 setQuestionCount(c => c + 1);
-                
+
                 const data = res;
                 const aiResponse: IMessage = {
                     id: 'msg-' + Date.now(),
@@ -193,17 +195,17 @@ const PhongVanAI: React.FC = () => {
                     timestamp: new Date(),
                     isTyping: true
                 };
-                
+
                 setMessages(prev => [...prev, aiResponse]);
                 speakText(aiResponse.content);
                 setTimeout(() => setIsSpeaking(false), 5000);
-                
+
                 if (data.isFinished) {
                     setInterviewFinished(true);
                 }
             }
         } catch (error: any) {
-            window.alert('Lỗi: ' + (error.message || 'Lỗi khi gửi câu trả lời.'));
+            await Swal.fire('Lỗi', error.message || 'Lỗi khi gửi câu trả lời.', 'error');
             setIsInterviewerTyping(false);
         }
     };
@@ -232,7 +234,7 @@ const PhongVanAI: React.FC = () => {
                 });
             }
         } catch (error: any) {
-            window.alert('Lỗi: ' + (error.message || 'Lỗi khi lấy kết quả.'));
+            await Swal.fire('Lỗi', error.message || 'Lỗi khi lấy kết quả.', 'error');
         } finally {
             setIsLoadingResult(false);
         }
@@ -243,7 +245,7 @@ const PhongVanAI: React.FC = () => {
     const speakText = (text: string) => {
         if (!voiceEnabled) return;
         window.speechSynthesis.cancel();
-        
+
         let hasSpoken = false;
 
         const trySpeak = () => {
@@ -252,11 +254,11 @@ const PhongVanAI: React.FC = () => {
             if (voices.length === 0 && 'speechSynthesis' in window) return;
 
             hasSpoken = true;
-            
+
             const vietnameseVoice = voices.find(voice =>
                 voice.lang.toLowerCase().includes('vi') || /vietnamese|tiếng việt/i.test(voice.name)
             );
-            
+
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'vi-VN';
 
@@ -270,7 +272,7 @@ const PhongVanAI: React.FC = () => {
                     // Split text into chunks by punctuation to avoid 200 char limits
                     const sentences = text.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
                     let i = 0;
-                    
+
                     const playNext = () => {
                         if (i >= sentences.length) return;
                         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5210';
@@ -280,7 +282,7 @@ const PhongVanAI: React.FC = () => {
                         audio.onerror = () => playNext(); // Bỏ qua nếu lỗi
                         audio.play().catch(e => {
                             console.error("Lỗi Backend TTS fallback", e);
-                            playNext(); 
+                            playNext();
                         });
                         i++;
                     };
@@ -293,7 +295,7 @@ const PhongVanAI: React.FC = () => {
 
         if ('speechSynthesis' in window && window.speechSynthesis.getVoices().length === 0) {
             window.speechSynthesis.onvoiceschanged = trySpeak;
-            
+
             setTimeout(() => {
                 if (!hasSpoken) {
                     trySpeak();
@@ -312,7 +314,7 @@ const PhongVanAI: React.FC = () => {
     };
 
     // --- SPEECH-TO-TEXT (Web Speech API) ---
-    const toggleRecording = () => {
+    const toggleRecording = async () => {
         // Đang ghi → dừng lại
         if (isRecording) {
             recognitionRef.current?.stop();
@@ -322,7 +324,7 @@ const PhongVanAI: React.FC = () => {
         const SpeechRecognition =
             (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            window.alert('Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Vui lòng dùng Chrome, Edge hoặc Cốc Cốc.');
+            await Swal.fire('Không hỗ trợ', 'Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Vui lòng dùng Chrome, Edge hoặc Cốc Cốc.', 'warning');
             return;
         }
 
@@ -350,7 +352,7 @@ const PhongVanAI: React.FC = () => {
 
         recognition.onerror = (event: any) => {
             if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                window.alert('Không thể truy cập micro. Hãy cấp quyền micro cho trang web rồi thử lại.');
+                Swal.fire('Không truy cập được micro', 'Hãy cấp quyền micro cho trang web rồi thử lại.', 'warning');
             }
             setIsRecording(false);
         };
@@ -379,13 +381,15 @@ const PhongVanAI: React.FC = () => {
                 <div style={{ background: '#1e293b', padding: '40px', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
                     <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>🚀 Thiết lập phỏng vấn AI</h2>
                     <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: '32px' }}>Tùy chỉnh thông số phiên phỏng vấn của bạn</p>
-                    
+
                     <div style={{ marginBottom: '20px' }}>
+
                         <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Vị trí ứng tuyển</label>
                         <select value={viTri} onChange={e => setViTri(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
                             {requestedPosition && !['Backend Developer', 'Frontend Developer', 'Fullstack Developer', 'Mobile Developer', 'DevOps Engineer', 'Data Engineer', 'QA/Tester', 'UI/UX Designer', 'Business Analyst', 'Project Manager'].includes(requestedPosition) && (
                                 <option value={requestedPosition}>{requestedPosition}</option>
                             )}
+
                             <option value="Backend Developer">Backend Developer</option>
                             <option value="Frontend Developer">Frontend Developer</option>
                             <option value="Fullstack Developer">Fullstack Developer</option>
@@ -398,10 +402,10 @@ const PhongVanAI: React.FC = () => {
                             <option value="Project Manager">Project Manager</option>
                         </select>
                     </div>
-                    
+
                     <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Cấp độ</label>
-                        <select value={capDo} onChange={e => setCapDo(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                        <label htmlFor="pv-capDo" style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Cấp độ</label>
+                        <select id="pv-capDo" value={capDo} onChange={e => setCapDo(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
                             <option value="Intern">Intern</option>
                             <option value="Fresher">Fresher</option>
                             <option value="Junior">Junior</option>
@@ -411,8 +415,8 @@ const PhongVanAI: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
-                        <select value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value) as TinhCachAI)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                        <label htmlFor="pv-tinhCach" style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
+                        <select id="pv-tinhCach" value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value) as TinhCachAI)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
                             <option value={TinhCachAI.Friendly}>Thân thiện (Hướng dẫn)</option>
                             <option value={TinhCachAI.Normal}>Bình thường (Tiêu chuẩn)</option>
                             <option value={TinhCachAI.Strict}>Khó tính (Xoáy sâu vào lỗi sai)</option>
@@ -420,11 +424,11 @@ const PhongVanAI: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '32px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
-                        <input type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#64748b', outline: 'none', cursor: 'not-allowed' }} />
+                        <label htmlFor="pv-soCauHoi" style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
+                        <input id="pv-soCauHoi" type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#64748b', outline: 'none', cursor: 'not-allowed' }} />
                     </div>
 
-                    <button onClick={handleStart} disabled={isStarting} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: isStarting ? 'not-allowed' : 'pointer', opacity: isStarting ? 0.7 : 1 }}>
+                    <button onClick={handleStart} disabled={isStarting} style={{ width: '100%', padding: '14px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: isStarting ? 'not-allowed' : 'pointer', opacity: isStarting ? 0.7 : 1 }}>
                         {isStarting ? 'Đang khởi tạo...' : 'Bắt Đầu Phỏng Vấn'}
                     </button>
                 </div>
@@ -501,7 +505,7 @@ const PhongVanAI: React.FC = () => {
                         </div>
                     )}
 
-                    <button onClick={() => navigate('/')} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #6366f1, #7c3aed)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
+                    <button onClick={() => navigate('/')} style={{ width: '100%', padding: '14px', background: 'var(--ai-accent)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
                         Trở về trang chủ
                     </button>
                 </div>
@@ -532,7 +536,7 @@ const PhongVanAI: React.FC = () => {
                             {voiceEnabled ? '🔊 Đang bật AI' : '🔈 Đã tắt AI'}
                         </button>
                         <button className="iv-btn-end end-btn" onClick={() => setShowEndModal(true)}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
                             Kết thúc
                         </button>
                     </div>
@@ -570,12 +574,12 @@ const PhongVanAI: React.FC = () => {
                                     <div className="iv-cam-status">
                                         {isSpeaking ? (
                                             <span className="iv-speaking-badge">
-                                                <span className="iv-eq"><span/><span/><span/><span/></span>
+                                                <span className="iv-eq"><span /><span /><span /><span /></span>
                                                 Đang nói
                                             </span>
                                         ) : isInterviewerTyping ? (
                                             <span className="iv-thinking-badge">
-                                                <span className="iv-dot-bounce"><span/><span/><span/></span>
+                                                <span className="iv-dot-bounce"><span /><span /><span /></span>
                                                 Đang suy nghĩ...
                                             </span>
                                         ) : (
@@ -591,7 +595,7 @@ const PhongVanAI: React.FC = () => {
                             <div className="iv-self-inner">
                                 {isRecording && <div className="iv-rec-ring" />}
                                 <div className="iv-self-avatar">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                                 </div>
                             </div>
                             <div className="iv-self-label">
@@ -626,13 +630,13 @@ const PhongVanAI: React.FC = () => {
                                             </div>
                                             <div className="iv-msg-content">
                                                 {msg.isTyping ? (
-                                                    <TypewriterText 
-                                                        content={msg.content} 
+                                                    <TypewriterText
+                                                        content={msg.content}
                                                         scrollRef={chatBoxRef}
                                                         onComplete={() => {
-                                                            setMessages(prev => prev.map(m => m.id === msg.id ? {...m, isTyping: false} : m));
+                                                            setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isTyping: false } : m));
                                                             setIsSpeaking(false);
-                                                        }} 
+                                                        }}
                                                     />
                                                 ) : (
                                                     <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
@@ -659,23 +663,23 @@ const PhongVanAI: React.FC = () => {
                             {interviewFinished ? (
                                 <div className="iv-finished-area">
                                     <div className="iv-finished-msg">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                                         Buổi phỏng vấn đã hoàn thành!
                                     </div>
                                     <div className="iv-finished-actions">
                                         <button className="iv-btn-end" onClick={() => navigate('/')}>
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
                                             Kết thúc
                                         </button>
                                         <button className="iv-btn-result" onClick={handleGetResult} disabled={isLoadingResult}>
                                             {isLoadingResult ? (
                                                 <>
-                                                    <span className="iv-dot-bounce"><span/><span/><span/></span>
+                                                    <span className="iv-dot-bounce"><span /><span /><span /></span>
                                                     AI đang chấm điểm...
                                                 </>
                                             ) : (
                                                 <>
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
                                                     Nhận kết quả
                                                 </>
                                             )}
@@ -685,7 +689,7 @@ const PhongVanAI: React.FC = () => {
                             ) : (
                                 <div className="iv-chat-input-area">
                                     <div className="iv-input-wrapper">
-                                        <textarea 
+                                        <textarea
                                             className="iv-textarea"
                                             ref={inputRef}
                                             value={inputText}
@@ -700,19 +704,21 @@ const PhongVanAI: React.FC = () => {
                                             onClick={toggleRecording}
                                             disabled={(isInterviewerTyping || isSpeaking) && !isRecording}
                                             title={isRecording ? 'Dừng ghi âm' : 'Nói để nhập câu trả lời'}
+                                            aria-label={isRecording ? 'Dừng ghi âm' : 'Nói để nhập câu trả lời'}
                                         >
                                             {isRecording ? (
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
                                             ) : (
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="8" y1="22" x2="16" y2="22" /></svg>
                                             )}
                                         </button>
-                                        <button 
-                                            className="iv-btn-send" 
+                                        <button
+                                            className="iv-btn-send"
                                             onClick={handleSendMessage}
                                             disabled={!inputText.trim() || isInterviewerTyping || isSpeaking}
+                                            aria-label="Gửi câu trả lời"
                                         >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
                                         </button>
                                     </div>
                                 </div>
@@ -727,7 +733,7 @@ const PhongVanAI: React.FC = () => {
                 <div className="iv-modal-overlay">
                     <div className="iv-modal">
                         <div className="iv-modal-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
                         </div>
                         <h3>Kết thúc phỏng vấn?</h3>
                         <p>Bạn có chắc chắn muốn kết thúc buổi phỏng vấn sớm? AI sẽ tổng hợp điểm dựa trên những câu hỏi đã hoàn thành.</p>
@@ -739,7 +745,7 @@ const PhongVanAI: React.FC = () => {
                 </div>
             )}
 
-<style>{`
+            <style>{`
                 /* ── RESET & BASE ── */
                 #interview-room-root {
                     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
@@ -1079,9 +1085,11 @@ const PhongVanAI: React.FC = () => {
                     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
                 }
                 .iv-msg-bubble.user {
+
                     background: linear-gradient(135deg, #f69050, #e67e22);
                     border: 1px solid rgba(246,144,80,0.3);
                     color: white;
+
                     border-top-right-radius: 4px;
                 }
                 .iv-typing-bubble {

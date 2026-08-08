@@ -1,6 +1,7 @@
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using educodeai_server.Config;
+using educodeai_server.Constants;
 using educodeai_server.Data;
 using educodeai_server.DTOs.Media;
 using educodeai_server.Models;
@@ -309,7 +310,7 @@ namespace educodeai_server.Services.Implementation
             // Invalidate cache khóa học (mirror AiSubtitleWorker) để chi tiết khóa học phản ánh phụ đề mới.
             try
             {
-                await _redisService.XoaKeyAsync($"Instructor:{maGiangVien}:CourseList");
+                await _redisService.XoaKeyAsync(CacheKeys.InstructorCourseList(maGiangVien));
                 await _redisService.TangVersionKhoaHocAsync(baiHoc.ChuongHoc.KhoaHoc.MaKhoaHoc);
             }
             catch (Exception cacheEx)
@@ -379,7 +380,7 @@ namespace educodeai_server.Services.Implementation
             {
                 var maKhoaHoc = baiHoc.ChuongHoc.KhoaHoc.MaKhoaHoc;
                 var maGV = baiHoc.ChuongHoc.KhoaHoc.MaGiangVien;
-                await _redisService.XoaKeyAsync($"Instructor:{maGV}:CourseList");
+                await _redisService.XoaKeyAsync(CacheKeys.InstructorCourseList(maGV));
                 await _redisService.TangVersionKhoaHocAsync(maKhoaHoc);
             }
             catch (Exception cacheEx)

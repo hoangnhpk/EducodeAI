@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -9,6 +9,8 @@ using educodeai_server.Services;
 using educodeai_server.Services.Implement;
 using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
+using educodeai_server.Services.RefreshTokens;
+using educodeai_server.Services.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -117,6 +119,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // 3. CẤU HÌNH KẾT NỐI CƠ SỞ DỮ LIỆU
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrEmpty(connectionString) && !connectionString.Contains("Maximum Pool Size", StringComparison.OrdinalIgnoreCase))
+{
+    connectionString += ";Maximum Pool Size=10;Minimum Pool Size=0;Pooling=true;";
+}
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseNpgsql(connectionString, sqlOptions =>
     {
@@ -203,6 +209,7 @@ builder.Services.AddScoped<IOtpRateLimiter, OtpRateLimiter>();
 builder.Services.Configure<RefreshTokenCleanupOptions>(builder.Configuration.GetSection("RefreshTokenCleanup"));
 builder.Services.AddSingleton<RefreshTokenCleanupService>();
 builder.Services.AddHostedService<RefreshTokenCleanupWorker>();
+
 builder.Services.Configure<RequestOriginOptions>(builder.Configuration.GetSection("Security:RequestOrigin"));
 builder.Services.AddSingleton<IValidateOptions<RequestOriginOptions>, RequestOriginOptionsValidator>();
 builder.Services.AddOptions<RequestOriginOptions>().ValidateOnStart();
@@ -212,9 +219,10 @@ builder.Services.Configure<TrustedProxyOptions>(options =>
 builder.Services.AddSingleton<IValidateOptions<TrustedProxyOptions>, TrustedProxyOptionsValidator>();
 builder.Services.AddOptions<TrustedProxyOptions>().ValidateOnStart();
 builder.Services.AddSingleton<IRequestOriginValidator, RequestOriginValidator>();
+
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
-builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
+builder.Services.AddScoped<IKhoaHocRepository, educodeai_server.Repository.Implementation.KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
 builder.Services.AddScoped<IThanhToanKhoaHocService, ThanhToanKhoaHocService>();
 builder.Services.AddScoped<IMaGiamGiaService, MaGiamGiaService>();
@@ -250,6 +258,8 @@ builder.Services.AddSingleton<IGiangVienReviewEmailQueue, GiangVienReviewEmailQu
 builder.Services.AddHostedService<GiangVienReviewEmailWorker>();
 builder.Services.AddSingleton<LopHocEmailQueue>();
 builder.Services.AddHostedService<LopHocEmailWorker>();
+builder.Services.AddSingleton<IGiangVienReviewEmailQueue, GiangVienReviewEmailQueue>();
+builder.Services.AddHostedService<GiangVienReviewEmailWorker>();
 builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocService>();
 builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
 builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();

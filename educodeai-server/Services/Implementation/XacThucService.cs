@@ -237,12 +237,26 @@ namespace educodeai_server.Services.Implementation
             _memoryCache.Remove(accountCacheKey);
             _logger.LogInformation("Đăng nhập thành công cho user {UserId}.", user!.MaNguoiDung);
 
-            var decision = UnifiedLoginPolicy.Decide(
-                LoginProvider.Password,
-                user.DanhSachPhienDangNhap,
-                request.MaThietBi,
-                user.SecurityVersion,
-                DateTime.UtcNow);
+
+            var activeSessions = user!.DanhSachPhienDangNhap.Where(p => p.DangHoatDong).ToList();
+            var currentSession = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == request.MaThietBi);
+            var isTrustedDevice = currentSession?.TrustedUntilUtc > DateTime.UtcNow
+                && currentSession.TrustRevokedAtUtc == null;
+
+            // Phiên đã xác minh OTP trước đó vẫn được tin cậy sau khi người dùng đăng xuất.
+            // Đăng xuất chỉ kết thúc phiên hiện tại, không buộc xác minh lại cùng thiết bị.
+            if (currentSession != null && !currentSession.DangHoatDong && isTrustedDevice)
+            {
+                return await XuLyDangNhapThanhCongAsync(user, request.MaThietBi, request.TenThietBi);
+            }
+
+            // Nếu thiết bị đã tồn tại nhưng chưa được tin cậy, không coi là thiết bị mới
+            // đã xác minh; yêu cầu OTP lại để tránh bypass bằng mã thiết bị cũ.
+            if (currentSession != null && !currentSession.DangHoatDong)
+            {
+                currentSession = null;
+            }
+
 
             return await HoanTatDangNhapTheoPolicyAsync(user, request.MaThietBi, request.TenThietBi, decision);
         }
@@ -661,9 +675,45 @@ namespace educodeai_server.Services.Implementation
             string devId = string.IsNullOrEmpty(maThietBi) ? "FP-UNKNOWN-" + Guid.NewGuid().ToString("N").Substring(0, 8) : maThietBi;
             string deviceName = string.IsNullOrEmpty(tenThietBi) ? "Thiết bị không xác định" : tenThietBi;
             
-            var executionStrategy = _context.Database.CreateExecutionStrategy();
-            object? result = null;
-            await executionStrategy.ExecuteAsync(async () =>
+
+            // TÃ¬m phiÃªn Ä‘Äƒng nháº­p cÅ© dá»±a trÃªn Fingerprint cá»§a User nÃ y
+            var phien = u.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == devId);
+            
+            if (phien == null) { 
+                // Náº¿u lÃ  thiáº¿t bá»‹ hoÃ n toÃ n má»›i
+                phien = new PhienDangNhapModel { 
+                    MaNguoiDung = u.MaNguoiDung, 
+                    MaThietBi = devId, 
+                    TenThietBi = deviceName, 
+                    ThoiGianDangNhap = DateTime.UtcNow,
+                    ThoiGianHoatDongCuoi = DateTime.UtcNow,
+                    DangHoatDong = true,
+                    TrustedUntilUtc = DateTime.UtcNow.AddDays(30),
+                    LastVerifiedAtUtc = DateTime.UtcNow
+                }; 
+                _context.PhienDangNhaps.Add(phien); 
+            } else {
+                // Náº¿u thiáº¿t bá»‹ cÅ© quay láº¡i (ká»ƒ cáº£ khi Ä‘Ã£ xÃ³a cache trÃ¬nh duyá»‡t nhá» Fingerprint)
+                phien.ThoiGianHoatDongCuoi = DateTime.UtcNow;
+                phien.TrustRevokedAtUtc = null;
+                phien.TrustedUntilUtc ??= DateTime.UtcNow.AddDays(30);
+                phien.LastVerifiedAtUtc ??= DateTime.UtcNow;
+                phien.DangHoatDong = true;
+                phien.TenThietBi = deviceName; // LuÃ´n cáº­p nháº­t tÃªn thiáº¿t bá»‹ má»›i nháº¥t
+            }
+
+            u.NgayDangNhapCuoi = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            // Phase C: refresh token CSPRNG hash trong DB + HttpOnly cookie
+            var material = _tokenService.CreateRefreshTokenMaterial();
+            var httpContext = _httpContextAccessor.HttpContext;
+            var ipTao = httpContext?.Connection.RemoteIpAddress?.ToString();
+            var uaTao = httpContext?.Request.Headers["User-Agent"].ToString();
+            if (!string.IsNullOrEmpty(uaTao) && uaTao!.Length > 256) uaTao = uaTao.Substring(0, 256);
+
+            _context.RefreshTokens.Add(new RefreshTokenModel
+
             {
                 await using var transaction = await _context.Database.BeginTransactionAsync();
                 try
@@ -1030,7 +1080,16 @@ namespace educodeai_server.Services.Implementation
                 throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác.");
 
             var payload = JsonSerializer.Deserialize<ThietBiOtpPayload>(verify.PayloadJson ?? "{}")!;
-            return await XuLyDangNhapThanhCongAsync(user, payload.MaThietBi, payload.TenThietBi, grantTrust: true);
+
+            var session = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == payload.MaThietBi);
+            if (session != null)
+            {
+                session.TrustRevokedAtUtc = null;
+                session.TrustedUntilUtc = DateTime.UtcNow.AddDays(30);
+                session.LastVerifiedAtUtc = DateTime.UtcNow;
+            }
+            return await XuLyDangNhapThanhCongAsync(user, payload.MaThietBi, payload.TenThietBi);
+
         }
 
         public async Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest r, string i) {

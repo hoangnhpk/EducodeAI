@@ -10,11 +10,27 @@
   --accent-orange: #f59e0b;
   --accent-orange-hover: #d97706;
 
+  /* ===== BRAND SOFT ===== */
+  --primary-soft: #fef3ec;
+
+  /* ===== AI ACCENT (Tím riêng cho tính năng AI) ===== */
+  --ai-accent: #8b5cf6;
+  --ai-accent-hover: #7c3aed;
+  --ai-accent-soft: #f3effe;
+
   /* ===== SEMANTIC COLORS ===== */
   --success: #10b981;
+  --success-soft: #e7f7f1;
+  --success-strong: #047857;
   --danger: #ef4444;
+  --danger-soft: #fdecec;
+  --danger-strong: #b91c1c;
   --warning: #f59e0b;
+  --warning-soft: #fef3e0;
+  --warning-strong: #b45309;
   --info: #0ea5e9;
+  --info-soft: #e6f6fe;
+  --info-strong: #0369a1;
 
   /* ===== BACKGROUND COLORS ===== */
   --bg-main: #f9fafb;
@@ -29,6 +45,18 @@
   --text-light: #9ca3af;
   --text-white: #ffffff;
   --text-dark: #181d38;
+
+  /* ===== NEUTRAL / GRAY SCALE (thang xám trung tính toàn cục) ===== */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
 
   /* ===== BORDER & SHADOW ===== */
   --border-color: #e5e7eb;
@@ -56,18 +84,18 @@
   --transition-slow: 0.5s ease;
 }
 
-/* ========== SIDEBAR GRADIENT COLORS ========== */
+/* ========== SIDEBAR GRADIENT COLORS (tối trung tính, active viền cam) ========== */
 :root {
-  --sidebar-gradient-start: #1e40af;
-  --sidebar-gradient-end: #1e3a8a;
-  --sidebar-active-border: #fbbf24;
+  --sidebar-gradient-start: #1f2937;
+  --sidebar-gradient-end: #111827;
+  --sidebar-active-border: var(--primary);
 }
 
-/* ========== DASHBOARD SPECIFIC ========== */
+/* ========== DASHBOARD SPECIFIC (tiêu đề dùng màu chữ đậm trung tính) ========== */
 :root {
-  --dashboard-gv-title: #1e40af;
-  --dashboard-qtv-title: #1e40af;
-  --dashboard-hv-title: #1e293b;
+  --dashboard-gv-title: var(--text-dark);
+  --dashboard-qtv-title: var(--text-dark);
+  --dashboard-hv-title: var(--text-dark);
 }
 
 /* ========== CONTENT PAGE (CP) SPECIFIC - CAM THEME ========== */

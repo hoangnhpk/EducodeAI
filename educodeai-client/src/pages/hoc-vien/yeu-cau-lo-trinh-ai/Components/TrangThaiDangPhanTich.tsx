@@ -1,8 +1,5 @@
+import "./YeuCauLoTrinhAI.css";
+
 export default function TrangThaiDangPhanTich() {
-  return (
-    <div className="ai-panel w-auto h-auto bg-light shadow-sm rounded p-4 p-md-5">
-      <div className="spinner-border text-warning" />
-      <p className="mt-3">AI đang phân tích...</p>
-    </div>
-  );
+  return <div className="roadmap-sidebar-card ai-loading" role="status" aria-live="polite"><span className="spinner-border" aria-hidden="true" /><p className="mt-3 mb-0">AI đang phân tích thông tin của bạn...</p></div>;
 }

@@ -1,7 +1,12 @@
-import { useEffect, useState, memo } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 import { createPortal } from "react-dom";
+import Swal from "sweetalert2";
 import { type NguoiDung } from "@/pages/quan-tri-vien/quan-ly-nguoi-dung/DuLieuNguoiDungDTO";
+
 import PasswordInput from "@/components/PasswordInput";
+
+import { useModalA11y } from "@/hooks/useModalA11y";
+
 
 type Props = {
     hienThi: boolean;
@@ -27,6 +32,9 @@ const ModalNguoiDung = memo(({
     const [matKhau, setMatKhau] = useState("");
     const [vaiTro, setVaiTro] =
         useState<"Admin" | "Giảng viên" | "Học viên">("Học viên");
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    useModalA11y(hienThi, onDong, panelRef);
 
     useEffect(() => {
         if (hienThi) {
@@ -49,11 +57,11 @@ const ModalNguoiDung = memo(({
 
     const handleSubmit = () => {
         if (!hoTen.trim() || !email.trim()) {
-            alert("Vui lòng nhập đầy đủ họ tên và email");
+            Swal.fire({ title: "Thiếu thông tin", text: "Vui lòng nhập đầy đủ họ tên và email", icon: "warning", customClass: { container: "qlnv-swal-over-modal" } });
             return;
         }
         if (!dangSua && !matKhau.trim()) {
-            alert("Vui lòng nhập mật khẩu cho tài khoản mới");
+            Swal.fire({ title: "Thiếu thông tin", text: "Vui lòng nhập mật khẩu cho tài khoản mới", icon: "warning", customClass: { container: "qlnv-swal-over-modal" } });
             return;
         }
 
@@ -67,12 +75,12 @@ const ModalNguoiDung = memo(({
 
     const modalContent = (
         <div className="qlnv-modal-overlay" onClick={(e) => e.target === e.currentTarget && onDong()}>
-            <div className="qlnv-modal-card">
+            <div className="qlnv-modal-card" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="modal-nguoi-dung-title">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>
+                    <h3 id="modal-nguoi-dung-title" style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)' }}>
                         {dangSua ? "Cập nhật người dùng" : "Thêm người dùng"}
                     </h3>
-                    <button onClick={onDong} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#94a3b8', lineHeight: 1 }}>&times;</button>
+                    <button onClick={onDong} aria-label="Đóng" style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--text-light)', lineHeight: 1 }}>&times;</button>
                 </div>
 
                 <div className="form-group">

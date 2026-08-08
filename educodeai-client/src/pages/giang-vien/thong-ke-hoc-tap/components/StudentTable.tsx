@@ -1,5 +1,4 @@
 ﻿import type { HocVien } from "./Types";
-import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import "./css/student-table.css";
 
 interface Props {
@@ -96,8 +95,8 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
                 <td>{getStatusBadge(hocVien.trangThai ?? "")}</td>
 
                 <td>
-                  <button className="detail-btn">
-                    <Eye size={16} />
+                  <button className="detail-btn" aria-label={`Xem chi tiết ${getName(hocVien)}`}>
+                    <i className="fas fa-eye" aria-hidden="true" />
                     Chi tiết
                   </button>
                 </td>
@@ -118,7 +117,7 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
       {totalPages > 1 && (
         <div className="pagination">
           <button className="pagination-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>
-            <ChevronLeft size={18} />
+            <i className="fas fa-chevron-left" aria-hidden="true" />
             Trước
           </button>
 
@@ -126,7 +125,7 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
 
           <button className="pagination-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>
             Sau
-            <ChevronRight size={18} />
+            <i className="fas fa-chevron-right" aria-hidden="true" />
           </button>
         </div>
       )}

@@ -119,7 +119,7 @@ const QuanLyThietBi: React.FC = () => {
                                         </div>
                                     </div>
                                     {!device.isCurrentDevice && (
-                                        <button className="btn btn-light btn-sm rounded-pill text-danger px-3 fw-bold" 
+                                        <button className="btn btn-light btn-sm rounded-pill text-danger px-3 fw-bold"
                                             onClick={() => handleLogoutRemote(false, device.maPhien)}>Đăng xuất</button>
                                     )}
                                 </div>
@@ -137,46 +137,47 @@ const QuanLyThietBi: React.FC = () => {
                             <div className="text-center">
                                 <div className="mb-4">
                                     <div className="bg-primary-subtle d-inline-block p-3 rounded-circle mb-3">
-                                        <i className="bi bi-shield-lock fs-2 text-primary" style={{ color: '#fb873f !important' }}></i>
+                                        <i className="bi bi-shield-lock fs-2 text-primary" style={{ color: 'var(--primary)' }}></i>
                                     </div>
                                     <h4 id="remote-logout-title" className="fw-bold">Xác minh OTP</h4>
                                     <p className="text-muted small">Nhập mã OTP 6 số đã được gửi đến email của bạn.</p>
                                 </div>
-                                
+
                                 <div className="mb-4">
                                     <label htmlFor="remote-logout-otp" className="visually-hidden">Mã OTP gồm 6 chữ số</label>
                                     <input
                                         id="remote-logout-otp"
                                         type="text"
-                                        className="form-control text-center fs-2 fw-bold rounded-3 border-2" 
-                                        style={{ 
-                                            letterSpacing: '8px', 
+                                        className="form-control text-center fs-2 fw-bold rounded-3 border-2"
+                                        style={{
+                                            letterSpacing: '8px',
                                             height: '70px',
                                             borderColor: '#eee',
                                             backgroundColor: '#f8f9fa'
-                                        }} 
+                                        }}
                                         maxLength={6}
-                                        inputMode="numeric"
-                                        autoComplete="one-time-code"
-                                        autoFocus
-                                        value={otp} 
-                                        onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))} 
+
+                                        placeholder="000000"
+                                        aria-label="Mã OTP 6 số"
+                                        value={otp}
+
+                                        onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
                                     />
                                 </div>
 
                                 <div className="d-flex gap-3 mt-4 align-items-center justify-content-center">
-                                    <button 
+                                    <button
                                         type="button"
-                                        className="btn btn-light rounded-pill fw-bold border d-flex align-items-center justify-content-center m-0" 
+                                        className="btn btn-light rounded-pill fw-bold border d-flex align-items-center justify-content-center m-0"
                                         style={{ flex: 1, height: '55px' }}
                                         onClick={() => { setShowOtpModal(false); setOtp(''); setLogoutAction({ all: false, ids: [] }); }}
                                     >
                                         Hủy bỏ
                                     </button>
-                                    <button 
+                                    <button
                                         type="button"
-                                        className="btn btn-primary rounded-pill text-white fw-bold border d-flex align-items-center justify-content-center m-0 shadow-sm" 
-                                        style={{ backgroundColor: '#fb873f', borderColor: '#fb873f', flex: 1, height: '55px' }} 
+                                        className="btn btn-primary rounded-pill text-white fw-bold border d-flex align-items-center justify-content-center m-0 shadow-sm"
+                                        style={{ backgroundColor: '#fb873f', borderColor: '#fb873f', flex: 1, height: '55px' }}
                                         onClick={confirmLogoutRemote}
                                     >
                                         Xác nhận

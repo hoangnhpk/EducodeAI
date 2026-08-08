@@ -11,7 +11,7 @@ const DoiMatKhau: React.FC = () => {
 
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (matKhauMoi !== confirmPass) {
             Swal.fire('Lỗi', 'Mật khẩu nhập lại không khớp!', 'error');
             return;
@@ -52,10 +52,24 @@ const DoiMatKhau: React.FC = () => {
                         </div>
 
                         <form onSubmit={handleUpdatePassword}>
-                            <PasswordInput id="doi-mat-khau-cu" label="Mật khẩu hiện tại" autoComplete="current-password" containerClassName="mb-3" floating value={matKhauCu} onChange={e => setMatKhauCu(e.target.value)} required />
-                            <PasswordInput id="doi-mat-khau-moi" label="Mật khẩu mới" autoComplete="new-password" containerClassName="mb-3" floating value={matKhauMoi} onChange={e => setMatKhauMoi(e.target.value)} required />
-                            <PasswordInput id="doi-mat-khau-xac-nhan" label="Nhập lại mật khẩu mới" autoComplete="new-password" containerClassName="mb-4" floating value={confirmPass} onChange={e => setConfirmPass(e.target.value)} required />
-                            <button className="btn btn-primary w-100 py-3 rounded-pill fw-bold text-white border-0" 
+
+                            <div className="form-floating mb-3">
+                                <input type="password" aria-label="Mật khẩu hiện tại" className="form-control rounded-3" placeholder="Old Pass"
+                                    value={matKhauCu} onChange={e => setMatKhauCu(e.target.value)} required />
+                                <label>Mật khẩu hiện tại</label>
+                            </div>
+                            <div className="form-floating mb-3">
+                                <input type="password" aria-label="Mật khẩu mới" className="form-control rounded-3" placeholder="New Pass"
+                                    value={matKhauMoi} onChange={e => setMatKhauMoi(e.target.value)} required />
+                                <label>Mật khẩu mới</label>
+                            </div>
+                            <div className="form-floating mb-4">
+                                <input type="password" aria-label="Nhập lại mật khẩu mới" className="form-control rounded-3" placeholder="Confirm Pass"
+                                    value={confirmPass} onChange={e => setConfirmPass(e.target.value)} required />
+                                <label>Nhập lại mật khẩu mới</label>
+                            </div>
+
+                            <button className="btn btn-primary w-100 py-3 rounded-pill fw-bold text-white border-0"
                                 style={{ backgroundColor: '#fb873f' }} type="submit" disabled={loading}>
                                 {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
                             </button>

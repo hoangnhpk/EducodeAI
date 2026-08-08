@@ -44,7 +44,7 @@
 
 .ctgd-badge-popular {
   background-color: rgba(246, 144, 80, 0.15);
-  color: #f69050;
+  color: var(--primary);
 }
 
 .ctgd-badge-category {
@@ -82,12 +82,12 @@
 
 .ctgd-rating-score {
   font-weight: 700;
-  color: #f69050;
+  color: var(--primary);
   font-size: 16px;
 }
 
 .ctgd-stars {
-  color: #f69050;
+  color: var(--primary);
 }
 
 .ctgd-rating-count {
@@ -112,7 +112,7 @@
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #f69050;
+  border: 2px solid var(--primary);
 }
 
 .ctgd-instructor-info-top {
@@ -178,7 +178,7 @@
 }
 
 .ctgd-learn-icon {
-  color: #f69050;
+  color: var(--primary);
   margin-top: 3px;
   font-size: 16px;
 }
@@ -201,7 +201,7 @@
 }
 
 .ctgd-expand-btn {
-  color: #f69050;
+  color: var(--primary);
   font-weight: 600;
   font-size: 14px;
   background: none;
@@ -292,7 +292,7 @@
 }
 
 .ctgd-preview-link {
-  color: #f69050;
+  color: var(--primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -351,7 +351,7 @@
 .ctgd-instructor-name {
   font-size: 20px;
   font-weight: 700;
-  color: #f69050;
+  color: var(--primary);
   margin-bottom: 5px;
 }
 
@@ -391,7 +391,7 @@
   height: 36px;
   border-radius: 50%;
   background-color: #f0f2f5;
-  color: #f69050;
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -400,7 +400,7 @@
 }
 
 .ctgd-social-btn:hover {
-  background-color: #f69050;
+  background-color: var(--primary);
   color: #fff;
 }
 
@@ -430,13 +430,13 @@
 .ctgd-reviews-score {
   font-size: 48px;
   font-weight: 700;
-  color: #f69050;
+  color: var(--primary);
   line-height: 1;
   margin-bottom: 5px;
 }
 
 .ctgd-reviews-stars {
-  color: #f69050;
+  color: var(--primary);
   font-size: 16px;
   margin-bottom: 5px;
 }
@@ -472,7 +472,7 @@
 
 .ctgd-review-bar-fill {
   height: 100%;
-  background-color: #f69050;
+  background-color: var(--primary);
   border-radius: 4px;
 }
 
@@ -615,7 +615,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #f69050;
+  color: var(--primary);
   font-size: 24px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   padding-left: 5px; /* Visual center for play icon */
@@ -666,7 +666,7 @@
 }
 
 .ctgd-discount-badge {
-  color: #f69050;
+  color: var(--primary);
   font-size: 14px;
   font-weight: 600;
 }
@@ -681,7 +681,7 @@
 }
 
 .ctgd-btn-primary {
-  background-color: #f69050;
+  background-color: var(--primary);
   color: #fff;
   border: none;
   padding: 16px;

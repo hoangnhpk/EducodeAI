@@ -49,7 +49,7 @@ export default function SidebarQuanTriVien() {
           <span>Review & Đánh giá</span>
         </a> */}
 
-        {/* <a href="/quan-tri-vien/quan-ly-hoc-vien" className="qtv-nav-link">
+        {/* <a href="/quan-tri-vien/tang-khoa-hoc" className="qtv-nav-link">
           <MdPeople /> Học Viên
         </a> */}
 
