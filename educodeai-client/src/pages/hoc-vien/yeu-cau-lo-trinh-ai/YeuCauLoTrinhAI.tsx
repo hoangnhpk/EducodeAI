@@ -81,29 +81,44 @@ export default function YeuCauLoTrinhAI() {
   };
 
   return (
-    <div className="container-xxl py-5 roadmap-page">
+    <div className="container-xxl py-5">
       <div className="container">
         <div className="text-center mb-5">
           <h6 className="section-title bg-white px-3">AI Roadmap</h6>
-          <h1 className="ai-color">Yêu cầu lộ trình học tập cá nhân hóa với AI</h1>
+          <h1 className="ai-color">
+            Yêu cầu lộ trình học tập cá nhân hóa với AI
+          </h1>
           <p>AI sẽ phân tích thông tin của bạn để tạo lộ trình phù hợp nhất</p>
         </div>
 
         {!isAIAvailable && (
-          <div className="roadmap-ai-alert" role="alert">
-            <i className="fas fa-circle-exclamation" aria-hidden="true" />
-            Hệ thống AI hiện đang hết lượt sử dụng hoặc đang bận. Vui lòng quay lại sau ít phút!
-          </div>
+            <div style={{ maxWidth: '800px', margin: '0 auto', marginBottom: '20px', padding: '15px 20px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 500 }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Hệ thống AI hiện đang hết lượt sử dụng hoặc đang bận. Vui lòng quay lại sau ít phút!
+            </div>
         )}
 
-        <div className="roadmap-layout">
-          <div className="roadmap-form-column">
-            <FormYeuCauLoTrinh onSubmit={xuLyGuiForm} isSubmitting={trangThaiAI === "dang_phan_tich"} isAIAvailable={isAIAvailable} />
+        <div className="row align-items-stretch">
+          <div className="col-lg-6">
+            <FormYeuCauLoTrinh
+              onSubmit={xuLyGuiForm}
+              isSubmitting={trangThaiAI === "dang_phan_tich"}
+              isAIAvailable={isAIAvailable}
+            />
           </div>
-          <div className="roadmap-sidebar-column">
+
+          <div className="col-lg-6">
             {trangThaiAI === "da_co_ket_qua" ? (
-              <TrangThaiKetQua ketQua={ketQuaAI} onModify={handleModify} onConfirm={handleConfirm} isProcessing={isProcessing} />
-            ) : <AiPanel trangThaiAI={trangThaiAI} ketQua={null} />}
+              // Render Component Kết quả với đầy đủ tính năng
+              <TrangThaiKetQua
+                ketQua={ketQuaAI}
+                onModify={handleModify}
+                onConfirm={handleConfirm}
+                isProcessing={isProcessing}
+              />
+            ) : (
+              <AiPanel trangThaiAI={trangThaiAI} ketQua={null} />
+            )}
           </div>
         </div>
       </div>

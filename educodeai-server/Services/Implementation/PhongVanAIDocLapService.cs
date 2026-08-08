@@ -5,6 +5,8 @@ using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using educodeai_server.Exceptions;
+using educodeai_server.DTOs.AI;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -19,6 +21,33 @@ namespace educodeai_server.Services.Implementation
             _context = context;
             _geminiService = geminiService;
             _logger = logger;
+        }
+
+        public async Task<PhongVanSessionDto> GetInterviewAsync(int userId, int maPhongVan)
+        {
+            var session = await _context.LichSuPhongVans.FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaPhongVan == maPhongVan);
+            if (session == null) throw new NotFoundException("Không tìm thấy buổi phỏng vấn.");
+
+            return new PhongVanSessionDto
+            {
+                MaPhongVan = session.MaPhongVan,
+                ViTriUngTuyen = session.ViTriUngTuyen,
+                CapDo = session.CapDo,
+                TinhCachAI = session.TinhCachAI,
+                SoLuongCauHoi = session.SoLuongCauHoi,
+                TrangThai = session.TrangThai,
+                GhiChu = session.GhiChu,
+                LichSuChat = string.IsNullOrEmpty(session.ChiTietChatJSON) ? new List<PhongVanDocLapTurnDto>() : System.Text.Json.JsonSerializer.Deserialize<List<PhongVanDocLapTurnDto>>(session.ChiTietChatJSON)!
+            };
+        }
+
+        public async Task UpdateNoteAsync(int userId, int maPhongVan, string ghiChu)
+        {
+            var session = await _context.LichSuPhongVans.FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaPhongVan == maPhongVan);
+            if (session == null) throw new NotFoundException("Không tìm thấy buổi phỏng vấn.");
+
+            session.GhiChu = ghiChu;
+            await _context.SaveChangesAsync();
         }
 
         public async Task<StartPhongVanResponseDto> StartInterviewAsync(int userId, StartPhongVanRequestDto request)

@@ -11,7 +11,6 @@ import Swal from 'sweetalert2';
 const QuanLyNguoiDung = () => {
     const [ds, setDs] = useState<NguoiDung[]>([]);
     const [dangTai, setDangTai] = useState(false);
-    const [loi, setLoi] = useState(false);
     const [tuKhoa, setTuKhoa] = useState("");
     const [vaiTroLoc, setVaiTroLoc] = useState<"ALL" | "Admin" | "Giảng viên" | "Học viên">("ALL");
     const [trangThaiLoc, setTrangThaiLoc] = useState<"ALL" | "Hoạt động" | "Bị khóa" | "Khóa vĩnh viễn">("ALL");
@@ -72,7 +71,6 @@ const QuanLyNguoiDung = () => {
     // H.7: filter + pagination server-side. Gọi lại API khi đổi trang/keyword/vai trò/trạng thái.
     const taiDanhSach = useCallback(async () => {
         setDangTai(true);
-        setLoi(false);
         try {
             const vaiTroNum = vaiTroLoc === "Giảng viên" ? 1 : vaiTroLoc === "Học viên" ? 2 : undefined;
             const res = await NguoiDungService.layDanhSach({
@@ -86,7 +84,6 @@ const QuanLyNguoiDung = () => {
             setTongSo(res.total || 0);
         } catch (error) {
             console.error("Lỗi tải danh sách:", error);
-            setLoi(true);
         } finally {
             setDangTai(false);
         }
@@ -141,7 +138,7 @@ const QuanLyNguoiDung = () => {
             Swal.fire({ title: 'Lưu ý', text: 'Chỉ có thể xóa tài khoản đã bị khóa vĩnh viễn', icon: 'warning' });
             return;
         }
-        const { isConfirmed } = await Swal.fire({ title: 'Xác nhận xóa?', text: `Bạn có chắc muốn xóa ${u.hoTen}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: 'var(--danger)' });
+        const { isConfirmed } = await Swal.fire({ title: 'Xác nhận xóa?', text: `Bạn có chắc muốn xóa ${u.hoTen}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
         if (isConfirmed) {
             try {
                 await NguoiDungService.xoaNguoiDung(u.maNguoiDung);
@@ -163,28 +160,11 @@ const QuanLyNguoiDung = () => {
     const handleThayDoiTrangThai = useCallback((v: any) => { setTrangThaiLoc(v); setTrangHienTai(1); }, []);
 
     return (
-        <div className="user-management-container qtv-page-content">
+        <div className="user-management-container">
             <h2 className="page-title">Quản lý người dùng</h2>
             <ThanhCongCu tuKhoa={tuKhoa} onThayDoiTuKhoa={handleThayDoiTuKhoa} vaiTroLoc={vaiTroLoc} onThayDoiVaiTro={handleThayDoiVaiTro} trangThaiLoc={trangThaiLoc} onThayDoiTrangThai={handleThayDoiTrangThai} onThemMoi={handleThemMoi} />
-            {loi ? (
-                <div style={{
-                    padding: '48px 24px', textAlign: 'center',
-                    background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)'
-                }}>
-                    <div style={{ fontSize: 40, color: 'var(--danger)', marginBottom: 12 }}>
-                        <i className="bi bi-exclamation-triangle-fill" aria-hidden></i>
-                    </div>
-                    <p style={{ color: 'var(--text-main)', fontWeight: 600, marginBottom: 4 }}>Không tải được danh sách người dùng</p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 20 }}>Đã xảy ra lỗi khi kết nối máy chủ. Vui lòng thử lại.</p>
-                    <button className="btn-add" style={{ marginLeft: 0 }} onClick={taiDanhSach}>
-                        <i className="bi bi-arrow-clockwise" aria-hidden style={{ marginRight: 6 }}></i>Thử lại
-                    </button>
-                </div>
-            ) : (
             <DanhSachNguoiDung duLieu={danhSachPhanTrang} dangTai={dangTai} onSua={handleSua} onXoa={handleXoa} onDoiTrangThai={handleDoiTrangThai} />
-            )}
-            {!loi && !dangTai && tongSoTrang > 1 && (
+            {!dangTai && tongSoTrang > 1 && (
                 <div className="pagination-wrapper">
                     <button disabled={trangHienTai === 1} onClick={() => setTrangHienTai(p => p - 1)} className="btn-pagination-nav">Trước</button>
                     <div className="pagination-pages">

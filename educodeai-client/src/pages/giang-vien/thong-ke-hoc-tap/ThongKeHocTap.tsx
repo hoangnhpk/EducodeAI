@@ -6,6 +6,13 @@ import StatCard from "./components/StatCard";
 import StudentTable from "./components/StudentTable";
 import TopStudents from "./components/TopStudents";
 import AtRiskStudents from "./components/AtRiskStudents";
+import {
+  Clock,
+  BookOpen,
+  ClipboardCheck,
+  CheckCircle,
+  Search,
+} from "lucide-react";
 
 import "./components/ThongKeHocTap.css";
 
@@ -94,24 +101,24 @@ export default function ThongKeHocTap() {
   if (error) {
     return (
       <div className="thong-ke-container">
-        <div style={{
-          padding: '20px',
-          background: 'var(--danger-soft)',
-          border: '1px solid var(--danger)',
-          borderRadius: 'var(--radius-md)',
-          color: 'var(--danger-strong)'
+        <div style={{ 
+          padding: '20px', 
+          background: '#fee2e2', 
+          border: '1px solid #ef4444',
+          borderRadius: '8px',
+          color: '#991b1b'
         }}>
           <h3>Lỗi tải dữ liệu</h3>
           <p>{error}</p>
-          <button
+          <button 
             onClick={fetchAllData}
             style={{
               marginTop: '10px',
               padding: '8px 16px',
-              background: 'var(--danger)',
+              background: '#ef4444',
               color: 'white',
               border: 'none',
-              borderRadius: 'var(--radius-sm)',
+              borderRadius: '4px',
               cursor: 'pointer'
             }}
           >
@@ -136,7 +143,7 @@ export default function ThongKeHocTap() {
           title="GIỜ HỌC TB / HỌC VIÊN"
           value={`${Number(overview?.gioHocTrungBinh ?? 0).toFixed(1)}h`}
           subtitle="Trung bình mỗi học viên"
-          icon="fa-clock"
+          icon={Clock}
           gradient="icon-purple"
         />
 
@@ -144,7 +151,7 @@ export default function ThongKeHocTap() {
           title="KHÓA HỌC ĐANG DẠY"
           value={String(overview?.soKhoaHocDangDay || 0)}
           subtitle="Khóa học đang hoạt động"
-          icon="fa-book-open"
+          icon={BookOpen}
           gradient="icon-blue"
         />
 
@@ -152,7 +159,7 @@ export default function ThongKeHocTap() {
           title="TỔNG BÀI TẬP"
           value={String(overview?.tongBaiTap || 0)}
           subtitle="Tổng số bài tập đã giao"
-          icon="fa-clipboard-check"
+          icon={ClipboardCheck}
           gradient="icon-yellow"
         />
 
@@ -166,7 +173,7 @@ export default function ThongKeHocTap() {
               ? "⚠ Trung bình"
               : "✘ Cần cải thiện"
           }
-          icon="fa-circle-check"
+          icon={CheckCircle}
           gradient="icon-green"
         />
       </div>
@@ -180,7 +187,7 @@ export default function ThongKeHocTap() {
           <h3>Bảng chi tiết học viên ({totalStudents})</h3>
 
           <div className="search-box">
-            <i className="fas fa-magnifying-glass" aria-hidden="true" />
+            <Search size={18} />
             <input
               type="text"
               placeholder="Tìm kiếm học viên..."

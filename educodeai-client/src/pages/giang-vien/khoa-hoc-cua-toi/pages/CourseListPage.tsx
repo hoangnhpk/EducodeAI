@@ -45,40 +45,20 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
         {!loading && !error && courses.length > 0 && (
           <div className="khm-stat-row khm-mb-24">
             <div className="khm-stat-card">
-              <div className="khm-stat-icon khm-stat-icon-primary" aria-hidden="true">
-                <i className="fas fa-book-open" />
-              </div>
-              <div className="khm-stat-body">
-                <div className="khm-stat-value">{courses.length}</div>
-                <div className="khm-stat-label">Khóa học</div>
-              </div>
+              <div className="khm-stat-value">{courses.length}</div>
+              <div className="khm-stat-label">Khóa học</div>
             </div>
             <div className="khm-stat-card">
-              <div className="khm-stat-icon khm-stat-icon-info" aria-hidden="true">
-                <i className="fas fa-user-graduate" />
-              </div>
-              <div className="khm-stat-body">
-                <div className="khm-stat-value">{totalStudents}</div>
-                <div className="khm-stat-label">Tổng HV</div>
-              </div>
+              <div className="khm-stat-value">{totalStudents}</div>
+              <div className="khm-stat-label">Tổng HV</div>
             </div>
             <div className="khm-stat-card">
-              <div className="khm-stat-icon khm-stat-icon-warning" aria-hidden="true">
-                <i className="fas fa-star" />
-              </div>
-              <div className="khm-stat-body">
-                <div className="khm-stat-value">{avgRating}</div>
-                <div className="khm-stat-label">Đánh giá TB</div>
-              </div>
+              <div className="khm-stat-value khm-text-accent">{avgRating}</div>
+              <div className="khm-stat-label">Đánh giá TB</div>
             </div>
             <div className="khm-stat-card">
-              <div className="khm-stat-icon khm-stat-icon-success" aria-hidden="true">
-                <i className="fas fa-award" />
-              </div>
-              <div className="khm-stat-body">
-                <div className="khm-stat-value">{courses.filter(c => c.coChungChi).length}</div>
-                <div className="khm-stat-label">Có chứng chỉ</div>
-              </div>
+              <div className="khm-stat-value">{courses.filter(c => c.coChungChi).length}</div>
+              <div className="khm-stat-label">Có chứng chỉ</div>
             </div>
           </div>
         )}

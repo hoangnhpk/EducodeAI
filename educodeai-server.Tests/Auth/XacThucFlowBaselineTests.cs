@@ -18,13 +18,7 @@ public sealed class XacThucFlowBaselineTests
 
     public XacThucFlowBaselineTests()
     {
-        var originValidator = new Mock<educodeai_server.Services.Security.IRequestOriginValidator>();
-        originValidator.Setup(validator => validator.IsAllowed(It.IsAny<HttpRequest>()))
-            .Returns((HttpRequest request) => request.Headers.ContainsKey("Origin") || request.Headers.ContainsKey("Referer"));
-        _controller = new XacThucController(
-            _authService.Object,
-            Mock.Of<IGiayToScanningService>(),
-            originValidator.Object)
+        _controller = new XacThucController(_authService.Object, Mock.Of<IGiayToScanningService>())
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };
@@ -70,14 +64,14 @@ public sealed class XacThucFlowBaselineTests
         var refreshResult = new { token = "new-access-token" };
         _controller.HttpContext.Request.Headers.Origin = "http://localhost:3000";
         _authService
-            .Setup(x => x.LamMoiTokenAsync(request.MaThietBi))
+            .Setup(x => x.LamMoiTokenAsync(string.Empty, request.MaThietBi))
             .ReturnsAsync(refreshResult);
 
         var action = await _controller.RefreshToken(request);
 
         Assert.Same(refreshResult, Assert.IsType<OkObjectResult>(action).Value);
         _authService.Verify(
-            x => x.LamMoiTokenAsync("device-001"),
+            x => x.LamMoiTokenAsync(string.Empty, "device-001"),
             Times.Once);
     }
 
@@ -90,7 +84,7 @@ public sealed class XacThucFlowBaselineTests
             () => _controller.RefreshToken(request));
 
         _authService.Verify(
-            x => x.LamMoiTokenAsync(It.IsAny<string>()),
+            x => x.LamMoiTokenAsync(It.IsAny<string>(), It.IsAny<string>()),
             Times.Never);
     }
 
@@ -134,18 +128,18 @@ public sealed class XacThucFlowBaselineTests
     public async Task AuthenticatedDeviceAndPasswordFlows_UseUserClaim()
     {
         SetUserId(42);
-        var remoteRequest = new DangXuatTuXaRequest { CaptchaToken = "captcha-token" };
+        var remoteRequest = new DangXuatTuXaRequest();
         var passwordRequest = new DoiMatKhauRequest();
         var devices = new[] { new { id = "device-1" } };
-        _authService.Setup(x => x.LayDanhSachThietBiAsync(42)).ReturnsAsync(devices);
+        _authService.Setup(x => x.LayDanhSachThietBiAsync(42, "current")).ReturnsAsync(devices);
         _authService.Setup(x => x.DangXuatAsync(42, "device-1")).ReturnsAsync(true);
-        _authService.Setup(x => x.YeuCauOtpDangXuatTuXaAsync(42, "captcha-token")).ReturnsAsync(true);
+        _authService.Setup(x => x.YeuCauOtpDangXuatTuXaAsync(42)).ReturnsAsync(true);
         _authService.Setup(x => x.XacNhanDangXuatTuXaAsync(42, remoteRequest)).ReturnsAsync(true);
         _authService.Setup(x => x.DoiMatKhauAsync(42, passwordRequest)).ReturnsAsync(true);
 
-        Assert.Same(devices, Assert.IsType<OkObjectResult>(await _controller.LayDanhSachThietBi()).Value);
+        Assert.Same(devices, Assert.IsType<OkObjectResult>(await _controller.LayDanhSachThietBi("current")).Value);
         Assert.IsType<OkObjectResult>(await _controller.DangXuat("device-1"));
-        Assert.IsType<OkObjectResult>(await _controller.YeuCauOtpDangXuatTuXa(remoteRequest));
+        Assert.IsType<OkObjectResult>(await _controller.YeuCauOtpDangXuatTuXa());
         Assert.IsType<OkObjectResult>(await _controller.XacNhanDangXuatTuXa(remoteRequest));
         Assert.IsType<OkObjectResult>(await _controller.DoiMatKhau(passwordRequest));
 

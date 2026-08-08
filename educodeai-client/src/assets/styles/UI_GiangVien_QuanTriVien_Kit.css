@@ -99,40 +99,15 @@ body {
   color: white;
 }
 
-/* Theme nút primary qua chính biến --bs-* của Bootstrap 5.3.
-   Dùng selector .btn.btn-primary (0,2,0) để LUÔN thắng rule .btn-primary
-   (0,1,0) của Bootstrap bất kể thứ tự load CSS -> nút cam trên toàn hệ thống,
-   khỏi sửa từng trang. KHÔNG set background trực tiếp (Bootstrap .btn đã đọc
-   var(--bs-btn-bg), set biến là đủ và đúng cơ chế). */
-.btn.btn-primary {
-  --bs-btn-color: #fff;
-  --bs-btn-bg: var(--primary);
-  --bs-btn-border-color: var(--primary);
-  --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: var(--primary-hover);
-  --bs-btn-hover-border-color: var(--primary-hover);
-  --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: var(--primary-dark);
-  --bs-btn-active-border-color: var(--primary-dark);
-  --bs-btn-disabled-color: #fff;
-  --bs-btn-disabled-bg: var(--primary);
-  --bs-btn-disabled-border-color: var(--primary);
-  --bs-btn-focus-shadow-rgb: 246, 144, 80;
+.btn-primary {
+  background: var(--primary);
+  color: white;
 }
 
-/* Nút ghost/secondary Bootstrap: theme qua --bs-* sang token neutral
-   (viền --border-color, chữ --text-main, hover nền --border-light) thay vì
-   xám mặc định Bootstrap. Selector (0,2,0) thắng .btn-outline-secondary. */
-.btn.btn-outline-secondary {
-  --bs-btn-color: var(--text-main);
-  --bs-btn-border-color: var(--border-color);
-  --bs-btn-hover-color: var(--text-main);
-  --bs-btn-hover-bg: var(--border-light);
-  --bs-btn-hover-border-color: var(--border-color);
-  --bs-btn-active-color: var(--text-main);
-  --bs-btn-active-bg: var(--border-light);
-  --bs-btn-active-border-color: var(--border-color);
-  --bs-btn-focus-shadow-rgb: 229, 231, 235;
+.btn-primary:hover {
+  background: var(--primary-hover);
+  color: white;
+  box-shadow: 0 4px 12px rgba(246, 144, 80, 0.3);
 }
 
 .btn-secondary {
@@ -178,35 +153,16 @@ label {
 
 input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   width: 100%;
-  padding-block: 10px;
+  padding: 10px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
   font-size: 14px;
-}
-
-/* Padding ngang tách riêng ở specificity thấp (0,0,1) để mọi class search
-   theo trang (vd .khm-search-input với padding-left chừa chỗ icon) LUÔN
-   override được -> fix icon đè chữ trên toàn hệ thống, khỏi sửa từng trang. */
-input, select, textarea {
-  padding-inline: 12px;
-}
-/* Giữ nguyên hành vi cũ: checkbox/radio không nhận padding ngang.
-   Selector này chỉ chạm checkbox/radio nên KHÔNG làm tăng specificity với input search. */
-input[type="checkbox"], input[type="radio"] {
-  padding-inline: 0;
 }
 
 input:focus,
 textarea:focus {
   outline: none;
   border-color: var(--primary);
-}
-
-/* Ô input có icon bên trái: chừa chỗ cho icon absolute.
-   Cấu trúc :not() + class để specificity (0,3,1) thắng rule input global ở trên (0,2,1),
-   khỏi phải nâng specificity thủ công ở từng trang. */
-input.form-control-icon:not([type="checkbox"]):not([type="radio"]) {
-  padding-left: 40px;
 }
 
 .table {
@@ -302,7 +258,7 @@ input.form-control-icon:not([type="checkbox"]):not([type="radio"]) {
 .qtv-sidebar {
   width: 260px;
   height: 100vh;
-  background: linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
+  background: linear-gradient(180deg, #1a237e 0%, #0d47a1 100%); /* Màu gradient sâu hơn */
   color: white;
   display: flex;
   flex-direction: column;
@@ -327,7 +283,7 @@ input.form-control-icon:not([type="checkbox"]):not([type="radio"]) {
 
 .header-icon-spin {
   font-size: 1.8rem;
-  color: var(--primary);
+  color: #4fc3f7;
 }
 
 .system-label {
@@ -364,9 +320,9 @@ input.form-control-icon:not([type="checkbox"]):not([type="radio"]) {
 }
 
 .qtv-nav-link.active {
-  background: rgba(255, 255, 255, 0.25);
+  background: #2979ff; /* Màu xanh sáng hơn làm nổi bật */
   color: white;
-  border-left: 3px solid var(--primary);
+  box-shadow: 0 4px 12px rgba(41, 121, 255, 0.3);
 }
 
 .link-icon {
@@ -395,7 +351,7 @@ input.form-control-icon:not([type="checkbox"]):not([type="radio"]) {
   top: 0;
   left: 0;
 
-  background: linear-gradient(180deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
+  background: linear-gradient(180deg, #1a237e 0%, #0d47a1 100%);
   display: flex;
   flex-direction: column;
   /* Loại bỏ các khoảng trắng mặc định */

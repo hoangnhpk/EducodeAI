@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
+import { Bot, Settings, ShieldCheck, X } from 'lucide-react';
 import { reviewAdminService } from '../../../services/review-admin.service';
 import ReviewAdminDetailDrawer from './components/ReviewAdminDetailDrawer';
 import ReviewAdminFilters from './components/ReviewAdminFilters';
@@ -153,7 +154,7 @@ export default function QuanLyReviewMoi() {
           icon: 'success',
           title: 'AI xử lý xong!',
           html: `✅ Duyệt: <strong>${result.soDaDuyet}</strong> &nbsp;|&nbsp; ❌ Từ chối: <strong>${result.soTuChoi}</strong>`,
-          confirmButtonColor: 'var(--ai-accent)',
+          confirmButtonColor: '#7c3aed',
         });
       }
     } catch {
@@ -177,7 +178,7 @@ export default function QuanLyReviewMoi() {
       showCancelButton: true,
       confirmButtonText: '🤖 Để AI xử lý',
       cancelButtonText: 'Hủy',
-      confirmButtonColor: 'var(--ai-accent)',
+      confirmButtonColor: '#7c3aed',
     });
     if (confirm.isConfirmed) await runAIDuyet(false);
   };
@@ -245,7 +246,7 @@ export default function QuanLyReviewMoi() {
       {/* ── Hero ── */}
       <section className="qtrv-hero">
         <div className="qtrv-hero__content">
-          <div className="qtrv-hero__icon"><i className="fas fa-shield-halved" style={{ fontSize: 24 }} aria-hidden="true" /></div>
+          <div className="qtrv-hero__icon"><ShieldCheck size={24} /></div>
           <div>
             <h1>Quản lý đánh giá khóa học</h1>
             <p>Kiểm duyệt nhận xét học viên, xử lý nội dung không phù hợp.</p>
@@ -275,7 +276,7 @@ export default function QuanLyReviewMoi() {
             disabled={aiDuying}
             title="Gemini AI phân tích tất cả review đang chờ duyệt"
           >
-            <i className="fas fa-robot" aria-hidden="true" />
+            <Bot size={15} />
             {aiDuying ? 'AI đang xử lý...' : 'AI Duyệt'}
             {choDuyetCount > 0 && !aiDuying && (
               <span className="qtrv-ai-batch-count">{choDuyetCount}</span>
@@ -288,9 +289,8 @@ export default function QuanLyReviewMoi() {
             className={`qtrv-ai-settings-btn ${aiSettings.enabled ? 'active' : ''}`}
             onClick={handleOpenSettings}
             title="Cài đặt tự động duyệt AI"
-            aria-label="Cài đặt tự động duyệt AI"
           >
-            <i className="fas fa-gear" aria-hidden="true" />
+            <Settings size={15} />
           </button>
         </div>
       </section>
@@ -301,11 +301,11 @@ export default function QuanLyReviewMoi() {
           <div className="qtrv-settings-panel" onClick={e => e.stopPropagation()}>
             <div className="qtrv-settings-header">
               <div className="qtrv-settings-title">
-                <i className="fas fa-robot" aria-hidden="true" />
+                <Bot size={16} />
                 Cài đặt AI Duyệt Tự Động
               </div>
-              <button type="button" className="qtrv-settings-close" onClick={() => setShowSettings(false)} aria-label="Đóng">
-                <i className="fas fa-xmark" aria-hidden="true" />
+              <button type="button" className="qtrv-settings-close" onClick={() => setShowSettings(false)}>
+                <X size={16} />
               </button>
             </div>
 
@@ -381,7 +381,7 @@ export default function QuanLyReviewMoi() {
               {/* Preview logic */}
               {draftSettings.enabled && (
                 <div className="qtrv-settings-preview">
-                  <i className="fas fa-robot" aria-hidden="true" />
+                  <Bot size={13} />
                   <span>
                     AI sẽ tự động duyệt khi có <strong>≥{draftSettings.nguongSoLuong}</strong> review chờ,
                     hoặc mỗi <strong>{draftSettings.khoangCachPhut} phút</strong> nếu có bất kỳ review nào chờ.

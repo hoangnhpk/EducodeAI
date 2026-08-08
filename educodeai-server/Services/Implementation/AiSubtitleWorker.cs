@@ -1,5 +1,4 @@
 using educodeai_server.Config;
-using educodeai_server.Constants;
 using educodeai_server.Data;
 using educodeai_server.Models;
 using Google.Cloud.Speech.V1;
@@ -158,7 +157,7 @@ namespace educodeai_server.Services.Implementation
                     // Invalidate theo đúng pattern hệ thống (xem KhoaHocCuaToiService):
                     //  - Danh sách khóa học giảng viên: key "Instructor:{id}:CourseList"
                     //  - Chi tiết khóa học: key có version "...detail:v{version}" → tăng version để invalidate
-                    await redisService.XoaKeyAsync(CacheKeys.InstructorCourseList(maGiangVien));
+                    await redisService.XoaKeyAsync($"Instructor:{maGiangVien}:CourseList");
                     await redisService.TangVersionKhoaHocAsync(maKhoaHoc);
 
                     _logger.LogInformation("Cache invalidated for course {MaKhoaHoc} after subtitle creation", maKhoaHoc);

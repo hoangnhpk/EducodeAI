@@ -72,15 +72,6 @@ namespace educodeai_server.Controllers.HocVien
                 if (maNguoiDung <= 0) maNguoiDung = 1; // Temporary mock for dev if needed
 
                 var data = await _thucHanhService.SubmitCodeAsync(maNguoiDung, maBaiTap, request);
-                if (!data.ThanhCong)
-                {
-                    var error = data.Results.FirstOrDefault()?.ErrorMessage?.Replace("[INFRA]", "").Trim();
-                    return StatusCode(StatusCodes.Status503ServiceUnavailable, new
-                    {
-                        message = "Máy chủ chấm code đang quá tải, vui lòng thử lại sau.",
-                        error
-                    });
-                }
                 return Ok(data);
             }
             catch (Exception ex)

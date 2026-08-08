@@ -1,7 +1,6 @@
-import { useRef, useState, memo } from "react";
+import { useState, memo } from "react";
 import { createPortal } from "react-dom";
 import { type NguoiDung } from "@/pages/quan-tri-vien/quan-ly-nguoi-dung/DuLieuNguoiDungDTO";
-import { useModalA11y } from "@/hooks/useModalA11y";
 
 type Props = {
     nguoiDung: NguoiDung | null;
@@ -13,9 +12,6 @@ const ModalKhoaNguoiDung = memo(({ nguoiDung, onDong, onXacNhan }: Props) => {
     const [lyDoChon, setLyDoChon] = useState("Vi phạm điều khoản cộng đồng");
     const [lyDoChiTiet, setLyDoChiTiet] = useState("");
     const [thoiHan, setThoiHan] = useState("1d");
-    const panelRef = useRef<HTMLDivElement>(null);
-
-    useModalA11y(!!nguoiDung, onDong, panelRef);
 
     if (!nguoiDung) return null;
 
@@ -28,13 +24,13 @@ const ModalKhoaNguoiDung = memo(({ nguoiDung, onDong, onXacNhan }: Props) => {
 
     const modalContent = (
         <div className="qlnv-modal-overlay" onClick={(e) => e.target === e.currentTarget && onDong()}>
-            <div className="qlnv-modal-card" style={{ maxWidth: 450 }} ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="modal-khoa-title">
+            <div className="qlnv-modal-card" style={{ maxWidth: 450 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h3 id="modal-khoa-title" style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)' }}>Khóa người dùng</h3>
-                    <button onClick={onDong} aria-label="Đóng" style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--text-light)', lineHeight: 1 }}>&times;</button>
+                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>Khóa người dùng</h3>
+                    <button onClick={onDong} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#94a3b8', lineHeight: 1 }}>&times;</button>
                 </div>
-
-                <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>
+                
+                <p style={{ fontSize: 14, color: "#475569", marginBottom: 20 }}>
                     Bạn đang thực hiện khóa tài khoản của <strong>{hoTen}</strong>
                 </p>
 
@@ -44,7 +40,7 @@ const ModalKhoaNguoiDung = memo(({ nguoiDung, onDong, onXacNhan }: Props) => {
                         className="modal-input"
                         value={lyDoChon}
                         onChange={(e) => setLyDoChon(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}
+                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                     >
                         <option value="Vi phạm điều khoản cộng đồng">Vi phạm điều khoản cộng đồng</option>
                         <option value="Spam nội dung">Spam nội dung</option>
@@ -60,7 +56,7 @@ const ModalKhoaNguoiDung = memo(({ nguoiDung, onDong, onXacNhan }: Props) => {
                         className="modal-input"
                         value={thoiHan}
                         onChange={(e) => setThoiHan(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}
+                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                     >
                         <option value="15s">15 giây (Test)</option>
                         <option value="1d">1 ngày</option>
@@ -80,13 +76,13 @@ const ModalKhoaNguoiDung = memo(({ nguoiDung, onDong, onXacNhan }: Props) => {
                         value={lyDoChiTiet}
                         onChange={(e) => setLyDoChiTiet(e.target.value)}
                         className="modal-input"
-                        style={{ resize: "vertical", width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}
+                        style={{ resize: "vertical", width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                     />
                 </div>
 
                 <div className="modal-actions" style={{ marginTop: '25px' }}>
                     <button className="btn-cancel" onClick={onDong}>Hủy</button>
-                    <button className="btn-action btn-lock" onClick={handleXacNhan} style={{ background: 'var(--danger)', color: 'var(--text-white)', border: 'none', fontWeight: 600 }}>
+                    <button className="btn-action btn-lock" onClick={handleXacNhan} style={{ background: '#ef4444', color: 'white', border: 'none', fontWeight: 600 }}>
                         Xác nhận khóa
                     </button>
                 </div>

@@ -3,11 +3,13 @@ import Swal from 'sweetalert2';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import FacebookLogin from '@greatsumini/react-facebook-login';
 import { getDeviceInfo } from '../../utils/deviceHelper';
 import { FaArrowLeft } from 'react-icons/fa';
 import ReCAPTCHA from "react-google-recaptcha";
 import { setAuthTokens } from '../../utils/authStorage';
+import { classifyLoginResponse, type LoginUser } from './loginFlow';
+import PasswordInput from '../../components/PasswordInput';
+import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
 
 const DangNhap: React.FC = () => {
     const navigate = useNavigate();
@@ -18,6 +20,7 @@ const DangNhap: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<{ identifier?: string; password?: string; otp?: string }>({});
     const [replaceDeviceInfo, setReplaceDeviceInfo] = useState<{ oldestDeviceName: string; email: string } | null>(null);
+    const [continuationEmail, setContinuationEmail] = useState('');
 
     // State dữ liệu form
     const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -27,14 +30,12 @@ const DangNhap: React.FC = () => {
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "335320969122-3e5a0uoj7scbhmgi83utlesvf5rbrtdt.apps.googleusercontent.com";
-    const FACEBOOK_APP_ID = "994470786348116";
     
-    const redirectByUserRole = (user: any) => {
+    const redirectByUserRole = (user: LoginUser) => {
         const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
-        if (role === 0) navigate('/quan-tri-vien'); 
+        if (role === 0) navigate('/quan-tri-vien');
         else if (role === 1) navigate('/giang-vien');
         else navigate('/');
-        window.location.reload();
     };
 
     const validateForm = () => {
@@ -45,32 +46,54 @@ const DangNhap: React.FC = () => {
         return Object.keys(newErrors).length === 0;
     };
 
+    const handleLoginSuccess = async (token: string, user: LoginUser) => {
+        setAuthTokens(token);
+        localStorage.setItem('user_info', JSON.stringify(user));
+        redirectByUserRole(user);
+    };
+
+    const handleLoginResponse = async (response: Record<string, unknown>) => {
+        const outcome = classifyLoginResponse(response);
+        if (outcome.kind === 'completed') {
+            await handleLoginSuccess(outcome.token, outcome.user);
+            return;
+        }
+        if (outcome.kind === 'otp') {
+            setContinuationEmail(outcome.email);
+            setStep(2);
+            await Swal.fire({ icon: 'info', title: 'Thiết bị mới', text: outcome.message, timer: 2000, showConfirmButton: false });
+            return;
+        }
+        if (outcome.kind === 'replacement') {
+            setReplaceDeviceInfo({ oldestDeviceName: outcome.oldestDeviceName, email: outcome.email });
+            const result = await Swal.fire({
+                title: 'Giới hạn đăng nhập',
+                text: `Tài khoản đã đạt giới hạn 3 thiết bị. Bạn có muốn đăng xuất thiết bị "${outcome.oldestDeviceName}" để tiếp tục không?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Đồng ý, thay thế',
+                cancelButtonText: 'Hủy bỏ',
+                confirmButtonColor: '#fb873f',
+                reverseButtons: true
+            });
+            if (result.isConfirmed) setStep(3);
+            return;
+        }
+        if (outcome.kind === 'captcha') {
+            setShowCaptcha(true);
+            setErrors({ identifier: outcome.message || 'Vui lòng xác thực Captcha.' });
+            return;
+        }
+        throw new Error('Phản hồi đăng nhập không hợp lệ');
+    };
+
     // Hàm gọi API Đăng nhập tái sử dụng
     const performLogin = async (token?: string) => {
         setIsLoading(true);
         try {
-            // Mặc định captcha sẽ là "SKIP_CAPTCHA" nếu tham số token không được truyền
-            const response: any = await authService.login(emailOrUsername, password, token || "SKIP_CAPTCHA");
+            const response = await authService.login(emailOrUsername, password, token);
             
-            if (response.requiresOtp) {
-                setStep(2);
-                Swal.fire({ icon: 'info', title: 'Thiết bị mới', text: response.message, timer: 2000, showConfirmButton: false });
-            } else if (response.requiresLogoutOldest) {
-                // ... (giữ nguyên logic đầy phiên)
-                setReplaceDeviceInfo({ oldestDeviceName: response.oldestDeviceName, email: response.email });
-                const result = await Swal.fire({ title: 'Giới hạn đăng nhập', html: `Tài khoản của bạn đã đạt giới hạn 3 thiết bị.<br/><br/>Bạn có muốn đăng xuất thiết bị <b>${response.oldestDeviceName}</b> để tiếp tục truy cập trên trình duyệt này không?`, icon: 'warning', showCancelButton: true, confirmButtonText: 'Đồng ý, thay thế', cancelButtonText: 'Hủy bỏ', confirmButtonColor: '#fb873f', reverseButtons: true });
-                if (result.isConfirmed) {
-                    setStep(3);
-                    Swal.fire({ icon: 'info', title: 'Xác nhận OTP', text: 'Mã OTP đã được gửi về Email của bạn để xác nhận thay thế thiết bị.', timer: 2500, showConfirmButton: false });
-                }
-            } else if (response.requiresCaptcha) {
-                // KÍCH HOẠT CAPTCHA SAU 3 LẦN SAI
-                setShowCaptcha(true);
-                setErrors({ identifier: response.message }); 
-                Swal.fire({ icon: 'warning', title: 'Xác thực bảo mật', text: response.message });
-            } else if (response.token) {
-                handleLoginSuccess(response);
-            }
+            await handleLoginResponse(response);
         } catch (error: any) {
             const errorMsg = error.response?.data?.message || "Tài khoản hoặc mật khẩu không chính xác!";
             setErrors({ identifier: errorMsg });
@@ -127,10 +150,10 @@ const DangNhap: React.FC = () => {
         try {
             // Đã đổi tên hàm thành confirmLogin
             const response: any = await authService.confirmLogin({
-                taiKhoan: emailOrUsername,
+                taiKhoan: continuationEmail || emailOrUsername.trim(),
                 otpCode: otp
             });
-            handleLoginSuccess(response);
+            await handleLoginResponse(response);
         } catch (error: any) {
             setErrors({ otp: error.response?.data?.message || "Mã OTP không chính xác!" });
         } finally {
@@ -151,20 +174,12 @@ const DangNhap: React.FC = () => {
                 taiKhoan: replaceDeviceInfo?.email || emailOrUsername,
                 otpCode: otp
             });
-            handleLoginSuccess(response);
+            await handleLoginResponse(response);
         } catch (error: any) {
             setErrors({ otp: error.response?.data?.message || "Mã OTP không chính xác!" });
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const handleLoginSuccess = async (res: any) => {
-        setAuthTokens(res.token);
-        // Refresh token do backend đặt trong cookie HttpOnly; frontend không lưu/đọc.
-        localStorage.setItem('user_info', JSON.stringify(res.user));
-        await Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đăng nhập thành công!', timer: 1500, showConfirmButton: false });
-        redirectByUserRole(res.user);
     };
 
     return (
@@ -195,20 +210,27 @@ const DangNhap: React.FC = () => {
                                     <div className="row g-3">
                                         <div className="col-12 text-start">
                                             <div className="form-floating">
-                                                <input type="text" className={`form-control ${errors.identifier ? 'is-invalid' : ''}`}
-                                                    placeholder="Tài khoản hoặc Email" value={emailOrUsername} onChange={(e) => {setEmailOrUsername(e.target.value); setErrors({})}} disabled={isLoading} />
-                                                <label>Email của bạn</label>
-                                                {errors.identifier && <div className="invalid-feedback">{errors.identifier}</div>}
+                                                <input id="login-identifier" type="text" className={`form-control ${errors.identifier ? 'is-invalid' : ''}`}
+                                                    placeholder="Tài khoản hoặc Email" value={emailOrUsername} onChange={(e) => {setEmailOrUsername(e.target.value); setErrors({})}} disabled={isLoading}
+                                                    aria-invalid={Boolean(errors.identifier)} aria-describedby={errors.identifier ? 'login-identifier-error' : undefined} />
+                                                <label htmlFor="login-identifier">Email hoặc tài khoản</label>
+                                                {errors.identifier && <div id="login-identifier-error" className="invalid-feedback" role="alert">{errors.identifier}</div>}
                                             </div>
                                         </div>
 
                                         <div className="col-12 text-start">
-                                            <div className="form-floating">
-                                                <input type="password" className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                                                    placeholder="Mật khẩu" value={password} onChange={(e) => {setPassword(e.target.value); setErrors({})}} disabled={isLoading} />
-                                                <label>Mật khẩu</label>
-                                                {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                                            </div>
+                                            <PasswordInput
+                                                id="login-password"
+                                                label="Mật khẩu"
+                                                floating
+                                                className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                                                placeholder="Mật khẩu"
+                                                value={password}
+                                                onChange={(e) => { setPassword(e.target.value); setErrors({}); }}
+                                                disabled={isLoading}
+                                                autoComplete="current-password"
+                                                error={errors.password}
+                                            />
                                         </div>
 
                                         <div className="col-12 text-end">
@@ -220,7 +242,8 @@ const DangNhap: React.FC = () => {
                                             <div className="col-12 d-flex flex-column align-items-center my-2 animate__animated animate__zoomIn">
                                                 <p className="small text-danger fw-bold mb-2">Vui lòng xác thực mã bên dưới.</p>
                                                 <ReCAPTCHA
-                                                    sitekey="6Legm5csAAAAABr5FTIC25geZIxrxlmF5ORzuiYt"
+                                                    ref={recaptchaRef}
+                                                    sitekey={RECAPTCHA_SITE_KEY || 'invalid-site-key'}
                                                     onChange={onCaptchaVerify}
                                                 />
                                             </div>
@@ -241,8 +264,8 @@ const DangNhap: React.FC = () => {
                                                     <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted">Hoặc đăng nhập với</span>
                                                 </div>
 
-                                                <div className="col-12 d-flex gap-2">
-                                                    <div className="w-100">
+                                                <div className="col-12 d-flex">
+                                                    <div className="w-100 google-login-button">
                                                         <GoogleLogin
                                                             onSuccess={async (credentialResponse) => {
                                                                 try {
@@ -252,7 +275,7 @@ const DangNhap: React.FC = () => {
                                                                     const response: any = await authService.googleLogin({
                                                                         credential: credentialResponse.credential!
                                                                     }, maThietBi, tenThietBi);
-                                                                    handleLoginSuccess(response);
+                                                                    await handleLoginResponse(response);
                                                                 } catch (error: any) {
                                                                     Swal.fire('Lỗi', error.response?.data?.message || 'Đăng nhập Google thất bại', 'error');
                                                                 } finally {
@@ -260,51 +283,20 @@ const DangNhap: React.FC = () => {
                                                                 }
                                                             }}
                                                             onError={() => {
-                                                                console.error('Google Login failed before backend call. Check Google OAuth origin: http://localhost:3000 and popup/cookie settings.');
-                                                                Swal.fire('Lỗi', 'Google OAuth thất bại trước khi gọi API. Kiểm tra OAuth Client ID và Authorized JavaScript origins có http://localhost:3000.', 'error');
+                                                                const currentOrigin = window.location.origin;
+                                                                console.error(`Google Login failed before backend call. Check Google OAuth origin: ${currentOrigin} and popup/cookie settings.`);
+                                                                Swal.fire('Lỗi', `Google OAuth thất bại trước khi gọi API. Kiểm tra OAuth Client ID và Authorized JavaScript origins có ${currentOrigin}.`, 'error');
                                                             }}
                                                             ux_mode="popup"
                                                             theme="outline"
-                                                            width="100%"
-                                                        />
-                                                    </div>
-                                                    <div className="w-100">
-                                                        <FacebookLogin
-                                                            appId={FACEBOOK_APP_ID}
-                                                            scope="public_profile,email"
-                                                            fields="name,email,picture"
-                                                            onSuccess={async (response: any) => {
-                                                                try {
-                                                                    setIsLoading(true);
-                                                                    const { maThietBi, tenThietBi } = getDeviceInfo();
-                                                                    // E.6: gửi access token thô để backend verify với Graph API.
-                                                                    const fbResponse: any = await authService.facebookLogin(
-                                                                        { accessToken: response.accessToken },
-                                                                        maThietBi, tenThietBi);
-                                                                    handleLoginSuccess(fbResponse);
-                                                                } catch (error: any) {
-                                                                    const msg = error.response?.data?.message || error.message || 'Đăng nhập Facebook thất bại';
-                                                                    Swal.fire('Lỗi', msg, 'error');
-                                                                } finally {
-                                                                    setIsLoading(false);
-                                                                }
-                                                            }}
-                                                            onFail={(error) => {
-                                                                console.error('FB Login Fail:', error);
-                                                                Swal.fire('Lỗi', 'Kết nối với Facebook thất bại', 'error');
-                                                            }}
-                                                            render={({ onClick }) => (
-                                                                <button onClick={onClick} className="btn btn-outline-primary w-100 py-2 fw-bold rounded-3 d-flex align-items-center justify-content-center" style={{ height: '40px', borderColor: '#dee2e6', color: '#666' }}>
-                                                                    <i className="bi bi-facebook me-2" style={{ color: '#1877F2' }}></i> Facebook
-                                                                </button>
-                                                            )}
+                                                            width="560"
                                                         />
                                                     </div>
                                                 </div>
                                             </>
                                         )}
 
-                                        <div className="col-12 mt-4 d-flex justify-content-between align-items-center">
+                                        <div className="col-12 mt-4 d-flex justify-content-between align-items-center login-footer-links">
                                             <Link to="/" className="text-decoration-none fw-bold small" style={{ color: '#fb873f' }}>
                                                 <i className="bi bi-house-door-fill me-1"></i> Trang chủ
                                             </Link>
@@ -316,7 +308,7 @@ const DangNhap: React.FC = () => {
                                 </form>
                             ) : (
                                 <div className="text-center animate__animated animate__fadeIn">
-                                    <button className="btn btn-link text-decoration-none text-muted p-0 mb-3" onClick={() => { setStep(1); setOtp(''); setShowCaptcha(false); }}>
+                                    <button type="button" className="btn btn-link text-decoration-none text-muted p-0 mb-3" onClick={() => { setStep(1); setOtp(''); setShowCaptcha(false); }}>
                                         <FaArrowLeft className="me-1" /> Quay lại
                                     </button>
                                     <h2 className="h4 mb-3 fw-bold">
@@ -329,10 +321,13 @@ const DangNhap: React.FC = () => {
                                     </p>
                                     
                                     <div className="form-floating my-4 text-start">
-                                        <input type="text" className={`form-control text-center fs-3 fw-bold ${errors.otp ? 'is-invalid' : ''}`} 
-                                            maxLength={6} value={otp} autoFocus onChange={(e) => { setOtp(e.target.value.replace(/[^0-9]/g, '')); setErrors({}); }} />
-                                        <label>Nhập mã 6 chữ số</label>
-                                        {errors.otp && <div className="invalid-feedback text-center">{errors.otp}</div>}
+                                        <input id="login-otp" type="text" className={`form-control text-center fs-3 fw-bold ${errors.otp ? 'is-invalid' : ''}`}
+                                            maxLength={6} inputMode="numeric" autoComplete="one-time-code" value={otp} autoFocus
+                                            aria-invalid={Boolean(errors.otp)} aria-describedby={errors.otp ? 'login-otp-error' : 'login-otp-help'}
+                                            onChange={(e) => { setOtp(e.target.value.replace(/[^0-9]/g, '')); setErrors({}); }} />
+                                        <label htmlFor="login-otp">Nhập mã 6 chữ số</label>
+                                        <div id="login-otp-help" className="visually-hidden">Mã xác thực một lần gồm 6 chữ số được gửi qua email.</div>
+                                        {errors.otp && <div id="login-otp-error" className="invalid-feedback text-center" role="alert">{errors.otp}</div>}
                                     </div>
 
                                     <button className="btn btn-primary w-100 py-3 mb-3 text-white border-0 fw-bold rounded-pill" 

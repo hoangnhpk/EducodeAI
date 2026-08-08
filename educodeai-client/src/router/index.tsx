@@ -1,5 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
-import React from "react";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import ProtectedRoute from "../pages/auth/ProtectedRoute";
 
 import LayoutHocVien from "../layouts/hoc-vien/LayoutHocVien";
@@ -16,7 +15,9 @@ import BoSungHoSoGiangVien from "../pages/auth/BoSungHoSoGiangVien";
 import QuenMatKhau from "../pages/auth/QuenMatKhau";
 import NotFound from "../pages/NotFound";
 
-import TrangChuHocVien from "@/pages/hoc-vien/trang-chu/TrangChu";import NoiDungKhoaHoc from "@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHoc";import ChiTietKhoaHoc from "../pages/hoc-vien/chi-tiet-khoa-hoc/ChiTietKhoaHoc";
+import TrangChuHocVien from "@/pages/hoc-vien/trang-chu/TrangChu";
+import NoiDungKhoaHoc from "@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHoc";
+import ChiTietKhoaHoc from "../pages/hoc-vien/chi-tiet-khoa-hoc/ChiTietKhoaHoc";
 import MuaKhoaHoc from "../pages/hoc-vien/mua-khoa-hoc/MuaKhoaHoc";
 import YeuCauLoTrinhAI from "../pages/hoc-vien/yeu-cau-lo-trinh-ai/YeuCauLoTrinhAI";
 import KhoaHocAICuaToi from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/KhoaHocCaNhanAI";
@@ -24,6 +25,7 @@ import ChiTietLoTrinhAI from "../pages/hoc-vien/khoa-hoc-ca-nhan-ai/ChiTietLoTri
 import HoSoHocVienPage from "../pages/hoc-vien/ho-so-hoc-vien/ho-so-hoc-vien";
 import KhongGianHocTap from "@/pages/hoc-vien/khong-gian-hoc-tap/KhongGianHocTap";
 import ProfilePage from "../pages/hoc-vien/ho-so-hoc-vien/ProfilePage";
+import KhoaHocCuaToiHocVien from "@/pages/hoc-vien/khoa-hoc-cua-toi/KhoaHocCuaToiHocVien";
 import DoiMatKhau from "../pages/hoc-vien/ho-so-hoc-vien/DoiMatKhau";
 import QuanLyThietBi from "../pages/hoc-vien/ho-so-hoc-vien/QuanLyThietBi";
 import KhamPhaLoTrinh from "../pages/hoc-vien/kham-pha-lo-trinh/KhamPhaLoTrinh";
@@ -49,7 +51,7 @@ import QuanLyMaGiamGiaGiangVien from "@/pages/giang-vien/ma-giam-gia/QuanLyMaGia
 
 import QuanLyReviewMoi from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReviewMoi";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
-import TangKhoaHoc from "../pages/quan-tri-vien/tang-khoa-hoc/TangKhoaHoc";
+import QuanLyHocVien from "../pages/quan-tri-vien/quan-ly-hoc-vien/QuanLyHocVien";
 import QuanLyApiKey from "@/pages/quan-tri-vien/quan-ly-api-key/QuanLyApiKey";
 import CauHinhHeThong from "../pages/quan-tri-vien/cau-hinh-he-thong/CauHinhHeThong";
 import ThongKeAdmin from "@/pages/quan-tri-vien/thong-ke/ThongKeAdmin";
@@ -72,24 +74,9 @@ const readUserInfo = (): any | null => {
   }
 };
 
-const DANG_KY_GIANG_VIEN_SESSION_KEY = 'educodeai:dang-ky-giang-vien:draft';
-
-const RegistrationDraftBoundary = () => {
-  const location = useLocation();
-  const previousPath = React.useRef(location.pathname);
-
-  React.useEffect(() => {
-    const wasRegistration = previousPath.current === '/dang-ky-giang-vien';
-    const isRegistration = location.pathname === '/dang-ky-giang-vien';
-    if (wasRegistration && !isRegistration) {
-      sessionStorage.removeItem(DANG_KY_GIANG_VIEN_SESSION_KEY);
-    }
-    previousPath.current = location.pathname;
-  }, [location.pathname]);
-
-  return <Outlet />;
+const HomeRedirect = () => {
+  return <TrangChuHocVien />;
 };
-
 
 const PublicAuthRoute = ({ children }: { children?: React.ReactNode }) => {
   const user = readUserInfo();
@@ -109,7 +96,6 @@ export default function AppRouter() {
     <SystemConfigProvider>
       <BrowserRouter>
         <Routes>
-          <Route element={<RegistrationDraftBoundary />}>
           <Route element={<PublicAuthRoute />}>
             <Route path="/dang-nhap" element={<DangNhap />} />
             <Route path="/dang-ky" element={<DangKy />} />
@@ -120,7 +106,7 @@ export default function AppRouter() {
           </Route>
 
           <Route element={<PublicRoute><LayoutHocVien /></PublicRoute>}>
-            <Route path="/" element={<TrangChuHocVien />} />
+            <Route path="/" element={<HomeRedirect />} />
             <Route path="/khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
           </Route>
 
@@ -131,7 +117,7 @@ export default function AppRouter() {
             <Route path="/mua-khoa-hoc/:id" element={<MuaKhoaHoc />} />
             <Route path="/ho-so" element={<HoSoHocVienPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/hoc-vien/khoa-hoc-cua-toi" element={<Navigate to="/khong-gian-hoc-tap" replace />} />
+            <Route path="/hoc-vien/khoa-hoc-cua-toi" element={<KhoaHocCuaToiHocVien />} />
             <Route path="/bao-mat" element={<DoiMatKhau />} />
             <Route path="/thiet-bi" element={<QuanLyThietBi />} />
             <Route path="/khoa-hoc-ai-cua-toi" element={<KhoaHocAICuaToi />} />
@@ -170,7 +156,7 @@ export default function AppRouter() {
             <Route path="thong-ke" element={<ThongKeAdmin />} />
             <Route path="nguoi-dung" element={<QuanLyNguoiDung />} />
             <Route path="quan-ly-binh-luan-review" element={<QuanLyReviewMoi />} />
-            <Route path="tang-khoa-hoc" element={<TangKhoaHoc />} />
+            <Route path="quan-ly-hoc-vien" element={<QuanLyHocVien />} />
             <Route path="quan-ly-api-key" element={<QuanLyApiKey />} />
             <Route path="cau-hinh-he-thong" element={<CauHinhHeThong />} />
             <Route path="rut-tien-giang-vien" element={<QuanLyRutTienGiangVien />} />
@@ -181,7 +167,6 @@ export default function AppRouter() {
           </Route>
 
           <Route path="*" element={<NotFound />} />
-          </Route>
         </Routes>
       </BrowserRouter>
     </SystemConfigProvider>

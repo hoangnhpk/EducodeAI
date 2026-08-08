@@ -1,3 +1,4 @@
+import { Star, X } from 'lucide-react';
 import type { ReviewItem } from './ReviewAdmin.types';
 import { formatDate, getRelativeTime, getTrangThaiClass, getTrangThaiLabel } from './review-admin.utils';
 
@@ -20,14 +21,14 @@ export default function ReviewAdminDetailDrawer({ review, onClose, onApprove, on
             <div className="qtrv-drawer__header">
               <div>
                 <span className="qtrv-type-badge is-rating">
-                  <i className="fas fa-star" aria-hidden="true" />
+                  <Star size={14} />
                   Đánh giá khóa học
                 </span>
                 <h3>{review.khoaHoc.tenKhoaHoc}</h3>
                 <p>{review.khoaHoc.giangVien || 'Nội dung đánh giá từ học viên'}</p>
               </div>
-              <button type="button" className="qtrv-close-btn" onClick={onClose} aria-label="Đóng">
-                <i className="fas fa-xmark" aria-hidden="true" />
+              <button type="button" className="qtrv-close-btn" onClick={onClose}>
+                <X size={18} />
               </button>
             </div>
 

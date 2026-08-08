@@ -1,4 +1,4 @@
-namespace educodeai_server.DTOs.AI
+﻿namespace educodeai_server.DTOs.AI
 {
     public class TinNhanChatDTO
     {
@@ -16,7 +16,6 @@ namespace educodeai_server.DTOs.AI
         public List<TinNhanChatDTO> LichSuChat { get; set; } = new();
 
         // Ngữ cảnh bài học hiện tại (Frontend sẽ truyền null nếu đang ở trang chủ/không học bài)
-        public int? MaBaiHoc { get; set; }
         public string? TieuDeBaiHoc { get; set; }
         public string? NoiDungBaiHoc { get; set; }
     }
