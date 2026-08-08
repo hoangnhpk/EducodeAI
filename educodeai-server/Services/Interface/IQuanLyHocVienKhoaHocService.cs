@@ -8,7 +8,7 @@ namespace educodeai_server.Services.Interface
     {
         Task<List<KhoaHocCuaGiangVienDTO>> LayDanhSachKhoaHocAsync(int maGiangVien);
         Task<List<ChiTietHocVienTrongKhoaDTO>> LayDanhSachHocVienAsync(int maGiangVien, int? maKhoaHoc, string? search);
-        Task<TienDoKhoaHocHocVienDTO> LayTienDoChiTietAsync(int maKhoaHoc, int maNguoiDung);
+        Task<TienDoKhoaHocHocVienDTO?> LayTienDoChiTietAsync(int maGiangVien, int maKhoaHoc, int maNguoiDung);
         Task<IEnumerable<object>> LayCacKhoaHocCuaHocVienAsync(int maNguoiDung, int maGiangVien);
         Task<GuiMailHangLoatResultDTO> GuiMailHangLoatAsync(int maGiangVien, GuiMailHangLoatDTO dto);
     }

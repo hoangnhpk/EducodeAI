@@ -67,6 +67,11 @@ export interface BaiHoc {
     thoiLuong: number;
     thuTu: number;
     linkVideo?: string | null;
+    videoSource?: string | null;
+    videoPublicId?: string | null;
+    videoStatus?: string | null;
+    hasSubtitle?: boolean;
+    subtitleUrl?: string | null;
     daXem?: boolean;
     laHocThu?: boolean;
     biKhoa?: boolean;

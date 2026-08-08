@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import type { StartPhongVanRequest } from '../../../services/phong-van-ai.service';
 import {
     PhongVanAIService,
@@ -50,6 +51,8 @@ const INTERVIEWER = {
 
 const PhongVanAI: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const requestedPosition = location.state?.chuyenNganh || '';
     
     // --- SETUP STATE ---
     const [setupMode, setSetupMode] = useState(true);
@@ -134,7 +137,7 @@ const PhongVanAI: React.FC = () => {
                 setTimeout(() => setIsSpeaking(false), 4000);
             }
         } catch (error: any) {
-            window.alert('Lỗi: ' + (error.message || 'Không thể bắt đầu phiên phỏng vấn.'));
+            await Swal.fire('Lỗi', error.message || 'Không thể bắt đầu phiên phỏng vấn.', 'error');
         } finally {
             setIsStarting(false);
         }
@@ -166,7 +169,7 @@ const PhongVanAI: React.FC = () => {
             if (res && (res.nhanXetCauTruoc || res.cauHoiTiepTheo)) {
                 setIsInterviewerTyping(false);
                 setIsSpeaking(true);
-                setQuestionCount(c => c + 1);
+                setQuestionCount(c => Math.min(c + 1, soLuongCauHoi));
                 
                 const data = res;
                 const aiResponse: IMessage = {
@@ -185,7 +188,7 @@ const PhongVanAI: React.FC = () => {
                 }
             }
         } catch (error: any) {
-            window.alert('Lỗi: ' + (error.message || 'Lỗi khi gửi câu trả lời.'));
+            await Swal.fire('Lỗi', error.message || 'Lỗi khi gửi câu trả lời.', 'error');
             setIsInterviewerTyping(false);
         }
     };
@@ -195,8 +198,9 @@ const PhongVanAI: React.FC = () => {
             navigate('/');
             return;
         }
+
         setShowEndModal(false);
-        navigate('/');
+        await handleGetResult();
     };
 
     const handleGetResult = async () => {
@@ -214,7 +218,7 @@ const PhongVanAI: React.FC = () => {
                 });
             }
         } catch (error: any) {
-            window.alert('Lỗi: ' + (error.message || 'Lỗi khi lấy kết quả.'));
+            await Swal.fire('Lỗi', error.message || 'Lỗi khi lấy kết quả.', 'error');
         } finally {
             setIsLoadingResult(false);
         }
@@ -228,7 +232,7 @@ const PhongVanAI: React.FC = () => {
     };
 
     // --- SPEECH-TO-TEXT (Web Speech API) ---
-    const toggleRecording = () => {
+    const toggleRecording = async () => {
         // Đang ghi → dừng lại
         if (isRecording) {
             recognitionRef.current?.stop();
@@ -238,7 +242,7 @@ const PhongVanAI: React.FC = () => {
         const SpeechRecognition =
             (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            window.alert('Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Vui lòng dùng Chrome, Edge hoặc Cốc Cốc.');
+            await Swal.fire('Không hỗ trợ', 'Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Vui lòng dùng Chrome, Edge hoặc Cốc Cốc.', 'warning');
             return;
         }
 
@@ -266,7 +270,7 @@ const PhongVanAI: React.FC = () => {
 
         recognition.onerror = (event: any) => {
             if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                window.alert('Không thể truy cập micro. Hãy cấp quyền micro cho trang web rồi thử lại.');
+                Swal.fire('Không truy cập được micro', 'Hãy cấp quyền micro cho trang web rồi thử lại.', 'warning');
             }
             setIsRecording(false);
         };
@@ -291,14 +295,17 @@ const PhongVanAI: React.FC = () => {
 
     if (setupMode) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#0f172a' }}>
-                <div style={{ background: '#1e293b', padding: '40px', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-                    <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>🚀 Thiết lập phỏng vấn AI</h2>
-                    <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: '32px' }}>Tùy chỉnh thông số phiên phỏng vấn của bạn</p>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--bg-main)' }}>
+                <div style={{ background: 'var(--bg-card)', padding: '40px', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: 'var(--shadow-lg)' }}>
+                    <h2 style={{ color: 'var(--text-main)', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>🚀 Thiết lập phỏng vấn AI</h2>
+                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginBottom: '32px' }}>Tùy chỉnh thông số phiên phỏng vấn của bạn</p>
                     
                     <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Vị trí ứng tuyển</label>
-                        <select value={viTri} onChange={e => setViTri(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                        <label htmlFor="pv-viTri" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Vị trí ứng tuyển</label>
+                        <select id="pv-viTri" value={viTri} onChange={e => setViTri(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', outline: 'none' }}>
+                            {requestedPosition && !['Backend Developer', 'Frontend Developer', 'Fullstack Developer', 'Mobile Developer', 'DevOps Engineer', 'Data Engineer', 'QA/Tester', 'UI/UX Designer', 'Business Analyst', 'Project Manager'].includes(requestedPosition) && (
+                                <option value={requestedPosition}>{requestedPosition}</option>
+                            )}
                             <option value="Backend Developer">Backend Developer</option>
                             <option value="Frontend Developer">Frontend Developer</option>
                             <option value="Fullstack Developer">Fullstack Developer</option>
@@ -313,8 +320,8 @@ const PhongVanAI: React.FC = () => {
                     </div>
                     
                     <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Cấp độ</label>
-                        <select value={capDo} onChange={e => setCapDo(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                        <label htmlFor="pv-capDo" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Cấp độ</label>
+                        <select id="pv-capDo" value={capDo} onChange={e => setCapDo(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', outline: 'none' }}>
                             <option value="Intern">Intern</option>
                             <option value="Fresher">Fresher</option>
                             <option value="Junior">Junior</option>
@@ -324,8 +331,8 @@ const PhongVanAI: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
-                        <select value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value))} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                        <label htmlFor="pv-tinhCach" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
+                        <select id="pv-tinhCach" value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value) as TinhCachAI)} style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', outline: 'none' }}>
                             <option value={TinhCachAI.Friendly}>Thân thiện (Hướng dẫn)</option>
                             <option value={TinhCachAI.Normal}>Bình thường (Tiêu chuẩn)</option>
                             <option value={TinhCachAI.Strict}>Khó tính (Xoáy sâu vào lỗi sai)</option>
@@ -333,11 +340,11 @@ const PhongVanAI: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '32px' }}>
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
-                        <input type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#64748b', outline: 'none', cursor: 'not-allowed' }} />
+                        <label htmlFor="pv-soCauHoi" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
+                        <input id="pv-soCauHoi" type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-light)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-muted)', outline: 'none', cursor: 'not-allowed' }} />
                     </div>
 
-                    <button onClick={handleStart} disabled={isStarting} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: isStarting ? 'not-allowed' : 'pointer', opacity: isStarting ? 0.7 : 1 }}>
+                    <button onClick={handleStart} disabled={isStarting} style={{ width: '100%', padding: '14px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: isStarting ? 'not-allowed' : 'pointer', opacity: isStarting ? 0.7 : 1 }}>
                         {isStarting ? 'Đang khởi tạo...' : 'Bắt Đầu Phỏng Vấn'}
                     </button>
                 </div>
@@ -414,7 +421,7 @@ const PhongVanAI: React.FC = () => {
                         </div>
                     )}
 
-                    <button onClick={() => navigate('/')} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #6366f1, #7c3aed)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
+                    <button onClick={() => navigate('/')} style={{ width: '100%', padding: '14px', background: 'var(--ai-accent)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' }}>
                         Trở về trang chủ
                     </button>
                 </div>
@@ -602,6 +609,7 @@ const PhongVanAI: React.FC = () => {
                                             onClick={toggleRecording}
                                             disabled={(isInterviewerTyping || isSpeaking) && !isRecording}
                                             title={isRecording ? 'Dừng ghi âm' : 'Nói để nhập câu trả lời'}
+                                            aria-label={isRecording ? 'Dừng ghi âm' : 'Nói để nhập câu trả lời'}
                                         >
                                             {isRecording ? (
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
@@ -609,10 +617,11 @@ const PhongVanAI: React.FC = () => {
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
                                             )}
                                         </button>
-                                        <button 
-                                            className="iv-btn-send" 
+                                        <button
+                                            className="iv-btn-send"
                                             onClick={handleSendMessage}
                                             disabled={!inputText.trim() || isInterviewerTyping || isSpeaking}
+                                            aria-label="Gửi câu trả lời"
                                         >
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                         </button>
@@ -640,33 +649,6 @@ const PhongVanAI: React.FC = () => {
                     </div>
                 </div>
             )}
-
-            {/* RESULT MODAL */}
-            {finalResult !== null ? (
-                <div className="iv-modal-overlay">
-                    <div className="iv-modal iv-result-modal">
-                        <div className="iv-result-score-wrap">
-                            <div className="iv-result-score-circle">
-                                <span className="iv-result-score-num">{finalResult.diemSo}</span>
-                                <span className="iv-result-score-label">/ 100</span>
-                            </div>
-                        </div>
-                        <h3>Kết quả phỏng vấn</h3>
-                        <div className="iv-result-review">
-                            <TypewriterText 
-                                content={finalResult.danhGiaChung} 
-                                scrollRef={chatBoxRef} 
-                                onComplete={() => {}} 
-                            />
-                        </div>
-                        <div className="iv-modal-actions">
-                            <button className="iv-modal-btn confirm" onClick={() => navigate('/')}>
-                                Quay về trang chủ
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
 
 <style>{`
                 /* ── RESET & BASE ── */
@@ -990,7 +972,7 @@ const PhongVanAI: React.FC = () => {
                     border-top-left-radius: 4px;
                 }
                 .iv-msg-bubble.user {
-                    background: linear-gradient(135deg, #1e3a5f, #1e40af);
+                    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
                     border: 1px solid rgba(59,130,246,0.3);
                     color: #dbeafe;
                     border-top-right-radius: 4px;

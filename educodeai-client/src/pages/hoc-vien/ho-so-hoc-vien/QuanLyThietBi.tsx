@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { authService } from '@/services/auth.service';
-import { getDeviceInfo } from '../../../utils/deviceHelper';
 
 const QuanLyThietBi: React.FC = () => {
     const [devices, setDevices] = useState<any[]>([]);
@@ -12,8 +11,7 @@ const QuanLyThietBi: React.FC = () => {
 
     const fetchDevices = async () => {
         try {
-            const { maThietBi } = getDeviceInfo();
-            const data: any = await authService.getDevices(maThietBi);
+            const data = await authService.getDevices();
             setDevices(data);
         } catch (error) {
             console.error(error);
@@ -23,7 +21,13 @@ const QuanLyThietBi: React.FC = () => {
     };
 
     useEffect(() => {
+        // G.14: chỉ fetch khi mở trang; sau đó refetch khi nhận event SessionListChanged
+        // từ SignalR (sessionHub dispatch) thay vì polling định kỳ.
         fetchDevices();
+
+        const onSessionListChanged = () => { fetchDevices(); };
+        window.addEventListener('SessionListChanged', onSessionListChanged);
+        return () => window.removeEventListener('SessionListChanged', onSessionListChanged);
     }, []);
 
     const handleLogoutRemote = (all: boolean, maPhien?: number) => {
@@ -41,7 +45,7 @@ const QuanLyThietBi: React.FC = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    await authService.requestOtpDangXuatTuXa();
+                    await authService.requestOtpDangXuatTuXa('');
                     setShowOtpModal(true);
                 } catch (error: any) {
                     Swal.fire('Lỗi', error.response?.data?.message || 'Không thể gửi OTP', 'error');
@@ -60,37 +64,14 @@ const QuanLyThietBi: React.FC = () => {
             await authService.xacNhanDangXuatTuXa({
                 DangXuatTatCa: logoutAction.all,
                 DanhSachMaPhien: logoutAction.ids,
-                OtpCode: otp, 
-                CaptchaToken: "SKIP_CAPTCHA"
+                OtpCode: otp
             });
-            
             setShowOtpModal(false);
             setOtp('');
 
             if (logoutAction.all) {
-                // Nếu đăng xuất tất cả -> Hiển thị thông báo và đếm ngược 3 giây
-                Swal.fire({
-                    title: 'Đã đăng xuất tất cả!',
-                    html: 'Tài khoản đã được đăng xuất khỏi mọi thiết bị. Hệ thống sẽ đăng xuất sau <b>3</b> giây...',
-                    icon: 'success',
-                    timer: 3000,
-                    timerProgressBar: true,
-                    showConfirmButton: false,
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        const b = Swal.getHtmlContainer()?.querySelector('b');
-                        let timerInterval = setInterval(() => {
-                            if (b) b.textContent = Math.ceil(Swal.getTimerLeft()! / 1000).toString();
-                        }, 100);
-                        (Swal as any)._timerInterval = timerInterval;
-                    },
-                    willClose: () => {
-                        clearInterval((Swal as any)._timerInterval);
-                    }
-                }).then(() => {
-                    localStorage.clear();
-                    window.location.href = '/dang-nhap';
-                });
+                await Swal.fire('Thành công', 'Đã đăng xuất tất cả thiết bị khác. Phiên hiện tại vẫn hoạt động.', 'success');
+                fetchDevices();
             } else {
                 Swal.fire('Thành công', 'Đã đăng xuất thiết bị từ xa!', 'success');
                 fetchDevices();
@@ -108,8 +89,10 @@ const QuanLyThietBi: React.FC = () => {
                         <h2 className="fw-bold mb-1">Thiết bị đang đăng nhập</h2>
                         <p className="text-muted small">Kiểm soát các phiên truy cập vào tài khoản của bạn.</p>
                     </div>
-                    <button className="btn btn-outline-danger rounded-pill px-4 fw-bold btn-sm" 
-                        onClick={() => handleLogoutRemote(true)}>Đăng xuất tất cả</button>
+                    <div className="d-flex align-items-center gap-3">
+                        <button className="btn btn-outline-danger rounded-pill px-4 fw-bold btn-sm"
+                            onClick={() => handleLogoutRemote(true)}>Đăng xuất tất cả thiết bị khác</button>
+                    </div>
                 </div>
 
                 {loading ? (
@@ -148,7 +131,7 @@ const QuanLyThietBi: React.FC = () => {
 
             {/* Modal OTP - Tối ưu hóa để giảm giật lag */}
             {showOtpModal && (
-                <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1060 }}>
+                <div className="modal fade show d-block" role="dialog" aria-modal="true" aria-labelledby="remote-logout-title" style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1060 }}>
                     <div className="modal-dialog modal-dialog-centered">
                         <div className="modal-content border-0 rounded-4 shadow-lg p-4">
                             <div className="text-center">
@@ -156,13 +139,15 @@ const QuanLyThietBi: React.FC = () => {
                                     <div className="bg-primary-subtle d-inline-block p-3 rounded-circle mb-3">
                                         <i className="bi bi-shield-lock fs-2 text-primary" style={{ color: '#fb873f !important' }}></i>
                                     </div>
-                                    <h4 className="fw-bold">Xác minh OTP</h4>
+                                    <h4 id="remote-logout-title" className="fw-bold">Xác minh OTP</h4>
                                     <p className="text-muted small">Nhập mã OTP 6 số đã được gửi đến email của bạn.</p>
                                 </div>
                                 
                                 <div className="mb-4">
-                                    <input 
-                                        type="text" 
+                                    <label htmlFor="remote-logout-otp" className="visually-hidden">Mã OTP gồm 6 chữ số</label>
+                                    <input
+                                        id="remote-logout-otp"
+                                        type="text"
                                         className="form-control text-center fs-2 fw-bold rounded-3 border-2" 
                                         style={{ 
                                             letterSpacing: '8px', 
@@ -170,8 +155,10 @@ const QuanLyThietBi: React.FC = () => {
                                             borderColor: '#eee',
                                             backgroundColor: '#f8f9fa'
                                         }} 
-                                        maxLength={6} 
-                                        placeholder="000000"
+                                        maxLength={6}
+                                        inputMode="numeric"
+                                        autoComplete="one-time-code"
+                                        autoFocus
                                         value={otp} 
                                         onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))} 
                                     />
@@ -182,7 +169,7 @@ const QuanLyThietBi: React.FC = () => {
                                         type="button"
                                         className="btn btn-light rounded-pill fw-bold border d-flex align-items-center justify-content-center m-0" 
                                         style={{ flex: 1, height: '55px' }}
-                                        onClick={() => setShowOtpModal(false)}
+                                        onClick={() => { setShowOtpModal(false); setOtp(''); setLogoutAction({ all: false, ids: [] }); }}
                                     >
                                         Hủy bỏ
                                     </button>

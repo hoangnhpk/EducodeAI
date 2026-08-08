@@ -1,5 +1,4 @@
 ﻿import type { HocVien } from "./Types";
-import { AlertTriangle, Mail } from "lucide-react";
 import "./css/at-risk-students.css";
 
 interface Props {
@@ -25,20 +24,20 @@ const AtRiskStudents = ({ students }: Props) => {
   return (
     <div className="at-risk-card">
       <div className="at-risk-header">
-        <AlertTriangle color="#ef4444" size={20} />
+        <i className="fas fa-triangle-exclamation" aria-hidden="true" style={{ color: "var(--danger)" }} />
         Học viên có nguy cơ bỏ học
       </div>
 
       <div className="at-risk-list">
         {atRiskStudents.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#6b7280", padding: "20px" }}>
+          <p style={{ textAlign: "center", color: "var(--text-muted)", padding: "20px" }}>
             Không có học viên có nguy cơ bỏ học
           </p>
         ) : (
           atRiskStudents.map((hocVien, idx) => (
             <div key={hocVien.maHocVien ?? hocVien.maNguoiDung ?? `risk-${idx}`} className="at-risk-item">
               <div className="at-risk-icon">
-                <AlertTriangle size={18} />
+                <i className="fas fa-triangle-exclamation" aria-hidden="true" />
               </div>
 
               <div className="at-risk-info">
@@ -56,7 +55,7 @@ const AtRiskStudents = ({ students }: Props) => {
                 disabled={!hocVien.email?.trim()}
                 title="Gửi email liên hệ"
               >
-                <Mail size={16} />
+                <i className="fas fa-envelope" aria-hidden="true" />
                 Liên hệ
               </button>
             </div>

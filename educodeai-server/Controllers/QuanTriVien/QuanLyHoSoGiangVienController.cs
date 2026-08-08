@@ -22,62 +22,34 @@ namespace educodeai_server.Controllers.QuanTriVien
         [HttpGet("ds-ho-so")]
         public async Task<IActionResult> LayDanhSachHoSo([FromQuery] string? trangThai)
         {
-            try
-            {
-                var result = await _service.LayDanhSachHoSoAsync(trangThai);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var result = await _service.LayDanhSachHoSoAsync(trangThai);
+            return Ok(result);
         }
 
         /// <summary>Lấy chi tiết một hồ sơ theo mã.</summary>
         [HttpGet("chi-tiet/{maHoSo}")]
         public async Task<IActionResult> LayChiTietHoSo(long maHoSo)
         {
-            try
-            {
-                var result = await _service.LayChiTietHoSoAsync(maHoSo);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var result = await _service.LayChiTietHoSoAsync(maHoSo);
+            return Ok(result);
         }
 
         /// <summary>Đếm số hồ sơ đang chờ duyệt (cho badge thông báo trên menu admin).</summary>
         [HttpGet("dem-cho-duyet")]
         public async Task<IActionResult> DemChoDuyet()
         {
-            try
-            {
-                int count = await _service.DemHoSoChoDuyetAsync();
-                return Ok(new { soLuong = count });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            int count = await _service.DemHoSoChoDuyetAsync();
+            return Ok(new { soLuong = count });
         }
 
         /// <summary>Duyệt hồ sơ: tạo tài khoản giảng viên + gửi email.</summary>
         [HttpPut("duyet/{maHoSo}")]
         public async Task<IActionResult> DuyetHoSo(long maHoSo)
         {
-            try
-            {
-                int maQuanTriVien = int.Parse(User.FindFirst("id")?.Value ?? "0");
-                if (maQuanTriVien <= 0) return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
-                var result = await _service.DuyetHoSoAsync(maHoSo, maQuanTriVien);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            int maQuanTriVien = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            if (maQuanTriVien <= 0) return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
+            var result = await _service.DuyetHoSoAsync(maHoSo, maQuanTriVien);
+            return Ok(result);
         }
 
         /// <summary>Từ chối hồ sơ kèm lý do.</summary>
@@ -90,17 +62,10 @@ namespace educodeai_server.Controllers.QuanTriVien
                 return BadRequest(new { message = "Dữ liệu không hợp lệ", errors });
             }
 
-            try
-            {
-                int maQuanTriVien = int.Parse(User.FindFirst("id")?.Value ?? "0");
-                if (maQuanTriVien <= 0) return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
-                var result = await _service.TuChoiHoSoAsync(maHoSo, maQuanTriVien, request);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            int maQuanTriVien = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            if (maQuanTriVien <= 0) return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
+            var result = await _service.TuChoiHoSoAsync(maHoSo, maQuanTriVien, request);
+            return Ok(result);
         }
 
         /// <summary>Yêu cầu giảng viên bổ sung hồ sơ.</summary>
@@ -113,17 +78,11 @@ namespace educodeai_server.Controllers.QuanTriVien
                 return BadRequest(new { message = "Dữ liệu không hợp lệ", errors });
             }
 
-            try
-            {
-                int maQuanTriVien = int.Parse(User.FindFirst("id")?.Value ?? "0");
-                if (maQuanTriVien <= 0) return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
-                var result = await _service.YeuCauBoSungHoSoAsync(maHoSo, maQuanTriVien, request);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            int maQuanTriVien = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            if (maQuanTriVien <= 0) return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
+            var result = await _service.YeuCauBoSungHoSoAsync(maHoSo, maQuanTriVien, request);
+            return Ok(result);
         }
+
     }
 }

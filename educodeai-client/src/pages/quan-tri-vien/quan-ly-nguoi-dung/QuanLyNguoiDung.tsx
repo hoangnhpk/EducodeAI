@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { type NguoiDung } from '@/pages/quan-tri-vien/quan-ly-nguoi-dung/DuLieuNguoiDungDTO'
 import { NguoiDungService } from "@/services/quan-ly-nguoi-dung.service";
 
@@ -11,6 +11,7 @@ import Swal from 'sweetalert2';
 const QuanLyNguoiDung = () => {
     const [ds, setDs] = useState<NguoiDung[]>([]);
     const [dangTai, setDangTai] = useState(false);
+    const [loi, setLoi] = useState(false);
     const [tuKhoa, setTuKhoa] = useState("");
     const [vaiTroLoc, setVaiTroLoc] = useState<"ALL" | "Admin" | "Giảng viên" | "Học viên">("ALL");
     const [trangThaiLoc, setTrangThaiLoc] = useState<"ALL" | "Hoạt động" | "Bị khóa" | "Khóa vĩnh viễn">("ALL");
@@ -66,42 +67,37 @@ const QuanLyNguoiDung = () => {
         } as any;
     }, [getStatusInfo]);
 
+    const [tongSo, setTongSo] = useState(0);
+
+    // H.7: filter + pagination server-side. Gọi lại API khi đổi trang/keyword/vai trò/trạng thái.
     const taiDanhSach = useCallback(async () => {
         setDangTai(true);
+        setLoi(false);
         try {
-            const res = await NguoiDungService.layDanhSach();
-            const rawData = Array.isArray(res) ? res : (res as any)?.data || [];
-            const normalized = rawData.map(normalizeUser);
-            setDs(normalized);
+            const vaiTroNum = vaiTroLoc === "Giảng viên" ? 1 : vaiTroLoc === "Học viên" ? 2 : undefined;
+            const res = await NguoiDungService.layDanhSach({
+                page: trangHienTai,
+                pageSize: soLuongMoiTrang,
+                keyword: tuKhoa.trim() || undefined,
+                vaiTro: vaiTroNum,
+                trangThai: trangThaiLoc === "ALL" ? undefined : trangThaiLoc,
+            });
+            setDs((res.data || []).map(normalizeUser));
+            setTongSo(res.total || 0);
         } catch (error) {
             console.error("Lỗi tải danh sách:", error);
+            setLoi(true);
         } finally {
             setDangTai(false);
         }
-    }, [normalizeUser]);
+    }, [normalizeUser, trangHienTai, tuKhoa, vaiTroLoc, trangThaiLoc]);
 
     useEffect(() => {
         taiDanhSach();
     }, [taiDanhSach]);
 
-    const danhSachSauLoc = useMemo(() => {
-        const keyword = tuKhoa.toLowerCase().trim();
-        return ds.filter(u => {
-            const matchKeyword = !keyword || (u.hoTen?.toLowerCase().includes(keyword)) || (u.email?.toLowerCase().includes(keyword));
-            const matchVaiTro = vaiTroLoc === "ALL" || u.vaiTro === vaiTroLoc;
-            const matchTrangThai = trangThaiLoc === "ALL" || 
-                                 u.trangThai === trangThaiLoc || 
-                                 (trangThaiLoc === "Bị khóa" && (u.trangThai === "Bị khóa" || u.trangThai === "Tạm khóa"));
-            return matchKeyword && matchVaiTro && matchTrangThai;
-        });
-    }, [ds, tuKhoa, vaiTroLoc, trangThaiLoc]);
-
-    const danhSachPhanTrang = useMemo(() => {
-        const start = (trangHienTai - 1) * soLuongMoiTrang;
-        return danhSachSauLoc.slice(start, start + soLuongMoiTrang);
-    }, [danhSachSauLoc, trangHienTai]);
-
-    const tongSoTrang = Math.ceil(danhSachSauLoc.length / soLuongMoiTrang);
+    const danhSachPhanTrang = ds;
+    const tongSoTrang = Math.ceil(tongSo / soLuongMoiTrang);
 
     const handleSua = useCallback((u: NguoiDung) => { 
         setDangSua(u);
@@ -145,7 +141,7 @@ const QuanLyNguoiDung = () => {
             Swal.fire({ title: 'Lưu ý', text: 'Chỉ có thể xóa tài khoản đã bị khóa vĩnh viễn', icon: 'warning' });
             return;
         }
-        const { isConfirmed } = await Swal.fire({ title: 'Xác nhận xóa?', text: `Bạn có chắc muốn xóa ${u.hoTen}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
+        const { isConfirmed } = await Swal.fire({ title: 'Xác nhận xóa?', text: `Bạn có chắc muốn xóa ${u.hoTen}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: 'var(--danger)' });
         if (isConfirmed) {
             try {
                 await NguoiDungService.xoaNguoiDung(u.maNguoiDung);
@@ -170,8 +166,25 @@ const QuanLyNguoiDung = () => {
         <div className="user-management-container">
             <h2 className="page-title">Quản lý người dùng</h2>
             <ThanhCongCu tuKhoa={tuKhoa} onThayDoiTuKhoa={handleThayDoiTuKhoa} vaiTroLoc={vaiTroLoc} onThayDoiVaiTro={handleThayDoiVaiTro} trangThaiLoc={trangThaiLoc} onThayDoiTrangThai={handleThayDoiTrangThai} onThemMoi={handleThemMoi} />
+            {loi ? (
+                <div style={{
+                    padding: '48px 24px', textAlign: 'center',
+                    background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)'
+                }}>
+                    <div style={{ fontSize: 40, color: 'var(--danger)', marginBottom: 12 }}>
+                        <i className="bi bi-exclamation-triangle-fill" aria-hidden></i>
+                    </div>
+                    <p style={{ color: 'var(--text-main)', fontWeight: 600, marginBottom: 4 }}>Không tải được danh sách người dùng</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 20 }}>Đã xảy ra lỗi khi kết nối máy chủ. Vui lòng thử lại.</p>
+                    <button className="btn-add" style={{ marginLeft: 0 }} onClick={taiDanhSach}>
+                        <i className="bi bi-arrow-clockwise" aria-hidden style={{ marginRight: 6 }}></i>Thử lại
+                    </button>
+                </div>
+            ) : (
             <DanhSachNguoiDung duLieu={danhSachPhanTrang} dangTai={dangTai} onSua={handleSua} onXoa={handleXoa} onDoiTrangThai={handleDoiTrangThai} />
-            {!dangTai && tongSoTrang > 1 && (
+            )}
+            {!loi && !dangTai && tongSoTrang > 1 && (
                 <div className="pagination-wrapper">
                     <button disabled={trangHienTai === 1} onClick={() => setTrangHienTai(p => p - 1)} className="btn-pagination-nav">Trước</button>
                     <div className="pagination-pages">

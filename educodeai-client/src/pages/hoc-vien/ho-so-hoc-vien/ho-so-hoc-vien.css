@@ -243,14 +243,14 @@
 
 .stat-card.hours .stat-label {
   font-size: 0.875rem;
-  color: #1e40af;
+  color: var(--text-dark);
   font-weight: 500;
 }
 
 .stat-card.hours .stat-value {
   font-size: 3rem;
   font-weight: bold;
-  color: #1e3a8a;
+  color: var(--text-dark);
 }
 
 /* ======================================================
@@ -467,7 +467,7 @@
 
 .cai-dat-container h2 {
   font-size: 24px;
-  color: #1e293b;
+  color: var(--text-dark);
   font-weight: 700;
   margin-bottom: 5px;
 }
@@ -496,7 +496,7 @@
 .settings-card h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-dark);
   margin-bottom: 20px;
 }
 
@@ -579,7 +579,7 @@
 .edit-profile-modal h2 {
   font-size: 22px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-dark);
   margin-bottom: 5px;
 }
 
@@ -615,6 +615,12 @@
   font-size: 14px;
   outline: none;
   transition: all 0.2s ease;
+}
+
+.form-group input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+  border-color: var(--primary);
 }
 
 .form-group input:focus {

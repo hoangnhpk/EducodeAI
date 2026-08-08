@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../../services/auth.service";
+import { redirectToLoginOnce } from "../../utils/sessionTermination";
 
 export default function HeaderHocVien() {
   const navigate = useNavigate();
@@ -18,18 +20,17 @@ export default function HeaderHocVien() {
   }, []);
 
   // Hàm xử lý đăng xuất
-  const handleLogout = () => {
-    localStorage.removeItem("user_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("user_info");
-    setUser(null);
-    alert("Bạn đã đăng xuất thành công!");
-    navigate("/dang-nhap");
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      setUser(null);
+      redirectToLoginOnce(navigate);
+    }
   };
 
   return (
-    <nav className="navbar navbar-expand-lg bg-white navbar-light shadow sticky-top p-0">
+    <nav className="navbar navbar-expand-lg bg-white navbar-light shadow fixed-top p-0">
       <Link
         to="/"
         className="navbar-brand d-flex align-items-center px-4 px-lg-5"
@@ -45,6 +46,9 @@ export default function HeaderHocVien() {
         className="navbar-toggler me-4"
         data-bs-toggle="collapse"
         data-bs-target="#navbarCollapse"
+        aria-controls="navbarCollapse"
+        aria-expanded="false"
+        aria-label="Mở menu điều hướng"
       >
         <span className="navbar-toggler-icon"></span>
       </button>
@@ -55,9 +59,16 @@ export default function HeaderHocVien() {
             Trang chủ
           </Link>
 
-          <Link to="/yeu-cau-lo-trinh-ai" className="nav-item nav-link">
-            Lộ trình AI
-          </Link>
+          <div className="nav-item dropdown">
+            <a href="#" className="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+              Hệ Sinh Thái AI
+            </a>
+            <div className="dropdown-menu m-0 shadow-sm border-0 fade-down">
+              <Link to="/yeu-cau-lo-trinh-ai" className="dropdown-item">Sinh Lộ trình AI</Link>
+              <Link to="/sinh-do-an-ai" className="dropdown-item">Sinh Đồ án thực chiến</Link>
+              <Link to="/phong-van-ai" className="dropdown-item">Phòng giả lập phỏng vấn</Link>
+            </div>
+          </div>
 
           <Link to="/khong-gian-hoc-tap" className="nav-item nav-link">
             Không gian học tập
@@ -70,14 +81,15 @@ export default function HeaderHocVien() {
           {/* KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP */}
           {user ? (
             <div className="nav-item dropdown px-lg-4">
-              <a
-                href="#"
-                className="nav-link dropdown-toggle d-flex align-items-center"
+              <button
+                type="button"
+                className="nav-link dropdown-toggle d-flex align-items-center border-0 bg-transparent"
                 data-bs-toggle="dropdown"
-                onClick={(e) => e.preventDefault()}
+                aria-expanded="false"
+                aria-label="Mở menu tài khoản"
               >
                 <span className="fw-bold d-none d-lg-inline">{user.hoTen || user.name}</span>
-              </a>
+              </button>
 
               {/* DANH SÁCH MENU XỔ XUỐNG */}
               <div className="dropdown-menu dropdown-menu-end fade-down m-0 shadow-sm border-0">
@@ -89,9 +101,6 @@ export default function HeaderHocVien() {
                 </Link>
                 <Link to="/thu-thach-hoc-tap" className="dropdown-item">
                   Thử thách học tập
-                </Link>
-                <Link to="/hoc-vien/khoa-hoc-cua-toi" className="dropdown-item">
-                  Khóa học của tôi
                 </Link>
                 <Link to="/hoc-vien/nhap-ma-qua-tang" className="dropdown-item">
                   Nhập mã quà tặng

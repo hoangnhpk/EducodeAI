@@ -18,6 +18,10 @@ namespace educodeai_server.Repository.Interface
         Task<KhoaHocModel?> GetKhoaHocWithDetailsAsync(int maKhoaHoc);
         Task<List<KhoaHocModel>> GetKhoaHocsByGiangVienAsync(int maGiangVien);
 
+        // Overlay cá nhân hóa nhẹ (dùng khi chi tiết khóa học lấy từ cache public)
+        Task<List<int>> GetMaBaiHocDaXemAsync(int maKhoaHoc, int maNguoiDung);
+        Task<(BaiKiemTraChungChiDTO? BaiKiemTra, ThongTinChungChiDTO? ThongTin)> LayChungChiCaNhanAsync(int maKhoaHoc, int maNguoiDung);
+
         // 4. Tiến độ, ghi chú và bài tập
         Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto);
         Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto);
@@ -38,6 +42,8 @@ namespace educodeai_server.Repository.Interface
         Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> KiemTraDaDanhGiaAsync(int maKhoaHoc, int maNguoiDung);
         Task<bool> ThemDanhGiaAsync(DanhGiaModel danhGia);
+        Task<DanhGiaModel?> LayDanhGiaCuaNguoiDungAsync(int maKhoaHoc, int maNguoiDung);
+        Task<bool> CapNhatDanhGiaAsync(DanhGiaModel danhGia);
         Task<bool> KiemTraHoanThanhKhoaHocAsync(int maKhoaHoc, int maNguoiDung);
     }
 }

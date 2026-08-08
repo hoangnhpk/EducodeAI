@@ -16,6 +16,7 @@ public static class DatabaseSchemaSync
             ALTER TABLE "KhoaHocs" ADD COLUMN IF NOT EXISTS "DeletedBy" integer NULL;
             ALTER TABLE "KhoaHocs" ADD COLUMN IF NOT EXISTS "DonViTienTe" character varying(10) NOT NULL DEFAULT 'VND';
             ALTER TABLE "KhoaHocs" ADD COLUMN IF NOT EXISTS "ChoPhepMua" boolean NOT NULL DEFAULT true;
+            ALTER TABLE "KhoaHocs" ADD COLUMN IF NOT EXISTS "BanSeHocDuocGi" text NULL;
 
             ALTER TABLE "KeyAPIs" ADD COLUMN IF NOT EXISTS "DeletedAt" timestamp with time zone NULL;
             ALTER TABLE "KeyAPIs" ADD COLUMN IF NOT EXISTS "DeletedBy" integer NULL;
@@ -58,6 +59,16 @@ public static class DatabaseSchemaSync
                 "Payload" jsonb NOT NULL,
                 "ProcessedAt" timestamp with time zone NOT NULL DEFAULT now()
             );
+
+            -- I.2: unique index (partial) chống TOCTOU race tạo 2 hồ sơ giảng viên trùng
+            -- email/tài khoản/số giấy tờ khi đang chờ xử lý. Chỉ ràng buộc hồ sơ chưa bị từ chối
+            -- (TuChoi) để cho phép nộp lại sau khi bị từ chối. Là hàng phòng thủ cuối sau check AnyAsync.
+            CREATE UNIQUE INDEX IF NOT EXISTS "UX_HoSoGV_Email_DangXuLy"
+                ON "HoSoDangKyGiangViens" (lower("Email")) WHERE "TrangThaiHoSo" <> 'TuChoi';
+            CREATE UNIQUE INDEX IF NOT EXISTS "UX_HoSoGV_TaiKhoan_DangXuLy"
+                ON "HoSoDangKyGiangViens" (lower("TaiKhoan")) WHERE "TrangThaiHoSo" <> 'TuChoi';
+            CREATE UNIQUE INDEX IF NOT EXISTS "UX_HoSoGV_SoGiayTo_DangXuLy"
+                ON "HoSoDangKyGiangViens" ("SoGiayTo") WHERE "TrangThaiHoSo" <> 'TuChoi';
             """,
             cancellationToken);
     }

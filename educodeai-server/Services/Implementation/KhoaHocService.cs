@@ -3,6 +3,7 @@ using System.Text.Json;
 using educodeai_server.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using educodeai_server.Constants;
 using educodeai_server.Data;
 using educodeai_server.DTOs.AI;
 using educodeai_server.DTOs.KhoaHoc;
@@ -42,7 +43,7 @@ namespace educodeai_server.Services.Implementation
         public async Task<IEnumerable<KhoaHocDto>> GetAllKhoaHocsAsync(int maNguoiDung)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            const string publicKey = "CourseList:Public:v2";
+            const string publicKey = CacheKeys.CourseListPublic;
 
             // 1. Đọc Public Cache
             var cached = await _redisService.LayGiaTriAsync(publicKey);
@@ -144,28 +145,28 @@ namespace educodeai_server.Services.Implementation
                 }
             }
 
-            // 4. Overlay trạng thái DaXem từng bài học theo user
+            // 4. Overlay dữ liệu cá nhân hóa bằng các query NHẸ (không nạp lại full-tree từ DB).
             if (detail != null && maNguoiDung > 0)
             {
-                _logger.LogInformation("[DB QUERY] GetKhoaHocByIdAsync - Overlay DaXem cho user #{UserId}, khóa học #{CourseId}",
+                _logger.LogInformation("[DB QUERY] GetKhoaHocByIdAsync - Overlay cá nhân hóa cho user #{UserId}, khóa học #{CourseId}",
                     maNguoiDung, maKhoaHoc);
-                var userDetail = await _khoaHocRepository.GetNoiDungKhoaHocAsync(maKhoaHoc, maNguoiDung);
-                if (userDetail != null)
-                {
-                    foreach (var chuong in detail.DanhSachChuongHoc)
-                    {
-                        var userChuong = userDetail.DanhSachChuongHoc.FirstOrDefault(c => c.Id == chuong.Id);
-                        if (userChuong == null) continue;
-                        foreach (var bai in chuong.DanhSachBaiHoc)
-                        {
-                            var userBai = userChuong.DanhSachBaiHoc.FirstOrDefault(b => b.Id == bai.Id);
-                            if (userBai != null) bai.DaXem = userBai.DaXem;
-                        }
-                    }
 
-                    // Cập nhật các thông tin chứng chỉ cá nhân hóa
-                    detail.BaiKiemTraChungChi = userDetail.BaiKiemTraChungChi;
-                    detail.ThongTinChungChi = userDetail.ThongTinChungChi;
+                // 4a. Phủ trạng thái DaXem từ danh sách MaBaiHoc đã xem
+                var daXemIds = (await _khoaHocRepository.GetMaBaiHocDaXemAsync(maKhoaHoc, maNguoiDung)).ToHashSet();
+                foreach (var chuong in detail.DanhSachChuongHoc)
+                {
+                    foreach (var bai in chuong.DanhSachBaiHoc)
+                    {
+                        bai.DaXem = daXemIds.Contains(bai.Id);
+                    }
+                }
+
+                // 4b. Overlay chứng chỉ cá nhân hóa (chỉ query khi khóa học có chứng chỉ)
+                if (detail.CoChungChi)
+                {
+                    var (baiKiemTra, thongTin) = await _khoaHocRepository.LayChungChiCaNhanAsync(maKhoaHoc, maNguoiDung);
+                    detail.BaiKiemTraChungChi = baiKiemTra;
+                    detail.ThongTinChungChi = thongTin;
                 }
             }
 
@@ -261,8 +262,8 @@ namespace educodeai_server.Services.Implementation
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[EmailBgTask] Lỗi: {ex.Message}");
-                        System.IO.File.WriteAllText("EmailBgTask_Error.txt", ex.ToString());
+                        _logger.LogError(ex, "[EmailBgTask] Lỗi tạo PDF/gửi email chứng chỉ cho user #{UserId}, khóa học #{CourseId}",
+                            dto.MaNguoiDung, dto.MaKhoaHoc);
                     }
                 });
             }
@@ -348,13 +349,30 @@ namespace educodeai_server.Services.Implementation
             {
                 throw new Exception("Bạn phải hoàn thành 100% khóa học mới được phép đánh giá!");
             }
-            // 1 user chỉ được đánh giá 1 lần cho 1 khóa học
-            bool daTonTai = await _khoaHocRepository.KiemTraDaDanhGiaAsync(yeuCau.MaKhoaHoc, yeuCau.MaNguoiDung);
-            if (daTonTai) throw new Exception("Bạn đã đánh giá khóa học này rồi!");
+
+            // Lọc nội dung tục tĩu/nhạy cảm ngay tại nguồn trước khi lưu
+            if (KiemTraCoTuNhayCam(yeuCau.NhanXet ?? string.Empty))
+            {
+                throw new Exception("Nội dung đánh giá chứa từ ngữ không phù hợp. Vui lòng chỉnh sửa lại!");
+            }
 
             // Submit → ChoDuyet (chỉ chính học viên thấy)
             // Sau khi Admin/AI duyệt → DaDuyet (mọi người thấy)
-            // Bị từ chối → xóa khỏi DB (học viên có thể gửi lại)
+            // Bị từ chối → học viên được phép gửi lại (ghi đè bản cũ, quay về ChoDuyet)
+            var danhGiaHienCo = await _khoaHocRepository.LayDanhGiaCuaNguoiDungAsync(yeuCau.MaKhoaHoc, yeuCau.MaNguoiDung);
+            if (danhGiaHienCo != null)
+            {
+                // Chỉ cho gửi lại nếu bản trước đã bị từ chối; ChoDuyet/DaDuyet thì chặn
+                if (danhGiaHienCo.TrangThai != "TuChoi")
+                    throw new Exception("Bạn đã đánh giá khóa học này rồi!");
+
+                danhGiaHienCo.SoSao = yeuCau.SoSao;
+                danhGiaHienCo.NhanXet = yeuCau.NhanXet;
+                danhGiaHienCo.NgayDanhGia = DateTime.Now;
+                danhGiaHienCo.TrangThai = "ChoDuyet";
+                return await _khoaHocRepository.CapNhatDanhGiaAsync(danhGiaHienCo);
+            }
+
             var model = new DanhGiaModel
             {
                 MaKhoaHoc = yeuCau.MaKhoaHoc,
@@ -368,70 +386,92 @@ namespace educodeai_server.Services.Implementation
             return await _khoaHocRepository.ThemDanhGiaAsync(model);
         }
 
+        // Từ tục nguyên bản CÒN DẤU — nhờ dấu mà phân biệt được với từ sạch
+        // (lồn≠lớn, chó≠cho, cặc≠các, đụ≠dự, cứt≠cút...).
+        private static readonly HashSet<string> _tucCoDau = new(StringComparer.Ordinal)
+        {
+            "lồn", "cặc", "cứt", "đụ", "đéo", "đĩ", "địt", "buồi", "lìn"
+        };
+
+        // Cụm tục có dấu (nguyên văn) — dò trực tiếp trên câu.
+        private static readonly string[] _tucCumCoDau =
+        {
+            "vãi lồn", "vãi cặc", "chó chết", "khốn nạn", "đầu buồi"
+        };
+
+        // Bỏ dấu + leet rồi so khớp BẰNG (equality) trên từng token.
+        // Chỉ gồm từ mà bản bỏ dấu KHÔNG trùng từ tiếng Việt sạch thông dụng
+        // → không đưa cac/cho/lon/du/cut vào vì sẽ chặn nhầm "các/cho/lớn/được/cút".
+        private static readonly HashSet<string> _tucKhongDau = new(StringComparer.Ordinal)
+        {
+            "ngu", "dit", "vcl", "vkl", "dcm", "dkm", "cmm", "clmm"
+        };
+
+        // Cụm viết tắt tục hiếm trùng từ sạch — dò substring trên chuỗi đã nối liền
+        // để bắt kiểu chèn ký tự phân cách "v.c.l", "đ.c.m".
+        private static readonly string[] _vietTatNoiLien =
+        {
+            "vcl", "vkl", "dcm", "clmm"
+        };
+
         /// <summary>
-        /// Kiểm tra xem chuỗi có chứa từ nhạy cảm không.
-        /// Xử lý các cách lách: chèn ký tự đặc biệt, số thay chữ, dấu, lặp chữ.
+        /// Kiểm tra chuỗi có chứa từ nhạy cảm không, theo hướng token để tránh chặn nhầm từ sạch.
+        /// Tầng 1: so khớp token trên bản CÒN DẤU (phân biệt lồn/lớn, chó/cho, cặc/các).
+        /// Tầng 2: so khớp token sau khi bỏ dấu + leet, chỉ với từ không trùng từ sạch thông dụng.
+        /// Tầng 3: dò cụm viết tắt tục trên chuỗi đã nối liền (bắt lách kiểu "v.c.l", "đ.c.m").
         /// </summary>
         private static bool KiemTraCoTuNhayCam(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return false;
 
-            // Bước 1: Chuẩn hóa – loại bỏ dấu tiếng Việt, thay số/ký tự tương đương
-            var lowered = input.ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
-            var sb = new System.Text.StringBuilder(lowered.Length);
-            foreach (var c in lowered)
+            var lower = input.ToLowerInvariant();
+
+            // Tầng 1: cụm tục có dấu (nguyên văn)
+            foreach (var cum in _tucCumCoDau)
+                if (lower.Contains(cum)) return true;
+
+            // Tách token theo ký tự KHÔNG phải chữ/số (giữ nguyên dấu tiếng Việt là chữ Unicode)
+            var tokens = System.Text.RegularExpressions.Regex
+                .Split(lower, @"[^\p{L}\p{N}]+")
+                .Where(t => t.Length > 0)
+                .ToList();
+
+            foreach (var token in tokens)
             {
-                var cat = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
-                if (cat == System.Globalization.UnicodeCategory.NonSpacingMark) continue;
-                sb.Append(c switch
-                {
-                    'đ' => 'd', '0' => 'o', '1' => 'i', '4' => 'a',
-                    '3' => 'e', '5' => 's', '7' => 't', '@' => 'a',
-                    _ => c
-                });
+                // Tầng 1: token tục còn dấu
+                if (_tucCoDau.Contains(token)) return true;
+
+                // Tầng 2: bỏ dấu + leet rồi so khớp bằng
+                var norm = BoDauVaLeet(token);
+                if (norm.Length > 0 && _tucKhongDau.Contains(norm)) return true;
             }
 
-            // Bước 2: Xóa tất cả ký tự KHÔNG phải chữ cái/số để phát hiện lách kiểu "n.g.u" hay "n_g_u"
-            var stripped = System.Text.RegularExpressions.Regex.Replace(sb.ToString(), @"[^a-z0-9]", "");
-
-            // Bước 3: Kiểm tra trên CẢ HAI chuỗi: có dấu phân cách (sb) và không có (stripped)
-            var patterns = new[]
-            {
-                // --- Kiểm tra trên chuỗi normalized (có thể có dấu phân cách) ---
-                (@"n+[^a-z]*g+[^a-z]*u+",              sb.ToString()),   // n.g.u, n_g_u, ngu
-                (@"d+[^a-z]*m+",                        sb.ToString()),   // d.m, dm, d m
-                (@"d+[^a-z]*c+[^a-z]*m+",              sb.ToString()),   // d.c.m
-                (@"v+[^a-z]*c+[^a-z]*l+",              sb.ToString()),   // v.c.l
-                (@"v+[^a-z]*l+",                        sb.ToString()),   // v.l
-                (@"c+[^a-z]*h+[^a-z]*o+",              sb.ToString()),   // c.h.o
-                (@"l+[^a-z]*o+[^a-z]*n+",              sb.ToString()),   // l.o.n
-                (@"c+[^a-z]*a+[^a-z]*c+",              sb.ToString()),   // c.a.c
-                (@"d+[^a-z]*i+[^a-z]*t+",              sb.ToString()),   // d.i.t
-                (@"c+[^a-z]*u+[^a-z]*t+",              sb.ToString()),   // c.u.t
-                // --- Kiểm tra trên chuỗi đã loại hết ký tự đặc biệt ---
-                (@"ngu+",                               stripped),        // ngu, nguu
-                (@"dm+",                                stripped),        // dm, dmm
-                (@"dcm+",                               stripped),        // dcm
-                (@"vcl+",                               stripped),        // vcl
-                (@"cho+",                               stripped),        // cho
-                (@"lon+",                               stripped),        // lon
-                (@"cac+",                               stripped),        // cac
-                (@"dit+",                               stripped),        // dit
-                (@"cut+",                               stripped),        // cut
-                (@"du+",                                stripped),        // du
-            };
-
-            foreach (var (pattern, target) in patterns)
-            {
-                if (System.Text.RegularExpressions.Regex.IsMatch(
-                    target, pattern,
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                {
-                    return true; // Phát hiện vi phạm
-                }
-            }
+            // Tầng 3: nối toàn bộ token đã bỏ dấu + leet, dò cụm viết tắt tục
+            var noiLien = string.Concat(tokens.Select(BoDauVaLeet));
+            foreach (var vt in _vietTatNoiLien)
+                if (noiLien.Contains(vt)) return true;
 
             return false;
+        }
+
+        /// <summary>Bỏ dấu tiếng Việt + quy đổi leet, chỉ giữ [a-z0-9].</summary>
+        private static string BoDauVaLeet(string token)
+        {
+            var decomposed = token.Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder(decomposed.Length);
+            foreach (var c in decomposed)
+            {
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c)
+                    == System.Globalization.UnicodeCategory.NonSpacingMark) continue;
+                char m = c switch
+                {
+                    'đ' => 'd', '0' => 'o', '1' => 'i', '3' => 'e',
+                    '4' => 'a', '5' => 's', '7' => 't', '@' => 'a',
+                    _ => c
+                };
+                if ((m >= 'a' && m <= 'z') || (m >= '0' && m <= '9')) sb.Append(m);
+            }
+            return sb.ToString();
         }
 
         private static string TaoNoiDungEmailChungChi(

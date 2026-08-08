@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
 namespace educodeai_server.DTOs.XacThuc
@@ -39,8 +39,15 @@ namespace educodeai_server.DTOs.XacThuc
         [Required]
         public string SoGiayTo { get; set; } = string.Empty;
 
+        /// <summary>N?i c?p do ng??i d?ng nh?p tay; ???c m? h?a c?ng d? li?u qu?t CCCD.</summary>
+        public string? NoiCap { get; set; }
+
+        [StringLength(255)]
+        public string? NguyenQuan { get; set; }
+
         public IFormFile? AnhDaiDien { get; set; }
 
+        // ?nh CCCD ch? d?ng t?m trong request ?? OCR; kh?ng ???c l?u xu?ng ? ??a.
         [Required]
         public IFormFile AnhGiayToMatTruoc { get; set; } = default!;
 

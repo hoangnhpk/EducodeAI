@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
+import Swal from 'sweetalert2';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 interface IMessage {
@@ -29,8 +30,18 @@ const PhongVanDoAn: React.FC = () => {
     const chatRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const tenDoAn: string = (location.state as any)?.tenDoAn ?? 'Đồ án của bạn';
-    const cauHoiDauTien: string = (location.state as any)?.cauHoiDauTien ?? '';
+    const sessionStorageKey = sessionId ? `phongvan-do-an-${sessionId}` : '';
+    const savedSession = sessionStorageKey ? sessionStorage.getItem(sessionStorageKey) : null;
+    let savedSessionData: { tenDoAn?: string; cauHoiDauTien?: string } = {};
+    if (savedSession) {
+        try {
+            savedSessionData = JSON.parse(savedSession);
+        } catch {
+            sessionStorage.removeItem(sessionStorageKey);
+        }
+    }
+    const tenDoAn: string = (location.state as any)?.tenDoAn ?? savedSessionData.tenDoAn ?? 'Đồ án của bạn';
+    const cauHoiDauTien: string = (location.state as any)?.cauHoiDauTien ?? savedSessionData.cauHoiDauTien ?? '';
 
     const [messages, setMessages] = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState('');
@@ -43,7 +54,6 @@ const PhongVanDoAn: React.FC = () => {
     const [timeLeft, setTimeLeft] = useState(300); // 5 phút = 300 giây
     const [soLanChuyenTab, setSoLanChuyenTab] = useState(0);
     const TONG_SO_CAU = 3;
-    const TOTAL_TIME = 300;
 
     // Khởi tạo tin nhắn đầu tiên từ AI
     useEffect(() => {
@@ -106,8 +116,15 @@ const PhongVanDoAn: React.FC = () => {
         if (soLanChuyenTab === 0 || daKetThuc) return;
 
         if (soLanChuyenTab > 2) {
-            alert('🚨 HỦY KẾT QUẢ: Bạn đã vi phạm quy chế quá 2 lần do liên tục rời khỏi tab phỏng vấn. Buổi phỏng vấn sẽ kết thúc ngay bây giờ!');
-            navigate('/sinh-do-an-ai');
+            Swal.fire({
+                icon: 'error',
+                title: 'HỦY KẾT QUẢ',
+                text: 'Bạn đã vi phạm quy chế quá 2 lần do liên tục rời khỏi tab phỏng vấn. Buổi phỏng vấn sẽ kết thúc ngay bây giờ!',
+                confirmButtonText: 'Đã hiểu',
+                allowOutsideClick: false
+            }).then(() => {
+                navigate('/sinh-do-an-ai');
+            });
             return;
         }
 
@@ -199,9 +216,9 @@ const PhongVanDoAn: React.FC = () => {
     };
 
     const diemMauSac = (diem: number) => {
-        if (diem >= 16) return '#22c55e';
+        if (diem >= 16) return 'var(--success)';
         if (diem >= 10) return '#f59e0b';
-        return '#ef4444';
+        return 'var(--danger)';
     };
 
     // ─── RENDER ─────────────────────────────────────────────────────────────
@@ -241,14 +258,14 @@ const PhongVanDoAn: React.FC = () => {
                             <span>⚡</span>
                             <span>{tongDiemTamThoi}<span className="pvd-score-max">/100</span></span>
                         </div>
-                        <div className="pvd-timer-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: timeLeft <= 60 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.1)', padding: '6px 12px', borderRadius: '12px', color: timeLeft <= 60 ? '#ef4444' : '#e2e8f0', fontWeight: 'bold' }}>
-                            <span>⏱️</span>
+                        <div className="pvd-timer-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: timeLeft <= 60 ? 'rgba(239, 68, 68, 0.1)' : '#f1f5f9', padding: '6px 12px', borderRadius: '8px', color: timeLeft <= 60 ? '#ef4444' : '#475569', fontWeight: '600', border: timeLeft <= 60 ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid #e2e8f0' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             <span>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
                         </div>
                         {soLanChuyenTab > 0 && (
-                            <div className="pvd-timer-badge" style={{ color: '#ef4444', backgroundColor: '#fef2f2', border: '1px solid #fecaca' }}>
-                                <span>⚠️</span>
-                                <span>{soLanChuyenTab}</span>
+                            <div className="pvd-timer-badge" style={{ color: '#ef4444', backgroundColor: '#fef2f2', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '8px' }} aria-label="Cảnh báo rời tab">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <span>{soLanChuyenTab} lần</span>
                             </div>
                         )}
                         <button
@@ -481,7 +498,7 @@ const PhongVanDoAn: React.FC = () => {
             .pvd-header-left { display: flex; align-items: center; gap: 0.875rem; }
             .pvd-ai-avatar {
                 width: 42px; height: 42px; border-radius: 12px;
-                background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+                background: linear-gradient(135deg, var(--ai-accent-hover), var(--info));
                 display: flex; align-items: center; justify-content: center;
                 flex-shrink: 0; box-shadow: 0 0 16px rgba(124,58,237,0.4);
             }
@@ -492,7 +509,7 @@ const PhongVanDoAn: React.FC = () => {
             }
             .pvd-live-dot {
                 display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-                background: #22c55e;
+                background: var(--success);
                 animation: pvdPulse 1.5s ease-in-out infinite;
             }
             @keyframes pvdPulse {
@@ -508,7 +525,7 @@ const PhongVanDoAn: React.FC = () => {
             }
             .pvd-progress-fill {
                 height: 100%; border-radius: 99px;
-                background: linear-gradient(90deg, #7c3aed, #0ea5e9);
+                background: linear-gradient(90deg, var(--ai-accent-hover), var(--info));
                 transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1);
             }
             .pvd-score-badge {
@@ -559,7 +576,7 @@ const PhongVanDoAn: React.FC = () => {
                 flex-shrink: 0;
             }
             .pvd-avatar-ai {
-                background: linear-gradient(135deg, #7c3aed 0%, #0ea5e9 100%);
+                background: linear-gradient(135deg, var(--ai-accent-hover) 0%, var(--info) 100%);
                 color: white; box-shadow: 0 4px 12px rgba(124,58,237,0.35);
             }
             .pvd-avatar-user {
@@ -576,7 +593,7 @@ const PhongVanDoAn: React.FC = () => {
                 border-top-left-radius: 4px; color: #e2e8f0;
             }
             .pvd-bubble.user {
-                background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+                background: linear-gradient(135deg, var(--ai-accent-hover) 0%, var(--ai-accent) 100%);
                 border-top-right-radius: 4px; color: white;
                 box-shadow: 0 4px 16px rgba(124,58,237,0.3);
             }
@@ -627,7 +644,7 @@ const PhongVanDoAn: React.FC = () => {
             .pvd-input:disabled { opacity: 0.5; cursor: not-allowed; }
             .pvd-send-btn {
                 width: 50px; height: 50px; border-radius: 12px;
-                background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+                background: linear-gradient(135deg, var(--ai-accent-hover), var(--info));
                 border: none; cursor: pointer; color: white;
                 display: flex; align-items: center; justify-content: center;
                 transition: all 0.2s ease; flex-shrink: 0;
@@ -652,7 +669,7 @@ const PhongVanDoAn: React.FC = () => {
             }
             .pvd-spinner-lg {
                 width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1);
-                border-top-color: #7c3aed; border-radius: 50%;
+                border-top-color: var(--ai-accent-hover); border-radius: 50%;
                 animation: pvdSpin 0.8s linear infinite;
             }
 
@@ -710,7 +727,7 @@ const PhongVanDoAn: React.FC = () => {
                 background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
                 border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;
             }
-            .pvd-comment-title { font-size: 0.8rem; font-weight: 700; color: #7c3aed; margin: 0 0 0.5rem; }
+            .pvd-comment-title { font-size: 0.8rem; font-weight: 700; color: var(--ai-accent-hover); margin: 0 0 0.5rem; }
             .pvd-comment-text { font-size: 0.88rem; color: #94a3b8; margin: 0; line-height: 1.6; }
 
             .pvd-detail-section { margin-bottom: 1.5rem; }
@@ -727,7 +744,7 @@ const PhongVanDoAn: React.FC = () => {
 
             .pvd-modal-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
             .pvd-btn-primary {
-                flex: 1; background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+                flex: 1; background: linear-gradient(135deg, var(--ai-accent-hover), var(--info));
                 border: none; color: white; border-radius: 10px; padding: 0.875rem 1rem;
                 font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
                 font-family: inherit;
@@ -756,7 +773,7 @@ const PhongVanDoAn: React.FC = () => {
             .sda-submit-info strong { font-size: 0.92rem; color: #e2e8f0; display: block; margin-bottom: 0.25rem; }
             .sda-submit-info p { font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.5; }
             .sda-submit-btn {
-                background: linear-gradient(135deg, #7c3aed 0%, #0ea5e9 100%);
+                background: linear-gradient(135deg, var(--ai-accent-hover) 0%, var(--info) 100%);
                 border: none; color: white; border-radius: 12px;
                 padding: 0.875rem 1.5rem; font-size: 0.9rem; font-weight: 700;
                 cursor: pointer; display: flex; align-items: center; gap: 0.5rem;

@@ -20,17 +20,47 @@ interface IKhoaHoc {
     donViTienTe: string;
 }
 
+interface IReview {
+    id: number;
+    name: string;
+    courseName: string;
+    instructorName: string;
+    quote: string;
+    soSao: number;
+}
+
+interface IInstructor {
+    id: number;
+    name: string;
+    avgRating: number;
+    totalReviews: number;
+    avatar?: string;
+    role: string;
+}
+
 const parseKyNangTags = (raw?: string): string[] => {
     if (!raw?.trim()) return [];
     return raw.split(',').map((item) => item.trim()).filter(Boolean);
 };
 
+const getLastName = (fullName: string) => {
+    const parts = fullName.trim().split(' ');
+    return parts.length > 0 ? parts[parts.length - 1] : 'U';
+};
+
+const getFallbackAvatar = (name: string, size: number = 200, bold: boolean = false) => {
+    const lastName = getLastName(name);
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(lastName)}&background=random&color=fff&size=${size}&length=${lastName.length}${bold ? '&bold=true' : ''}`;
+};
+
 const TrangChu: React.FC = () => {
     const [courses, setCourses] = useState<IKhoaHoc[]>([]);
+    const [reviews, setReviews] = useState<IReview[]>([]);
+    const [instructors, setInstructors] = useState<IInstructor[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [isSearchPinned, setIsSearchPinned] = useState(false);
-    const [navbarBottom, setNavbarBottom] = useState(0);
+
     const searchPlaceholderRef = useRef<HTMLDivElement>(null);
     const searchBarHeightRef = useRef(0);
 
@@ -49,6 +79,29 @@ const TrangChu: React.FC = () => {
         }
     };
 
+    const loadReviews = async () => {
+        try {
+            const data = await axiosInstance.get<IReview[]>('api/KhoaHoc/top-reviews');
+            setReviews(data);
+        } catch (error) {
+            console.error("Lỗi tải reviews:", error);
+        }
+    };
+
+    const loadInstructors = async () => {
+        try {
+            const data = await axiosInstance.get<IInstructor[]>('api/KhoaHoc/top-instructors');
+            setInstructors(data);
+        } catch (error) {
+            console.error("Lỗi tải instructors:", error);
+        }
+    };
+
+    useEffect(() => {
+        loadReviews();
+        loadInstructors();
+    }, []);
+
     useEffect(() => {
         const delay = setTimeout(() => {
             loadData(searchTerm);
@@ -58,20 +111,24 @@ const TrangChu: React.FC = () => {
 
     useEffect(() => {
         const updateSearchBar = () => {
-            const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
-            const bottom = navbar ? Math.max(navbar.getBoundingClientRect().bottom, 0) : 0;
-            setNavbarBottom(bottom);
-
             const placeholder = searchPlaceholderRef.current;
-            const scrollY = window.scrollY;
-            const placeholderTop = placeholder?.getBoundingClientRect().top ?? Infinity;
-            const shouldPin = scrollY > 300 && placeholderTop <= bottom;
+            if (!placeholder) return;
 
-            if (placeholder && !shouldPin && placeholder.offsetHeight > 0) {
+            const rect = placeholder.getBoundingClientRect();
+            // Thanh navbar cao khoảng 75px. Khi thanh tìm kiếm chạm đến đây thì ghim.
+            const shouldPin = rect.top <= 75;
+
+            if (!shouldPin && placeholder.offsetHeight > 0) {
                 searchBarHeightRef.current = placeholder.offsetHeight;
             }
 
             setIsSearchPinned(shouldPin);
+
+            if (shouldPin) {
+                document.body.classList.add('search-pinned-override');
+            } else {
+                document.body.classList.remove('search-pinned-override');
+            }
         };
 
         updateSearchBar();
@@ -80,8 +137,17 @@ const TrangChu: React.FC = () => {
         return () => {
             window.removeEventListener('scroll', updateSearchBar);
             window.removeEventListener('resize', updateSearchBar);
+            document.body.classList.remove('search-pinned-override');
         };
     }, []);
+
+    const handleCategoryClick = (name: string) => {
+        setSearchTerm(name);
+        const coursesSection = document.getElementById('courses-section');
+        if (coursesSection) {
+            coursesSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
 
     const renderSearchBar = () => (
         <div className="container">
@@ -175,28 +241,6 @@ const TrangChu: React.FC = () => {
                 </div>
             </section>
 
-            {/* 3. Search Bar — ghim ngay dưới navbar khi cuộn */}
-            <div
-                ref={searchPlaceholderRef}
-                className="home-search-wrapper"
-                aria-hidden={isSearchPinned}
-            >
-                {isSearchPinned ? (
-                    <div style={{ height: searchBarHeightRef.current }} />
-                ) : (
-                    <div className="home-search-bar">{renderSearchBar()}</div>
-                )}
-            </div>
-
-            {isSearchPinned && createPortal(
-                <div
-                    className="home-search-bar home-search-bar--pinned"
-                    style={{ top: navbarBottom }}
-                >
-                    {renderSearchBar()}
-                </div>,
-                document.body
-            )}
 
             {/* 4. Features - Hệ sinh thái AI */}
             <section id="features-section" className="py-5 bg-light">
@@ -248,6 +292,30 @@ const TrangChu: React.FC = () => {
                 </div>
             </section>
 
+            {/* 3. Search Bar — ghim ngay dưới navbar khi cuộn */}
+            <div
+                ref={searchPlaceholderRef}
+                className="home-search-wrapper"
+                aria-hidden={isSearchPinned}
+            >
+                {isSearchPinned ? (
+                    <div style={{ height: searchBarHeightRef.current }} />
+                ) : (
+                    <div className="home-search-bar">{renderSearchBar()}</div>
+                )}
+            </div>
+
+            {isSearchPinned && createPortal(
+                <div
+                    className="home-search-bar home-search-bar--pinned"
+                    style={{ top: 0 }}
+                >
+                    {renderSearchBar()}
+                </div>,
+                document.body
+            )}
+
+
             {/* 5. Categories */}
             <section className="py-5 bg-white border-top">
                 <div className="container py-4">
@@ -266,7 +334,7 @@ const TrangChu: React.FC = () => {
                             { name: "MySQL", icon: "fa-solid fa-database", color: "text-secondary", bg: "bg-secondary-subtle" },
                             { name: "UI/UX", icon: "fa-solid fa-pen-nib", color: "text-success", bg: "bg-success-subtle" }
                         ].map((cat, index) => (
-                            <div key={index} className="col-6 col-md-3 col-lg-2" onClick={() => setSearchTerm(cat.name)}>
+                            <div key={index} className="col-6 col-md-3 col-lg-2" onClick={() => handleCategoryClick(cat.name)}>
                                 <div className="category-card text-center p-4 bg-white border rounded-4 cursor-pointer transition-all h-100">
                                     <div className={`icon-wrapper d-inline-flex align-items-center justify-content-center rounded-4 fs-2 mb-3 ${cat.bg} ${cat.color}`} style={{ width: '60px', height: '60px' }}>
                                         <i className={cat.icon}></i>
@@ -291,10 +359,28 @@ const TrangChu: React.FC = () => {
 
                     <div className="row g-4">
                         {isLoading ? (
-                            <div className="text-center w-100 py-5">
-                                <div className="spinner-border text-primary fs-4" style={{ width: '3rem', height: '3rem' }} role="status"></div>
-                                <p className="mt-3 text-muted fw-bold">Đang tải khoá học...</p>
-                            </div>
+                            Array.from({ length: 8 }).map((_, i) => (
+                                <div key={`skeleton-${i}`} className="col-md-6 col-lg-3" aria-hidden="true">
+                                    <div className="course-card card h-100 border-0 overflow-hidden">
+                                        <div className="course-skeleton-thumb skeleton-shimmer" />
+                                        <div className="card-body p-4 d-flex flex-column">
+                                            <div className="d-flex justify-content-between mb-3">
+                                                <span className="course-skeleton-line skeleton-shimmer" style={{ width: '35%' }} />
+                                                <span className="course-skeleton-line skeleton-shimmer" style={{ width: '20%' }} />
+                                            </div>
+                                            <span className="course-skeleton-line skeleton-shimmer mb-2" style={{ width: '90%' }} />
+                                            <span className="course-skeleton-line skeleton-shimmer mb-3" style={{ width: '60%' }} />
+                                            <div className="d-flex gap-2 mb-3">
+                                                <span className="course-skeleton-pill skeleton-shimmer" />
+                                                <span className="course-skeleton-pill skeleton-shimmer" />
+                                            </div>
+                                            <div className="mt-auto">
+                                                <span className="course-skeleton-btn skeleton-shimmer" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
                         ) : courses.length > 0 ? (
                             courses.map((kh) => {
                                 const skillTags = parseKyNangTags(kh.kyNangChinh);
@@ -304,17 +390,19 @@ const TrangChu: React.FC = () => {
                                 return (
                                 <div key={kh.maKhoaHoc} className="col-md-6 col-lg-3">
                                     <div className="course-card card h-100 border-0 rounded-4 shadow-sm overflow-hidden transition-all">
-                                        <div className="position-relative overflow-hidden" style={{ height: '200px' }}>
+                                        <div className="position-relative overflow-hidden bg-light" style={{ height: '200px' }}>
                                             <img
                                                 src={`/img/${kh.hinhAnh}`}
                                                 alt={kh.tenKhoaHoc}
-                                                className="w-100 h-100 object-fit-cover course-img"
+                                                className="w-100 h-100 object-fit-contain course-img"
                                                 onError={(e) => (e.currentTarget.src = 'https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=500&q=80')}
                                             />
-                                            <div className="position-absolute top-0 start-0 m-3">
-                                                <span className="badge bg-dark px-3 py-2 text-uppercase tracking-wider rounded-3 opacity-75">
-                                                    {kh.linhVuc}
-                                                </span>
+                                            <div className="position-absolute top-0 start-0 m-3 w-100 pe-4">
+                                                <div className="badge bg-dark px-3 py-2 rounded-3 opacity-75 badge-marquee-wrap">
+                                                    <span className={`text-uppercase tracking-wider ${kh.linhVuc && kh.linhVuc.length > 20 ? 'badge-marquee-text' : ''}`}>
+                                                        {kh.linhVuc}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="card-body p-4 d-flex flex-column">
@@ -381,8 +469,17 @@ const TrangChu: React.FC = () => {
                         ) : (
                             <div className="text-center w-100 py-5">
                                 <div className="display-1 text-muted mb-3"><i className="fas fa-search-minus"></i></div>
-                                <h4 className="text-dark fw-bold mb-3">Không tìm thấy khóa học nào phù hợp!</h4>
-                                <button className="btn btn-outline-primary rounded-pill px-4" onClick={() => setSearchTerm('')}>Xóa bộ lọc</button>
+                                <h4 className="text-dark fw-bold mb-2">Không tìm thấy khóa học nào phù hợp!</h4>
+                                <p className="text-muted mb-4 mx-auto" style={{ maxWidth: '420px' }}>
+                                    {searchTerm
+                                        ? `Không có kết quả cho "${searchTerm}". Thử từ khóa khác hoặc xóa bộ lọc để xem tất cả khóa học.`
+                                        : 'Hiện chưa có khóa học nào. Vui lòng quay lại sau.'}
+                                </p>
+                                {searchTerm && (
+                                    <button className="btn btn-outline-primary rounded-pill px-4" onClick={() => setSearchTerm('')}>
+                                        <i className="fa fa-rotate-left me-2"></i>Xóa bộ lọc
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -397,64 +494,101 @@ const TrangChu: React.FC = () => {
                             <h6 className="text-primary fw-bold text-uppercase tracking-widest mb-2">Đội ngũ chuyên gia</h6>
                             <h2 className="display-6 fw-bold text-dark m-0">Giảng viên tiêu biểu</h2>
                         </div>
-                        <a href="#" className="fw-bold text-muted text-decoration-none hover-primary d-none d-md-block">Xem tất cả <i className="fas fa-arrow-right ms-1"></i></a>
                     </div>
 
-                    <div className="row g-4">
-                        {[
-                            { name: "Nguyễn Quốc Hùng", role: "Senior .NET Developer", bg: "0D8ABC" },
-                            { name: "Nguyễn Tấn Nhật Khôi", role: "System Architect", bg: "fb873f" },
-                            { name: "Nguyễn Huy Hoàng", role: "Frontend Lead", bg: "22c55e" },
-                            { name: "Nguyễn Xuân Âu", role: "Cloud & DevOps", bg: "a855f7" }
-                        ].map((gv, index) => (
-                            <div key={index} className="col-md-6 col-lg-3">
+                    <div className="row g-4 justify-content-center">
+                        {instructors.length > 0 ? instructors.map((gv, index) => (
+                            <div key={gv.id || index} className="col-md-6 col-lg-3">
                                 <div className="instructor-card bg-light rounded-4 border p-4 text-center transition-all h-100">
                                     <div className="instructor-img-wrap mx-auto mb-4">
-                                        <img src={`https://ui-avatars.com/api/?name=${gv.name.replace(/ /g, '+')}&background=${gv.bg}&color=fff&size=200`} alt={gv.name} className="rounded-circle shadow-sm border border-4 border-white instructor-img" style={{ width: '100px', height: '100px' }} />
+                                        <img 
+                                            src={gv.avatar ? (gv.avatar.startsWith('http') ? gv.avatar : `/img/${gv.avatar}`) : getFallbackAvatar(gv.name)} 
+                                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getFallbackAvatar(gv.name); }}
+                                            alt={gv.name} 
+                                            className="rounded-circle shadow-sm border border-4 border-white instructor-img object-fit-cover" 
+                                            style={{ width: '100px', height: '100px' }} 
+                                        />
                                     </div>
                                     <h5 className="fw-bold text-dark">{gv.name}</h5>
-                                    <p className="text-primary fw-bold small mb-4">{gv.role}</p>
+                                    <p className="text-primary fw-bold small mb-2">{gv.role}</p>
+                                    
+                                    <div className="text-warning mb-3 d-flex align-items-center justify-content-center gap-1">
+                                        <i className="fas fa-star"></i>
+                                        <span className="text-dark fw-bold ms-1">{gv.avgRating.toFixed(1)}</span>
+                                        <span className="text-muted small">({gv.totalReviews} đánh giá)</span>
+                                    </div>
+
                                     <div className="d-flex justify-content-center gap-2">
-                                        <a href="#" className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-linkedin-in"></i></a>
-                                        <a href="#" className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-github"></i></a>
+                                        <a href="#" aria-label={`LinkedIn của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-linkedin-in" aria-hidden="true"></i></a>
+                                        <a href="#" aria-label={`GitHub của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-github" aria-hidden="true"></i></a>
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        )) : (
+                            <div className="col-12 text-center py-5">
+                                <div className="d-inline-block bg-white p-5 rounded-4 border border-light shadow-sm">
+                                    <i className="fas fa-user-slash text-muted opacity-50 mb-3" style={{ fontSize: '3rem' }}></i>
+                                    <h5 className="text-dark fw-bold mb-2">Chưa có đánh giá nào</h5>
+                                    <p className="text-muted mb-0">Hệ thống hiện chưa ghi nhận đánh giá nào cho các giảng viên. Hãy trở thành người đầu tiên trải nghiệm nhé!</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
 
             {/* 8. Reviews */}
-            <section className="py-5 text-white position-relative overflow-hidden bg-dark">
+            <section className="py-5 position-relative overflow-hidden" style={{ backgroundColor: '#f8fafc' }}>
+                {/* Background Blobs for modern aesthetic */}
+                <div className="position-absolute rounded-circle" style={{ width: '400px', height: '400px', background: 'rgba(13, 110, 253, 0.05)', filter: 'blur(60px)', top: '-100px', left: '-100px', pointerEvents: 'none' }}></div>
+                <div className="position-absolute rounded-circle" style={{ width: '300px', height: '300px', background: 'rgba(251, 135, 63, 0.05)', filter: 'blur(60px)', bottom: '-50px', right: '-50px', pointerEvents: 'none' }}></div>
+
                 <div className="container py-5 position-relative z-index-1">
                     <div className="text-center mb-5">
-                        <h6 className="text-primary fw-bold text-uppercase tracking-widest mb-2">Đánh giá thực tế</h6>
-                        <h2 className="display-6 fw-bold m-0">Học viên nói gì về EduCode?</h2>
+                        <div className="d-inline-block px-3 py-1 bg-primary-subtle text-primary fw-bold text-uppercase rounded-pill mb-3" style={{ fontSize: '0.85rem', letterSpacing: '1.5px' }}>Đánh giá thực tế</div>
+                        <h2 className="display-6 fw-bold text-dark m-0">Học viên nói gì về EduCode?</h2>
+                        <p className="text-muted mt-3 mb-0 mx-auto" style={{ maxWidth: '600px' }}>Những chia sẻ chân thực từ các bạn học viên đã trải nghiệm nền tảng học và luyện thi của chúng tôi.</p>
                     </div>
 
-                    <div className="row g-4">
-                        {[
-                            { name: "Trần Minh", role: "Fresher Backend", quote: "Nhờ tính năng giả lập phỏng vấn AI, mình đã tự tin hơn rất nhiều khi deal lương thực tế. Các câu hỏi AI đưa ra cực kỳ sát với Technical Interview." },
-                            { name: "Vy Văn Khiến", role: "Sinh viên CNTT", quote: "Code trực tiếp trên trình duyệt và được hệ thống test case ẩn tự động chấm điểm. Cảm giác như đang làm bài thi LeetCode vậy!" },
-                            { name: "Thu Hoài", role: "Frontend ReactJS", quote: "Giao diện website cực kỳ thân thiện. Chức năng AI sinh đồ án giúp mình tiết kiệm hàng tuần trời ngồi suy nghĩ đề tài làm dự án cuối khóa." }
-                        ].map((review, i) => (
-                            <div key={i} className="col-md-4">
-                                <div className="review-card bg-dark bg-opacity-50 p-4 rounded-4 border border-secondary h-100">
-                                    <div className="text-warning mb-3">
-                                        <i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i>
-                                    </div>
-                                    <p className="text-light opacity-75 fst-italic mb-4">"{review.quote}"</p>
-                                    <div className="d-flex align-items-center gap-3 mt-auto">
-                                        <img src={`https://ui-avatars.com/api/?name=${review.name.replace(/ /g, '+')}&background=random`} alt="User" className="rounded-circle" style={{ width: '48px', height: '48px' }} />
-                                        <div>
-                                            <h6 className="fw-bold m-0 text-white">{review.name}</h6>
-                                            <small className="text-secondary">{review.role}</small>
+                    <div className="row g-4 justify-content-center">
+                        {reviews.length > 0 ? reviews.map((review, i) => (
+                            <div key={review.id || i} className="col-md-6 col-lg-4">
+                                <div className="review-card bg-white p-4 rounded-4 shadow-sm border-0 h-100 position-relative overflow-hidden" style={{ transition: 'transform 0.3s ease, box-shadow 0.3s ease' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = '0 0.5rem 1.5rem rgba(0,0,0,0.1)' }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0.25rem 0.75rem rgba(0,0,0,0.05)' }}>
+                                    
+                                    {/* Quote Watermark */}
+                                    <i className="fas fa-quote-right position-absolute" style={{ fontSize: '5rem', color: '#f1f5f9', bottom: '-10px', right: '10px', zIndex: 0, transform: 'rotate(-5deg)' }}></i>
+                                    
+                                    <div className="position-relative z-index-1 d-flex flex-column h-100">
+                                        <div className="text-warning mb-3">
+                                            {[...Array(5)].map((_, index) => (
+                                                <i key={index} className={`fas fa-star me-1 ${index < review.soSao ? 'text-warning' : 'text-secondary opacity-25'}`}></i>
+                                            ))}
+                                        </div>
+                                        <p className="text-secondary fst-italic mb-4 flex-grow-1" style={{ lineHeight: '1.6' }}>"{review.quote}"</p>
+                                        
+                                        <div className="d-flex align-items-center gap-3 pt-3 border-top border-light mt-auto">
+                                            <div className="position-relative">
+                                                <img src={getFallbackAvatar(review.name, 45, true)} alt="User" className="rounded-circle shadow-sm" style={{ width: '45px', height: '45px' }} />
+                                                <div className="position-absolute bg-success rounded-circle border border-2 border-white" style={{ width: '12px', height: '12px', bottom: '0px', right: '0px' }}></div>
+                                            </div>
+                                            <div>
+                                                <h6 className="fw-bold m-0 text-dark" style={{ fontSize: '0.95rem' }}>{review.name}</h6>
+                                                <small className="text-muted d-block mt-1" style={{ fontSize: '0.8rem' }}>Khóa học: <span className="text-dark fw-medium">{review.courseName}</span></small>
+                                                <small className="text-muted" style={{ fontSize: '0.8rem' }}>GV: <span className="text-dark fw-medium">{review.instructorName}</span></small>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        )) : (
+                            <div className="col-12 text-center py-5">
+                                <div className="d-inline-block bg-white p-5 rounded-4 border border-light shadow-sm">
+                                    <i className="fas fa-comment-slash text-muted opacity-50 mb-3" style={{ fontSize: '3rem' }}></i>
+                                    <h5 className="text-dark fw-bold mb-2">Chưa có đánh giá nào</h5>
+                                    <p className="text-muted mb-0">Hệ thống hiện chưa ghi nhận đánh giá nào từ học viên. Hãy là người đầu tiên trải nghiệm và để lại nhận xét nhé!</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
@@ -463,7 +597,7 @@ const TrangChu: React.FC = () => {
             <section className="py-5 bg-primary">
                 <div className="container py-4">
                     <div className="bg-white rounded-4 p-5 p-md-5 d-flex flex-column flex-md-row align-items-center justify-content-between shadow-lg position-relative overflow-hidden">
-                        <div className="position-absolute" style={{ right: '-50px', top: '-50px', width: '250px', height: '250px', background: 'rgba(251, 135, 63, 0.1)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }}></div>
+                        <div className="position-absolute" style={{ right: '-50px', top: '-50px', width: '250px', height: '250px', background: 'rgba(246, 144, 80, 0.1)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }}></div>
                         <div className="text-center text-md-start mb-4 mb-md-0 position-relative z-index-1">
                             <h2 className="display-6 fw-bold text-dark mb-3">Bạn muốn truyền cảm hứng?</h2>
                             <p className="text-muted fs-5 mb-0" style={{ maxWidth: '600px' }}>Trở thành giảng viên trên EduCode để chia sẻ kiến thức, xây dựng thương hiệu cá nhân và tạo thu nhập thụ động.</p>
@@ -508,9 +642,9 @@ const TrangChu: React.FC = () => {
                 .hero-badge {
                     padding: 0.35rem 1rem;
                     border-radius: 50rem;
-                    background: rgba(251, 135, 63, 0.2);
-                    color: #fb873f;
-                    border: 1px solid rgba(251, 135, 63, 0.3);
+                    background: rgba(246, 144, 80, 0.2);
+                    color: var(--primary);
+                    border: 1px solid rgba(246, 144, 80, 0.3);
                     font-size: 0.875rem;
                     text-transform: uppercase;
                     letter-spacing: 0.1em;
@@ -522,7 +656,7 @@ const TrangChu: React.FC = () => {
                     height: 12px;
                     bottom: -4px;
                     left: 0;
-                    color: rgba(251, 135, 63, 0.4);
+                    color: rgba(246, 144, 80, 0.4);
                 }
                 .hero-cta-group {
                     display: flex;
@@ -549,14 +683,14 @@ const TrangChu: React.FC = () => {
                     transition: all 0.25s ease;
                 }
                 .hero-cta-btn--primary {
-                    background: #0d6efd;
-                    border-color: #0d6efd;
+                    background: var(--primary);
+                    border-color: var(--primary);
                     color: #fff;
-                    box-shadow: 0 10px 24px rgba(13, 110, 253, 0.35);
+                    box-shadow: 0 10px 24px rgba(246, 144, 80, 0.35);
                 }
                 .hero-cta-btn--primary:hover {
-                    background: #0b5ed7;
-                    border-color: #0b5ed7;
+                    background: var(--primary-hover);
+                    border-color: var(--primary-hover);
                     color: #fff;
                     transform: translateY(-1px);
                 }
@@ -579,7 +713,7 @@ const TrangChu: React.FC = () => {
                 }
                 .home-search-bar {
                     background: #fff;
-                    border-bottom: 1px solid #e2e8f0;
+                    border-bottom: 1px solid var(--border-color);
                     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
                     padding: 0.85rem 0;
                 }
@@ -593,21 +727,21 @@ const TrangChu: React.FC = () => {
                     display: flex;
                     align-items: center;
                     background: #fff;
-                    border: 2px solid #e2e8f0;
+                    border: 2px solid var(--border-color);
                     border-radius: 50rem;
                     height: 3.5rem;
                     overflow: hidden;
                     transition: all 0.3s ease;
                 }
                 .search-bar-modern:focus-within {
-                    border-color: #fb873f;
+                    border-color: var(--primary);
                     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
                 }
                 .search-icon {
                     width: 3.5rem;
                     display: grid;
                     place-items: center;
-                    color: #94a3b8;
+                    color: var(--text-light);
                     font-size: 1.1rem;
                 }
                 .search-input {
@@ -616,32 +750,40 @@ const TrangChu: React.FC = () => {
                     border: none;
                     outline: none;
                     font-weight: 600;
-                    color: #334155;
+                    color: var(--text-main);
+                }
+                .search-input:focus-visible {
+                    outline: 2px solid var(--primary);
+                    outline-offset: 2px;
+                }
+                .search-input:focus-visible {
+                    outline: 2px solid var(--primary);
+                    outline-offset: -2px;
                 }
                 .clear-btn {
                     width: 3.5rem;
                     height: 100%;
                     background: none;
                     border: none;
-                    color: #94a3b8;
+                    color: var(--text-light);
                     cursor: pointer;
                     display: grid;
                     place-items: center;
                 }
-                .clear-btn:hover { color: #fb873f; }
+                .clear-btn:hover { color: var(--primary); }
 
                 /* Stats */
                 .stat-item {
-                    border-right: 1px solid #f1f5f9;
+                    border-right: 1px solid var(--border-light);
                 }
                 @media (max-width: 768px) {
-                    .stat-item { border-right: none; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem; }
+                    .stat-item { border-right: none; border-bottom: 1px solid var(--border-light); padding-bottom: 1rem; }
                 }
 
                 /* Feature Card */
                 .feature-card {
                     transition: all 0.4s ease;
-                    border: 1px solid #f1f5f9;
+                    border: 1px solid var(--border-light);
                 }
                 .feature-card:hover {
                     transform: translateY(-8px);
@@ -662,10 +804,10 @@ const TrangChu: React.FC = () => {
 
                 /* Category Card */
                 .category-card:hover {
-                    border-color: #fb873f !important;
+                    border-color: var(--primary) !important;
                     transform: translateY(-5px);
                 }
-                .category-card:hover h5 { color: #fb873f !important; }
+                .category-card:hover h5 { color: var(--primary) !important; }
                 .icon-wrapper { transition: all 0.3s ease; }
                 .category-card:hover .icon-wrapper { transform: scale(1.1); }
 
@@ -694,22 +836,22 @@ const TrangChu: React.FC = () => {
                     font-size: 0.72rem;
                     font-weight: 600;
                     line-height: 1.2;
-                    background: rgba(251, 135, 63, 0.1);
-                    color: #c2410c;
-                    border: 1px solid rgba(251, 135, 63, 0.22);
+                    background: var(--primary-soft);
+                    color: var(--primary-dark);
+                    border: 1px solid rgba(246, 144, 80, 0.22);
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
                 .course-skill-tag--more {
-                    background: #f1f5f9;
-                    color: #64748b;
-                    border-color: #e2e8f0;
+                    background: var(--border-light);
+                    color: var(--text-muted);
+                    border-color: var(--border-color);
                 }
                 .course-skill-tag--empty {
-                    background: #f8fafc;
-                    color: #94a3b8;
-                    border-color: #e2e8f0;
+                    background: var(--bg-main);
+                    color: var(--text-light);
+                    border-color: var(--border-color);
                     font-weight: 500;
                 }
                 .line-clamp-2 {
@@ -736,32 +878,32 @@ const TrangChu: React.FC = () => {
                 .btn-course-detail {
                     grid-column: 1 / -1;
                     background: #fff;
-                    border: 1px solid #cbd5e1;
-                    color: #334155;
+                    border: 1px solid var(--border-color);
+                    color: var(--text-main);
                 }
                 .btn-course-detail:hover {
-                    background: #f8fafc;
-                    border-color: #94a3b8;
-                    color: #0f172a;
+                    background: var(--bg-main);
+                    border-color: var(--text-light);
+                    color: var(--text-main);
                 }
                 .btn-course-trial {
                     background: #fff;
-                    border: 1px solid #fb873f;
-                    color: #fb873f;
+                    border: 1px solid var(--primary);
+                    color: var(--primary);
                 }
                 .btn-course-trial:hover {
-                    background: rgba(251, 135, 63, 0.08);
-                    color: #e86f24;
+                    background: rgba(246, 144, 80, 0.08);
+                    color: var(--primary-hover);
                 }
                 .btn-course-buy {
-                    background: #fb873f;
-                    border: 1px solid #fb873f;
+                    background: var(--primary);
+                    border: 1px solid var(--primary);
                     color: #fff;
-                    box-shadow: 0 4px 10px rgba(251, 135, 63, 0.25);
+                    box-shadow: 0 4px 10px rgba(246, 144, 80, 0.25);
                 }
                 .btn-course-buy:hover {
-                    background: #e86f24;
-                    border-color: #e86f24;
+                    background: var(--primary-hover);
+                    border-color: var(--primary-hover);
                     color: #fff;
                 }
                 .btn-course-buy--full {
@@ -777,19 +919,79 @@ const TrangChu: React.FC = () => {
                 .instructor-img { transition: transform 0.3s ease; }
                 .instructor-card:hover .instructor-img { transform: scale(1.1); }
                 .social-icon { width: 36px; height: 36px; transition: all 0.3s ease; text-decoration: none; }
-                .social-icon:hover { background: #fb873f !important; color: #fff !important; }
+                .social-icon:hover { background: var(--primary) !important; color: #fff !important; }
 
-                .hover-primary:hover { color: #fb873f !important; }
+                .hover-primary:hover { color: var(--primary) !important; }
 
                 /* Colors */
-                .bg-primary-subtle { background-color: rgba(251, 135, 63, 0.1) !important; }
-                .text-primary { color: #fb873f !important; }
+                .bg-primary-subtle { background-color: var(--primary-soft) !important; }
+                .text-primary { color: var(--primary) !important; }
 
                 /* Button specific sizing */
                 .hero-btn {
                     width: 250px !important;
                     height: 56px !important;
                     font-size: 1.1rem !important;
+                }
+
+                /* Course Skeleton (loading) */
+                .course-skeleton-thumb {
+                    height: 200px;
+                    width: 100%;
+                }
+                .course-skeleton-line {
+                    display: block;
+                    height: 0.85rem;
+                    border-radius: var(--radius-sm);
+                }
+                .course-skeleton-pill {
+                    display: inline-block;
+                    height: 1.35rem;
+                    width: 4.5rem;
+                    border-radius: 50rem;
+                }
+                .course-skeleton-btn {
+                    display: block;
+                    height: 42px;
+                    width: 100%;
+                    border-radius: var(--radius-md);
+                }
+                .skeleton-shimmer {
+                    background: linear-gradient(
+                        90deg,
+                        var(--border-light) 25%,
+                        var(--border-color) 37%,
+                        var(--border-light) 63%
+                    );
+                    background-size: 400% 100%;
+                    animation: skeleton-loading 1.4s ease infinite;
+                }
+                @keyframes skeleton-loading {
+                    0% { background-position: 100% 50%; }
+                    100% { background-position: 0 50%; }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .skeleton-shimmer { animation: none; }
+                    .hero-cta-btn,
+                    .feature-card,
+                    .course-card,
+                    .course-img,
+                    .category-card,
+                    .instructor-card,
+                    .instructor-img,
+                    .icon-box,
+                    .icon-wrapper,
+                    .social-icon,
+                    .feature-link {
+                        transition: none !important;
+                    }
+                    .feature-card:hover,
+                    .course-card:hover,
+                    .category-card:hover,
+                    .instructor-card:hover,
+                    .hero-cta-btn:hover {
+                        transform: none !important;
+                    }
                 }
             `}</style>
         </div>

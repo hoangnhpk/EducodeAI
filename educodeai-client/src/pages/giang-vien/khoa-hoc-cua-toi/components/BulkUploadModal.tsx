@@ -9,8 +9,11 @@ import {
   verticalListSortingStrategy, useSortable, arrayMove
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import Swal from 'sweetalert2';
 import * as mediaApi from '@/services/media.service';
+import { GIA_PHU_DE_AI_MOI_PHUT_USD, MAX_CLOUDINARY_VIDEO_MB } from '@/services/media.service';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface BulkUploadItem {
   id: string;
@@ -18,7 +21,7 @@ interface BulkUploadItem {
   tieuDe: string;
   dungLuongMb: number;
   tienDo: number;
-  trangThai: 'cho_xu_ly' | 'dang_tai' | 'thanh_cong' | 'loi';
+  trangThai: 'cho_xu_ly' | 'dang_tai' | 'thanh_cong' | 'loi' | 'da_huy';
   thongBaoLoi?: string;
 }
 
@@ -29,6 +32,7 @@ interface BulkUploadModalProps {
   maChuong: number;
   soLuongHienTai: number;
   khiTaiLenThanhCong: (baiHocMoi: any[]) => void;
+  khiYeuCauPhuDeAI?: (maBaiHocIds: number[]) => void;
 }
 
 const MAX_VIDEO_PER_BATCH = 50;
@@ -73,19 +77,20 @@ const QueueRow: React.FC<{
             </div>
           </div>
           <div style={{ flex: '0 0 120px' }}>
-             {item.trangThai === 'cho_xu_ly' && <span className="khm-badge" style={{ background: '#f1f5f9', color: '#64748b' }}>Chờ tải lên</span>}
+             {item.trangThai === 'cho_xu_ly' && <span className="khm-badge" style={{ background: 'var(--khm-gray-100)', color: 'var(--khm-gray-600)' }}>Chờ tải lên</span>}
              {item.trangThai === 'dang_tai' && (
                <div style={{ width: '100%' }}>
                  <div className="khm-text-sm khm-text-primary khm-mb-4">Đang tải... {item.tienDo}%</div>
-                 <div style={{ background: '#e2e8f0', borderRadius: 4, height: 4, overflow: 'hidden' }}>
+                 <div style={{ background: 'var(--khm-gray-200)', borderRadius: 4, height: 4, overflow: 'hidden' }}>
                     <div style={{ background: 'var(--khm-primary)', height: '100%', width: `${item.tienDo}%`, transition: 'width 0.2s' }} />
                  </div>
                </div>
              )}
-             {item.trangThai === 'thanh_cong' && <span className="khm-badge" style={{ background: '#dcfce7', color: '#166534' }}>✓ Thành công</span>}
+             {item.trangThai === 'thanh_cong' && <span className="khm-badge" style={{ background: 'var(--success-soft)', color: 'var(--success-strong)' }}>✓ Thành công</span>}
+             {item.trangThai === 'da_huy' && <span className="khm-badge" style={{ background: 'var(--khm-gray-100)', color: 'var(--khm-gray-600)' }}>⊘ Đã hủy</span>}
              {item.trangThai === 'loi' && (
                <div>
-                 <span className="khm-badge" style={{ background: '#fee2e2', color: '#991b1b', marginBottom: 4 }}>❌ Lỗi</span>
+                 <span className="khm-badge" style={{ background: 'var(--danger-soft)', color: 'var(--danger-strong)', marginBottom: 4 }}>❌ Lỗi</span>
                  <div className="khm-text-sm khm-text-danger" style={{ fontSize: 10 }}>{item.thongBaoLoi}</div>
                </div>
              )}
@@ -104,7 +109,7 @@ const QueueRow: React.FC<{
   );
 };
 
-const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, maGiangVien, maChuong, soLuongHienTai, khiTaiLenThanhCong }) => {
+const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, maGiangVien, maChuong, soLuongHienTai, khiTaiLenThanhCong, khiYeuCauPhuDeAI }) => {
   const [hangDoi, setHangDoi] = useState<BulkUploadItem[]>([]);
   const [dangTaiLen, setDangTaiLen] = useState(false);
   const [apDungPhuDeAI, setApDungPhuDeAI] = useState(false);
@@ -115,9 +120,18 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
   // Track uploaded lesson IDs for post-upload AI subtitle
   const uploadedLessonsRef = useRef<{ maBaiHoc: number; thoiLuong: number }[]>([]);
 
+  // Cờ hủy toàn batch + các AbortController đang chạy (mỗi item 1 cái) để hủy upload giữa chừng.
+  const daHuyRef = useRef(false);
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+
   const refInputFile = useRef<HTMLInputElement>(null);
   const refInputFolder = useRef<HTMLInputElement>(null);
   const refInputSafariFallback = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const phuDeConfirmRef = useRef<HTMLDivElement>(null);
+
+  useModalA11y(dangMo && !dangTaiLen, dongModal, panelRef);
+  useModalA11y(showPhuDeConfirm && !dangXuLyPhuDe, () => setShowPhuDeConfirm(false), phuDeConfirmRef);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -130,6 +144,8 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
       setDangTaiLen(false);
       setApDungPhuDeAI(false);
       uploadedLessonsRef.current = [];
+      daHuyRef.current = false;
+      abortControllersRef.current.clear();
       setShowPhuDeConfirm(false);
       setDangXuLyPhuDe(false);
       setPhuDeKetQua(null);
@@ -144,8 +160,8 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
     Array.from(files).forEach(f => {
       if (choPhep.includes(f.type) || f.name.endsWith('.mp4') || f.name.endsWith('.mov')) {
         const dungLuongMb = f.size / (1024 * 1024);
-        if (dungLuongMb > 2000) {
-          alert(`File ${f.name} vượt quá dung lượng tối đa 2GB.`);
+        if (dungLuongMb > MAX_CLOUDINARY_VIDEO_MB) {
+          void Swal.fire('Vượt dung lượng', `File ${f.name} vượt quá dung lượng tối đa ${(MAX_CLOUDINARY_VIDEO_MB / 1024).toFixed(0)}GB.`, 'warning');
           return;
         }
         let tieuDe = f.name.replace(/\.[^/.]+$/, ""); // remove extension
@@ -158,7 +174,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
           trangThai: 'cho_xu_ly'
         });
       } else {
-        alert(`File ${f.name} không đúng định dạng video hỗ trợ.`);
+        void Swal.fire('Sai định dạng', `File ${f.name} không đúng định dạng video hỗ trợ.`, 'warning');
       }
     });
 
@@ -167,7 +183,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
         const combined = [...prev, ...itemsMoi];
         const total = combined.length;
         if (total > MAX_VIDEO_PER_BATCH) {
-          alert(`Chỉ được tải lên tối đa ${MAX_VIDEO_PER_BATCH} video mỗi lần. ${total - MAX_VIDEO_PER_BATCH} video vượt quá đã bị loại.`);
+          void Swal.fire('Vượt giới hạn', `Chỉ được tải lên tối đa ${MAX_VIDEO_PER_BATCH} video mỗi lần. ${total - MAX_VIDEO_PER_BATCH} video vượt quá đã bị loại.`, 'warning');
           // Lấy đúng MAX_VIDEO_PER_BATCH item (giữ ưu tiên video đầu tiên)
           const kept = prev.length >= MAX_VIDEO_PER_BATCH ? prev : [...prev, ...itemsMoi.slice(0, MAX_VIDEO_PER_BATCH - prev.length)];
           return kept.sort((a, b) => a.tieuDe.localeCompare(b.tieuDe));
@@ -204,16 +220,25 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
     const qSnapshot = [...hangDoi];
 
     const taiLenFile = async (item: BulkUploadItem, indexOffset: number) => {
+      // Nếu đã bấm hủy toàn batch trước khi tới lượt item này thì bỏ qua, không upload.
+      if (daHuyRef.current) {
+        capNhatItem(item.id, { trangThai: 'da_huy', thongBaoLoi: 'Đã hủy' });
+        return;
+      }
+
+      const controller = new AbortController();
+      abortControllersRef.current.set(item.id, controller);
+
       try {
         capNhatItem(item.id, { trangThai: 'dang_tai', tienDo: 0, thongBaoLoi: undefined });
-        
+
         // 1. Get Signature sequentially for each file just before uploading (Rate Limit prevention)
         const chuKy = await mediaApi.layChuKyUploadVideo();
 
-        // 2. Upload to Cloudinary
+        // 2. Upload to Cloudinary (truyền signal để hủy giữa chừng)
         const ketQua = await mediaApi.uploadVideoToCloudinary(item.file, chuKy, (p) => {
            capNhatItem(item.id, { tienDo: p });
-        });
+        }, controller.signal);
 
         // 3. Save to DB
         const thoiLuong = Math.round(ketQua.duration || 0);
@@ -243,8 +268,17 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
 
         capNhatItem(item.id, { trangThai: 'thanh_cong', tienDo: 100 });
       } catch (error: any) {
+         // Bị hủy giữa chừng (abort) → đánh dấu da_huy, KHÔNG coi là lỗi và KHÔNG gọi themBaiHoc
+         // (đã bị ngắt trước bước lưu DB nên không gắn video dở vào bài học).
+         const laHuy = daHuyRef.current || error?.name === 'CanceledError' || error?.name === 'AbortError' || error?.code === 'ERR_CANCELED';
+         if (laHuy) {
+            capNhatItem(item.id, { trangThai: 'da_huy', thongBaoLoi: 'Đã hủy' });
+            return;
+         }
          capNhatItem(item.id, { trangThai: 'loi', thongBaoLoi: error.message || 'Lỗi không xác định' });
          throw error; // Throw so we know it failed
+      } finally {
+         abortControllersRef.current.delete(item.id);
       }
     };
 
@@ -279,29 +313,36 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
      xuLyTaiLenHangDoi();
   };
 
+  // Hủy toàn bộ batch đang tải: bật cờ hủy (chặn item chưa tới lượt) + abort mọi upload đang chạy.
+  const xuLyHuyTaiLen = () => {
+    daHuyRef.current = true;
+    abortControllersRef.current.forEach(c => c.abort());
+    abortControllersRef.current.clear();
+  };
+
   const soLuongCho = hangDoi.filter(q => q.trangThai === 'cho_xu_ly').length;
   const soLuongThanhCong = hangDoi.filter(q => q.trangThai === 'thanh_cong').length;
   const soLuongLoi = hangDoi.filter(q => q.trangThai === 'loi').length;
-  const daHoanThanh = hangDoi.length > 0 && hangDoi.every(q => q.trangThai === 'thanh_cong' || q.trangThai === 'loi');
+  const daHoanThanh = hangDoi.length > 0 && hangDoi.every(q => q.trangThai === 'thanh_cong' || q.trangThai === 'loi' || q.trangThai === 'da_huy');
 
   if (!dangMo) return null;
 
   return (
     <div className="khm-modal-backdrop">
-      <div className="khm-modal khm-modal-xl" onClick={e => e.stopPropagation()} style={{ maxWidth: 900 }}>
+      <div className="khm-modal khm-modal-xl" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="bulk-upload-title" onClick={e => e.stopPropagation()} style={{ maxWidth: 900 }}>
         <div className="khm-modal-header">
-          <h3 className="khm-modal-title">Tải lên hàng loạt (Bulk Upload)</h3>
-          {!dangTaiLen && <button className="khm-modal-close" onClick={dongModal}>×</button>}
+          <h3 className="khm-modal-title" id="bulk-upload-title">Tải lên hàng loạt (Bulk Upload)</h3>
+          {!dangTaiLen && <button className="khm-modal-close" onClick={dongModal} aria-label="Đóng">×</button>}
         </div>
         <div className="khm-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           
-          <div className="khm-flex khm-gap-16 khm-mb-24">
-             <div className="khm-alert khm-alert-info khm-flex-1" style={{ margin: 0 }}>
+          <div className="khm-flex khm-gap-16 khm-mb-24" style={{ flexWrap: 'wrap', alignItems: 'center' }}>
+             <div className="khm-alert khm-alert-info khm-flex-1" style={{ margin: 0, minWidth: 240 }}>
                <div>
                  <strong>💡 Mẹo:</strong> Giữ tên file gọn gàng (VD: <code>01-gioi-thieu.mp4</code>) để hệ thống tự động sắp xếp (A-Z).
                </div>
              </div>
-             <div className="khm-flex khm-gap-8 khm-items-center">
+             <div className="khm-flex khm-gap-8 khm-items-center" style={{ flexShrink: 0, flexWrap: 'wrap' }}>
                 <input
                   type="file"
                   multiple
@@ -328,13 +369,13 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                   onChange={e => { xuLyChonFile(e.target.files); e.target.value = ''; }}
                   {...({ webkitdirectory: "", directory: "" } as any)}
                 />
-                <button className="khm-btn khm-btn-outline" onClick={() => refInputFile.current?.click()} disabled={dangTaiLen}>
+                <button className="khm-btn khm-btn-outline" onClick={() => refInputFile.current?.click()} disabled={dangTaiLen} style={{ flex: 1, whiteSpace: 'nowrap' }}>
                   + Chọn Files
                 </button>
-                <button className="khm-btn khm-btn-outline" onClick={() => refInputFolder.current?.click()} disabled={dangTaiLen} title="Chọn cả thư mục (Desktop)">
+                <button className="khm-btn khm-btn-outline" onClick={() => refInputFolder.current?.click()} disabled={dangTaiLen} title="Chọn cả thư mục (Desktop)" style={{ flex: 1, whiteSpace: 'nowrap' }}>
                   + Chọn Folder
                 </button>
-                <button className="khm-btn khm-btn-outline khm-btn-sm" onClick={() => refInputSafariFallback.current?.click()} disabled={dangTaiLen} style={{ fontSize: 12 }} title="Safari iOS fallback">
+                <button className="khm-btn khm-btn-outline" onClick={() => refInputSafariFallback.current?.click()} disabled={dangTaiLen} title="Safari iOS fallback" style={{ flex: 1, whiteSpace: 'nowrap' }}>
                   📱 Chọn File (iOS)
                 </button>
              </div>
@@ -375,10 +416,10 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
               {/* AI Subtitle Confirm Modal */}
               {showPhuDeConfirm && (
                 <div className="khm-modal-backdrop">
-                  <div className="khm-modal khm-modal-md" onClick={e => e.stopPropagation()}>
+                  <div className="khm-modal khm-modal-md" ref={phuDeConfirmRef} role="dialog" aria-modal="true" aria-labelledby="phude-confirm-title" onClick={e => e.stopPropagation()}>
                     <div className="khm-modal-header">
-                      <h3 className="khm-modal-title">✨ Xác nhận tạo Phụ đề AI</h3>
-                      <button className="khm-modal-close" disabled={dangXuLyPhuDe} onClick={() => setShowPhuDeConfirm(false)}>×</button>
+                      <h3 className="khm-modal-title" id="phude-confirm-title">✨ Xác nhận tạo Phụ đề AI</h3>
+                      <button className="khm-modal-close" disabled={dangXuLyPhuDe} onClick={() => setShowPhuDeConfirm(false)} aria-label="Đóng">×</button>
                     </div>
                     <div className="khm-modal-body">
                       {phuDeKetQua ? (
@@ -401,7 +442,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                                 <tr key={l.maBaiHoc} style={{ borderBottom: '1px solid var(--khm-gray-100)' }}>
                                   <td style={{ padding: '4px 8px' }}>#{i + 1}</td>
                                   <td style={{ padding: '4px 8px' }}>{Math.ceil(l.thoiLuong / 60)} phút</td>
-                                  <td style={{ padding: '4px 8px' }}>${(Math.ceil(l.thoiLuong / 60) * 0.06).toFixed(2)}</td>
+                                  <td style={{ padding: '4px 8px' }}>${(Math.ceil(l.thoiLuong / 60) * GIA_PHU_DE_AI_MOI_PHUT_USD).toFixed(2)}</td>
                                 </tr>
                               ))}
                               {uploadedLessonsRef.current.length > 10 && (
@@ -413,15 +454,15 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                                 <td style={{ padding: '6px 8px' }}>Tổng</td>
                                 <td style={{ padding: '6px 8px' }}>{uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60), 0)} phút</td>
                                 <td style={{ padding: '6px 8px' }}>
-                                  ${uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60) * 0.06, 0).toFixed(2)}
+                                  ${uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60) * GIA_PHU_DE_AI_MOI_PHUT_USD, 0).toFixed(2)}
                                 </td>
                               </tr>
                             </tfoot>
                           </table>
 
-                          <div className="khm-alert khm-alert-info" style={{ fontSize: 13 }}>
-                            <input type="checkbox" id="phude_gdpr_consent" className="khm-mr-4" />
-                            <label htmlFor="phude_gdpr_consent">
+                          <div className="khm-alert khm-alert-info" style={{ fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                            <input type="checkbox" id="phude_gdpr_consent" style={{ marginTop: 3, flexShrink: 0, width: 'auto', padding: 0 }} />
+                            <label htmlFor="phude_gdpr_consent" style={{ cursor: 'pointer', flex: 1, lineHeight: 1.5 }}>
                               Tôi xác nhận video không chứa thông tin cá nhân nhạy cảm. Nội dung audio sẽ gửi tới Google Cloud Speech-to-Text, tự động xóa sau 24h.
                             </label>
                           </div>
@@ -433,27 +474,31 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
                         <button className="khm-btn khm-btn-primary khm-btn-sm" onClick={() => setShowPhuDeConfirm(false)}>Đóng</button>
                       ) : (
                         <>
-                          <span className="khm-text-sm khm-text-muted">Phí AI: $0.06/phút</span>
+                          <span className="khm-text-sm khm-text-muted">Phí AI: ${GIA_PHU_DE_AI_MOI_PHUT_USD}/phút</span>
                           <div className="khm-flex khm-gap-8">
                             <button className="khm-btn khm-btn-outline khm-btn-sm" disabled={dangXuLyPhuDe} onClick={() => setShowPhuDeConfirm(false)}>Hủy</button>
-                            <button className="khm-btn khm-btn-sm" style={{ background: '#c026d3', color: '#fff', border: 'none' }}
+                            <button className="khm-btn khm-btn-sm" style={{ background: 'var(--ai-accent)', color: 'var(--text-white)', border: 'none' }}
                               disabled={dangXuLyPhuDe}
                               onClick={async () => {
                                 const cb = document.getElementById('phude_gdpr_consent') as HTMLInputElement;
-                                if (!cb.checked) { alert('Vui lòng đồng ý với điều khoản GDPR.'); return; }
+                                if (!cb.checked) { await Swal.fire('Chưa đồng ý', 'Vui lòng đồng ý với điều khoản GDPR.', 'warning'); return; }
                                 setDangXuLyPhuDe(true);
                                 try {
                                   let success = 0, fail = 0;
+                                  const idThanhCong: number[] = [];
                                   for (const l of uploadedLessonsRef.current) {
-                                    try { await mediaApi.taoPhuDeAI(l.maBaiHoc); success++; }
+                                    try { await mediaApi.taoPhuDeAI(l.maBaiHoc); success++; idThanhCong.push(l.maBaiHoc); }
                                     catch { fail++; }
                                   }
+                                  // Báo cho component cha đánh dấu các bài này là "Processing_Subtitle"
+                                  // để badge hiện ngay + kích hoạt polling tự cập nhật khi worker xong.
+                                  if (idThanhCong.length > 0) khiYeuCauPhuDeAI?.(idThanhCong);
                                   setPhuDeKetQua(`✅ Đã gửi yêu cầu AI cho ${success} video.${fail > 0 ? ` ❌ ${fail} video thất bại.` : ''} Phụ đề sẽ có sau vài phút.`);
                                 } catch { setPhuDeKetQua('❌ Lỗi hệ thống. Vui lòng thử lại sau.'); }
                                 finally { setDangXuLyPhuDe(false); }
                               }}
                             >
-                              {dangXuLyPhuDe ? <><span className="khm-spinner khm-spinner-sm" /> Đang xử lý...</> : `Đồng ý - $${uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60) * 0.06, 0).toFixed(2)}`}
+                              {dangXuLyPhuDe ? <><span className="khm-spinner khm-spinner-sm" /> Đang xử lý...</> : `Đồng ý - $${uploadedLessonsRef.current.reduce((s, l) => s + Math.ceil(l.thoiLuong / 60) * GIA_PHU_DE_AI_MOI_PHUT_USD, 0).toFixed(2)}`}
                             </button>
                           </div>
                         </>
@@ -486,9 +531,14 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ dangMo, dongModal, ma
              )}
              
              {dangTaiLen && (
-               <button className="khm-btn khm-btn-primary khm-btn-sm" disabled>
-                 <span className="khm-spinner khm-spinner-sm" /> Đang xử lý...
-               </button>
+               <>
+                 <button className="khm-btn khm-btn-primary khm-btn-sm" disabled>
+                   <span className="khm-spinner khm-spinner-sm" /> Đang xử lý...
+                 </button>
+                 <button className="khm-btn khm-btn-danger khm-btn-sm" onClick={xuLyHuyTaiLen}>
+                   ✕ Hủy tải lên
+                 </button>
+               </>
              )}
 
              {daHoanThanh && soLuongLoi > 0 && !dangTaiLen && (

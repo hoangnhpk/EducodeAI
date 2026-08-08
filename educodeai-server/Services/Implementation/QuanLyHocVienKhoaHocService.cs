@@ -145,35 +145,47 @@ namespace educodeai_server.Services
             }
         }
 
-        public async Task<TienDoKhoaHocHocVienDTO> LayTienDoChiTietAsync(int maKhoaHoc, int maNguoiDung)
+        public async Task<TienDoKhoaHocHocVienDTO?> LayTienDoChiTietAsync(int maGiangVien, int maKhoaHoc, int maNguoiDung)
         {
-            int tongThoiGianPhut = 0;
-            try
-            {
-                tongThoiGianPhut = await _context.TienDoBaiHocs
-                    .Include(t => t.BaiHoc)
-                    .ThenInclude(b => b.ChuongHoc)
-                    .Where(t => t.MaNguoiDung == maNguoiDung && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc)
-                    .SumAsync(t => t.ThoiGianHoc);
-            }
-            catch { /* Bỏ qua nếu lỗi */ }
+            var khoaThuocGiangVien = await _context.KhoaHocs
+                .AnyAsync(k => k.MaKhoaHoc == maKhoaHoc && k.MaGiangVien == maGiangVien);
+            if (!khoaThuocGiangVien)
+                return null;
+
+            // TienDoBaiHocs.ThoiGianHoc lưu theo GIÂY (client gửi currentTime của player video),
+            // nên phải quy đổi sang phút trước khi trả về cho UI.
+            int tongThoiGianGiay = await _context.TienDoBaiHocs
+                .AsNoTracking()
+                .Where(t => t.MaNguoiDung == maNguoiDung && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc)
+                .SumAsync(t => (int?)t.ThoiGianHoc) ?? 0;
+
+            int tongThoiGianPhut = tongThoiGianGiay / 60;
 
             var tatCaBaiHoc = await _context.BaiHocs
+                .AsNoTracking()
                 .Include(b => b.ChuongHoc)
                 .Where(b => b.ChuongHoc.MaKhoaHoc == maKhoaHoc)
+                .OrderBy(b => b.ChuongHoc.ThuTu)
+                .ThenBy(b => b.ThuTu)
                 .ToListAsync();
 
-            var baiDaHocIDs = await _context.TienDoBaiHocs
-                .Where(t => t.MaNguoiDung == maNguoiDung && t.DaXem)
+            // Chỉ lấy bài đã xem của đúng khóa học này thay vì toàn bộ tiến độ mọi khóa.
+            var baiDaHocIDs = (await _context.TienDoBaiHocs
+                .AsNoTracking()
+                .Where(t => t.MaNguoiDung == maNguoiDung
+                         && t.DaXem
+                         && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc)
                 .Select(t => t.MaBaiHoc)
-                .ToListAsync();
+                .ToListAsync())
+                .ToHashSet();
 
+            // Gom theo MaChuong, không gom theo tên: hai chương trùng tên sẽ bị nhập làm một.
             var tienDoTheoChuong = tatCaBaiHoc
-                .GroupBy(b => b.ChuongHoc?.TenChuong ?? "Chương bổ sung")
+                .GroupBy(b => b.ChuongHoc?.MaChuong ?? 0)
                 .Select(g => new ChuongHocTienDoDTO
                 {
-                    MaChuong = g.First().ChuongHoc?.MaChuong ?? 0,
-                    TenChuong = g.Key,
+                    MaChuong = g.Key,
+                    TenChuong = g.First().ChuongHoc?.TenChuong ?? "Chương bổ sung",
                     DanhSachBaiHoc = g.Select(b => new BaiHocTienDoDTO
                     {
                         MaBaiHoc = b.MaBaiHoc,

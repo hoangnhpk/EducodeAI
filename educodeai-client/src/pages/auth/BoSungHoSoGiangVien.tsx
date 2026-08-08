@@ -141,7 +141,7 @@ export default function BoSungHoSoGiangVien() {
   // --- Trạng thái: đang xác thực token ---
   if (dangXacThuc) {
     return (
-      <div className="dkgv-container" style={{ maxWidth: "640px" }}>
+      <div className="dkgv-container mx-auto" style={{ maxWidth: "640px" }}>
         <div style={{ marginBottom: "20px" }}>
           <Link to="/trang-thai-ho-so-giang-vien" className="text-decoration-none" style={{ color: "#65676b", fontSize: "14px" }}>
             <FaArrowLeft className="me-2" /> Quay lại tra cứu hồ sơ
@@ -164,7 +164,7 @@ export default function BoSungHoSoGiangVien() {
   if (!daXacThuc) {
     const isDaNop = daNopRoi;
     return (
-      <div className="dkgv-container" style={{ maxWidth: "640px" }}>
+      <div className="dkgv-container mx-auto" style={{ maxWidth: "640px" }}>
         <div style={{ marginBottom: "20px" }}>
           <Link to="/trang-thai-ho-so-giang-vien" className="text-decoration-none" style={{ color: "#65676b", fontSize: "14px" }}>
             <FaArrowLeft className="me-2" /> Quay lại tra cứu hồ sơ
@@ -196,7 +196,7 @@ export default function BoSungHoSoGiangVien() {
 
   // --- Trạng thái: hợp lệ, hiện form ---
   return (
-    <div className="dkgv-container" style={{ maxWidth: "760px" }}>
+    <div className="dkgv-container mx-auto" style={{ maxWidth: "760px" }}>
       <div style={{ marginBottom: "20px" }}>
         <Link to="/trang-thai-ho-so-giang-vien" className="text-decoration-none" style={{ color: "#65676b", fontSize: "14px" }}>
           <FaArrowLeft className="me-2" /> Quay lại tra cứu hồ sơ

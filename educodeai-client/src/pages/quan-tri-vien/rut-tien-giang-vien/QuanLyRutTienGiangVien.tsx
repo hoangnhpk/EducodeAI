@@ -240,20 +240,28 @@ export default function QuanLyRutTienGiangVien() {
               </tr>
             </thead>
             <tbody>
-              {danhSach.map((item) => (
-                <tr key={item.maYeuCauRutTien}>
-                  <td>{item.maYeuCauRutTien}</td>
-                  <td>{item.tenGiangVien}</td>
-                  <td>{item.soTienYeuCau.toLocaleString("vi-VN")} VND</td>
-                  <td>{hienThiTrangThaiYeuCauRutTien(item.trangThaiYeuCau)}</td>
-                  <td>{item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : "—"}</td>
-                  <td>
-                    <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => moModalChiTiet(item.maYeuCauRutTien)}>
-                      Xem chi tiết
-                    </button>
+              {danhSach.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center text-muted py-4">
+                    Chưa có yêu cầu rút tiền nào.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                danhSach.map((item) => (
+                  <tr key={item.maYeuCauRutTien}>
+                    <td>{item.maYeuCauRutTien}</td>
+                    <td>{item.tenGiangVien}</td>
+                    <td>{item.soTienYeuCau.toLocaleString("vi-VN")} VND</td>
+                    <td>{hienThiTrangThaiYeuCauRutTien(item.trangThaiYeuCau)}</td>
+                    <td>{item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : "—"}</td>
+                    <td>
+                      <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => moModalChiTiet(item.maYeuCauRutTien)}>
+                        Xem chi tiết
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -319,7 +327,7 @@ export default function QuanLyRutTienGiangVien() {
                         <img
                           src={chiTiet.duongDanAnhQr}
                           alt="QR chuyển khoản"
-                          style={{ maxWidth: 280, height: "auto", border: "1px solid #e5e7eb", borderRadius: 8 }}
+                          style={{ maxWidth: 280, height: "auto", border: "1px solid var(--border-color)", borderRadius: 8 }}
                         />
                         <div className="mt-2">
                           <a href={chiTiet.duongDanAnhQr} target="_blank" rel="noreferrer" className="small">

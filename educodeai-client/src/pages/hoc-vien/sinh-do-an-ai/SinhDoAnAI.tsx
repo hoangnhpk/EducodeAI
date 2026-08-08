@@ -215,7 +215,7 @@ const SinhDoAnAI: React.FC = () => {
                 mucTieuNgheNghiep: mucTieu,
                 ngonNguCongNghe: techValue,
                 capDo: capDo,
-            });
+            }, { signal: abortRef.current.signal });
 
             const data = response as unknown as IProjectResult;
 
@@ -253,6 +253,13 @@ const SinhDoAnAI: React.FC = () => {
             setStatus('empty');
             addToast('error', msg);
         }
+    };
+
+    // ── Dừng generate (dùng lại abortRef sẵn có) ──
+    const handleStop = () => {
+        abortRef.current?.abort();
+        setStatus('empty');
+        addToast('info', 'Đã dừng tạo đồ án');
     };
 
     // ── Load from history ──
@@ -376,6 +383,7 @@ const SinhDoAnAI: React.FC = () => {
             const res = await axiosInstance.post<{ maDoAn: number; cauHoiDauTien: string; message: string }>(
                 '/api/SinhDoAnAI/nop-do-an',
                 {
+                    maDoAn: resultData.maDoAn || undefined,
                     tenDoAn: resultData.tenDoAn,
                     moTa: resultData.moTa,
                     yeuCauChucNang: resultData.yeuCauChucNang.map((f: any) => typeof f === 'string' ? f : (f.tenChucNang || f.TenChucNang || '')),
@@ -388,6 +396,10 @@ const SinhDoAnAI: React.FC = () => {
                 }
             ) as any;
             const { sessionId, cauHoiDauTien } = res;
+            sessionStorage.setItem(`phongvan-do-an-${sessionId}`, JSON.stringify({
+                tenDoAn: resultData.tenDoAn,
+                cauHoiDauTien,
+            }));
             // Chuyển sang phòng phỏng vấn, truyền state qua router
             navigate(`/phong-van-do-an/${sessionId}`, {
                 state: { tenDoAn: resultData.tenDoAn, cauHoiDauTien }
@@ -652,6 +664,21 @@ const SinhDoAnAI: React.FC = () => {
                             <div className="sda-gen-shine" aria-hidden="true" />
                         </button>
 
+                        {/* Nút Dừng - hiện khi đang tạo, dùng lại abortRef sẵn có */}
+                        {status === 'loading' && (
+                            <button
+                                type="button"
+                                className="sda-stop-btn"
+                                onClick={handleStop}
+                                aria-label="Dừng tạo đồ án"
+                            >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                                </svg>
+                                Dừng
+                            </button>
+                        )}
+
                         {/* Quick re-gen hint */}
                         {status === 'result' && (
                             <p className="sda-regen-hint">
@@ -704,7 +731,7 @@ const SinhDoAnAI: React.FC = () => {
                             <div className="sda-empty sda-empty-error" role="status">
                                 <div className="sda-error-orbit" aria-hidden="true">
                                     <div className="sda-error-core">
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
                                             <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
                                         </svg>
                                     </div>
@@ -888,7 +915,7 @@ const SinhDoAnAI: React.FC = () => {
                                                         style={{ cursor: isLocked ? 'not-allowed' : 'pointer', opacity: (isCompleted && !isExpanded) ? 0.7 : (isLocked ? 0.5 : 1), alignItems: 'flex-start' }}
                                                         onClick={() => !isLocked && setExpandedFeature(isExpanded ? null : idx)}
                                                     >
-                                                        <div className="sda-feature-num" aria-hidden="true" style={{ background: isCompleted ? '#22c55e' : (isLocked ? '#475569' : ''), color: isCompleted || isLocked ? 'white' : '', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <div className="sda-feature-num" aria-hidden="true" style={{ background: isCompleted ? 'var(--success)' : (isLocked ? 'var(--text-muted)' : ''), color: isCompleted || isLocked ? 'white' : '', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                             {isLocked ? (
                                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                                                             ) : (
@@ -902,7 +929,7 @@ const SinhDoAnAI: React.FC = () => {
                                                         <div className="sda-feature-text" style={{ flex: 1, paddingRight: '1rem' }}>
                                                             <div style={{ textDecoration: isCompleted ? 'line-through' : 'none', fontWeight: 600 }}>{tenChucNangText}</div>
                                                             {chiTietYeuCauText && (
-                                                                <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: '#94a3b8', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                                                                <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--text-light)', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
                                                                     {chiTietYeuCauText}
                                                                 </div>
                                                             )}
@@ -916,7 +943,7 @@ const SinhDoAnAI: React.FC = () => {
                                                             <p className="sda-feature-detail-title">Chấm điểm tính năng Ngày {ngay}</p>
 
                                                             <div className="sda-submit-note-wrapper" style={{ width: '100%', marginBottom: '1rem' }}>
-                                                                <label style={{ display: 'block', fontSize: '0.82rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>
+                                                                <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.4rem', fontWeight: 600 }}>
                                                                     Khó khăn bạn gặp phải ở phần này? (Tuỳ chọn)
                                                                 </label>
                                                                 <textarea
@@ -930,7 +957,7 @@ const SinhDoAnAI: React.FC = () => {
                                                             </div>
 
                                                             <div className="sda-submit-note-wrapper" style={{ width: '100%', marginBottom: '1rem' }}>
-                                                                <label style={{ display: 'block', fontSize: '0.82rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>
+                                                                <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.4rem', fontWeight: 600 }}>
                                                                     Bạn có sửa đổi gì so với thiết kế ban đầu không? (Tuỳ chọn)
                                                                 </label>
                                                                 <textarea
@@ -944,7 +971,7 @@ const SinhDoAnAI: React.FC = () => {
                                                             </div>
 
                                                             {yc.goiYFileNop && (
-                                                                <div className="sda-feature-suggestion" style={{ marginTop: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem', color: '#60a5fa', fontStyle: 'italic' }}>
+                                                                <div className="sda-feature-suggestion" style={{ marginTop: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--info)', fontStyle: 'italic' }}>
                                                                     💡 Gợi ý file cần nộp: <strong>{yc.goiYFileNop}</strong>
                                                                 </div>
                                                             )}
@@ -1031,7 +1058,7 @@ const SinhDoAnAI: React.FC = () => {
 
 
                                     <div className="sda-submit-note-wrapper" style={{ width: '100%', marginTop: '0.5rem' }}>
-                                        <label htmlFor="khoKhan" style={{ display: 'block', fontSize: '0.82rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>
+                                        <label htmlFor="khoKhan" style={{ display: 'block', fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.4rem', fontWeight: 600 }}>
                                             Bạn gặp những khó khăn gì trong quá trình làm đồ án này? (Tuỳ chọn)
                                         </label>
                                         <textarea
@@ -1258,7 +1285,7 @@ const SinhDoAnAI: React.FC = () => {
             .sda-error-box { display: flex; align-items: flex-start; gap: 8px; padding: 12px 14px; border-radius: 10px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; font-size: 13px; line-height: 1.5; }
 
             /* Generate button */
-            .sda-gen-btn { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 16px; border-radius: 14px; border: none; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #0ea5e9 100%); color: white; font-size: 15px; font-weight: 800; cursor: pointer; transition: all 0.3s; box-shadow: 0 8px 32px rgba(124,58,237,0.4); letter-spacing: 0.01em; }
+            .sda-gen-btn { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 16px; border-radius: 14px; border: none; background: linear-gradient(135deg, var(--ai-accent) 0%, #4f46e5 50%, var(--info) 100%); color: white; font-size: 15px; font-weight: 800; cursor: pointer; transition: all 0.3s; box-shadow: 0 8px 32px rgba(124,58,237,0.4); letter-spacing: 0.01em; }
             .sda-gen-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(124,58,237,0.55); }
             .sda-gen-btn:disabled { opacity: 0.7; cursor: not-allowed; }
             .sda-gen-shine { position: absolute; top: 0; left: -100%; width: 60%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent); animation: shine 2.5s infinite; }
@@ -1268,6 +1295,11 @@ const SinhDoAnAI: React.FC = () => {
 
             /* Regen hint */
             .sda-regen-hint { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #475569; margin: -12px 0 0; justify-content: center; }
+
+            /* Stop button */
+            .sda-stop-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; margin-top: -12px; border-radius: 12px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+            .sda-stop-btn:hover { background: rgba(239,68,68,0.2); }
+
 
             /* Retry button */
             .sda-retry-btn { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); color: #a78bfa; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; }
@@ -1412,7 +1444,7 @@ const SinhDoAnAI: React.FC = () => {
             .sda-submit-info strong { font-size: 0.92rem; color: #e2e8f0; display: block; margin-bottom: 0.25rem; }
             .sda-submit-info p { font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.5; }
             .sda-submit-btn {
-                background: linear-gradient(135deg, #7c3aed 0%, #0ea5e9 100%);
+                background: linear-gradient(135deg, var(--ai-accent) 0%, var(--info) 100%);
                 border: none; color: white; border-radius: 12px;
                 padding: 0.875rem 1.5rem; font-size: 0.9rem; font-weight: 700;
                 cursor: pointer; display: flex; align-items: center; gap: 0.5rem;

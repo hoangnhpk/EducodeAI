@@ -20,9 +20,14 @@ namespace educodeai_server.Controllers.HocVien
 
         private int GetUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null) throw new UnauthorizedAccessException("Không tìm thấy thông tin người dùng.");
-            return int.Parse(userIdClaim.Value);
+            var userIdClaim = User.FindFirst("id")?.Value
+                           ?? User.FindFirst("MaNguoiDung")?.Value
+                           ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId) || userId <= 0)
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin người dùng.");
+
+            return userId;
         }
 
         [HttpPost("start")]

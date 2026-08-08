@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Swal from 'sweetalert2';
+import PasswordInput from '@/components/PasswordInput';
 import { authService } from '../../../services/auth.service';
 import './bao-mat.css';
 
@@ -24,8 +25,7 @@ const DoiMatKhau: React.FC = () => {
         try {
             await authService.doiMatKhau({
                 MatKhauCu: formData.oldPass,
-                MatKhauMoi: formData.newPass,
-                OtpCode: "" // Không cần OTP nữa
+                MatKhauMoi: formData.newPass
             });
             
             Swal.fire({ 
@@ -53,18 +53,9 @@ const DoiMatKhau: React.FC = () => {
                 <h3 className="mb-4 text-center fw-bold text-orange" style={{ color: '#fb873f' }}>Đổi Mật Khẩu</h3>
                 
                 <form onSubmit={handleChangePassword} className="animate__animated animate__fadeIn">
-                    <div className="form-floating mb-3">
-                        <input type="password" underline-none="true" className="form-control" placeholder="Cũ" value={formData.oldPass} onChange={e => setFormData({...formData, oldPass: e.target.value})} required />
-                        <label>Mật khẩu hiện tại</label>
-                    </div>
-                    <div className="form-floating mb-3">
-                        <input type="password" underline-none="true" className="form-control" placeholder="Mới" value={formData.newPass} onChange={e => setFormData({...formData, newPass: e.target.value})} required />
-                        <label>Mật khẩu mới</label>
-                    </div>
-                    <div className="form-floating mb-4">
-                        <input type="password" underline-none="true" className="form-control" placeholder="Xác nhận" value={formData.confirmPass} onChange={e => setFormData({...formData, confirmPass: e.target.value})} required />
-                        <label>Nhập lại mật khẩu mới</label>
-                    </div>
+                    <PasswordInput id="bao-mat-mat-khau-cu" label="Mật khẩu hiện tại" autoComplete="current-password" containerClassName="mb-3" floating value={formData.oldPass} onChange={e => setFormData({...formData, oldPass: e.target.value})} required />
+                    <PasswordInput id="bao-mat-mat-khau-moi" label="Mật khẩu mới" autoComplete="new-password" containerClassName="mb-3" floating value={formData.newPass} onChange={e => setFormData({...formData, newPass: e.target.value})} required />
+                    <PasswordInput id="bao-mat-mat-khau-xac-nhan" label="Nhập lại mật khẩu mới" autoComplete="new-password" containerClassName="mb-4" floating value={formData.confirmPass} onChange={e => setFormData({...formData, confirmPass: e.target.value})} required />
                     <button className="btn btn-orange w-100 py-3 fw-bold rounded-pill text-white border-0" 
                         style={{ backgroundColor: '#fb873f' }} type="submit" disabled={loading}>
                         {loading ? <span className="spinner-border spinner-border-sm"></span> : 'Lưu thay đổi'}

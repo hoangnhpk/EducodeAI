@@ -13,10 +13,17 @@ namespace educodeai_server.Controllers
     public class XacThucController : ControllerBase
     {
         private readonly IXacThucService _xacThucService;
+        private readonly IGiayToScanningService _giayToScanningService;
+        private readonly educodeai_server.Services.Security.IRequestOriginValidator _originValidator;
 
-        public XacThucController(IXacThucService xacThucService)
+        public XacThucController(
+            IXacThucService xacThucService,
+            IGiayToScanningService giayToScanningService,
+            educodeai_server.Services.Security.IRequestOriginValidator originValidator)
         {
             _xacThucService = xacThucService;
+            _giayToScanningService = giayToScanningService;
+            _originValidator = originValidator;
         }
 
         #region 1. API ĐĂNG NHẬP
@@ -30,9 +37,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.DangNhapAsync(request, ipAddress);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -44,9 +51,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.DangNhapGoogleAsync(request, maThietBi, tenThietBi);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -58,24 +65,21 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.DangNhapFacebookAsync(request, maThietBi, tenThietBi);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromQuery] string refreshToken, [FromQuery] string maThietBi)
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
-            try
+            if (!_originValidator.IsAllowed(HttpContext.Request))
             {
-                var result = await _xacThucService.LamMoiTokenAsync(refreshToken, maThietBi);
-                return Ok(result);
+                throw Helpers.ApiException.Forbidden("Yêu cầu không hợp lệ.");
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var result = await _xacThucService.LamMoiTokenAsync(request.MaThietBi);
+            return Ok(result);
         }
 
         [HttpPost("xac-nhan-otp")]
@@ -86,9 +90,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.XacNhanOtpVaDangNhapAsync(request);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -100,9 +104,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.XacNhanThayTheThietBiAsync(request);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -122,9 +126,9 @@ namespace educodeai_server.Controllers
                 await _xacThucService.YeuCauDangKyAsync(request, ipAddress);
                 return Ok(new { message = "Hệ thống đã gửi mã OTP. Vui lòng kiểm tra Email (mã có hiệu lực trong 5 phút)." });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -139,9 +143,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.XacNhanDangKyVaLuuDbAsync(request);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -151,13 +155,13 @@ namespace educodeai_server.Controllers
             if (!ModelState.IsValid) return BadRequest(new { message = "Email không hợp lệ." });
             try
             {
-                var sent = await _xacThucService.GuiOtpEmailGiangVienAsync(request.Email);
+                var sent = await _xacThucService.GuiOtpEmailGiangVienAsync(request.Email, request.CaptchaToken);
                 if (!sent) return BadRequest(new { message = "Không gửi được OTP email. Kiểm tra cấu hình SMTP/Gmail." });
                 return Ok(new { message = "Đã gửi OTP email. Mã có hiệu lực trong 5 phút." });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -170,9 +174,9 @@ namespace educodeai_server.Controllers
                 await _xacThucService.XacMinhOtpEmailGiangVienAsync(request.Email, request.OtpCode);
                 return Ok(new { message = "Email đã được xác minh." });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -183,7 +187,6 @@ namespace educodeai_server.Controllers
             if (!ModelState.IsValid)
             {
                 var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)));
-                Console.WriteLine($"[MODELSTATE ERRORS]: {errors}");
                 return BadRequest(new { message = "Dữ liệu không hợp lệ", errors });
             }
 
@@ -192,12 +195,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.DangKyGiangVienAsync(request);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                var errorMsg = $"Lỗi: {ex.Message}";
-                Console.WriteLine($"[ERROR] {errorMsg}");
-                Console.WriteLine($"[STACK] {ex.StackTrace}");
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -213,9 +213,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.TraCuuTrangThaiHoSoAsync(email);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -230,9 +230,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.KiemTraQuyenBoSungHoSoAsync(maHoSo, token);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -251,9 +251,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.BoSungHoSoAsync(maHoSo, request);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -262,17 +262,17 @@ namespace educodeai_server.Controllers
 
         [Authorize]
         [HttpGet("danh-sach-thiet-bi")]
-        public async Task<IActionResult> LayDanhSachThietBi([FromQuery] string maThietBiHienTai)
+        public async Task<IActionResult> LayDanhSachThietBi()
         {
             try
             {
                 int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
-                var result = await _xacThucService.LayDanhSachThietBiAsync(userId, maThietBiHienTai);
+                var result = await _xacThucService.LayDanhSachThietBiAsync(userId);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -287,10 +287,17 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.YeuCauQuenMatKhauAsync(request, ipAddress);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
+        }
+
+        [HttpPost("xac-minh-otp-quen-mat-khau")]
+        public async Task<IActionResult> XacMinhOtpQuenMatKhau([FromBody] XacMinhOtpQuenMatKhauRequest request)
+        {
+            var result = await _xacThucService.XacMinhOtpQuenMatKhauAsync(request);
+            return Ok(result);
         }
 
         [HttpPost("dat-lai-mat-khau")]
@@ -301,9 +308,9 @@ namespace educodeai_server.Controllers
                 var result = await _xacThucService.DatLaiMatKhauAsync(request);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -313,47 +320,62 @@ namespace educodeai_server.Controllers
         [HttpPost("dang-xuat")]
         public async Task<IActionResult> DangXuat([FromBody] string maThietBi)
         {
-            try
-            {
-                int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
-                await _xacThucService.DangXuatAsync(userId, maThietBi);
-                return Ok(new { message = "Đăng xuất thiết bị thành công." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            // Không cần CSRF check ở đây: endpoint [Authorize] yêu cầu bearer access token,
+            // attacker không gắn được Authorization header cross-site. CSRF defense (Origin/Referer)
+            // chỉ cần cho refresh-token vì endpoint đó dựa hoàn toàn vào HttpOnly cookie.
+            int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            await _xacThucService.DangXuatAsync(userId, maThietBi);
+            return Ok(new { message = "Đăng xuất thiết bị thành công." });
+        }
+
+        // G.12: frontend gọi MỘT LẦN khi SignalR reconnect để đồng bộ trạng thái phiên,
+        // thay cho polling. Request vẫn qua SessionCheckMiddleware nên phiên đã revoke sẽ bị chặn.
+        [Authorize]
+        [HttpGet("session-state")]
+        public async Task<IActionResult> SessionState()
+        {
+            int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            var result = await _xacThucService.LayTrangThaiPhienAsync(userId);
+            return Ok(result);
         }
 
         [Authorize]
         [HttpPost("yeu-cau-otp-dang-xuat-tu-xa")]
-        public async Task<IActionResult> YeuCauOtpDangXuatTuXa()
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("RemoteLogoutOtpSend")]
+        public async Task<IActionResult> YeuCauOtpDangXuatTuXa([FromBody] DangXuatTuXaRequest? request)
         {
+            if (request is null)
+                return BadRequest(new { thanhCong = false, thongBao = "Nội dung yêu cầu không hợp lệ." });
+
             try
             {
                 int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
-                await _xacThucService.YeuCauOtpDangXuatTuXaAsync(userId);
+                await _xacThucService.YeuCauOtpDangXuatTuXaAsync(userId, request.CaptchaToken ?? string.Empty);
                 return Ok(new { message = "Mã OTP xác nhận đăng xuất từ xa đã được gửi đến email của bạn." });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
         [Authorize]
         [HttpPost("xac-nhan-dang-xuat-tu-xa")]
-        public async Task<IActionResult> XacNhanDangXuatTuXa([FromBody] DangXuatTuXaRequest request)
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("RemoteLogoutOtpVerify")]
+        public async Task<IActionResult> XacNhanDangXuatTuXa([FromBody] DangXuatTuXaRequest? request)
         {
+            if (request is null)
+                return BadRequest(new { thanhCong = false, thongBao = "Nội dung yêu cầu không hợp lệ." });
+
             try
             {
                 int userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
                 await _xacThucService.XacNhanDangXuatTuXaAsync(userId, request);
                 return Ok(new { message = "Đã đăng xuất các thiết bị thành công." });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
             }
         }
 
@@ -370,12 +392,58 @@ namespace educodeai_server.Controllers
                 await _xacThucService.DoiMatKhauAsync(userId, request);
                 return Ok(new { message = "Đổi mật khẩu thành công!" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
+                throw;
+            }
+        }
+
+        #endregion
+        #region 6. API QUÉT CCCD/GIẤY TỜ
+
+        [HttpPost("quet-giay-to")]
+        [Consumes("multipart/form-data")]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("QuetGiayToPolicy")]
+        public async Task<IActionResult> QuetGiayTo([FromForm] GiayToScanningRequest request, [FromServices] educodeai_server.Data.EduCodeAIDbContext dbContext)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)));
+                return BadRequest(new { thanhCong = false, thongBao = "Dữ liệu không hợp lệ", errors });
+            }
+
+            try
+            {
+                var result = await _giayToScanningService.QuetGiayToAsync(request, HttpContext.RequestAborted);
+                if (!result.ThanhCong)
+                    return BadRequest(result);
+
+                // Kiểm tra xem số giấy tờ này đã được sử dụng chưa
+                if (!string.IsNullOrWhiteSpace(result.SoGiayTo))
+                {
+                    var so = result.SoGiayTo.Trim();
+                    // Cùng một CCCD không được tạo nhiều hồ sơ
+                    var daTonTai = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.AnyAsync(
+                        dbContext.HoSoDangKyGiangViens,
+                        x => x.SoGiayTo == so && x.TrangThaiHoSo != "TuChoi"
+                    );
+                    if (daTonTai)
+                    {
+                        return BadRequest(new { thanhCong = false, thongBao = "Số giấy tờ này đã được sử dụng để đăng ký tài khoản khác." });
+                    }
+                }
+
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                throw;
             }
         }
 
         #endregion
     }
 }
+
+
+

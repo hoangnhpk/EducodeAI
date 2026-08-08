@@ -21,13 +21,13 @@ export interface HoSoGiangVienDetail extends HoSoGiangVienListItem {
   tieuSu: string;
   linkedInUrl?: string;
   websiteUrl?: string;
-  anhGiayToMatTruocUrl: string;
-  anhGiayToMatSauUrl: string;
+  thongTinCccdQuet?: Record<string, string>;
   phuongThucThanhToan: string;
   tenNganHang?: string;
   soTaiKhoanNhanTien?: string;
   tenChuTaiKhoan?: string;
   maSoThue?: string;
+  loaiDoiTuongThue?: string;
   maQuanTriVienDuyet?: number;
   ngayCapNhat: string;
 }
@@ -73,5 +73,5 @@ export const HoSoGiangVienAdminService = {
       `/api/QuanTriVien/quan-ly-ho-so-giang-vien/yeu-cau-bo-sung/${maHoSo}`,
       { noiDungBoSung }
     );
-  }
+  },
 };
