@@ -132,21 +132,21 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
             <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'ai' ? 'var(--ai-accent-soft)' : 'var(--bg-card)' }}>
               <input type="radio" name="subtitleOpt" checked={luaChon === 'ai'} onChange={() => setLuaChon('ai')} style={{ marginTop: 4, width: 'auto', flexShrink: 0 }} disabled={dangXuLy} />
               <div>
-                <strong style={{ display: 'block', marginBottom: 4, color: 'var(--ai-accent-hover)' }}>Dùng AI Transcription (Có phí) ✨</strong>
-                <span className="khm-text-sm khm-text-muted">Tự động nhận diện giọng nói và tạo phụ đề (Hỗ trợ tiếng Việt).</span>
-                
+                <strong className="subtitle-ai-title">Dùng AI Transcription (Có phí) ✨</strong>
+                <span className="khm-text-sm khm-text-muted subtitle-ai-description">Tự động nhận diện giọng nói và tạo phụ đề (Hỗ trợ tiếng Việt).</span>
+
                 {luaChon === 'ai' && (
-                  <div className="khm-mt-12 khm-p-12" style={{ background: 'var(--ai-accent-soft)', borderRadius: 6 }}>
-                    <div className="khm-text-sm khm-mb-8">
-                      <strong>Chi phí ước tính:</strong> ${chiPhiDuKien} USD <br/>
-                      <span className="khm-text-muted">(Dựa trên thời lượng {Math.ceil(baiHoc.thoiLuong / 60)} phút)</span>
+                  <div className="khm-mt-12 khm-p-12 subtitle-ai-panel" style={{ background: 'var(--ai-accent-soft)', borderRadius: 6 }}>
+                    <div className="khm-text-sm subtitle-ai-cost">
+                      <strong>Chi phí ước tính: ${chiPhiDuKien} USD</strong>
+                      <span className="khm-text-muted subtitle-ai-duration">(Dựa trên thời lượng {Math.ceil(baiHoc.thoiLuong / 60)} phút)</span>
                     </div>
-                    <div className="khm-text-xs khm-text-muted khm-mb-12">
+                    <label className="subtitle-ai-gdpr" htmlFor="gdpr_consent">
                       <input type="checkbox" id="gdpr_consent" className="khm-mr-4" required />
-                      <label htmlFor="gdpr_consent">Tôi xác nhận video không chứa thông tin cá nhân nhạy cảm vi phạm GDPR.</label>
-                    </div>
-                    <button 
-                      className="khm-btn khm-btn-sm" 
+                      <span>Tôi xác nhận video không chứa thông tin cá nhân nhạy cảm vi phạm GDPR.</span>
+                    </label>
+                    <button
+                      className="khm-btn khm-btn-sm subtitle-ai-submit"
                       style={{ background: 'var(--ai-accent)', color: 'var(--text-white)', border: 'none' }}
                       onClick={() => {
                         const cb = document.getElementById('gdpr_consent') as HTMLInputElement;

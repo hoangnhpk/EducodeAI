@@ -58,17 +58,39 @@ export interface LichSuPhongVan {
     ngayPhongVan: Date;
 }
 
+type ApiEnvelope<T> = {
+    success: boolean;
+    data?: T;
+    message?: string;
+};
+
+const unwrapResponse = <T>(response: T | ApiEnvelope<T>): T => {
+    if (typeof response === 'object' && response !== null && 'success' in response) {
+        const envelope = response as ApiEnvelope<T>;
+        if (!envelope.success || envelope.data === undefined) {
+            throw new Error(envelope.message || 'Phản hồi từ máy chủ không hợp lệ.');
+        }
+        return envelope.data;
+    }
+
+    return response as T;
+};
+
 export const PhongVanAIService = {
     startInterview: async (request: StartPhongVanRequest) => {
-        return await axiosClient.post<StartPhongVanResponse>('/api/PhongVanAI/start', request);
+        const response = await axiosClient.post<StartPhongVanResponse | ApiEnvelope<StartPhongVanResponse>>('/api/PhongVanAI/start', request);
+        return unwrapResponse(response);
     },
     answerQuestion: async (request: AnswerPhongVanRequest) => {
-        return await axiosClient.post<AnswerPhongVanResponse>('/api/PhongVanAI/answer', request);
+        const response = await axiosClient.post<AnswerPhongVanResponse | ApiEnvelope<AnswerPhongVanResponse>>('/api/PhongVanAI/answer', request);
+        return unwrapResponse(response);
     },
     endInterview: async (maPhongVan: number) => {
-        return await axiosClient.post<EndPhongVanResponse>(`/api/PhongVanAI/end/${maPhongVan}`);
+        const response = await axiosClient.post<EndPhongVanResponse | ApiEnvelope<EndPhongVanResponse>>(`/api/PhongVanAI/end/${maPhongVan}`);
+        return unwrapResponse(response);
     },
     getHistory: async () => {
-        return await axiosClient.get<LichSuPhongVan[]>('/api/PhongVanAI/history');
+        const response = await axiosClient.get<LichSuPhongVan[] | ApiEnvelope<LichSuPhongVan[]>>('/api/PhongVanAI/history');
+        return unwrapResponse(response);
     }
 };

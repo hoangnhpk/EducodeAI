@@ -1,4 +1,4 @@
-﻿using educodeai_server.Data;
+using educodeai_server.Data;
 using educodeai_server.DTOs.KhoaHoc;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
@@ -227,6 +227,71 @@ namespace EduCodeAI.Controllers.HocVien
                 totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
                 currentPage = page
             });
+        }
+
+        /// <summary>
+        /// API công khai: Lấy đánh giá đã duyệt (ngẫu nhiên) để hiển thị trên trang chủ
+        /// </summary>
+        [HttpGet("danh-gia-trang-chu")]
+        public async Task<IActionResult> GetDanhGiaTrangChu([FromQuery] int soLuong = 3)
+        {
+            var danhGias = await _context.DanhGias.AsNoTracking()
+                .Include(d => d.NguoiDung)
+                .Include(d => d.KhoaHoc)
+                    .ThenInclude(k => k.GiangVien)
+                .Where(d => !string.IsNullOrEmpty(d.NhanXet) && d.TrangThai != "TuChoi")
+                .OrderByDescending(d => d.SoSao)
+                .ThenBy(d => Guid.NewGuid()) // Random trong cùng mức sao
+                .Take(soLuong)
+                .Select(d => new
+                {
+                    maDanhGia = d.MaDanhGia,
+                    soSao = d.SoSao,
+                    nhanXet = d.NhanXet,
+                    ngayDanhGia = d.NgayDanhGia,
+                    nguoiDung = new
+                    {
+                        hoTen = d.NguoiDung.HoTen,
+                        anhDaiDien = d.NguoiDung.AnhDaiDien
+                    },
+                    khoaHoc = new
+                    {
+                        tenKhoaHoc = d.KhoaHoc.TenKhoaHoc,
+                        giangVien = d.KhoaHoc.GiangVien != null ? d.KhoaHoc.GiangVien.HoTen : "Chưa rõ"
+                    }
+                })
+                .ToListAsync();
+
+            return Ok(danhGias);
+        }
+
+        /// <summary>
+        /// API công khai: Lấy danh sách giảng viên tiêu biểu (dựa trên trung bình sao của các khóa học)
+        /// </summary>
+        [HttpGet("giang-vien-tieu-bieu")]
+        public async Task<IActionResult> GetGiangVienTieuBieu([FromQuery] int soLuong = 4)
+        {
+            var topInstructors = await _context.NguoiDungs
+                .Where(u => u.VaiTro == 1 && u.TrangThai == "Hoạt động") // 1: Giảng viên
+                .Select(u => new
+                {
+                    maGiangVien = u.MaNguoiDung,
+                    hoTen = u.HoTen,
+                    anhDaiDien = u.AnhDaiDien,
+                    chuyenMon = "Giảng viên EduCode", // Default role title
+                    diemTrungBinh = u.KhoaHocs
+                        .Where(k => k.TrangThai == "Hoạt động")
+                        .Average(k => (double?)k.DiemDanhGiaTB) ?? 0,
+                    tongKhoaHoc = u.KhoaHocs
+                        .Count(k => k.TrangThai == "Hoạt động")
+                })
+                .Where(u => u.tongKhoaHoc > 0) // Chỉ xét những GV đã có khóa học xuất bản
+                .OrderByDescending(u => u.diemTrungBinh)
+                .ThenByDescending(u => u.tongKhoaHoc) // Ưu tiên số lượng khóa học nếu bằng sao
+                .Take(soLuong)
+                .ToListAsync();
+
+            return Ok(topInstructors);
         }
     }
 }

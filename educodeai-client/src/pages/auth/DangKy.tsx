@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import Swal from 'sweetalert2';
 // 1. IMPORT THƯ VIỆN CAPTCHA
 import ReCAPTCHA from "react-google-recaptcha";
 import { setAuthTokens } from '../../utils/authStorage';
-import { FaArrowLeft } from 'react-icons/fa';
 import PasswordInput from '../../components/PasswordInput';
+import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
 
 const RegisterPage = () => {
     const navigate = useNavigate();
@@ -203,9 +204,10 @@ const RegisterPage = () => {
                                             label="Mật khẩu"
                                             floating
                                             className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                                            placeholder="Pass"
+                                            placeholder="Mật khẩu"
                                             value={formData.password}
-                                            onChange={(e) => handleInputChange(e)}
+                                            onChange={handleInputChange}
+                                            autoComplete="new-password"
                                             error={errors.password}
                                         />
                                         {formData.password && (
@@ -218,7 +220,7 @@ const RegisterPage = () => {
                                     {/* 5. GIAO DIỆN CAPTCHA THÊM VÀO ĐÂY */}
                                     <div className="col-12 mt-3 d-flex flex-column align-items-center">
                                         <ReCAPTCHA
-                                            sitekey="6Legm5csAAAAABr5FTIC25geZIxrxlmF5ORzuiYt" // <-- BẠN PHẢI THAY MÃ SITE KEY VÀO ĐÂY
+                                            sitekey={RECAPTCHA_SITE_KEY || 'invalid-site-key'}
                                             onChange={(token) => {
                                                 setCaptchaToken(token || '');
                                                 if (errors.captcha) setErrors((prev: any) => ({ ...prev, captcha: null }));

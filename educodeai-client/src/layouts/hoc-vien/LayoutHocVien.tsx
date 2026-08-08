@@ -1,4 +1,6 @@
-import { Outlet } from "react-router-dom";
+
+import { useEffect } from 'react';
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import HeaderHocVien from "@/layouts/hoc-vien/HeaderHocVien";
 import FooterHocVien from "@/layouts/hoc-vien/FooterHocVien";
 import "@/assets/styles/variables.css";

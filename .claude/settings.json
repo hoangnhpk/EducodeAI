@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet --info)",
+      "Bash(curl -s -o /dev/null -w 'backend:%{http_code}\\\\n' http://localhost:5210/swagger/index.html)",
+      "Bash(curl -s -o /dev/null -w 'frontend:%{http_code}\\\\n' http://localhost:5173/)",
+      "Bash(taskkill //F //IM dotnet.exe)"
+    ]
+  }
+}
