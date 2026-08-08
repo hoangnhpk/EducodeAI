@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using educodeai_server.Helpers;
@@ -20,13 +20,19 @@ namespace educodeai_server.Controllers.HocVien
         /// Lấy danh sách tất cả khóa học, có hỗ trợ tìm kiếm theo tên hoặc lĩnh vực
         /// </summary>
         [HttpGet("all")]
-        public async Task<IActionResult> GetAll([FromQuery] string? search)
+        public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int? maGiangVien)
         {
             int maNguoiDung = LayNguoiDungID.LayID(User);
             try
             {
                 // Lấy dữ liệu gốc từ Service
                 var allCourses = await _service.GetAllKhoaHocsAsync(maNguoiDung);
+
+                // Nếu có filter theo giảng viên
+                if (maGiangVien.HasValue && maGiangVien.Value > 0)
+                {
+                    allCourses = allCourses.Where(x => x.MaGiangVien == maGiangVien.Value).ToList();
+                }
 
                 // Nếu người dùng có nhập từ khóa (search không trống)
                 if (!string.IsNullOrWhiteSpace(search))

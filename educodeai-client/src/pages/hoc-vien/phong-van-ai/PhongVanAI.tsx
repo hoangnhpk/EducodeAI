@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { FaArrowLeft } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -377,15 +379,15 @@ const PhongVanAI: React.FC = () => {
 
     if (setupMode) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#0f172a' }}>
-                <div style={{ background: '#1e293b', padding: '40px', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-                    <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>🚀 Thiết lập phỏng vấn AI</h2>
-                    <p style={{ color: '#94a3b8', textAlign: 'center', marginBottom: '32px' }}>Tùy chỉnh thông số phiên phỏng vấn của bạn</p>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f8f9fa' }}>
+                <div style={{ background: '#ffffff', padding: '40px', borderRadius: '16px', width: '100%', maxWidth: '500px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' }}>
+                    <h2 style={{ color: '#1e293b', fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>🚀 Thiết lập phỏng vấn AI</h2>
+                    <p style={{ color: '#64748b', textAlign: 'center', marginBottom: '32px' }}>Tùy chỉnh thông số phiên phỏng vấn của bạn</p>
 
                     <div style={{ marginBottom: '20px' }}>
 
-                        <label style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Vị trí ứng tuyển</label>
-                        <select value={viTri} onChange={e => setViTri(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                        <label style={{ display: 'block', color: '#334155', marginBottom: '8px', fontWeight: '500' }}>Vị trí ứng tuyển</label>
+                        <select value={viTri} onChange={e => setViTri(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#1e293b', outline: 'none' }}>
                             {requestedPosition && !['Backend Developer', 'Frontend Developer', 'Fullstack Developer', 'Mobile Developer', 'DevOps Engineer', 'Data Engineer', 'QA/Tester', 'UI/UX Designer', 'Business Analyst', 'Project Manager'].includes(requestedPosition) && (
                                 <option value={requestedPosition}>{requestedPosition}</option>
                             )}
@@ -404,8 +406,8 @@ const PhongVanAI: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '20px' }}>
-                        <label htmlFor="pv-capDo" style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Cấp độ</label>
-                        <select id="pv-capDo" value={capDo} onChange={e => setCapDo(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                        <label htmlFor="pv-capDo" style={{ display: 'block', color: '#334155', marginBottom: '8px', fontWeight: '500' }}>Cấp độ</label>
+                        <select id="pv-capDo" value={capDo} onChange={e => setCapDo(e.target.value)} style={{ width: '100%', padding: '12px 16px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#1e293b', outline: 'none' }}>
                             <option value="Intern">Intern</option>
                             <option value="Fresher">Fresher</option>
                             <option value="Junior">Junior</option>
@@ -415,8 +417,8 @@ const PhongVanAI: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '20px' }}>
-                        <label htmlFor="pv-tinhCach" style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
-                        <select id="pv-tinhCach" value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value) as TinhCachAI)} style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', outline: 'none' }}>
+                        <label htmlFor="pv-tinhCach" style={{ display: 'block', color: '#334155', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
+                        <select id="pv-tinhCach" value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value) as TinhCachAI)} style={{ width: '100%', padding: '12px 16px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#1e293b', outline: 'none' }}>
                             <option value={TinhCachAI.Friendly}>Thân thiện (Hướng dẫn)</option>
                             <option value={TinhCachAI.Normal}>Bình thường (Tiêu chuẩn)</option>
                             <option value={TinhCachAI.Strict}>Khó tính (Xoáy sâu vào lỗi sai)</option>
@@ -424,8 +426,8 @@ const PhongVanAI: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '32px' }}>
-                        <label htmlFor="pv-soCauHoi" style={{ display: 'block', color: '#cbd5e1', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
-                        <input id="pv-soCauHoi" type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#64748b', outline: 'none', cursor: 'not-allowed' }} />
+                        <label htmlFor="pv-soCauHoi" style={{ display: 'block', color: '#334155', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
+                        <input id="pv-soCauHoi" type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#94a3b8', outline: 'none', cursor: 'not-allowed' }} />
                     </div>
 
                     <button onClick={handleStart} disabled={isStarting} style={{ width: '100%', padding: '14px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: isStarting ? 'not-allowed' : 'pointer', opacity: isStarting ? 0.7 : 1 }}>

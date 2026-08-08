@@ -1,4 +1,4 @@
-﻿using educodeai_server.Data;
+using educodeai_server.Data;
 using educodeai_server.DTOs.XacThuc;
 using educodeai_server.DTOs.NguoiDung;
 using EduCodeAI.DTOs;
@@ -238,25 +238,12 @@ namespace educodeai_server.Services.Implementation
             _logger.LogInformation("Đăng nhập thành công cho user {UserId}.", user!.MaNguoiDung);
 
 
-            var activeSessions = user!.DanhSachPhienDangNhap.Where(p => p.DangHoatDong).ToList();
-            var currentSession = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == request.MaThietBi);
-            var isTrustedDevice = currentSession?.TrustedUntilUtc > DateTime.UtcNow
-                && currentSession.TrustRevokedAtUtc == null;
-
-            // Phiên đã xác minh OTP trước đó vẫn được tin cậy sau khi người dùng đăng xuất.
-            // Đăng xuất chỉ kết thúc phiên hiện tại, không buộc xác minh lại cùng thiết bị.
-            if (currentSession != null && !currentSession.DangHoatDong && isTrustedDevice)
-            {
-                return await XuLyDangNhapThanhCongAsync(user, request.MaThietBi, request.TenThietBi);
-            }
-
-            // Nếu thiết bị đã tồn tại nhưng chưa được tin cậy, không coi là thiết bị mới
-            // đã xác minh; yêu cầu OTP lại để tránh bypass bằng mã thiết bị cũ.
-            if (currentSession != null && !currentSession.DangHoatDong)
-            {
-                currentSession = null;
-            }
-
+            var decision = UnifiedLoginPolicy.Decide(
+                LoginProvider.Password,
+                user!.DanhSachPhienDangNhap,
+                request.MaThietBi,
+                user.SecurityVersion,
+                DateTime.UtcNow);
 
             return await HoanTatDangNhapTheoPolicyAsync(user, request.MaThietBi, request.TenThietBi, decision);
         }
@@ -702,24 +689,12 @@ namespace educodeai_server.Services.Implementation
                 phien.TenThietBi = deviceName; // LuÃ´n cáº­p nháº­t tÃªn thiáº¿t bá»‹ má»›i nháº¥t
             }
 
-            u.NgayDangNhapCuoi = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-
-            // Phase C: refresh token CSPRNG hash trong DB + HttpOnly cookie
-            var material = _tokenService.CreateRefreshTokenMaterial();
-            var httpContext = _httpContextAccessor.HttpContext;
-            var ipTao = httpContext?.Connection.RemoteIpAddress?.ToString();
-            var uaTao = httpContext?.Request.Headers["User-Agent"].ToString();
-            if (!string.IsNullOrEmpty(uaTao) && uaTao!.Length > 256) uaTao = uaTao.Substring(0, 256);
-
-            _context.RefreshTokens.Add(new RefreshTokenModel
-
-            {
-                await using var transaction = await _context.Database.BeginTransactionAsync();
+            object result;
+            await using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
                     var sessionUpsert = new SessionUpsert(_context);
-                    var phien = await sessionUpsert.GetOrCreateAsync(
+                    var activePhien = await sessionUpsert.GetOrCreateAsync(
                         u.MaNguoiDung,
                         devId,
                         deviceName,
@@ -731,7 +706,7 @@ namespace educodeai_server.Services.Implementation
 
                     var now = DateTime.UtcNow;
                     await _context.RefreshTokens
-                        .Where(t => t.MaPhien == phien.MaPhien && t.NgayThuHoi == null)
+                        .Where(t => t.MaPhien == activePhien.MaPhien && t.NgayThuHoi == null)
                         .ExecuteUpdateAsync(update => update
                             .SetProperty(t => t.NgayThuHoi, now)
                             .SetProperty(t => t.LyDoThuHoi, "LOGIN_REPLACED")
@@ -746,7 +721,7 @@ namespace educodeai_server.Services.Implementation
                     _context.RefreshTokens.Add(new RefreshTokenModel
                     {
                         MaNguoiDung = u.MaNguoiDung,
-                        MaPhien = phien.MaPhien,
+                        MaPhien = activePhien.MaPhien,
                         TokenHash = material.TokenHash,
                         FamilyId = material.FamilyId,
                         Jti = material.Jti,
@@ -759,7 +734,7 @@ namespace educodeai_server.Services.Implementation
                     await transaction.CommitAsync();
 
                     SetRefreshCookie(material.PlainToken, material.ExpiresAtUtc);
-                    var accessToken = _tokenService.CreateAccessToken(u, phien.MaPhien);
+                    var accessToken = _tokenService.CreateAccessToken(u, activePhien.MaPhien);
                     result = new
                     {
                         token = accessToken.Token,
@@ -781,7 +756,7 @@ namespace educodeai_server.Services.Implementation
                     await transaction.RollbackAsync();
                     throw;
                 }
-            });
+
 
             return result!;
         }

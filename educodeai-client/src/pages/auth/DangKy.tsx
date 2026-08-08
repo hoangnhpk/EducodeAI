@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-import { FaArrowLeft } from 'react-icons/fa';
 
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
@@ -11,6 +10,7 @@ import { setAuthTokens } from '../../utils/authStorage';
 
 import { FaArrowLeft } from 'react-icons/fa';
 import PasswordInput from '../../components/PasswordInput';
+import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
 
 
 const RegisterPage = () => {

@@ -25,11 +25,7 @@ export default function HeaderHocVien() {
       await authService.logout();
     } finally {
       setUser(null);
-
       redirectToLoginOnce(navigate);
-
-      navigate("/dang-nhap");
-
     }
   };
 
@@ -63,9 +59,28 @@ export default function HeaderHocVien() {
             Trang chủ
           </Link>
 
-          <Link to="/yeu-cau-lo-trinh-ai" className="nav-item nav-link">
-            Lộ trình AI
-          </Link>
+          <div className="nav-item dropdown">
+            <a
+              href="#"
+              className="nav-link dropdown-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              onClick={(e) => e.preventDefault()}
+            >
+              Hệ Sinh Thái AI
+            </a>
+            <div className="dropdown-menu fade-down m-0 shadow-sm border-0">
+              <Link to="/yeu-cau-lo-trinh-ai" className="dropdown-item">
+                Lộ trình AI
+              </Link>
+              <Link to="/sinh-do-an-ai" className="dropdown-item">
+                Sinh đồ án AI
+              </Link>
+              <Link to="/phong-van-ai" className="dropdown-item">
+                Phỏng vấn AI
+              </Link>
+            </div>
+          </div>
 
           <Link to="/khong-gian-hoc-tap" className="nav-item nav-link">
             Không gian học tập

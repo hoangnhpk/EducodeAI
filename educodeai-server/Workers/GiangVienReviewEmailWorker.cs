@@ -9,10 +9,6 @@ public sealed class GiangVienReviewEmailWorker : BackgroundService
 {
     private readonly IGiangVienReviewEmailQueue _queue;
 
-    private readonly IRedisService _redis;
-    private readonly IDataProtector _protector;
-    private readonly ILogger<GiangVienReviewEmailWorker> _logger;
-    public GiangVienReviewEmailWorker(IGiangVienReviewEmailQueue queue, IRedisService redis, IDataProtectionProvider protectionProvider, ILogger<GiangVienReviewEmailWorker> logger) { _queue = queue; _redis = redis; _protector = protectionProvider.CreateProtector("EduCodeAI.EmailQueue.v1"); _logger = logger; }
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IDataProtector _protector;
