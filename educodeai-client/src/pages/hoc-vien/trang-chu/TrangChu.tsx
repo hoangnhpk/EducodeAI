@@ -510,19 +510,17 @@ const TrangChu: React.FC = () => {
                                         />
                                     </div>
                                     <h5 className="fw-bold text-dark">{gv.name}</h5>
-<<<<<<< Updated upstream
-                                    <p className="text-primary fw-bold small mb-4">{gv.role}</p>
-                                    <div className="d-flex justify-content-center gap-2">
-                                        <a href="#" aria-label={`LinkedIn của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-linkedin-in" aria-hidden="true"></i></a>
-                                        <a href="#" aria-label={`GitHub của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-github" aria-hidden="true"></i></a>
-=======
                                     <p className="text-primary fw-bold small mb-2">{gv.role}</p>
                                     
                                     <div className="text-warning mb-3 d-flex align-items-center justify-content-center gap-1">
                                         <i className="fas fa-star"></i>
                                         <span className="text-dark fw-bold ms-1">{gv.avgRating.toFixed(1)}</span>
                                         <span className="text-muted small">({gv.totalReviews} đánh giá)</span>
->>>>>>> Stashed changes
+                                    </div>
+
+                                    <div className="d-flex justify-content-center gap-2">
+                                        <a href="#" aria-label={`LinkedIn của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-linkedin-in" aria-hidden="true"></i></a>
+                                        <a href="#" aria-label={`GitHub của ${gv.name}`} className="social-icon bg-white text-muted rounded-circle d-flex align-items-center justify-content-center shadow-sm"><i className="fab fa-github" aria-hidden="true"></i></a>
                                     </div>
                                 </div>
                             </div>

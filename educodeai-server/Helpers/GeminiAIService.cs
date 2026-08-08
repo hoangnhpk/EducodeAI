@@ -273,18 +273,6 @@ namespace educodeai_server.Helpers
                                 var metaObj = Newtonsoft.Json.Linq.JObject.Parse(usageMetaString);
                                 actualTokens = (int?)metaObj["totalTokenCount"] ?? 0;
 
-
-                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
-                        response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
-                        response.StatusCode == System.Net.HttpStatusCode.Forbidden ||
-                        response.StatusCode == System.Net.HttpStatusCode.NotFound ||
-                        response.StatusCode == System.Net.HttpStatusCode.BadRequest ||
-                        response.StatusCode == System.Net.HttpStatusCode.InternalServerError ||
-                        response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable ||
-                        response.StatusCode == System.Net.HttpStatusCode.BadGateway)
-                    {
-                        Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
-
                                 if (actualTokens > 0)
                                 {
                                     Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {actualTokens} tokens.");
