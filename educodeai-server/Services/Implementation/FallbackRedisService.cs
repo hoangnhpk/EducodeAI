@@ -148,6 +148,28 @@ namespace educodeai_server.Services
             }
         }
 
+        public Task<IEnumerable<string>> LayTuDauListAsync(string key, int soLuong)
+        {
+            try
+            {
+                var listKey = $"list:{key}";
+                if (_memoryCache.TryGetValue(listKey, out List<string>? list) && list != null)
+                {
+                    var count = Math.Min(soLuong, list.Count);
+                    var items = list.Take(count).ToList();
+                    list.RemoveRange(0, count);
+                    _memoryCache.Set(listKey, list, TimeSpan.FromHours(1));
+                    return Task.FromResult<IEnumerable<string>>(items);
+                }
+                return Task.FromResult(Enumerable.Empty<string>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error popping list from MemoryCache for key: {Key}", key);
+                return Task.FromResult(Enumerable.Empty<string>());
+            }
+        }
+
         public Task<IEnumerable<string>> DocDauListKhongXoaAsync(string key, int soLuong)
         {
             try
