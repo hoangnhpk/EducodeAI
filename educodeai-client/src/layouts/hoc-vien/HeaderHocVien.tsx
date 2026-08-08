@@ -29,7 +29,7 @@ export default function HeaderHocVien() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg bg-white navbar-light shadow sticky-top p-0">
+    <nav className="navbar navbar-expand-lg bg-white navbar-light shadow fixed-top p-0">
       <Link
         to="/"
         className="navbar-brand d-flex align-items-center px-4 px-lg-5"
@@ -55,9 +55,16 @@ export default function HeaderHocVien() {
             Trang chủ
           </Link>
 
-          <Link to="/yeu-cau-lo-trinh-ai" className="nav-item nav-link">
-            Lộ trình AI
-          </Link>
+          <div className="nav-item dropdown">
+            <a href="#" className="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+              Hệ Sinh Thái AI
+            </a>
+            <div className="dropdown-menu m-0 shadow-sm border-0 fade-down">
+              <Link to="/yeu-cau-lo-trinh-ai" className="dropdown-item">Sinh Lộ trình AI</Link>
+              <Link to="/sinh-do-an-ai" className="dropdown-item">Sinh Đồ án thực chiến</Link>
+              <Link to="/phong-van-ai" className="dropdown-item">Phòng giả lập phỏng vấn</Link>
+            </div>
+          </div>
 
           <Link to="/khong-gian-hoc-tap" className="nav-item nav-link">
             Không gian học tập

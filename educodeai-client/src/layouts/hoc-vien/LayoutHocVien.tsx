@@ -1,5 +1,10 @@
 import { useEffect } from 'react';
+<<<<<<< Updated upstream
 import { useNavigate, Outlet } from "react-router-dom";
+=======
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
+
+>>>>>>> Stashed changes
 import HeaderHocVien from "@/layouts/hoc-vien/HeaderHocVien";
 import FooterHocVien from "@/layouts/hoc-vien/FooterHocVien";
 import "@/assets/styles/variables.css";

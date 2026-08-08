@@ -116,8 +116,20 @@ const PhongVanDoAn: React.FC = () => {
         if (soLanChuyenTab === 0 || daKetThuc) return;
 
         if (soLanChuyenTab > 2) {
+<<<<<<< Updated upstream
             Swal.fire('Hủy kết quả', 'Bạn đã vi phạm quy chế quá 2 lần do liên tục rời khỏi tab phỏng vấn. Buổi phỏng vấn sẽ kết thúc ngay bây giờ!', 'error')
                 .then(() => navigate('/sinh-do-an-ai'));
+=======
+            Swal.fire({
+                icon: 'error',
+                title: 'HỦY KẾT QUẢ',
+                text: 'Bạn đã vi phạm quy chế quá 2 lần do liên tục rời khỏi tab phỏng vấn. Buổi phỏng vấn sẽ kết thúc ngay bây giờ!',
+                confirmButtonText: 'Đã hiểu',
+                allowOutsideClick: false
+            }).then(() => {
+                navigate('/sinh-do-an-ai');
+            });
+>>>>>>> Stashed changes
             return;
         }
 
@@ -251,6 +263,7 @@ const PhongVanDoAn: React.FC = () => {
                             <span>⚡</span>
                             <span>{tongDiemTamThoi}<span className="pvd-score-max">/100</span></span>
                         </div>
+<<<<<<< Updated upstream
                         <div className="pvd-timer-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: timeLeft <= 60 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.1)', padding: '6px 12px', borderRadius: '12px', color: timeLeft <= 60 ? 'var(--danger)' : '#e2e8f0', fontWeight: 'bold' }}>
                             <span>⏱️</span>
                             <span>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
@@ -259,6 +272,16 @@ const PhongVanDoAn: React.FC = () => {
                             <div className="pvd-timer-badge" style={{ color: 'var(--danger)', backgroundColor: '#fef2f2', border: '1px solid #fecaca' }}>
                                 <span>⚠️</span>
                                 <span>{soLanChuyenTab}</span>
+=======
+                        <div className="pvd-timer-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: timeLeft <= 60 ? 'rgba(239, 68, 68, 0.1)' : '#f1f5f9', padding: '6px 12px', borderRadius: '8px', color: timeLeft <= 60 ? '#ef4444' : '#475569', fontWeight: '600', border: timeLeft <= 60 ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid #e2e8f0' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
+                        </div>
+                        {soLanChuyenTab > 0 && (
+                            <div className="pvd-timer-badge" style={{ color: '#ef4444', backgroundColor: '#fef2f2', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '8px' }} aria-label="Cảnh báo rời tab">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <span>{soLanChuyenTab} lần</span>
+>>>>>>> Stashed changes
                             </div>
                         )}
                         <button
