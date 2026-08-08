@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using educodeai_server.DTOs.AI;
 using educodeai_server.Services.Interface;
+using educodeai_server.Repository.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -153,6 +154,56 @@ namespace educodeai_server.Controllers.HocVien
             {
                 return BadRequest();
             }
+        }
+        [HttpGet("add-test-key")]
+        [AllowAnonymous]
+        public async Task<IActionResult> AddTestKey([FromServices] educodeai_server.Data.EduCodeAIDbContext db, [FromServices] IRedisService redisService, [FromQuery] string key)
+        {
+            try
+            {
+                var newKey = new educodeai_server.Models.KeyAPIModel
+                {
+                    TenKey = "Test Key from Chat",
+                    LoaiKey = "Chinh",
+                    RPMLimit = 15,
+                    TPMLimit = 1000000,
+                    RPDLimit = 1500,
+                    TrangThai = true,
+                    ThuTuUuTien = 1,
+                    ModelSuDung = "gemini-2.5-flash",
+                    NgayTao = DateTime.UtcNow
+                };
+                
+                string secret = HttpContext.RequestServices.GetRequiredService<IConfiguration>()["ApiSecurity:SecretKey"];
+                newKey.MaKeyMaHoa = educodeai_server.Helpers.MaHoaHelper.MaHoa(key, secret);
+                
+                db.Set<educodeai_server.Models.KeyAPIModel>().Add(newKey);
+                await db.SaveChangesAsync();
+                
+                // Xoá cache để Redis nạp lại
+                var keys = redisService.LayDanhSachKeyTheoPattern("EduCodeAI:KeyPool:*");
+                foreach (var k in keys) await redisService.XoaKeyAsync(k);
+                
+                return Ok("Key added successfully. ID: " + newKey.ID);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.ToString());
+            }
+        }
+        
+        [HttpGet("fix-models")]
+        [AllowAnonymous]
+        public async Task<IActionResult> FixModels([FromServices] educodeai_server.Data.EduCodeAIDbContext db, [FromServices] IRedisService redisService)
+        {
+            var keysToUpdate = db.Set<educodeai_server.Models.KeyAPIModel>().Where(k => k.ModelSuDung == "gemini-1.5-flash" || k.ModelSuDung == "gemini-1.5-pro").ToList();
+            foreach(var key in keysToUpdate) {
+                key.ModelSuDung = "gemini-2.5-flash";
+            }
+            await db.SaveChangesAsync();
+            var keys = redisService.LayDanhSachKeyTheoPattern("EduCodeAI:KeyPool:*");
+            foreach (var k in keys) await redisService.XoaKeyAsync(k);
+            return Ok("Fixed " + keysToUpdate.Count + " keys.");
         }
     }
 }

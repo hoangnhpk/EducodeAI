@@ -111,6 +111,18 @@ const PhongVanAI: React.FC = () => {
         return `${m}:${sec}`;
     };
 
+    const playTTS = (text: string) => {
+        setIsSpeaking(true);
+        const audio = new Audio(`/api/PhongVanAI/tts?text=${encodeURIComponent(text)}`);
+        audio.play().catch(e => {
+            console.error("Lỗi phát audio:", e);
+            setTimeout(() => setIsSpeaking(false), 4000); // Fallback
+        });
+        audio.onended = () => {
+            setIsSpeaking(false);
+        };
+    };
+
     const handleStart = async () => {
         setIsStarting(true);
         try {
@@ -133,8 +145,7 @@ const PhongVanAI: React.FC = () => {
                     }
                 ]);
                 setSetupMode(false);
-                setIsSpeaking(true);
-                setTimeout(() => setIsSpeaking(false), 4000);
+                playTTS(res.cauHoiDauTien);
             }
         } catch (error: any) {
             await Swal.fire('Lỗi', error.message || 'Không thể bắt đầu phiên phỏng vấn.', 'error');
@@ -181,7 +192,7 @@ const PhongVanAI: React.FC = () => {
                 };
                 
                 setMessages(prev => [...prev, aiResponse]);
-                setTimeout(() => setIsSpeaking(false), 5000);
+                playTTS(data.nhanXetCauTruoc + (data.cauHoiTiepTheo ? '. ' + data.cauHoiTiepTheo : ''));
                 
                 if (data.isFinished) {
                     setInterviewFinished(true);

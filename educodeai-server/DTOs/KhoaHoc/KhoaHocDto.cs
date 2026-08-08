@@ -1,4 +1,4 @@
-﻿namespace educodeai_server.DTOs.KhoaHoc
+namespace educodeai_server.DTOs.KhoaHoc
 {
     public class KhoaHocDto
     {
@@ -14,5 +14,7 @@
         public bool KhoaHocDaDangKy { get; set; }
         public decimal GiaKhoaHoc { get; set; }
         public string DonViTienTe { get; set; }
+        public int MaGiangVien { get; set; }
+        public string TenGiangVien { get; set; }
     }
 }
