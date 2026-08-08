@@ -108,7 +108,7 @@ const EduBanner: React.FC = () => {
                 }
                 .btn-white {
                     background-color: white !important;
-                    color: #1e293b !important;
+                    color: var(--text-dark) !important;
                 }
                 .btn-white:hover {
                     background-color: #f8fafc !important;

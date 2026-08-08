@@ -8,6 +8,7 @@ namespace educodeai_server.DTOs.AI
     // ============================================================
     public class NopDoAnRequestDto
     {
+        public int? MaDoAn { get; set; }
         [Required] public string TenDoAn { get; set; } = string.Empty;
         [Required] public string MoTa { get; set; } = string.Empty;
         [Required] public List<string> YeuCauChucNang { get; set; } = new();

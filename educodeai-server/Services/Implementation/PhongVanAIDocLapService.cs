@@ -5,6 +5,8 @@ using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using educodeai_server.Exceptions;
+using educodeai_server.DTOs.AI;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -19,6 +21,33 @@ namespace educodeai_server.Services.Implementation
             _context = context;
             _geminiService = geminiService;
             _logger = logger;
+        }
+
+        public async Task<PhongVanSessionDto> GetInterviewAsync(int userId, int maPhongVan)
+        {
+            var session = await _context.LichSuPhongVans.FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaPhongVan == maPhongVan);
+            if (session == null) throw new NotFoundException("Không tìm thấy buổi phỏng vấn.");
+
+            return new PhongVanSessionDto
+            {
+                MaPhongVan = session.MaPhongVan,
+                ViTriUngTuyen = session.ViTriUngTuyen,
+                CapDo = session.CapDo,
+                TinhCachAI = session.TinhCachAI,
+                SoLuongCauHoi = session.SoLuongCauHoi,
+                TrangThai = session.TrangThai,
+                GhiChu = session.GhiChu,
+                LichSuChat = string.IsNullOrEmpty(session.ChiTietChatJSON) ? new List<PhongVanDocLapTurnDto>() : System.Text.Json.JsonSerializer.Deserialize<List<PhongVanDocLapTurnDto>>(session.ChiTietChatJSON)!
+            };
+        }
+
+        public async Task UpdateNoteAsync(int userId, int maPhongVan, string ghiChu)
+        {
+            var session = await _context.LichSuPhongVans.FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaPhongVan == maPhongVan);
+            if (session == null) throw new NotFoundException("Không tìm thấy buổi phỏng vấn.");
+
+            session.GhiChu = ghiChu;
+            await _context.SaveChangesAsync();
         }
 
         public async Task<StartPhongVanResponseDto> StartInterviewAsync(int userId, StartPhongVanRequestDto request)
@@ -88,6 +117,7 @@ Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện hướng
 
             if (lichSu == null) throw new Exception("Không tìm thấy phiên phỏng vấn.");
             if (lichSu.TrangThai == TrangThaiPhongVan.Completed) throw new Exception("Phiên phỏng vấn đã kết thúc.");
+            if (string.IsNullOrWhiteSpace(request.CauTraLoi)) throw new ArgumentException("Câu trả lời không được để trống.");
 
             var chatHistory = JsonSerializer.Deserialize<List<PhongVanDocLapTurnDto>>(lichSu.ChiTietChatJSON) ?? new List<PhongVanDocLapTurnDto>();
             
@@ -104,38 +134,53 @@ Tính cách của bạn: {lichSu.TinhCachAI}.
 Dưới đây là lịch sử cuộc trò chuyện:
 {chatContext}
 
-Ứng viên vừa trả lời câu hỏi gần nhất. Nhiệm vụ của bạn:
-1. Đưa ra nhận xét ngắn gọn (2-3 câu) về câu trả lời của ứng viên bằng TIẾNG VIỆT.
-{(isFinished ? "2. Đây là câu hỏi cuối cùng, bạn không cần hỏi thêm gì nữa. Kết thúc bằng câu: 'Cảm ơn bạn, buổi phỏng vấn kết thúc tại đây.'" : "2. Đưa ra CÂU HỎI TIẾP THEO ngắn gọn (1-2 câu) cho ứng viên bằng TIẾNG VIỆT.")}
+Hãy đánh giá câu trả lời gần nhất và trả về đúng JSON:
+{{
+    ""nhanXetCauTruoc"": ""Nhận xét ngắn gọn 2-3 câu bằng tiếng Việt"",
+    ""cauHoiTiepTheo"": ""{(isFinished ? "" : "Câu hỏi tiếp theo ngắn gọn bằng tiếng Việt")}""
+}}
+Yêu cầu:
+- Chỉ trả về JSON, không markdown hoặc giải thích thêm.
+- Toàn bộ nội dung bằng tiếng Việt.
+- {(isFinished ? "Đây là câu cuối, cauHoiTiepTheo bắt buộc là chuỗi rỗng và nhận xét kết thúc bằng lời cảm ơn." : "cauHoiTiepTheo phải là một câu hỏi mới, phù hợp với lịch sử phỏng vấn.")}";
 
-=== YÊU CẦU BẮT BUỘC ===
-- BẮT BUỘC trả lời 100% bằng TIẾNG VIỆT. CẤM dùng tiếng Anh.
-- Trả lời ngắn gọn, tự nhiên như đang nói chuyện. Tối đa 5-6 câu.
-- KHÔNG sử dụng JSON. KHÔNG in ra kịch bản. KHÔNG liệt kê Role/Personality/Context.
-- KHÔNG dùng format có dấu * hoặc markdown.";
+            var rawResponse = await _geminiService.GenerateAsync(prompt, true);
+            string nhanXet;
+            string cauHoiTiepTheo;
+            try
+            {
+                var responseText = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse);
+                var json = ChuanHoaJsonTuAIHelper.ExtractJson(responseText);
+                var aiResponse = JsonSerializer.Deserialize<JsonElement>(json);
+                nhanXet = aiResponse.GetProperty("nhanXetCauTruoc").GetString()?.Trim() ?? "";
+                cauHoiTiepTheo = isFinished
+                    ? ""
+                    : aiResponse.GetProperty("cauHoiTiepTheo").GetString()?.Trim() ?? "";
 
-            var rawResponse = await _geminiService.GenerateAsync(prompt);
-            string nhanXet = "";
-            try {
-                nhanXet = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse).Replace("*", "").Trim();
-                if (nhanXet.Length > 200 && nhanXet.Contains("?")) 
-                {
-                    var sentences = nhanXet.Split(new[] { '.', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    var questionSentence = sentences.LastOrDefault(s => s.Contains("?"));
-                    if (!string.IsNullOrWhiteSpace(questionSentence))
-                    {
-                        nhanXet = questionSentence.Trim();
-                    }
-                }
-            } catch {
-                nhanXet = "Cảm ơn bạn đã trả lời. " + (isFinished ? "Chúng ta kết thúc phỏng vấn ở đây." : "Hãy tiếp tục với câu hỏi khác nhé.");
+                if (string.IsNullOrWhiteSpace(nhanXet))
+                    throw new JsonException("AI không trả về nhận xét.");
+                if (!isFinished && string.IsNullOrWhiteSpace(cauHoiTiepTheo))
+                    throw new JsonException("AI không trả về câu hỏi tiếp theo.");
             }
-            string cauHoiTiepTheo = "";
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi phân tích câu trả lời phỏng vấn. RawResponse: {Raw}", rawResponse);
+                nhanXet = isFinished
+                    ? "Cảm ơn bạn đã trả lời. Buổi phỏng vấn kết thúc tại đây."
+                    : "Cảm ơn bạn đã trả lời. Hãy tiếp tục thể hiện rõ cách suy nghĩ và kinh nghiệm của bạn.";
+                cauHoiTiepTheo = isFinished
+                    ? ""
+                    : "Bạn có thể chia sẻ một tình huống thực tế mà bạn đã áp dụng kiến thức này không?";
+            }
+
+            var aiMessage = isFinished
+                ? nhanXet
+                : $"{nhanXet}\n\n{cauHoiTiepTheo}";
 
             var aiTurn = new PhongVanDocLapTurnDto
             {
                 Role = "ai",
-                Message = (nhanXet + "\n\n" + cauHoiTiepTheo).Trim(),
+                Message = aiMessage,
                 Timestamp = DateTime.UtcNow
             };
             chatHistory.Add(aiTurn);
