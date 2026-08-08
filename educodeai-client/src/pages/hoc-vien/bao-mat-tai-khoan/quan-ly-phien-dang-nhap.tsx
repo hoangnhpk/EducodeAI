@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import ReCAPTCHA from "react-google-recaptcha";
 import { authService } from '../../../services/auth.service';
-import { clearLocalSession, redirectToLoginOnce } from '../../../utils/sessionTermination';
 import './bao-mat.css';
 
 const QuanLyPhienDangNhap: React.FC = () => {
-    const navigate = useNavigate();
     const [sessions, setSessions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showOtpDiv, setShowOtpDiv] = useState(false);
     const [otp, setOtp] = useState('');
+    const [captchaToken, setCaptchaToken] = useState('');
     const [logoutType, setLogoutType] = useState<'ALL' | 'SINGLE'>('ALL');
     const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
@@ -21,7 +20,7 @@ const QuanLyPhienDangNhap: React.FC = () => {
     const fetchSessions = async () => {
         setLoading(true);
         try {
-            const res = await authService.getDevices();
+            const res: any = await authService.getDevices(""); // Pass empty string for current device if not needed or get actual one
             setSessions(res);
         } catch (error) {
             console.error(error);
@@ -32,10 +31,10 @@ const QuanLyPhienDangNhap: React.FC = () => {
 
     const handleRequestRemoteLogout = async (type: 'ALL' | 'SINGLE', sessionId?: number) => {
         setLogoutType(type);
-        setSelectedSessionId(type === 'SINGLE' && sessionId ? sessionId : null);
+        if (sessionId) setSelectedSessionId(sessionId);
         
         try {
-            await authService.requestOtpDangXuatTuXa('');
+            await authService.requestOtpDangXuatTuXa();
             setShowOtpDiv(true);
             Swal.fire({ icon: 'info', title: 'Xác minh', text: 'Mã OTP xác nhận đã được gửi đến Email của bạn!', timer: 2500, showConfirmButton: false });
         } catch (error: any) {
@@ -44,22 +43,19 @@ const QuanLyPhienDangNhap: React.FC = () => {
     };
 
     const handleConfirmRemoteLogout = async () => {
+        if (!captchaToken) return Swal.fire('Cảnh báo', 'Vui lòng xác thực Captcha', 'warning');
         if (otp.length !== 6) return Swal.fire('Cảnh báo', 'Vui lòng nhập đủ 6 số OTP', 'warning');
 
         try {
             await authService.xacNhanDangXuatTuXa({
                 DangXuatTatCa: logoutType === 'ALL',
                 DanhSachMaPhien: logoutType === 'SINGLE' && selectedSessionId ? [selectedSessionId] : [],
-                OtpCode: otp
+                OtpCode: otp,
+                CaptchaToken: captchaToken
             });
-            if (logoutType === 'ALL') {
-                clearLocalSession();
-                redirectToLoginOnce(navigate);
-                return;
-            }
             Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đã đăng xuất thiết bị an toàn.', timer: 2000, showConfirmButton: false});
+            setShowOtpDiv(false);
             setOtp('');
-            setSelectedSessionId(null);
             fetchSessions();
         } catch (error: any) {
             Swal.fire('Lỗi', error.response?.data?.message || 'OTP không hợp lệ hoặc đã hết hạn', 'error');
@@ -68,13 +64,11 @@ const QuanLyPhienDangNhap: React.FC = () => {
 
     return (
         <div className="container py-4" style={{ maxWidth: '800px' }}>
-            <div className="d-flex justify-content-between align-items-center mb-4 gap-3 flex-wrap">
+            <div className="d-flex justify-content-between align-items-center mb-4">
                 <h4 className="fw-bold m-0"><i className="bi bi-pc-display-horizontal me-2 text-orange"></i>Thiết bị đăng nhập</h4>
-                <div className="d-flex align-items-center gap-3 flex-wrap justify-content-end">
-                    <button className="btn btn-outline-danger btn-sm px-3 py-2 fw-bold" onClick={() => handleRequestRemoteLogout('ALL')}>
-                        <i className="bi bi-box-arrow-right me-1"></i> Đăng xuất tất cả thiết bị khác
-                    </button>
-                </div>
+                <button className="btn btn-outline-danger btn-sm px-3 py-2 fw-bold" onClick={() => handleRequestRemoteLogout('ALL')}>
+                    <i className="bi bi-box-arrow-right me-1"></i> Đăng xuất tất cả thiết bị khác
+                </button>
             </div>
 
             <div className="card shadow-sm border-0 rounded-4 overflow-hidden">
@@ -124,13 +118,16 @@ const QuanLyPhienDangNhap: React.FC = () => {
                             </div>
                         </div>
                         
-                            <div className="row g-3 align-items-center justify-content-center mt-2">
+                        <div className="row g-3 align-items-center justify-content-center mt-2">
                             <div className="col-12 col-md-4">
                                 <input type="text" className="form-control form-control-lg text-center fw-bold otp-input" placeholder="Mã OTP" maxLength={6} value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} />
                             </div>
+                            <div className="col-12 col-md-5 d-flex justify-content-center">
+                                <ReCAPTCHA sitekey="THAY_BANG_SITE_KEY_CUA_BAN" onChange={(token) => setCaptchaToken(token || '')} />
+                            </div>
                             <div className="col-12 col-md-3 d-flex flex-column gap-2">
                                 <button className="btn btn-danger py-2 fw-bold w-100" onClick={handleConfirmRemoteLogout}>Xác nhận</button>
-                                <button className="btn btn-outline-secondary py-2 w-100" onClick={() => { setShowOtpDiv(false); setOtp(''); }}>Hủy bỏ</button>
+                                <button className="btn btn-outline-secondary py-2 w-100" onClick={() => {setShowOtpDiv(false); setOtp('');}}>Hủy bỏ</button>
                             </div>
                         </div>
                     </div>

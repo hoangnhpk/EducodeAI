@@ -1,100 +1,44 @@
 /* ===== STUDENT TABLE CARD ===== */
 .student-table-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-}
-
-.student-table-scroll {
-  width: 100%;
-  overflow-x: auto;
 }
 
 /* ===== TABLE ===== */
 .student-table {
   width: 100%;
-  min-width: 920px;
   border-collapse: collapse;
-  table-layout: fixed;
 }
 
 .student-table thead {
-  background: var(--bg-main);
-  border-bottom: 1px solid var(--border-color);
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .student-table th {
-  padding: 14px 16px;
+  padding: 16px 24px;
   text-align: left;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .student-table td {
-  padding: 14px 16px;
+  padding: 16px 24px;
   font-size: 14px;
-  color: var(--text-main);
-  vertical-align: middle;
+  color: #374151;
 }
 
 .student-table tbody tr {
-  border-bottom: 1px solid var(--border-color);
-  transition: background var(--transition-fast);
-}
-
-.student-table tbody tr:last-child {
-  border-bottom: none;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s ease;
 }
 
 .student-table tbody tr:hover {
-  background: var(--bg-main);
-}
-
-.student-table th:nth-child(1),
-.student-table td:nth-child(1) {
-  width: 20%;
-}
-
-.student-table th:nth-child(2),
-.student-table td:nth-child(2) {
-  width: 20%;
-}
-
-.student-table th:nth-child(3),
-.student-table td:nth-child(3) {
-  width: 16%;
-}
-
-.student-table th:nth-child(4),
-.student-table td:nth-child(4) {
-  width: 12%;
-}
-
-.student-table th:nth-child(5),
-.student-table td:nth-child(5) {
-  width: 10%;
-}
-
-.student-table th:nth-child(6),
-.student-table td:nth-child(6) {
-  width: 12%;
-}
-
-.student-table th:nth-child(7),
-.student-table td:nth-child(7) {
-  width: 10%;
-}
-
-.student-table-empty {
-  text-align: center;
-  padding: 32px 16px !important;
-  color: var(--text-muted);
+  background: #f9fafb;
 }
 
 /* ===== STUDENT INFO ===== */
@@ -102,228 +46,108 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0;
-}
-
-.student-info strong {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 600;
-  color: var(--text-dark);
-}
-
-.student-avatar,
-.student-avatar-img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .student-avatar {
-  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fb923c, #f97316);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-white);
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 1;
+  color: #ffffff;
+  font-weight: 600;
 }
 
-.student-avatar-img {
-  object-fit: cover;
-  border: 1px solid var(--border-color);
-}
-
-.student-email {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-/* ===== PROGRESS (scoped — tránh đụng Bootstrap .progress-bar) ===== */
-.st-progress {
+/* ===== PROGRESS ===== */
+.progress-wrapper {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 0;
 }
 
-.st-progress-track {
-  flex: 1;
-  min-width: 72px;
-  max-width: 110px;
+.progress-bar {
+  width: 90px;
   height: 8px;
   background: #e5e7eb;
   border-radius: 999px;
   overflow: hidden;
 }
 
-.st-progress-fill {
-  display: block;
+.progress-fill {
   height: 100%;
-  min-width: 0;
   border-radius: 999px;
-  transition: width 0.25s ease;
 }
 
-.st-progress-value {
-  flex-shrink: 0;
-  min-width: 48px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-dark);
-  font-variant-numeric: tabular-nums;
+.progress-green {
+  background: #22c55e;
 }
 
-.st-progress-fill.is-high {
-  background: var(--success);
+.progress-yellow {
+  background: #facc15;
 }
 
-.st-progress-fill.is-mid {
-  background: var(--warning);
-}
-
-.st-progress-fill.is-low {
-  background: var(--danger);
+.progress-red {
+  background: #ef4444;
 }
 
 /* ===== ASSIGNMENT BADGE ===== */
 .assignment-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   padding: 4px 10px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #0ea5e9;
+  color: #ffffff;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-  line-height: 1.3;
+  font-weight: 600;
 }
 
 /* ===== SCORE ===== */
 .avg-score {
-  font-weight: 700;
-  color: var(--text-dark);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  font-weight: 600;
+  color: #2563eb;
 }
 
 /* ===== STATUS BADGE ===== */
 .status-badge {
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  letter-spacing: 0.02em;
-  line-height: 1.3;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
 }
 
 .status-completed {
-  background: var(--success-soft);
-  color: var(--success-strong);
+  background: #dcfce7;
+  color: #166534;
 }
 
 .status-learning {
-  background: var(--warning-soft);
-  color: var(--warning-strong);
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .status-risk {
-  background: var(--danger-soft);
-  color: var(--danger-strong);
-}
-
-.status-not-started {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 /* ===== ACTION BUTTON ===== */
 .detail-btn {
-  padding: 7px 12px;
+  padding: 8px 14px;
   border-radius: 10px;
-  border: 1px solid var(--primary);
-  background: var(--primary-soft);
-  color: var(--primary-dark);
+  border: 1px solid #fb923c;
+  background: #fff7ed;
+  color: #f97316;
   font-size: 13px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 6px;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.detail-btn i {
-  font-size: 12px;
-  line-height: 1;
+  transition: all 0.2s ease;
 }
 
 .detail-btn:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--text-white);
-}
-
-.detail-btn:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* ===== PAGINATION (scoped — tránh đụng Bootstrap .pagination) ===== */
-.student-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-top: 1px solid var(--border-color);
-  background: var(--bg-card);
-}
-
-.student-pagination-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
-  color: var(--text-main);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.student-pagination-btn:hover:not(:disabled) {
-  border-color: var(--primary);
-  color: var(--primary-dark);
-  background: var(--primary-soft);
-}
-
-.student-pagination-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.student-pagination-info {
-  font-size: 13px;
-  color: var(--text-muted);
-  font-weight: 600;
+  background: #ffedd5;
 }

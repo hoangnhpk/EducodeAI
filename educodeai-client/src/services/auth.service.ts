@@ -1,45 +1,16 @@
 ﻿import axiosInstance from '@/configs/axios';
 import { getDeviceInfo } from '../utils/deviceHelper';
-import { clearLocalSession } from '../utils/sessionTermination';
+import { clearAuthTokens } from '../utils/authStorage';
 import { stopSessionHub } from '../configs/sessionHub';
 
 const api = axiosInstance as any;
-
-export interface IdentityScanResponse {
-  thanhCong?: boolean;
-  ThanhCong?: boolean;
-  thongBao?: string;
-  ThongBao?: string;
-  soGiayTo?: string;
-  SoGiayTo?: string;
-  hoTen?: string;
-  HoTen?: string;
-  ngaySinh?: string;
-  NgaySinh?: string;
-  gioiTinh?: string;
-  GioiTinh?: string;
-  ngayCap?: string;
-  NgayCap?: string;
-  noiCap?: string;
-  NoiCap?: string;
-  diaChi?: string;
-  DiaChi?: string;
-  quocTich?: string;
-  QuocTich?: string;
-  danToc?: string;
-  DanToc?: string;
-  tonGiao?: string;
-  TonGiao?: string;
-  nguyenQuan?: string;
-  NguyenQuan?: string;
-}
 
 export const authService = {
   registerGiangVien: async (formData: FormData) => {
     return await api.post('/api/XacThuc/dang-ky-giang-vien', formData);
   },
 
-  scanIdentityDocument: async (formData: FormData): Promise<IdentityScanResponse> => {
+  scanIdentityDocument: async (formData: FormData) => {
     // Khong set Content-Type thu cong de axios tu them boundary
     return await api.post('/api/XacThuc/quet-giay-to', formData, { timeout: 120000 });
   },
@@ -76,14 +47,14 @@ export const authService = {
     });
   },
 
-  login: async (identifier: string, pass: string, captcha?: string) => {
+  login: async (identifier: string, pass: string, captcha: string = 'SKIP_CAPTCHA') => {
     const { maThietBi, tenThietBi } = getDeviceInfo();
     return await api.post('/api/XacThuc/dang-nhap', {
-      taiKhoan: identifier.trim(),
+      taiKhoan: identifier,
       matKhau: pass,
       maThietBi,
       tenThietBi,
-      ...(captcha ? { captchaToken: captcha } : {})
+      captchaToken: captcha
     });
   },
 
@@ -106,15 +77,11 @@ export const authService = {
   },
 
   googleLogin: async (payload: { credential: string }, maThietBi: string, tenThietBi: string) => {
-    return await api.post('/api/XacThuc/google-login', payload, {
-      params: { maThietBi, tenThietBi }
-    });
+    return await api.post(`/api/XacThuc/google-login?maThietBi=${maThietBi}&tenThietBi=${tenThietBi}`, payload);
   },
 
   facebookLogin: async (payload: { accessToken: string }, maThietBi: string, tenThietBi: string) => {
-    return await api.post('/api/XacThuc/facebook-login', payload, {
-      params: { maThietBi, tenThietBi }
-    });
+    return await api.post(`/api/XacThuc/facebook-login?maThietBi=${maThietBi}&tenThietBi=${tenThietBi}`, payload);
   },
 
   refreshToken: async (maThietBi: string) => {
@@ -130,7 +97,8 @@ export const authService = {
         headers: { 'Content-Type': 'application/json' }
       });
     } finally {
-      clearLocalSession();
+      clearAuthTokens();
+      localStorage.removeItem('user_info');
     }
   },
 
@@ -153,19 +121,19 @@ export const authService = {
     });
   },
 
-  getDevices: async () => {
-    return await api.get('/api/XacThuc/danh-sach-thiet-bi');
+  getDevices: async (maThietBiHienTai: string) => {
+    return await api.get('/api/XacThuc/danh-sach-thiet-bi', { params: { maThietBiHienTai } });
   },
 
   doiMatKhau: async (payload: { MatKhauCu: string; MatKhauMoi: string }) => {
     return await api.post('/api/XacThuc/doi-mat-khau', payload);
   },
 
-  requestOtpDangXuatTuXa: async (captchaToken: string) => {
-    return await api.post('/api/XacThuc/yeu-cau-otp-dang-xuat-tu-xa', { captchaToken });
+  requestOtpDangXuatTuXa: async () => {
+    return await api.post('/api/XacThuc/yeu-cau-otp-dang-xuat-tu-xa');
   },
 
-  xacNhanDangXuatTuXa: async (payload: { DangXuatTatCa: boolean; DanhSachMaPhien: number[]; OtpCode: string }) => {
+  xacNhanDangXuatTuXa: async (payload: { DangXuatTatCa: boolean; DanhSachMaPhien: number[]; OtpCode: string; CaptchaToken: string }) => {
     return await api.post('/api/XacThuc/xac-nhan-dang-xuat-tu-xa', payload);
   }
 };

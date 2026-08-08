@@ -6,9 +6,9 @@
 
         /// <summary>
         /// Link mở trang khóa học của tôi trong email thanh toán.
-        /// Ví dụ: http://localhost:3000/khong-gian-hoc-tap
+        /// Ví dụ: http://localhost:3000/hoc-vien/khoa-hoc-cua-toi
         /// </summary>
-        public string FrontendCourseUrl { get; set; } = "http://localhost:3000/khong-gian-hoc-tap";
+        public string FrontendCourseUrl { get; set; } = "http://localhost:3000/hoc-vien/khoa-hoc-cua-toi";
 
         /// <summary>
         /// Link ví / rút tiền giảng viên trong email xác nhận chuyển khoản.

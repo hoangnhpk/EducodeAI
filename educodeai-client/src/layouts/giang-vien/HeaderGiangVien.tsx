@@ -1,3 +1,4 @@
+import { MdLogout } from 'react-icons/md';
 import { authService } from '@/services/auth.service';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -11,8 +12,8 @@ export default function HeaderGiangVien() {
       text: "Bạn có chắc chắn muốn đăng xuất?",
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: 'var(--primary)',
-      cancelButtonColor: 'var(--danger)',
+      confirmButtonColor: '#fb873f',
+      cancelButtonColor: '#d33',
       confirmButtonText: 'Đăng xuất',
       cancelButtonText: 'Hủy'
     });
@@ -31,7 +32,7 @@ export default function HeaderGiangVien() {
       </div>
       <div className="gv-header-right d-flex align-items-center gap-3">
         <button className="btn btn-outline-danger d-flex align-items-center gap-2" onClick={handleLogout}>
-          <i className="fas fa-right-from-bracket" aria-hidden="true" /> Đăng xuất
+          <MdLogout /> Đăng xuất
         </button>
       </div>
     </header>

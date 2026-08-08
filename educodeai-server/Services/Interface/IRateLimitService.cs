@@ -4,7 +4,7 @@ namespace educodeai_server.Services.Interface
 {
     public interface IRateLimitService
     {
-        Task<QuotaReservation?> ReserveQuotaAsync(int keyId, int rpmLimit, int tpmLimit, int rpdLimit, int estimatedTokens);
-        Task CommitQuotaAsync(QuotaReservation reservation, int actualTokens);
+        Task<bool> ReserveQuotaAsync(int keyId, int rpmLimit, int tpmLimit, int rpdLimit, int estimatedTokens);
+        Task<bool> CommitQuotaAsync(int keyId, int actualTokens, int estimatedTokens);
     }
 }

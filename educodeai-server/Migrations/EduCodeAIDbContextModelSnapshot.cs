@@ -4552,9 +4552,6 @@ namespace educodeai_server.Migrations
                     b.Property<DateTime>("NgayThamGia")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("SecurityVersion")
-                        .HasColumnType("integer");
-
                     b.Property<string>("SoTaiKhoanNhanTien")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -4600,7 +4597,6 @@ namespace educodeai_server.Migrations
                             HoTen = "Nguyễn Quốc Hùng",
                             MatKhau = "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4",
                             NgayThamGia = new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityVersion = 0,
                             TaiKhoan = "admin",
                             TrangThai = "Hoạt động",
                             VaiTro = 0
@@ -4614,7 +4610,6 @@ namespace educodeai_server.Migrations
                             HoTen = "Trần Thị Giảng Viên",
                             MatKhau = "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4",
                             NgayThamGia = new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityVersion = 0,
                             TaiKhoan = "giangvien",
                             TrangThai = "Hoạt động",
                             VaiTro = 1
@@ -4628,7 +4623,6 @@ namespace educodeai_server.Migrations
                             HoTen = "Lê Văn Học Viên",
                             MatKhau = "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4",
                             NgayThamGia = new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc),
-                            SecurityVersion = 0,
                             TaiKhoan = "hocvien",
                             TrangThai = "Hoạt động",
                             VaiTro = 2
@@ -4682,9 +4676,6 @@ namespace educodeai_server.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTime?>("LastVerifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("MaNguoiDung")
                         .HasColumnType("integer");
 
@@ -4704,21 +4695,9 @@ namespace educodeai_server.Migrations
                     b.Property<DateTime>("ThoiGianHoatDongCuoi")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("TrustRevokedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("TrustVersion")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("TrustedUntilUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.HasKey("MaPhien");
 
-                    b.HasIndex("MaNguoiDung", "DangHoatDong");
-
-                    b.HasIndex("MaNguoiDung", "MaThietBi")
-                        .IsUnique();
+                    b.HasIndex("MaNguoiDung");
 
                     b.ToTable("PhienDangNhap");
                 });

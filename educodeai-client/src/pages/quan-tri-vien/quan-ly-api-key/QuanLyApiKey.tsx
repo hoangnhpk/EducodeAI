@@ -104,7 +104,7 @@ const QuanLyApiKey = () => {
       title: 'Hiển thị API Key?',
       text: 'Hành động này sẽ được ghi log. Bạn có chắc muốn xem Key này?',
       showCancelButton: true,
-      confirmButtonColor: 'var(--warning)',
+      confirmButtonColor: '#eab308',
       confirmButtonText: 'Hiển thị',
       cancelButtonText: 'Hủy'
     });
@@ -163,7 +163,7 @@ const QuanLyApiKey = () => {
       title: 'NGUY HIỂM: Reset Usage?',
       text: `Bạn có chắc muốn reset mức sử dụng của key "${key.tenKey}" về 0? Hệ thống sẽ tạo một baseline mới.`,
       showCancelButton: true,
-      confirmButtonColor: 'var(--danger)',
+      confirmButtonColor: '#ef4444',
       cancelButtonText: 'Hủy',
       confirmButtonText: 'Reset'
     });
@@ -197,8 +197,8 @@ const QuanLyApiKey = () => {
       title: 'Xóa API Key?',
       text: `Bạn có chắc muốn xóa key "${key.tenKey}" không? Hành động này không thể hoàn tác.`,
       showCancelButton: true,
-      confirmButtonColor: 'var(--danger)',
-      cancelButtonColor: 'var(--text-muted)',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
       confirmButtonText: 'Xóa',
       cancelButtonText: 'Hủy',
     });
@@ -237,7 +237,7 @@ const QuanLyApiKey = () => {
       fetchKeys(); // reload
     } catch (err) {
       console.error(err);
-      Swal.fire("Lỗi", editingKey ? "Lỗi cập nhật Key!" : "Lỗi khi tạo Key hoặc mất kết nối Server!", "error");
+      alert(editingKey ? "Lỗi cập nhật Key!" : "Lỗi khi tạo Key hoặc mất kết nối Server!");
     }
   };
 
@@ -292,18 +292,21 @@ const QuanLyApiKey = () => {
             </span>
           </div>
 
-          <div className="akm-pool-tools">
-            <div className="akm-search-group" style={{ width: '200px' }}>
-              <i className="bi bi-search akm-search-icon" aria-hidden="true"></i>
+          {/* Thay đổi đoạn này trong code của ông */}
+          <div className="d-flex align-items-center gap-2 flex-nowrap"> {/* Thêm flex-nowrap để cấm xuống hàng */}
+            <div className="input-group input-group-sm akm-search-group" style={{ width: '200px' }}> {/* Set cứng width hoặc dùng class w-50 */}
+              <span className="input-group-text bg-white border-end-0">
+                <i className="bi bi-search text-muted"></i>
+              </span>
               <input
                 type="text"
-                className="form-control"
+                className="form-control border-start-0 ps-0"
                 placeholder="Tìm key..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="btn btn-outline-secondary akm-refresh-btn" onClick={fetchKeys}>
+            <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 text-nowrap" onClick={fetchKeys}>
               <i className={`bi bi-arrow-clockwise ${isLoading ? "fa-spin" : ""}`}></i>
               Làm mới
             </button>

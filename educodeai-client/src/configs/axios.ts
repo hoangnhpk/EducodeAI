@@ -64,7 +64,7 @@ axiosClient.interceptors.response.use(
         import("sweetalert2").then((Swal) => {
           Swal.default.fire({
             title: "Tài khoản đã bị khóa!",
-            text: `Lý do: ${data.reason || "Vi phạm quy định hệ thống"}. Hệ thống sẽ tự động đăng xuất sau 5 giây...`,
+            html: `Lý do: <b>${data.reason || "Vi phạm quy định hệ thống"}</b><br/>Hệ thống sẽ tự động đăng xuất sau <b>5</b> giây...`,
             icon: "error",
             timer: 5000,
             timerProgressBar: true,
@@ -132,9 +132,9 @@ axiosClient.interceptors.response.use(
           import("sweetalert2").then((Swal) => {
             Swal.default.fire({
               title: isLocked ? "Tài khoản bị khóa!" : "Hết phiên đăng nhập!",
-            text: isLocked
-                ? `Lý do: ${errorData?.reason || "Vi phạm quy định"}. Hệ thống sẽ chuyển hướng sau 5 giây...`
-                : "Phiên làm việc của bạn đã kết thúc. Hệ thống sẽ chuyển hướng sau 3 giây...",
+              html: isLocked 
+                ? `Lý do: <b>${errorData?.reason || "Vi phạm quy định"}</b>. Hệ thống sẽ chuyển hướng sau <b>5</b> giây...`
+                : "Phiên làm việc của bạn đã kết thúc. Hệ thống sẽ chuyển hướng sau <b>3</b> giây...",
               icon: "error",
               timer: isLocked ? 5000 : 3000,
               timerProgressBar: true,

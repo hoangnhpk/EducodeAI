@@ -451,6 +451,7 @@ export default function DangKyGiangVien() {
       fd.append('LoaiGiayTo', scanDocType === 'cccd' ? 'CCCD' : 'Passport');
       fd.append('AnhMatTruoc', scanFront as File);
       fd.append('AnhMatSau', scanBack as File);
+      fd.append('NguyenQuan', form.nguyenQuan.trim());
 
       // axios interceptor da tra ve response.data
       const data: any = await authService.scanIdentityDocument(fd);
@@ -465,7 +466,7 @@ export default function DangKyGiangVien() {
       const diaChi = payload?.diaChi || payload?.DiaChi || '';
       const quocTich = payload?.quocTich || payload?.QuocTich || '';
       const nguyenQuan = payload?.nguyenQuan || payload?.NguyenQuan || '';
-      setField('nguyenQuan', nguyenQuan);
+      if (String(nguyenQuan).trim()) setField('nguyenQuan', String(nguyenQuan).trim());
       const thanhCong = payload?.thanhCong ?? payload?.ThanhCong ?? false;
 
       if (!thanhCong) {

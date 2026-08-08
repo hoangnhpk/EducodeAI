@@ -461,7 +461,7 @@ const PlaylistImportPage: React.FC<Props> = ({
       {/* Select Videos for Chapter GROUP Modal */}
       {activeGroupModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--bg-card)', width: '100%', maxWidth: 500, borderRadius: 12, padding: 20, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#fff', width: '100%', maxWidth: 500, borderRadius: 12, padding: 20, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ margin: '0 0 16px', fontSize: '1.1rem', fontWeight: 700 }}>Chọn video cho chương này</h3>
             <div style={{ marginBottom: 12, padding: '0 8px' }}>
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>

@@ -51,14 +51,14 @@ const QuizDetailView: React.FC<Props> = ({ data }) => {
   const danhSachCauHoi = Array.isArray(data?.danhSachCauHoi) ? data.danhSachCauHoi : [];
 
   return (
-    <div className="quiz-detail-view" style={{ padding: '24px', background: 'var(--bg-main)' }}>
+    <div className="quiz-detail-view" style={{ padding: '24px', background: '#f8fafc' }}>
       <div className="bg-white p-4 rounded-4 shadow-sm border mb-4">
         <div className="d-flex align-items-center mb-2">
           <div className="bg-primary bg-opacity-10 text-primary p-2 rounded-3 me-3">
             <i className="bi bi-patch-question fs-4" />
           </div>
           <div>
-            <h4 className="m-0 fw-bold" style={{ color: 'var(--text-main)' }}>{data?.tenBaiTap || 'Chi tiết Quiz'}</h4>
+            <h4 className="m-0 fw-bold" style={{ color: '#1e293b' }}>{data?.tenBaiTap || 'Chi tiết Quiz'}</h4>
             {(data?.tenKhoaHoc || data?.tenChuong || data?.tenBaiHoc) && (
               <div className="text-muted mt-1" style={{ fontSize: '13px' }}>
                 {[data.tenKhoaHoc, data.tenChuong, data.tenBaiHoc].filter(Boolean).join(' › ')}
@@ -104,11 +104,11 @@ const QuizDetailView: React.FC<Props> = ({ data }) => {
                   <div className="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '28px', height: '28px', fontSize: '14px', fontWeight: 700 }}>
                     {index + 1}
                   </div>
-                  <span className="fw-bold text-uppercase" style={{ fontSize: '13px', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Câu hỏi {index + 1}</span>
+                  <span className="fw-bold text-uppercase" style={{ fontSize: '13px', color: '#64748b', letterSpacing: '0.05em' }}>Câu hỏi {index + 1}</span>
                 </div>
 
                 <div className="p-4">
-                  <div className="mb-4" style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main)', lineHeight: '1.6' }}>
+                  <div className="mb-4" style={{ fontSize: '18px', fontWeight: 600, color: '#1e293b', lineHeight: '1.6' }}>
                     {getQuestionText(q) || '(Chưa có nội dung câu hỏi)'}
                   </div>
 
@@ -133,7 +133,7 @@ const QuizDetailView: React.FC<Props> = ({ data }) => {
                       <i className="bi bi-lightbulb text-warning fs-5" />
                       <div>
                         <div className="fw-bold text-warning-emphasis mb-1" style={{ fontSize: '14px' }}>Giải thích & đáp án:</div>
-                        <div style={{ fontSize: '14px', color: 'var(--warning-strong)' }}>
+                        <div style={{ fontSize: '14px', color: '#92400e' }}>
                           <span className="fw-bold me-2">Đáp án đúng: {correct || 'Chưa có'}</span>
                           <span className="text-secondary mx-2">|</span>
                           {getExplanation(q) || 'Không có giải thích cho câu hỏi này.'}

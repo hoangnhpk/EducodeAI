@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors,
@@ -9,7 +9,6 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ChuongHocDetail, BaiHocDetail } from '../types';
-import { useModalA11y } from '@/hooks/useModalA11y';
 import EmptyState from './ui/EmptyState';
 import ConfirmDialog from './ui/ConfirmDialog';
 import { ListItemSkeleton } from './ui/Skeleton';
@@ -116,11 +115,8 @@ interface ChapterModalProps {
 const ChapterModal: React.FC<ChapterModalProps> = ({ isOpen, editData, isLoading, onSave, onClose }) => {
   const [name, setName] = useState(editData?.tenChuong ?? '');
   const [err, setErr] = useState('');
-  const panelRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => { setName(editData?.tenChuong ?? ''); setErr(''); }, [editData, isOpen]);
-
-  useModalA11y(isOpen && !isLoading, onClose, panelRef);
 
   if (!isOpen) return null;
   const handleSave = () => {
@@ -130,10 +126,10 @@ const ChapterModal: React.FC<ChapterModalProps> = ({ isOpen, editData, isLoading
   };
   return (
     <div className="khm-modal-backdrop" onClick={onClose}>
-      <div className="khm-modal" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="chapter-modal-title" onClick={e => e.stopPropagation()}>
+      <div className="khm-modal" onClick={e => e.stopPropagation()}>
         <div className="khm-modal-header">
-          <h3 className="khm-modal-title" id="chapter-modal-title">{editData ? 'Chỉnh sửa chương' : 'Thêm chương mới'}</h3>
-          <button className="khm-modal-close" onClick={onClose} aria-label="Đóng">×</button>
+          <h3 className="khm-modal-title">{editData ? 'Chỉnh sửa chương' : 'Thêm chương mới'}</h3>
+          <button className="khm-modal-close" onClick={onClose}>×</button>
         </div>
         <div className="khm-modal-body">
           <div className="khm-form-group">

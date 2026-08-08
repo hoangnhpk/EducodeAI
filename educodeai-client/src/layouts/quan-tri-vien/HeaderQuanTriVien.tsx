@@ -12,7 +12,7 @@ export default function HeaderQuanTriVien() {
       text: "Bạn có chắc chắn muốn đăng xuất?",
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#f69050',
+      confirmButtonColor: '#fb873f',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Đăng xuất',
       cancelButtonText: 'Hủy'

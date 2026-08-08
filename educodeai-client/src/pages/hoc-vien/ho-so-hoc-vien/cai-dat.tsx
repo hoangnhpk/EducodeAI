@@ -1,7 +1,6 @@
 import { useState } from "react";
 import axios from "@/configs/axios";
 import Swal from "sweetalert2";
-import PasswordInput from "@/components/PasswordInput";
 
 const CaiDat = () => {
   const [emailNotif, setEmailNotif] = useState(true);
@@ -129,11 +128,32 @@ const CaiDat = () => {
             </div>
 
             <div className="modal-body">
-              <PasswordInput id="settings-mat-khau-cu" label="Mật khẩu hiện tại" autoComplete="current-password" containerClassName="form-group" value={matKhauCu} onChange={(e) => setMatKhauCu(e.target.value)} />
+              <div className="form-group">
+                <label>Mật khẩu hiện tại</label>
+                <input
+                  type="password"
+                  value={matKhauCu}
+                  onChange={(e) => setMatKhauCu(e.target.value)}
+                />
+              </div>
 
-              <PasswordInput id="settings-mat-khau-moi" label="Mật khẩu mới" autoComplete="new-password" containerClassName="form-group" value={matKhauMoi} onChange={(e) => setMatKhauMoi(e.target.value)} />
+              <div className="form-group">
+                <label>Mật khẩu mới</label>
+                <input
+                  type="password"
+                  value={matKhauMoi}
+                  onChange={(e) => setMatKhauMoi(e.target.value)}
+                />
+              </div>
 
-              <PasswordInput id="settings-mat-khau-xac-nhan" label="Xác nhận mật khẩu mới" autoComplete="new-password" containerClassName="form-group" value={xacNhan} onChange={(e) => setXacNhan(e.target.value)} />
+              <div className="form-group">
+                <label>Xác nhận mật khẩu mới</label>
+                <input
+                  type="password"
+                  value={xacNhan}
+                  onChange={(e) => setXacNhan(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="modal-actions">

@@ -2,42 +2,37 @@
    KhoaHocModule.css — Design System cho Module Khóa Học Của Tôi
    ============================================================ */
 
-/* ---------- Root Variables ----------
-   Repoint sang brand token toàn cục (variables.css). Giữ nguyên tên --khm-*
-   để không vỡ chỗ tham chiếu; brand = CAM (--primary), bỏ indigo. */
+/* ---------- Root Variables ---------- */
 :root {
-  --khm-primary: var(--primary);
-  --khm-primary-hover: var(--primary-hover);
-  --khm-primary-light: var(--primary-soft);
-  --khm-accent: var(--warning);
-  --khm-accent-light: var(--warning-soft);
-  --khm-success: var(--success);
-  --khm-success-light: var(--success-soft);
-  --khm-danger: var(--danger);
-  --khm-danger-light: var(--danger-soft);
-  --khm-warning: var(--warning);
-  --khm-warning-light: var(--warning-soft);
-  --khm-gray-50: var(--gray-50);
-  --khm-gray-100: var(--gray-100);
-  --khm-gray-200: var(--gray-200);
-  --khm-gray-300: var(--gray-300);
-  --khm-gray-400: var(--gray-400);
-  --khm-gray-500: var(--gray-500);
-  --khm-gray-600: var(--gray-600);
-  --khm-gray-700: var(--gray-700);
-  --khm-gray-800: var(--gray-800);
-  --khm-gray-900: var(--gray-900);
-  --khm-white: var(--bg-card);
-  --khm-radius: var(--radius-md);
+  --khm-primary: #6366f1;
+  --khm-primary-hover: #4f46e5;
+  --khm-primary-light: #eef2ff;
+  --khm-accent: #f59e0b;
+  --khm-accent-light: #fef3c7;
+  --khm-success: #10b981;
+  --khm-success-light: #d1fae5;
+  --khm-danger: #ef4444;
+  --khm-danger-light: #fee2e2;
+  --khm-warning: #f59e0b;
+  --khm-warning-light: #fef3c7;
+  --khm-gray-50: #f9fafb;
+  --khm-gray-100: #f3f4f6;
+  --khm-gray-200: #e5e7eb;
+  --khm-gray-300: #d1d5db;
+  --khm-gray-400: #9ca3af;
+  --khm-gray-500: #6b7280;
+  --khm-gray-600: #4b5563;
+  --khm-gray-700: #374151;
+  --khm-gray-800: #1f2937;
+  --khm-gray-900: #111827;
+  --khm-white: #ffffff;
+  --khm-radius: 12px;
   --khm-radius-sm: 8px;
-  --khm-radius-lg: var(--radius-lg);
-  --khm-shadow: var(--shadow-sm);
-  --khm-shadow-md: var(--shadow-md);
-  --khm-shadow-lg: var(--shadow-lg);
-  --khm-transition: var(--transition-fast);
-  /* ring cam mờ cho focus, thay cho rgba indigo */
-  --khm-focus-ring: 0 0 0 3px rgba(246, 144, 80, .18);
-  --khm-focus-ring-lg: 0 0 0 4px rgba(246, 144, 80, .14);
+  --khm-radius-lg: 16px;
+  --khm-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --khm-shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+  --khm-shadow-lg: 0 10px 25px rgba(0,0,0,.08), 0 4px 10px rgba(0,0,0,.06);
+  --khm-transition: 0.2s ease;
 }
 
 /* ---------- Layout ---------- */
@@ -51,64 +46,6 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 28px 24px;
-}
-
-.khm-wrapper > .khm-course-form-page,
-.khm-page.khm-course-form-page {
-  width: 100% !important;
-  max-width: 1000px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  text-align: left;
-  align-items: flex-start;
-}
-
-.khm-course-form-page .khm-breadcrumb,
-.khm-course-form-page .khm-page-header,
-.khm-course-form-page .khm-form-section {
-  width: 100% !important;
-  max-width: none !important;
-  margin-left: 0;
-  margin-right: 0;
-  text-align: left;
-}
-
-.khm-course-form-page .khm-page-header {
-  justify-content: flex-start;
-  align-items: center;
-}
-
-.khm-course-form-page .khm-form-section {
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.khm-course-form-page .khm-form-section-header,
-.khm-course-form-page .khm-form-section-body {
-  padding: 24px;
-}
-
-.khm-course-form-page .khm-form-group {
-  margin-bottom: 20px;
-}
-
-.khm-course-form-page .khm-form-input,
-.khm-course-form-page .khm-form-select,
-.khm-course-form-page .khm-form-textarea {
-  width: 100%;
-}
-
-@media (max-width: 640px) {
-  .khm-course-form-page .khm-page-header {
-    align-items: flex-start !important;
-    flex-direction: column;
-  }
-
-  .khm-course-form-page .khm-form-section-header,
-  .khm-course-form-page .khm-form-section-body {
-    padding: 20px;
-  }
 }
 
 /* ---------- Page Header ---------- */
@@ -163,7 +100,7 @@
 .khm-btn-primary:hover:not(:disabled) {
   background: var(--khm-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(246,144,80,0.35);
+  box-shadow: 0 4px 12px rgba(99,102,241,0.35);
 }
 
 .khm-btn-accent {
@@ -171,7 +108,7 @@
   color: white;
 }
 .khm-btn-accent:hover:not(:disabled) {
-  background: var(--warning-strong);
+  background: #d97706;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(245,158,11,0.35);
 }
@@ -201,7 +138,7 @@
   color: white;
 }
 .khm-btn-danger:hover:not(:disabled) {
-  background: var(--danger-strong);
+  background: #dc2626;
   transform: translateY(-1px);
 }
 
@@ -253,23 +190,23 @@
 }
 .khm-badge-published {
   background: var(--khm-success-light);
-  color: var(--success-strong);
+  color: #065f46;
 }
 .khm-badge-archived {
-  background: var(--khm-gray-100);
-  color: var(--khm-gray-600);
+  background: #f3e8ff;
+  color: #6b21a8;
 }
 .khm-badge-cert {
   background: var(--khm-accent-light);
-  color: var(--warning-strong);
+  color: #92400e;
 }
 .khm-badge-primary {
   background: var(--khm-primary-light);
-  color: var(--primary-dark);
+  color: #312e81;
 }
 .khm-badge-yt {
-  background: var(--danger-soft);
-  color: var(--danger-strong);
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 /* ---------- Form Elements ---------- */
@@ -305,7 +242,7 @@
 .khm-form-select:focus,
 .khm-form-textarea:focus {
   border-color: var(--khm-primary);
-  box-shadow: var(--khm-focus-ring);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
 }
 .khm-form-input.error,
 .khm-form-select.error,
@@ -486,7 +423,7 @@
 }
 .khm-search-input:focus {
   border-color: var(--khm-primary);
-  box-shadow: var(--khm-focus-ring);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
 }
 
 .khm-status-tabs {
@@ -531,7 +468,7 @@
 }
 .khm-category-select:focus {
   border-color: var(--khm-primary);
-  box-shadow: var(--khm-focus-ring);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
 }
 
 /* Sidebar giảng viên chiếm ~260px, nên breakpoint phải cao hơn 768px viewport
@@ -1020,75 +957,52 @@
 }
 .khm-alert-warning {
   background: var(--khm-warning-light);
-  color: var(--warning-strong);
-  border: 1px solid var(--warning);
+  color: #92400e;
+  border: 1px solid #fde68a;
 }
 .khm-alert-info {
   background: var(--khm-primary-light);
-  color: var(--primary-dark);
-  border: 1px solid var(--primary);
+  color: #312e81;
+  border: 1px solid #c7d2fe;
 }
 .khm-alert-danger {
   background: var(--khm-danger-light);
-  color: var(--danger-strong);
-  border: 1px solid var(--danger);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
 }
 .khm-alert-success {
   background: var(--khm-success-light);
-  color: var(--success-strong);
-  border: 1px solid var(--success);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
 }
 
 /* ---------- Stats row ---------- */
 .khm-stat-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  display: flex;
   gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 .khm-stat-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
   background: white;
   border: 1px solid var(--khm-gray-200);
-  border-radius: var(--khm-radius);
-  box-shadow: var(--khm-shadow);
-  padding: 16px 18px;
-  min-width: 0;
-  transition: box-shadow var(--khm-transition), transform var(--khm-transition);
-}
-.khm-stat-card:hover {
-  box-shadow: var(--khm-shadow-md);
-  transform: translateY(-1px);
-}
-.khm-stat-icon {
-  width: 44px;
-  height: 44px;
   border-radius: var(--khm-radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-  background: var(--khm-gray-100);
-  color: var(--khm-gray-500);
+  box-shadow: var(--khm-shadow);
+  padding: 14px 18px;
+  text-align: center;
+  min-width: 80px;
+  flex: 1;
 }
-.khm-stat-icon-primary { background: var(--primary-soft); color: var(--primary-dark); }
-.khm-stat-icon-success { background: var(--success-soft); color: var(--success-strong); }
-.khm-stat-icon-info { background: var(--info-soft); color: var(--info-strong); }
-.khm-stat-icon-warning { background: var(--warning-soft); color: var(--warning-strong); }
-.khm-stat-body { min-width: 0; }
 .khm-stat-value {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: var(--khm-gray-900);
-  line-height: 1.1;
+  line-height: 1;
 }
 .khm-stat-label {
   font-size: 0.72rem;
   color: var(--khm-gray-500);
-  margin-top: 2px;
+  margin-top: 4px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -1126,7 +1040,7 @@
 .khm-step-circle.active {
   background: var(--khm-primary);
   color: white;
-  box-shadow: var(--khm-focus-ring-lg);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.2);
 }
 .khm-step-circle.pending {
   background: var(--khm-gray-200);
@@ -1261,7 +1175,7 @@
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 2.5px solid rgba(246, 144, 80, .2);
+  border: 2.5px solid rgba(99,102,241,0.2);
   border-top-color: var(--khm-primary);
   border-radius: 50%;
   animation: khm-spin 0.7s linear infinite;
@@ -1299,7 +1213,7 @@
 }
 .khm-url-input:focus {
   border-color: var(--khm-primary);
-  box-shadow: var(--khm-focus-ring-lg);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
 }
 .khm-url-input.error { border-color: var(--khm-danger); }
 
@@ -1313,7 +1227,7 @@
 }
 .khm-progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--khm-primary), var(--khm-primary-hover));
+  background: linear-gradient(90deg, var(--khm-primary), #818cf8);
   border-radius: 50px;
   transition: width 0.4s ease;
 }
@@ -1386,60 +1300,5 @@
 .khm-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .khm-text-primary { color: var(--khm-primary); }
 .khm-font-semibold { font-weight: 600; }
-
-.subtitle-ai-title {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--ai-accent-hover);
-}
-
-.subtitle-ai-description {
-  display: block;
-  margin-bottom: 6px;
-}
-
-.subtitle-ai-cost {
-  margin-bottom: 6px;
-}
-
-.subtitle-ai-cost > strong {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--ai-accent-hover);
-  font-weight: 600;
-}
-
-.subtitle-ai-duration {
-  display: block;
-  margin-bottom: 6px;
-}
-
-.subtitle-ai-gdpr {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 12px;
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.5;
-  cursor: pointer;
-}
-
-.subtitle-ai-gdpr input {
-  width: auto;
-  flex: 0 0 auto;
-  margin: 3px 0 0;
-}
-
-.subtitle-ai-submit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 16px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 500;
-}
 .khm-relative { position: relative; }
 .khm-absolute-inset { position: absolute; inset: 0; }

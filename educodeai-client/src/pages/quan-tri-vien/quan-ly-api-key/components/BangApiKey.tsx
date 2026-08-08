@@ -139,7 +139,7 @@ const BangApiKey = ({ danhSach, revealedKeys, onSua, onKhoa, onCapMoi, onResetUs
                                         </div>
                                         <span className="akm-limit-pct">{rPctShow}</span>
                                     </div>
-                                    <div className="mt-1" style={{ fontSize: "11px", color: "var(--text-light)" }}>
+                                    <div className="mt-1" style={{ fontSize: "11px", color: "#8a94a6" }}>
                                         <i className="bi bi-info-circle me-1"></i> {key.rpmLimit} RPM · {key.tpmLimit >= 1000000 ? (key.tpmLimit/1000000) + "M" : key.tpmLimit} TPM
                                     </div>
                                 </td>
