@@ -452,9 +452,6 @@ export default function DangKyGiangVien() {
       fd.append('AnhMatTruoc', scanFront as File);
       fd.append('AnhMatSau', scanBack as File);
 
-      fd.append('NguyenQuan', form.nguyenQuan.trim());
-
-
       // axios interceptor da tra ve response.data
       const data: any = await authService.scanIdentityDocument(fd);
       if (generation !== identityScanGeneration.current) return;
@@ -468,9 +465,7 @@ export default function DangKyGiangVien() {
       const diaChi = payload?.diaChi || payload?.DiaChi || '';
       const quocTich = payload?.quocTich || payload?.QuocTich || '';
       const nguyenQuan = payload?.nguyenQuan || payload?.NguyenQuan || '';
-
-      if (String(nguyenQuan).trim()) setField('nguyenQuan', String(nguyenQuan).trim());
-
+      setField('nguyenQuan', nguyenQuan);
       const thanhCong = payload?.thanhCong ?? payload?.ThanhCong ?? false;
 
       if (!thanhCong) {
@@ -654,34 +649,34 @@ export default function DangKyGiangVien() {
     const inputId = `dkgv-upload-${errorKey}`;
     const errorId = `${inputId}-error`;
     return (
-      <div className="dkgv-upload-box-wrap">
-        <label className="dkgv-upload-box-label" htmlFor={inputId}>{label}</label>
-        <input
-          id={inputId}
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="visually-hidden"
-          aria-invalid={Boolean(errors[errorKey])}
-          aria-describedby={errors[errorKey] ? errorId : undefined}
-          onChange={(e) => onPick(e.target.files?.[0] || null)}
-        />
-        <button type="button" className={preview ? 'dkgv-upload-box dkgv-upload-has-preview' : 'dkgv-upload-box'} onClick={() => inputRef.current?.click()}>
-          {preview ? (
-            <div className="dkgv-preview-container">
-              <img src={preview} alt={`Xem trước ${label.toLowerCase()}`} className="dkgv-preview-img" />
-            </div>
-          ) : (
-            <>
-              <div className="dkgv-upload-box-icon" aria-hidden="true"><i className="bi bi-image" /></div>
-              <div className="dkgv-upload-box-title">Chọn ảnh để tải lên</div>
-              <div className="dkgv-upload-box-desc">Hỗ trợ JPG, PNG, WEBP (Tối đa 5MB)</div>
-            </>
-          )}
-        </button>
-        {file && <div className="small text-success mt-2" role="status">Đã chọn: {file.name}</div>}
-        {errors[errorKey] && <div id={errorId} className="text-danger small mt-1" role="alert">{errors[errorKey]}</div>}
-      </div>
+    <div className="dkgv-upload-box-wrap">
+      <label className="dkgv-upload-box-label" htmlFor={inputId}>{label}</label>
+      <input
+        id={inputId}
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="visually-hidden"
+        aria-invalid={Boolean(errors[errorKey])}
+        aria-describedby={errors[errorKey] ? errorId : undefined}
+        onChange={(e) => onPick(e.target.files?.[0] || null)}
+      />
+      <button type="button" className={preview ? 'dkgv-upload-box dkgv-upload-has-preview' : 'dkgv-upload-box'} onClick={() => inputRef.current?.click()}>
+        {preview ? (
+          <div className="dkgv-preview-container">
+            <img src={preview} alt={`Xem trước ${label.toLowerCase()}`} className="dkgv-preview-img" />
+          </div>
+        ) : (
+          <>
+            <div className="dkgv-upload-box-icon" aria-hidden="true"><i className="bi bi-image" /></div>
+            <div className="dkgv-upload-box-title">Chọn ảnh để tải lên</div>
+            <div className="dkgv-upload-box-desc">Hỗ trợ JPG, PNG, WEBP (Tối đa 5MB)</div>
+          </>
+        )}
+      </button>
+      {file && <div className="small text-success mt-2" role="status">Đã chọn: {file.name}</div>}
+      {errors[errorKey] && <div id={errorId} className="text-danger small mt-1" role="alert">{errors[errorKey]}</div>}
+    </div>
     );
   };
 

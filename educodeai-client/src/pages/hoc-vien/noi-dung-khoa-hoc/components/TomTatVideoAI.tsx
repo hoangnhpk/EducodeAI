@@ -9,11 +9,10 @@ interface VideoSummaryProps {
     maBaiHoc: number;
     phuDeGoc: string;
     linkVideo: string;
-    subtitleUrl?: string;
     tieuDe: string;
 }
 
-export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, linkVideo, subtitleUrl, tieuDe }) => {
+export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, linkVideo, tieuDe }) => {
     const [ketQuaTomTat, setKetQuaTomTat] = useState<string | null>(null);
     const [dangXuLy, setDangXuLy] = useState(false);
     const [loi, setLoi] = useState(false);
@@ -47,7 +46,6 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
                 MaBaiHoc: maBaiHoc,
                 PhuDeVideo: phuDeGoc || "",
                 VideoId: videoId,
-                SubtitleUrl: subtitleUrl || "",
                 TieuDe: tieuDe || ""
             });
 
@@ -74,11 +72,20 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
         }
     };
 
-    const handleLamMoi = () => {
-        localStorage.removeItem(storageKey);
-        setKetQuaTomTat(null);
-        xuLyTomTatVideo();
-    };
+    // const handleLamMoi = () => {
+    //     Swal.fire({
+    //         title: 'Bạn muốn AI phân tích và tóm tắt lại từ đầu?',
+    //         icon: 'question',
+    //         showCancelButton: true,
+    //         confirmButtonText: 'Có',
+    //         cancelButtonText: 'Hủy'
+    //     }).then(result => {
+    //         if (result.isConfirmed) {
+    //             localStorage.removeItem(storageKey);
+    //             xuLyTomTatVideo();
+    //         }
+    //     });
+    // }
 
     return (
         <div className="ai-summary-container">
@@ -94,7 +101,7 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
                     </button>
                 )}
 
-                {ketQuaTomTat && !dangXuLy && !loi && (
+                {ketQuaTomTat && !dangXuLy && (
                     <button
                         className="btn-ai-summarize"
                         onClick={xuLyCopy}
@@ -113,18 +120,18 @@ export const VideoSummary: React.FC<VideoSummaryProps> = ({ maBaiHoc, phuDeGoc, 
                 </div>
             )}
 
-            {(loi || (ketQuaTomTat && (ketQuaTomTat.includes("Educational content summarizer") || ketQuaTomTat.includes("Lỗi gọi AI")))) && !dangXuLy && (
+            {loi && !dangXuLy && (
                 <div style={{
-                    marginTop: '20px', padding: '16px', background: '#fef2f2',
-                    borderRadius: '8px', border: '1px solid #fca5a5', color: '#991b1b',
+                    marginTop: '20px', padding: '16px', background: 'var(--danger-soft)',
+                    borderRadius: '8px', border: '1px solid var(--danger)', color: 'var(--danger-strong)',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px'
                 }}>
                     <span>
-                        <i className="fas fa-exclamation-triangle me-2" style={{ color: '#dc2626' }}></i>
-                        Bản tóm tắt gặp sự cố hoặc xảy ra lỗi AI. Bạn có muốn tạo lại không?
+                        <i className="fas fa-exclamation-triangle me-2"></i>
+                        Đã có lỗi xảy ra khi gọi AI. Vui lòng thử lại.
                     </span>
-                    <button className="btn btn-danger btn-sm" onClick={handleLamMoi} style={{ borderRadius: '20px', fontWeight: 600 }}>
-                        <i className="fas fa-redo-alt me-1"></i> Tạo lại
+                    <button className="btn-ai-summarize" onClick={xuLyTomTatVideo}>
+                        <i className="fas fa-sync-alt me-1"></i> Thử lại
                     </button>
                 </div>
             )}

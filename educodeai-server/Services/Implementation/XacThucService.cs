@@ -1,4 +1,4 @@
-using educodeai_server.Data;
+﻿using educodeai_server.Data;
 using educodeai_server.DTOs.XacThuc;
 using educodeai_server.DTOs.NguoiDung;
 using EduCodeAI.DTOs;
@@ -237,10 +237,9 @@ namespace educodeai_server.Services.Implementation
             _memoryCache.Remove(accountCacheKey);
             _logger.LogInformation("Đăng nhập thành công cho user {UserId}.", user!.MaNguoiDung);
 
-
             var decision = UnifiedLoginPolicy.Decide(
                 LoginProvider.Password,
-                user!.DanhSachPhienDangNhap,
+                user.DanhSachPhienDangNhap,
                 request.MaThietBi,
                 user.SecurityVersion,
                 DateTime.UtcNow);
@@ -662,39 +661,15 @@ namespace educodeai_server.Services.Implementation
             string devId = string.IsNullOrEmpty(maThietBi) ? "FP-UNKNOWN-" + Guid.NewGuid().ToString("N").Substring(0, 8) : maThietBi;
             string deviceName = string.IsNullOrEmpty(tenThietBi) ? "Thiết bị không xác định" : tenThietBi;
             
-
-            // TÃ¬m phiÃªn Ä‘Äƒng nháº­p cÅ© dá»±a trÃªn Fingerprint cá»§a User nÃ y
-            var phien = u.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == devId);
-            
-            if (phien == null) { 
-                // Náº¿u lÃ  thiáº¿t bá»‹ hoÃ n toÃ n má»›i
-                phien = new PhienDangNhapModel { 
-                    MaNguoiDung = u.MaNguoiDung, 
-                    MaThietBi = devId, 
-                    TenThietBi = deviceName, 
-                    ThoiGianDangNhap = DateTime.UtcNow,
-                    ThoiGianHoatDongCuoi = DateTime.UtcNow,
-                    DangHoatDong = true,
-                    TrustedUntilUtc = DateTime.UtcNow.AddDays(30),
-                    LastVerifiedAtUtc = DateTime.UtcNow
-                }; 
-                _context.PhienDangNhaps.Add(phien); 
-            } else {
-                // Náº¿u thiáº¿t bá»‹ cÅ© quay láº¡i (ká»ƒ cáº£ khi Ä‘Ã£ xÃ³a cache trÃ¬nh duyá»‡t nhá» Fingerprint)
-                phien.ThoiGianHoatDongCuoi = DateTime.UtcNow;
-                phien.TrustRevokedAtUtc = null;
-                phien.TrustedUntilUtc ??= DateTime.UtcNow.AddDays(30);
-                phien.LastVerifiedAtUtc ??= DateTime.UtcNow;
-                phien.DangHoatDong = true;
-                phien.TenThietBi = deviceName; // LuÃ´n cáº­p nháº­t tÃªn thiáº¿t bá»‹ má»›i nháº¥t
-            }
-
-            object result;
-            await using var transaction = await _context.Database.BeginTransactionAsync();
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+            object? result = null;
+            await executionStrategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
                     var sessionUpsert = new SessionUpsert(_context);
-                    var activePhien = await sessionUpsert.GetOrCreateAsync(
+                    var phien = await sessionUpsert.GetOrCreateAsync(
                         u.MaNguoiDung,
                         devId,
                         deviceName,
@@ -706,7 +681,7 @@ namespace educodeai_server.Services.Implementation
 
                     var now = DateTime.UtcNow;
                     await _context.RefreshTokens
-                        .Where(t => t.MaPhien == activePhien.MaPhien && t.NgayThuHoi == null)
+                        .Where(t => t.MaPhien == phien.MaPhien && t.NgayThuHoi == null)
                         .ExecuteUpdateAsync(update => update
                             .SetProperty(t => t.NgayThuHoi, now)
                             .SetProperty(t => t.LyDoThuHoi, "LOGIN_REPLACED")
@@ -721,7 +696,7 @@ namespace educodeai_server.Services.Implementation
                     _context.RefreshTokens.Add(new RefreshTokenModel
                     {
                         MaNguoiDung = u.MaNguoiDung,
-                        MaPhien = activePhien.MaPhien,
+                        MaPhien = phien.MaPhien,
                         TokenHash = material.TokenHash,
                         FamilyId = material.FamilyId,
                         Jti = material.Jti,
@@ -734,7 +709,7 @@ namespace educodeai_server.Services.Implementation
                     await transaction.CommitAsync();
 
                     SetRefreshCookie(material.PlainToken, material.ExpiresAtUtc);
-                    var accessToken = _tokenService.CreateAccessToken(u, activePhien.MaPhien);
+                    var accessToken = _tokenService.CreateAccessToken(u, phien.MaPhien);
                     result = new
                     {
                         token = accessToken.Token,
@@ -756,7 +731,7 @@ namespace educodeai_server.Services.Implementation
                     await transaction.RollbackAsync();
                     throw;
                 }
-
+            });
 
             return result!;
         }
@@ -1055,16 +1030,7 @@ namespace educodeai_server.Services.Implementation
                 throw ApiException.InvalidRequest(verify.ErrorMessage ?? "Mã OTP không chính xác.");
 
             var payload = JsonSerializer.Deserialize<ThietBiOtpPayload>(verify.PayloadJson ?? "{}")!;
-
-            var session = user.DanhSachPhienDangNhap.FirstOrDefault(p => p.MaThietBi == payload.MaThietBi);
-            if (session != null)
-            {
-                session.TrustRevokedAtUtc = null;
-                session.TrustedUntilUtc = DateTime.UtcNow.AddDays(30);
-                session.LastVerifiedAtUtc = DateTime.UtcNow;
-            }
-            return await XuLyDangNhapThanhCongAsync(user, payload.MaThietBi, payload.TenThietBi);
-
+            return await XuLyDangNhapThanhCongAsync(user, payload.MaThietBi, payload.TenThietBi, grantTrust: true);
         }
 
         public async Task<object> YeuCauQuenMatKhauAsync(QuenMatKhauRequest r, string i) {

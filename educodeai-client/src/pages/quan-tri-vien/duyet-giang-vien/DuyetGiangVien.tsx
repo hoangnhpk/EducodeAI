@@ -3,7 +3,7 @@ import Swal from "sweetalert2";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { HoSoGiangVienAdminService } from "@/services/ho-so-giang-vien-admin.service";
 import type { HoSoGiangVienListItem, HoSoGiangVienDetail } from "@/services/ho-so-giang-vien-admin.service";
-import "../../../assets/styles/LayoutDashboard.css";
+import "../quan-ly-nguoi-dung/QuanLyNguoiDung.css";
 
 const TRANG_THAI_OPTIONS = [
   { value: "", label: "Tất cả trạng thái" },
@@ -208,7 +208,7 @@ export default function DuyetGiangVien() {
 
   const baseUrl = import.meta.env.VITE_API_URL || "";
   return (
-    <div className="qtv-page-content">
+    <div className="container-fluid py-4">
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
         <h3 className="fw-bold mb-0">Duyệt hồ sơ đăng ký giảng viên</h3>
       </div>

@@ -1,11 +1,7 @@
 ﻿/* ===========================
-   PAGE CONTAINER
-   Spacing dùng chung với các trang QTV
+   TOOLBAR
+   (Token global từ variables.css — KHÔNG khai báo lại :root)
 =========================== */
-.user-management-container {
-    min-height: 100%;
-}
-
 .toolbar {
     display: flex;
     align-items: center;

@@ -35,7 +35,7 @@ namespace educodeai_server.Helpers
             _rateLimitService = rateLimitService;
             _logger = logger;
             _secretKey = config["ApiSecurity:SecretKey"] ?? throw new Exception("Chưa cấu hình SecretKey!");
-            _modelName = config["GeminiAI:Model"] ?? "gemini-1.5-flash-latest";
+            _modelName = config["GeminiAI:Model"] ?? "gemini-1.5-flash";
         }
 
         private async Task<List<string>> LayDanhSachKeyHopLeTuRedisAsync()
@@ -181,32 +181,21 @@ namespace educodeai_server.Helpers
             }
         }
 
-        public async Task<string> GenerateAsync(string prompt, bool isJsonMode = false, string? systemInstruction = null)
+        public async Task<string> GenerateAsync(string prompt, bool isJsonMode = false)
         {
+
+
             return await AiRequestQueueHelper.EnqueueAsync(async () =>
             {
                 object config = isJsonMode 
                     ? new { temperature = 0.7, topP = 0.9, maxOutputTokens = 8192, responseMimeType = "application/json" }
                     : new { temperature = 0.7, topP = 0.9, maxOutputTokens = 8192 };
 
-                object requestBody;
-                if (!string.IsNullOrWhiteSpace(systemInstruction))
+                var requestBody = new
                 {
-                    requestBody = new
-                    {
-                        system_instruction = new { parts = new[] { new { text = systemInstruction } } },
-                        contents = new[] { new { parts = new[] { new { text = prompt } } } },
-                        generationConfig = config
-                    };
-                }
-                else
-                {
-                    requestBody = new
-                    {
-                        contents = new[] { new { parts = new[] { new { text = prompt } } } },
-                        generationConfig = config
-                    };
-                }
+                    contents = new[] { new { parts = new[] { new { text = prompt } } } },
+                    generationConfig = config
+                };
 
                 var hopLeKeys = await LayDanhSachKeyHopLeTuRedisAsync();
                 
@@ -226,9 +215,6 @@ namespace educodeai_server.Helpers
                     string modelSuDung = await _redisService.LayHashAsync(currentRedisKey, "ModelSuDung");
                     if (string.IsNullOrWhiteSpace(modelSuDung) || modelSuDung.Equals("All", StringComparison.OrdinalIgnoreCase)) modelSuDung = _modelName;
                     else if (modelSuDung.StartsWith("models/")) modelSuDung = modelSuDung.Substring(7);
-
-                    // HOTFIX: Google changed model aliases, force standard model name
-                    if (modelSuDung.Contains("gemini-1.5-flash") || modelSuDung == "gemini-pro") modelSuDung = "gemini-2.5-flash";
 
                     string requestUrl = $"v1beta/models/{modelSuDung}:generateContent?key={rawKey}";
 
@@ -288,7 +274,6 @@ namespace educodeai_server.Helpers
                                 {
                                     Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {actualTokens} tokens.");
                                 }
-
 
                                 await LuuLogVaoRedisQueue(currentRedisKey, actualTokens, (int)response.StatusCode, requestUrl);
                             }

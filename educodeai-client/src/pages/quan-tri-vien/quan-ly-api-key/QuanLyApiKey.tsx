@@ -250,7 +250,7 @@ const QuanLyApiKey = () => {
   );
 
   return (
-    <div className="akm-page qtv-page-content">
+    <div className="akm-page">
       {/* ======= HEADER ======= */}
       <div className="akm-header d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div className="d-flex align-items-center gap-3">
