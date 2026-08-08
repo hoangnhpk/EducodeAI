@@ -3059,7 +3059,6 @@ namespace educodeai_server.Migrations
                     b.ToTable("DanhGias");
                 });
 
-
             modelBuilder.Entity("educodeai_server.Models.DanhHieuModel", b =>
                 {
                     b.Property<int>("MaDanhHieu")
@@ -3154,7 +3153,6 @@ namespace educodeai_server.Migrations
 
                     b.ToTable("DoAnThucChiens");
                 });
-
 
             modelBuilder.Entity("educodeai_server.Models.DoanhThuGiangVienModel", b =>
                 {
@@ -4554,6 +4552,9 @@ namespace educodeai_server.Migrations
                     b.Property<DateTime>("NgayThamGia")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("SecurityVersion")
+                        .HasColumnType("integer");
+
                     b.Property<string>("SoTaiKhoanNhanTien")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -4599,6 +4600,7 @@ namespace educodeai_server.Migrations
                             HoTen = "Nguyễn Quốc Hùng",
                             MatKhau = "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4",
                             NgayThamGia = new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityVersion = 0,
                             TaiKhoan = "admin",
                             TrangThai = "Hoạt động",
                             VaiTro = 0
@@ -4612,6 +4614,7 @@ namespace educodeai_server.Migrations
                             HoTen = "Trần Thị Giảng Viên",
                             MatKhau = "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4",
                             NgayThamGia = new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityVersion = 0,
                             TaiKhoan = "giangvien",
                             TrangThai = "Hoạt động",
                             VaiTro = 1
@@ -4625,6 +4628,7 @@ namespace educodeai_server.Migrations
                             HoTen = "Lê Văn Học Viên",
                             MatKhau = "$2a$11$XcTfQrJ7G8hQ9vZkLmNOPuS5d6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4",
                             NgayThamGia = new DateTime(2025, 12, 31, 17, 0, 0, 0, DateTimeKind.Utc),
+                            SecurityVersion = 0,
                             TaiKhoan = "hocvien",
                             TrangThai = "Hoạt động",
                             VaiTro = 2
@@ -4678,6 +4682,9 @@ namespace educodeai_server.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTime?>("LastVerifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("MaNguoiDung")
                         .HasColumnType("integer");
 
@@ -4697,9 +4704,21 @@ namespace educodeai_server.Migrations
                     b.Property<DateTime>("ThoiGianHoatDongCuoi")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("TrustRevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TrustVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("TrustedUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("MaPhien");
 
-                    b.HasIndex("MaNguoiDung");
+                    b.HasIndex("MaNguoiDung", "DangHoatDong");
+
+                    b.HasIndex("MaNguoiDung", "MaThietBi")
+                        .IsUnique();
 
                     b.ToTable("PhienDangNhap");
                 });
@@ -4750,6 +4769,77 @@ namespace educodeai_server.Migrations
                     b.HasIndex("MaNguoiTang", "MaKhoaHoc", "CreatedAt");
 
                     b.ToTable("QuaTangKhoaHocs");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.RefreshTokenModel", b =>
+                {
+                    b.Property<long>("MaRefreshToken")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("MaRefreshToken"));
+
+                    b.Property<string>("FamilyId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("IpTao")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("IpThuHoi")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Jti")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("LyDoThuHoi")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("MaNguoiDung")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MaPhien")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("NgayTao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NgayThuHoi")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReplacedByTokenHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("ThoiGianHetHan")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("UserAgentTao")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("MaRefreshToken");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("MaPhien");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("MaNguoiDung", "NgayThuHoi", "ThoiGianHetHan");
+
+                    b.ToTable("RefreshToken");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.TestCaseThucHanhModel", b =>
@@ -5641,6 +5731,24 @@ namespace educodeai_server.Migrations
                     b.Navigation("NguoiNhan");
 
                     b.Navigation("NguoiTang");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.RefreshTokenModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "NguoiDung")
+                        .WithMany()
+                        .HasForeignKey("MaNguoiDung")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("educodeai_server.Models.PhienDangNhapModel", "PhienDangNhap")
+                        .WithMany()
+                        .HasForeignKey("MaPhien")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("NguoiDung");
+
+                    b.Navigation("PhienDangNhap");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.TestCaseThucHanhModel", b =>

@@ -18,6 +18,20 @@ namespace educodeai_server.Workers
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            try
+            {
+                await XuLyHangDoiAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // Tắt ứng dụng là đường đi bình thường, không phải lỗi. Nếu để exception này
+                // thoát ra khỏi ExecuteAsync, BackgroundService sẽ báo lỗi và dừng cả host.
+                _logger.LogInformation("LopHocEmailWorker dừng theo yêu cầu tắt ứng dụng.");
+            }
+        }
+
+        private async Task XuLyHangDoiAsync(CancellationToken stoppingToken)
+        {
             await foreach (var job in _queue.ReadAllAsync(stoppingToken))
             {
                 foreach (var nguoiNhan in job.NguoiNhan)

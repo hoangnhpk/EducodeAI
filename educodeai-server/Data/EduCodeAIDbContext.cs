@@ -62,6 +62,7 @@ namespace educodeai_server.Data
         public DbSet<DoAnThucChienModel> DoAnThucChiens { get; set; }
         public DbSet<ChungChiDoAnModel> ChungChiDoAns { get; set; }
         public DbSet<LichSuNapTienAIModel> LichSuNapTienAIs { get; set; }
+        public DbSet<RefreshTokenModel> RefreshTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
@@ -104,6 +105,28 @@ namespace educodeai_server.Data
             modelBuilder.Entity<MaQuaTangHocVienModel>().HasIndex(x => new { x.MaNguoiTang, x.TrangThai, x.CreatedAt });
             modelBuilder.Entity<HoSoDangKyGiangVienModel>().HasIndex(x => x.Email);
             modelBuilder.Entity<HoSoDangKyGiangVienModel>().HasIndex(x => x.MaNguoiDung).IsUnique();
+
+            // Session hot-path indexes (Phase G realtime session)
+            modelBuilder.Entity<PhienDangNhapModel>().HasIndex(p => new { p.MaNguoiDung, p.DangHoatDong });
+            modelBuilder.Entity<PhienDangNhapModel>().HasIndex(p => new { p.MaNguoiDung, p.MaThietBi }).IsUnique();
+
+            // Refresh token indexes (Phase C auth hardening)
+            modelBuilder.Entity<RefreshTokenModel>().HasIndex(r => r.TokenHash).IsUnique();
+            modelBuilder.Entity<RefreshTokenModel>().HasIndex(r => r.FamilyId);
+            modelBuilder.Entity<RefreshTokenModel>().HasIndex(r => new { r.MaNguoiDung, r.NgayThuHoi, r.ThoiGianHetHan });
+            modelBuilder.Entity<RefreshTokenModel>().HasIndex(r => r.MaPhien);
+
+            modelBuilder.Entity<RefreshTokenModel>()
+                .HasOne(r => r.NguoiDung)
+                .WithMany()
+                .HasForeignKey(r => r.MaNguoiDung)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RefreshTokenModel>()
+                .HasOne(r => r.PhienDangNhap)
+                .WithMany()
+                .HasForeignKey(r => r.MaPhien)
+                .OnDelete(DeleteBehavior.SetNull);
 
 
             // ====== RELATIONSHIPS CONFIGURATION ======

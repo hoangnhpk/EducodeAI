@@ -36,21 +36,13 @@ namespace educodeai_server.Controllers.GiangVien
         [HttpGet("chi-tiet/{maKhoaHoc}")]
         public async Task<IActionResult> GetChiTiet(int maKhoaHoc)
         {
-            try
-            {
-                var maGiangVien = GetMaGiangVien();
-                if (maGiangVien == 0) return Unauthorized();
-                
-                var result = await _service.GetChiTietKhoaHocAsync(maKhoaHoc, maGiangVien);
-                if (result == null)
-                    return NotFound(new { success = false, message = "Không tìm thấy khóa học" });
-                return Ok(new { success = true, data = result });
-            }
-            catch (Exception ex)
-            {
-                System.IO.File.WriteAllText("error_500.txt", ex.ToString());
-                throw;
-            }
+            var maGiangVien = GetMaGiangVien();
+            if (maGiangVien == 0) return Unauthorized();
+
+            var result = await _service.GetChiTietKhoaHocAsync(maKhoaHoc, maGiangVien);
+            if (result == null)
+                return NotFound(new { success = false, message = "Không tìm thấy khóa học" });
+            return Ok(new { success = true, data = result });
         }
 
         [HttpPost("tao-moi")]
@@ -130,9 +122,16 @@ namespace educodeai_server.Controllers.GiangVien
         {
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.ThemChuongAsync(maKhoaHoc, maGiangVien, dto);
-            return Ok(new { success = true, data = result });
+
+            try
+            {
+                var result = await _service.ThemChuongAsync(maKhoaHoc, maGiangVien, dto);
+                return Ok(new { success = true, data = result });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPut("cap-nhat-chuong/{maChuong}")]
@@ -140,11 +139,18 @@ namespace educodeai_server.Controllers.GiangVien
         {
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.CapNhatChuongAsync(maChuong, maGiangVien, dto);
-            if (!result)
-                return BadRequest(new { success = false, message = "Cập nhật chương thất bại" });
-            return Ok(new { success = true, message = "Cập nhật chương thành công" });
+
+            try
+            {
+                var result = await _service.CapNhatChuongAsync(maChuong, maGiangVien, dto);
+                if (!result)
+                    return BadRequest(new { success = false, message = "Cập nhật chương thất bại" });
+                return Ok(new { success = true, message = "Cập nhật chương thành công" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { success = false, message = ex.Message });
+            }
         }
 
         [HttpDelete("xoa-chuong/{maChuong}")]
@@ -152,11 +158,18 @@ namespace educodeai_server.Controllers.GiangVien
         {
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.XoaChuongAsync(maChuong, maGiangVien);
-            if (!result)
-                return BadRequest(new { success = false, message = "Xóa chương thất bại" });
-            return Ok(new { success = true, message = "Xóa chương thành công" });
+
+            try
+            {
+                var result = await _service.XoaChuongAsync(maChuong, maGiangVien);
+                if (!result)
+                    return BadRequest(new { success = false, message = "Xóa chương thất bại" });
+                return Ok(new { success = true, message = "Xóa chương thành công" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPost("them-video/{maChuong}")]
@@ -164,9 +177,16 @@ namespace educodeai_server.Controllers.GiangVien
         {
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.ThemVideoAsync(maChuong, maGiangVien, dto);
-            return Ok(new { success = true, data = result });
+
+            try
+            {
+                var result = await _service.ThemVideoAsync(maChuong, maGiangVien, dto);
+                return Ok(new { success = true, data = result });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPut("cap-nhat-video/{maBaiHoc}")]
@@ -174,11 +194,18 @@ namespace educodeai_server.Controllers.GiangVien
         {
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
-            
-            var result = await _service.CapNhatVideoAsync(maBaiHoc, maGiangVien, dto);
-            if (!result)
-                return BadRequest(new { success = false, message = "Cập nhật bài học thất bại" });
-            return Ok(new { success = true, message = "Cập nhật bài học thành công" });
+
+            try
+            {
+                var result = await _service.CapNhatVideoAsync(maBaiHoc, maGiangVien, dto);
+                if (!result)
+                    return BadRequest(new { success = false, message = "Cập nhật bài học thất bại" });
+                return Ok(new { success = true, message = "Cập nhật bài học thành công" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { success = false, message = ex.Message });
+            }
         }
 
         [HttpDelete("xoa-video/{maBaiHoc}")]
@@ -186,11 +213,18 @@ namespace educodeai_server.Controllers.GiangVien
         {
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
-            
-            var (success, message) = await _service.XoaVideoAsync(maBaiHoc, maGiangVien, env.WebRootPath);
-            if (!success)
-                return BadRequest(new { success = false, message });
-            return Ok(new { success = true, message });
+
+            try
+            {
+                var (success, message) = await _service.XoaVideoAsync(maBaiHoc, maGiangVien, env.WebRootPath);
+                if (!success)
+                    return BadRequest(new { success = false, message });
+                return Ok(new { success = true, message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPost("them-file/{maChuong}")]
@@ -199,8 +233,15 @@ namespace educodeai_server.Controllers.GiangVien
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
 
-            var result = await _service.ThemFileAsync(maChuong, maGiangVien, dto, env.WebRootPath);
-            return Ok(new { success = true, data = result });
+            try
+            {
+                var result = await _service.ThemFileAsync(maChuong, maGiangVien, dto, env.WebRootPath);
+                return Ok(new { success = true, data = result });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPut("cap-nhat-file/{maBaiHoc}")]
@@ -209,10 +250,17 @@ namespace educodeai_server.Controllers.GiangVien
             var maGiangVien = GetMaGiangVien();
             if (maGiangVien == 0) return Unauthorized();
 
-            var result = await _service.CapNhatFileAsync(maBaiHoc, maGiangVien, dto, env.WebRootPath);
-            if (!result)
-                return BadRequest(new { success = false, message = "Cập nhật bài học thất bại" });
-            return Ok(new { success = true, message = "Cập nhật bài học thành công" });
+            try
+            {
+                var result = await _service.CapNhatFileAsync(maBaiHoc, maGiangVien, dto, env.WebRootPath);
+                if (!result)
+                    return BadRequest(new { success = false, message = "Cập nhật bài học thất bại" });
+                return Ok(new { success = true, message = "Cập nhật bài học thành công" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPost("upload-hinh-anh")]

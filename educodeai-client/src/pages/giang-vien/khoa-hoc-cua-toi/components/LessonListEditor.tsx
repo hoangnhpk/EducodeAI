@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors,
@@ -9,7 +9,9 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import Swal from 'sweetalert2';
 import type { BaiHocDetail } from '../types';
+import { useModalA11y } from '@/hooks/useModalA11y';
 import EmptyState from './ui/EmptyState';
 import ConfirmDialog from './ui/ConfirmDialog';
 import { ListItemSkeleton } from './ui/Skeleton';
@@ -58,6 +60,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
   const [errors, setErrors] = useState<Record<string, string>>({});
   const isYT = editData?.linkVideo && getYTId(editData.linkVideo);
   const isCloudinary = editData?.videoSource === 'cloudinary';
+  const panelRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     setLoaiBaiHoc(editData?.loaiBaiHoc === 'File' ? 'File' : 'Video');
@@ -68,6 +71,8 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
     setFile(null);
     setErrors({});
   }, [editData, isOpen]);
+
+  useModalA11y(isOpen && !isLoading, onClose, panelRef);
 
   if (!isOpen) return null;
   const validate = () => {
@@ -93,10 +98,10 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
 
   return (
     <div className="khm-modal-backdrop" onClick={onClose}>
-      <div className="khm-modal khm-modal-lg" onClick={e => e.stopPropagation()}>
+      <div className="khm-modal khm-modal-lg" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="lesson-modal-title" onClick={e => e.stopPropagation()}>
         <div className="khm-modal-header">
-          <h3 className="khm-modal-title">{isEdit ? 'Chỉnh sửa bài học' : 'Thêm bài học mới'}</h3>
-          <button className="khm-modal-close" onClick={onClose}>×</button>
+          <h3 className="khm-modal-title" id="lesson-modal-title">{isEdit ? 'Chỉnh sửa bài học' : 'Thêm bài học mới'}</h3>
+          <button className="khm-modal-close" onClick={onClose} aria-label="Đóng">×</button>
         </div>
         <div className="khm-modal-body">
           {!isEdit && (
@@ -165,7 +170,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
                 onChange={e => {
                   const selectedFile = e.target.files?.[0] || null;
                   if (selectedFile && selectedFile.size > MAX_CLOUDINARY_VIDEO_MB * 1024 * 1024) {
-                    alert(`Dung lượng file vượt quá ${(MAX_CLOUDINARY_VIDEO_MB / 1024).toFixed(0)}GB.`);
+                    void Swal.fire('Vượt dung lượng', `Dung lượng file vượt quá ${(MAX_CLOUDINARY_VIDEO_MB / 1024).toFixed(0)}GB.`, 'warning');
                     setFile(null);
                     return;
                   }
@@ -180,7 +185,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
               {errors.file && <div className="khm-form-error">⚠ {errors.file}</div>}
               {uploadProgress !== null && (
                 <div className="khm-mt-8">
-                  <div style={{ background: '#e2e8f0', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                  <div style={{ background: 'var(--khm-gray-200)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
                     <div style={{ background: 'var(--khm-primary)', height: '100%', width: `${uploadProgress}%`, transition: 'width 0.2s' }} />
                   </div>
                   <div className="khm-text-sm khm-text-muted khm-mt-4 khm-flex khm-gap-8 khm-items-center">
@@ -222,25 +227,19 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
 
 // ---- Video Preview Modal ----
 const VideoPreviewModal: React.FC<{ lesson: BaiHocDetail | null; onClose: () => void }> = ({ lesson, onClose }) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(!!lesson, onClose, panelRef);
+
   if (!lesson) return null;
   const ytId = getYTId(lesson.linkVideo);
   const isFile = lesson.loaiBaiHoc === 'File';
 
-  // Debug: Log subtitle info
-  console.log('VideoPreviewModal - lesson:', {
-    maBaiHoc: lesson.maBaiHoc,
-    tieuDe: lesson.tieuDe,
-    hasSubtitle: lesson.hasSubtitle,
-    subtitleUrl: lesson.subtitleUrl,
-    videoSource: lesson.videoSource
-  });
-
   return (
     <div className="khm-modal-backdrop" onClick={onClose}>
-      <div className="khm-modal khm-modal-lg" onClick={e => e.stopPropagation()}>
+      <div className="khm-modal khm-modal-lg" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="video-preview-title" onClick={e => e.stopPropagation()}>
         <div className="khm-modal-header">
-          <h3 className="khm-modal-title khm-truncate">{lesson.tieuDe}</h3>
-          <button className="khm-modal-close" onClick={onClose}>×</button>
+          <h3 className="khm-modal-title khm-truncate" id="video-preview-title">{lesson.tieuDe}</h3>
+          <button className="khm-modal-close" onClick={onClose} aria-label="Đóng">×</button>
         </div>
         <div className="khm-modal-body khm-p-0">
           {isFile ? (
@@ -351,10 +350,10 @@ const LessonRow: React.FC<{
             <span>#{index + 1}</span>
             {lesson.thoiLuong > 0 && <span>⏱ {formatDur(lesson.thoiLuong)}</span>}
             {isYT && <span className="khm-badge khm-badge-yt" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>YouTube</span>}
-            {lesson.videoSource === 'cloudinary' && <span className="khm-badge" style={{ background: '#e0e7ff', color: '#4338ca', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>Cloudinary</span>}
-            {lesson.hasSubtitle && <span className="khm-badge" style={{ background: '#dcfce7', color: '#166534', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>CC</span>}
-            {lesson.videoStatus === 'Processing_Subtitle' && <span className="khm-badge" style={{ background: '#fef9c3', color: '#854d0e', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>Đang tạo Phụ đề...</span>}
-            {isFile && <span className="khm-badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>Tài liệu</span>}
+            {lesson.videoSource === 'cloudinary' && <span className="khm-badge" style={{ background: 'var(--khm-gray-100)', color: 'var(--khm-gray-600)', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>Cloudinary</span>}
+            {lesson.hasSubtitle && <span className="khm-badge" style={{ background: 'var(--success-soft)', color: 'var(--success-strong)', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>CC</span>}
+            {lesson.videoStatus === 'Processing_Subtitle' && <span className="khm-badge" style={{ background: 'var(--warning-soft)', color: 'var(--warning-strong)', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>Đang tạo Phụ đề...</span>}
+            {isFile && <span className="khm-badge" style={{ background: 'var(--info-soft)', color: 'var(--info-strong)', fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4 }}>Tài liệu</span>}
           </div>
         </div>
 
@@ -364,9 +363,9 @@ const LessonRow: React.FC<{
           )}
           {lesson.videoSource === 'cloudinary' && (
             lesson.hasSubtitle ? (
-              <span className="khm-btn khm-btn-sm khm-btn-icon" style={{ color: '#166534', cursor: 'default' }} title="Đã có phụ đề">✓ CC</span>
+              <span className="khm-btn khm-btn-sm khm-btn-icon" style={{ color: 'var(--success-strong)', cursor: 'default' }} title="Đã có phụ đề">✓ CC</span>
             ) : lesson.videoStatus === 'Processing_Subtitle' ? (
-              <span className="khm-btn khm-btn-sm khm-btn-icon" style={{ color: '#854d0e', cursor: 'default' }} title="Đang tạo phụ đề">⏳</span>
+              <span className="khm-btn khm-btn-sm khm-btn-icon" style={{ color: 'var(--warning-strong)', cursor: 'default' }} title="Đang tạo phụ đề">⏳</span>
             ) : (
               <button className="khm-btn khm-btn-ghost khm-btn-sm khm-btn-icon" onClick={() => onManageSubtitle(lesson)} title="Quản lý Phụ đề">CC</button>
             )
@@ -427,7 +426,7 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, tenChuong, ini
               ▶ Import YouTube
             </button>
           )}
-          <button className="khm-btn khm-btn-secondary khm-btn-sm" onClick={() => setBulkModalOpen(true)} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1' }}>
+          <button className="khm-btn khm-btn-secondary khm-btn-sm" onClick={() => setBulkModalOpen(true)} style={{ background: 'var(--khm-gray-100)', color: 'var(--khm-gray-700)', border: '1px solid var(--khm-gray-300)' }}>
             📥 Tải lên Hàng loạt
           </button>
           <button className="khm-btn khm-btn-primary khm-btn-sm" onClick={() => { setEditTarget(null); setModalOpen(true); }}>

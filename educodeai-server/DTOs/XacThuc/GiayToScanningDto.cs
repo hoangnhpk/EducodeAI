@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 
 namespace educodeai_server.DTOs.XacThuc
@@ -14,6 +15,9 @@ namespace educodeai_server.DTOs.XacThuc
         [Required]
         [RegularExpression(@"^(CCCD|Passport)$", ErrorMessage = "Loại giấy tờ phải là CCCD hoặc Passport")]
         public string LoaiGiayTo { get; set; } = "CCCD";
+
+        [StringLength(255)]
+        public string? NguyenQuan { get; set; }
     }
 
     public class GiayToScanningResponse
@@ -31,5 +35,16 @@ namespace educodeai_server.DTOs.XacThuc
         public string? DanToc { get; set; }
         public string? TonGiao { get; set; }
         public string? NguyenQuan { get; set; }
+
+        [JsonIgnore]
+        public string ContractVersion { get; set; } = "identity-scan.v2";
+        [JsonIgnore]
+        public string Status { get; set; } = "Rejected";
+        [JsonIgnore]
+        public string AssuranceLevel { get; set; } = "None";
+        [JsonIgnore]
+        public string? FailureCode { get; set; }
+        [JsonIgnore]
+        public string PolicyVersion { get; set; } = "cccd-policy.v1";
     }
 }

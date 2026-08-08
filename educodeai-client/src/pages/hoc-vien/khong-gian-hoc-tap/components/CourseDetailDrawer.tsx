@@ -48,6 +48,9 @@ export default function CourseDetailDrawer({ course, maLoTrinh, onClose }: Props
             src={imgSrc}
             alt=""
             onError={(e) => {
+              // Chặn vòng lặp khi chính ảnh mặc định (ảnh ngoài) cũng lỗi.
+              if (e.currentTarget.dataset.fallback === '1') return;
+              e.currentTarget.dataset.fallback = '1';
               e.currentTarget.src = defaultImg;
             }}
           />

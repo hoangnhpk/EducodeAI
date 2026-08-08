@@ -18,6 +18,10 @@ namespace educodeai_server.Repository.Interface
         Task<KhoaHocModel?> GetKhoaHocWithDetailsAsync(int maKhoaHoc);
         Task<List<KhoaHocModel>> GetKhoaHocsByGiangVienAsync(int maGiangVien);
 
+        // Overlay cá nhân hóa nhẹ (dùng khi chi tiết khóa học lấy từ cache public)
+        Task<List<int>> GetMaBaiHocDaXemAsync(int maKhoaHoc, int maNguoiDung);
+        Task<(BaiKiemTraChungChiDTO? BaiKiemTra, ThongTinChungChiDTO? ThongTin)> LayChungChiCaNhanAsync(int maKhoaHoc, int maNguoiDung);
+
         // 4. Tiến độ, ghi chú và bài tập
         Task<bool> LuuTienDoBaiHoc(TienDoBaiHocDTO dto);
         Task<bool> LuuGhiChuBaiHoc(GhiChuBaiHocDTO dto);

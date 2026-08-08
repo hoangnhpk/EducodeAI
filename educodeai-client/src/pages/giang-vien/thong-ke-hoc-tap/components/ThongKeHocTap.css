@@ -1,15 +1,15 @@
 /* ===== STAT CARD ===== */
 .stat-card {
-  background: #ffffff;
-  border-radius: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-normal);
 }
 
 .stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 /* ===== HEADER ===== */
@@ -24,54 +24,55 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #9ca3af;
+  color: var(--text-light);
   margin-bottom: 8px;
 }
 
 .stat-value {
   font-size: 32px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--text-dark);
   margin-bottom: 4px;
 }
 
 .stat-subtitle {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 /* ===== ICON ===== */
 .stat-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: var(--text-white);
+  font-size: 20px;
 }
 
-/* ===== ICON GRADIENTS ===== */
+/* ===== ICON GRADIENTS (mỗi thẻ 1 tông semantic) ===== */
 .icon-purple {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: var(--ai-accent);
 }
 
 .icon-blue {
-  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  background: var(--info);
 }
 
 .icon-yellow {
-  background: linear-gradient(135deg, #f59e0b, #facc15);
+  background: var(--warning);
 }
 
 .icon-green {
-  background: linear-gradient(135deg, #10b981, #22c55e);
+  background: var(--success);
 }
 
 /* ===== PAGE ===== */
 .thong-ke-container {
   padding: 24px;
-  background: #f9fafb;
+  background: var(--bg-main);
 }
 
 /* ===== HEADER ===== */
@@ -83,7 +84,7 @@
 
 .thong-ke-page-header p {
   font-size: 14px;
-  color: #000000;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -117,32 +118,54 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 
 .student-header h3 {
+  margin: 0;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--text-dark);
 }
 
 /* ===== SEARCH ===== */
 .search-box {
   position: relative;
+  min-width: 240px;
+  flex: 0 1 280px;
 }
 
-.search-box svg {
+.search-box svg,
+.search-box > i {
   position: absolute;
-  left: 10px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--text-light);
+  pointer-events: none;
+  font-size: 13px;
 }
 
 .search-box input {
-  padding: 8px 12px 8px 36px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 14px;
   outline: none;
+}
+
+.search-box input::placeholder {
+  color: var(--text-light);
+}
+
+.search-box input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.18);
 }
 
 /* ===== BOTTOM GRID ===== */
@@ -169,10 +192,10 @@
 
 /* ===== CHART CARD ===== */
 .chart-card {
-  background: #ffffff;
-  border-radius: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
 }
 
 /* ===== CHART TITLE ===== */
@@ -193,11 +216,11 @@
 }
 
 .chart-title.blue::before {
-  background: #3b82f6;
+  background: var(--info);
 }
 
 .chart-title.green::before {
-  background: #10b981;
+  background: var(--success);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -218,13 +241,13 @@
 .income-section-header h3 {
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-dark);
   margin: 0;
 }
 
 .income-section-header p {
   margin-top: 4px;
-  color: #4b5563;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -236,11 +259,11 @@
 }
 
 .income-overview-card {
-  background: linear-gradient(145deg, #ffffff, #f8fafc);
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 16px;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -248,15 +271,15 @@
 
 .income-overview-card strong {
   font-size: 20px;
-  color: #111827;
+  color: var(--text-main);
 }
 
 .income-overview-card small {
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .income-label {
-  color: #334155;
+  color: var(--text-muted);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -289,7 +312,7 @@
 .income-group-tabs button.active {
   background: var(--primary);
   border-color: var(--primary);
-  color: #ffffff;
+  color: var(--text-white);
 }
 
 .income-empty-state {
@@ -297,14 +320,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 .income-course-table-wrapper {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-md);
   margin-top: 8px;
 }
 
@@ -321,20 +344,20 @@
 
 .income-course-table th,
 .income-course-table td {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
   padding: 10px 8px;
   text-align: left;
   font-size: 14px;
 }
 
 .income-course-table th {
-  color: #334155;
+  color: var(--text-main);
   font-weight: 700;
 }
 
 .income-empty-row {
   text-align: center !important;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 
 @media (max-width: 1200px) {

@@ -78,7 +78,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--success-strong);
   background: var(--success-soft);
@@ -131,7 +131,7 @@
   background: rgba(255,255,255,0.25);
   border-radius: 999px;
   padding: 1px 7px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   min-width: 18px;
   text-align: center;
@@ -319,7 +319,7 @@
 
 .qtrv-settings-field label p {
   margin: 2px 0 0;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
@@ -485,7 +485,7 @@
 }
 
 .qtrv-card__label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--rc-muted);
   text-transform: uppercase;
@@ -518,7 +518,7 @@
 
 .qtrv-rating-panel__header h3 {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--rc-muted);
   text-transform: uppercase;
@@ -551,7 +551,7 @@
 }
 
 .qtrv-stars-inline > span {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--rc-muted);
   margin-left: 6px;
 }
@@ -708,13 +708,13 @@
 .qtrv-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .qtrv-table thead th {
   padding: 10px 14px;
   background: var(--bg-main);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -753,14 +753,14 @@
 }
 
 .qtrv-user-cell strong {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--rc-text);
   font-weight: 600;
   display: block;
 }
 
 .qtrv-user-cell span {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--rc-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -773,8 +773,8 @@
 .qtrv-linked-cell {
   max-width: 200px;
 }
-.qtrv-linked-cell strong { 
-  font-size: 13px; 
+.qtrv-linked-cell strong {
+  font-size: 14px;
   font-weight: 600; 
   color: var(--rc-text); 
   display: block;
@@ -783,7 +783,7 @@
   text-overflow: ellipsis;
 }
 .qtrv-linked-cell span { 
-  font-size: 11.5px; 
+  font-size: 12px; 
   color: var(--rc-muted); 
   display: block;
   white-space: nowrap;
@@ -794,7 +794,7 @@
 /* Content Cell */
 .qtrv-content-cell p {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--rc-muted);
   line-height: 1.5;
 }
@@ -1006,7 +1006,7 @@
 }
 
 .qtrv-detail-card label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--rc-muted);
@@ -1015,13 +1015,13 @@
 }
 
 .qtrv-detail-card strong { font-size: 13px; display: block; }
-.qtrv-detail-card small  { font-size: 11px; color: var(--rc-muted); }
+.qtrv-detail-card small  { font-size: 12px; color: var(--rc-muted); }
 
 .qtrv-detail-content {
   background: var(--bg-main);
   border-radius: 8px;
   padding: 14px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.7;
   color: var(--rc-text);
   white-space: pre-wrap;

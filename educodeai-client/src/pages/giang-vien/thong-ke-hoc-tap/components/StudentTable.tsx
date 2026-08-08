@@ -1,5 +1,4 @@
 ﻿import type { HocVien } from "./Types";
-import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import "./css/student-table.css";
 
 interface Props {
@@ -23,9 +22,9 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
   };
 
   const getProgressClass = (tienDo: number) => {
-    if (tienDo >= 80) return "progress-green";
-    if (tienDo >= 50) return "progress-yellow";
-    return "progress-red";
+    if (tienDo >= 80) return "is-high";
+    if (tienDo >= 50) return "is-mid";
+    return "is-low";
   };
 
   const getName = (hocVien: HocVien) => hocVien.tenHocVien?.trim() || hocVien.hoTen?.trim() || "—";
@@ -51,82 +50,103 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
 
   return (
     <div className="student-table-card">
-      <table className="student-table">
-        <thead>
-          <tr>
-            <th>Họ tên</th>
-            <th>Email</th>
-            <th>% Hoàn thành</th>
-            <th>Số bài đã nộp</th>
-            <th>Tổng giờ học</th>
-            <th>Trạng thái</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
+      <div className="student-table-scroll">
+        <table className="student-table">
+          <thead>
+            <tr>
+              <th>Họ tên</th>
+              <th>Email</th>
+              <th>% Hoàn thành</th>
+              <th>Số bài đã nộp</th>
+              <th>Tổng giờ học</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {students.map((hocVien, rowIndex) => {
-            const progress = getProgress(hocVien);
-            return (
-              <tr key={hocVien.maHocVien ?? hocVien.maNguoiDung ?? `student-${rowIndex}`}>
-                <td>
-                  <div className="student-info">
-                    {getAvatar(hocVien)}
-                    <strong>{getName(hocVien)}</strong>
-                  </div>
-                </td>
-
-                <td>{hocVien.email?.trim() || "—"}</td>
-
-                <td>
-                  <div className="progress-wrapper">
-                    <div className="progress-bar">
-                      <div className={`progress-fill ${getProgressClass(progress)}`} style={{ width: `${progress}%` }} />
+          <tbody>
+            {students.map((hocVien, rowIndex) => {
+              const progress = Math.min(100, Math.max(0, getProgress(hocVien)));
+              return (
+                <tr key={hocVien.maHocVien ?? hocVien.maNguoiDung ?? `student-${rowIndex}`}>
+                  <td>
+                    <div className="student-info">
+                      {getAvatar(hocVien)}
+                      <strong title={getName(hocVien)}>{getName(hocVien)}</strong>
                     </div>
-                    <strong>{progress.toFixed(1)}%</strong>
-                  </div>
-                </td>
+                  </td>
 
-                <td>
-                  <span className="assignment-badge">{getAssignments(hocVien)}</span>
-                </td>
+                  <td>
+                    <span className="student-email" title={hocVien.email?.trim() || undefined}>
+                      {hocVien.email?.trim() || "—"}
+                    </span>
+                  </td>
 
-                <td className="avg-score">{getStudyMetric(hocVien)}</td>
+                  <td>
+                    <div className="st-progress">
+                      <div className="st-progress-track" aria-hidden="true">
+                        <span
+                          className={`st-progress-fill ${getProgressClass(progress)}`}
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <strong className="st-progress-value">{progress.toFixed(1)}%</strong>
+                    </div>
+                  </td>
 
-                <td>{getStatusBadge(hocVien.trangThai ?? "")}</td>
+                  <td>
+                    <span className="assignment-badge">{getAssignments(hocVien)}</span>
+                  </td>
 
-                <td>
-                  <button className="detail-btn">
-                    <Eye size={16} />
-                    Chi tiết
-                  </button>
+                  <td className="avg-score">{getStudyMetric(hocVien)}</td>
+
+                  <td>{getStatusBadge(hocVien.trangThai ?? "")}</td>
+
+                  <td>
+                    <button type="button" className="detail-btn" aria-label={`Xem chi tiết ${getName(hocVien)}`}>
+                      <i className="fas fa-eye" aria-hidden="true" />
+                      Chi tiết
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+
+            {students.length === 0 && (
+              <tr>
+                <td colSpan={7} className="student-table-empty">
+                  Không tìm thấy học viên
                 </td>
               </tr>
-            );
-          })}
-
-          {students.length === 0 && (
-            <tr>
-              <td colSpan={8} style={{ textAlign: "center", padding: 24 }}>
-                Không tìm thấy học viên
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {totalPages > 1 && (
-        <div className="pagination">
-          <button className="pagination-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>
-            <ChevronLeft size={18} />
+        <div className="student-pagination">
+          <button
+            type="button"
+            className="student-pagination-btn"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <i className="fas fa-chevron-left" aria-hidden="true" />
             Trước
           </button>
 
-          <div className="pagination-info">Trang {currentPage} / {totalPages}</div>
+          <div className="student-pagination-info">
+            Trang {currentPage} / {totalPages}
+          </div>
 
-          <button className="pagination-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+          <button
+            type="button"
+            className="student-pagination-btn"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
             Sau
-            <ChevronRight size={18} />
+            <i className="fas fa-chevron-right" aria-hidden="true" />
           </button>
         </div>
       )}

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Text.Json;
+using educodeai_server.Constants;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using educodeai_server.Repository.Interface;
@@ -43,7 +44,7 @@ namespace educodeai_server.Helpers
             var keys = new List<string>();
             try
             {
-                keys = _redisService.LayDanhSachKeyTheoPattern("EduCodeAI:KeyPool:*").ToList();
+                keys = _redisService.LayDanhSachKeyTheoPattern(CacheKeys.KeyPoolPattern).ToList();
                 foreach (var k in keys)
                 {
                     var trangThaiStr = await _redisService.LayHashAsync(k, "TrangThai");
@@ -56,7 +57,7 @@ namespace educodeai_server.Helpers
                         if (parts.Length >= 3 && int.TryParse(parts[2], out int keyId))
                         {
                             string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
-                            var reqUsedStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{keyId}:{homNaySuffix}");
+                            var reqUsedStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageRpd(keyId, homNaySuffix));
                             int.TryParse(reqUsedStr ?? "0", out int used);
                             
                             if (max > 0 && used < max)
@@ -82,7 +83,7 @@ namespace educodeai_server.Helpers
                     {
                         if (key.TrangThai && key.RPDLimit > 0)
                         {
-                            var redisKey = $"EduCodeAI:KeyPool:{key.ID}";
+                            var redisKey = CacheKeys.KeyPool(key.ID);
                             
                             // Äông bá key vào Redis/MemoryCache
                             await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", key.MaKeyMaHoa);
@@ -230,7 +231,8 @@ namespace educodeai_server.Helpers
                     // Estimate Tokens: roughly 0.3 tokens per char for prompt
                     int estimatedTokens = (int)Math.Ceiling(prompt.Length * 0.3) + 200; // 200 overhead
 
-                    if (!await _rateLimitService.ReserveQuotaAsync(keyId, rpmLimit, tpmLimit, rpdLimit, estimatedTokens))
+                    var reservation = await _rateLimitService.ReserveQuotaAsync(keyId, rpmLimit, tpmLimit, rpdLimit, estimatedTokens);
+                    if (reservation == null)
                     {
                         Console.WriteLine($"[RateLimit] Key {currentRedisKey} bị giới hạn (RPM/TPM/RPD). Đang chuyển Key khác...");
                         soLanThuLai++;
@@ -238,48 +240,39 @@ namespace educodeai_server.Helpers
                     }
 
 
-                    HttpResponseMessage response = null;
-                    int actualTokens = 0;
-
+                    // Quota đã được INCR trên Redis. Mọi đường thoát khỏi vòng lặp này
+                    // (return / continue / throw / exception bất ngờ) đều phải commit lại,
+                    // nếu không estimatedTokens sẽ kẹt trong bucket TPM/ngày đến khi hết hạn.
+                    bool daHoanQuota = false;
                     try
                     {
-                        response = await _http.PostAsJsonAsync(requestUrl, requestBody);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[Gemini Lỗi Kết Nối] Google từ chối phũ phàng với key {currentRedisKey}. Chi tiết: {ex.Message}. Đang thử key khác...");
-                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
-                        soLanThuLai++;
-                        await Task.Delay(2000);
-                        continue;
-                    }
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var responseBody = await response.Content.ReadAsStringAsync();
+                        HttpResponseMessage response = null;
+                        int actualTokens = 0;
 
                         try
                         {
-                            string usageMetaString = ChuanHoaJsonTuAIHelper.usageMetadata(responseBody);
-                            var metaObj = Newtonsoft.Json.Linq.JObject.Parse(usageMetaString);
-                            actualTokens = (int?)metaObj["totalTokenCount"] ?? 0;
-
-                            if (actualTokens > 0)
-                            {
-                                Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {actualTokens} tokens.");
-                            }
-
-                            await LuuLogVaoRedisQueue(currentRedisKey, actualTokens, (int)response.StatusCode, requestUrl);
+                            response = await _http.PostAsJsonAsync(requestUrl, requestBody);
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[Gemini Lỗi Token Tracker] {ex.Message}");
+                            Console.WriteLine($"[Gemini Lỗi Kết Nối] Google từ chối phũ phàng với key {currentRedisKey}. Chi tiết: {ex.Message}. Đang thử key khác...");
+                            await _rateLimitService.CommitQuotaAsync(reservation, 0);
+                            daHoanQuota = true;
+                            soLanThuLai++;
+                            await Task.Delay(2000);
+                            continue;
                         }
 
-                        await _rateLimitService.CommitQuotaAsync(keyId, actualTokens, estimatedTokens);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var responseBody = await response.Content.ReadAsStringAsync();
 
-                        return responseBody;
-                    }
+                            try
+                            {
+                                string usageMetaString = ChuanHoaJsonTuAIHelper.usageMetadata(responseBody);
+                                var metaObj = Newtonsoft.Json.Linq.JObject.Parse(usageMetaString);
+                                actualTokens = (int?)metaObj["totalTokenCount"] ?? 0;
+
 
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
                         response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
@@ -292,29 +285,50 @@ namespace educodeai_server.Helpers
                     {
                         Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
 
-                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
-                        await LuuLogVaoRedisQueue(currentRedisKey, 0, (int)response.StatusCode, requestUrl);
-
-                        soLanThuLai++;
-                        await Task.Delay(2000);
-                        continue;
-                    }
+                                if (actualTokens > 0)
+                                {
+                                    Console.WriteLine($"[Gemini] Key {currentRedisKey} vừa chạy hết {actualTokens} tokens.");
+                                }
 
 
-                    if (!response.IsSuccessStatusCode)
-                    {
+                                await LuuLogVaoRedisQueue(currentRedisKey, actualTokens, (int)response.StatusCode, requestUrl);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[Gemini Lỗi Token Tracker] {ex.Message}");
+                            }
+
+                            await _rateLimitService.CommitQuotaAsync(reservation, actualTokens);
+                            daHoanQuota = true;
+
+                            return responseBody;
+                        }
+
+                        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                            response.StatusCode == System.Net.HttpStatusCode.TooManyRequests ||
+                            response.StatusCode == System.Net.HttpStatusCode.Forbidden ||
+                            response.StatusCode == System.Net.HttpStatusCode.InternalServerError ||
+                            response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable ||
+                            response.StatusCode == System.Net.HttpStatusCode.BadGateway)
+                        {
+                            Console.WriteLine($"[Gemini] Key {currentRedisKey} bị {response.StatusCode}. Đang chuyển Key khác...");
+
+                            await _rateLimitService.CommitQuotaAsync(reservation, 0);
+                            daHoanQuota = true;
+                            await LuuLogVaoRedisQueue(currentRedisKey, 0, (int)response.StatusCode, requestUrl);
+
+                            soLanThuLai++;
+                            await Task.Delay(2000);
+                            continue;
+                        }
+
+                        // Còn lại là status không nằm trong nhóm retry (VD 404 model sai):
+                        // ném lỗi tiếng Việt ra UI, quota được finally hoàn lại.
                         string errorContent = await response.Content.ReadAsStringAsync();
-                        
-                        string msg = "Lỗi kết nối đến máy chủ AI. Vui lòng thử lại.";
 
-                        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                            msg = "Lỗi (401): API Key bị thiếu hoặc sai. Vui lòng kiểm tra lại cấu hình Key trong hệ thống.";
-                        else if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-                            msg = "Lỗi (429): API Key đã dùng hết lượt hoặc bị gọi quá nhanh. Vui lòng thử lại sau 1 phút hoặc thêm Key mới.";
-                        else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
-                            msg = "Lỗi (403): API Key bị từ chối truy cập (có thể do sai quyền hoặc bị khóa).";
-                        else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || response.StatusCode == System.Net.HttpStatusCode.BadGateway)
-                            msg = $"Lỗi ({response.StatusCode}): Máy chủ AI của Google đang bị nghẽn mạng. Vui lòng nhấn Thử lại sau ít phút.";
+                        string msg;
+                        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                            msg = $"Model AI '{modelSuDung}' không tồn tại hoặc chưa được Google hỗ trợ. Vui lòng kiểm tra cấu hình.";
                         else
                             msg = $"Lỗi không xác định từ AI ({response.StatusCode}). Vui lòng báo cho Admin.";
 
@@ -322,17 +336,11 @@ namespace educodeai_server.Helpers
                         Console.WriteLine($"[Gemini Error] {response.StatusCode} - {errorContent}");
                         throw new Exception(msg);
                     }
-
-                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    finally
                     {
-                        await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
-                        var body = await response.Content.ReadAsStringAsync();
-                        _logger.LogError("[Gemini] Model/API endpoint không tồn tại. Model={Model}, Body={Body}", modelSuDung, body);
-                        throw new Exception($"Model AI '{modelSuDung}' không tồn tại hoặc chưa được Google hỗ trợ. Vui lòng kiểm tra cấu hình.");
+                        if (!daHoanQuota)
+                            await _rateLimitService.CommitQuotaAsync(reservation, 0);
                     }
-
-                    await _rateLimitService.CommitQuotaAsync(keyId, 0, estimatedTokens);
-                    response.EnsureSuccessStatusCode();
 
                 }
 
@@ -357,7 +365,7 @@ namespace educodeai_server.Helpers
                 };
 
                 string jsonLog = JsonSerializer.Serialize(nhatKy);
-                await _redisService.DayVaoCuoiListAsync("EduCodeAI:LogQueue", jsonLog);
+                await _redisService.DayVaoCuoiListAsync(CacheKeys.LogQueue, jsonLog);
             }
             catch (Exception ex)
             {
