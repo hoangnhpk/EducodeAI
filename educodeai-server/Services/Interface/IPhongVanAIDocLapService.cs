@@ -9,7 +9,5 @@ namespace educodeai_server.Services.Interface
         Task<AnswerPhongVanResponseDto> AnswerQuestionAsync(int userId, AnswerPhongVanRequestDto request);
         Task<EndPhongVanResponseDto> EndInterviewAsync(int userId, int maPhongVan);
         Task<List<LichSuPhongVanModel>> GetInterviewHistoryAsync(int userId);
-        Task<PhongVanSessionDto> GetInterviewAsync(int userId, int maPhongVan);
-        Task UpdateNoteAsync(int userId, int maPhongVan, string ghiChu);
     }
 }

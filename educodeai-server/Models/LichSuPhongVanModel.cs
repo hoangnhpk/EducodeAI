@@ -43,11 +43,6 @@ namespace educodeai_server.Models
 
         public string DanhGiaChung { get; set; } = string.Empty;
 
-        [MaxLength(5000)]
-        public string GhiChu { get; set; } = string.Empty;
-
-        public DateTime? CapNhatGhiChuLuc { get; set; }
-
         /// <summary>
         /// Chứa chuỗi JSON mảng PhongVanTurnDto
         /// </summary>

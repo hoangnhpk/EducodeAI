@@ -55,7 +55,7 @@
 .profile-info h2 {
   font-size: 24px;
   font-weight: 700;
-  color: var(--text-dark);
+  color: #1e293b;
   margin-bottom: 8px;
 }
 
@@ -108,7 +108,7 @@
 .mini-stat-item h3 {
   font-size: 28px;
   font-weight: 700;
-  color: var(--text-dark);
+  color: #1e293b;
   margin-bottom: 4px;
 }
 
@@ -131,7 +131,7 @@
 .content-header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: var(--text-dark);
+  color: #1e293b;
   margin-bottom: 8px;
 }
 
@@ -192,7 +192,7 @@
 .stat-value {
   font-size: 36px;
   font-weight: 700;
-  color: var(--text-dark);
+  color: #1e293b;
 }
 
 /* Specific colors for values */

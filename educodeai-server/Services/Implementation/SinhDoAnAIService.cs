@@ -147,37 +147,23 @@ BẠN PHẢI TRẢ VỀ DỮ LIỆU ĐÚNG CHUẨN JSON VỚI ĐỊNH DẠNG SAU
                 TienDoHoanThanh   = request.TienDoHoanThanh,
             };
 
-            // Tái sử dụng bản ghi đồ án đã sinh nếu bản ghi thuộc về học viên.
-            educodeai_server.Models.DoAnThucChienModel? dbDoAn = null;
-            if (request.MaDoAn.HasValue && request.MaDoAn.Value > 0)
+            // Lưu vào DB đồ án mới
+            var newDoAn = new educodeai_server.Models.DoAnThucChienModel
             {
-                dbDoAn = await _dbContext.DoAnThucChiens
-                    .FirstOrDefaultAsync(x => x.MaDoAn == request.MaDoAn.Value && x.MaNguoiDung == maNguoiDung);
-
-                if (dbDoAn == null)
-                    throw new UnauthorizedAccessException("Đồ án không thuộc về tài khoản hiện tại.");
-            }
-
-            if (dbDoAn == null)
-            {
-                dbDoAn = new educodeai_server.Models.DoAnThucChienModel
-                {
-                    MaNguoiDung = maNguoiDung
-                };
-                _dbContext.DoAnThucChiens.Add(dbDoAn);
-            }
-
-            dbDoAn.TenDoAn = request.TenDoAn;
-            dbDoAn.MoTa = request.MoTa;
-            dbDoAn.YeuCauChucNangJSON = JsonSerializer.Serialize(request.YeuCauChucNang);
-            dbDoAn.CauTrucDatabaseText = request.CauTrucDatabase;
-            dbDoAn.MucTieuNgheNghiep = request.MucTieuNgheNghiep;
-            dbDoAn.NgonNguCongNghe = request.NgonNguCongNghe;
-            dbDoAn.TrangThai = educodeai_server.Models.TrangThaiDoAn.DangPhongVan;
-            dbDoAn.NgayNop = DateTime.UtcNow;
+                MaNguoiDung = maNguoiDung,
+                TenDoAn = request.TenDoAn,
+                MoTa = request.MoTa,
+                YeuCauChucNangJSON = JsonSerializer.Serialize(request.YeuCauChucNang),
+                CauTrucDatabaseText = request.CauTrucDatabase,
+                MucTieuNgheNghiep = request.MucTieuNgheNghiep,
+                NgonNguCongNghe = request.NgonNguCongNghe,
+                TrangThai = educodeai_server.Models.TrangThaiDoAn.DangPhongVan,
+                NgayNop = DateTime.UtcNow
+            };
+            _dbContext.DoAnThucChiens.Add(newDoAn);
             await _dbContext.SaveChangesAsync();
 
-            phien.MaDoAn = dbDoAn.MaDoAn;
+            phien.MaDoAn = newDoAn.MaDoAn;
 
             // Lưu vào cache 2 tiếng
             _cache.Set($"phongvan_{sessionId}", phien, TimeSpan.FromHours(2));
@@ -198,15 +184,7 @@ BẠN PHẢI TRẢ VỀ DỮ LIỆU ĐÚNG CHUẨN JSON VỚI ĐỊNH DẠNG SAU
         // ================================================================
         public async Task<TraLoiPhongVanResponseDto> TraLoiPhongVanAsync(int maNguoiDung, TraLoiPhongVanRequestDto request)
         {
-            if (request.SoCauHienTai < 1 || request.SoCauHienTai > TONG_SO_CAU)
-                throw new ArgumentException($"Số câu hỏi phải từ 1 đến {TONG_SO_CAU}.");
-
-            if (string.IsNullOrWhiteSpace(request.CauTraLoi))
-                throw new ArgumentException("Câu trả lời không được để trống.");
-
             var phien = _LayPhien(request.SessionId, maNguoiDung);
-            if (phien.DaKetThuc)
-                throw new InvalidOperationException("Phiên phỏng vấn đã kết thúc.");
 
             var (diem, nhanXet, cauHoiDaHoi) = await _ChamDiemCauTraLoi(phien, request.SoCauHienTai, request.CauTraLoi);
 
@@ -268,8 +246,7 @@ BẠN PHẢI TRẢ VỀ DỮ LIỆU ĐÚNG CHUẨN JSON VỚI ĐỊNH DẠNG SAU
             // Lưu kết quả vào DB
             if (phien.MaDoAn > 0)
             {
-                var dbDoAn = await _dbContext.DoAnThucChiens
-                    .FirstOrDefaultAsync(x => x.MaDoAn == phien.MaDoAn && x.MaNguoiDung == maNguoiDung);
+                var dbDoAn = await _dbContext.DoAnThucChiens.FindAsync(phien.MaDoAn);
                 if (dbDoAn != null)
                 {
                     dbDoAn.DiemPhongVan = tongDiem;
@@ -416,15 +393,8 @@ Nhiệm vụ của bạn là đánh giá mã nguồn xem học viên đã thực
         // ================================================================
         private PhienPhongVan _LayPhien(string sessionId, int maNguoiDung)
         {
-            if (string.IsNullOrWhiteSpace(sessionId))
-                throw new ArgumentException("SessionId không hợp lệ.");
-
             if (!_cache.TryGetValue($"phongvan_{sessionId}", out PhienPhongVan? phien) || phien == null)
                 throw new Exception("Phiên phỏng vấn không tồn tại hoặc đã hết hạn (>2 tiếng).");
-
-            if (phien.MaNguoiDung != maNguoiDung)
-                throw new UnauthorizedAccessException("Phiên phỏng vấn không thuộc về tài khoản hiện tại.");
-
             return phien;
         }
 

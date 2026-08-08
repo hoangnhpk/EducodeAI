@@ -67,7 +67,7 @@
 
 .tt-stat__icon--badge { background: #ede9fe; color: #6d28d9; }
 .tt-stat__icon--exp { background: #ffedd5; color: #ea580c; }
-.tt-stat__icon--clock { background: #dbeafe; color: var(--primary); }
+.tt-stat__icon--clock { background: #dbeafe; color: #2563eb; }
 
 .tt-stat__label {
   display: block;
@@ -158,7 +158,7 @@
   justify-content: center;
 }
 
-.tt-task-card__icon--book { background: #dbeafe; color: var(--primary); }
+.tt-task-card__icon--book { background: #dbeafe; color: #2563eb; }
 .tt-task-card__icon--chat { background: #e0f2fe; color: #0284c7; }
 .tt-task-card__icon--quiz { background: #f3f4f6; color: #6b7280; }
 .tt-task-card__icon--calendar { background: #fef3c7; color: #d97706; }
@@ -752,7 +752,7 @@
 }
 
 .tt-leaderboard__icon--global {
-  color: var(--primary);
+  color: #2563eb;
 }
 
 .tt-leaderboard__title {
@@ -886,7 +886,7 @@
   justify-content: center;
   font-weight: 700;
   font-size: 14px;
-  color: var(--primary);
+  color: #2563eb;
 }
 
 .tt-lb__avatar img {
@@ -915,7 +915,7 @@
 
 .tt-lb__name {
   font-size: 14px;
-  color: var(--text-dark);
+  color: #1e293b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

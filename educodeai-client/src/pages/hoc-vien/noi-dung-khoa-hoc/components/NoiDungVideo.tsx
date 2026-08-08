@@ -20,7 +20,7 @@ interface Props {
 }
 
 // 2. Bọc component trong forwardRef
-export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, videoSource, subtitleUrl, maBaiHoc, maNguoiDung, daXem, onVideoCompleted }, ref) => {
+export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, videoSource, maBaiHoc, maNguoiDung, daXem, onVideoCompleted }, ref) => {
   const playerRef = useRef<any>(null);
   const [daSanSang, setDaSanSang] = useState(false);
   const [thoiLuongVideo, setThoiLuongVideo] = useState(0);
@@ -376,18 +376,7 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
             if (dangCanhBaoRef.current) return;
             lastRealTimeRef.current = Date.now();
           }}
-        >
-          {/* Phụ đề: browser chỉ render <track> định dạng VTT. SRT bị bỏ qua (cần convert, ngoài phạm vi). */}
-          {subtitleUrl && subtitleUrl.toLowerCase().endsWith('.vtt') && (
-            <track
-              kind="subtitles"
-              srcLang="vi"
-              label="Tiếng Việt"
-              default
-              src={subtitleUrl}
-            />
-          )}
-        </video>
+        />
       )}
 
       {daSanSang && (

@@ -27,24 +27,6 @@ namespace educodeai_server.DTOs.AI
         public bool IsFinished { get; set; }
         public string NhanXetCauTruoc { get; set; } = string.Empty;
         public string CauHoiTiepTheo { get; set; } = string.Empty;
-        public string TinNhanAI { get; set; } = string.Empty;
-    }
-
-    public class PhongVanSessionDto
-    {
-        public int MaPhongVan { get; set; }
-        public string ViTriUngTuyen { get; set; } = string.Empty;
-        public string CapDo { get; set; } = string.Empty;
-        public TinhCachAI TinhCachAI { get; set; }
-        public int SoLuongCauHoi { get; set; }
-        public TrangThaiPhongVan TrangThai { get; set; }
-        public string GhiChu { get; set; } = string.Empty;
-        public List<PhongVanDocLapTurnDto> LichSuChat { get; set; } = new();
-    }
-
-    public class UpdatePhongVanNoteDto
-    {
-        public string GhiChu { get; set; } = string.Empty;
     }
 
     public class EndPhongVanResponseDto

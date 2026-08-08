@@ -2,13 +2,13 @@ const StatCard = ({
   title,
   value,
   subtitle,
-  icon,
+  icon: Icon,
   gradient,
 }: {
   title: string;
   value: string;
   subtitle: string;
-  icon: string;
+  icon: any;
   gradient: string;
 }) => (
   <div className="stat-card">
@@ -20,7 +20,7 @@ const StatCard = ({
       </div>
 
       <div className={`stat-icon ${gradient}`}>
-        <i className={`fas ${icon}`} aria-hidden="true" />
+        <Icon size={24} />
       </div>
     </div>
   </div>

@@ -14,12 +14,10 @@ namespace educodeai_server.Controllers.HocVien
     public class SinhDoAnAIController : ControllerBase
     {
         private readonly ISinhDoAnAIService _sinhDoAnAIService;
-        private readonly ILogger<SinhDoAnAIController> _logger;
 
-        public SinhDoAnAIController(ISinhDoAnAIService sinhDoAnAIService, ILogger<SinhDoAnAIController> logger)
+        public SinhDoAnAIController(ISinhDoAnAIService sinhDoAnAIService)
         {
             _sinhDoAnAIService = sinhDoAnAIService;
-            _logger = logger;
         }
 
         // ============================================================
@@ -43,7 +41,6 @@ namespace educodeai_server.Controllers.HocVien
         // ============================================================
         // CŨ: Sinh đồ án (không cần login)
         // ============================================================
-        [Authorize]
         [HttpPost("generate")]
         public async Task<IActionResult> GenerateDoAn([FromBody] SinhDoAnRequestDto request)
         {
@@ -78,7 +75,6 @@ namespace educodeai_server.Controllers.HocVien
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi nộp đồ án");
                 return StatusCode(500, new { message = "Lỗi khi nộp đồ án", details = ex.Message });
             }
         }
@@ -98,18 +94,6 @@ namespace educodeai_server.Controllers.HocVien
 
                 var result = await _sinhDoAnAIService.TraLoiPhongVanAsync(userId, request);
                 return Ok(result);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -131,14 +115,6 @@ namespace educodeai_server.Controllers.HocVien
 
                 var result = await _sinhDoAnAIService.LayKetQuaPhongVanAsync(0, userId, sessionId);
                 return Ok(result);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
-import Swal from 'sweetalert2';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 interface IMessage {
@@ -30,18 +29,8 @@ const PhongVanDoAn: React.FC = () => {
     const chatRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const sessionStorageKey = sessionId ? `phongvan-do-an-${sessionId}` : '';
-    const savedSession = sessionStorageKey ? sessionStorage.getItem(sessionStorageKey) : null;
-    let savedSessionData: { tenDoAn?: string; cauHoiDauTien?: string } = {};
-    if (savedSession) {
-        try {
-            savedSessionData = JSON.parse(savedSession);
-        } catch {
-            sessionStorage.removeItem(sessionStorageKey);
-        }
-    }
-    const tenDoAn: string = (location.state as any)?.tenDoAn ?? savedSessionData.tenDoAn ?? 'Đồ án của bạn';
-    const cauHoiDauTien: string = (location.state as any)?.cauHoiDauTien ?? savedSessionData.cauHoiDauTien ?? '';
+    const tenDoAn: string = (location.state as any)?.tenDoAn ?? 'Đồ án của bạn';
+    const cauHoiDauTien: string = (location.state as any)?.cauHoiDauTien ?? '';
 
     const [messages, setMessages] = useState<IMessage[]>([]);
     const [inputText, setInputText] = useState('');
@@ -116,15 +105,8 @@ const PhongVanDoAn: React.FC = () => {
         if (soLanChuyenTab === 0 || daKetThuc) return;
 
         if (soLanChuyenTab > 2) {
-            Swal.fire({
-                icon: 'error',
-                title: 'HỦY KẾT QUẢ',
-                text: 'Bạn đã vi phạm quy chế quá 2 lần do liên tục rời khỏi tab phỏng vấn. Buổi phỏng vấn sẽ kết thúc ngay bây giờ!',
-                confirmButtonText: 'Đã hiểu',
-                allowOutsideClick: false
-            }).then(() => {
-                navigate('/sinh-do-an-ai');
-            });
+            alert('🚨 HỦY KẾT QUẢ: Bạn đã vi phạm quy chế quá 2 lần do liên tục rời khỏi tab phỏng vấn. Buổi phỏng vấn sẽ kết thúc ngay bây giờ!');
+            navigate('/sinh-do-an-ai');
             return;
         }
 
@@ -216,9 +198,9 @@ const PhongVanDoAn: React.FC = () => {
     };
 
     const diemMauSac = (diem: number) => {
-        if (diem >= 16) return 'var(--success)';
+        if (diem >= 16) return '#22c55e';
         if (diem >= 10) return '#f59e0b';
-        return 'var(--danger)';
+        return '#ef4444';
     };
 
     // ─── RENDER ─────────────────────────────────────────────────────────────
@@ -258,14 +240,14 @@ const PhongVanDoAn: React.FC = () => {
                             <span>⚡</span>
                             <span>{tongDiemTamThoi}<span className="pvd-score-max">/100</span></span>
                         </div>
-                        <div className="pvd-timer-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: timeLeft <= 60 ? 'rgba(239, 68, 68, 0.1)' : '#f1f5f9', padding: '6px 12px', borderRadius: '8px', color: timeLeft <= 60 ? '#ef4444' : '#475569', fontWeight: '600', border: timeLeft <= 60 ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid #e2e8f0' }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <div className="pvd-timer-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: timeLeft <= 60 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.1)', padding: '6px 12px', borderRadius: '12px', color: timeLeft <= 60 ? '#ef4444' : '#e2e8f0', fontWeight: 'bold' }}>
+                            <span>⏱️</span>
                             <span>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
                         </div>
                         {soLanChuyenTab > 0 && (
-                            <div className="pvd-timer-badge" style={{ color: '#ef4444', backgroundColor: '#fef2f2', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '8px' }} aria-label="Cảnh báo rời tab">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                <span>{soLanChuyenTab} lần</span>
+                            <div className="pvd-timer-badge" style={{ color: '#ef4444', backgroundColor: '#fef2f2', border: '1px solid #fecaca' }}>
+                                <span>⚠️</span>
+                                <span>{soLanChuyenTab}</span>
                             </div>
                         )}
                         <button
@@ -478,8 +460,8 @@ const PhongVanDoAn: React.FC = () => {
             /* BASE */
             #pvd-root {
                 font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-                background: var(--bg-main, #f9fafb);
-                color: var(--text-main, #111827);
+                background: #060911;
+                color: #e2e8f0;
                 min-height: 100vh;
                 display: flex;
                 flex-direction: column;
@@ -488,9 +470,9 @@ const PhongVanDoAn: React.FC = () => {
             /* HEADER */
             .pvd-header {
                 position: sticky; top: 0; z-index: 50;
-                background: rgba(255, 255, 255, 0.95);
+                background: rgba(8, 12, 24, 0.92);
                 backdrop-filter: blur(16px);
-                border-bottom: 1px solid var(--border-color, #e5e7eb);
+                border-bottom: 1px solid rgba(255,255,255,0.07);
                 padding: 0.875rem 1.5rem;
                 display: flex; align-items: center; justify-content: space-between;
                 gap: 1rem;
@@ -498,20 +480,18 @@ const PhongVanDoAn: React.FC = () => {
             .pvd-header-left { display: flex; align-items: center; gap: 0.875rem; }
             .pvd-ai-avatar {
                 width: 42px; height: 42px; border-radius: 12px;
-
-                background: linear-gradient(135deg, #f69050, #e67e22);
-
+                background: linear-gradient(135deg, #7c3aed, #0ea5e9);
                 display: flex; align-items: center; justify-content: center;
-                flex-shrink: 0; box-shadow: 0 4px 12px rgba(246,144,80,0.35);
+                flex-shrink: 0; box-shadow: 0 0 16px rgba(124,58,237,0.4);
             }
-            .pvd-title { font-size: 1rem; font-weight: 700; margin: 0; letter-spacing: -0.3px; color: var(--text-main, #111827); }
+            .pvd-title { font-size: 1rem; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
             .pvd-subtitle {
-                font-size: 0.75rem; color: var(--text-muted, #6b7280); margin: 0;
+                font-size: 0.75rem; color: #64748b; margin: 0;
                 display: flex; align-items: center; gap: 0.4rem;
             }
             .pvd-live-dot {
                 display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-                background: var(--success);
+                background: #22c55e;
                 animation: pvdPulse 1.5s ease-in-out infinite;
             }
             @keyframes pvdPulse {
@@ -520,41 +500,39 @@ const PhongVanDoAn: React.FC = () => {
             }
             .pvd-header-right { display: flex; align-items: center; gap: 1rem; }
             .pvd-progress-info { display: flex; flex-direction: column; gap: 4px; }
-            .pvd-progress-label { font-size: 0.72rem; color: var(--text-muted, #6b7280); font-weight: 600; }
+            .pvd-progress-label { font-size: 0.72rem; color: #94a3b8; font-weight: 600; }
             .pvd-progress-bar {
-                width: 120px; height: 5px; background: var(--border-color, #e5e7eb);
+                width: 120px; height: 5px; background: rgba(255,255,255,0.08);
                 border-radius: 99px; overflow: hidden;
             }
             .pvd-progress-fill {
                 height: 100%; border-radius: 99px;
-
-                background: linear-gradient(90deg, #f69050, #e67e22);
-
+                background: linear-gradient(90deg, #7c3aed, #0ea5e9);
                 transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1);
             }
             .pvd-score-badge {
                 display: flex; align-items: center; gap: 0.4rem;
-                background: rgba(246,144,80,0.1); border: 1px solid rgba(246,144,80,0.25);
+                background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3);
                 border-radius: 8px; padding: 0.35rem 0.75rem;
-                font-weight: 700; font-size: 0.95rem; color: #e67e22;
+                font-weight: 700; font-size: 0.95rem; color: #a78bfa;
             }
-            .pvd-score-max { font-size: 0.7rem; color: var(--text-muted, #6b7280); font-weight: 400; }
+            .pvd-score-max { font-size: 0.7rem; color: #64748b; font-weight: 400; }
             .pvd-exit-btn {
                 display: flex; align-items: center; gap: 0.4rem;
-                background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2);
-                color: #ef4444; border-radius: 8px; padding: 0.4rem 0.875rem;
+                background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+                color: #f87171; border-radius: 8px; padding: 0.4rem 0.875rem;
                 font-size: 0.8rem; font-weight: 600; cursor: pointer;
                 transition: all 0.2s ease;
             }
-            .pvd-exit-btn:hover { background: rgba(239,68,68,0.12); }
+            .pvd-exit-btn:hover { background: rgba(239,68,68,0.2); }
 
             /* INTRO BANNER */
             .pvd-intro-banner {
                 margin: 1.25rem 1.5rem 0;
-                background: rgba(234,179,8,0.06); border: 1px solid rgba(234,179,8,0.2);
+                background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.2);
                 border-radius: 12px; padding: 0.75rem 1rem;
                 display: flex; gap: 0.75rem; align-items: flex-start;
-                font-size: 0.82rem; color: #b45309; line-height: 1.5;
+                font-size: 0.82rem; color: #fbbf24; line-height: 1.5;
             }
 
             /* MAIN / CHAT */
@@ -566,7 +544,7 @@ const PhongVanDoAn: React.FC = () => {
             .pvd-chat {
                 flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem;
                 display: flex; flex-direction: column; gap: 1.25rem;
-                scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.1) transparent;
+                scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
             }
 
             /* MESSAGES */
@@ -580,14 +558,12 @@ const PhongVanDoAn: React.FC = () => {
                 flex-shrink: 0;
             }
             .pvd-avatar-ai {
-
-                background: linear-gradient(135deg, #f69050, #e67e22);
-                color: white; box-shadow: 0 4px 12px rgba(246,144,80,0.3);
-
+                background: linear-gradient(135deg, #7c3aed 0%, #0ea5e9 100%);
+                color: white; box-shadow: 0 4px 12px rgba(124,58,237,0.35);
             }
             .pvd-avatar-user {
-                background: var(--bg-main, #f9fafb); border: 1px solid var(--border-color, #e5e7eb);
-                color: var(--text-muted, #6b7280);
+                background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+                color: #94a3b8;
             }
             .pvd-bubble-wrap { display: flex; flex-direction: column; gap: 0.375rem; max-width: 78%; }
             .pvd-bubble {
@@ -595,16 +571,13 @@ const PhongVanDoAn: React.FC = () => {
                 font-size: 0.92rem; line-height: 1.65;
             }
             .pvd-bubble.ai {
-                background: white; border: 1px solid var(--border-color, #e5e7eb);
-                border-top-left-radius: 4px; color: var(--text-main, #111827);
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+                border-top-left-radius: 4px; color: #e2e8f0;
             }
             .pvd-bubble.user {
-
-                background: linear-gradient(135deg, #f69050, #e67e22);
-
+                background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
                 border-top-right-radius: 4px; color: white;
-                box-shadow: 0 4px 16px rgba(246,144,80,0.3);
+                box-shadow: 0 4px 16px rgba(124,58,237,0.3);
             }
             .pvd-bubble p { margin: 0; }
             .pvd-msg-user .pvd-bubble-wrap { align-items: flex-end; }
@@ -615,7 +588,7 @@ const PhongVanDoAn: React.FC = () => {
             }
             .pvd-typing span {
                 width: 7px; height: 7px; border-radius: 50%;
-                background: #9ca3af;
+                background: #64748b;
                 animation: pvdBounce 1.3s ease-in-out infinite;
             }
             .pvd-typing span:nth-child(2) { animation-delay: 0.15s; }
@@ -629,46 +602,44 @@ const PhongVanDoAn: React.FC = () => {
             .pvd-score-pill {
                 display: inline-flex; align-items: center; gap: 0.3rem;
                 font-size: 0.75rem; font-weight: 700;
-                background: rgba(0,0,0,0.06); border-radius: 6px;
+                background: rgba(0,0,0,0.2); border-radius: 6px;
                 padding: 0.2rem 0.5rem; width: fit-content;
             }
 
             /* INPUT */
             .pvd-input-area {
                 padding: 1rem 1.5rem 0;
-                border-top: 1px solid var(--border-color, #e5e7eb);
+                border-top: 1px solid rgba(255,255,255,0.05);
             }
             .pvd-input-wrap {
                 display: flex; gap: 0.625rem;
             }
             .pvd-input {
-                flex: 1; background: white;
-                border: 1px solid var(--border-color, #e5e7eb);
-                color: var(--text-main, #111827); border-radius: 12px; padding: 0.875rem 1.125rem;
+                flex: 1; background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.1);
+                color: #e2e8f0; border-radius: 12px; padding: 0.875rem 1.125rem;
                 font-size: 0.92rem; outline: none; transition: all 0.2s;
                 font-family: inherit;
             }
-            .pvd-input::placeholder { color: #9ca3af; }
-            .pvd-input:focus { border-color: rgba(246,144,80,0.5); background: white; box-shadow: 0 0 0 3px rgba(246,144,80,0.08); }
+            .pvd-input::placeholder { color: #475569; }
+            .pvd-input:focus { border-color: rgba(124,58,237,0.5); background: rgba(255,255,255,0.07); }
             .pvd-input:disabled { opacity: 0.5; cursor: not-allowed; }
             .pvd-send-btn {
                 width: 50px; height: 50px; border-radius: 12px;
-
-                background: linear-gradient(135deg, #f69050, #e67e22);
-
+                background: linear-gradient(135deg, #7c3aed, #0ea5e9);
                 border: none; cursor: pointer; color: white;
                 display: flex; align-items: center; justify-content: center;
                 transition: all 0.2s ease; flex-shrink: 0;
-                box-shadow: 0 4px 12px rgba(246,144,80,0.35);
+                box-shadow: 0 4px 12px rgba(124,58,237,0.35);
             }
             .pvd-send-btn:hover:not(:disabled) { transform: scale(1.05); }
             .pvd-send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-            .pvd-input-hint { font-size: 0.75rem; color: var(--text-muted, #6b7280); margin: 0.5rem 0 0; text-align: center; }
+            .pvd-input-hint { font-size: 0.75rem; color: #475569; margin: 0.5rem 0 0; text-align: center; }
 
             /* SPINNER */
             .pvd-spinner {
-                width: 18px; height: 18px; border: 2px solid rgba(246,144,80,0.3);
-                border-top-color: #f69050; border-radius: 50%;
+                width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+                border-top-color: white; border-radius: 50%;
                 animation: pvdSpin 0.7s linear infinite;
             }
             @keyframes pvdSpin { to { transform: rotate(360deg); } }
@@ -676,20 +647,18 @@ const PhongVanDoAn: React.FC = () => {
             /* FINALIZING */
             .pvd-finalizing {
                 display: flex; flex-direction: column; align-items: center;
-                gap: 0.75rem; padding: 2rem; color: var(--text-muted, #6b7280);
+                gap: 0.75rem; padding: 2rem; color: #64748b;
             }
             .pvd-spinner-lg {
-
-                width: 36px; height: 36px; border: 3px solid var(--border-color, #e5e7eb);
-                border-top-color: #f69050; border-radius: 50%;
-
+                width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1);
+                border-top-color: #7c3aed; border-radius: 50%;
                 animation: pvdSpin 0.8s linear infinite;
             }
 
             /* OVERLAY */
             .pvd-overlay {
                 position: fixed; inset: 0; z-index: 999;
-                background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
+                background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
                 display: flex; align-items: center; justify-content: center;
                 padding: 1rem;
                 animation: pvdFadeIn 0.3s ease;
@@ -697,11 +666,10 @@ const PhongVanDoAn: React.FC = () => {
             @keyframes pvdFadeIn { from { opacity:0; } to { opacity:1; } }
 
             .pvd-modal {
-                background: white; border: 1px solid var(--border-color, #e5e7eb);
+                background: #0f1623; border: 1px solid rgba(255,255,255,0.1);
                 border-radius: 20px; padding: 2rem; max-width: 560px; width: 100%;
                 max-height: 85vh; overflow-y: auto;
                 animation: pvdSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);
-                box-shadow: 0 25px 60px rgba(0,0,0,0.12);
             }
             @keyframes pvdSlideUp {
                 from { opacity:0; transform:translateY(24px) scale(0.97); }
@@ -711,97 +679,92 @@ const PhongVanDoAn: React.FC = () => {
             .pvd-result-title {
                 font-size: 1.4rem; font-weight: 800; text-align: center; margin: 0 0 0.5rem;
             }
-            .pvd-result-title.pass { color: #059669; }
-            .pvd-result-title.fail { color: #dc2626; }
+            .pvd-result-title.pass { color: #4ade80; }
+            .pvd-result-title.fail { color: #f87171; }
             .pvd-result-score {
-                text-align: center; font-size: 1.05rem; color: var(--text-muted, #6b7280); margin: 0 0 1.25rem;
+                text-align: center; font-size: 1.05rem; color: #94a3b8; margin: 0 0 1.25rem;
             }
-            .pvd-result-score strong { color: var(--text-main, #111827); font-size: 1.3rem; }
-            .pvd-pass-hint { font-size: 0.8rem; color: var(--text-muted, #6b7280); }
+            .pvd-result-score strong { color: #e2e8f0; font-size: 1.3rem; }
+            .pvd-pass-hint { font-size: 0.8rem; color: #64748b; }
 
             .pvd-cert-box {
-                background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2);
+                background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.25);
                 border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;
                 display: flex; flex-direction: column; gap: 0.5rem; align-items: center;
             }
-            .pvd-cert-label { font-size: 0.8rem; color: #059669; font-weight: 600; }
+            .pvd-cert-label { font-size: 0.8rem; color: #4ade80; font-weight: 600; }
             .pvd-cert-code {
                 font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;
-                color: #047857; letter-spacing: 1px;
+                color: #a7f3d0; letter-spacing: 1px;
             }
             .pvd-cert-copy {
-                background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25);
-                color: #059669; border-radius: 6px; padding: 0.3rem 0.75rem;
+                background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.3);
+                color: #4ade80; border-radius: 6px; padding: 0.3rem 0.75rem;
                 font-size: 0.78rem; font-weight: 600; cursor: pointer;
                 transition: all 0.2s;
             }
-            .pvd-cert-copy:hover { background: rgba(16,185,129,0.18); }
+            .pvd-cert-copy:hover { background: rgba(74,222,128,0.25); }
 
             .pvd-comment-box {
-                background: var(--bg-main, #f9fafb); border: 1px solid var(--border-color, #e5e7eb);
+                background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
                 border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;
             }
-
-            .pvd-comment-title { font-size: 0.8rem; font-weight: 700; color: #e67e22; margin: 0 0 0.5rem; }
-            .pvd-comment-text { font-size: 0.88rem; color: var(--text-muted, #6b7280); margin: 0; line-height: 1.6; }
-
+            .pvd-comment-title { font-size: 0.8rem; font-weight: 700; color: #7c3aed; margin: 0 0 0.5rem; }
+            .pvd-comment-text { font-size: 0.88rem; color: #94a3b8; margin: 0; line-height: 1.6; }
 
             .pvd-detail-section { margin-bottom: 1.5rem; }
-            .pvd-detail-title { font-size: 0.8rem; font-weight: 700; color: var(--text-muted, #6b7280); margin: 0 0 0.75rem; }
+            .pvd-detail-title { font-size: 0.8rem; font-weight: 700; color: #64748b; margin: 0 0 0.75rem; }
             .pvd-detail-item {
                 padding: 0.625rem; border-radius: 8px;
-                background: var(--bg-main, #f9fafb); border: 1px solid var(--border-color, #e5e7eb);
+                background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
                 margin-bottom: 0.5rem;
             }
             .pvd-detail-header { display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
-            .pvd-detail-num { font-size: 0.78rem; font-weight: 700; color: var(--text-muted, #6b7280); }
+            .pvd-detail-num { font-size: 0.78rem; font-weight: 700; color: #64748b; }
             .pvd-detail-score { font-size: 0.82rem; font-weight: 800; }
-            .pvd-detail-nhanxet { font-size: 0.82rem; color: var(--text-muted, #6b7280); margin: 0; line-height: 1.4; }
+            .pvd-detail-nhanxet { font-size: 0.82rem; color: #94a3b8; margin: 0; line-height: 1.4; }
 
             .pvd-modal-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
             .pvd-btn-primary {
-                flex: 1; background: linear-gradient(135deg, #f69050, #e67e22);
-
+                flex: 1; background: linear-gradient(135deg, #7c3aed, #0ea5e9);
                 border: none; color: white; border-radius: 10px; padding: 0.875rem 1rem;
                 font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
-                font-family: inherit; box-shadow: 0 4px 12px rgba(246,144,80,0.3);
+                font-family: inherit;
             }
             .pvd-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
             .pvd-btn-secondary {
-                flex: 1; background: var(--bg-main, #f9fafb);
-                border: 1px solid var(--border-color, #e5e7eb); color: var(--text-muted, #6b7280);
+                flex: 1; background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.1); color: #94a3b8;
                 border-radius: 10px; padding: 0.875rem 1rem;
                 font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
                 font-family: inherit;
             }
-            .pvd-btn-secondary:hover { background: rgba(246,144,80,0.04); color: var(--text-main, #111827); border-color: rgba(246,144,80,0.25); }
+            .pvd-btn-secondary:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
 
             /* SDA Submit CTA styles (injected into SinhDoAnAI parent) */
             .sda-submit-cta {
                 margin-top: 1.5rem;
-                background: linear-gradient(135deg, rgba(246,144,80,0.08), rgba(217,119,6,0.05));
-                border: 1px solid rgba(246,144,80,0.25);
+                background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(14,165,233,0.08));
+                border: 1px solid rgba(124,58,237,0.3);
                 border-radius: 16px; padding: 1.25rem 1.5rem;
                 display: flex; align-items: center; justify-content: space-between;
                 gap: 1rem; flex-wrap: wrap;
             }
             .sda-submit-info { display: flex; align-items: flex-start; gap: 0.75rem; flex: 1; min-width: 200px; }
             .sda-submit-icon { font-size: 1.75rem; flex-shrink: 0; }
-            .sda-submit-info strong { font-size: 0.92rem; color: var(--text-main, #111827); display: block; margin-bottom: 0.25rem; }
-            .sda-submit-info p { font-size: 0.8rem; color: var(--text-muted, #6b7280); margin: 0; line-height: 1.5; }
+            .sda-submit-info strong { font-size: 0.92rem; color: #e2e8f0; display: block; margin-bottom: 0.25rem; }
+            .sda-submit-info p { font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.5; }
             .sda-submit-btn {
-
-                background: linear-gradient(135deg, #f69050, #e67e22);
-
+                background: linear-gradient(135deg, #7c3aed 0%, #0ea5e9 100%);
                 border: none; color: white; border-radius: 12px;
                 padding: 0.875rem 1.5rem; font-size: 0.9rem; font-weight: 700;
                 cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
                 transition: all 0.25s ease; white-space: nowrap;
-                box-shadow: 0 4px 20px rgba(246,144,80,0.35); font-family: inherit;
+                box-shadow: 0 4px 20px rgba(124,58,237,0.4); font-family: inherit;
             }
             .sda-submit-btn:hover:not(:disabled) {
                 transform: translateY(-2px);
-                box-shadow: 0 8px 28px rgba(246,144,80,0.5);
+                box-shadow: 0 8px 28px rgba(124,58,237,0.5);
             }
             .sda-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         `}</style>

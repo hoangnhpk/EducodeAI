@@ -53,7 +53,7 @@
 }
 
 .adm-kpi {
-  background: var(--bg-card);
+  background: #fff;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 18px;
@@ -92,23 +92,23 @@
 }
 
 .adm-kpi__icon--blue {
-  background: var(--info-soft);
-  color: var(--info-strong);
+  background: #eff6ff;
+  color: #2563eb;
 }
 
 .adm-kpi__icon--purple {
-  background: var(--ai-accent-soft);
-  color: var(--ai-accent);
+  background: #fdf4ff;
+  color: #c026d3;
 }
 
 .adm-kpi__icon--orange {
-  background: var(--primary-soft);
+  background: #fff7ed;
   color: var(--primary);
 }
 
 .adm-kpi__icon--green {
-  background: var(--success-soft);
-  color: var(--success-strong);
+  background: #ecfdf5;
+  color: #059669;
 }
 
 .adm-kpi__label {
@@ -149,7 +149,7 @@
 .adm-top {
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-top__header {
@@ -227,7 +227,7 @@
 .adm-widget {
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-widget__header {
@@ -276,7 +276,7 @@
   padding: 4px;
   border: 1px solid var(--border-light);
   border-radius: 14px;
-  background: var(--bg-card);
+  background: #fff;
   width: fit-content;
 }
 
@@ -297,7 +297,7 @@
 }
 
 .adm-tab--active {
-  background: var(--primary-soft);
+  background: #fff7ed;
   border-color: rgba(246, 144, 80, 0.35);
   color: var(--text-dark);
 }
@@ -314,7 +314,7 @@
   justify-content: space-between;
   gap: 12px;
   border-bottom: 1px solid var(--border-light);
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-chart__filters {
@@ -332,7 +332,7 @@
   padding: 6px 10px;
   border: 1px solid var(--border-light);
   border-radius: 12px;
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-chart__filter-label {
@@ -426,18 +426,18 @@
 
 .adm-chart__body {
   padding: 12px 12px 18px;
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-chart__empty {
   padding: 40px 16px;
   text-align: center;
   color: var(--text-muted);
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-stats-state {
-  background: var(--bg-card);
+  background: #fff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 40px 16px;
@@ -446,9 +446,9 @@
 }
 
 .adm-stats-state--error {
-  background: var(--danger-soft);
-  border-color: var(--danger);
-  color: var(--danger-strong);
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
 }
 
 .adm-stats-spinner {
@@ -489,7 +489,7 @@
   max-height: min(78vh, 820px);
   display: flex;
   flex-direction: column;
-  background: var(--bg-card);
+  background: #fff;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
   box-shadow: 0 20px 60px rgba(2, 6, 23, 0.25);
@@ -503,7 +503,7 @@
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--border-light);
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-modal__title {
@@ -525,14 +525,14 @@
   height: 34px;
   border: 1px solid var(--border-light);
   border-radius: 10px;
-  background: var(--bg-card);
+  background: #fff;
   color: var(--text-dark);
   font-size: 22px;
   line-height: 1;
 }
 
 .adm-modal__close:hover {
-  background: var(--bg-main);
+  background: #f8fafc;
 }
 
 .adm-modal__tools {
@@ -542,7 +542,7 @@
   gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-light);
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-detail {
@@ -569,7 +569,7 @@
   border-radius: 12px;
   border: 1px solid var(--border-light);
   padding: 0 12px;
-  font-size: 14px;
+  font-size: 13.5px;
   outline: none;
 }
 
@@ -588,7 +588,7 @@
   padding: 0 12px;
   border-radius: 12px;
   border: 1px solid var(--border-light);
-  background: var(--bg-card);
+  background: #fff;
   color: var(--text-dark);
   font-size: 14px;
   font-weight: var(--font-weight-semibold);
@@ -602,7 +602,7 @@
 .adm-modal__body {
   padding: 12px 16px 16px;
   overflow: auto;
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-modal__state {
@@ -612,16 +612,16 @@
 }
 
 .adm-modal__state--error {
-  background: var(--danger-soft);
-  border: 1px solid var(--danger);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
   border-radius: 12px;
-  color: var(--danger-strong);
+  color: #991b1b;
 }
 
 .adm-table table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .adm-table {
@@ -635,7 +635,7 @@
 .adm-table th,
 .adm-table td {
   padding: 10px 10px;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid #eef2f7;
   vertical-align: middle;
 }
 
@@ -645,7 +645,7 @@
   letter-spacing: 0.5px;
   color: var(--text-muted);
   font-weight: var(--font-weight-semibold);
-  background: var(--bg-main);
+  background: #f8fafc;
   white-space: nowrap;
   position: sticky;
   top: 0;
@@ -653,7 +653,7 @@
 }
 
 .adm-table tr:hover td {
-  background: var(--bg-main);
+  background: #fafafa;
 }
 
 /* ====== DOANH THU ====== */
@@ -661,7 +661,7 @@
   margin-top: 16px;
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--bg-card);
+  background: #fff;
 }
 
 .adm-revenue__header {
@@ -682,7 +682,7 @@
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--border-light);
-  background: var(--bg-main);
+  background: #fafbfc;
 }
 
 @media (max-width: 1200px) {
@@ -698,7 +698,7 @@
 }
 
 .adm-revenue-kpi {
-  background: var(--bg-card);
+  background: #fff;
   border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 14px 16px;
@@ -722,11 +722,11 @@
 }
 
 .adm-revenue-kpi__value--amber {
-  color: var(--warning-strong);
+  color: #d97706;
 }
 
 .adm-revenue-kpi__value--green {
-  color: var(--success-strong);
+  color: #059669;
 }
 
 .adm-revenue-kpi__hint {
@@ -756,5 +756,5 @@
 
 .adm-revenue__chart-body {
   padding: 12px 12px 18px;
-  background: var(--bg-card);
+  background: #fff;
 }

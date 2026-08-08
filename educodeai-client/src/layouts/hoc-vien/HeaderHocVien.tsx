@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/auth.service";
-import { redirectToLoginOnce } from "../../utils/sessionTermination";
+import { clearAuthTokens } from "../../utils/authStorage";
 
 export default function HeaderHocVien() {
   const navigate = useNavigate();
@@ -24,8 +24,10 @@ export default function HeaderHocVien() {
     try {
       await authService.logout();
     } finally {
+      clearAuthTokens();
+      localStorage.removeItem("user_info");
       setUser(null);
-      redirectToLoginOnce(navigate);
+      navigate("/dang-nhap");
     }
   };
 
@@ -46,9 +48,6 @@ export default function HeaderHocVien() {
         className="navbar-toggler me-4"
         data-bs-toggle="collapse"
         data-bs-target="#navbarCollapse"
-        aria-controls="navbarCollapse"
-        aria-expanded="false"
-        aria-label="Mở menu điều hướng"
       >
         <span className="navbar-toggler-icon"></span>
       </button>
@@ -59,28 +58,9 @@ export default function HeaderHocVien() {
             Trang chủ
           </Link>
 
-          <div className="nav-item dropdown">
-            <a
-              href="#"
-              className="nav-link dropdown-toggle"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-              onClick={(e) => e.preventDefault()}
-            >
-              Hệ Sinh Thái AI
-            </a>
-            <div className="dropdown-menu fade-down m-0 shadow-sm border-0">
-              <Link to="/yeu-cau-lo-trinh-ai" className="dropdown-item">
-                Lộ trình AI
-              </Link>
-              <Link to="/sinh-do-an-ai" className="dropdown-item">
-                Sinh đồ án AI
-              </Link>
-              <Link to="/phong-van-ai" className="dropdown-item">
-                Phỏng vấn AI
-              </Link>
-            </div>
-          </div>
+          <Link to="/yeu-cau-lo-trinh-ai" className="nav-item nav-link">
+            Lộ trình AI
+          </Link>
 
           <Link to="/khong-gian-hoc-tap" className="nav-item nav-link">
             Không gian học tập
@@ -93,15 +73,14 @@ export default function HeaderHocVien() {
           {/* KIỂM TRA TRẠNG THÁI ĐĂNG NHẬP */}
           {user ? (
             <div className="nav-item dropdown px-lg-4">
-              <button
-                type="button"
-                className="nav-link dropdown-toggle d-flex align-items-center border-0 bg-transparent"
+              <a
+                href="#"
+                className="nav-link dropdown-toggle d-flex align-items-center"
                 data-bs-toggle="dropdown"
-                aria-expanded="false"
-                aria-label="Mở menu tài khoản"
+                onClick={(e) => e.preventDefault()}
               >
                 <span className="fw-bold d-none d-lg-inline">{user.hoTen || user.name}</span>
-              </button>
+              </a>
 
               {/* DANH SÁCH MENU XỔ XUỐNG */}
               <div className="dropdown-menu dropdown-menu-end fade-down m-0 shadow-sm border-0">

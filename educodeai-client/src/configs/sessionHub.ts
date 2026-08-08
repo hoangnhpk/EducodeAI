@@ -1,21 +1,21 @@
 import * as signalR from "@microsoft/signalr";
-import { getAuthTokens } from "../utils/authStorage";
-import { redirectToLoginOnce } from "../utils/sessionTermination";
+import { clearAuthTokens, getAuthTokens } from "../utils/authStorage";
 
 // Kết nối SignalR SessionHub (Phase G.9): nhận event revoke/khóa realtime để logout UI
 // ngay, thay cho việc polling mỗi 10 giây. Access token lấy từ localStorage qua
 // accessTokenFactory (cách chuẩn SignalR); C.10 hoãn nên token vẫn ở localStorage.
 
 let connection: signalR.HubConnection | null = null;
-let sessionClearHandler: (() => void) | null = null;
+let isForcingLogout = false;
 
 const getToken = () => getAuthTokens().accessToken || "";
 
 const forceLogout = (title: string, message: string) => {
-  if (!redirectToLoginOnce(() => undefined)) return;
+  if (isForcingLogout) return;
+  isForcingLogout = true;
 
-  void import("sweetalert2")
-    .then((Swal) => Swal.default.fire({
+  void import("sweetalert2").then((Swal) => {
+    Swal.default.fire({
       title,
       html: message,
       icon: "warning",
@@ -23,15 +23,16 @@ const forceLogout = (title: string, message: string) => {
       timerProgressBar: true,
       showConfirmButton: false,
       allowOutsideClick: false,
-    }))
-    .finally(() => window.location.assign("/dang-nhap"));
+    }).then(() => {
+      clearAuthTokens();
+      localStorage.removeItem("user_info");
+      window.location.href = "/dang-nhap";
+    });
+  });
 };
 
 export const startSessionHub = async (): Promise<void> => {
-  if (connection) return
-  window.removeEventListener('auth:session-cleared', sessionClearHandler ?? (() => undefined))
-  sessionClearHandler = () => { void stopSessionHub() }
-  window.addEventListener('auth:session-cleared', sessionClearHandler)
+  if (connection) return;
   const token = getToken();
   if (!token) return;
 
@@ -74,10 +75,6 @@ export const startSessionHub = async (): Promise<void> => {
 };
 
 export const stopSessionHub = async (): Promise<void> => {
-  if (sessionClearHandler) {
-    window.removeEventListener('auth:session-cleared', sessionClearHandler)
-    sessionClearHandler = null
-  }
   if (!connection) return;
   const c = connection;
   connection = null;

@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using educodeai_server.Services.Interface;
 using educodeai_server.Models;
 using educodeai_server.Data;
-using educodeai_server.Constants;
 
 namespace educodeai_server.Workers
 {
@@ -33,8 +32,11 @@ namespace educodeai_server.Workers
                         var redisService = scope.ServiceProvider.GetRequiredService<IRedisService>();
                         var dbContext = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
 
-                        // Gom log từ Redis LogQueue xuống bảng NhatKySuDung.
+                        // 1. GOM LOG TÙM REDIS ÄÄY XUÔNG BÄNG NhatKySuDung
                         await DongBoNhatKyAsync(redisService, dbContext);
+
+                        // 2. CHÔT SÔ TOKEN TÙM REDIS HASH VÊ BÄNG KeyAPI
+                        await DongBoHanMucKeyAsync(redisService, dbContext);
                     }
                 }
                 catch (Exception ex)
@@ -48,11 +50,9 @@ namespace educodeai_server.Workers
         {
             try
             {
-                // Peek-then-trim: đọc KHÔNG xóa, ghi DB thành công rồi mới trim khỏi Redis.
-                // Nếu SaveChanges lỗi, log vẫn còn nguyên trong queue để vòng sau xử lý lại.
-                var danhSachLogJson = (await redisService.DocDauListKhongXoaAsync(CacheKeys.LogQueue, 100)).ToList();
+                var danhSachLogJson = await redisService.LayTuDauListAsync("EduCodeAI:LogQueue", 100);
 
-                if (danhSachLogJson.Count == 0) return;
+                if (!danhSachLogJson.Any()) return;
 
                 var danhSachNhatKy = new List<NhatKySuDungModel>();
 
@@ -69,7 +69,7 @@ namespace educodeai_server.Workers
                     }
                     catch
                     {
-                        // Bỏ qua log không hợp lệ
+                        // Bá qua log không háp lá
                     }
                 }
 
@@ -78,13 +78,64 @@ namespace educodeai_server.Workers
                     await dbContext.Set<NhatKySuDungModel>().AddRangeAsync(danhSachNhatKy);
                     await dbContext.SaveChangesAsync();
                 }
-
-                // Chỉ trim đúng số phần tử đã đọc để không cắt nhầm log mới push vào sau đó.
-                await redisService.CatDauListAsync(CacheKeys.LogQueue, danhSachLogJson.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi đồng bộ nhật ký sử dụng (LogQueue sẽ được giữ lại để thử lại)");
+                _logger.LogError(ex, "Lá khi dong bá nhát ký");
+            }
+        }
+
+        private async Task DongBoHanMucKeyAsync(IRedisService redisService, EduCodeAIDbContext dbContext)
+        {
+            try
+            {
+                // Láy các Key dang áÆc phép cháy
+                var activeKeys = dbContext.KeyAPIs.Where(k => k.TrangThai).ToList();
+                bool coSuThayDoi = false;
+
+                foreach (var key in activeKeys)
+                {
+                    string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
+
+                    var tokenDaDungStr = await redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
+                    var requestDaDungStr = await redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
+
+                    if (int.TryParse(tokenDaDungStr, out int tokenDaDungMoi) &&
+                        int.TryParse(requestDaDungStr, out int requestDaDungMoi))
+                    {
+                        // Thóng kê lai tù NhatKySuDungModel
+                        var thongKe = dbContext.NhatKySuDungs
+                            .Where(nk => nk.ID_Key == key.ID)
+                            .GroupBy(nk => nk.ID_Key)
+                            .Select(g => new { 
+                                TotalTokens = g.Sum(nk => nk.SoTokenTieuHao),
+                                TotalRequests = g.Count()
+                            })
+                            .FirstOrDefault();
+
+                        if (thongKe != null)
+                        {
+                            _logger.LogInformation("Key {KeyId} - Redis: Token={RedisToken}, Request={RedisRequest} | DB: Token={DBToken}, Request={DBRequests}", 
+                                key.ID, tokenDaDungMoi, requestDaDungMoi, thongKe.TotalTokens, thongKe.TotalRequests);
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Key {KeyId} - Redis: Token={RedisToken}, Request={RedisRequest} | DB: Không có data", 
+                                key.ID, tokenDaDungMoi, requestDaDungMoi);
+                        }
+                        
+                        coSuThayDoi = true;
+                    }
+                }
+
+                if (coSuThayDoi)
+                {
+                    _logger.LogInformation("Äã kiá tra hán mác cho {Count} keys", activeKeys.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lá khi dong bá hán mác key");
             }
         }
     }

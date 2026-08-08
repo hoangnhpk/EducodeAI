@@ -16,31 +16,7 @@ body {
   color: var(--text-main);
 }
 
-.password-input-toggle {
-  z-index: 6;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--primary);
-  box-shadow: none;
-  line-height: 1;
-}
-
-.password-input-toggle:hover,
-.password-input-toggle:active {
-  border: 0;
-  background: transparent;
-  color: var(--primary-hover);
-  box-shadow: none;
-}
-
-.password-input-toggle:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
+/* ========== UTILITIES ========== */
 .fw-medium {
   font-weight: var(--font-weight-semibold) !important;
 }
@@ -1311,94 +1287,4 @@ body {
 
 .tilt-card-3d:hover small {
   transform: translateZ(20px);
-}
-
-/* ========== REVIEW ROTATION ANIMATIONS ========== */
-.review-rotate-wrapper {
-  perspective: 1200px;
-  animation-fill-mode: both;
-}
-
-/* --- Enter: 3D flip-in từ phía sau + scale up + fade in --- */
-.review-rotate-wrapper.review-enter {
-  animation: reviewFlipIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-
-@keyframes reviewFlipIn {
-  0% {
-    opacity: 0;
-    transform: rotateY(-90deg) scale(0.7) translateY(30px);
-    filter: blur(8px);
-  }
-  40% {
-    opacity: 0.5;
-    transform: rotateY(-20deg) scale(0.9) translateY(10px);
-    filter: blur(3px);
-  }
-  70% {
-    opacity: 0.85;
-    transform: rotateY(8deg) scale(1.02) translateY(-5px);
-    filter: blur(1px);
-  }
-  100% {
-    opacity: 1;
-    transform: rotateY(0deg) scale(1) translateY(0);
-    filter: blur(0);
-  }
-}
-
-/* --- Exit: 3D flip-out ra phía trước + scale down + fade out --- */
-.review-rotate-wrapper.review-exit {
-  animation: reviewFlipOut 0.7s cubic-bezier(0.55, 0.085, 0.68, 0.53) both;
-}
-
-@keyframes reviewFlipOut {
-  0% {
-    opacity: 1;
-    transform: rotateY(0deg) scale(1) translateY(0);
-    filter: blur(0);
-  }
-  30% {
-    opacity: 0.7;
-    transform: rotateY(15deg) scale(1.03) translateY(-10px);
-    filter: blur(1px);
-  }
-  100% {
-    opacity: 0;
-    transform: rotateY(90deg) scale(0.6) translateY(40px);
-    filter: blur(10px);
-  }
-}
-
-/* --- Hiệu ứng shimmer ánh sáng lướt qua card khi mới xuất hiện --- */
-.review-rotate-wrapper.review-enter .review-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    transparent 100%
-  );
-  animation: reviewShimmer 1.2s ease-out 0.4s both;
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-@keyframes reviewShimmer {
-  0% {
-    left: -100%;
-    opacity: 0;
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    left: 150%;
-    opacity: 0;
-  }
 }

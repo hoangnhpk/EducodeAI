@@ -5,7 +5,7 @@ import quaTangKhoaHocService, {
   type KhoaHocTangOptionDTO,
   type QuaTangKhoaHocItemDTO,
 } from "@/services/qua-tang-khoa-hoc.service";
-import "./TangKhoaHoc.css";
+import { BsGiftFill, BsSearch } from "react-icons/bs";
 
 const dinhDangTien = (gia: number, donVi: string) =>
   new Intl.NumberFormat("vi-VN", {
@@ -113,38 +113,32 @@ export default function TangKhoaHocGiangVien() {
   };
 
   return (
-    <div className="tkh-container">
-      <div className="tkh-header">
-        <h1 className="tkh-title">Tặng khóa học</h1>
-        <p className="tkh-subtitle">Chọn khóa học của bạn, sau đó chọn học viên từ danh sách gợi ý để tặng.</p>
+    <div className="qllh-container">
+      <div className="qllh-header">
+        <h1 className="qllh-title">Tặng khóa học</h1>
+        <p className="qllh-subtitle">Chọn khóa học của bạn, sau đó chọn học viên từ danh sách gợi ý để tặng.</p>
       </div>
 
-      <div className="tkh-panel">
+      <div className="qllh-table-wrapper" style={{ padding: 16, marginBottom: 20 }}>
         {dangTaiKhoa ? (
-          <div className="tkh-placeholder">
-            <i className="fas fa-spinner fa-spin" aria-hidden="true" />
-            Đang tải danh sách khóa học...
-          </div>
+          <div style={{ padding: 16 }}>Đang tải danh sách khóa học...</div>
         ) : khoaHocs.length === 0 ? (
-          <div className="tkh-placeholder">
-            <i className="fas fa-box-open" aria-hidden="true" />
-            Bạn chưa có khóa học để tặng.
-          </div>
+          <div style={{ padding: 16 }}>Bạn chưa có khóa học để tặng.</div>
         ) : (
-          <div className="tkh-grid">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
             {khoaHocs.map((kh) => (
-              <div key={kh.maKhoaHoc} className="tkh-card">
-                <div className="tkh-card-title">{kh.tenKhoaHoc}</div>
-                <div className="tkh-card-meta">
-                  Mã khóa học: #{kh.maKhoaHoc} - <span className="tkh-card-price">{dinhDangTien(kh.giaKhoaHoc, kh.donViTienTe)}</span>
+              <div key={kh.maKhoaHoc} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 14, background: "#fff" }}>
+                <div style={{ fontWeight: 700, color: "#111827", marginBottom: 6 }}>{kh.tenKhoaHoc}</div>
+                <div style={{ color: "#6b7280", fontSize: 13, marginBottom: 10 }}>
+                  Mã khóa học: #{kh.maKhoaHoc} - {dinhDangTien(kh.giaKhoaHoc, kh.donViTienTe)}
                 </div>
-                <div className="tkh-card-spacer" />
                 <button
-                  className="tkh-btn-tang"
+                  className="qllh-btn-search"
+                  style={{ width: "100%", justifyContent: "center" }}
                   onClick={() => void handleTang(kh)}
                   disabled={dangTangMaKhoaHoc === kh.maKhoaHoc}
                 >
-                  <i className={dangTangMaKhoaHoc === kh.maKhoaHoc ? "fas fa-spinner fa-spin" : "fas fa-gift"} aria-hidden="true" />
+                  <BsGiftFill />
                   {dangTangMaKhoaHoc === kh.maKhoaHoc ? "Đang xử lý..." : "Tặng khóa học này"}
                 </button>
               </div>
@@ -153,35 +147,36 @@ export default function TangKhoaHocGiangVien() {
         )}
       </div>
 
-      <div className="tkh-panel">
-        <div className="tkh-history-bar">
-          <div className="tkh-history-heading">
-            <h3 className="tkh-history-title">Lịch sử tặng khóa học</h3>
-            <p className="tkh-history-desc">Các lượt tặng khóa học gần đây của giảng viên.</p>
+      <div className="qllh-table-wrapper">
+        <div className="qllh-filter-bar" style={{ marginBottom: 0 }}>
+          <div style={{ minWidth: 260 }}>
+            <h3 style={{ margin: 0, color: "#9a3412" }}>Lịch sử tặng khóa học</h3>
+            <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 13 }}>Các lượt tặng khóa học gần đây của giảng viên.</p>
           </div>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               void napLichSu(tuKhoaLichSu || undefined);
             }}
-            className="tkh-search-form"
+            className="qllh-search-form"
+            style={{ maxWidth: 520 }}
           >
-            <div className="tkh-search-field">
-              <i className="fas fa-magnifying-glass tkh-search-icon" aria-hidden="true" />
+            <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center" }}>
+              <BsSearch style={{ position: "absolute", left: "16px", color: "#9ca3af" }} />
               <input
                 type="search"
                 placeholder="Tìm theo mã/tên/email..."
-                className="tkh-search-input"
+                className="qllh-search-input"
                 value={tuKhoaLichSu}
                 onChange={(e) => setTuKhoaLichSu(e.target.value)}
               />
             </div>
-            <button type="submit" className="tkh-btn-filter">Lọc</button>
+            <button type="submit" className="qllh-btn-search">Lọc</button>
           </form>
         </div>
 
-        <div className="tkh-table-scroll">
-          <table className="tkh-table">
+        <div style={{ overflowX: "auto" }}>
+          <table className="qllh-table">
             <thead>
               <tr>
                 <th>Mã</th>
@@ -193,15 +188,15 @@ export default function TangKhoaHocGiangVien() {
             </thead>
             <tbody>
               {dangTaiLichSu ? (
-                <tr><td colSpan={5} className="tkh-table-empty">Đang tải lịch sử...</td></tr>
+                <tr><td colSpan={5} style={{ textAlign: "center", padding: 20 }}>Đang tải lịch sử...</td></tr>
               ) : lichSuHienThi.length === 0 ? (
-                <tr><td colSpan={5} className="tkh-table-empty">Chưa có lịch sử tặng khóa học.</td></tr>
+                <tr><td colSpan={5} style={{ textAlign: "center", padding: 20 }}>Chưa có lịch sử tặng khóa học.</td></tr>
               ) : (
                 lichSuHienThi.map((item) => (
                   <tr key={item.maQuaTang}>
                     <td>#{item.maQuaTang}</td>
                     <td>{item.tenKhoaHoc}</td>
-                    <td>{item.tenNguoiNhan}<br /><small className="tkh-cell-sub">{item.emailNguoiNhan || "—"}</small></td>
+                    <td>{item.tenNguoiNhan}<br /><small style={{ color: "#6b7280" }}>{item.emailNguoiNhan || "—"}</small></td>
                     <td>{item.trangThai}</td>
                     <td>{new Date(item.createdAt).toLocaleString("vi-VN")}</td>
                   </tr>
