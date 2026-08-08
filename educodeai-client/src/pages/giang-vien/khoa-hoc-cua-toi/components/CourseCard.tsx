@@ -3,7 +3,7 @@ import type { KhoaHocListItem } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 const getImageUrl = (url?: string): string => {
-  if (!url) return 'https://placehold.co/600x340/6366f1/white?text=Khóa+Học';
+  if (!url) return 'https://placehold.co/600x340/f69050/white?text=Khóa+Học';
   if (url.startsWith('http')) return url;
   // Ảnh upload thật (/uploads/...) do backend phục vụ; tên file trần (seed) là asset public của frontend.
   if (url.startsWith('/')) return `${BASE_URL}${url}`;
@@ -34,7 +34,7 @@ const CourseCard: React.FC<Props> = ({ course, onEdit, onManage, onArchive, onDu
         src={getImageUrl(course.hinhAnh)}
         alt={course.tenKhoaHoc}
         className="khm-course-card-img"
-        onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x340/6366f1/white?text=Khóa+Học'; }}
+        onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x340/f69050/white?text=Khóa+Học'; }}
       />
       <div className="khm-course-card-body">
         <div className="khm-course-card-badges">

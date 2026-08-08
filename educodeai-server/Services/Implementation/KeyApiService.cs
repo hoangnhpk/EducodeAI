@@ -1,3 +1,4 @@
+using educodeai_server.Constants;
 using educodeai_server.DTOs.AI;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
@@ -24,8 +25,8 @@ namespace educodeai_server.Services.Implementation
                 if (key != null && key.TrangThai)
                 {
                     string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
-                    var reqStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
-                    var tokStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
+                    var reqStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageRpd(key.ID, homNaySuffix));
+                    var tokStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageDailyToken(key.ID, homNaySuffix));
 
                     if (int.TryParse(reqStr, out int req))
                     {
@@ -54,8 +55,8 @@ namespace educodeai_server.Services.Implementation
             if (key != null && key.TrangThai)
             {
                 string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
-                var reqStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:RPD:{key.ID}:{homNaySuffix}");
-                var tokStr = await _redisService.LayGiaTriAsync($"EduCodeAI:Usage:DailyToken:{key.ID}:{homNaySuffix}");
+                var reqStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageRpd(key.ID, homNaySuffix));
+                var tokStr = await _redisService.LayGiaTriAsync(CacheKeys.UsageDailyToken(key.ID, homNaySuffix));
 
                 if (int.TryParse(reqStr, out int req)) key.DaSuDungRequestHomNay = req;
                 if (int.TryParse(tokStr, out int tok)) key.DaSuDungTokenHomNay = tok;
@@ -113,7 +114,7 @@ namespace educodeai_server.Services.Implementation
 
             if (isUpdated)
             {
-                string redisKey = $"EduCodeAI:KeyPool:{id}";
+                string redisKey = CacheKeys.KeyPool(id);
 
                 if (status)
                 {
@@ -136,7 +137,7 @@ namespace educodeai_server.Services.Implementation
 
             if (isDeleted)
             {
-                await _redisService.XoaKeyAsync($"EduCodeAI:KeyPool:{id}");
+                await _redisService.XoaKeyAsync(CacheKeys.KeyPool(id));
             }
 
             return isDeleted;
@@ -148,14 +149,23 @@ namespace educodeai_server.Services.Implementation
 
             if (rawKey == null || !rawKey.TrangThai) return false;
 
-            string redisKey = $"EduCodeAI:KeyPool:{rawKey.ID}";
+            string redisKey = CacheKeys.KeyPool(rawKey.ID);
 
-            await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", rawKey.MaKeyMaHoa);
-            await _redisService.LuuHashAsync(redisKey, "RPMLimit", rawKey.RPMLimit.ToString());
-            await _redisService.LuuHashAsync(redisKey, "TPMLimit", rawKey.TPMLimit.ToString());
-            await _redisService.LuuHashAsync(redisKey, "RPDLimit", rawKey.RPDLimit.ToString());
-            await _redisService.LuuHashAsync(redisKey, "ModelSuDung", rawKey.ModelSuDung);
-            await _redisService.LuuHashAsync(redisKey, "TrangThai", rawKey.TrangThai.ToString());
+            // Gom kết quả từng lệnh ghi. Redis ngắt → LuuHashAsync trả false (đã nuốt
+            // RedisConnectionException bên trong). Chỉ khi TẤT CẢ ghi được mới coi là sync thành công.
+            bool tatCaGhiDuoc =
+                await _redisService.LuuHashAsync(redisKey, "MaKeyMaHoa", rawKey.MaKeyMaHoa) &
+                await _redisService.LuuHashAsync(redisKey, "RPMLimit", rawKey.RPMLimit.ToString()) &
+                await _redisService.LuuHashAsync(redisKey, "TPMLimit", rawKey.TPMLimit.ToString()) &
+                await _redisService.LuuHashAsync(redisKey, "RPDLimit", rawKey.RPDLimit.ToString()) &
+                await _redisService.LuuHashAsync(redisKey, "ModelSuDung", rawKey.ModelSuDung) &
+                await _redisService.LuuHashAsync(redisKey, "TrangThai", rawKey.TrangThai.ToString());
+
+            if (!tatCaGhiDuoc)
+            {
+                // Không ghi audit SYNC_CONFIG khi sync thất bại để log phản ánh đúng thực tế.
+                return false;
+            }
 
             var auditLog = new educodeai_server.Models.ApiKeyAuditLog
             {
@@ -183,8 +193,8 @@ namespace educodeai_server.Services.Implementation
                 if (rawKey != null && rawKey.TrangThai)
                 {
                     string homNaySuffix = DateTime.UtcNow.ToString("yyyyMMdd");
-                    await _redisService.XoaKeyAsync($"EduCodeAI:Usage:RPD:{id}:{homNaySuffix}");
-                    await _redisService.XoaKeyAsync($"EduCodeAI:Usage:DailyToken:{id}:{homNaySuffix}");
+                    await _redisService.XoaKeyAsync(CacheKeys.UsageRpd(id, homNaySuffix));
+                    await _redisService.XoaKeyAsync(CacheKeys.UsageDailyToken(id, homNaySuffix));
                 }
             }
 

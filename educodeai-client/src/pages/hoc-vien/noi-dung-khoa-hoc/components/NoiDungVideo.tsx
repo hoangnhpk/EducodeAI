@@ -20,7 +20,7 @@ interface Props {
 }
 
 // 2. Bọc component trong forwardRef
-export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, videoSource, maBaiHoc, maNguoiDung, daXem, onVideoCompleted }, ref) => {
+export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, videoSource, subtitleUrl, maBaiHoc, maNguoiDung, daXem, onVideoCompleted }, ref) => {
   const playerRef = useRef<any>(null);
   const [daSanSang, setDaSanSang] = useState(false);
   const [thoiLuongVideo, setThoiLuongVideo] = useState(0);
@@ -86,6 +86,9 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
       controls: 1,
       modestbranding: 1,
       rel: 0,
+      fs: 1,
+      cc_load_policy: 0,
+      iv_load_policy: 1,
     },
   }), []);
 
@@ -287,9 +290,9 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
       // Chỉ hiện Quiz cho những Chapter có câu hỏi (videoQuizs.length > 0)
       const currentChapters = chaptersRef.current;
       if (currentChapters.length > 0) {
-        const chuaKiemTra = currentChapters.find(c => 
-          !c.daKiemTra && 
-          c.videoQuizs && c.videoQuizs.length > 0 && 
+        const chuaKiemTra = currentChapters.find(c =>
+          !c.daKiemTra &&
+          c.videoQuizs && c.videoQuizs.length > 0 &&
           currentVideoTime >= c.thoiGianKetThuc
         );
         if (chuaKiemTra) {
@@ -330,69 +333,79 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
   );
 
   return (
-    <div className="cp-tab-pane active" style={{ display: 'block', height: '100%' }}>
-      {laYouTube ? (
-        <YouTube
-          videoId={videoId ?? undefined}
-          opts={tuyChinh}
-          onReady={khiSanSang}
-          onStateChange={khiTrangThaiThayDoi}
-          className="cp-video-frame w-100 h-100"
-          iframeClassName="w-100 h-100"
-          style={{ aspectRatio: '16/9', borderRadius: '8px 8px 0 0' }}
-        />
-      ) : (
-        <video
-          ref={playerRef}
-          controls
-          controlsList="nodownload"
-          className="cp-video-frame w-100 h-100"
-          style={{ aspectRatio: '16/9', borderRadius: '8px 8px 0 0', background: '#000' }}
-          src={videoUrl ? videoUrl.replace(/\.[^/.]+$/, '.mp4') : ''}
-          poster={videoUrl ? videoUrl.replace(/\.[^/.]+$/, '.jpg') : undefined}
-          onLoadedMetadata={(e) => {
-            setThoiLuongVideo(e.currentTarget.duration);
-            setDaSanSang(true);
-            // mock YouTube player functions
-            playerRef.current.getCurrentTime = () => playerRef.current?.currentTime || 0;
-            playerRef.current.getDuration = () => playerRef.current?.duration || 0;
-            playerRef.current.playVideo = () => playerRef.current?.play();
-            playerRef.current.pauseVideo = () => playerRef.current?.pause();
-            playerRef.current.seekTo = (time: number) => { if (playerRef.current) playerRef.current.currentTime = time; };
-            // Trạng thái giống YouTube API: 1 = đang phát, 2 = tạm dừng, 0 = kết thúc
-            playerRef.current.getPlayerState = () => {
-              const v = playerRef.current;
-              if (!v) return 2;
-              if (v.ended) return 0;
-              return v.paused ? 2 : 1;
-            };
-            playerRef.current.getPlaybackRate = () => playerRef.current?.playbackRate || 1;
-          }}
-          onEnded={() => luuTienDo(playerRef.current?.getDuration() || 0)}
-          onTimeUpdate={(e) => {
-            setThoiGianHienTai(e.currentTarget.currentTime);
-          }}
-          onPlay={() => {
-            if (dangCanhBaoRef.current) return;
-            lastRealTimeRef.current = Date.now();
-          }}
-        />
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative', width: '100%', background: '#000' }}>
+        {laYouTube ? (
+          <YouTube
+            videoId={videoId ?? undefined}
+            opts={tuyChinh}
+            onReady={khiSanSang}
+            onStateChange={khiTrangThaiThayDoi}
+            className="w-100 h-100"
+            iframeClassName="w-100 h-100"
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
+        ) : (
+          <video
+            ref={playerRef}
+            controls
+            controlsList="nodownload"
+            className="w-100 h-100"
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: '#000' }}
+            src={videoUrl ? videoUrl.replace(/\.[^/.]+$/, '.mp4') : ''}
+            poster={videoUrl ? videoUrl.replace(/\.[^/.]+$/, '.jpg') : undefined}
+            onLoadedMetadata={(e) => {
+              const v = e.currentTarget;
+              setThoiLuongVideo(v.duration || 0);
+              setDaSanSang(true);
+              if (v) {
+                (v as any).getCurrentTime = () => v.currentTime || 0;
+                (v as any).getDuration = () => v.duration || 0;
+                (v as any).playVideo = () => v.play();
+                (v as any).pauseVideo = () => v.pause();
+                (v as any).seekTo = (time: number) => { v.currentTime = time; };
+                (v as any).getPlayerState = () => {
+                  if (v.ended) return 0;
+                  return v.paused ? 2 : 1;
+                };
+                (v as any).getPlaybackRate = () => v.playbackRate || 1;
+              }
+            }}
+            onEnded={() => luuTienDo(playerRef.current?.getDuration() || 0)}
+            onTimeUpdate={(e) => {
+              setThoiGianHienTai(e.currentTarget.currentTime);
+            }}
+            onPlay={() => {
+              if (dangCanhBaoRef.current) return;
+              lastRealTimeRef.current = Date.now();
+            }}
+          >
+            {/* Phụ đề: browser chỉ render <track> định dạng VTT. SRT bị bỏ qua. */}
+            {subtitleUrl && subtitleUrl.toLowerCase().endsWith('.vtt') && (
+              <track
+                kind="subtitles"
+                srcLang="vi"
+                label="Tiếng Việt"
+                src={subtitleUrl}
+              />
+            )}
+          </video>
+        )}
+      </div>
 
       {daSanSang && (
         <div style={{
-          padding: '12px',
-          background: '#f8f9fa',
-          border: '1px solid #dee2e6',
-          borderTop: 'none',
-          borderRadius: '0 0 8px 8px',
+          flexShrink: 0,
+          padding: '10px 16px',
+          background: '#ffffff',
+          borderTop: '1px solid #e2e8f0',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ fontWeight: '600', color: '#555', fontSize: '0.95rem' }}>
-              <i className="far fa-clock me-2"></i>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontWeight: '600', color: '#475569', fontSize: '0.9rem' }}>
+              <i className="far fa-clock me-2" style={{ color: '#f69050' }}></i>
               {Math.floor(thoiGianHienTai / 60)}:{Math.floor(thoiGianHienTai % 60).toString().padStart(2, '0')} /{' '}
               {Math.floor(thoiLuongVideo / 60)}:{Math.floor(thoiLuongVideo % 60).toString().padStart(2, '0')}
             </div>

@@ -1,4 +1,3 @@
-import { CheckCircle2, Clock, ShieldAlert, Star, TrendingUp } from 'lucide-react';
 import type { ThongKeReview } from './ReviewAdmin.types';
 
 interface Props {
@@ -26,7 +25,7 @@ export default function ReviewAdminStats({ data }: Props) {
         {/* Tổng đánh giá */}
         <article className="qtrv-card qtrv-card--blue">
           <div className="qtrv-card__icon">
-            <TrendingUp size={16} />
+            <i className="fas fa-arrow-trend-up" aria-hidden="true" />
           </div>
           <div className="qtrv-card__body">
             <span className="qtrv-card__label">Tổng đánh giá</span>
@@ -37,11 +36,11 @@ export default function ReviewAdminStats({ data }: Props) {
         {/* Chờ duyệt – quan trọng nhất cho Admin */}
         <article className="qtrv-card qtrv-card--amber" style={{ position: 'relative' }}>
           <div className="qtrv-card__icon">
-            <Clock size={16} />
+            <i className="fas fa-clock" aria-hidden="true" />
           </div>
           <div className="qtrv-card__body">
             <span className="qtrv-card__label">Chờ duyệt</span>
-            <strong className="qtrv-card__value" style={{ color: choDuyet > 0 ? '#d97706' : undefined }}>
+            <strong className="qtrv-card__value" style={{ color: choDuyet > 0 ? 'var(--primary-dark)' : undefined }}>
               {choDuyet}
             </strong>
           </div>
@@ -49,8 +48,8 @@ export default function ReviewAdminStats({ data }: Props) {
             <span style={{
               position: 'absolute', top: 8, right: 8,
               width: 8, height: 8, borderRadius: '50%',
-              background: '#f59e0b',
-              boxShadow: '0 0 0 3px #fff8ed',
+              background: 'var(--warning)',
+              boxShadow: '0 0 0 3px var(--warning-soft)',
               animation: 'qtrv-pulse 1.5s ease-in-out infinite'
             }} title={`${choDuyet} đánh giá cần xét duyệt`} />
           )}
@@ -59,7 +58,7 @@ export default function ReviewAdminStats({ data }: Props) {
         {/* Đã duyệt */}
         <article className="qtrv-card qtrv-card--green">
           <div className="qtrv-card__icon">
-            <CheckCircle2 size={16} />
+            <i className="fas fa-circle-check" aria-hidden="true" />
           </div>
           <div className="qtrv-card__body">
             <span className="qtrv-card__label">Đã duyệt</span>
@@ -70,7 +69,7 @@ export default function ReviewAdminStats({ data }: Props) {
         {/* Từ chối */}
         <article className="qtrv-card qtrv-card--red">
           <div className="qtrv-card__icon">
-            <ShieldAlert size={16} />
+            <i className="fas fa-shield-halved" aria-hidden="true" />
           </div>
           <div className="qtrv-card__body">
             <span className="qtrv-card__label">Từ chối</span>
@@ -88,14 +87,17 @@ export default function ReviewAdminStats({ data }: Props) {
           </div>
         </div>
         <div className="qtrv-stars-inline">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star
-              key={star}
-              size={14}
-              fill={star <= Math.round(data.danhGiaTrungBinh) ? '#f59e0b' : 'none'}
-              color={star <= Math.round(data.danhGiaTrungBinh) ? '#f59e0b' : '#d1d5db'}
-            />
-          ))}
+          {[1, 2, 3, 4, 5].map((star) => {
+            const filled = star <= Math.round(data.danhGiaTrungBinh);
+            return (
+              <i
+                key={star}
+                className={filled ? 'fas fa-star' : 'far fa-star'}
+                style={{ color: filled ? 'var(--warning)' : 'var(--text-light)', fontSize: 14 }}
+                aria-hidden="true"
+              />
+            );
+          })}
           <span>{totalRatings} đánh giá</span>
         </div>
       </aside>

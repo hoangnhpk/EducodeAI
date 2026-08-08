@@ -12,20 +12,20 @@
 .roadmap-eyebrow {
     font-size: 1rem;
     letter-spacing: 0.2em;
-    color: #fb873f;
+    color: var(--primary);
     text-transform: uppercase;
     display: inline-block;
     margin-bottom: 0.8rem;
 }
 
 .roadmap-heading {
-    color: #0f172a;
+    color: var(--text-dark);
     margin-bottom: 2rem;
 }
 
 .roadmap-heading span {
     display: block;
-    color: #475569;
+    color: var(--text-muted);
     font-size: 1rem;
     margin-top: 0.35rem;
 }
@@ -53,18 +53,18 @@
 }
 
 .roadmap-card-primary {
-    background: #fff7f1;
+    background: var(--primary-soft);
     border-color: rgba(251, 135, 63, 0.35);
 }
 
 .roadmap-card h3 {
     margin: 0;
-    color: #0f172a;
+    color: var(--text-dark);
     font-weight: 700;
 }
 
 .roadmap-path {
-    color: #fb873f;
+    color: var(--primary);
     font-weight: 600;
     font-size: 0.95rem;
 }
@@ -73,7 +73,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #475569;
+    color: var(--text-muted);
     font-size: 0.95rem;
     margin-bottom: 0.5rem;
 }
@@ -89,7 +89,7 @@
 .progress-bar-custom {
     height: 100%;
     border-radius: inherit;
-    background: #fb873f;
+    background: var(--primary);
     transition: width 0.6s ease;
 }
 
@@ -103,39 +103,39 @@
 
 /* ── OVERRIDE BOOTSTRAP PRIMARY COLOR TO ORANGE THEME ── */
 .khoa-hoc-ca-nhan-ai-page .text-primary {
-    color: #fb873f !important;
+    color: var(--primary) !important;
 }
 
 .khoa-hoc-ca-nhan-ai-page .bg-primary {
-    background-color: #fb873f !important;
+    background-color: var(--primary) !important;
     color: white !important;
 }
 
 .khoa-hoc-ca-nhan-ai-page .btn-primary {
-    background-color: #fb873f !important;
-    border-color: #fb873f !important;
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
     color: #ffffff !important;
 }
 
 .khoa-hoc-ca-nhan-ai-page .btn-primary:hover {
-    background-color: #e57635 !important;
-    border-color: #e57635 !important;
+    background-color: var(--primary-hover) !important;
+    border-color: var(--primary-hover) !important;
 }
 
 .khoa-hoc-ca-nhan-ai-page .btn-outline-primary {
-    color: #fb873f !important;
-    border-color: #fb873f !important;
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
 }
 
 .khoa-hoc-ca-nhan-ai-page .btn-outline-primary:hover {
-    background-color: #fb873f !important;
+    background-color: var(--primary) !important;
     color: #ffffff !important;
 }
 
 .khoa-hoc-ca-nhan-ai-page .progress-bar {
-    background-color: #fb873f !important;
+    background-color: var(--primary) !important;
 }
 
 .khoa-hoc-ca-nhan-ai-page .spinner-border.text-primary {
-    color: #fb873f !important;
+    color: var(--primary) !important;
 }
