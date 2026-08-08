@@ -122,6 +122,12 @@ namespace educodeai_server.Repository.Implementation
             return Task.CompletedTask;
         }
 
+        public async Task<int> CountBaiHocByVideoPublicIdAsync(string publicId)
+        {
+            if (string.IsNullOrEmpty(publicId)) return 0;
+            return await _context.BaiHocs.CountAsync(b => b.VideoPublicId == publicId);
+        }
+
         public async Task SaveChangesAsync()
             => await _context.SaveChangesAsync();
     }

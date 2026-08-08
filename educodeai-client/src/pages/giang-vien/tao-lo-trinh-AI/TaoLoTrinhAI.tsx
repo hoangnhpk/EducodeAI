@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import './QuanLyLoTrinh.css';
+import { getAccessToken } from '../../../utils/authStorage';
 
 interface IKhoaHocGoc {
     maKhoaHoc: number;
@@ -106,7 +106,7 @@ const QuanLyLoTrinh = () => {
     const fetchDanhSach = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('user_token');
+            const token = getAccessToken();
             const response = await fetch('https://localhost:7284/api/giangvien/quan-ly-lo-trinh/danh-sach', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -121,7 +121,7 @@ const QuanLyLoTrinh = () => {
 
     const fetchKhoaHocCoSan = async () => {
         try {
-            const token = localStorage.getItem('user_token');
+            const token = getAccessToken();
             const response = await fetch('https://localhost:7284/api/giangvien/quan-ly-lo-trinh/danh-sach-khoa-hoc-co-san', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -168,14 +168,14 @@ const QuanLyLoTrinh = () => {
             text: `Hành động này sẽ xóa vĩnh viễn lộ trình #${id}!`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#64748b',
+            confirmButtonColor: 'var(--danger)',
+            cancelButtonColor: 'var(--text-muted)',
             confirmButtonText: 'Đồng ý xóa',
             cancelButtonText: 'Hủy'
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    const token = localStorage.getItem('user_token');
+                    const token = getAccessToken();
                     const res = await fetch(`https://localhost:7284/api/giangvien/quan-ly-lo-trinh/xoa/${id}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -196,7 +196,7 @@ const QuanLyLoTrinh = () => {
         if (tempCourses.length === 0) return Swal.fire('Cảnh báo', "Chưa có khóa học nào!", "warning");
 
         try {
-            const token = localStorage.getItem('user_token');
+            const token = getAccessToken();
             const method = isEditMode ? 'PUT' : 'POST';
             const url = isEditMode
                 ? `https://localhost:7284/api/giangvien/quan-ly-lo-trinh/cap-nhat/${editingItem.maLoTrinh}`
@@ -400,7 +400,7 @@ const QuanLyLoTrinh = () => {
                             </div>
                             <button onClick={() => setIsPreviewOpen(false)} className="close-x">×</button>
                         </div>
-                        <div className="modal-body-pro" style={{ background: '#f8fafc' }}>
+                        <div className="modal-body-pro" style={{ background: 'var(--bg-main)' }}>
                             <div style={{ padding: '10px' }}>
                                 {viewData.steps.length > 0 ? viewData.steps.map((step: any, i: number) => (
                                     <div key={i} className="course-item-card" style={{ marginBottom: '15px', borderLeft: '4px solid var(--ai-accent)' }}>
@@ -448,7 +448,7 @@ const QuanLyLoTrinh = () => {
                 .input-pro:focus { border-color: var(--ai-accent); box-shadow: 0 0 0 4px var(--ai-accent-soft); }
                 .empty-state-pro { text-align: center; padding: 40px 20px; background: var(--bg-card); border: 2px dashed var(--border-color); border-radius: var(--radius-lg); }
                 .btn-select-kh { background: var(--ai-accent-soft); color: var(--ai-accent-hover); border: none; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; transition: var(--transition-fast); }
-                .btn-select-kh:hover { background: #e9e2fb; }
+                .btn-select-kh:hover { background: var(--ai-accent-soft); filter: brightness(0.97); }
                 .course-item-card { display: flex; align-items: center; gap: 15px; background: var(--bg-card); padding: 15px; border-radius: var(--radius-md); margin-bottom: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
                 .course-img-small { width: 60px; height: 60px; border-radius: var(--radius-md); object-fit: cover; border: 1px solid var(--border-color); }
                 .select-pro { border: 1.5px solid var(--border-color); background: var(--bg-main); padding: 12px; border-radius: var(--radius-sm); font-weight: 600; width: 100%; font-size: 0.9rem; outline: none; cursor: pointer;}

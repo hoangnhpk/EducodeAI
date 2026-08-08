@@ -17,17 +17,17 @@
   --khm-danger-light: var(--danger-soft);
   --khm-warning: var(--warning);
   --khm-warning-light: var(--warning-soft);
-  --khm-gray-50: #f9fafb;
-  --khm-gray-100: #f3f4f6;
-  --khm-gray-200: #e5e7eb;
-  --khm-gray-300: #d1d5db;
-  --khm-gray-400: #9ca3af;
-  --khm-gray-500: #6b7280;
-  --khm-gray-600: #4b5563;
-  --khm-gray-700: #374151;
-  --khm-gray-800: #1f2937;
-  --khm-gray-900: #111827;
-  --khm-white: #ffffff;
+  --khm-gray-50: var(--gray-50);
+  --khm-gray-100: var(--gray-100);
+  --khm-gray-200: var(--gray-200);
+  --khm-gray-300: var(--gray-300);
+  --khm-gray-400: var(--gray-400);
+  --khm-gray-500: var(--gray-500);
+  --khm-gray-600: var(--gray-600);
+  --khm-gray-700: var(--gray-700);
+  --khm-gray-800: var(--gray-800);
+  --khm-gray-900: var(--gray-900);
+  --khm-white: var(--bg-card);
   --khm-radius: var(--radius-md);
   --khm-radius-sm: 8px;
   --khm-radius-lg: var(--radius-lg);
@@ -113,7 +113,7 @@
   color: white;
 }
 .khm-btn-accent:hover:not(:disabled) {
-  background: #d97706;
+  background: var(--warning-strong);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(245,158,11,0.35);
 }
@@ -143,7 +143,7 @@
   color: white;
 }
 .khm-btn-danger:hover:not(:disabled) {
-  background: #dc2626;
+  background: var(--danger-strong);
   transform: translateY(-1px);
 }
 
@@ -195,23 +195,23 @@
 }
 .khm-badge-published {
   background: var(--khm-success-light);
-  color: #065f46;
+  color: var(--success-strong);
 }
 .khm-badge-archived {
-  background: #f3e8ff;
-  color: #6b21a8;
+  background: var(--khm-gray-100);
+  color: var(--khm-gray-600);
 }
 .khm-badge-cert {
   background: var(--khm-accent-light);
-  color: #92400e;
+  color: var(--warning-strong);
 }
 .khm-badge-primary {
   background: var(--khm-primary-light);
   color: var(--primary-dark);
 }
 .khm-badge-yt {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--danger-soft);
+  color: var(--danger-strong);
 }
 
 /* ---------- Form Elements ---------- */
@@ -962,8 +962,8 @@
 }
 .khm-alert-warning {
   background: var(--khm-warning-light);
-  color: #92400e;
-  border: 1px solid #fde68a;
+  color: var(--warning-strong);
+  border: 1px solid var(--warning);
 }
 .khm-alert-info {
   background: var(--khm-primary-light);
@@ -972,13 +972,13 @@
 }
 .khm-alert-danger {
   background: var(--khm-danger-light);
-  color: #991b1b;
-  border: 1px solid #fca5a5;
+  color: var(--danger-strong);
+  border: 1px solid var(--danger);
 }
 .khm-alert-success {
   background: var(--khm-success-light);
-  color: #065f46;
-  border: 1px solid #6ee7b7;
+  color: var(--success-strong);
+  border: 1px solid var(--success);
 }
 
 /* ---------- Stats row ---------- */

@@ -250,7 +250,7 @@ const QuanLyApiKey = () => {
   );
 
   return (
-    <div className="akm-page">
+    <div className="akm-page qtv-page-content">
       {/* ======= HEADER ======= */}
       <div className="akm-header d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div className="d-flex align-items-center gap-3">
@@ -292,21 +292,18 @@ const QuanLyApiKey = () => {
             </span>
           </div>
 
-          {/* Thay đổi đoạn này trong code của ông */}
-          <div className="d-flex align-items-center gap-2 flex-nowrap"> {/* Thêm flex-nowrap để cấm xuống hàng */}
-            <div className="input-group input-group-sm akm-search-group" style={{ width: '200px' }}> {/* Set cứng width hoặc dùng class w-50 */}
-              <span className="input-group-text bg-white border-end-0">
-                <i className="bi bi-search text-muted"></i>
-              </span>
+          <div className="akm-pool-tools">
+            <div className="akm-search-group" style={{ width: '200px' }}>
+              <i className="bi bi-search akm-search-icon" aria-hidden="true"></i>
               <input
                 type="text"
-                className="form-control border-start-0 ps-0"
+                className="form-control"
                 placeholder="Tìm key..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 text-nowrap" onClick={fetchKeys}>
+            <button className="btn btn-outline-secondary akm-refresh-btn" onClick={fetchKeys}>
               <i className={`bi bi-arrow-clockwise ${isLoading ? "fa-spin" : ""}`}></i>
               Làm mới
             </button>

@@ -183,18 +183,79 @@ namespace educodeai_server.Helpers
             }
             catch
             {
-                throw new Exception("Output khong phai JSON hop le (Gemini response)");
+                // Nếu chuỗi truyền vào không phải JSON Gemini response
+                return LamSachLeakedPromptHeaders(outputAI);
             }
 
-            var text = root["candidates"]?
-                .First?["content"]?["parts"]?
-                .Select(p => p?["text"]?.ToString())
-                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+            var parts = root["candidates"]?
+                .FirstOrDefault()?["content"]?["parts"]?
+                .OfType<JObject>()
+                .ToList();
 
-            if (string.IsNullOrWhiteSpace(text))
+            if (parts == null || parts.Count == 0)
+            {
+                var textFallback = root["candidates"]?.FirstOrDefault()?["content"]?["parts"]?.FirstOrDefault()?["text"]?.ToString();
+                if (!string.IsNullOrWhiteSpace(textFallback))
+                {
+                    return LamSachLeakedPromptHeaders(textFallback);
+                }
                 throw new Exception("Khong tim thay noi dung text tu Gemini");
+            }
 
-            return text;
+            // 1. Lọc bỏ các part có "thought": true (tư duy nội bộ / thinking process của Gemma / Gemini Thinking)
+            var nonThoughtTexts = parts
+                .Where(p => p["thought"] == null || p["thought"]?.Value<bool>() == false)
+                .Select(p => p["text"]?.ToString())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
+
+            string finalResult;
+            if (nonThoughtTexts.Count > 0)
+            {
+                finalResult = string.Join("\n", nonThoughtTexts).Trim();
+            }
+            else
+            {
+                // Nếu tất cả parts đều dính thought, lấy part cuối cùng
+                finalResult = parts.Select(p => p["text"]?.ToString()).LastOrDefault(t => !string.IsNullOrWhiteSpace(t)) ?? string.Empty;
+            }
+
+            return LamSachLeakedPromptHeaders(finalResult);
+        }
+
+        public static string LamSachLeakedPromptHeaders(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return text;
+
+            var lines = text.Split('\n');
+            int startIndex = -1;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].Trim();
+                if (trimmed.StartsWith("◦ Key Constraints:") ||
+                    trimmed.StartsWith("Educational content summarizer") ||
+                    trimmed.StartsWith("NHIỆM VỤ CỦA BẠN:") ||
+                    trimmed.StartsWith("=== NGUYÊN TẮC:") ||
+                    trimmed.StartsWith("=== NGỮ CẢNH HIỆN TẠI:") ||
+                    trimmed.StartsWith("=== LỊCH SỬ TRÒ CHUYỆN") ||
+                    trimmed.StartsWith("• AI: (Internal thought process") ||
+                    trimmed.StartsWith("◦ Current Context:") ||
+                    trimmed.StartsWith("◦ Conversation History:"))
+                {
+                    continue;
+                }
+
+                startIndex = i;
+                break;
+            }
+
+            if (startIndex >= 0 && startIndex < lines.Length)
+            {
+                return string.Join("\n", lines.Skip(startIndex)).Trim();
+            }
+
+            return text.Trim();
         }
 
         public static string ExtractJson(string text)

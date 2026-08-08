@@ -188,7 +188,7 @@ namespace educodeai_server.Repository.Implementation
             var nganHangCauHoi = await LayNganHangCauHoiChungChiAsync(khoaHoc);
 
             duLieuKhoaHoc.BaiKiemTraChungChi = khoaHoc.CoChungChi
-                ? TaoBaiKiemTraChungChi(duLieuKhoaHoc, khoaHoc, nganHangCauHoi, daHoanThanhKhoaHoc)
+                ? TaoBaiKiemTraChungChi(duLieuKhoaHoc.MaKhoaHoc, duLieuKhoaHoc.TenKhoaHoc, khoaHoc, nganHangCauHoi, daHoanThanhKhoaHoc)
                 : null;
             duLieuKhoaHoc.ThongTinChungChi = khoaHoc.CoChungChi && maNguoiDung > 0
                 ? await LayThongTinChungChiAsync(khoaHoc, maNguoiDung, nganHangCauHoi.Count)
@@ -438,6 +438,10 @@ namespace educodeai_server.Repository.Implementation
                         .FirstOrDefaultAsync(td => td.MaBaiHoc == dto.MaBaiHoc
                                                 && td.MaNguoiDung == dto.MaNguoiDung);
 
+                    // Đạt quiz chỉ đánh dấu ĐÃ XEM, không sinh ra thời gian xem video.
+                    // ThoiGianHoc là số GIÂY xem thật (client gửi currentTime của player),
+                    // nên không được gán giá trị bịa vào đây — trước đây gán 100 với ý
+                    // "100%" làm sai đơn vị và ghi đè mất thời gian xem thật ở nhánh else.
                     if (tienDo == null)
                     {
                         tienDo = new TienDoBaiHocModel
@@ -445,7 +449,6 @@ namespace educodeai_server.Repository.Implementation
                             MaBaiHoc = dto.MaBaiHoc,
                             MaNguoiDung = dto.MaNguoiDung,
                             DaXem = true,
-                            ThoiGianHoc = 100, // 100%
                             NgayCapNhat = DateTime.Now
                         };
                         _context.TienDoBaiHocs.Add(tienDo);
@@ -455,8 +458,9 @@ namespace educodeai_server.Repository.Implementation
                         if (!tienDo.DaXem)
                         {
                             tienDo.DaXem = true;
-                            tienDo.ThoiGianHoc = 100;
                         }
+                        // NgayCapNhat vẫn cập nhật: học viên có học hôm nay thật, dữ liệu này
+                        // cấp cho nhiệm vụ ngay_hoc / hoc_bai và nhãn giam_chan.
                         tienDo.NgayCapNhat = DateTime.Now;
                         _context.TienDoBaiHocs.Update(tienDo);
                     }
@@ -755,15 +759,16 @@ namespace educodeai_server.Repository.Implementation
         }
 
         private BaiKiemTraChungChiDTO TaoBaiKiemTraChungChi(
-            KhoaHoc_NoiDungKhoaHocDTO duLieuKhoaHoc,
+            int maKhoaHoc,
+            string tenKhoaHoc,
             KhoaHocModel khoaHoc,
             List<CauHoiChungChiItem> nganHangCauHoi,
             bool daHoanThanhKhoaHoc)
         {
             return new BaiKiemTraChungChiDTO
             {
-                MaBaiKiemTra = duLieuKhoaHoc.MaKhoaHoc * -1,
-                TieuDe = khoaHoc.TenChungChi ?? $"Bài kiểm tra cuối khóa: {duLieuKhoaHoc.TenKhoaHoc}",
+                MaBaiKiemTra = maKhoaHoc * -1,
+                TieuDe = khoaHoc.TenChungChi ?? $"Bài kiểm tra cuối khóa: {tenKhoaHoc}",
                 MoTa = "Hoàn thành bài kiểm tra cuối khóa để mở khóa chứng chỉ. Bạn có thể thi lại nếu chưa đạt.",
                 SoCauHoi = nganHangCauHoi.Count,
                 ThoiGianLamBai = khoaHoc.ThoiGianLamBaiChungChi,
@@ -868,6 +873,52 @@ namespace educodeai_server.Repository.Implementation
                     return cauHoi;
                 })
                 .ToList();
+        }
+
+        // Overlay nhẹ: chỉ lấy danh sách MaBaiHoc đã xem của user trong 1 khóa học.
+        // Dùng để phủ trạng thái DaXem lên cây nội dung lấy từ cache (tránh query lại full-tree).
+        public async Task<List<int>> GetMaBaiHocDaXemAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            if (maNguoiDung <= 0) return new List<int>();
+
+            return await _context.TienDoBaiHocs
+                .AsNoTracking()
+                .Where(t => t.MaNguoiDung == maNguoiDung
+                         && t.BaiHoc.ChuongHoc.MaKhoaHoc == maKhoaHoc
+                         && t.DaXem == true)
+                .Select(t => t.MaBaiHoc)
+                .ToListAsync();
+        }
+
+        // Overlay nhẹ: dữ liệu chứng chỉ cá nhân hóa (bài kiểm tra + thông tin chứng chỉ) cho 1 user.
+        // Chỉ chạy khi khóa học có chứng chỉ; khóa không chứng chỉ trả (null, null) để khỏi query.
+        public async Task<(BaiKiemTraChungChiDTO? BaiKiemTra, ThongTinChungChiDTO? ThongTin)> LayChungChiCaNhanAsync(int maKhoaHoc, int maNguoiDung)
+        {
+            var khoaHoc = await _context.KhoaHocs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.MaKhoaHoc == maKhoaHoc);
+
+            if (khoaHoc == null || !khoaHoc.CoChungChi)
+            {
+                return (null, null);
+            }
+
+            var nganHangCauHoi = await LayNganHangCauHoiChungChiAsync(khoaHoc);
+            var daHoanThanh = maNguoiDung > 0 && await KiemTraHoanThanhKhoaHocAsync(maKhoaHoc, maNguoiDung);
+
+            var baiKiemTra = TaoBaiKiemTraChungChi(maKhoaHoc, khoaHoc.TenKhoaHoc, khoaHoc, nganHangCauHoi, daHoanThanh);
+
+            ThongTinChungChiDTO thongTin = maNguoiDung > 0
+                ? await LayThongTinChungChiAsync(khoaHoc, maNguoiDung, nganHangCauHoi.Count)
+                : new ThongTinChungChiDTO
+                {
+                    DaCap = false,
+                    TongSoCauHoi = nganHangCauHoi.Count,
+                    TenKhoaHoc = khoaHoc.TenKhoaHoc,
+                    TenChungChi = khoaHoc.TenChungChi
+                };
+
+            return (baiKiemTra, thongTin);
         }
 
         private static List<CauHoiChungChiItem> ParseCauHoiChungChi(string? json, int baseId)

@@ -28,8 +28,7 @@ const DoiMatKhau: React.FC = () => {
         try {
             await authService.doiMatKhau({
                 MatKhauCu: matKhauCu,
-                MatKhauMoi: matKhauMoi,
-                OtpCode: "" // Không cần OTP nữa
+                MatKhauMoi: matKhauMoi
             });
             await Swal.fire('Thành công', 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
             localStorage.clear();

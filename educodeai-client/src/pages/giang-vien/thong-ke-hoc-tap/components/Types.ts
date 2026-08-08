@@ -67,22 +67,21 @@ export interface ProgressDataPoint {
   value: number;
 }
 
-// ================== THU NHẬP (INCOME) ==================
-
 export type NhomThuNhapTheoThoiGian = 'day' | 'week' | 'month';
 
 export interface ThuNhapTongQuan {
-  tongDoanhThu?: number | null;
-  tongPhiNenTang?: number | null;
-  tongThucNhan?: number | null;
-  thucNhanThangNay?: number | null;
-  tongDonHang?: number | null;
+  tongDoanhThu: number;
+  tongPhiNenTang: number;
+  tongThucNhan: number;
+  thucNhanThangNay: number;
+  tongDonHang: number;
 }
 
 export interface ThuNhapTheoThoiGian {
   nhanThoiGian: string;
-  thucNhan: number;
+  tongDoanhThu: number;
   phiNenTang: number;
+  thucNhan: number;
 }
 
 export interface ThuNhapTheoKhoaHoc {

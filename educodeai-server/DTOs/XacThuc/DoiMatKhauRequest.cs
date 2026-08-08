@@ -12,9 +12,5 @@ namespace educodeai_server.DTOs.XacThuc
         [JsonPropertyName("MatKhauMoi")]
         [JsonProperty("MatKhauMoi")]
         public string? MatKhauMoi { get; set; }
-
-        [JsonPropertyName("OtpCode")]
-        [JsonProperty("OtpCode")]
-        public string? OtpCode { get; set; }
     }
 }

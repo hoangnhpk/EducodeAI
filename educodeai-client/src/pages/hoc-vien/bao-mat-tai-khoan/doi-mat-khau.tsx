@@ -24,8 +24,7 @@ const DoiMatKhau: React.FC = () => {
         try {
             await authService.doiMatKhau({
                 MatKhauCu: formData.oldPass,
-                MatKhauMoi: formData.newPass,
-                OtpCode: "" // Không cần OTP nữa
+                MatKhauMoi: formData.newPass
             });
             
             Swal.fire({ 

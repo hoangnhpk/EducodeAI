@@ -472,11 +472,11 @@ const NoiDungKhoaHoc = () => {
     };
 
     if (!maNguoiDung) {
-        return <div>Vui lòng đăng nhập để xem nội dung khóa học.</div>;
+        return <NoiDungKhoaHocRequireLogin />;
     }
 
     if (!khoaHoc || !baiHocHienTai) {
-        return <div>Đang tải khóa học...</div>;
+        return <NoiDungKhoaHocLoading />;
     }
 
     const dangLamQuiz = tabActive === 'quiz' || dangLamKiemTraChungChi || (tabActive === 'hoc' && baiHocHienTai.loaiBaiHoc === 'Quiz');
@@ -486,17 +486,10 @@ const NoiDungKhoaHoc = () => {
             case 'Video':
                 if (baiHocHienTai.biKhoa || !baiHocHienTai.linkVideo) {
                     return (
-                        <div className="p-5 text-center text-muted">
-                            <i className="fas fa-lock fa-2x mb-3 d-block" />
-                            <p className="mb-3">Bài học này thuộc nội dung trả phí.</p>
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={() => khoaHoc && navigate(`/mua-khoa-hoc/${khoaHoc.maKhoaHoc}`)}
-                            >
-                                Mua khóa học để mở khóa
-                            </button>
-                        </div>
+                        <BaiHocBiKhoaCard
+                            tenKhoaHoc={khoaHoc.tenKhoaHoc}
+                            maKhoaHoc={khoaHoc.maKhoaHoc}
+                        />
                     );
                 }
                 return (
@@ -505,6 +498,7 @@ const NoiDungKhoaHoc = () => {
                         key={baiHocHienTai.id}
                         videoUrl={baiHocHienTai.linkVideo}
                         videoSource={baiHocHienTai.videoSource}
+                        subtitleUrl={baiHocHienTai.subtitleUrl}
                         maBaiHoc={baiHocHienTai.id}
                         maNguoiDung={maNguoiDung}
                         daXem={baiHocHienTai.daXem}
@@ -552,25 +546,11 @@ const NoiDungKhoaHoc = () => {
                 tenKhoaHoc={khoaHoc.tenKhoaHoc}
                 soBaiDaHoc={soBaiDaHoc}
                 tongSoBai={tongSoBai}
+                laCheDoHocThu={khoaHoc.laCheDoHocThu}
+                soVideoHocThu={khoaHoc.soVideoHocThu}
+                onMuaKhoaHoc={() => navigate(`/mua-khoa-hoc/${khoaHoc.maKhoaHoc}`)}
                 onMoGhiChu={() => setHienSidebar(true)}
             />
-
-            {khoaHoc.laCheDoHocThu && (
-                <div className="container py-2">
-                    <div className="alert alert-info d-flex flex-wrap justify-content-between align-items-center mb-0">
-                        <span>
-                            Bạn đang học thử {khoaHoc.soVideoHocThu ?? 2} video đầu tiên. Mua khóa để mở khóa toàn bộ nội dung.
-                        </span>
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-primary mt-2 mt-md-0"
-                            onClick={() => navigate(`/mua-khoa-hoc/${khoaHoc.maKhoaHoc}`)}
-                        >
-                            Mua khóa học
-                        </button>
-                    </div>
-                </div>
-            )}
 
             <button
                 className="cp-mobile-toggle-sidebar btn btn-sm"
@@ -685,6 +665,7 @@ const NoiDungKhoaHoc = () => {
                                         maBaiHoc={baiHocHienTai.id || 0}
                                         phuDeGoc={baiHocHienTai.noiDung || ''}
                                         linkVideo={baiHocHienTai.linkVideo || ''}
+                                        subtitleUrl={baiHocHienTai.subtitleUrl || ''}
                                         tieuDe={baiHocHienTai.tieuDe || ''}
                                     />
                                 </div>
@@ -765,6 +746,294 @@ const NoiDungKhoaHoc = () => {
                 noiDungBaiHoc={baiHocHienTai.noiDung}
                 isQuizMode={dangLamQuiz}
             />
+        </div>
+    );
+};
+
+const NoiDungKhoaHocLoading = () => {
+    const [progress, setProgress] = useState(15);
+    const [stepIndex, setStepIndex] = useState(0);
+
+    const steps = [
+        "Đang kết nối môi trường học tập EduCodeAI...",
+        "Đang tải cấu trúc chương học & danh sách bài giảng...",
+        "Đang chuẩn bị trình phát video & trợ lý AI...",
+        "Sẵn sàng! Đang khởi chạy bài học..."
+    ];
+
+    const tips = [
+        "Mẹo: Bạn có thể đặt câu hỏi cho Trợ lý AI bất cứ lúc nào trong khi học.",
+        "Mẹo: Bạn có thể lưu lại các ghi chú trực tiếp tại mốc thời gian của video.",
+        "Mẹo: Hoàn thành bài trắc nghiệm cuối khóa để nhận chứng chỉ chính thức từ EduCodeAI."
+    ];
+
+    const [tipIndex, setTipIndex] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setProgress((prev) => {
+                if (prev >= 92) return 92;
+                return prev + Math.floor(Math.random() * 15) + 8;
+            });
+        }, 350);
+
+        const stepTimer = setInterval(() => {
+            setStepIndex((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
+        }, 700);
+
+        const tipTimer = setInterval(() => {
+            setTipIndex((prev) => (prev + 1) % tips.length);
+        }, 2500);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(stepTimer);
+            clearInterval(tipTimer);
+        };
+    }, []);
+
+    return (
+        <div className="cp-modern-loader-container">
+            <div className="cp-modern-loader-backdrop" />
+
+            <div className="cp-modern-loader-card">
+                <div className="cp-loader-orb-wrapper">
+                    <div className="cp-loader-ring-outer" />
+                    <div className="cp-loader-ring-inner" />
+                    <div className="cp-loader-core-icon">
+                        <i className="fas fa-graduation-cap" />
+                    </div>
+                </div>
+
+                <h3 className="cp-loader-title">EduCodeAI Learning</h3>
+
+                <div className="cp-loader-status-text">
+                    <i className="fas fa-circle-notch fa-spin text-warning me-1" />
+                    <span>{steps[stepIndex]}</span>
+                </div>
+
+                <div className="cp-loader-progress-track">
+                    <div
+                        className="cp-loader-progress-fill"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+
+                <div className="cp-loader-step-dots">
+                    {steps.map((_, i) => (
+                        <div
+                            key={i}
+                            className={`cp-loader-dot ${i <= stepIndex ? 'active' : ''}`}
+                        />
+                    ))}
+                </div>
+
+                <div className="cp-loader-tip-box">
+                    <i className="fas fa-lightbulb" />
+                    <span>{tips[tipIndex]}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const NoiDungKhoaHocRequireLogin = () => {
+    const navigate = useNavigate();
+    return (
+        <div className="cp-modern-loader-container">
+            <div className="cp-modern-loader-backdrop" />
+            <div className="cp-modern-loader-card" style={{ maxWidth: 460 }}>
+                <div
+                    style={{
+                        width: 72,
+                        height: 72,
+                        borderRadius: '50%',
+                        background: 'rgba(246, 144, 80, 0.15)',
+                        border: '1px solid rgba(246, 144, 80, 0.4)',
+                        color: '#f69050',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '2rem',
+                        marginBottom: '1.5rem'
+                    }}
+                >
+                    <i className="fas fa-lock" />
+                </div>
+                <h3 className="cp-loader-title" style={{ fontSize: '1.3rem' }}>Yêu cầu đăng nhập</h3>
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.75rem' }}>
+                    Bạn cần đăng nhập tài khoản EduCodeAI để truy cập nội dung bài học và làm bài tập.
+                </p>
+                <button
+                    type="button"
+                    onClick={() => navigate('/dang-nhap')}
+                    style={{
+                        background: 'linear-gradient(135deg, #f69050, #ff7b2b)',
+                        color: '#fff',
+                        fontWeight: 600,
+                        padding: '0.75rem 2.2rem',
+                        borderRadius: '999px',
+                        border: 'none',
+                        boxShadow: '0 6px 20px rgba(246, 144, 80, 0.4)',
+                        cursor: 'pointer',
+                        fontSize: '0.95rem'
+                    }}
+                >
+                    <i className="fas fa-sign-in-alt me-2" /> Đăng nhập ngay
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const BaiHocBiKhoaCard = ({ tenKhoaHoc, maKhoaHoc }: { tenKhoaHoc: string; maKhoaHoc: number }) => {
+    const navigate = useNavigate();
+    return (
+        <div
+            style={{
+                width: '100%',
+                minHeight: '440px',
+                height: '100%',
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '2rem 1.5rem',
+                color: '#fff',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 12px 36px rgba(15, 23, 42, 0.15)'
+            }}
+        >
+            <div
+                style={{
+                    position: 'absolute',
+                    top: '-20%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '320px',
+                    height: '320px',
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(246, 144, 80, 0.25) 0%, transparent 70%)',
+                    pointerEvents: 'none'
+                }}
+            />
+
+            <div
+                style={{
+                    position: 'relative',
+                    zIndex: 2,
+                    maxWidth: '520px',
+                    width: '100%',
+                    background: 'rgba(15, 23, 42, 0.75)',
+                    backdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(246, 144, 80, 0.3)',
+                    borderRadius: '20px',
+                    padding: '2.5rem 2rem',
+                    textAlign: 'center',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.4)'
+                }}
+            >
+                <div
+                    style={{
+                        width: '72px',
+                        height: '72px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #f69050, #ff7b2b)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.9rem',
+                        color: '#ffffff',
+                        marginBottom: '1.25rem',
+                        boxShadow: '0 0 25px rgba(246, 144, 80, 0.55)',
+                        animation: 'cp-pulse-glow 2s infinite ease-in-out'
+                    }}
+                >
+                    <i className="fas fa-crown" />
+                </div>
+
+                <div
+                    style={{
+                        display: 'inline-block',
+                        padding: '4px 14px',
+                        borderRadius: '999px',
+                        background: 'rgba(246, 144, 80, 0.15)',
+                        color: '#f69050',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        marginBottom: '0.75rem',
+                        border: '1px solid rgba(246, 144, 80, 0.3)'
+                    }}
+                >
+                    Nội dung trả phí
+                </div>
+
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.6rem', lineHeight: 1.3 }}>
+                    Mở khóa toàn bộ khóa học
+                </h3>
+
+                <p style={{ color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                    Bài học này thuộc nội dung chính thức của khóa <strong>{tenKhoaHoc}</strong>. Hãy mở khóa để truy cập trọn bộ video, thực hành IDE & nhận chứng chỉ.
+                </p>
+
+                <div
+                    style={{
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        borderRadius: '12px',
+                        padding: '0.9rem 1.2rem',
+                        marginBottom: '1.75rem',
+                        textAlign: 'left',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        fontSize: '0.85rem',
+                        color: '#cbd5e1',
+                        border: '1px solid rgba(255, 255, 255, 0.08)'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <i className="fas fa-check-circle" style={{ color: '#10b981' }} />
+                        <span>Xem không giới hạn tất cả bài giảng chất lượng cao</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <i className="fas fa-check-circle" style={{ color: '#10b981' }} />
+                        <span>Thực hành lập trình IDE tự động chấm & Trợ lý AI 24/7</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <i className="fas fa-check-circle" style={{ color: '#10b981' }} />
+                        <span>Thi kiểm tra & cấp chứng chỉ hoàn thành EduCodeAI</span>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => navigate(`/mua-khoa-hoc/${maKhoaHoc}`)}
+                    style={{
+                        width: '100%',
+                        background: 'linear-gradient(135deg, #f69050 0%, #ff7b2b 100%)',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '0.98rem',
+                        padding: '0.85rem 1.75rem',
+                        borderRadius: '999px',
+                        border: 'none',
+                        boxShadow: '0 8px 24px rgba(246, 144, 80, 0.4)',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        transition: 'all 0.2s ease'
+                    }}
+                >
+                    <i className="fas fa-unlock-alt" />
+                    <span>Nâng cấp & Mở khóa ngay</span>
+                </button>
+            </div>
         </div>
     );
 };
