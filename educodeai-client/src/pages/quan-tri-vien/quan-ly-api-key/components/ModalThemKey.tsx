@@ -105,8 +105,14 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
   return (
     <>
       <div className="modal-backdrop fade show" style={{ opacity: 0.5 }} onClick={() => !isSubmitting && onClose()}></div>
-      <div className="modal fade show d-block" tabIndex={-1}>
-        <div className="modal-dialog modal-dialog-centered modal-lg">
+      <div
+        className="modal fade show d-block akm-modal-overlay"
+        tabIndex={-1}
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !isSubmitting) onClose();
+        }}
+      >
+        <div className="modal-dialog modal-dialog-centered modal-lg" onMouseDown={(event) => event.stopPropagation()}>
           <div
             ref={panelRef}
             role="dialog"
@@ -147,10 +153,10 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                       </span>
                     )}
                   </label>
-                  <div className="input-group input-group-sm">
+                  <div className="akm-key-fetch-row">
                     <input
                       type="text"
-                      className="form-control font-monospace"
+                      className="form-control font-monospace akm-key-fetch-input"
                       required={!editData}
                       placeholder={editData ? "Nhập mã mới (nếu cần)" : "AIza..."}
                       value={formData.maKeyRaw}
@@ -163,7 +169,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                     />
                     <button
                       type="button"
-                      className="btn btn-outline-secondary d-flex align-items-center gap-1"
+                      className="btn btn-outline-secondary akm-key-fetch-btn"
                       onClick={handleFetchModels}
                       disabled={isFetchingModels || isSubmitting}
                       title="Gọi Google API để lấy danh sách model khả dụng"
@@ -191,7 +197,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                   </label>
                   {modelList.length > 0 ? (
                     <select
-                      className="form-select form-select-sm"
+                      className="form-select akm-modal-control"
                       required
                       value={formData.modelSuDung}
                       onChange={(e) => setFormData({ ...formData, modelSuDung: e.target.value })}
@@ -225,7 +231,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                   <div className="col-md-6">
                     <label className="form-label fw-semibold text-muted small mb-1">Loại Key</label>
                     <select
-                      className="form-select form-select-sm"
+                      className="form-select akm-modal-control"
                       value={formData.loaiKey}
                       onChange={(e) => setFormData({ ...formData, loaiKey: e.target.value })}
                       disabled={isSubmitting}
@@ -238,7 +244,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                     <label className="form-label fw-semibold text-muted small mb-1">Mức ưu tiên</label>
                     <input
                       type="number"
-                      className="form-control form-control-sm"
+                      className="form-control form-control-sm akm-modal-control"
                       value={formData.thuTuUuTien}
                       onChange={(e) => setFormData({ ...formData, thuTuUuTien: parseInt(e.target.value) || 0 })}
                       disabled={isSubmitting}
