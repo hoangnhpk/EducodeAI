@@ -160,7 +160,7 @@ const CauHinhHeThong = () => {
 
                 <div className="config-content">
                     {isLoading ? (
-                        <div style={{textAlign: 'center', padding: '50px', color: '#64748b'}}>
+                        <div style={{textAlign: 'center', padding: '50px', color: 'var(--text-muted)'}}>
                             <i className="fa fa-spinner fa-spin fa-2x"></i>
                             <p>Đang kiểm tra kết nối hệ thống...</p>
                         </div>
@@ -197,7 +197,7 @@ const CauHinhHeThong = () => {
                                         <label>Logo Website (Hệ thống đang sử dụng mặc định - Khóa):</label>
                                         <div className="media-input-group">
                                             <img src="/img/icon.png" alt="Logo preview" className="preview-img logo-preview" />
-                                            <input type="text" className="input-config" value="icon.png" disabled style={{cursor: 'not-allowed', backgroundColor: '#f1f5f9'}} />
+                                            <input type="text" className="input-config" value="icon.png" disabled style={{cursor: 'not-allowed', backgroundColor: 'var(--border-light)'}} />
                                         </div>
                                     </div>
                                     <div className="form-group">
@@ -221,12 +221,12 @@ const CauHinhHeThong = () => {
                                                 <button 
                                                     type="button" 
                                                     className="btn-save-config" 
-                                                    style={{backgroundColor: '#64748b', fontSize: '0.9rem'}}
+                                                    style={{backgroundColor: 'var(--text-muted)', fontSize: '0.9rem'}}
                                                     onClick={() => fileInputRef.current?.click()}
                                                 >
                                                     <i className="fa fa-upload"></i> Chọn ảnh mới
                                                 </button>
-                                                <span style={{fontSize: '0.85rem', color: '#64748b'}}>
+                                                <span style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>
                                                     File hiện tại: <strong>{configs.BannerChinh}</strong>
                                                 </span>
                                             </div>
@@ -240,8 +240,8 @@ const CauHinhHeThong = () => {
                                     <h2 className="pane-title">Bảo mật & Server</h2>
                                     <div className="system-toggle-box">
                                         <div>
-                                            <h3 style={{margin: 0, color: '#1e293b'}}>Bật chế độ bảo trì</h3>
-                                            <p style={{margin: '5px 0 0 0', color: '#64748b', fontSize: '0.85rem'}}>Khoá website, chỉ Quản trị viên được phép truy cập.</p>
+                                            <h3 style={{margin: 0, color: 'var(--text-dark)'}}>Bật chế độ bảo trì</h3>
+                                            <p style={{margin: '5px 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem'}}>Khoá website, chỉ Quản trị viên được phép truy cập.</p>
                                         </div>
                                         <label className="toggle-switch">
                                             <input type="checkbox" checked={configs.CheDoBaoTri === 'true'} onChange={e => handleChange('CheDoBaoTri', e.target.checked ? 'true' : 'false')} />
@@ -250,11 +250,11 @@ const CauHinhHeThong = () => {
                                     </div>
                                     
                                     <div className="form-group" style={{marginTop: '25px', opacity: 0.7}}>
-                                        <label>Giới hạn dung lượng tải lên (MB) - <span style={{color: '#ef4444'}}>Đã khóa</span>:</label>
+                                        <label>Giới hạn dung lượng tải lên (MB) - <span style={{color: 'var(--danger)'}}>Đã khóa</span>:</label>
                                         <input 
                                             type="number" 
                                             className="input-config" 
-                                            style={{width: '200px', cursor: 'not-allowed', backgroundColor: '#f1f5f9'}} 
+                                            style={{width: '200px', cursor: 'not-allowed', backgroundColor: 'var(--border-light)'}}
                                             value={configs.GioiHanDungLuong} 
                                             disabled 
                                         />

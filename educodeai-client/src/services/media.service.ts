@@ -51,9 +51,10 @@ export const layTokenPhatVideo = async (publicId: string) => {
 };
 
 export const uploadVideoToCloudinary = async (
-  file: File, 
-  signatureData: ChuKyUploadVideoDTO, 
-  onProgress?: (percent: number) => void
+  file: File,
+  signatureData: ChuKyUploadVideoDTO,
+  onProgress?: (percent: number) => void,
+  signal?: AbortSignal,
 ) => {
   const chunkSize = 20 * 1024 * 1024; // 20MB mỗi chunk
   const totalChunks = Math.ceil(file.size / chunkSize);
@@ -77,11 +78,12 @@ export const uploadVideoToCloudinary = async (
     formData.append('upload_preset', signatureData.uploadPreset);
 
     const res = await axios.post(url, formData, {
-      headers: { 
+      headers: {
         'Content-Type': 'multipart/form-data',
         'X-Unique-Upload-Id': uniqueUploadId,
         'Content-Range': `bytes ${start}-${end - 1}/${file.size}`
-      }
+      },
+      signal,
     });
 
     if (onProgress) {

@@ -29,11 +29,11 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
   return (
     <div className="btth-section-block mb-4 shadow-sm border-0">
       <div className="d-flex align-items-center mb-4 pb-3 border-bottom">
-        <div className="bg-warning bg-opacity-10 p-2 rounded-3 me-3">
-          <i className="bi bi-patch-question fs-5 text-warning" />
+        <div className="p-2 rounded-3 me-3" style={{ background: 'var(--ai-accent-soft)' }}>
+          <i className="bi bi-patch-question fs-5" style={{ color: 'var(--ai-accent)' }} aria-hidden="true" />
         </div>
         <div>
-          <h5 className="m-0 fw-bold" style={{ color: '#1e293b' }}>Bước 2: Cấu hình Quiz và Sinh câu hỏi bằng AI</h5>
+          <h5 className="m-0 fw-bold" style={{ color: 'var(--text-main)' }}>Bước 2: Cấu hình Quiz và Sinh câu hỏi bằng AI</h5>
           <p className="m-0 text-muted" style={{ fontSize: '12px' }}>AI sẽ đọc nội dung bài học và tạo câu hỏi trắc nghiệm phù hợp</p>
         </div>
       </div>
@@ -44,13 +44,13 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
           <div className="col-12 mb-4">
             <label className="btth-label">Bài học đang chọn</label>
             <div className="input-group">
-              <span className="input-group-text bg-light border-end-0" style={{ borderRadius: '10px 0 0 10px' }}>
-                <i className="bi bi-journal-text" />
+              <span className="input-group-text bg-light border-end-0" style={{ borderRadius: 'var(--radius-md) 0 0 var(--radius-md)' }}>
+                <i className="bi bi-journal-text" aria-hidden="true" />
               </span>
               <input
                 type="text"
                 className="form-control border-start-0"
-                style={{ borderRadius: '0 10px 10px 0', background: '#f8fafc', fontWeight: 600, color: baiHocId ? '#0F172A' : '#94A3B8' }}
+                style={{ borderRadius: '0 var(--radius-md) var(--radius-md) 0', background: 'var(--bg-main)', fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}
                 value={tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
                 readOnly
               />
@@ -112,8 +112,8 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
         <div className="mt-4 pt-2">
           <button
             type="submit"
-            className="btn btn-warning w-100 py-3 d-flex align-items-center justify-content-center gap-2"
-            style={{ borderRadius: '12px', fontWeight: 700, fontSize: '15px', color: '#78350f', boxShadow: '0 4px 6px -1px rgba(234, 179, 8, 0.25)' }}
+            className="btn w-100 py-3 d-flex align-items-center justify-content-center gap-2"
+            style={{ borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '15px', background: 'var(--ai-accent)', color: 'var(--text-white)', boxShadow: 'var(--shadow-md)' }}
             disabled={!baiHocId || isGenerating}
           >
             {isGenerating ? (
