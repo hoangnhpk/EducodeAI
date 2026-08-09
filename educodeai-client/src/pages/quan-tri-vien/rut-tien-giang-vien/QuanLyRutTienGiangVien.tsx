@@ -4,6 +4,22 @@ import { RutTienGiangVienService } from "@/services/rut-tien-giang-vien.service"
 import type { YeuCauRutTienChiTietDTO } from "@/services/rut-tien-giang-vien.service";
 import { hienThiTrangThaiYeuCauRutTien } from "@/utils/rut-tien-trang-thai";
 import { enrichYeuCauRutTienVoiQrPreview } from "@/utils/vietqr-rut-tien";
+import "./QuanLyRutTienGiangVien.css";
+
+const getStatusClassName = (status: string) => {
+  switch (status) {
+    case "CHO_DUYET":
+      return "adm-wd-badge--wait";
+    case "CHO_CHUYEN_KHOAN":
+      return "adm-wd-badge--progress";
+    case "DA_CHUYEN_KHOAN":
+      return "adm-wd-badge--done";
+    case "TU_CHOI":
+      return "adm-wd-badge--reject";
+    default:
+      return "adm-wd-badge--default";
+  }
+};
 
 export default function QuanLyRutTienGiangVien() {
   const [dangTai, setDangTai] = useState<boolean>(true);
@@ -140,6 +156,18 @@ export default function QuanLyRutTienGiangVien() {
     setChiTiet(null);
   };
 
+  const saoChepNoiDungChuyenKhoan = async () => {
+    const noiDung = chiTiet?.noiDungChuyenKhoan?.trim();
+    if (!noiDung) return;
+
+    try {
+      await navigator.clipboard.writeText(noiDung);
+      await Swal.fire({ toast: true, position: "top-end", icon: "success", title: "Đã sao chép mã chuyển khoản", showConfirmButton: false, timer: 1800 });
+    } catch {
+      await Swal.fire("Lỗi", "Không thể sao chép mã chuyển khoản.", "error");
+    }
+  };
+
   const xacNhanDaChuyenKhoan = async () => {
     if (!chiTiet) return;
     const xacNhan = await Swal.fire({
@@ -202,170 +230,147 @@ export default function QuanLyRutTienGiangVien() {
     (chiTiet!.trangThaiYeuCau === "CHO_DUYET" || chiTiet!.trangThaiYeuCau === "CHO_CHUYEN_KHOAN");
 
   return (
-    <div>
-      <h2>Quản lý rút tiền giảng viên</h2>
-
-
-      <div style={{ marginBottom: 12, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <select
-          className="form-select"
-          style={{ maxWidth: 280 }}
-          value={trangThaiLoc}
-          onChange={(e) => setTrangThaiLoc(e.target.value)}
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option value="CHO_DUYET">Chờ xử lý</option>
-          <option value="CHO_CHUYEN_KHOAN">Đang chuyển khoản</option>
-          <option value="DA_CHUYEN_KHOAN">Thành công</option>
-          <option value="TU_CHOI">Bị từ chối</option>
-        </select>
-        <button type="button" className="btn btn-primary" onClick={() => taiDanhSach(trangThaiLoc)}>
-          Lọc
-        </button>
-      </div>
-
-      {dangTai ? (
-        <div>Đang tải dữ liệu...</div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-striped table-bordered align-middle">
-            <thead className="table-light">
-              <tr>
-                <th>Mã YC</th>
-                <th>Giảng viên</th>
-                <th>Số tiền</th>
-                <th>Trạng thái</th>
-                <th>Ngày tạo</th>
-                <th style={{ width: 140 }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {danhSach.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center text-muted py-4">
-                    Chưa có yêu cầu rút tiền nào.
-                  </td>
-                </tr>
-              ) : (
-                danhSach.map((item) => (
-                  <tr key={item.maYeuCauRutTien}>
-                    <td>{item.maYeuCauRutTien}</td>
-                    <td>{item.tenGiangVien}</td>
-                    <td>{item.soTienYeuCau.toLocaleString("vi-VN")} VND</td>
-                    <td>{hienThiTrangThaiYeuCauRutTien(item.trangThaiYeuCau)}</td>
-                    <td>{item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : "—"}</td>
-                    <td>
-                      <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => moModalChiTiet(item.maYeuCauRutTien)}>
-                        Xem chi tiết
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+    <div className="adm-wd-page qtv-page-content">
+      <header className="adm-wd-header">
+        <div className="adm-wd-header__titles">
+          <div className="adm-wd-header__icon" aria-hidden="true">
+            <i className="bi bi-wallet2" />
+          </div>
+          <div>
+            <h1 className="adm-wd-title">Quản lý rút tiền giảng viên</h1>
+            <p className="adm-wd-subtitle">Quản lý và xử lý các yêu cầu rút tiền từ giảng viên trong hệ thống.</p>
+          </div>
         </div>
-      )}
+      </header>
+
+      <section className="adm-wd-card" aria-label="Danh sách yêu cầu rút tiền">
+        <div className="adm-wd-card-header">
+          <h2 className="adm-wd-section-title">Danh sách yêu cầu</h2>
+          <div className="adm-wd-toolbar">
+            <select
+              className="adm-wd-select"
+              value={trangThaiLoc}
+              onChange={(e) => setTrangThaiLoc(e.target.value)}
+              aria-label="Lọc theo trạng thái"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="CHO_DUYET">Chờ xử lý</option>
+              <option value="CHO_CHUYEN_KHOAN">Đang chuyển khoản</option>
+              <option value="DA_CHUYEN_KHOAN">Thành công</option>
+              <option value="TU_CHOI">Bị từ chối</option>
+            </select>
+            <button type="button" className="adm-wd-btn adm-wd-btn--primary" onClick={() => taiDanhSach(trangThaiLoc)}>
+              Lọc
+            </button>
+          </div>
+        </div>
+
+        <div className="adm-wd-tablewrap">
+          {dangTai ? (
+            <div className="adm-wd-state">Đang tải dữ liệu...</div>
+          ) : (
+            <table className="adm-wd-table">
+              <thead>
+                <tr>
+                  <th>Mã YC</th>
+                  <th>Giảng viên</th>
+                  <th>Số tiền</th>
+                  <th>Trạng thái</th>
+                  <th>Ngày tạo</th>
+                  <th className="adm-wd-action-col">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {danhSach.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="adm-wd-state">Chưa có yêu cầu rút tiền nào.</td>
+                  </tr>
+                ) : (
+                  danhSach.map((item) => (
+                    <tr key={item.maYeuCauRutTien}>
+                      <td>#{item.maYeuCauRutTien}</td>
+                      <td>{item.tenGiangVien}</td>
+                      <td className="adm-wd-amount">{item.soTienYeuCau.toLocaleString("vi-VN")} VND</td>
+                      <td>
+                        <span className={`adm-wd-badge ${getStatusClassName(item.trangThaiYeuCau)}`}>
+                          {hienThiTrangThaiYeuCauRutTien(item.trangThaiYeuCau)}
+                        </span>
+                      </td>
+                      <td>{item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : "—"}</td>
+                      <td className="adm-wd-action-cell">
+                        <button type="button" className="adm-wd-btn adm-wd-btn--ghost adm-wd-btn--sm" onClick={() => moModalChiTiet(item.maYeuCauRutTien)}>
+                          Xem chi tiết
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </section>
 
       {moChiTiet && (
-        <div
-          className="modal d-block"
-          tabIndex={-1}
-          style={{ background: "rgba(0,0,0,0.45)" }}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="modal-dialog modal-lg modal-dialog-scrollable">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Chi tiết yêu cầu rút tiền #{chiTiet?.maYeuCauRutTien ?? "…"}</h5>
-                <button type="button" className="btn-close" aria-label="Đóng" onClick={dongModal} />
-              </div>
-              <div className="modal-body">
-                {!chiTiet ? (
-                  <p>Đang tải...</p>
-                ) : (
-                  <>
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <p>
-                          <strong>Giảng viên:</strong> {chiTiet.tenGiangVien}
-                        </p>
-                        <p>
-                          <strong>Email:</strong> {chiTiet.emailGiangVien ?? "—"}
-                        </p>
-                        <p>
-                          <strong>Số tiền:</strong> {chiTiet.soTienYeuCau.toLocaleString("vi-VN")} {chiTiet.loaiTien}
-                        </p>
-                        <p>
-                          <strong>Trạng thái:</strong> {hienThiTrangThaiYeuCauRutTien(chiTiet.trangThaiYeuCau)}{" "}
-                          <small className="text-muted">({chiTiet.trangThaiYeuCau})</small>
-                        </p>
+        <div className="adm-wd-modal" role="presentation">
+          <div className="adm-wd-modal__backdrop" onClick={dongModal} />
+          <div className="adm-wd-modal__panel" role="dialog" aria-modal="true" aria-labelledby="adm-wd-modal-title">
+            <div className="adm-wd-modal__header">
+              <h2 id="adm-wd-modal-title" className="adm-wd-modal__title">Chi tiết yêu cầu rút tiền #{chiTiet?.maYeuCauRutTien ?? "…"}</h2>
+              <button type="button" className="adm-wd-modal__close" aria-label="Đóng" onClick={dongModal}>×</button>
+            </div>
+            <div className="adm-wd-modal__body">
+              {!chiTiet ? (
+                <p>Đang tải...</p>
+              ) : (
+                <div className="adm-wd-modal-layout">
+                  <div className="adm-wd-modal-qr-column adm-wd-info-card">
+                    {chiTiet.duongDanAnhQr ? (
+                      <>
+                        <img className="adm-wd-qr__img" src={chiTiet.duongDanAnhQr} alt="QR chuyển khoản" />
+                        <a href={chiTiet.duongDanAnhQr} target="_blank" rel="noreferrer" className="adm-wd-qr__link">
+                          <i className="bi bi-box-arrow-up-right" aria-hidden="true" />
+                          Mở ảnh trong tab mới
+                        </a>
+                      </>
+                    ) : (
+                      <p className="adm-wd-hint">{!chiTiet.maNganHangNhan?.trim() || !chiTiet.soTaiKhoanNhan?.trim() ? "Không tạo được URL QR: thiếu mã VietQR hoặc số tài khoản nhận trên yêu cầu." : "Không tạo được ảnh QR. Hãy đóng và mở lại chi tiết, hoặc tải lại trang."}</p>
+                    )}
+                  </div>
+
+                  <div className="adm-wd-modal-info-column">
+                    <div className="adm-wd-detail-grid">
+                      <div className="adm-wd-general-info adm-wd-info-card">
+                        <h3 className="adm-wd-info-card__title">Thông tin giảng viên</h3>
+                        <div className="adm-wd-field"><span className="adm-wd-field__label">Giảng viên</span><strong className="adm-wd-field__value">{chiTiet.tenGiangVien}</strong></div>
+                        <div className="adm-wd-field"><span className="adm-wd-field__label">Email</span><strong className="adm-wd-field__value">{chiTiet.emailGiangVien ?? "—"}</strong></div>
+                        <div className="adm-wd-field"><span className="adm-wd-field__label">Số tiền</span><strong className="adm-wd-field__value">{chiTiet.soTienYeuCau.toLocaleString("vi-VN")} {chiTiet.loaiTien}</strong></div>
+                        <div className="adm-wd-field"><span className="adm-wd-field__label">Trạng thái</span><span className={`adm-wd-badge ${getStatusClassName(chiTiet.trangThaiYeuCau)}`}>{hienThiTrangThaiYeuCauRutTien(chiTiet.trangThaiYeuCau)}</span></div>
                       </div>
-                      <div className="col-md-6">
-                        <p>
-                          <strong>Ngân hàng (mã VietQR):</strong> {chiTiet.maNganHangNhan}
-                        </p>
-                        <p>
-                          <strong>Số tài khoản:</strong> {chiTiet.soTaiKhoanNhan}
-                        </p>
-                        <p>
-                          <strong>Tên chủ TK:</strong> {chiTiet.tenTaiKhoanNhan}
-                        </p>
-                        <p>
-                          <strong>Nội dung CK (bắt buộc khớp SePay):</strong> {chiTiet.noiDungChuyenKhoan ?? "—"}
-                        </p>
-                        <p className="small text-muted mb-0">
-                          Ghi đúng mã nội dung này khi chuyển từ TK MB trên SePay (mã ngẫu nhiên gắn với yêu cầu, không đoán trước được).
-                        </p>
+
+                      <div className="adm-wd-bank-box adm-wd-info-card">
+                        <h3 className="adm-wd-info-card__title">Thông tin chuyển khoản</h3>
+                        <div className="adm-wd-field"><span className="adm-wd-field__label">Ngân hàng (mã VietQR)</span><strong className="adm-wd-field__value">{chiTiet.maNganHangNhan}</strong></div>
+                        <div className="adm-wd-field"><span className="adm-wd-field__label">Số tài khoản</span><strong className="adm-wd-field__value">{chiTiet.soTaiKhoanNhan}</strong></div>
+                        <div className="adm-wd-field"><span className="adm-wd-field__label">Tên chủ TK</span><strong className="adm-wd-field__value">{chiTiet.tenTaiKhoanNhan}</strong></div>
+                        <div className="adm-wd-field adm-wd-field--copy"><span className="adm-wd-field__label">Nội dung CK</span><div className="adm-wd-copy-row"><strong className="adm-wd-field__value">{chiTiet.noiDungChuyenKhoan ?? "—"}</strong><button type="button" className="adm-wd-copy-btn" onClick={() => void saoChepNoiDungChuyenKhoan()} disabled={!chiTiet.noiDungChuyenKhoan} aria-label="Sao chép nội dung chuyển khoản">Sao chép</button></div></div>
+                        <p className="adm-wd-hint">Ghi đúng mã nội dung này khi chuyển từ TK MB trên SePay.</p>
                       </div>
                     </div>
 
-                    {chiTiet.duongDanAnhQr ? (
-                      <div className="text-center mb-3">
-                        <p className="fw-bold">Mã QR chuyển khoản (VietQR)</p>
-                        <img
-                          src={chiTiet.duongDanAnhQr}
-                          alt="QR chuyển khoản"
-                          style={{ maxWidth: 280, height: "auto", border: "1px solid #e5e7eb", borderRadius: 8 }}
-                        />
-                        <div className="mt-2">
-                          <a href={chiTiet.duongDanAnhQr} target="_blank" rel="noreferrer" className="small">
-                            Mở ảnh QR trong tab mới
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-muted">
-                        {!chiTiet.maNganHangNhan?.trim() || !chiTiet.soTaiKhoanNhan?.trim()
-                          ? "Không tạo được URL QR: thiếu mã VietQR hoặc số tài khoản nhận trên yêu cầu."
-                          : "Không tạo được ảnh QR. Hãy đóng và mở lại chi tiết, hoặc tải lại trang."}
-                      </p>
-                    )}
-
-                    {chiTiet.ghiChuAdmin && (
-                      <p>
-                        <strong>Ghi chú admin:</strong> {chiTiet.ghiChuAdmin}
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-              <div className="modal-footer flex-wrap gap-2">
-                <button type="button" className="btn btn-secondary" onClick={dongModal}>
-                  Đóng
-                </button>
-                {chiTiet && coTheXuLyTrongModal && (
-                  <>
-                    <button type="button" className="btn btn-success" onClick={() => void xacNhanDaChuyenKhoan()}>
-                      Đã thanh toán
-                    </button>
-                    <button type="button" className="btn btn-danger" onClick={() => void tuChoiThanhToan()}>
-                      Từ chối thanh toán
-                    </button>
-                  </>
-                )}
-              </div>
+                    {chiTiet.ghiChuAdmin && <p className="adm-wd-note"><strong>Ghi chú admin:</strong> {chiTiet.ghiChuAdmin}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="adm-wd-modal__footer">
+              <button type="button" className="adm-wd-btn adm-wd-btn--secondary" onClick={dongModal}>Đóng</button>
+              {chiTiet && coTheXuLyTrongModal && (
+                <>
+                  <button type="button" className="adm-wd-btn adm-wd-btn--success" onClick={() => void xacNhanDaChuyenKhoan()}>Đã thanh toán</button>
+                  <button type="button" className="adm-wd-btn adm-wd-btn--danger" onClick={() => void tuChoiThanhToan()}>Từ chối thanh toán</button>
+                </>
+              )}
             </div>
           </div>
         </div>

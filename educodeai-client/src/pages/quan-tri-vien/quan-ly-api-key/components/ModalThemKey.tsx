@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { KeyApiManage, KeyApiSummary, GeminiModel } from "../QuanLyApiKey.types";
 import axiosClient from "@/configs/axios";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface Props {
   isOpen: boolean;
@@ -24,6 +25,9 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
   const [modelList, setModelList] = useState<GeminiModel[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [fetchModelError, setFetchModelError] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useModalA11y(isOpen, onClose, panelRef);
 
   useEffect(() => {
     if (isOpen) {
@@ -75,7 +79,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
         headers: { "Content-Type": "application/json" },
       });
       if (res.length === 0) {
-        setFetchModelError("Không tìm thấy model Gemini nào cho key này.");
+        setFetchModelError("Không tìm thấy model sinh nội dung nào cho key này.");
       } else {
         setModelList(res);
         // Tự chọn model đầu tiên nếu chưa có
@@ -100,12 +104,25 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
 
   return (
     <>
-      <div className="modal-backdrop fade show" style={{ opacity: 0.5 }}></div>
-      <div className="modal fade show d-block" tabIndex={-1}>
-        <div className="modal-dialog modal-dialog-centered modal-lg">
-          <div className="modal-content shadow-lg border-0 akm-modal" style={{ borderRadius: "12px" }}>
+      <div className="modal-backdrop fade show" style={{ opacity: 0.5 }} onClick={() => !isSubmitting && onClose()}></div>
+      <div
+        className="modal fade show d-block akm-modal-overlay"
+        tabIndex={-1}
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !isSubmitting) onClose();
+        }}
+      >
+        <div className="modal-dialog modal-dialog-centered modal-lg" onMouseDown={(event) => event.stopPropagation()}>
+          <div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="addKeyModalTitle"
+            className="modal-content shadow-lg border-0 akm-modal"
+            style={{ borderRadius: "12px" }}
+          >
             <div className="modal-header border-bottom-0 pb-0 pt-4 px-4">
-              <h5 className="modal-title fw-bold fs-5 text-dark">
+              <h5 id="addKeyModalTitle" className="modal-title fw-bold fs-5 text-dark">
                 {editData ? "Cập nhật API Key" : "Thêm API Key mới"}
               </h5>
               <button type="button" className="btn-close" onClick={onClose} disabled={isSubmitting}></button>
@@ -136,10 +153,10 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                       </span>
                     )}
                   </label>
-                  <div className="input-group input-group-sm">
+                  <div className="akm-key-fetch-row">
                     <input
                       type="text"
-                      className="form-control font-monospace"
+                      className="form-control font-monospace akm-key-fetch-input"
                       required={!editData}
                       placeholder={editData ? "Nhập mã mới (nếu cần)" : "AIza..."}
                       value={formData.maKeyRaw}
@@ -152,7 +169,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                     />
                     <button
                       type="button"
-                      className="btn btn-outline-secondary d-flex align-items-center gap-1"
+                      className="btn btn-outline-secondary akm-key-fetch-btn"
                       onClick={handleFetchModels}
                       disabled={isFetchingModels || isSubmitting}
                       title="Gọi Google API để lấy danh sách model khả dụng"
@@ -180,7 +197,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                   </label>
                   {modelList.length > 0 ? (
                     <select
-                      className="form-select form-select-sm"
+                      className="form-select akm-modal-control"
                       required
                       value={formData.modelSuDung}
                       onChange={(e) => setFormData({ ...formData, modelSuDung: e.target.value })}
@@ -214,7 +231,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                   <div className="col-md-6">
                     <label className="form-label fw-semibold text-muted small mb-1">Loại Key</label>
                     <select
-                      className="form-select form-select-sm"
+                      className="form-select akm-modal-control"
                       value={formData.loaiKey}
                       onChange={(e) => setFormData({ ...formData, loaiKey: e.target.value })}
                       disabled={isSubmitting}
@@ -227,7 +244,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                     <label className="form-label fw-semibold text-muted small mb-1">Mức ưu tiên</label>
                     <input
                       type="number"
-                      className="form-control form-control-sm"
+                      className="form-control form-control-sm akm-modal-control"
                       value={formData.thuTuUuTien}
                       onChange={(e) => setFormData({ ...formData, thuTuUuTien: parseInt(e.target.value) || 0 })}
                       disabled={isSubmitting}
