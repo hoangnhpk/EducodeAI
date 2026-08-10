@@ -8,6 +8,7 @@ import TopStudents from "./components/TopStudents";
 import AtRiskStudents from "./components/AtRiskStudents";
 
 import "./components/ThongKeHocTap.css";
+import { formatThoiGianTuGiay } from "@/utils/format-thoi-gian-hoc";
 
 export default function ThongKeHocTap() {
   // ================== STATES ==================
@@ -133,8 +134,8 @@ export default function ThongKeHocTap() {
       {/* STAT CARDS */}
       <div className="stat-grid">
         <StatCard
-          title="GIỜ HỌC TB / HỌC VIÊN"
-          value={`${Number(overview?.gioHocTrungBinh ?? 0).toFixed(1)}h`}
+          title="THỜI GIAN HỌC TB / HỌC VIÊN"
+          value={formatThoiGianTuGiay(overview?.gioHocTrungBinh)}
           subtitle="Trung bình mỗi học viên"
           icon="fa-clock"
           gradient="icon-purple"

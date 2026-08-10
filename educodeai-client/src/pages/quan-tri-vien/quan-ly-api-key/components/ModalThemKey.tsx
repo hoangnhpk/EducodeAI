@@ -215,7 +215,7 @@ const ModalThemKey = ({ isOpen, onClose, onSave, editData }: Props) => {
                       type="text"
                       className="form-control form-control-sm"
                       required
-                      placeholder="VD: gemini-1.5-flash"
+                      placeholder="VD: gemini-2.5-flash"
                       value={formData.modelSuDung}
                       onChange={(e) => setFormData({ ...formData, modelSuDung: e.target.value })}
                       disabled={isSubmitting}

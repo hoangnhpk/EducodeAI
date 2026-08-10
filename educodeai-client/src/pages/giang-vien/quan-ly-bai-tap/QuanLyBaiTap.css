@@ -3,36 +3,45 @@
    (bỏ xanh dương thương hiệu → cam --primary)
    ========================================= */
 
-/* 1. Badge (Trạng thái) */
-.badge {
-    padding: 7px 16px;
+/* 1. Badge trạng thái (tránh đụng Bootstrap .badge — chữ trắng trên nền nhạt) */
+.qlbt-badge {
+    padding: 7px 14px;
     font-size: 11px;
     border-radius: var(--radius-sm);
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.6px;
     display: inline-block;
+    line-height: 1.2;
+    border: 1px solid transparent;
 }
 
-/* Xám: Draft */
-.badge-draft {
-    background: var(--border-color);
-    color: var(--text-main);
+.qlbt-badge--draft {
+    background: #e5e7eb;
+    color: #374151;
+    border-color: #d1d5db;
 }
 
-/* Xanh lá: Published */
-.badge-published {
-    background: var(--success-soft);
-    color: var(--success-strong);
+.qlbt-badge--published {
+    background: #d1fae5;
+    color: #065f46;
+    border-color: #a7f3d0;
 }
 
-/* Vàng: Sửa/Đang chờ */
-.badge-sửa {
+.qlbt-badge--pending {
     background: var(--warning-soft);
     color: var(--warning-strong);
+    border-color: #fde68a;
 }
 
 /* 2. Nút Hành động */
+.actions-group {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .action-btn {
     padding: 7px 14px;
     font-size: 13px;
@@ -44,6 +53,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
 }
 
 /* Nút Sửa: dùng cam --primary */
