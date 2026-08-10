@@ -406,7 +406,17 @@ var app = builder.Build();
 
 // Khởi tạo dữ liệu nền của module thử thách nếu môi trường hiện tại còn thiếu.
 // Initializer chỉ thêm theo MaCode, không ghi đè cấu hình nhiệm vụ/danh hiệu đã tồn tại.
-await ThuThachDataInitializer.InitializeAsync(app.Services);
+try
+{
+    await ThuThachDataInitializer.InitializeAsync(app.Services);
+}
+catch (Exception ex)
+{
+    // Không chặn ứng dụng khởi động nếu database tạm thời chưa sẵn sàng.
+    // Các endpoint cần database vẫn sẽ trả lỗi phù hợp cho đến khi DB kết nối lại.
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    logger.LogError(ex, "Không thể khởi tạo dữ liệu module thử thách; ứng dụng vẫn tiếp tục khởi động.");
+}
 
 // Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
