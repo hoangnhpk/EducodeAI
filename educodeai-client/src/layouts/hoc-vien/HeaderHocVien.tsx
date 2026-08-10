@@ -114,9 +114,6 @@ export default function HeaderHocVien() {
                 <Link to="/thu-thach-hoc-tap" className="dropdown-item">
                   Thử thách học tập
                 </Link>
-                <Link to="/hoc-vien/khoa-hoc-cua-toi" className="dropdown-item">
-                  Khóa học của tôi
-                </Link>
                 <Link to="/hoc-vien/nhap-ma-qua-tang" className="dropdown-item">
                   Nhập mã quà tặng
                 </Link>

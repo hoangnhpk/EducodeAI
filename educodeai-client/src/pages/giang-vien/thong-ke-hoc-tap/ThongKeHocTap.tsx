@@ -76,7 +76,7 @@ export default function ThongKeHocTap() {
   // ================== LOADING STATE ==================
   if (loading) {
     return (
-      <div className="thong-ke-container" style={{ 
+      <div className="gv-page thong-ke-container" style={{ 
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
@@ -93,7 +93,7 @@ export default function ThongKeHocTap() {
   // ================== ERROR STATE ==================
   if (error) {
     return (
-      <div className="thong-ke-container">
+      <div className="gv-page thong-ke-container">
         <div style={{
           padding: '20px',
           background: 'var(--danger-soft)',
@@ -123,7 +123,7 @@ export default function ThongKeHocTap() {
   }
 
   return (
-    <div className="thong-ke-container">
+    <div className="gv-page thong-ke-container">
       {/* Header */}
       <div className="thong-ke-page-header">
         <h2>Thống kê học tập</h2>

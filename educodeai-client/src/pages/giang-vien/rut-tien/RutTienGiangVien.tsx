@@ -217,7 +217,7 @@ export default function RutTienGiangVien() {
   const apiBase = import.meta.env.VITE_API_URL ?? "";
 
   return (
-    <div className="gv-rut-tien-page">
+    <div className="gv-page gv-rut-tien-page">
       <div className="mb-4">
         <h2 className="h3 fw-bold text-dark mb-1">Ví giảng viên</h2>
         <p className="text-muted small mb-0">Tổng quan doanh thu và các khoản rút — số dư khả dụng là phần bạn có thể yêu cầu rút.</p>

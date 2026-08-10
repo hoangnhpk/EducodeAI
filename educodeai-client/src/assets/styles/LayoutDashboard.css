@@ -154,15 +154,24 @@
   white-space: nowrap;
 }
 
-/* ===== MAIN CONTENT CHUNG ===== */
+/* ===== MAIN CONTENT CHUNG =====
+   Chuẩn padding trang GV: 24px (theo trang Thống kê).
+   Các page con KHÔNG thêm padding ngoài ở root wrapper. */
 .gv-main-content,
 .qtv-main-content {
+  --gv-content-padding: 24px;
   flex: 1;
-  padding: 24px;
+  padding: var(--gv-content-padding);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.gv-page {
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 /* ===== PAGE CONTENT QTV DÙNG CHUNG ===== */
