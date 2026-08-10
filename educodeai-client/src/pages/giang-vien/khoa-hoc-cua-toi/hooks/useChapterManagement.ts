@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import type { ChuongHocDetail } from '../types';
@@ -37,6 +37,11 @@ export const useChapterManagement = ({ maKhoaHoc, initialChapters, onRefresh }: 
   
   const [highlightId, setHighlightId] = useState<number | null>(null);
 
+  useEffect(() => {
+    setChapters([...initialChapters].sort((a, b) => a.thuTu - b.thuTu));
+    setLoading(false);
+  }, [initialChapters]);
+
   const loadChapters = useCallback(async () => {
     try {
       setLoading(true);
@@ -66,27 +71,33 @@ export const useChapterManagement = ({ maKhoaHoc, initialChapters, onRefresh }: 
     }
   }, [chapters, maGiangVien, maKhoaHoc, showToast]);
 
-  const handleSave = async (tenChuong: string) => {
+  const handleSave = async (tenChuong: string | string[]) => {
     try {
       setSaving(true);
-      const dto = { tenChuong, thuTu: editTarget ? editTarget.thuTu : chapters.length + 1 };
       if (editTarget) {
-        await api.capNhatChuong(maGiangVien, editTarget.maChuong, dto);
-        setChapters(prev => prev.map(c => c.maChuong === editTarget.maChuong ? { ...c, tenChuong } : c));
+        const name = typeof tenChuong === 'string' ? tenChuong : tenChuong[0];
+        await api.capNhatChuong(maGiangVien, editTarget.maChuong, { tenChuong: name, thuTu: editTarget.thuTu });
+        setChapters(prev => prev.map(c => c.maChuong === editTarget.maChuong ? { ...c, tenChuong: name } : c));
         showToast('success', 'Cập nhật chương thành công!');
       } else {
-        const res = await api.themChuong(maGiangVien, maKhoaHoc, dto);
-        const newCh: ChuongHocDetail = { maChuong: res.maChuong, tenChuong: res.tenChuong, thuTu: res.thuTu, danhSachBaiHoc: [] };
-        setChapters(prev => [...prev, newCh]);
-        setHighlightId(res.maChuong);
-        setTimeout(() => setHighlightId(null), 2000);
-        showToast('success', 'Thêm chương thành công!');
+        const names = Array.isArray(tenChuong) ? tenChuong : [tenChuong];
+        const created: ChuongHocDetail[] = [];
+        for (const [index, name] of names.entries()) {
+          const res = await api.themChuong(maGiangVien, maKhoaHoc, { tenChuong: name, thuTu: chapters.length + index + 1 });
+          created.push({ maChuong: res.maChuong, tenChuong: res.tenChuong, thuTu: res.thuTu, danhSachBaiHoc: [] });
+        }
+        setChapters(prev => [...prev, ...created]);
+        if (created.length) {
+          setHighlightId(created[created.length - 1].maChuong);
+          setTimeout(() => setHighlightId(null), 2000);
+        }
+        showToast('success', `Đã thêm thành công ${created.length} chương mới.`);
       }
       setModalOpen(false);
       setEditTarget(null);
       onRefresh?.();
     } catch {
-      showToast('error', 'Có lỗi xảy ra. Vui lòng thử lại.');
+      showToast('error', 'Có lỗi xảy ra khi tạo chương. Các chương đã tạo trước đó vẫn được giữ lại.');
     } finally { setSaving(false); }
   };
 
