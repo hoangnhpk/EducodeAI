@@ -298,6 +298,10 @@
   color: var(--text-dark);
 }
 
+.akm-table-card {
+  padding: 32px;
+}
+
 .akm-table-card .card-header {
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-light);

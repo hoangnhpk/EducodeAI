@@ -1,0 +1,108 @@
+/* Shared admin table, status, and action controls. */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    font-size: 14px;
+}
+
+.user-table thead {
+    background: var(--bg-main);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.user-table th {
+    padding: 11px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.user-table td {
+    padding: 11px 16px;
+    color: var(--text-main);
+    vertical-align: middle;
+}
+
+.user-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+
+.user-table tbody tr:last-child { border-bottom: none; }
+.user-table tbody tr:hover { background: var(--primary-soft); }
+
+.badge-role {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--ai-accent-soft);
+    color: var(--ai-accent-hover);
+}
+
+.user-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.user-status-dot-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+
+.user-status-active { background: var(--success-soft); color: var(--success-strong); }
+.user-status-active .user-status-dot-indicator { background: var(--success); }
+.user-status-locked { background: var(--warning-soft); color: var(--warning-strong); }
+.user-status-locked .user-status-dot-indicator { background: var(--warning); }
+.user-status-permanent-locked { background: var(--danger-soft); color: var(--danger-strong); }
+.user-status-permanent-locked .user-status-dot-indicator { background: var(--danger); }
+
+.action-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    gap: 6px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 6px 9px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-action i { font-size: 13px; }
+.btn-edit { color: var(--info); background: var(--info-soft); border-color: var(--info-soft); }
+.btn-lock { color: var(--warning-strong); background: var(--warning-soft); border-color: var(--warning-soft); }
+.btn-unlock { color: var(--success-strong); background: var(--success-soft); border-color: var(--success-soft); }
+.btn-delete { color: var(--danger-strong); background: var(--danger-soft); border-color: var(--danger-soft); }
+.btn-edit:hover { background: var(--info); color: var(--text-white); border-color: var(--info); }
+.btn-lock:hover { background: var(--warning); color: var(--text-white); border-color: var(--warning); }
+.btn-unlock:hover { background: var(--success); color: var(--text-white); border-color: var(--success); }
+.btn-delete:hover { background: var(--danger); color: var(--text-white); border-color: var(--danger); }

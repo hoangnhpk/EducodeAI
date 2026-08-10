@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getDeviceInfo } from "../utils/deviceHelper";
 import { clearAuthTokens, getAuthTokens, setAuthTokens } from "../utils/authStorage";
+import { getSessionGeneration, isLoggingOut } from "../utils/authLifecycle";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -58,6 +59,14 @@ axiosClient.interceptors.response.use(
 
     // Nếu lỗi 401
     if (error.response?.status === 401) {
+      const requestUrl = String(originalRequest?.url || '');
+      const isAuthLifecycleRequest = requestUrl.includes('/dang-nhap')
+        || requestUrl.includes('/refresh-token')
+        || requestUrl.includes('/dang-xuat');
+      if (isLoggingOut() || isAuthLifecycleRequest) {
+        return Promise.reject(error);
+      }
+
       // KIỂM TRA XEM CÓ PHẢI BỊ KHÓA TÀI KHOẢN KHÔNG (Từ Middleware mới)
       const data = error.response.data;
       if (data?.isBanned) {
@@ -108,6 +117,7 @@ axiosClient.interceptors.response.use(
         const { maThietBi } = getDeviceInfo();
 
         try {
+          const refreshGeneration = getSessionGeneration();
           // Refresh token nằm trong cookie HttpOnly (JS không đọc được);
           // gửi kèm tự động nhờ withCredentials. Không truyền token qua URL.
           const response: any = await axios.post(
@@ -117,6 +127,9 @@ axiosClient.interceptors.response.use(
           );
 
           const { token } = response.data;
+          if (isLoggingOut() || refreshGeneration !== getSessionGeneration()) {
+            return Promise.reject(error);
+          }
           setAuthTokens(token);
 
           axiosClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
