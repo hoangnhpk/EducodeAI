@@ -567,19 +567,27 @@ JSON CÓ ĐÚNG 2 TRƯỜNG:
                 sb.AppendLine($"Câu {t.SoCau} ({t.Diem}/20): {t.NhanXet}");
 
             var prompt = $@"
+BẠN LÀ MỘT GIÁM KHẢO NGƯỜI VIỆT NAM.
 Vừa kết thúc phỏng vấn đồ án '{phien.TenDoAn}'. 
 Tổng điểm: {tongDiem}/100. Kết quả: {(daDat ? "ĐẠT" : "CHƯA ĐẠT")}.
 Chi tiết: {sb}
 
-Viết nhận xét tổng (3-4 câu): điểm mạnh, điểm cần cải thiện, lời khuyên.
-Xưng ""anh"", gọi ""em"". Chỉ trả về đoạn văn, không markdown.
+Nhiệm vụ: Viết nhận xét tổng (3-4 câu) bằng TIẾNG VIỆT về: điểm mạnh, điểm cần cải thiện, lời khuyên.
+Xưng ""anh"", gọi ""em"".
+
+BẮT BUỘC TRẢ VỀ JSON DUY NHẤT NHƯ SAU (KHÔNG DÙNG MARKDOWN KHÁC, KHÔNG GIẢI THÍCH):
+{{
+  ""nhanXet"": ""<nội dung nhận xét bằng tiếng Việt>""
+}}
 ";
             try
             {
                 try
                 {
                     var raw = await _gemini.GenerateAsync(prompt);
-                    return ChuanHoaJsonTuAIHelper.LayTextChatTuAI(raw).Trim();
+                    var json = ChuanHoaJsonTuAIHelper.ChuanHoa(raw);
+                    var parsed = JsonSerializer.Deserialize<JsonElement>(json);
+                    return parsed.GetProperty("nhanXet").GetString() ?? (daDat ? "Chúc mừng em đã vượt qua!" : "Em cần ôn tập thêm và thử lại.");
                 }
                 catch (Exception ex)
                 {

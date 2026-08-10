@@ -18,6 +18,9 @@ interface IProjectResult {
     moTa: string;
     yeuCauChucNang: IYeuCauChucNang[];
     cauTrucDatabase: string;
+    daHoanThanh?: boolean;
+    tongDiem?: number;
+    nhanXetTong?: string;
 }
 
 interface IHistoryItem {
@@ -499,7 +502,7 @@ const SinhDoAnAI: React.FC = () => {
                             Lịch sử
                             {history.length > 0 && <span className="sda-history-count">{history.length}</span>}
                         </button>
-                        <button className="sda-back-btn" onClick={() => navigate(-1)} aria-label="Quay lại">
+                        <button className="sda-back-btn" onClick={() => navigate('/')} aria-label="Quay lại">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                                 <path d="M19 12H5M12 5l-7 7 7 7" />
                             </svg>
@@ -846,10 +849,12 @@ const SinhDoAnAI: React.FC = () => {
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                                             <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                                         </svg>
-                                        Yêu cầu chức năng
-                                        <span className="sda-tab-count" aria-label={`${resultData.yeuCauChucNang.length} chức năng`}>
-                                            {resultData.yeuCauChucNang.length}
-                                        </span>
+                                        {resultData.daHoanThanh ? 'Kết quả đồ án' : 'Yêu cầu chức năng'}
+                                        {!resultData.daHoanThanh && (
+                                            <span className="sda-tab-count" aria-label={`${resultData.yeuCauChucNang.length} chức năng`}>
+                                                {resultData.yeuCauChucNang.length}
+                                            </span>
+                                        )}
                                     </button>
                                     <button
                                         id="tab-database"
@@ -874,9 +879,42 @@ const SinhDoAnAI: React.FC = () => {
                                         aria-labelledby="tab-features"
                                         className="sda-features-list"
                                     >
-                                        {resultData.yeuCauChucNang.map((yc: any, idx) => {
-                                            // Handle backward compatibility or case issues
-                                            const tenChucNangText = typeof yc === 'string' ? yc : (yc.tenChucNang || yc.TenChucNang || `Tính năng ${idx + 1}`);
+                                        {resultData.daHoanThanh ? (
+                                            <div className="sda-result-summary" style={{ padding: '2.5rem 1.5rem', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                                                <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🏆</div>
+                                                <h3 style={{ color: '#0f172a', fontSize: '1.5rem', marginBottom: '0.5rem', fontWeight: 700 }}>Đã Hoàn Thành Xuất Sắc</h3>
+                                                <p style={{ fontSize: '1.25rem', color: '#10b981', fontWeight: 'bold', marginBottom: '2rem' }}>
+                                                    Tổng điểm phỏng vấn: {resultData.tongDiem ?? 100}/100
+                                                </p>
+                                                <div style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left', lineHeight: '1.7', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                                                    <h4 style={{ color: '#334155', fontSize: '1.05rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{ fontSize: '1.2rem' }}>📝</span> Nhận xét từ AI Interviewer
+                                                    </h4>
+                                                    <p style={{ color: '#475569', margin: 0, whiteSpace: 'pre-line' }}>
+                                                        {(() => {
+                                                            let text = resultData.nhanXetTong;
+                                                            if (!text) return 'Bạn đã hoàn thành rất tốt đồ án này. Hãy tiếp tục phát huy và tự tin đưa dự án này vào CV nhé!';
+                                                            
+                                                            // Dọn dẹp tất cả các loại lỗi rò rỉ prompt tiếng Anh (Tone:, Role:, Draft:, v.v.)
+                                                            // Bằng cách lấy đoạn văn tiếng Việt cuối cùng
+                                                            if (text.includes('Tone:') || text.includes('Role:') || text.includes('Draft') || text.includes('*')) {
+                                                                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                                                                // Lấy dòng cuối cùng (thường là câu tiếng Việt)
+                                                                if (lines.length > 0) {
+                                                                    const lastLine = lines[lines.length - 1];
+                                                                    // Xóa dấu * ở đầu/cuối nếu có
+                                                                    return lastLine.replace(/^\*+|\*+$/g, '').trim();
+                                                                }
+                                                            }
+                                                            return text;
+                                                        })()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            resultData.yeuCauChucNang.map((yc: any, idx) => {
+                                                // Handle backward compatibility or case issues
+                                                const tenChucNangText = typeof yc === 'string' ? yc : (yc.tenChucNang || yc.TenChucNang || `Tính năng ${idx + 1}`);
                                             const chiTietYeuCauText = typeof yc === 'string' ? '' : (yc.chiTietYeuCau || yc.ChiTietYeuCau || '');
                                             const ngay = typeof yc === 'string' ? idx + 1 : (yc.ngay || yc.Ngay || idx + 1);
                                             const diem = typeof yc === 'string' ? 0 : (yc.diem || yc.Diem || 0);
@@ -1013,7 +1051,7 @@ const SinhDoAnAI: React.FC = () => {
                                                     )}
                                                 </div>
                                             );
-                                        })}
+                                        }))}
                                     </div>
                                 )}
 
@@ -1046,47 +1084,48 @@ const SinhDoAnAI: React.FC = () => {
                                 )}
 
                                 {/* ── NỘP ĐỒ ÁN CTA ── */}
-                                <div className="sda-submit-cta">
-                                    <div className="sda-submit-info">
-                                        <span className="sda-submit-icon">🎯</span>
-                                        <div>
-                                            <strong>Sẵn sàng chứng minh bản thân?</strong>
-                                            <p>Nộp đồ án và bước vào Trạm Hỏi Cung AI – hoàn thành để nhận Chứng Chỉ Thực Chiến</p>
+                                {!resultData.daHoanThanh && (
+                                    <div className="sda-submit-cta">
+                                        <div className="sda-submit-info">
+                                            <span className="sda-submit-icon">🎯</span>
+                                            <div>
+                                                <strong>Sẵn sàng chứng minh bản thân?</strong>
+                                                <p>Nộp đồ án và bước vào Trạm Hỏi Cung AI – hoàn thành để nhận Chứng Chỉ Thực Chiến</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="sda-submit-note-wrapper" style={{ width: '100%', marginTop: '0.5rem' }}>
+                                            <label htmlFor="khoKhan" style={{ display: 'block', fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.4rem', fontWeight: 600 }}>
+                                                Bạn gặp những khó khăn gì trong quá trình làm đồ án này? (Tuỳ chọn)
+                                            </label>
+                                            <textarea
+                                                id="khoKhan"
+                                                className="sda-textarea"
+                                                placeholder="Ví dụ: Cấu hình Redux rườm rà, hoặc khó khăn khi tối ưu truy vấn Database..."
+                                                value={khoKhan}
+                                                onChange={e => setKhoKhan(e.target.value)}
+                                                rows={2}
+                                                style={{ width: '100%', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', padding: '0.75rem', color: 'var(--text-main, #111827)', fontSize: '0.85rem', resize: 'vertical' }}
+                                            />
+                                        </div>
+
+                                        <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                                            <button
+                                                id="sda-submit-btn"
+                                                className={`sda-submit-btn ${submitting ? 'loading' : ''}`}
+                                                onClick={handleNopDoAn}
+                                                disabled={submitting}
+                                                aria-busy={submitting}
+                                            >
+                                                {submitting ? (
+                                                    <><span className="sda-gen-spinner" aria-hidden="true" />Đang nộp...</>
+                                                ) : (
+                                                    <><span>🚀</span> Nộp Đồ Án &amp; Bắt Đầu Phỏng Vấn AI</>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
-
-
-                                    <div className="sda-submit-note-wrapper" style={{ width: '100%', marginTop: '0.5rem' }}>
-                                        <label htmlFor="khoKhan" style={{ display: 'block', fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.4rem', fontWeight: 600 }}>
-                                            Bạn gặp những khó khăn gì trong quá trình làm đồ án này? (Tuỳ chọn)
-                                        </label>
-                                        <textarea
-                                            id="khoKhan"
-                                            className="sda-textarea"
-                                            placeholder="Ví dụ: Cấu hình Redux rườm rà, hoặc khó khăn khi tối ưu truy vấn Database..."
-                                            value={khoKhan}
-                                            onChange={e => setKhoKhan(e.target.value)}
-                                            rows={2}
-                                            style={{ width: '100%', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', padding: '0.75rem', color: 'var(--text-main, #111827)', fontSize: '0.85rem', resize: 'vertical' }}
-                                        />
-                                    </div>
-
-                                    <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                                        <button
-                                            id="sda-submit-btn"
-                                            className={`sda-submit-btn ${submitting ? 'loading' : ''}`}
-                                            onClick={handleNopDoAn}
-                                            disabled={submitting}
-                                            aria-busy={submitting}
-                                        >
-                                            {submitting ? (
-                                                <><span className="sda-gen-spinner" aria-hidden="true" />Đang nộp...</>
-                                            ) : (
-                                                <><span>🚀</span> Nộp Đồ Án &amp; Bắt Đầu Phỏng Vấn AI</>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
+                                )}
 
                             </div>
                         )}
