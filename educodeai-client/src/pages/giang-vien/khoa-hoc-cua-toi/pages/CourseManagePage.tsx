@@ -40,6 +40,7 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>(initialTab);
   const [selectedChapter, setSelectedChapter] = useState<{ maChuong: number; tenChuong: string } | null>(null);
+  const [showChapterEditor, setShowChapterEditor] = useState(false);
 
   // Certificate state
   const [certForm, setCertForm] = useState<CertificateConfig>({
@@ -305,12 +306,21 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
         {tab === 'content' && (
           <div className="fade-in">
             {!selectedChapter && chapterCount === 0 ? (
-              <div className="khm-alert khm-alert-info">
-                📂 Bạn cần tạo ít nhất một chương trước khi thêm bài học.
-                <button className="khm-btn khm-btn-primary khm-btn-sm" style={{ marginLeft: 12 }} onClick={() => setSelectedChapter(null)}>
-                  Tạo chương mới →
-                </button>
-              </div>
+              showChapterEditor ? (
+                <ChapterListEditor
+                  maKhoaHoc={maKhoaHoc}
+                  initialChapters={detail.danhSachChuong}
+                  onSelectChapter={handleSelectChapter}
+                  onRefresh={() => void loadDetail()}
+                />
+              ) : (
+                <div className="khm-alert khm-alert-info">
+                  📂 Bạn cần tạo ít nhất một chương trước khi thêm bài học.
+                  <button className="khm-btn khm-btn-primary khm-btn-sm" style={{ marginLeft: 12 }} onClick={() => setShowChapterEditor(true)}>
+                    Tạo chương mới →
+                  </button>
+                </div>
+              )
             ) : (
               <>
                 {chapterCount > 0 && (

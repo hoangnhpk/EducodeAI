@@ -110,7 +110,7 @@ interface ChapterModalProps {
   isOpen: boolean;
   editData?: ChuongHocDetail | null;
   isLoading: boolean;
-  onSave: (tenChuong: string) => void;
+  onSave: (tenChuong: string | string[]) => void;
   onClose: () => void;
 }
 const ChapterModal: React.FC<ChapterModalProps> = ({ isOpen, editData, isLoading, onSave, onClose }) => {
@@ -124,9 +124,19 @@ const ChapterModal: React.FC<ChapterModalProps> = ({ isOpen, editData, isLoading
 
   if (!isOpen) return null;
   const handleSave = () => {
-    if (!name.trim()) { setErr('Tên chương không được để trống.'); return; }
-    if (name.length > 200) { setErr('Tên chương tối đa 200 ký tự.'); return; }
-    onSave(name.trim());
+    if (editData) {
+      const trimmedName = name.trim();
+      if (!trimmedName) { setErr('Tên chương không được để trống.'); return; }
+      if (trimmedName.length > 200) { setErr('Tên chương tối đa 200 ký tự.'); return; }
+      onSave(trimmedName);
+      return;
+    }
+
+    const names = name.split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+    if (!names.length) { setErr('Vui lòng nhập ít nhất một tên chương.'); return; }
+    const invalidIndex = names.findIndex(item => item.length > 200);
+    if (invalidIndex >= 0) { setErr(`Tên chương ở dòng ${invalidIndex + 1} tối đa 200 ký tự.`); return; }
+    onSave(names);
   };
   return (
     <div className="khm-modal-backdrop" onClick={onClose}>
@@ -138,23 +148,35 @@ const ChapterModal: React.FC<ChapterModalProps> = ({ isOpen, editData, isLoading
         <div className="khm-modal-body">
           <div className="khm-form-group">
             <label className="khm-form-label">Tên chương <span className="req">*</span></label>
-            <input
-              className={`khm-form-input ${err ? 'error' : ''}`}
-              placeholder="Ví dụ: Chương 1 - Giới thiệu"
-              value={name}
-              onChange={e => { setName(e.target.value); setErr(''); }}
-              autoFocus
-              onKeyDown={e => e.key === 'Enter' && handleSave()}
-              disabled={isLoading}
-              maxLength={200}
-            />
+            {editData ? (
+              <input
+                className={`khm-form-input ${err ? 'error' : ''}`}
+                placeholder="Ví dụ: Chương 1 - Giới thiệu"
+                value={name}
+                onChange={e => { setName(e.target.value); setErr(''); }}
+                autoFocus
+                onKeyDown={e => e.key === 'Enter' && handleSave()}
+                disabled={isLoading}
+                maxLength={200}
+              />
+            ) : (
+              <textarea
+                className={`khm-form-input ${err ? 'error' : ''}`}
+                placeholder={'Nhập danh sách tên chương, mỗi chương trên 1 dòng. Ví dụ:\nChương 1: Tổng quan\nChương 2: Cài đặt môi trường\nChương 3: Bắt đầu dự án'}
+                value={name}
+                onChange={e => { setName(e.target.value); setErr(''); }}
+                autoFocus
+                disabled={isLoading}
+                rows={7}
+              />
+            )}
             {err && <div className="khm-form-error">⚠ {err}</div>}
           </div>
         </div>
         <div className="khm-modal-footer">
           <button className="khm-btn khm-btn-outline khm-btn-sm" onClick={onClose} disabled={isLoading}>Hủy</button>
           <button className="khm-btn khm-btn-primary khm-btn-sm" onClick={handleSave} disabled={isLoading}>
-            {isLoading ? <><span className="khm-spinner khm-spinner-sm" /> Đang lưu...</> : (editData ? 'Cập nhật' : 'Thêm chương')}
+            {isLoading ? <><span className="khm-spinner khm-spinner-sm" /> Đang lưu...</> : (editData ? 'Cập nhật' : 'Thêm danh sách chương')}
           </button>
         </div>
       </div>
