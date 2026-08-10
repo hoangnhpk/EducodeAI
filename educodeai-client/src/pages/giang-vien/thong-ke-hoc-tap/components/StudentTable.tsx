@@ -1,4 +1,7 @@
-﻿import type { HocVien } from "./Types";
+﻿import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { HocVien } from "./Types";
+import { formatThoiGianTuGiay } from "@/utils/format-thoi-gian-hoc";
 import "./css/student-table.css";
 
 interface Props {
@@ -9,6 +12,9 @@ interface Props {
 }
 
 const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props) => {
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState<HocVien | null>(null);
+
   const getStatusBadge = (trangThai: string) => {
     const map: Record<string, { label: string; className: string }> = {
       "Hoàn thành": { label: "HOÀN THÀNH", className: "status-badge status-completed" },
@@ -36,16 +42,35 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
     return `${Number(hocVien.soBaiDaNop ?? 0)} bài`;
   };
   const getStudyMetric = (hocVien: HocVien) => {
-    if (hocVien.gioHoc != null) return `${Number(hocVien.gioHoc).toFixed(1)}h`;
+    if (hocVien.gioHoc != null) return formatThoiGianTuGiay(hocVien.gioHoc);
     return Number(hocVien.diemTrungBinh ?? 0).toFixed(1);
   };
+  const getStudyLabel = (hocVien: HocVien) => (hocVien.gioHoc != null ? "Tổng thời gian học" : "Điểm trung bình");
 
-  const getAvatar = (hocVien: HocVien) => {
+  const getAvatar = (hocVien: HocVien, large = false) => {
     const ten = getName(hocVien);
     if (hocVien.anhDaiDien) {
-      return <img src={hocVien.anhDaiDien} alt={ten || "Học viên"} className="student-avatar-img" />;
+      return (
+        <img
+          src={hocVien.anhDaiDien}
+          alt={ten || "Học viên"}
+          className={large ? "student-avatar-img student-avatar-img--lg" : "student-avatar-img"}
+        />
+      );
     }
-    return <div className="student-avatar">{ten.charAt(0).toUpperCase() || "?"}</div>;
+    return (
+      <div className={large ? "student-avatar student-avatar--lg" : "student-avatar"}>
+        {ten.charAt(0).toUpperCase() || "?"}
+      </div>
+    );
+  };
+
+  const dongChiTiet = () => setSelected(null);
+
+  const moLopHoc = () => {
+    const email = selected?.email?.trim();
+    dongChiTiet();
+    navigate(email ? `/giang-vien/lop-hoc?search=${encodeURIComponent(email)}` : "/giang-vien/lop-hoc");
   };
 
   return (
@@ -57,7 +82,7 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
             <th>Email</th>
             <th>% Hoàn thành</th>
             <th>Nộp</th>
-            <th>Học</th>
+            <th>Thời gian học</th>
             <th>Trạng thái</th>
             <th>Hành động</th>
           </tr>
@@ -98,7 +123,12 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
                 <td>{getStatusBadge(hocVien.trangThai ?? "")}</td>
 
                 <td>
-                  <button type="button" className="detail-btn" aria-label={`Xem chi tiết ${getName(hocVien)}`}>
+                  <button
+                    type="button"
+                    className="detail-btn"
+                    aria-label={`Xem chi tiết ${getName(hocVien)}`}
+                    onClick={() => setSelected(hocVien)}
+                  >
                     <i className="fas fa-eye" aria-hidden="true" />
                     Chi tiết
                   </button>
@@ -142,6 +172,68 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
             Sau
             <i className="fas fa-chevron-right" aria-hidden="true" />
           </button>
+        </div>
+      )}
+
+      {selected && (
+        <div
+          className="st-detail-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) dongChiTiet();
+          }}
+        >
+          <div className="st-detail-modal" role="dialog" aria-modal="true" aria-labelledby="st-detail-title">
+            <div className="st-detail-header">
+              <h3 id="st-detail-title">Chi tiết học viên</h3>
+              <button type="button" className="st-detail-close" onClick={dongChiTiet} aria-label="Đóng">
+                ×
+              </button>
+            </div>
+
+            <div className="st-detail-body">
+              <div className="st-detail-profile">
+                {getAvatar(selected, true)}
+                <div>
+                  <div className="st-detail-name">{getName(selected)}</div>
+                  <div className="st-detail-email">{selected.email?.trim() || "Không có email"}</div>
+                  <div className="st-detail-status">{getStatusBadge(selected.trangThai ?? "")}</div>
+                </div>
+              </div>
+
+              <div className="st-detail-grid">
+                <div className="st-detail-item">
+                  <span className="st-detail-label">% Hoàn thành</span>
+                  <strong>{getProgress(selected).toFixed(1)}%</strong>
+                </div>
+                <div className="st-detail-item">
+                  <span className="st-detail-label">Bài đã nộp</span>
+                  <strong>{getAssignments(selected)}</strong>
+                </div>
+                <div className="st-detail-item">
+                  <span className="st-detail-label">{getStudyLabel(selected)}</span>
+                  <strong>{getStudyMetric(selected)}</strong>
+                </div>
+                <div className="st-detail-item">
+                  <span className="st-detail-label">Số khóa tham gia</span>
+                  <strong>{Number(selected.soKhoaHocThamGia ?? 0)}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="st-detail-footer">
+              <button type="button" className="st-detail-btn st-detail-btn--ghost" onClick={dongChiTiet}>
+                Đóng
+              </button>
+              {selected.email?.trim() && (
+                <a className="st-detail-btn st-detail-btn--soft" href={`mailto:${selected.email.trim()}`}>
+                  Gửi email
+                </a>
+              )}
+              <button type="button" className="st-detail-btn st-detail-btn--primary" onClick={moLopHoc}>
+                Xem trong lớp học
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import './QuanLyHocVienKhoaHoc.css';
 import Swal from 'sweetalert2';
 import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
@@ -165,10 +166,11 @@ const formatGiftTime = (raw: string) => {
 };
 
 export default function QuanLyHocVienKhoaHoc() {
+  const [searchParams] = useSearchParams();
   const [khoaHocs, setKhoaHocs] = useState<KhoaHoc[]>([]);
   const [hocViens, setHocViens] = useState<HocVien[]>([]);
   const [selectedKhoaHoc, setSelectedKhoaHoc] = useState<string>('0');
-  const [searchInput, setSearchInput] = useState<string>('');
+  const [searchInput, setSearchInput] = useState<string>(() => searchParams.get('search')?.trim() || '');
   const [loading, setLoading] = useState<boolean>(false);
 
   // --- STATE CHO PHÂN TRANG ---
