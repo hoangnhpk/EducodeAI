@@ -145,7 +145,7 @@ export default function NapTienAI() {
 
   if (dangTai) {
     return (
-      <div className="container py-4">
+      <div className="gv-page">
         <div className="text-center">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Đang tải...</span>
@@ -159,7 +159,7 @@ export default function NapTienAI() {
   const soTienVnd = parseFloat(soTienVndInput) || 0;
 
   return (
-    <div className="container py-4">
+    <div className="gv-page">
       <div className="mb-4">
         <h2 className="fw-bold">Nạp tiền vào ví AI</h2>
         <p className="text-muted">Chuyển đổi doanh thu VND thành AI Balance để sử dụng các tính năng AI</p>

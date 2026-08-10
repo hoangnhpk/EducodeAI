@@ -527,7 +527,7 @@ export default function QuanLyHocVienKhoaHoc() {
   }, [selectedKhoaHoc, fetchLichSuQuaTang, tuKhoaLichSu]);
 
   return (
-    <div className="qllh-container">
+    <div className="gv-page qllh-container">
       <div className="qllh-header">
         <div className="qllh-header__main">
           <h1 className="qllh-title">

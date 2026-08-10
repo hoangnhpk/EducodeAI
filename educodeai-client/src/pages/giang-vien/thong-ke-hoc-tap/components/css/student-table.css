@@ -3,13 +3,15 @@
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 /* ===== TABLE ===== */
 .student-table {
   width: 100%;
+  min-width: 960px;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .student-table thead {
@@ -18,18 +20,58 @@
 }
 
 .student-table th {
-  padding: 16px 24px;
+  padding: 14px 12px;
   text-align: left;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .student-table td {
-  padding: 16px 24px;
+  padding: 14px 12px;
   font-size: 14px;
   color: var(--text-main);
+  vertical-align: middle;
+}
+
+.student-table th:nth-child(1),
+.student-table td:nth-child(1) {
+  width: 20%;
+}
+
+.student-table th:nth-child(2),
+.student-table td:nth-child(2) {
+  width: 18%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-table th:nth-child(3),
+.student-table td:nth-child(3) {
+  width: 16%;
+}
+
+.student-table th:nth-child(4),
+.student-table td:nth-child(4) {
+  width: 10%;
+}
+
+.student-table th:nth-child(5),
+.student-table td:nth-child(5) {
+  width: 10%;
+}
+
+.student-table th:nth-child(6),
+.student-table td:nth-child(6) {
+  width: 14%;
+}
+
+.student-table th:nth-child(7),
+.student-table td:nth-child(7) {
+  width: 12%;
 }
 
 .student-table tbody tr {
@@ -46,12 +88,25 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
-.student-avatar {
+.student-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-avatar,
+.student-avatar-img {
   width: 40px;
   height: 40px;
   border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.student-avatar {
   background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   display: flex;
   align-items: center;
@@ -60,61 +115,76 @@
   font-weight: 600;
 }
 
-/* ===== PROGRESS ===== */
-.progress-wrapper {
+/* ===== PROGRESS (scoped — tránh đụng Bootstrap .progress-bar) ===== */
+.st-progress-wrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
-.progress-bar {
-  width: 90px;
+.st-progress-track {
+  flex: 1 1 auto;
+  min-width: 64px;
+  max-width: 90px;
   height: 8px;
   background: var(--border-color);
   border-radius: 999px;
   overflow: hidden;
 }
 
-.progress-fill {
+.st-progress-fill {
   height: 100%;
   border-radius: 999px;
+  display: block;
 }
 
-.progress-green {
+.st-progress-green {
   background: var(--success);
 }
 
-.progress-yellow {
+.st-progress-yellow {
   background: var(--warning);
 }
 
-.progress-red {
+.st-progress-red {
   background: var(--danger);
+}
+
+.st-progress-wrapper strong {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 13px;
 }
 
 /* ===== ASSIGNMENT BADGE ===== */
 .assignment-badge {
+  display: inline-block;
   padding: 4px 10px;
   background: var(--info);
   color: var(--text-white);
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 /* ===== SCORE ===== */
 .avg-score {
   font-weight: 600;
   color: var(--text-dark);
+  white-space: nowrap;
 }
 
 /* ===== STATUS BADGE ===== */
 .status-badge {
+  display: inline-block;
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
-  display: inline-block;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .status-completed {
@@ -132,9 +202,14 @@
   color: var(--danger-strong);
 }
 
+.status-not-started {
+  background: var(--bg-main);
+  color: var(--text-muted);
+}
+
 /* ===== ACTION BUTTON ===== */
 .detail-btn {
-  padding: 8px 14px;
+  padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid var(--primary);
   background: var(--primary-soft);
@@ -143,12 +218,57 @@
   font-weight: 600;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  width: auto;
+  min-width: max-content;
 }
 
 .detail-btn:hover {
   background: var(--primary);
   color: var(--text-white);
+}
+
+/* ===== PAGINATION (scoped — tránh đụng Bootstrap .pagination) ===== */
+.student-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.student-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.student-pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.student-pagination-btn:not(:disabled):hover {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.student-pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
 }

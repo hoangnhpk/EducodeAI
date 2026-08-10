@@ -22,9 +22,9 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
   };
 
   const getProgressClass = (tienDo: number) => {
-    if (tienDo >= 80) return "progress-green";
-    if (tienDo >= 50) return "progress-yellow";
-    return "progress-red";
+    if (tienDo >= 80) return "st-progress-green";
+    if (tienDo >= 50) return "st-progress-yellow";
+    return "st-progress-red";
   };
 
   const getName = (hocVien: HocVien) => hocVien.tenHocVien?.trim() || hocVien.hoTen?.trim() || "—";
@@ -56,8 +56,8 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
             <th>Họ tên</th>
             <th>Email</th>
             <th>% Hoàn thành</th>
-            <th>Số bài đã nộp</th>
-            <th>Tổng giờ học</th>
+            <th>Nộp</th>
+            <th>Học</th>
             <th>Trạng thái</th>
             <th>Hành động</th>
           </tr>
@@ -71,16 +71,19 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
                 <td>
                   <div className="student-info">
                     {getAvatar(hocVien)}
-                    <strong>{getName(hocVien)}</strong>
+                    <strong title={getName(hocVien)}>{getName(hocVien)}</strong>
                   </div>
                 </td>
 
-                <td>{hocVien.email?.trim() || "—"}</td>
+                <td title={hocVien.email?.trim() || undefined}>{hocVien.email?.trim() || "—"}</td>
 
                 <td>
-                  <div className="progress-wrapper">
-                    <div className="progress-bar">
-                      <div className={`progress-fill ${getProgressClass(progress)}`} style={{ width: `${progress}%` }} />
+                  <div className="st-progress-wrapper">
+                    <div className="st-progress-track">
+                      <div
+                        className={`st-progress-fill ${getProgressClass(progress)}`}
+                        style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                      />
                     </div>
                     <strong>{progress.toFixed(1)}%</strong>
                   </div>
@@ -95,7 +98,7 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
                 <td>{getStatusBadge(hocVien.trangThai ?? "")}</td>
 
                 <td>
-                  <button className="detail-btn" aria-label={`Xem chi tiết ${getName(hocVien)}`}>
+                  <button type="button" className="detail-btn" aria-label={`Xem chi tiết ${getName(hocVien)}`}>
                     <i className="fas fa-eye" aria-hidden="true" />
                     Chi tiết
                   </button>
@@ -106,7 +109,7 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
 
           {students.length === 0 && (
             <tr>
-              <td colSpan={8} style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={7} style={{ textAlign: "center", padding: 24 }}>
                 Không tìm thấy học viên
               </td>
             </tr>
@@ -115,15 +118,27 @@ const StudentTable = ({ students, currentPage, totalPages, onPageChange }: Props
       </table>
 
       {totalPages > 1 && (
-        <div className="pagination">
-          <button className="pagination-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>
+        <div className="student-pagination">
+          <button
+            type="button"
+            className="student-pagination-btn"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
             <i className="fas fa-chevron-left" aria-hidden="true" />
             Trước
           </button>
 
-          <div className="pagination-info">Trang {currentPage} / {totalPages}</div>
+          <div className="student-pagination-info">
+            Trang {currentPage} / {totalPages}
+          </div>
 
-          <button className="pagination-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+          <button
+            type="button"
+            className="student-pagination-btn"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
             Sau
             <i className="fas fa-chevron-right" aria-hidden="true" />
           </button>

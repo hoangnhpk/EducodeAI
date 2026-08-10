@@ -3,11 +3,11 @@
    (bám variables.css; không phụ thuộc module khác)
    ========================================= */
 
-/* Container full-width — KHÔNG bó giữa, đồng bộ các trang GV khác */
+/* Container full-width — padding ngoài do .gv-main-content (24px) */
 .tkh-container {
-  padding: 24px;
-  background: var(--bg-main);
-  min-height: calc(100vh - 80px);
+  padding: 0;
+  background: transparent;
+  min-height: 0;
   color: var(--text-dark);
 }
 
