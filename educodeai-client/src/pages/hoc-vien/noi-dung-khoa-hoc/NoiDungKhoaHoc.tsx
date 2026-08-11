@@ -476,7 +476,7 @@ const NoiDungKhoaHoc = () => {
     }
 
     if (!khoaHoc || !baiHocHienTai) {
-        return <div>Đang tải khóa học...</div>;
+        return <NoiDungKhoaHocLoading />;
     }
 
     const dangLamQuiz = tabActive === 'quiz' || dangLamKiemTraChungChi || (tabActive === 'hoc' && baiHocHienTai.loaiBaiHoc === 'Quiz');
@@ -768,5 +768,92 @@ const NoiDungKhoaHoc = () => {
         </div>
     );
 };
+
+const NoiDungKhoaHocLoading = () => {
+    const [progress, setProgress] = useState(15);
+    const [stepIndex, setStepIndex] = useState(0);
+
+    const steps = [
+        "Đang kết nối môi trường học tập EduCodeAI...",
+        "Đang tải cấu trúc chương học & danh sách bài giảng...",
+        "Đang chuẩn bị trình phát video & trợ lý AI...",
+        "Sẵn sàng! Đang khởi chạy bài học..."
+    ];
+
+    const tips = [
+        "Mẹo: Bạn có thể đặt câu hỏi cho Trợ lý AI bất cứ lúc nào trong khi học.",
+        "Mẹo: Bạn có thể lưu lại các ghi chú trực tiếp tại mốc thời gian của video.",
+        "Mẹo: Hoàn thành bài trắc nghiệm cuối khóa để nhận chứng chỉ chính thức từ EduCodeAI."
+    ];
+
+    const [tipIndex, setTipIndex] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setProgress((prev) => {
+                if (prev >= 92) return 92;
+                return prev + Math.floor(Math.random() * 15) + 8;
+            });
+        }, 350);
+
+        const stepTimer = setInterval(() => {
+            setStepIndex((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
+        }, 700);
+
+        const tipTimer = setInterval(() => {
+            setTipIndex((prev) => (prev + 1) % tips.length);
+        }, 2500);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(stepTimer);
+            clearInterval(tipTimer);
+        };
+    }, []);
+
+    return (
+        <div className="cp-modern-loader-container">
+            <div className="cp-modern-loader-backdrop" />
+
+            <div className="cp-modern-loader-card">
+                <div className="cp-loader-orb-wrapper">
+                    <div className="cp-loader-ring-outer" />
+                    <div className="cp-loader-ring-inner" />
+                    <div className="cp-loader-core-icon">
+                        <i className="fas fa-graduation-cap" />
+                    </div>
+                </div>
+
+                <h3 className="cp-loader-title">EduCodeAI Learning</h3>
+
+                <div className="cp-loader-status-text">
+                    <span>{steps[stepIndex]}</span>
+                </div>
+
+                <div className="cp-loader-progress-track">
+                    <div
+                        className="cp-loader-progress-fill"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+
+                <div className="cp-loader-step-dots">
+                    {steps.map((_, i) => (
+                        <div
+                            key={i}
+                            className={`cp-loader-dot ${i <= stepIndex ? 'active' : ''}`}
+                        />
+                    ))}
+                </div>
+
+                <div className="cp-loader-tip-box">
+                    <i className="fas fa-lightbulb" />
+                    <span>{tips[tipIndex]}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 export default NoiDungKhoaHoc;

@@ -175,6 +175,25 @@
 }
 
 /* ===== PAGE CONTENT QTV DÙNG CHUNG ===== */
+.qtv-main-content > div {
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Card nội dung cấp trang admin dùng khoảng đệm chuẩn 32px. */
+.qtv-content-card,
+.qtv-main-content .akm-table-card,
+.qtv-main-content .qtrv-table-card,
+.qtv-main-content .qlhv-card,
+.qtv-main-content .adm-wd-card,
+.qtv-main-content .adm-revenue,
+.qtv-main-content .adm-top,
+.qtv-main-content .adm-widget,
+.qtv-main-content .quan-tri-config-container {
+  padding: 32px;
+  box-sizing: border-box;
+}
+
 .qtv-page-content {
   padding: 36px 40px;
   min-height: 100%;

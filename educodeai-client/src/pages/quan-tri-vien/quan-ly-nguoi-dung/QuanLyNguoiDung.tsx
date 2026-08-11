@@ -5,6 +5,7 @@ import { NguoiDungService } from "@/services/quan-ly-nguoi-dung.service";
 import ThanhCongCu from "./components/ThanhCongCu";
 import DanhSachNguoiDung from "./components/DanhSachNguoiDung";
 import ModalNguoiDung from "./components/ModalNguoiDung";
+import "@/assets/styles/AdminTableControls.css";
 import "./QuanLyNguoiDung.css";
 import Swal from 'sweetalert2';
 
@@ -164,9 +165,15 @@ const QuanLyNguoiDung = () => {
 
     return (
         <div className="user-management-container qtv-page-content">
-            <h2 className="page-title">Quản lý người dùng</h2>
-            <ThanhCongCu tuKhoa={tuKhoa} onThayDoiTuKhoa={handleThayDoiTuKhoa} vaiTroLoc={vaiTroLoc} onThayDoiVaiTro={handleThayDoiVaiTro} trangThaiLoc={trangThaiLoc} onThayDoiTrangThai={handleThayDoiTrangThai} onThemMoi={handleThemMoi} />
-            {loi ? (
+            <div className="user-management-header">
+                <h2 className="page-title">Quản lý người dùng</h2>
+                <button className="btn-add" onClick={handleThemMoi}>Thêm Người Dùng</button>
+            </div>
+            <div className="user-management-card">
+                <div className="user-management-card-header">
+                    <ThanhCongCu tuKhoa={tuKhoa} onThayDoiTuKhoa={handleThayDoiTuKhoa} vaiTroLoc={vaiTroLoc} onThayDoiVaiTro={handleThayDoiVaiTro} trangThaiLoc={trangThaiLoc} onThayDoiTrangThai={handleThayDoiTrangThai} />
+                </div>
+                {loi ? (
                 <div style={{
                     padding: '48px 24px', textAlign: 'center',
                     background: 'var(--bg-card)', border: '1px solid var(--border-color)',
@@ -195,6 +202,7 @@ const QuanLyNguoiDung = () => {
                     <button disabled={trangHienTai === tongSoTrang} onClick={() => setTrangHienTai(p => p + 1)} className="btn-pagination-nav">Sau</button>
                 </div>
             )}
+            </div>
             {moModal && <ModalNguoiDung hienThi={moModal} dangSua={dangSua} onDong={handleDongModal} onHoanThanh={luuNguoiDung} />}
         </div>
     );

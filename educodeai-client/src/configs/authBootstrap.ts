@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { getDeviceInfo } from '../utils/deviceHelper'
 import { clearAuthTokens, getAuthTokens, setAuthTokens } from '../utils/authStorage'
+import { getSessionGeneration, isLoggingOut } from '../utils/authLifecycle'
 
 let bootstrapPromise: Promise<boolean> | null = null
 
@@ -12,6 +13,7 @@ export const bootstrapAuth = (): Promise<boolean> => {
   // trong lúc request bootstrap ban đầu vẫn đang chờ cookie refresh.
   if (getAuthTokens().accessToken) return Promise.resolve(true)
   const { maThietBi } = getDeviceInfo()
+  const bootstrapGeneration = getSessionGeneration()
 
   bootstrapPromise = axios
     .post(
@@ -21,6 +23,7 @@ export const bootstrapAuth = (): Promise<boolean> => {
     )
     .then((response) => {
       const token = response.data?.token
+      if (isLoggingOut() || bootstrapGeneration !== getSessionGeneration()) return false
       if (typeof token !== 'string' || !token.trim()) return false
       setAuthTokens(token)
       return true

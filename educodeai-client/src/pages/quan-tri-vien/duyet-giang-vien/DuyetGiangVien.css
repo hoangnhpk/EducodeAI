@@ -1,0 +1,107 @@
+.lecturer-review-page {
+  min-height: 100%;
+}
+
+.lecturer-review-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.lecturer-review-card {
+  padding: 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.lecturer-review-card .toolbar {
+  margin-bottom: 24px;
+}
+
+.lecturer-review-card .filter-select {
+  width: 240px;
+  min-width: 200px;
+}
+
+.lecturer-review-card .table-responsive {
+  overflow-x: auto;
+}
+
+.lecturer-review-card .lecturer-review-table {
+  width: 100%;
+  min-width: 1100px;
+  table-layout: fixed;
+}
+
+.lecturer-review-card .user-table th,
+.lecturer-review-card .user-table td {
+  vertical-align: middle;
+}
+
+.lecturer-review-card .user-table th:nth-child(1) { width: 23%; }
+.lecturer-review-card .user-table th:nth-child(2) { width: 22%; }
+.lecturer-review-card .user-table th:nth-child(3) { width: 14%; }
+.lecturer-review-card .user-table th:nth-child(4) {
+  width: 170px;
+  min-width: 170px;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.lecturer-review-card .user-table th:nth-child(5) {
+  width: 160px;
+  min-width: 160px;
+  box-sizing: border-box;
+}
+.lecturer-review-card .lecturer-review-table th:nth-child(6),
+.lecturer-review-card .lecturer-review-table td:nth-child(6) {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.lecturer-review-card .user-table td:nth-child(2),
+.lecturer-review-card .user-table td:nth-child(3) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lecturer-review-card .user-table td:nth-child(4) {
+  width: 170px;
+  min-width: 170px;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.lecturer-review-card .user-table td:nth-child(5) {
+  width: 160px;
+  min-width: 160px;
+  box-sizing: border-box;
+}
+
+.lecturer-review-card .user-table td:last-child {
+  text-align: center;
+}
+
+.lecturer-review-card .action-group {
+  justify-content: center !important;
+  align-items: center;
+  gap: 6px;
+}
+
+.lecturer-review-card .btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+@media (max-width: 768px) {
+  .lecturer-review-card .filter-select {
+    width: 100%;
+  }
+}
