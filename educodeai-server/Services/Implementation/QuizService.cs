@@ -80,6 +80,7 @@ namespace educodeai_server.Services.Implementation
             var prompt = $"""
                 Bạn là một chuyên gia giáo dục và tạo đề thi của hệ thống EduCodeAI.
                 Dựa vào NỘI DUNG BÀI HỌC dưới đây, hãy tạo ra đúng {dto.SoCauHoi} câu hỏi trắc nghiệm với độ khó: {dto.DoKho}.
+                Ngôn ngữ lập trình của khóa học: {dto.NgonNgu}. Hãy giữ nguyên thuật ngữ và ví dụ phù hợp với ngôn ngữ này.
 
                 == TIÊU ĐỀ VÀ NỘI DUNG TÓM TẮT TỪ NGƯỜI DÙNG ==
                 - Tiêu đề: {dto.TieuDe}

@@ -4,11 +4,12 @@ import type { GenerateQuizAIDTO } from '../types';
 interface Props {
   baiHocId: number | null;
   tenBaiHoc: string;
+  language: string;
   isGenerating: boolean;
   onGenerate: (dto: GenerateQuizAIDTO) => void;
 }
 
-export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGenerate }: Props) {
+export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, language, isGenerating, onGenerate }: Props) {
   const [soCau, setSoCau] = useState(5);
   const [doKho, setDoKho] = useState('Trung bình');
   const [tieuDe, setTieuDe] = useState('');
@@ -23,6 +24,7 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
       DoKho: doKho,
       TieuDe: tieuDe || `Quiz - ${tenBaiHoc}`,
       NoiDungTomTat: tomTat,
+      NgonNgu: language,
     });
   };
 
@@ -43,21 +45,22 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
           {/* Bài học readonly */}
           <div className="col-12 mb-4">
             <label className="btth-label">Bài học đang chọn</label>
-            <div className="input-group">
-              <span className="input-group-text bg-light border-end-0" style={{ borderRadius: 'var(--radius-md) 0 0 var(--radius-md)' }}>
-                <i className="bi bi-journal-text" aria-hidden="true" />
-              </span>
-              <input
-                type="text"
-                className="form-control border-start-0"
-                style={{ borderRadius: '0 var(--radius-md) var(--radius-md) 0', background: 'var(--bg-main)', fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}
-                value={tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
-                readOnly
-              />
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '40px', width: '100%', overflow: 'hidden', border: '1px solid var(--border-color, #dee2e6)', borderRadius: 'var(--radius-md)', background: 'var(--bg-main)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '48px', flex: '0 0 48px', background: '#f8f9fa', borderRight: '1px solid var(--border-color, #dee2e6)' }}><i className="bi bi-journal-text" aria-hidden="true" /></span>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 12px', fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}>{tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}</span>
             </div>
           </div>
 
-          {/* Tiêu đề quiz */}
+          {/* Ngôn ngữ lấy theo khóa học */}
+          <div className="col-md-6 mb-3">
+            <label className="btth-label">Ngôn ngữ lập trình</label>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '40px', width: '100%', overflow: 'hidden', border: '1px solid var(--border-color, #dee2e6)', borderRadius: 'var(--radius-md)', background: 'var(--bg-main)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '48px', flex: '0 0 48px', background: '#f8f9fa', borderRight: '1px solid var(--border-color, #dee2e6)' }}><i className="bi bi-code-slash" aria-hidden="true" /></span>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 12px' }}>{language || 'Lấy theo khóa học'}</span>
+            </div>
+          </div>
+
+
           <div className="col-12 mb-3">
             <label className="btth-label">Tiêu đề Quiz</label>
             <input

@@ -87,6 +87,7 @@ export interface GenerateQuizAIDTO {
   DoKho: string;        // "Dễ" | "Trung bình" | "Khó"
   TieuDe: string;
   NoiDungTomTat: string;
+  NgonNgu: string;
 }
 
 // 7. Câu hỏi trắc nghiệm (match backend output schema)

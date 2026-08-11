@@ -107,6 +107,31 @@ export const useExerciseList = () => {
         setChiTietQuiz(null);
     };
 
+    const handleUpdatePractice = async (updatedData: any) => {
+        const maBaiTap = updatedData?.maBaiTap;
+        const maBaiHoc = updatedData?.maBaiHoc;
+        if (!maBaiTap || !maBaiHoc) {
+            Swal.fire({ icon: 'error', text: 'Không xác định được bài tập hoặc bài học để cập nhật.' });
+            return;
+        }
+
+        try {
+            const response = await BaiTapThucHanhService.updateBaiTap(maBaiTap, {
+                ...updatedData,
+                maBaiHoc,
+            });
+            if (response?.success !== false) {
+                Swal.fire({ icon: 'success', text: 'Đã cập nhật bài tập thành công!', timer: 1500, showConfirmButton: false });
+                setChiTietQuiz({ ...updatedData, loaiBaiTap: 'IDE' });
+                await fetchDanhSach();
+            } else {
+                Swal.fire({ icon: 'error', text: response?.message || 'Không thể cập nhật bài tập.' });
+            }
+        } catch (error) {
+            Swal.fire({ icon: 'error', text: 'Lỗi hệ thống khi cập nhật bài tập.' });
+        }
+    };
+
     const danhSachKhoaHocFilter = useMemo(() => {
         return Array.from(new Set(danhSachBaiTap.map(x => x.tenKhoaHoc).filter(Boolean)));
     }, [danhSachBaiTap]);
@@ -154,6 +179,7 @@ export const useExerciseList = () => {
         modalState,
         fetchDanhSach,
         handleDeleteClick,
-        handleViewClick
+        handleViewClick,
+        handleUpdatePractice
     };
 };
