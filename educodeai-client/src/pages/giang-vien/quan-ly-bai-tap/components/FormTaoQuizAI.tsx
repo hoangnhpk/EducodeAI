@@ -51,31 +51,32 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, language, isGenerat
             </div>
           </div>
 
-          {/* Ngôn ngữ lấy theo khóa học */}
-          <div className="col-md-6 mb-3">
-            <label className="btth-label">Ngôn ngữ lập trình</label>
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '40px', width: '100%', overflow: 'hidden', border: '1px solid var(--border-color, #dee2e6)', borderRadius: 'var(--radius-md)', background: 'var(--bg-main)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '48px', flex: '0 0 48px', background: '#f8f9fa', borderRight: '1px solid var(--border-color, #dee2e6)' }}><i className="bi bi-code-slash" aria-hidden="true" /></span>
-              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 12px' }}>{language || 'Lấy theo khóa học'}</span>
+          <div className="btth-language-title-grid">
+            {/* Ngôn ngữ lấy theo khóa học */}
+            <div className="mb-3">
+              <label className="btth-label">Ngôn ngữ lập trình</label>
+              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '40px', width: '100%', overflow: 'hidden', border: '1px solid var(--border-color, #dee2e6)', borderRadius: 'var(--radius-md)', background: 'var(--bg-main)' }}>
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '48px', flex: '0 0 48px', background: '#f8f9fa', borderRight: '1px solid var(--border-color, #dee2e6)' }}><i className="bi bi-code-slash" aria-hidden="true" /></span>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 12px' }}>{language || 'Lấy theo khóa học'}</span>
+              </div>
             </div>
-          </div>
 
-
-          <div className="col-12 mb-3">
-            <label className="btth-label">Tiêu đề Quiz</label>
-            <input
-              type="text"
-              className="form-control"
-              value={tieuDe}
-              onChange={(e) => setTieuDe(e.target.value)}
-              placeholder={`Quiz - ${tenBaiHoc || 'tên bài học'}`}
-            />
+            <div className="mb-3">
+              <label className="btth-label">Tiêu đề Quiz</label>
+              <input
+                type="text"
+                className="form-control"
+                value={tieuDe}
+                onChange={(e) => setTieuDe(e.target.value)}
+                placeholder={`Quiz - ${tenBaiHoc || 'tên bài học'}`}
+              />
+            </div>
           </div>
 
           {/* Số câu + Độ khó */}
           <div className="col-md-6 mb-3">
             <label className="btth-label">Số câu hỏi</label>
-            <div className="input-group">
+            <div className="btth-input-addon" role="group" aria-label="Số câu hỏi">
               <input
                 type="number"
                 className="form-control"
@@ -84,7 +85,7 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, language, isGenerat
                 min={3}
                 max={20}
               />
-              <span className="input-group-text bg-light">câu</span>
+              <span className="btth-input-addon__suffix">câu</span>
             </div>
             <small className="text-muted">Tối thiểu 3, tối đa 20 câu</small>
           </div>

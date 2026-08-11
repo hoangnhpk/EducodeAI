@@ -31,6 +31,7 @@ const NoiDungKhoaHoc = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [khoaHoc, setKhoaHoc] = useState<KhoaHocData | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [idBaiHoc, setIdBaiHoc] = useState(0);
     const [hienSidebar, setHienSidebar] = useState(false);
     const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia' | 'quiz' | 'chungchi' | 'ide'>('hoc');
@@ -53,6 +54,12 @@ const NoiDungKhoaHoc = () => {
         if (!id) return;
 
         const realId = decodeId(id);
+        if (!realId) {
+            setLoadError('Đường dẫn khóa học không hợp lệ hoặc đã hết hạn.');
+            return;
+        }
+
+        setLoadError(null);
         const data = await KhoaHocService.layDuLieuKhoaHoc(realId);
         setKhoaHoc(data);
 
@@ -473,6 +480,18 @@ const NoiDungKhoaHoc = () => {
 
     if (!maNguoiDung) {
         return <div>Vui lòng đăng nhập để xem nội dung khóa học.</div>;
+    }
+
+    if (loadError) {
+        return (
+            <div className="p-5 text-center">
+                <h3>Không thể mở khóa học</h3>
+                <p className="text-muted">{loadError}</p>
+                <button type="button" className="btn btn-primary" onClick={() => navigate(-1)}>
+                    Quay lại
+                </button>
+            </div>
+        );
     }
 
     if (!khoaHoc || !baiHocHienTai) {

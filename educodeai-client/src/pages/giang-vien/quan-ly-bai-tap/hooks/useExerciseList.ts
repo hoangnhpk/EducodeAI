@@ -53,7 +53,8 @@ export const useExerciseList = () => {
                         Swal.fire({ icon: 'error', text: "Có lỗi xảy ra: " + response.message });
                     }
                 } catch (error: any) {
-                    Swal.fire({ icon: 'error', text: "Lỗi hệ thống khi xóa." });
+                    const message = error?.response?.data?.message || error?.message || 'Lỗi hệ thống khi xóa.';
+                    Swal.fire({ icon: 'error', text: message });
                 }
             }
         });

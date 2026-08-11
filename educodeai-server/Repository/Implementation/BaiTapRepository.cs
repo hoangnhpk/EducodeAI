@@ -148,13 +148,27 @@ namespace educodeai_server.Repository.Implementation
                     .ThenInclude(bh => bh.ChuongHoc)
                         .ThenInclude(ch => ch.KhoaHoc)
                 .Include(b => b.BaiTap_Quiz)
+                .Include(b => b.BaiTapThucHanh)
+                    .ThenInclude(th => th.TestCases)
+                .Include(b => b.KetQuaBaiTaps)
                 .FirstOrDefaultAsync(b => b.MaBaiTap == maBaiTap && b.BaiHoc.ChuongHoc.KhoaHoc.MaGiangVien == maGiangVien);
 
             if (baiTap == null) return false;
 
+            if (baiTap.KetQuaBaiTaps.Count > 0)
+            {
+                _context.KetQuaLamBais.RemoveRange(baiTap.KetQuaBaiTaps);
+            }
+
             if (baiTap.BaiTap_Quiz != null)
             {
                 _context.BaiTap_Quizs.Remove(baiTap.BaiTap_Quiz);
+            }
+
+            if (baiTap.BaiTapThucHanh != null)
+            {
+                _context.TestCaseThucHanhs.RemoveRange(baiTap.BaiTapThucHanh.TestCases);
+                _context.BaiTapThucHanhs.Remove(baiTap.BaiTapThucHanh);
             }
 
             _context.BaiTaps.Remove(baiTap);

@@ -1,9 +1,11 @@
 ﻿using educodeai_server.DTOs.BaiTap;
+using educodeai_server.Data;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Repository.Implementation;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
+using Microsoft.EntityFrameworkCore;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -11,11 +13,15 @@ namespace educodeai_server.Services.Implementation
     {
         private readonly IBaiTapRepository _baiTapRepository;
         private readonly IGeminiAIService _gemini;
+        private readonly EduCodeAIDbContext _context;
+        private readonly IRedisService _redisService;
 
-        public QuizService(IBaiTapRepository baiTapRepository, IGeminiAIService gemini)
+        public QuizService(IBaiTapRepository baiTapRepository, IGeminiAIService gemini, EduCodeAIDbContext context, IRedisService redisService)
         {
             _baiTapRepository = baiTapRepository;
             _gemini = gemini;
+            _context = context;
+            _redisService = redisService;
         }
 
         // Hàm xử lý logic tạo quiz
@@ -44,7 +50,16 @@ namespace educodeai_server.Services.Implementation
             };
 
             // Gọi đệ Repository chốt sổ vào Database
-            return await _baiTapRepository.CreateQuizAsync(baiTap, quiz);
+            var quizId = await _baiTapRepository.CreateQuizAsync(baiTap, quiz);
+            var maKhoaHoc = await _context.BaiHocs
+                .Where(bh => bh.MaBaiHoc == dto.MaBaiHoc)
+                .Select(bh => (int?)bh.ChuongHoc.MaKhoaHoc)
+                .FirstOrDefaultAsync();
+            if (maKhoaHoc.HasValue)
+            {
+                await _redisService.TangVersionKhoaHocAsync(maKhoaHoc.Value);
+            }
+            return quizId;
         }
         public async Task<string> GenerateQuizByAIAsync(GenerateQuizAIDTO dto, int maGiangVien)
         {
@@ -116,7 +131,19 @@ namespace educodeai_server.Services.Implementation
         {
             if (maBaiTap <= 0) throw new ArgumentException("M? b?i t?p kh?ng h?p l?.");
             ValidateQuiz(dto);
-            return await _baiTapRepository.CapNhatQuizAsync(maBaiTap, maGiangVien, dto);
+            var updated = await _baiTapRepository.CapNhatQuizAsync(maBaiTap, maGiangVien, dto);
+            if (updated)
+            {
+                var maKhoaHoc = await _context.BaiTaps
+                    .Where(bt => bt.MaBaiTap == maBaiTap)
+                    .Select(bt => (int?)bt.BaiHoc.ChuongHoc.MaKhoaHoc)
+                    .FirstOrDefaultAsync();
+                if (maKhoaHoc.HasValue)
+                {
+                    await _redisService.TangVersionKhoaHocAsync(maKhoaHoc.Value);
+                }
+            }
+            return updated;
         }
 
         private static void ValidateQuiz(CreateQuizDTO dto)

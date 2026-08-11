@@ -324,7 +324,7 @@ const SinhDoAnAI: React.FC = () => {
                 const MAX_TOTAL_LINES = 600;
                 let fileCount = 0;
 
-                for (const f of extracted.files) {
+                for (const f of extracted.files as unknown as Array<{ extraction?: Uint8Array; fileHeader: { flags: { directory: boolean }; name: string } }>) {
                     if (!f.extraction || f.fileHeader.flags.directory) continue;
                     const path = f.fileHeader.name;
                     // Bỏ qua thư mục rác
@@ -368,7 +368,8 @@ const SinhDoAnAI: React.FC = () => {
 
             const entries = Object.entries(zip.files)
                 .filter(([path, entry]) => {
-                    if (entry.dir) return false;
+                    const zipEntry = entry as JSZip.JSZipObject;
+                    if (zipEntry.dir) return false;
                     // Bỏ qua thư mục node_modules, .git, bin, obj, dist, build
                     if (/(\/|^)(node_modules|.git|bin|obj|dist|build|\.vs|\.idea|__pycache__)\//i.test(path)) return false;
                     // Chỉ lấy file code
@@ -382,7 +383,8 @@ const SinhDoAnAI: React.FC = () => {
                     parts.push(`\n// ... (đã cắt bớt, còn nhiều file khác chưa hiển thị để tiết kiệm Token)`);
                     break;
                 }
-                const text = await entry.async('text');
+                const zipEntry = entry as JSZip.JSZipObject;
+                const text = await zipEntry.async('text');
                 const lines = text.split('\n');
                 const remaining = MAX_TOTAL_LINES - totalLines;
                 const truncated = lines.length > remaining ? lines.slice(0, remaining).join('\n') + '\n// ... (file bị cắt bớt)' : text;
