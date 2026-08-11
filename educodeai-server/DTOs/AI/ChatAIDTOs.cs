@@ -19,5 +19,6 @@ namespace educodeai_server.DTOs.AI
         public int? MaBaiHoc { get; set; }
         public string? TieuDeBaiHoc { get; set; }
         public string? NoiDungBaiHoc { get; set; }
+        public double? ThoiGianVideo { get; set; }
     }
 }

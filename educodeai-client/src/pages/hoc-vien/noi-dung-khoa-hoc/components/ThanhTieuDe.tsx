@@ -74,14 +74,8 @@ export const ThanhTieuDe: React.FC<Props> = ({
 
                 {/* NÚT SỔ TAY CÁ NHÂN */}
                 <button 
-                    className="btn btn-light btn-sm" 
-                    style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '6px',
-                        border: '1px solid #eee',
-                        color: '#555'
-                    }}
+                    type="button"
+                    className="cp-btn-so-tay" 
                     onClick={onMoGhiChu}
                     title="Viết ghi chú cá nhân"
                 >
