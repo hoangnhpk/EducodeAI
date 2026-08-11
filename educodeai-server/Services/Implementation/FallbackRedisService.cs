@@ -14,7 +14,7 @@ namespace educodeai_server.Services
             _logger = logger;
         }
 
-        public async Task LuuGiaTriAsync(string key, string giaTri, TimeSpan? expiry = null)
+        public Task LuuGiaTriAsync(string key, string giaTri, TimeSpan? expiry = null)
         {
             try
             {
@@ -26,6 +26,8 @@ namespace educodeai_server.Services
                 _logger.LogError(ex, "Error saving to MemoryCache for key: {Key}", key);
                 throw;
             }
+
+            return Task.CompletedTask;
         }
 
         public async Task<string?> LayGiaTriAsync(string key)
@@ -43,7 +45,7 @@ namespace educodeai_server.Services
             }
         }
 
-        public async Task XoaKeyAsync(string key)
+        public Task XoaKeyAsync(string key)
         {
             try
             {
@@ -54,6 +56,8 @@ namespace educodeai_server.Services
             {
                 _logger.LogError(ex, "Error removing from MemoryCache for key: {Key}", key);
             }
+
+            return Task.CompletedTask;
         }
 
         public async Task LuuHashAsync(string key, string thuocTinh, string giaTri)

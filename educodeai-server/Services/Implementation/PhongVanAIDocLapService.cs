@@ -6,7 +6,6 @@ using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using educodeai_server.Exceptions;
-using educodeai_server.DTOs.AI;
 
 namespace educodeai_server.Services.Implementation
 {

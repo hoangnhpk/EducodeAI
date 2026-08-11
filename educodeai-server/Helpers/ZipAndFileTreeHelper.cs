@@ -12,7 +12,7 @@ namespace educodeai_server.Helpers
     {
         private static readonly string[] _ignoredFolders = new[] { "node_modules", "bin", "obj", ".git", ".vs", "packages", "dist", "build" };
 
-        public static void GiaiNenVaLocRac(IFormFile zipFile, string targetFolder, string password = null)
+        public static void GiaiNenVaLocRac(IFormFile zipFile, string targetFolder, string? password = null)
         {
             if (Directory.Exists(targetFolder))
             {
@@ -51,7 +51,11 @@ namespace educodeai_server.Helpers
                         if (!destinationPath.StartsWith(Path.GetFullPath(targetFolder), StringComparison.OrdinalIgnoreCase))
                             continue;
 
-                        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+                        string? directoryPath = Path.GetDirectoryName(destinationPath);
+                        if (directoryPath is null)
+                            continue;
+
+                        Directory.CreateDirectory(directoryPath);
                         
                         using (var zipStream = zf.GetInputStream(zipEntry))
                         using (var fs = new FileStream(destinationPath, FileMode.Create))
