@@ -51,12 +51,12 @@ const DanhSachNguoiDung = memo(({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai 
                 <table className="user-table">
                     <thead>
                         <tr>
-                            <th style={{ width: '25%' }}>Người dùng</th>
-                            <th style={{ width: '25%' }}>Email</th>
-                            <th style={{ width: '15%' }}>Vai trò</th>
-                            <th style={{ width: '120px' }}>Ngày tạo</th>
-                            <th style={{ width: '20%' }}>Trạng thái</th>
-                            <th style={{ width: '120px', textAlign: 'center' }}>Hành động</th>
+                            <th className="user-col-name">Người dùng</th>
+                            <th className="user-col-email">Email</th>
+                            <th className="user-col-role">Vai trò</th>
+                            <th className="user-col-created">Ngày tạo</th>
+                            <th className="user-col-status">Trạng thái</th>
+                            <th className="user-col-actions text-center">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,12 +88,12 @@ const DanhSachNguoiDung = memo(({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai 
                 <table className="user-table">
                     <thead>
                         <tr>
-                            <th style={{ width: '25%' }}>Người dùng</th>
-                            <th style={{ width: '25%' }}>Email</th>
-                            <th style={{ width: '15%' }}>Vai trò</th>
-                            <th style={{ width: '120px' }}>Ngày tạo</th>
-                            <th style={{ width: '20%' }}>Trạng thái</th>
-                            <th style={{ width: '120px', textAlign: 'center' }}>Hành động</th>
+                            <th className="user-col-name">Người dùng</th>
+                            <th className="user-col-email">Email</th>
+                            <th className="user-col-role">Vai trò</th>
+                            <th className="user-col-created">Ngày tạo</th>
+                            <th className="user-col-status">Trạng thái</th>
+                            <th className="user-col-actions text-center">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -126,13 +126,13 @@ const DanhSachNguoiDung = memo(({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai 
                                             </span>
                                         </div>
                                     </td>
-                                    <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{u.email}</td>
+                                    <td className="user-cell-email">{u.email}</td>
                                     <td>
                                         <span className={`badge-role ${getRoleClass(u.vaiTro)}`}>
                                             {u.vaiTro}
                                         </span>
                                     </td>
-                                    <td style={{ color: 'var(--text-light)', fontSize: '12px' }}>
+                                    <td className="user-cell-created">
                                         {u.ngayTao ? new Date(u.ngayTao).toLocaleDateString('vi-VN') : '—'}
                                     </td>
                                     <td>
@@ -146,23 +146,31 @@ const DanhSachNguoiDung = memo(({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai 
                                             );
                                         })()}
                                     </td>
-                                    <td>
+                                    <td className="user-cell-actions text-center">
                                         <div className="action-group">
-                                            <button className="btn-action btn-edit" title="Sửa thông tin" onClick={() => onSua(u)}>Sửa</button>
+                                            <button className="btn-action btn-edit" title="Sửa thông tin" aria-label={`Sửa thông tin ${u.hoTen}`} onClick={() => onSua(u)}>
+                                                <i className="bi bi-pencil" aria-hidden="true"></i>
+                                                <span>Sửa</span>
+                                            </button>
                                             <button
                                                 className={`btn-action ${u.trangThai === "Hoạt động" ? "btn-lock" : "btn-unlock"}`}
                                                 title={u.trangThai === "Hoạt động" ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                                                aria-label={u.trangThai === "Hoạt động" ? `Khóa tài khoản ${u.hoTen}` : `Mở khóa tài khoản ${u.hoTen}`}
                                                 onClick={() => {
-                                                    if (u.trangThai === "Hoạt động") { 
-                                                        setNguoiDangKhoa(u); 
-                                                    } else { 
-                                                        onDoiTrangThai(u); 
+                                                    if (u.trangThai === "Hoạt động") {
+                                                        setNguoiDangKhoa(u);
+                                                    } else {
+                                                        onDoiTrangThai(u);
                                                     }
                                                 }}
                                             >
-                                                {u.trangThai === "Hoạt động" ? "Khóa" : "Mở"}
+                                                <i className={`bi ${u.trangThai === "Hoạt động" ? "bi-lock" : "bi-unlock"}`} aria-hidden="true"></i>
+                                                <span>{u.trangThai === "Hoạt động" ? "Khóa" : "Mở khóa"}</span>
                                             </button>
-                                            <button className="btn-action btn-delete" title="Xóa vĩnh viễn" onClick={() => onXoa(u)}>Xóa</button>
+                                            <button className="btn-action btn-delete" title="Xóa vĩnh viễn" aria-label={`Xóa vĩnh viễn ${u.hoTen}`} onClick={() => onXoa(u)}>
+                                                <i className="bi bi-trash3" aria-hidden="true"></i>
+                                                <span>Xóa</span>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

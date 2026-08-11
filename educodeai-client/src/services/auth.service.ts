@@ -1,7 +1,8 @@
 ﻿import axiosInstance from '@/configs/axios';
 import { getDeviceInfo } from '../utils/deviceHelper';
-import { clearAuthTokens } from '../utils/authStorage';
+import { clearAuthTokens, getAuthTokens } from '../utils/authStorage';
 import { stopSessionHub } from '../configs/sessionHub';
+import { beginLogout, finishLogout } from '../utils/authLifecycle';
 
 const api = axiosInstance as any;
 
@@ -91,14 +92,22 @@ export const authService = {
 
   logout: async () => {
     const { maThietBi } = getDeviceInfo();
+    beginLogout();
+    const accessToken = getAuthTokens().accessToken;
+    clearAuthTokens();
+    localStorage.removeItem('user_info');
     await stopSessionHub();
     try {
-      await api.post('/api/XacThuc/dang-xuat', `"${maThietBi}"`, {
-        headers: { 'Content-Type': 'application/json' }
-      });
+      if (accessToken) {
+        await api.post('/api/XacThuc/dang-xuat', `"${maThietBi}"`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
     } finally {
-      clearAuthTokens();
-      localStorage.removeItem('user_info');
+      finishLogout();
     }
   },
 

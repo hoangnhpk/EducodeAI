@@ -53,15 +53,15 @@ const DoiMatKhau: React.FC = () => {
                 
                 <form onSubmit={handleChangePassword} className="animate__animated animate__fadeIn">
                     <div className="form-floating mb-3">
-                        <input type="password" aria-label="Mật khẩu hiện tại" className="form-control" placeholder="Cũ" value={formData.oldPass} onChange={e => setFormData({...formData, oldPass: e.target.value})} required />
+                        <input type="password" underline-none="true" className="form-control" placeholder="Cũ" value={formData.oldPass} onChange={e => setFormData({...formData, oldPass: e.target.value})} required />
                         <label>Mật khẩu hiện tại</label>
                     </div>
                     <div className="form-floating mb-3">
-                        <input type="password" aria-label="Mật khẩu mới" className="form-control" placeholder="Mới" value={formData.newPass} onChange={e => setFormData({...formData, newPass: e.target.value})} required />
+                        <input type="password" underline-none="true" className="form-control" placeholder="Mới" value={formData.newPass} onChange={e => setFormData({...formData, newPass: e.target.value})} required />
                         <label>Mật khẩu mới</label>
                     </div>
                     <div className="form-floating mb-4">
-                        <input type="password" aria-label="Nhập lại mật khẩu mới" className="form-control" placeholder="Xác nhận" value={formData.confirmPass} onChange={e => setFormData({...formData, confirmPass: e.target.value})} required />
+                        <input type="password" underline-none="true" className="form-control" placeholder="Xác nhận" value={formData.confirmPass} onChange={e => setFormData({...formData, confirmPass: e.target.value})} required />
                         <label>Nhập lại mật khẩu mới</label>
                     </div>
                     <button className="btn btn-orange w-100 py-3 fw-bold rounded-pill text-white border-0" 

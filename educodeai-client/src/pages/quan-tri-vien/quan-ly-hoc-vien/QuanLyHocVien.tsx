@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './QuanLyHocVien.css';
 import Swal from 'sweetalert2';
 import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
-import { useModalA11y } from '@/hooks/useModalA11y';
+import {
+    BsCheckCircleFill, BsXCircleFill, BsPersonPlusFill, BsSearch,
+    BsPencilSquare, BsTrashFill, BsPersonFill, BsExclamationTriangleFill,
+    BsChevronLeft, BsChevronRight, BsGiftFill
+} from 'react-icons/bs';
 
 interface HocVien { maNguoiDung: number; hoTen: string; email: string; anhDaiDien: string | null; trangThai: string; ngayThamGia: string; lyDoKhoa?: string | null; }
 interface FilterParams { Keyword: string; TrangThai: string; Page: number; PageSize: number; }
@@ -27,7 +31,6 @@ export default function QuanLyHocVien() {
     const [hocViens, setHocViens] = useState<HocVien[]>([]);
     const [total, setTotal] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(false);
-    const [loiTai, setLoiTai] = useState<boolean>(false);
 
     const [activeTab, setActiveTab] = useState<string>('Tất cả');
     const [searchInput, setSearchInput] = useState<string>('');
@@ -50,11 +53,6 @@ export default function QuanLyHocVien() {
     const [trangLichSu, setTrangLichSu] = useState<number>(1);
     const pageSizeLichSu = 10;
 
-    const formModalRef = useRef<HTMLDivElement>(null);
-    const deleteModalRef = useRef<HTMLDivElement>(null);
-    useModalA11y(isModalOpen, () => setIsModalOpen(false), formModalRef);
-    useModalA11y(isDeleteModalOpen, () => setIsDeleteModalOpen(false), deleteModalRef);
-
     const API_URL = import.meta.env.VITE_API_URL;
 
     const showToast = (message: string, type: 'success' | 'error') => {
@@ -64,13 +62,12 @@ export default function QuanLyHocVien() {
 
     const fetchHocViens = async () => {
         setLoading(true);
-        setLoiTai(false);
         try {
             const queryParams = new URLSearchParams(Object.entries(filters).reduce((acc, [key, val]) => { acc[key] = String(val); return acc; }, {} as Record<string, string>)).toString();
             const response = await fetch(`${API_URL}/api/admin/hoc-vien?${queryParams}`);
             const result = await response.json();
             if (result.success) { setHocViens(result.data.data); setTotal(result.data.total); }
-        } catch (error) { console.error(error); setLoiTai(true); } finally { setLoading(false); }
+        } catch (error) { console.error(error); } finally { setLoading(false); }
     };
 
     useEffect(() => { fetchHocViens(); }, [filters.Page, filters.TrangThai, filters.Keyword]);
@@ -277,9 +274,7 @@ export default function QuanLyHocVien() {
         <div className="qlhv-container relative">
             {toast && (
                 <div className={`qlhv-toast ${toast.type}`}>
-                    {toast.type === 'success'
-                        ? <i className="fas fa-circle-check" style={{ fontSize: 20 }} aria-hidden="true" />
-                        : <i className="fas fa-circle-xmark" style={{ fontSize: 20 }} aria-hidden="true" />}
+                    {toast.type === 'success' ? <BsCheckCircleFill size={20} /> : <BsXCircleFill size={20} />}
                     <span>{toast.message}</span>
                 </div>
             )}
@@ -290,15 +285,15 @@ export default function QuanLyHocVien() {
                     <p className="qlhv-subtitle">Quản lý tài khoản và trạng thái của học viên trong hệ thống.</p>
                 </div>
                 <button onClick={() => openModal('add')} className="qlhv-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <i className="fas fa-user-plus" style={{ fontSize: 18 }} aria-hidden="true" /> Thêm học viên
+                    <BsPersonPlusFill size={18} /> Thêm học viên
                 </button>
             </div>
 
             <div className="qlhv-card" style={{ marginTop: 20 }}>
                 <div className="qlhv-filter-bar" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <h3 style={{ margin: 0, color: 'var(--primary-hover)' }}>Lịch sử tặng khóa học</h3>
-                        <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 13 }}>Theo dõi các lượt tặng khóa gần đây của hệ thống.</p>
+                        <h3 style={{ margin: 0, color: '#9a3412' }}>Lịch sử tặng khóa học</h3>
+                        <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 13 }}>Theo dõi các lượt tặng khóa gần đây của hệ thống.</p>
                     </div>
                     <form
                         onSubmit={(e) => {
@@ -341,7 +336,7 @@ export default function QuanLyHocVien() {
                                         <td>#{item.maQuaTang}</td>
                                         <td>{item.tenKhoaHoc}</td>
                                         <td>{item.tenNguoiTang}</td>
-                                        <td>{item.tenNguoiNhan}<br /><small style={{ color: 'var(--text-muted)' }}>{item.emailNguoiNhan || '—'}</small></td>
+                                        <td>{item.tenNguoiNhan}<br /><small style={{ color: '#6b7280' }}>{item.emailNguoiNhan || '—'}</small></td>
                                         <td>{item.loaiNguoiTang}</td>
                                         <td>{item.trangThai}</td>
                                         <td>{new Date(item.createdAt).toLocaleString('vi-VN')}</td>
@@ -353,8 +348,8 @@ export default function QuanLyHocVien() {
                 </div>
                 {!dangTaiLichSu && lichSuQuaTang.length > 0 && (
                     <div className="qlhv-pagination">
-                        <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-                            Trang <b style={{ color: 'var(--primary-hover)' }}>{trangLichSu}</b> / {tongTrangLichSu}
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>
+                            Trang <b style={{ color: '#ea580c' }}>{trangLichSu}</b> / {tongTrangLichSu}
                         </span>
                         <div>
                             <button
@@ -363,7 +358,7 @@ export default function QuanLyHocVien() {
                                 className="qlhv-page-btn"
                                 title="Trang trước"
                             >
-                                <i className="fas fa-chevron-left" aria-hidden="true" />
+                                <BsChevronLeft size={18} />
                             </button>
                             <button
                                 disabled={trangLichSu >= tongTrangLichSu}
@@ -371,7 +366,7 @@ export default function QuanLyHocVien() {
                                 className="qlhv-page-btn"
                                 title="Trang sau"
                             >
-                                <i className="fas fa-chevron-right" aria-hidden="true" />
+                                <BsChevronRight size={18} />
                             </button>
                         </div>
                     </div>
@@ -389,7 +384,7 @@ export default function QuanLyHocVien() {
                     <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', width: '100%' }}>
                         <input type="text" placeholder="Tìm theo Mã, Họ tên hoặc Email..." className="qlhv-input" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
                         <button type="submit" className="qlhv-btn-search" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <i className="fas fa-magnifying-glass" aria-hidden="true" /> Tìm kiếm
+                            <BsSearch /> Tìm kiếm
                         </button>
                     </form>
                 </div>
@@ -400,36 +395,18 @@ export default function QuanLyHocVien() {
                             <tr><th>Mã Học Viên</th><th>Học Viên</th><th>Email</th><th>Trạng thái</th><th style={{ textAlign: 'right' }}>Hành động</th></tr>
                         </thead>
                         <tbody>
-                            {loiTai ? (
-                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--danger-strong)' }}>
-                                    <i className="fas fa-triangle-exclamation" style={{ display: 'block', margin: '0 auto 8px', fontSize: 28 }} aria-hidden="true" />
-                                    Không tải được danh sách học viên.
-                                    <div style={{ marginTop: 12 }}>
-                                        <button type="button" className="qlhv-btn-search" onClick={() => fetchHocViens()}>Thử lại</button>
-                                    </div>
-                                </td></tr>
-                            ) : loading ? (
-                                Array.from({ length: 6 }).map((_, i) => (
-                                    <tr key={`hv-skeleton-${i}`}>
-                                        <td><span className="qlhv-skeleton qlhv-skeleton--text" style={{ width: '40%' }} /></td>
-                                        <td><div className="qlhv-td-user"><span className="qlhv-skeleton qlhv-skeleton--avatar" /><span className="qlhv-skeleton qlhv-skeleton--text" style={{ width: '60%' }} /></div></td>
-                                        <td><span className="qlhv-skeleton qlhv-skeleton--text" style={{ width: '80%' }} /></td>
-                                        <td><span className="qlhv-skeleton qlhv-skeleton--pill" /></td>
-                                        <td><span className="qlhv-skeleton qlhv-skeleton--text" style={{ width: '90%' }} /></td>
-                                    </tr>
-                                ))
-                            ) : (
+                            {loading ? <tr><td colSpan={5} style={{ textAlign: 'center', color: '#f97316' }}>Đang tải...</td></tr> :
                                 hocViens.map(hv => (
                                     <tr key={hv.maNguoiDung}>
-                                        <td style={{ color: 'var(--text-light)' }}>#{hv.maNguoiDung}</td>
+                                        <td style={{ color: '#9ca3af' }}>#{hv.maNguoiDung}</td>
                                         <td>
                                             <div className="qlhv-td-user">
                                                 <div className="qlhv-avatar">
-                                                    {hv.anhDaiDien ? <img src={`${API_URL}${hv.anhDaiDien}`} alt="avt" /> : <i className="fas fa-user" style={{ fontSize: 24, color: 'var(--primary)' }} aria-hidden="true" />}
+                                                    {hv.anhDaiDien ? <img src={`${API_URL}${hv.anhDaiDien}`} alt="avt" /> : <BsPersonFill size={24} color="#f97316" />}
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: 'bold' }}>{hv.hoTen}</div>
-                                                    <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Tham gia: {new Date(hv.ngayThamGia).toLocaleDateString('vi-VN')}</div>
+                                                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>Tham gia: {new Date(hv.ngayThamGia).toLocaleDateString('vi-VN')}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -439,28 +416,28 @@ export default function QuanLyHocVien() {
                                             <button
                                                 onClick={() => void handleTangKhoaHoc(hv)}
                                                 className="qlhv-action-btn"
-                                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--warning-strong)' }}
+                                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#a16207' }}
                                                 disabled={dangTangCho === hv.maNguoiDung}
                                             >
-                                                <i className="fas fa-gift" aria-hidden="true" /> {dangTangCho === hv.maNguoiDung ? 'Đang tặng...' : 'Tặng khóa'}
+                                                <BsGiftFill /> {dangTangCho === hv.maNguoiDung ? 'Đang tặng...' : 'Tặng khóa'}
                                             </button>
                                             <button onClick={() => openModal('edit', hv)} className="qlhv-action-btn qlhv-btn-edit" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                <i className="fas fa-pen-to-square" aria-hidden="true" /> Sửa
+                                                <BsPencilSquare /> Sửa
                                             </button>
                                             <button onClick={() => handleDeleteClick(hv.maNguoiDung)} className="qlhv-action-btn qlhv-btn-delete" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                <i className="fas fa-trash" aria-hidden="true" /> Xóa
+                                                <BsTrashFill /> Xóa
                                             </button>
                                         </td>
                                     </tr>
-                                )))}
-                            {!loiTai && !loading && hocViens.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-light)' }}>Không có dữ liệu.</td></tr>}
+                                ))}
+                            {!loading && hocViens.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: '#9ca3af' }}>Không có dữ liệu.</td></tr>}
                         </tbody>
                     </table>
                 </div>
 
                 {totalPages > 0 && (
                     <div className="qlhv-pagination">
-                        <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Trang <b style={{ color: 'var(--primary-hover)' }}>{filters.Page}</b> / {totalPages}</span>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Trang <b style={{ color: '#ea580c' }}>{filters.Page}</b> / {totalPages}</span>
                         <div>
                             <button
                                 disabled={filters.Page === 1}
@@ -469,7 +446,7 @@ export default function QuanLyHocVien() {
                                 aria-label="Trang trước"
                                 title="Trang trước"
                             >
-                                <i className="fas fa-chevron-left" aria-hidden="true" />
+                                <BsChevronLeft size={18} />
                             </button>
                             <button
                                 disabled={filters.Page >= totalPages}
@@ -478,7 +455,7 @@ export default function QuanLyHocVien() {
                                 aria-label="Trang sau"
                                 title="Trang sau"
                             >
-                                <i className="fas fa-chevron-right" aria-hidden="true" />
+                                <BsChevronRight size={18} />
                             </button>
                         </div>
                     </div>
@@ -487,25 +464,25 @@ export default function QuanLyHocVien() {
 
             {/* Modal Thêm/Sửa */}
             {isModalOpen && (
-                <div className="qlhv-modal-overlay" onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}>
-                    <div className="qlhv-modal-content" ref={formModalRef} role="dialog" aria-modal="true" aria-labelledby="qlhv-form-modal-title">
-                        <h2 id="qlhv-form-modal-title" className="qlhv-title" style={{ marginBottom: '24px' }}>{modalMode === 'add' ? 'Thêm Học Viên' : 'Cập Nhật Học Viên'}</h2>
+                <div className="qlhv-modal-overlay">
+                    <div className="qlhv-modal-content">
+                        <h2 className="qlhv-title" style={{ marginBottom: '24px' }}>{modalMode === 'add' ? 'Thêm Học Viên' : 'Cập Nhật Học Viên'}</h2>
                         <form onSubmit={handleSave} noValidate>
                             <div className="qlhv-form-group">
                                 <label>Họ và tên</label>
-                                <input type="text" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.hoTen ? 'var(--danger)' : '' }} value={formData.hoTen} onChange={e => { setFormData({ ...formData, hoTen: e.target.value }); setFormErrors({ ...formErrors, hoTen: '' }); }} />
+                                <input type="text" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.hoTen ? '#ef4444' : '' }} value={formData.hoTen} onChange={e => { setFormData({ ...formData, hoTen: e.target.value }); setFormErrors({ ...formErrors, hoTen: '' }); }} />
                                 {formErrors.hoTen && <span className="qlhv-error-text">{formErrors.hoTen}</span>}
                             </div>
 
                             <div className="qlhv-form-group">
                                 <label>Email</label>
-                                <input type="email" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.email ? 'var(--danger)' : '' }} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); setFormErrors({ ...formErrors, email: '' }); }} />
+                                <input type="email" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.email ? '#ef4444' : '' }} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); setFormErrors({ ...formErrors, email: '' }); }} />
                                 {formErrors.email && <span className="qlhv-error-text">{formErrors.email}</span>}
                             </div>
 
                             <div className="qlhv-form-group">
                                 <label>{modalMode === 'add' ? 'Mật khẩu' : 'Mật khẩu mới (Bỏ trống nếu không đổi)'}</label>
-                                <input type="password" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.matKhauMoi ? 'var(--danger)' : '' }} value={formData.matKhauMoi} onChange={e => { setFormData({ ...formData, matKhauMoi: e.target.value }); setFormErrors({ ...formErrors, matKhauMoi: '' }); }} />
+                                <input type="password" className="qlhv-input" style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.matKhauMoi ? '#ef4444' : '' }} value={formData.matKhauMoi} onChange={e => { setFormData({ ...formData, matKhauMoi: e.target.value }); setFormErrors({ ...formErrors, matKhauMoi: '' }); }} />
                                 {formErrors.matKhauMoi && <span className="qlhv-error-text">{formErrors.matKhauMoi}</span>}
                             </div>
 
@@ -531,11 +508,11 @@ export default function QuanLyHocVien() {
                             {/*  HIỂN THỊ Ô NHẬP LÝ DO KHI CHỌN "BỊ KHÓA" */}
                             {modalMode === 'edit' && formData.trangThai === 'Bị khóa' && (
                                 <div className="qlhv-form-group" style={{ animation: 'fadeIn 0.3s' }}>
-                                    <label>Lý do khóa <span style={{ color: 'var(--danger)' }}>*</span></label>
+                                    <label>Lý do khóa <span style={{ color: '#ef4444' }}>*</span></label>
                                     <textarea
                                         className="qlhv-input"
                                         placeholder="Nhập lý do vi phạm hoặc khóa tài khoản..."
-                                        style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.lyDoKhoa ? 'var(--danger)' : '' }}
+                                        style={{ width: '100%', boxSizing: 'border-box', borderColor: formErrors.lyDoKhoa ? '#ef4444' : '' }}
                                         value={formData.lyDoKhoa}
                                         onChange={e => { setFormData({ ...formData, lyDoKhoa: e.target.value }); setFormErrors({ ...formErrors, lyDoKhoa: '' }); }}
                                     />
@@ -554,16 +531,16 @@ export default function QuanLyHocVien() {
 
             {/* Modal Xác nhận Xóa */}
             {isDeleteModalOpen && (
-                <div className="qlhv-modal-overlay" onClick={(e) => e.target === e.currentTarget && setIsDeleteModalOpen(false)}>
-                    <div className="qlhv-modal-content" ref={deleteModalRef} role="dialog" aria-modal="true" style={{ maxWidth: '400px', textAlign: 'center', padding: '32px 24px' }}>
+                <div className="qlhv-modal-overlay">
+                    <div className="qlhv-modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '32px 24px' }}>
                         <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
-                            <i className="fas fa-triangle-exclamation" style={{ fontSize: 56, color: 'var(--danger)' }} aria-hidden="true" />
+                            <BsExclamationTriangleFill size={56} color="#ef4444" />
                         </div>
-                        <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '12px' }}>
+                        <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#111827', marginBottom: '12px' }}>
                             Xác nhận xóa?
                         </h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '28px', lineHeight: '1.5' }}>
-                            Bạn có chắc chắn muốn xóa học viên này khỏi hệ thống? Hành động này <b style={{ color: 'var(--danger)' }}>không thể hoàn tác</b>.
+                        <p style={{ color: '#6b7280', fontSize: '15px', marginBottom: '28px', lineHeight: '1.5' }}>
+                            Bạn có chắc chắn muốn xóa học viên này khỏi hệ thống? Hành động này <b style={{ color: '#ef4444' }}>không thể hoàn tác</b>.
                         </p>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                             <button onClick={() => setIsDeleteModalOpen(false)} className="qlhv-btn-cancel">

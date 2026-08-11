@@ -1,14 +1,14 @@
 .qllh-container {
-  /* Full width: .gv-main-content đã có padding 24px nên container không pad ngang thêm */
+  /* Full width: .gv-main-content đã pad 24px — không pad thêm ở root */
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 4px 0 32px;
+  padding: 0;
   background:
     radial-gradient(1200px 280px at 12% 0%, rgba(37, 99, 235, 0.10), transparent 62%),
     radial-gradient(1000px 240px at 88% 0%, rgba(14, 165, 233, 0.08), transparent 58%),
     transparent;
-  min-height: calc(100vh - 140px);
+  min-height: 0;
   color: #1f2937;
   font-family: var(--font-main, system-ui, -apple-system, sans-serif);
 }

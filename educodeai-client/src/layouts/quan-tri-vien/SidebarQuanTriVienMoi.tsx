@@ -67,7 +67,7 @@ export default function SidebarQuanTriVienMoi() {
           <span>Quản lý API AI</span>
         </NavLink>
 
-        <NavLink to="/quan-tri-vien/quan-ly-hoc-vien" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
+        <NavLink to="/quan-tri-vien/tang-khoa-hoc" className={({ isActive }) => `qtv-nav-link ${isActive ? 'active' : ''}`}>
           <div className="link-icon"><MdCardGiftcard /></div>
           <span>Tặng khóa học</span>
         </NavLink>

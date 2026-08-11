@@ -3,7 +3,8 @@ import Swal from "sweetalert2";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { HoSoGiangVienAdminService } from "@/services/ho-so-giang-vien-admin.service";
 import type { HoSoGiangVienListItem, HoSoGiangVienDetail } from "@/services/ho-so-giang-vien-admin.service";
-import "../quan-ly-nguoi-dung/QuanLyNguoiDung.css";
+import "@/assets/styles/AdminTableControls.css";
+import "./DuyetGiangVien.css";
 
 const TRANG_THAI_OPTIONS = [
   { value: "", label: "Tất cả trạng thái" },
@@ -208,13 +209,14 @@ export default function DuyetGiangVien() {
 
   const baseUrl = import.meta.env.VITE_API_URL || "";
   return (
-    <div className="container-fluid py-4">
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <div className="qtv-page-content lecturer-review-page">
+      <div className="lecturer-review-header">
         <h3 className="fw-bold mb-0">Duyệt hồ sơ đăng ký giảng viên</h3>
       </div>
 
-      <div className="toolbar">
-        <select
+      <div className="lecturer-review-card">
+        <div className="toolbar">
+          <select
           className="filter-select"
           value={trangThaiLoc}
           onChange={(e) => handleLoc(e.target.value)}
@@ -237,7 +239,7 @@ export default function DuyetGiangVien() {
         </div>
       ) : (
         <div className="table-responsive">
-          <table className="user-table" style={{ tableLayout: "fixed" }}>
+          <table className="user-table lecturer-review-table">
             <thead>
               <tr>
                 <th style={{ width: '23%' }}>Người dùng</th>
@@ -293,19 +295,23 @@ export default function DuyetGiangVien() {
                     </td>
                     <td>
                       <div className="action-group" style={{ justifyContent: 'center' }}>
-                        <button className="btn-action btn-edit" title="Xem chi tiết" onClick={() => xemChiTiet(hs.maHoSoDangKyGiangVien)}>
-                          Xem
+                        <button className="btn-action btn-edit" title="Xem chi tiết" aria-label={`Xem chi tiết hồ sơ ${hs.hoTen}`} onClick={() => xemChiTiet(hs.maHoSoDangKyGiangVien)}>
+                          <i className="bi bi-eye" aria-hidden="true"></i>
+                          <span>Xem</span>
                         </button>
                         {hs.trangThaiHoSo === "ChoDuyet" && (
                           <>
-                            <button className="btn-action btn-unlock" title="Duyệt hồ sơ" onClick={() => xacNhanDuyet(hs.maHoSoDangKyGiangVien)}>
-                              Duyệt
+                            <button className="btn-action btn-unlock" title="Duyệt hồ sơ" aria-label={`Duyệt hồ sơ ${hs.hoTen}`} onClick={() => xacNhanDuyet(hs.maHoSoDangKyGiangVien)}>
+                              <i className="bi bi-check-lg" aria-hidden="true"></i>
+                              <span>Duyệt</span>
                             </button>
-                            <button className="btn-action btn-lock" title="Yêu cầu bổ sung" onClick={() => xacNhanBoSung(hs.maHoSoDangKyGiangVien)}>
-                              Bổ sung
+                            <button className="btn-action btn-lock" title="Yêu cầu bổ sung" aria-label={`Yêu cầu bổ sung hồ sơ ${hs.hoTen}`} onClick={() => xacNhanBoSung(hs.maHoSoDangKyGiangVien)}>
+                              <i className="bi bi-pencil" aria-hidden="true"></i>
+                              <span>Bổ sung</span>
                             </button>
-                            <button className="btn-action btn-delete" title="Từ chối hồ sơ" onClick={() => xacNhanTuChoi(hs.maHoSoDangKyGiangVien)}>
-                              Từ chối
+                            <button className="btn-action btn-delete" title="Từ chối hồ sơ" aria-label={`Từ chối hồ sơ ${hs.hoTen}`} onClick={() => xacNhanTuChoi(hs.maHoSoDangKyGiangVien)}>
+                              <i className="bi bi-x-lg" aria-hidden="true"></i>
+                              <span>Từ chối</span>
                             </button>
                           </>
                         )}
@@ -318,6 +324,7 @@ export default function DuyetGiangVien() {
           </table>
         </div>
       )}
+      </div>
 
       {/* MODAL Y?U C?U B? SUNG */}
       {maHoSoBoSung && (

@@ -782,8 +782,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.qtrv-linked-cell span { 
-  font-size: 12px; 
+.qtrv-linked-cell span {
+  font-size: 12px;
   color: var(--rc-muted); 
   display: block;
   white-space: nowrap;

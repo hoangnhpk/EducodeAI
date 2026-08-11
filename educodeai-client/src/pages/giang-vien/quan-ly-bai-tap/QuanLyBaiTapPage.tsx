@@ -51,7 +51,7 @@ export default function QuanLyBaiTapPage() {
     };
 
     return (
-        <div className="container-fluid py-4" style={{ backgroundColor: 'var(--bg-main)', minHeight: '100vh' }}>
+        <div className="gv-page">
             <div className="d-flex justify-content-between align-items-end mb-4">
                 <div>
                     <h2 className="mb-2" style={{ fontWeight: 800, color: 'var(--text-dark)', fontSize: '28px' }}>

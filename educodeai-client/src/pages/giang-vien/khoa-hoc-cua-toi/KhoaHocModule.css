@@ -48,9 +48,10 @@
 }
 
 .khm-page {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 28px 24px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0; /* .gv-main-content đã pad 24px */
 }
 
 /* ---------- Page Header ---------- */

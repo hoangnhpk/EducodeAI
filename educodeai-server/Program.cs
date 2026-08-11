@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -9,6 +9,8 @@ using educodeai_server.Services;
 using educodeai_server.Services.Implement;
 using educodeai_server.Services.Implementation;
 using educodeai_server.Services.Interface;
+using educodeai_server.Services.RefreshTokens;
+using educodeai_server.Services.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -114,10 +116,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // 3. CẤU HÌNH KẾT NỐI CƠ SỞ DỮ LIỆU
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (!string.IsNullOrEmpty(connectionString) && !connectionString.Contains("Maximum Pool Size", StringComparison.OrdinalIgnoreCase))
-{
-    connectionString += ";Maximum Pool Size=10;Minimum Pool Size=0;Pooling=true;";
-}
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseNpgsql(connectionString, sqlOptions =>
     {
@@ -201,9 +199,12 @@ builder.Services.AddScoped<ISessionRealtimeNotifier, SessionRealtimeNotifier>();
 builder.Services.AddScoped<IOtpService, OtpService>();
 // Rate-limit phát/verify OTP theo purpose + identifier + IP (D.3); fail-open khi cache lỗi.
 builder.Services.AddScoped<IOtpRateLimiter, OtpRateLimiter>();
+builder.Services.Configure<RefreshTokenCleanupOptions>(builder.Configuration.GetSection("RefreshTokenCleanup"));
+builder.Services.AddSingleton<RefreshTokenCleanupService>();
+builder.Services.AddHostedService<RefreshTokenCleanupWorker>();
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
-builder.Services.AddScoped<IKhoaHocRepository, KhoaHocRepository>();
+builder.Services.AddScoped<IKhoaHocRepository, educodeai_server.Repository.Implementation.KhoaHocRepository>();
 builder.Services.AddScoped<IKhoaHocService, KhoaHocService>();
 builder.Services.AddScoped<IThanhToanKhoaHocService, ThanhToanKhoaHocService>();
 builder.Services.AddScoped<IMaGiamGiaService, MaGiamGiaService>();
@@ -237,6 +238,8 @@ builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
 builder.Services.AddScoped<IQuanLyHocVienService,QuanLyHocVienService>();
 builder.Services.AddSingleton<LopHocEmailQueue>();
 builder.Services.AddHostedService<LopHocEmailWorker>();
+builder.Services.AddSingleton<IGiangVienReviewEmailQueue, GiangVienReviewEmailQueue>();
+builder.Services.AddHostedService<GiangVienReviewEmailWorker>();
 builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocService>();
 builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
 builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
@@ -403,7 +406,17 @@ var app = builder.Build();
 
 // Khởi tạo dữ liệu nền của module thử thách nếu môi trường hiện tại còn thiếu.
 // Initializer chỉ thêm theo MaCode, không ghi đè cấu hình nhiệm vụ/danh hiệu đã tồn tại.
-await ThuThachDataInitializer.InitializeAsync(app.Services);
+try
+{
+    await ThuThachDataInitializer.InitializeAsync(app.Services);
+}
+catch (Exception ex)
+{
+    // Không chặn ứng dụng khởi động nếu database tạm thời chưa sẵn sàng.
+    // Các endpoint cần database vẫn sẽ trả lỗi phù hợp cho đến khi DB kết nối lại.
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    logger.LogError(ex, "Không thể khởi tạo dữ liệu module thử thách; ứng dụng vẫn tiếp tục khởi động.");
+}
 
 // Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);

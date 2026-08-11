@@ -113,7 +113,7 @@ export default function TangKhoaHocGiangVien() {
   };
 
   return (
-    <div className="tkh-container">
+    <div className="gv-page tkh-container">
       <div className="tkh-header">
         <h1 className="tkh-title">Tặng khóa học</h1>
         <p className="tkh-subtitle">Chọn khóa học của bạn, sau đó chọn học viên từ danh sách gợi ý để tặng.</p>

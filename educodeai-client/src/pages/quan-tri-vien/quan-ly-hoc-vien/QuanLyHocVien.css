@@ -1,10 +1,10 @@
 /* Container bọc toàn bộ component để có nền xám rất nhạt, giúp thẻ màu trắng nổi lên */
 .qlhv-container {
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background-color: #f3f4f6; 
+  color: #1f2937; /* Chữ màu xám đậm (gần đen) */
   padding: 24px;
-  border-radius: var(--radius-lg);
-  font-family: var(--font-main);
+  border-radius: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
   min-height: calc(100vh - 80px);
 }
 
@@ -18,49 +18,49 @@
 .qlhv-title {
   font-size: 28px;
   font-weight: 800;
-  color: var(--primary-hover); /* Cam đậm cho contrast trên nền sáng */
+  color: #ea580c; /* Màu cam đậm một chút cho dễ đọc trên nền sáng */
   margin: 0;
 }
 .qlhv-subtitle {
-  color: var(--text-muted);
+  color: #6b7280;
   margin-top: 4px;
   font-size: 14px;
 }
 .qlhv-btn-primary {
-  background-color: var(--primary);
+  background-color: #f97316;
   color: white;
   border: none;
   padding: 10px 24px;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(246, 144, 80, 0.25);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
 }
 .qlhv-btn-primary:hover {
-  background-color: var(--primary-hover);
-  box-shadow: 0 6px 14px rgba(246, 144, 80, 0.35);
+  background-color: #ea580c;
+  box-shadow: 0 6px 14px rgba(249, 115, 22, 0.35);
 }
 
 /* Box bọc danh sách (Card Trắng) */
 .qlhv-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* Bóng đổ nhẹ nhàng */
 }
 
 /* Tabs */
 .qlhv-tabs {
   display: flex;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #e5e7eb;
   overflow-x: auto;
 }
 .qlhv-tab-btn {
   background: transparent;
   border: none;
-  color: var(--text-muted);
+  color: #6b7280;
   padding: 16px 24px;
   font-weight: 600;
   font-size: 14px;
@@ -68,27 +68,27 @@
   transition: all 0.2s;
 }
 .qlhv-tab-btn:hover {
-  color: var(--text-main);
-  background-color: var(--bg-main);
+  color: #111827;
+  background-color: #f9fafb;
 }
 .qlhv-tab-btn.active {
-  color: var(--primary-hover);
-  border-bottom: 2px solid var(--primary);
-  background-color: var(--primary-soft); /* Nền cam siêu nhạt khi active */
+  color: #ea580c;
+  border-bottom: 2px solid #ea580c;
+  background-color: #fff7ed; /* Nền cam siêu nhạt khi nhấn vào */
 }
 
 /* Thanh tìm kiếm */
 .qlhv-filter-bar {
   padding: 16px;
-  background-color: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   gap: 12px;
 }
 .qlhv-input {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #111827;
   padding: 10px 16px;
   border-radius: 6px;
   flex: 1;
@@ -97,16 +97,16 @@
   transition: border-color 0.2s;
 }
 .qlhv-input::placeholder {
-  color: var(--text-light);
+  color: #9ca3af;
 }
 .qlhv-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(246, 144, 80, 0.12); /* Viền glow cam brand khi gõ chữ */
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1); /* Viền glow màu cam khi gõ chữ */
 }
 .qlhv-btn-search {
-  background-color: var(--primary-soft);
-  color: var(--primary-hover);
-  border: 1px solid var(--primary-soft);
+  background-color: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
   padding: 10px 24px;
   border-radius: 6px;
   font-weight: 600;
@@ -114,8 +114,8 @@
   transition: all 0.2s;
 }
 .qlhv-btn-search:hover {
-  background-color: var(--primary-soft);
-  border-color: var(--primary);
+  background-color: #ffedd5;
+  border-color: #fdba74;
 }
 
 /* Table */
@@ -126,19 +126,19 @@
 }
 .qlhv-table th {
   padding: 16px;
-  background-color: var(--bg-main);
-  color: var(--text-muted);
+  background-color: #f9fafb;
+  color: #6b7280;
   text-transform: uppercase;
   font-size: 12px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #e5e7eb;
 }
 .qlhv-table td {
   padding: 16px;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-main);
+  border-bottom: 1px solid #e5e7eb;
+  color: #1f2937;
 }
 .qlhv-table tr:hover td {
-  background-color: var(--bg-main); /* Đổi màu xám nhạt khi đưa chuột vào dòng */
+  background-color: #f9fafb; /* Đổi màu xám nhạt khi đưa chuột vào dòng */
 }
 .qlhv-td-user {
   display: flex;
@@ -149,13 +149,13 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: var(--primary-soft); /* Nền cam nhạt */
-  border: 1px solid var(--primary-soft); /* Viền cam nhạt */
+  background-color: #fff7ed; /* Nền cam nhạt */
+  border: 1px solid #fed7aa; /* Viền cam nhạt */
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: var(--primary); /* Tông cam cho nội dung fallback */
+  color: #f97316; /* Tông cam cho nội dung fallback */
   overflow: hidden;
 }
 .qlhv-avatar img {
@@ -172,14 +172,14 @@
   font-weight: bold;
 }
 .qlhv-badge.active {
-  background-color: var(--success-soft);
-  color: var(--success-strong);
-  border: 1px solid var(--success-soft);
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
 }
 .qlhv-badge.locked {
-  background-color: var(--danger-soft);
-  color: var(--danger-strong);
-  border: 1px solid var(--danger-soft);
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
 }
 
 /* Hành động (Sửa/Xóa) */
@@ -192,10 +192,10 @@
   border-radius: 4px;
   transition: all 0.2s;
 }
-.qlhv-btn-edit { color: var(--info); }
-.qlhv-btn-edit:hover { background-color: var(--info-soft); }
-.qlhv-btn-delete { color: var(--danger); margin-left: 8px; }
-.qlhv-btn-delete:hover { background-color: var(--danger-soft); }
+.qlhv-btn-edit { color: #3b82f6; }
+.qlhv-btn-edit:hover { background-color: #eff6ff; }
+.qlhv-btn-delete { color: #ef4444; margin-left: 8px; }
+.qlhv-btn-delete:hover { background-color: #fef2f2; }
 
 /* Phân trang */
 .qlhv-pagination {
@@ -203,13 +203,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--bg-card);
-  border-top: 1px solid var(--border-color);
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
 }
 .qlhv-page-btn {
-  background-color: var(--bg-card);
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
+  background-color: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
@@ -218,13 +218,13 @@
   font-weight: 500;
 }
 .qlhv-page-btn:hover:not(:disabled) {
-  background-color: var(--bg-main);
-  border-color: var(--text-light);
+  background-color: #f9fafb;
+  border-color: #9ca3af;
 }
 .qlhv-page-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background-color: var(--border-light);
+  background-color: #f3f4f6;
 }
 
 /* Modal Popup nền trắng */
@@ -241,7 +241,7 @@
   z-index: 9999;
 }
 .qlhv-modal-content {
-  background-color: var(--bg-card);
+  background-color: #ffffff;
   padding: 32px;
   border-radius: 12px;
   width: 100%;
@@ -253,13 +253,13 @@
 }
 .qlhv-form-group label {
   display: block;
-  color: var(--text-main);
+  color: #374151;
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 600;
 }
 .qlhv-error-text {
-  color: var(--danger);
+  color: #ef4444;
   font-size: 12px;
   margin-top: 6px;
   display: block;
@@ -270,12 +270,12 @@
   gap: 12px;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid #e5e7eb;
 }
 .qlhv-btn-cancel {
   background: transparent;
-  color: var(--text-muted);
-  border: 1px solid var(--border-color);
+  color: #4b5563;
+  border: 1px solid #d1d5db;
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
@@ -283,11 +283,11 @@
   transition: all 0.2s;
 }
 .qlhv-btn-cancel:hover { 
-  background-color: var(--border-light);
-  color: var(--text-main);
+  background-color: #f3f4f6;
+  color: #111827;
 }
 .qlhv-btn-danger {
-  background-color: var(--danger);
+  background-color: #ef4444;
   color: white;
   border: none;
   padding: 10px 24px;
@@ -298,7 +298,7 @@
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 .qlhv-btn-danger:hover {
-  background-color: var(--danger-strong);
+  background-color: #dc2626;
 }
 
 /* Toast Thông báo nền trắng Kính mờ */
@@ -307,23 +307,23 @@
   top: 32px; 
   right: 32px;
   padding: 16px 24px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-card);
+  border-radius: 8px;
+  background: rgba(84, 235, 112, 0.95); 
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: var(--text-main);
+  color: #ffffff;
   font-weight: 600;
   font-size: 15px;
-  z-index: 99999;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-color);
+  z-index: 99999; 
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb; 
   display: flex;
   align-items: center;
   gap: 12px;
   animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-.qlhv-toast.success { border-left: 5px solid var(--success); }
-.qlhv-toast.error { border-left: 5px solid var(--danger); }
+.qlhv-toast.success { border-left: 5px solid #10b981; }
+.qlhv-toast.error { border-left: 5px solid #ef4444; }
 
 @keyframes slideInRight {
   0% { transform: translateX(100%); opacity: 0; }
@@ -342,26 +342,4 @@ textarea.qlhv-input {
   resize: vertical;
   min-height: 80px;
   font-family: inherit;
-}
-
-/* ===== Skeleton loading ===== */
-.qlhv-skeleton {
-  display: inline-block;
-  background: linear-gradient(90deg, var(--border-light) 25%, var(--border-color) 37%, var(--border-light) 63%);
-  background-size: 400% 100%;
-  border-radius: var(--radius-sm);
-  animation: qlhv-shimmer 1.4s ease infinite;
-}
-.qlhv-skeleton--text { height: 12px; width: 100%; }
-.qlhv-skeleton--pill { height: 22px; width: 84px; border-radius: 999px; }
-.qlhv-skeleton--avatar { width: 40px; height: 40px; border-radius: 50%; }
-
-@keyframes qlhv-shimmer {
-  0% { background-position: 100% 50%; }
-  100% { background-position: 0 50%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .qlhv-skeleton { animation: none; }
-  .qlhv-toast { animation: none; }
 }

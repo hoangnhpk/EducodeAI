@@ -160,7 +160,7 @@ const QuanLyThietBi: React.FC = () => {
                             <div className="text-center">
                                 <div className="mb-4">
                                     <div className="bg-primary-subtle d-inline-block p-3 rounded-circle mb-3">
-                                        <i className="bi bi-shield-lock fs-2 text-primary" style={{ color: 'var(--primary)' }}></i>
+                                        <i className="bi bi-shield-lock fs-2 text-primary" style={{ color: '#fb873f !important' }}></i>
                                     </div>
                                     <h4 className="fw-bold">Xác minh OTP</h4>
                                     <p className="text-muted small">Nhập mã OTP 6 số đã được gửi đến email của bạn.</p>
@@ -176,10 +176,9 @@ const QuanLyThietBi: React.FC = () => {
                                             borderColor: '#eee',
                                             backgroundColor: '#f8f9fa'
                                         }} 
-                                        maxLength={6}
+                                        maxLength={6} 
                                         placeholder="000000"
-                                        aria-label="Mã OTP 6 số"
-                                        value={otp}
+                                        value={otp} 
                                         onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))} 
                                     />
                                 </div>

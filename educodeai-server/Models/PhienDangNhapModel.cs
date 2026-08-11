@@ -28,5 +28,13 @@ namespace educodeai_server.Models
         public DateTime ThoiGianHoatDongCuoi { get; set; }
 
         public bool DangHoatDong { get; set; } = true; // Trạng thái: đang login hay đã logout
+
+        public DateTime? TrustedUntilUtc { get; set; }
+
+        public DateTime? TrustRevokedAtUtc { get; set; }
+
+        public int TrustVersion { get; set; }
+
+        public DateTime? LastVerifiedAtUtc { get; set; }
     }
 }
