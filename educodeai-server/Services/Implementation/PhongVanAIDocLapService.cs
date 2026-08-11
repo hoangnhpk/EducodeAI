@@ -163,6 +163,21 @@ Yêu cầu:
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi phân tích câu trả lời phỏng vấn. RawResponse: {Raw}", rawResponse);
+
+                // ===== TẠM THỜI - CHẨN ĐOÁN, XOÁ SAU KHI TÌM RA NGUYÊN NHÂN =====
+                // Dự án chưa có file logging nên ghi nguyên văn phản hồi Gemini ra file để đối chiếu.
+                // Body phản hồi không chứa API key (key nằm ở query string) nên an toàn.
+                try
+                {
+                    var debugDir = Path.Combine(AppContext.BaseDirectory, "ai-debug");
+                    Directory.CreateDirectory(debugDir);
+                    File.WriteAllText(
+                        Path.Combine(debugDir, $"phongvan-{DateTime.Now:yyyyMMdd-HHmmss-fff}.json"),
+                        $"// Loi: {ex.GetType().Name}: {ex.Message}{Environment.NewLine}{rawResponse}");
+                }
+                catch { /* chan doan that bai thi bo qua, khong lam hong luong chinh */ }
+                // ===== HẾT PHẦN TẠM THỜI =====
+
                 nhanXet = isFinished
                     ? "Cảm ơn bạn đã trả lời. Buổi phỏng vấn kết thúc tại đây."
                     : "Cảm ơn bạn đã trả lời. Hãy tiếp tục thể hiện rõ cách suy nghĩ và kinh nghiệm của bạn.";

@@ -86,7 +86,8 @@ namespace educodeai_server.Services.Implementation
                         "",
                         ""
                     ],
-                    "DapAnDung": "0",
+                    "DapAnDung": "A",
+                    "GiaiThich": "Giải thích ngắn gọn vì sao đáp án đó đúng"
                   }
                 ]
             }
@@ -107,8 +108,8 @@ namespace educodeai_server.Services.Implementation
                 === YÊU CẦU BẮT BUỘC ===
                 1. Đọc kỹ nội dung và tạo câu hỏi bám sát kiến thức.
                 2. Mỗi câu hỏi có 4 đáp án (A, B, C, D) và chỉ có 1 đáp án đúng.
-                3. Trường "dapAnDung" chỉ được điền 1 ký tự: "A", "B", "C", hoặc "D".
-                4. Phải có lời giải thích ngắn gọn, dễ hiểu cho mỗi câu.
+                3. Trường "DapAnDung" chỉ được điền 1 ký tự: "A", "B", "C", hoặc "D" (tương ứng phần tử thứ 1..4 của "LuaChon").
+                4. Trường "GiaiThich" bắt buộc có, giải thích ngắn gọn dễ hiểu vì sao đáp án đó đúng.
                 5. Đảm bảo các câu hỏi không bị trùng lặp ý tưởng và nội dung.
 
                 === OUTPUT FORMAT (JSON) ===

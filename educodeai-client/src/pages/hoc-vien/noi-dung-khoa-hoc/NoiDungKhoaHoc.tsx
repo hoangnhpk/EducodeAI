@@ -184,33 +184,16 @@ const NoiDungKhoaHoc = () => {
     const handleVideoCompleted = useCallback((maBaiHocVuaXong: number) => {
         const baiHocVuaXong = flatList.find((bai) => bai.id === maBaiHocVuaXong);
 
+        // Xem xong lý thuyết thì chuyển thẳng sang tab bài tập, không hiện popup.
         if (baiHocVuaXong?.thongTinQuiz) {
             setVideoDaXongLocal((prev) => [...prev, maBaiHocVuaXong]);
-
-            void Swal.fire({
-                title: 'Đã hoàn thành lý thuyết!',
-                text: 'Hãy hoàn thành bài trắc nghiệm để mở khóa bài học tiếp theo.',
-                icon: 'info',
-                timer: 3000,
-                showConfirmButton: false
-            }).then(() => {
-                setTabActive('quiz');
-            });
+            setTabActive('quiz');
             return;
         }
 
         if (baiHocVuaXong?.maBaiTapThucHanh) {
             setVideoDaXongLocal((prev) => [...prev, maBaiHocVuaXong]);
-
-            void Swal.fire({
-                title: 'Đã hoàn thành lý thuyết!',
-                text: 'Hãy hoàn thành bài tập thực hành IDE để mở khóa bài học tiếp theo.',
-                icon: 'info',
-                timer: 3000,
-                showConfirmButton: false
-            }).then(() => {
-                setTabActive('ide');
-            });
+            setTabActive('ide');
             return;
         }
 
@@ -721,7 +704,6 @@ const NoiDungKhoaHoc = () => {
                                             hoTenHienThi={hoTenHienThiChungChi}
                                             emailNhan={emailNhanChungChi}
                                             onThayDoiHoTenHienThi={setHoTenHienThiChungChi}
-                                            onThayDoiEmailNhan={setEmailNhanChungChi}
                                             onBatDauThi={xuLyBatDauKiemTraChungChi}
                                             onNopBai={xuLyNopBaiChungChi}
                                             onInChungChi={xuLyInChungChi}

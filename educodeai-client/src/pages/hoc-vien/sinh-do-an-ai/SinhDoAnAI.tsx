@@ -132,8 +132,11 @@ const SinhDoAnAI: React.FC = () => {
     const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
 
     // Timer for cooldown
-    const [currentTime, setCurrentTime] = useState(Date.now());
+    // Khởi tạo 0 thay vì Date.now() (gọi hàm impure lúc render vi phạm
+    // react-hooks/purity); effect bên dưới set ngay mốc thật khi mount.
+    const [currentTime, setCurrentTime] = useState(0);
     useEffect(() => {
+        setCurrentTime(Date.now());
         const t = setInterval(() => setCurrentTime(Date.now()), 1000);
         return () => clearInterval(t);
     }, []);
