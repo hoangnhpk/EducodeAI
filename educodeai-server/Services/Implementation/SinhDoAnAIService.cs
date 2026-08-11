@@ -342,7 +342,7 @@ Nhiệm vụ của bạn là đánh giá mã nguồn xem học viên đã thực
 - Kiểm tra dấu hiệu copy code/cheat: Nếu code quá hoàn hảo, sử dụng các thư viện ngoài không cần thiết, hoặc có format/comment bất thường (như do AI sinh ra), hãy trừ điểm nặng.
 - Chấm điểm (0-100). Đạt là >= 50.
 - Trả về JSON: {{ ""Diem"": <điểm>, ""NhanXet"": ""<nhận xét>"" }}
-- LƯU Ý: Nhận xét CỰC KỲ NGẮN GỌN (tối đa 2-3 câu), chỉ nêu đúng trọng tâm để tiết kiệm token. Bắt buộc escape ký tự đặc biệt, không dùng Enter (xuống dòng), dùng nháy đơn thay nháy kép trong chuỗi.
+- LƯU Ý: Nhận xét CỰC KỲ NGẮN GỌN (tối đa 2-3 câu), chỉ nêu đúng trọng tâm để tiết kiệm token. BẮT BUỘC VIẾT BẰNG TIẾNG VIỆT CÓ DẤU (ví dụ: 'Học viên đã triển khai tốt' chứ KHÔNG ĐƯỢC viết 'Hoc vien da trien khai tot'). Bắt buộc escape ký tự đặc biệt, không dùng Enter (xuống dòng), dùng nháy đơn thay nháy kép trong chuỗi.
 ";
             try
             {
@@ -359,19 +359,26 @@ Nhiệm vụ của bạn là đánh giá mã nguồn xem học viên đã thực
                     var doAn = await _dbContext.DoAnThucChiens.FindAsync(request.MaDoAn);
                     if (doAn != null && doAn.MaNguoiDung == maNguoiDung)
                     {
-                        var lstYeuCau = JsonSerializer.Deserialize<List<YeuCauChucNangDto>>(doAn.YeuCauChucNangJSON) ?? new List<YeuCauChucNangDto>();
-                        var currentFeature = lstYeuCau.FirstOrDefault(f => f.Ngay == request.Ngay);
-                        if (currentFeature != null)
+                        try
                         {
-                            currentFeature.Diem = diem;
-                            currentFeature.NhanXet = nx;
-                            if (diem >= 50)
+                            var lstYeuCau = JsonSerializer.Deserialize<List<YeuCauChucNangDto>>(doAn.YeuCauChucNangJSON, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<YeuCauChucNangDto>();
+                            var currentFeature = lstYeuCau.FirstOrDefault(f => f.Ngay == request.Ngay);
+                            if (currentFeature != null)
                             {
-                                currentFeature.NgayHoanThanh = DateTime.UtcNow;
-                                currentFeature.TrangThai = "Done";
+                                currentFeature.Diem = diem;
+                                currentFeature.NhanXet = nx;
+                                if (diem >= 50)
+                                {
+                                    currentFeature.NgayHoanThanh = DateTime.UtcNow;
+                                    currentFeature.TrangThai = "Done";
+                                }
+                                doAn.YeuCauChucNangJSON = JsonSerializer.Serialize(lstYeuCau);
+                                await _dbContext.SaveChangesAsync();
                             }
-                            doAn.YeuCauChucNangJSON = JsonSerializer.Serialize(lstYeuCau);
-                            await _dbContext.SaveChangesAsync();
+                        }
+                        catch (JsonException)
+                        {
+                            // Dữ liệu cũ không đúng format, bỏ qua việc cập nhật DB
                         }
                     }
                 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
+import JSZip from 'jszip';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 interface IYeuCauChucNang {
@@ -305,12 +306,114 @@ const SinhDoAnAI: React.FC = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    // ── Chấm điểm từng tính năng (Mới - Quay lại nộp 1 file) ──
+    // ── Đọc nội dung file (hỗ trợ cả file đơn và file ZIP) ──
+    const CODE_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.cs', '.html', '.css', '.json', '.md', '.py', '.java', '.go', '.rb', '.php', '.vue', '.svelte', '.sql', '.yml', '.yaml', '.env', '.txt', '.cfg', '.ini', '.sh', '.bat', '.xml', '.scss', '.less', '.graphql', '.prisma'];
+
+    const extractFileContent = async (file: File): Promise<{ fileName: string; content: string }> => {
+        if (file.name.endsWith('.rar')) {
+            // Giải nén RAR bằng node-unrar-js (WASM)
+            try {
+                const { createExtractorFromData } = await import('node-unrar-js/esm');
+                const wasmBinary = await fetch(new URL('node-unrar-js/esm/js/unrar.wasm', import.meta.url)).then(r => r.arrayBuffer());
+                const arrayBuffer = await file.arrayBuffer();
+                const extractor = await createExtractorFromData({ wasmBinary, data: arrayBuffer });
+                const extracted = extractor.extract();
+                
+                const parts: string[] = [];
+                let totalLines = 0;
+                const MAX_TOTAL_LINES = 600;
+                let fileCount = 0;
+
+                for (const f of extracted.files) {
+                    if (!f.extraction || f.fileHeader.flags.directory) continue;
+                    const path = f.fileHeader.name;
+                    // Bỏ qua thư mục rác
+                    if (/(\/|\\|^)(node_modules|\.git|bin|obj|dist|build|\.vs|\.idea|__pycache__)(\/|\\)/i.test(path)) continue;
+                    // Chỉ lấy file code
+                    const ext = '.' + path.split('.').pop()?.toLowerCase();
+                    if (!CODE_EXTENSIONS.includes(ext)) continue;
+                    
+                    if (totalLines >= MAX_TOTAL_LINES) {
+                        parts.push(`\n// ... (đã cắt bớt, còn nhiều file khác chưa hiển thị để tiết kiệm Token)`);
+                        break;
+                    }
+                    
+                    const text = new TextDecoder().decode(f.extraction);
+                    const lines = text.split('\n');
+                    const remaining = MAX_TOTAL_LINES - totalLines;
+                    const truncated = lines.length > remaining ? lines.slice(0, remaining).join('\n') + '\n// ... (file bị cắt bớt)' : text;
+                    parts.push(`\n// ========== FILE: ${path} ==========\n${truncated}`);
+                    totalLines += Math.min(lines.length, remaining);
+                    fileCount++;
+                }
+
+                if (parts.length === 0) {
+                    throw new Error('Không tìm thấy file code nào trong RAR.');
+                }
+
+                return {
+                    fileName: `${file.name} (${fileCount} files)`,
+                    content: parts.join('\n')
+                };
+            } catch (e: any) {
+                if (e.message?.includes('file code')) throw e;
+                throw new Error(`Không thể giải nén file RAR: ${e.message}. Vui lòng thử nén lại bằng .zip.`);
+            }
+        }
+        if (file.name.endsWith('.zip')) {
+            const zip = await JSZip.loadAsync(file);
+            const parts: string[] = [];
+            let totalLines = 0;
+            const MAX_TOTAL_LINES = 600;
+
+            const entries = Object.entries(zip.files)
+                .filter(([path, entry]) => {
+                    if (entry.dir) return false;
+                    // Bỏ qua thư mục node_modules, .git, bin, obj, dist, build
+                    if (/(\/|^)(node_modules|.git|bin|obj|dist|build|\.vs|\.idea|__pycache__)\//i.test(path)) return false;
+                    // Chỉ lấy file code
+                    const ext = '.' + path.split('.').pop()?.toLowerCase();
+                    return CODE_EXTENSIONS.includes(ext);
+                })
+                .sort(([a], [b]) => a.localeCompare(b));
+
+            for (const [path, entry] of entries) {
+                if (totalLines >= MAX_TOTAL_LINES) {
+                    parts.push(`\n// ... (đã cắt bớt, còn nhiều file khác chưa hiển thị để tiết kiệm Token)`);
+                    break;
+                }
+                const text = await entry.async('text');
+                const lines = text.split('\n');
+                const remaining = MAX_TOTAL_LINES - totalLines;
+                const truncated = lines.length > remaining ? lines.slice(0, remaining).join('\n') + '\n// ... (file bị cắt bớt)' : text;
+                parts.push(`\n// ========== FILE: ${path} ==========\n${truncated}`);
+                totalLines += Math.min(lines.length, remaining);
+            }
+
+            if (parts.length === 0) {
+                throw new Error('Không tìm thấy file code nào trong ZIP. Hãy đảm bảo ZIP chứa các file .ts, .cs, .js, .py, v.v.');
+            }
+
+            return {
+                fileName: `${file.name} (${entries.length} files)`,
+                content: parts.join('\n')
+            };
+        } else {
+            const textContent = await file.text();
+            const lines = textContent.split('\n');
+            const truncatedContent = lines.length > 500 ? lines.slice(0, 500).join('\n') + '\n\n// ... (đã cắt bớt để tiết kiệm Token)' : textContent;
+            return { fileName: file.name, content: truncatedContent };
+        }
+    };
+
+    // ── Chấm điểm từng tính năng (hỗ trợ file đơn + ZIP) ──
     const handleGradeFeature = async (idx: number, yc: any, file: File) => {
         if (!resultData) return;
 
-        if (file.size > 50 * 1024) {
-            addToast('error', 'File quá lớn (>50KB). Vui lòng chỉ tải lên file code trọng tâm của tính năng để tiết kiệm Token AI.');
+        const isArchive = file.name.endsWith('.zip') || file.name.endsWith('.rar');
+        const maxSize = isArchive ? 5 * 1024 * 1024 : 50 * 1024; // ZIP/RAR: 5MB, file đơn: 50KB
+        if (file.size > maxSize) {
+            addToast('error', isArchive ? 'File nén quá lớn (>5MB).' : 'File quá lớn (>50KB). Vui lòng chỉ tải lên file code trọng tâm.');
             return;
         }
 
@@ -320,9 +423,7 @@ const SinhDoAnAI: React.FC = () => {
         setFeatureGrades(prev => ({ ...prev, [idx]: { ...prev[idx], isLoading: true, error: undefined } }));
 
         try {
-            const textContent = await file.text();
-            const lines = textContent.split('\n');
-            const truncatedContent = lines.length > 500 ? lines.slice(0, 500).join('\n') + '\n\n// ... (đã cắt bớt để tiết kiệm Token)' : textContent;
+            const { fileName, content } = await extractFileContent(file);
 
             const tenChucNangText = typeof yc === 'string' ? yc : (yc.tenChucNang || yc.TenChucNang || `Tính năng ${idx + 1}`);
             const ngay = typeof yc === 'string' ? idx + 1 : (yc.ngay || yc.Ngay || idx + 1);
@@ -333,8 +434,8 @@ const SinhDoAnAI: React.FC = () => {
                 tenDoAn: resultData.tenDoAn,
                 moTa: resultData.moTa,
                 tenTinhNang: tenChucNangText,
-                tenFile: file.name,
-                noiDungFile: truncatedContent,
+                tenFile: fileName,
+                noiDungFile: content,
                 khoKhan: featureKhoKhan,
                 suaDoi: featureSuaDoi
             });
@@ -347,7 +448,6 @@ const SinhDoAnAI: React.FC = () => {
 
             if (diem >= 50 && !completedFeatures.includes(idx)) {
                 setCompletedFeatures(prev => [...prev, idx]);
-                // Update local resultData to persist the completion time
                 setResultData(prev => {
                     if (!prev) return prev;
                     const newFeatures = [...prev.yeuCauChucNang];
@@ -361,7 +461,7 @@ const SinhDoAnAI: React.FC = () => {
                 });
             }
         } catch (err: any) {
-            const msg = err?.response?.data?.details || err?.response?.data?.message || 'Lỗi khi chấm điểm';
+            const msg = err?.response?.data?.details || err?.response?.data?.message || err?.message || 'Lỗi khi chấm điểm';
             setFeatureGrades(prev => ({
                 ...prev,
                 [idx]: { ...prev[idx], isLoading: false, error: msg }
@@ -1018,7 +1118,7 @@ const SinhDoAnAI: React.FC = () => {
                                                                     type="file"
                                                                     id={`file-upload-${idx}`}
                                                                     className="sda-file-input-hidden"
-                                                                    accept=".js,.jsx,.ts,.tsx,.cs,.html,.css,.json,.md"
+                                                                    accept=".js,.jsx,.ts,.tsx,.cs,.html,.css,.json,.md,.py,.java,.go,.rb,.php,.vue,.zip,.rar,application/zip,application/x-zip-compressed"
                                                                     onChange={(e) => {
                                                                         const file = e.target.files?.[0];
                                                                         if (file) handleGradeFeature(idx, yc, file);
@@ -1027,7 +1127,7 @@ const SinhDoAnAI: React.FC = () => {
                                                                     disabled={gradeData?.isLoading}
                                                                 />
                                                                 <label htmlFor={`file-upload-${idx}`} className={`sda-upload-btn ${gradeData?.isLoading ? 'loading' : ''}`}>
-                                                                    {gradeData?.isLoading ? 'Đang chấm điểm...' : 'Tải file cốt lõi lên chấm (.ts, .cs...)'}
+                                                                    {gradeData?.isLoading ? 'Đang chấm điểm...' : '📁 Tải file, ZIP hoặc RAR lên chấm'}
                                                                 </label>
                                                             </div>
 
