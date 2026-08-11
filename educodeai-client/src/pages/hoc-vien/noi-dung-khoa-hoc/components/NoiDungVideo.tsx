@@ -7,6 +7,7 @@ import { VideoAIService, type VideoChapterDTO } from '@/services/video-ai.servic
 // 1. Định nghĩa kiểu dữ liệu cho Ref để component cha (NoiDungKhoaHoc) hiểu
 export interface NoiDungVideoRef {
   seekTo: (seconds: number) => void;
+  getCurrentTime: () => number;
 }
 
 interface Props {
@@ -60,7 +61,8 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
           dangCanhBaoRef.current = false;
         }, 1000);
       }
-    }
+    },
+    getCurrentTime: () => playerRef.current?.getCurrentTime?.() || 0
   }));
 
   // Lấy Video ID từ URL YouTube
@@ -108,7 +110,6 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
 
   // --- LOGIC: Xử lý Gian lận (Anti-Cheat) ---
   const xuLyGianLan = (currentTime: number, lastValidTime: number) => {
-    return;
     if (dangCanhBaoRef.current) return; // Nếu đang tua từ ghi chú thì bỏ qua
 
     dangCanhBaoRef.current = true;

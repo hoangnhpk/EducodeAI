@@ -130,10 +130,10 @@ body {
 }
 
 .btn-light:hover {
-  background-color: var(--bg-light);
-  color: var(--primary) !important;
-  border: 1px solid var(--primary) !important;
-  box-shadow: 0 2px 8px rgba(246, 144, 80, 0.2);
+  background-color: #ffffff;
+  color: var(--text-dark) !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .btn-square {

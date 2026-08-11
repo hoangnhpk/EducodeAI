@@ -782,6 +782,7 @@ const NoiDungKhoaHoc = () => {
                 maBaiHoc={baiHocHienTai.id}
                 tieuDeBaiHoc={baiHocHienTai.tieuDe}
                 noiDungBaiHoc={baiHocHienTai.noiDung}
+                getCurrentVideoTime={() => videoRef.current?.getCurrentTime() ?? null}
                 isQuizMode={dangLamQuiz}
             />
         </div>
