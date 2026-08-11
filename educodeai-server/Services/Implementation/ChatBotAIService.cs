@@ -134,7 +134,7 @@ namespace educodeai_server.Services.Implementation
 
             try
             {
-                string cauTraLoi = await _gemini.GenerateAsync(finalPrompt, false, systemInstruction);
+                string cauTraLoi = await _gemini.GenerateAsync($"{systemInstruction}\n\n{finalPrompt}");
                 var resultChuanHoa = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(cauTraLoi);
                 return resultChuanHoa;
             }
@@ -218,7 +218,7 @@ Hãy trình bày ngắn gọn bằng tiếng Việt, dùng gạch đầu dòng v
 
             try
             {
-                string rawJsonResult = await _gemini.GenerateAsync(promptTomTat, false, systemInstruction);
+                string rawJsonResult = await _gemini.GenerateAsync($"{systemInstruction}\n\n{promptTomTat}");
                 string ketQuaTomTat = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawJsonResult);
                 return ketQuaTomTat;
             }
@@ -396,7 +396,7 @@ Cấu trúc JSON bắt buộc:
 
             try
             {
-                string rawResponse = await _gemini.GenerateAsync(prompt, true, systemInstruction);
+                string rawResponse = await _gemini.GenerateAsync($"{systemInstruction}\n\n{prompt}", true);
                 rawResponse = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse);
                 rawResponse = LamSachJson(rawResponse);
 

@@ -65,10 +65,6 @@ namespace educodeai_server.Controllers.GiangVien
                 var result = await _service.CreatePracticeExerciseAsync(dto, lessonId, maGiangVien);
                 return Ok(new { success = true, message = "Lưu bài tập thành công", data = result });
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message, errors = new List<object>() });
-            }
             catch (Exception ex)
             {
                 return BadRequest(new { success = false, message = ex.Message, errors = new List<object>() });
@@ -85,10 +81,6 @@ namespace educodeai_server.Controllers.GiangVien
                 if (result == null) return NotFound(new { success = false, message = "Không tìm thấy bài tập", errors = new List<object>() });
                 return Ok(new { success = true, message = "Lấy chi tiết thành công", data = result });
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message, errors = new List<object>() });
-            }
             catch (Exception ex)
             {
                 return BadRequest(new { success = false, message = ex.Message, errors = new List<object>() });
@@ -104,10 +96,6 @@ namespace educodeai_server.Controllers.GiangVien
                 await _service.UpdateAsync(id, dto, maGiangVien);
                 return Ok(new { success = true, message = "Cập nhật thành công", data = new { } });
             }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message, errors = new List<object>() });
-            }
             catch (Exception ex)
             {
                 return BadRequest(new { success = false, message = ex.Message, errors = new List<object>() });
@@ -122,10 +110,6 @@ namespace educodeai_server.Controllers.GiangVien
                 int maGiangVien = LayNguoiDungID.LayID(User);
                 await _service.DeleteAsync(id, maGiangVien);
                 return Ok(new { success = true, message = "Xóa bài tập thành công", data = new { } });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message, errors = new List<object>() });
             }
             catch (Exception ex)
             {

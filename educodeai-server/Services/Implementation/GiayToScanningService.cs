@@ -1,4 +1,5 @@
 using educodeai_server.DTOs.XacThuc;
+using educodeai_server.Services.IdentityDocuments;
 using educodeai_server.Services.Interface;
 using SkiaSharp;
 using System.Globalization;
@@ -62,21 +63,38 @@ namespace educodeai_server.Services.Implementation
             }
         }
 
-        public async Task<GiayToScanningResponse> QuetGiayToAsync(GiayToScanningRequest request)
+        public async Task<GiayToScanningResponse> QuetGiayToAsync(
+            GiayToScanningRequest request,
+            CancellationToken cancellationToken = default)
         {
+            using var scanTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            scanTimeout.CancelAfter(TimeSpan.FromSeconds(90));
+            var scanToken = scanTimeout.Token;
+
             try
             {
                 var validate = ValidateRequest(request);
                 if (validate != null) return Fail(validate);
 
+                var frontMedia = await IdentityDocumentMediaValidator.ValidateAsync(
+                    request.AnhMatTruoc,
+                    IdentityDocumentMediaKind.IdentityDocument);
+                var backMedia = await IdentityDocumentMediaValidator.ValidateAsync(
+                    request.AnhMatSau,
+                    IdentityDocumentMediaKind.IdentityDocument);
+                if (!frontMedia.IsValid)
+                    return Fail(frontMedia.FailureMessage ?? "Ảnh mặt trước không hợp lệ.");
+                if (!backMedia.IsValid)
+                    return Fail(backMedia.FailureMessage ?? "Ảnh mặt sau không hợp lệ.");
+
                 // Chờ tessdata tải xong (nếu đang tải lần đầu) trước khi kiểm tra file.
-                await _tessReady;
+                await _tessReady.WaitAsync(scanToken);
 
                 if (!Directory.Exists(_tessDataPath) || !File.Exists(Path.Combine(_tessDataPath, "eng.traineddata")))
                     return Fail("Chưa cài dữ liệu OCR offline (tessdata).");
 
-                var frontBytes = await ReadAllBytesAsync(request.AnhMatTruoc);
-                var backBytes = await ReadAllBytesAsync(request.AnhMatSau);
+                var frontBytes = await ReadAllBytesAsync(request.AnhMatTruoc, scanToken);
+                var backBytes = await ReadAllBytesAsync(request.AnhMatSau, scanToken);
                 if (frontBytes.Length == 0 || backBytes.Length == 0)
                     return Fail("File ảnh không hợp lệ.");
 
@@ -102,6 +120,7 @@ namespace educodeai_server.Services.Implementation
                     engine.SetVariable("debug_file", "nul");
 
                     frontText = OcrImage(engine, frontBytes);
+                    scanToken.ThrowIfCancellationRequested();
                     backText = OcrImage(engine, backBytes);
 
                     // Nội dung OCR là dữ liệu giấy tờ nhạy cảm, không được ghi vào log.
@@ -152,7 +171,8 @@ namespace educodeai_server.Services.Implementation
                 var backIds  = ExtractCleanIdNumbers(backText);
                 if (frontIds.Count > 0 && backIds.Count > 0)
                 {
-                    var same = frontIds.Any(f => backIds.Any(b => IsSameId(f, b)));
+                    var same = frontIds.Any(f => backIds.Any(b =>
+                        IdentityDocumentRules.AreIdentifiersExactlyEqual(f, b, "CCCD")));
                     if (!same)
                         return Fail("Mặt trước và mặt sau không cùng 1 CCCD. Vui lòng tải đúng 2 mặt của cùng một giấy tờ.");
                 }
@@ -167,8 +187,34 @@ namespace educodeai_server.Services.Implementation
 
                 // QR mã trên CCCD gắn chip chứa dữ liệu chính xác 100%. Thử cả 2 mặt
                 // vì người dùng có thể tải ngược, và fallback OCR chỉ khi QR không đọc được.
-                var qrText = DecodeQrText(frontBytes) ?? DecodeQrText(backBytes);
+                var qrTexts = new[] { frontBytes, backBytes }
+                    .SelectMany(bytes => DecodeQrTexts(bytes))
+                    .Where(text => !string.IsNullOrWhiteSpace(text))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
+                if (qrTexts.Count > 1)
+                    return Fail("Không thể xác định duy nhất dữ liệu QR. Vui lòng chụp lại ảnh CCCD rõ hơn.");
+
+                var qrText = qrTexts.SingleOrDefault();
+                var qrInfo = ParseCccdQr(qrText);
+                if (string.Equals(request.LoaiGiayTo, "CCCD", StringComparison.OrdinalIgnoreCase)
+                    && qrInfo.SoGiayTo is null)
+                {
+                    return Fail("Không đọc được mã QR CCCD. Vui lòng chụp rõ mặt trước, không lóa và không che mã QR.");
+                }
+                if (qrInfo.SoGiayTo is not null)
+                {
+                    var ocrIds = ExtractCleanIdNumbers(frontText)
+                        .Concat(ExtractCleanIdNumbers(backText))
+                        .Distinct(StringComparer.Ordinal)
+                        .ToList();
+                    if (ocrIds.Count > 0 && ocrIds.All(id => !string.Equals(id, qrInfo.SoGiayTo, StringComparison.Ordinal)))
+                        return Fail("Số giấy tờ trên QR không khớp với ảnh OCR. Vui lòng chụp lại đúng hai mặt của cùng một CCCD.");
+                }
+
                 var parsed = ParseIdentity(orderedFront, orderedBack, request.LoaiGiayTo, qrText);
+                if (string.IsNullOrWhiteSpace(parsed.NguyenQuan) && !string.IsNullOrWhiteSpace(request.NguyenQuan))
+                    parsed.NguyenQuan = CleanOriginField(request.NguyenQuan);
                 if (string.IsNullOrWhiteSpace(parsed.SoGiayTo) && string.IsNullOrWhiteSpace(parsed.HoTen))
                     return Fail("Kh\u00f4ng \u0111\u1ecdc \u0111\u01b0\u1ee3c s\u1ed1 gi\u1ea5y t\u1edd/h\u1ecd t\u00ean t\u1eeb CCCD. Vui l\u00f2ng ch\u1ee5p l\u1ea1i \u1ea3nh r\u00f5 n\u00e9t, \u0111\u1eb7t gi\u1ea5y t\u1edd th\u1eb3ng, ch\u1ee5p ngang khung h\u00ecnh, \u0111\u1ee7 s\u00e1ng v\u00e0 kh\u00f4ng b\u1ecb l\u00f3a.");
 
@@ -177,8 +223,16 @@ namespace educodeai_server.Services.Implementation
                     return Fail($"Ch\u01b0a \u0111\u1ecdc \u0111\u01b0\u1ee3c: {string.Join(", ", missingFields)}. Vui l\u00f2ng ch\u1ee5p l\u1ea1i \u1ea3nh r\u00f5 n\u00e9t h\u01a1n, \u0111\u1eb7t gi\u1ea5y t\u1edd th\u1eb3ng, ch\u1ee5p ngang khung h\u00ecnh, \u0111\u1ee7 s\u00e1ng, kh\u00f4ng b\u1ecb l\u00f3a v\u00e0 kh\u00f4ng che m\u1ea5t g\u00f3c gi\u1ea5y t\u1edd.");
 
                 parsed.ThanhCong = true;
-                parsed.ThongBao = "Qu\u00e9t CCCD offline th\u00e0nh c\u00f4ng. N\u1ebfu c\u00f3 th\u00f4ng tin n\u00e0o kh\u00f4ng ch\u00ednh x\u00e1c theo gi\u1ea5y t\u1edd, vui l\u00f2ng ch\u1ee5p l\u1ea1i \u1ea3nh r\u00f5 n\u00e9t h\u01a1n, \u0111\u1eb7t gi\u1ea5y t\u1edd th\u1eb3ng, ch\u1ee5p ngang khung h\u00ecnh, \u0111\u1ee7 s\u00e1ng v\u00e0 kh\u00f4ng b\u1ecb l\u00f3a.";
+                parsed.Status = "NeedsConfirmation";
+                parsed.AssuranceLevel = "ExtractedValidated";
+                parsed.ThongBao = string.IsNullOrWhiteSpace(parsed.NguyenQuan)
+                    ? "\u0110\u00e3 \u0111\u1ecdc gi\u1ea5y t\u1edd, nh\u01b0ng ch\u01b0a \u0111\u1ecdc \u0111\u01b0\u1ee3c qu\u00ea qu\u00e1n. Vui l\u00f2ng nh\u1eadp v\u00e0 x\u00e1c nh\u1eadn qu\u00ea qu\u00e1n tr\u01b0\u1edbc khi ti\u1ebfp t\u1ee5c."
+                    : "Qu\u00e9t gi\u1ea5y t\u1edd offline th\u00e0nh c\u00f4ng. Vui l\u00f2ng ki\u1ec3m tra l\u1ea1i th\u00f4ng tin tr\u01b0\u1edbc khi ti\u1ebfp t\u1ee5c.";
                 return parsed;
+            }
+            catch (OperationCanceledException) when (scanToken.IsCancellationRequested)
+            {
+                return Fail("Quá trình quét mất quá nhiều thời gian. Vui lòng chụp lại ảnh CCCD rõ hơn.");
             }
             catch (Exception ex)
             {
@@ -196,7 +250,10 @@ namespace educodeai_server.Services.Implementation
             if (string.IsNullOrWhiteSpace(result.GioiTinh)) missing.Add("gi\u1edbi t\u00ednh");
             if (string.IsNullOrWhiteSpace(result.DiaChi)) missing.Add("\u0111\u1ecba ch\u1ec9");
             if (string.Equals(loaiGiayTo, "CCCD", StringComparison.OrdinalIgnoreCase)
-                && string.IsNullOrWhiteSpace(result.NguyenQuan)) missing.Add("qu\u00ea qu\u00e1n");
+                && string.IsNullOrWhiteSpace(result.NguyenQuan))
+            {
+                // Qu\u00ea qu\u00e1n c\u00f3 th\u1ec3 \u0111\u01b0\u1ee3c ng\u01b0\u1eddi d\u00f9ng b\u1ed5 sung \u1edf b\u01b0\u1edbc x\u00e1c nh\u1eadn.
+            }
             return missing;
         }
 
@@ -221,11 +278,11 @@ namespace educodeai_server.Services.Implementation
             return Path.Combine(AppContext.BaseDirectory, "tessdata");
         }
 
-        private static async Task<byte[]> ReadAllBytesAsync(IFormFile file)
+        private static async Task<byte[]> ReadAllBytesAsync(IFormFile file, CancellationToken cancellationToken)
         {
             await using var stream = file.OpenReadStream();
             using var ms = new MemoryStream();
-            await stream.CopyToAsync(ms);
+            await stream.CopyToAsync(ms, cancellationToken);
             return ms.ToArray();
         }
 
@@ -234,7 +291,7 @@ namespace educodeai_server.Services.Implementation
             using var bitmap = SKBitmap.Decode(bytes)
                 ?? throw new InvalidOperationException("Khong decode duoc anh");
 
-            var best = string.Empty;
+            var results = new List<(string Text, int Score)>();
             foreach (var variant in BuildVariants(bitmap))
             {
                 try
@@ -242,38 +299,54 @@ namespace educodeai_server.Services.Implementation
                     using var pix = Pix.LoadFromMemory(variant);
                     using var page = engine.Process(pix, PageSegMode.Auto);
                     var text = page.GetText() ?? string.Empty;
-                    if (CountAlphaNum(text) > CountAlphaNum(best)) best = text;
+                    if (CountAlphaNum(text) >= 4)
+                    {
+                        var score = CountOriginLabelsWithValue(text) * 1000 + CountAlphaNum(text);
+                        results.Add((text, score));
+                    }
                 }
                 catch
                 {
                     // bo qua variant loi, khong log
                 }
             }
-            return best;
+
+            // Không bỏ mất trường chỉ xuất hiện ở một biến thể OCR.
+            return string.Join("\n", results
+                .OrderByDescending(x => x.Score)
+                .Take(2)
+                .Select(x => x.Text)
+                .Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
+        private static int CountOriginLabelsWithValue(string text)
+        {
+            var normalized = NormalizeOcrLabel(text);
+            var compact = normalized.Replace(" ", string.Empty, StringComparison.Ordinal);
+            var labels = new[] { "que quan", "nguyen quan", "place of origin" };
+            return labels.Count(label =>
+            {
+                var labelCompact = label.Replace(" ", string.Empty, StringComparison.Ordinal);
+                var index = normalized.IndexOf(label, StringComparison.Ordinal);
+                if (index >= 0)
+                    return normalized[(index + label.Length)..].Trim().Length >= 2;
+                var compactIndex = compact.IndexOf(labelCompact, StringComparison.Ordinal);
+                return compactIndex >= 0 && compact[(compactIndex + labelCompact.Length)..].Length >= 2;
+            });
         }
 
         private static IEnumerable<byte[]> BuildVariants(SKBitmap source)
         {
-            // Đảm bảo ảnh đủ rộng để Tesseract đọc tốt nhất (tối thiểu 1600px ngang)
-            var scale = source.Width < 1600 ? 1600f / source.Width : 1f;
-            // Không phóng to quá 3x để tránh làm mờ ảnh do nội suy
-            if (scale > 3f) scale = 3f;
+            var longEdge = Math.Max(source.Width, source.Height);
+            var scale = longEdge > 2000 ? 2000f / longEdge : 1f;
             var w = Math.Max(1, (int)Math.Round(source.Width * scale));
             var h = Math.Max(1, (int)Math.Round(source.Height * scale));
             using var resized = Resize(source, w, h);
 
-            // Variant 1: Ảnh gốc resize (màu) — tốt nhất nếu ảnh đủ sáng, sắc nét
-            yield return EncodeJpeg(resized, 95);
-
-            // Variant 2: Grayscale tương phản nhẹ (contrast 1.3) — phù hợp ảnh chụp điện thoại thường
-            using (var g1 = GrayContrast(resized, 1.3f)) yield return EncodeJpeg(g1, 95);
-
-            // Variant 3: Grayscale tương phản mạnh (contrast 1.8) — phù hợp ảnh tối/ngược sáng
-            using (var g2 = GrayContrast(resized, 1.8f)) yield return EncodeJpeg(g2, 95);
-
-            // Variant 4: Adaptive threshold (ngưỡng tự động) — thay thế Binary cứng 155
-            // Tesseract tự chọn ngưỡng tốt hơn khi nhận ảnh grayscale sạch
-            using (var g3 = GrayContrast(resized, 2.2f)) yield return EncodePng(g3);
+            // Chỉ chạy hai biến thể hữu hạn để tránh ảnh điện thoại lớn làm treo OCR.
+            yield return EncodeJpeg(resized, 90);
+            using var contrast = GrayContrast(resized, 1.35f);
+            yield return EncodeJpeg(contrast, 90);
         }
 
         private static SKBitmap Resize(SKBitmap source, int width, int height)
@@ -449,31 +522,26 @@ namespace educodeai_server.Services.Implementation
             return sb.ToString();
         }
 
-        private static bool IsSameId(string a, string b)
+        private static IEnumerable<string> DecodeQrTexts(byte[] bytes)
         {
-            if (string.Equals(a, b, StringComparison.Ordinal)) return true;
-            // Cho phep OCR doc sai toi da 2 ky tu trong so 12-chu-so
-            // (vi mat sau CCCD co the bi nhoem, goc khuat, lam lech 1-2 so)
-            if (a.Length == b.Length && a.Length >= 9)
+            var rotations = new[] { 0, 90, 180, 270 };
+            foreach (var rotation in rotations)
             {
-                var maxDiff = a.Length >= 12 ? 2 : 1;
-                var diff = 0;
-                for (var i = 0; i < a.Length; i++)
-                    if (a[i] != b[i]) diff++;
-                return diff <= maxDiff;
+                var text = DecodeQrText(bytes, rotation);
+                if (!string.IsNullOrWhiteSpace(text))
+                    yield return text;
             }
-            return false;
         }
 
-        private static string? DecodeQrText(byte[] bytes)
+        private static string? DecodeQrText(byte[] bytes, int rotationDegrees)
         {
             try
             {
                 using var bitmap = SKBitmap.Decode(bytes);
                 if (bitmap == null) return null;
+                using var rotated = RotateBitmap(bitmap, rotationDegrees);
 
-                // Đọc toàn bộ điểm ảnh 1 lần (bulk) thay vì GetPixel per-pixel.
-                var src = bitmap.Pixels;
+                var src = rotated.Pixels;
                 var pixels = new byte[src.Length * 4];
                 var offset = 0;
                 foreach (var c in src)
@@ -484,11 +552,28 @@ namespace educodeai_server.Services.Implementation
                     pixels[offset++] = c.Alpha;
                 }
 
-                var source = new RGBLuminanceSource(pixels, bitmap.Width, bitmap.Height, RGBLuminanceSource.BitmapFormat.RGBA32);
-                var binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
-                var reader = new MultiFormatReader();
-                var result = reader.decode(binaryBitmap);
-                return result?.Text;
+                var source = new RGBLuminanceSource(pixels, rotated.Width, rotated.Height, RGBLuminanceSource.BitmapFormat.RGBA32);
+                var binaryBitmaps = new BinaryBitmap[]
+                {
+                    new(new HybridBinarizer(source)),
+                    new(new GlobalHistogramBinarizer(source))
+                };
+
+                foreach (var binaryBitmap in binaryBitmaps)
+                {
+                    try
+                    {
+                        var reader = new MultiFormatReader();
+                        var result = reader.decode(binaryBitmap);
+                        if (!string.IsNullOrWhiteSpace(result?.Text)) return result.Text;
+                    }
+                    catch (ReaderException)
+                    {
+                        // Thử bộ nhị phân tiếp theo khi ảnh có nền/độ tương phản khác nhau.
+                    }
+                }
+
+                return null;
             }
             catch
             {
@@ -496,30 +581,36 @@ namespace educodeai_server.Services.Implementation
             }
         }
 
+        private static SKBitmap RotateBitmap(SKBitmap source, int degrees)
+        {
+            if (degrees == 0) return source.Copy();
+            using var image = SKImage.FromBitmap(source);
+            using var surface = SKSurface.Create(new SKImageInfo(
+                degrees is 90 or 270 ? source.Height : source.Width,
+                degrees is 90 or 270 ? source.Width : source.Height));
+            var canvas = surface.Canvas;
+            canvas.Clear(SKColors.White);
+            canvas.Translate(surface.Canvas.LocalClipBounds.MidX, surface.Canvas.LocalClipBounds.MidY);
+            canvas.RotateDegrees(degrees);
+            canvas.DrawImage(image, -source.Width / 2f, -source.Height / 2f);
+            canvas.Flush();
+            using var snapshot = surface.Snapshot();
+            return SKBitmap.FromImage(snapshot);
+        }
+
+
         private sealed record CccdQrInfo(string? SoGiayTo, string? HoTen, string? NgaySinh, string? GioiTinh, string? DiaChi, string? NgayCap);
 
         private static CccdQrInfo ParseCccdQr(string? qrText)
         {
-            if (string.IsNullOrWhiteSpace(qrText)) return new(null, null, null, null, null, null);
-            var parts = qrText.Split('|').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
-            if (parts.Length < 6) return new(null, null, null, null, null, null);
-
-            var id = parts.FirstOrDefault(x => Regex.IsMatch(x, @"^\d{9}|\d{12}$"));
-            var name = parts.FirstOrDefault(x => !Regex.IsMatch(x, @"\d") && RemoveDiacritics(x).Split(' ', StringSplitOptions.RemoveEmptyEntries).Length >= 2);
-            var dobRaw = parts.FirstOrDefault(x => Regex.IsMatch(x, @"^\d{8}$"));
-            var dob = NormalizeCompactDate(dobRaw);
-            var gender = parts.FirstOrDefault(x => string.Equals(RemoveDiacritics(x), "Nam", StringComparison.OrdinalIgnoreCase) || string.Equals(RemoveDiacritics(x), "Nu", StringComparison.OrdinalIgnoreCase));
-            var issueRaw = parts.LastOrDefault(x => Regex.IsMatch(x, @"^\d{8}$") && x != dobRaw);
-            var issueDate = NormalizeCompactDate(issueRaw);
-            var address = parts.FirstOrDefault(x => x.Contains(',') && x != name);
-            return new(id, name, dob, NormalizeGender(gender), address, issueDate);
+            var parsed = CccdQrParser.Parse(qrText);
+            return parsed.IsValid
+                ? new(parsed.DocumentNumber, parsed.FullName, parsed.DateOfBirth, parsed.Gender, parsed.Address, parsed.IssueDate)
+                : new(null, null, null, null, null, null);
         }
 
-        private static string? NormalizeCompactDate(string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value) || !Regex.IsMatch(value, @"^\d{8}$")) return null;
-            return $"{value[..2]}/{value.Substring(2, 2)}/{value.Substring(4, 4)}";
-        }
+        private static string? NormalizeCompactDate(string? value) =>
+            IdentityDocumentRules.NormalizeCompactDate(value);
 
         private static string? NormalizeGender(string? value)
         {
@@ -598,49 +689,101 @@ namespace educodeai_server.Services.Implementation
 
         private static string? ExtractByLabel(List<string> lines, string[] labels)
         {
+            var normalizedLabels = labels
+                .Select(NormalizeOcrLabel)
+                .Where(x => x.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
             for (var i = 0; i < lines.Count; i++)
             {
                 var line = lines[i];
-                var plain = RemoveDiacritics(line).ToLowerInvariant();
-                foreach (var label in labels)
+                var normalized = NormalizeOcrLabel(line);
+                var candidateCombined = i + 1 < lines.Count
+                    ? NormalizeOcrLabel(line + " " + lines[i + 1])
+                    : normalized;
+                var compact = normalized.Replace(" ", string.Empty, StringComparison.Ordinal);
+                var combinedCompact = candidateCombined.Replace(" ", string.Empty, StringComparison.Ordinal);
+                var matchedLabel = normalizedLabels
+                    .Where(x => normalized.Contains(x, StringComparison.Ordinal)
+                        || compact.Contains(x.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.Ordinal)
+                        || candidateCombined.Contains(x, StringComparison.Ordinal)
+                        || combinedCompact.Contains(x.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.Ordinal))
+                    .OrderByDescending(x => x.Length)
+                    .FirstOrDefault();
+                if (matchedLabel == null) continue;
+
+                var valueParts = new List<string>();
+                var labelInLine = normalized.Contains(matchedLabel, StringComparison.Ordinal)
+                    || compact.Contains(matchedLabel.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.Ordinal);
+                var labelSource = labelInLine ? normalized : candidateCombined;
+                var labelEnd = labelSource.IndexOf(matchedLabel, StringComparison.Ordinal);
+                if (labelEnd < 0)
                 {
-                    if (!plain.Contains(label)) continue;
-
-                    var valueParts = new List<string>();
-                    var colon = line.IndexOf(':');
-                    if (colon >= 0 && colon < line.Length - 1)
+                    var compactSource = labelSource.Replace(" ", string.Empty, StringComparison.Ordinal);
+                    var compactLabel = matchedLabel.Replace(" ", string.Empty, StringComparison.Ordinal);
+                    var compactIndex = compactSource.IndexOf(compactLabel, StringComparison.Ordinal);
+                    if (compactIndex >= 0)
                     {
-                        var v = line[(colon + 1)..].Trim();
-                        if (v.Length >= 2 && !IsLabel(v)) valueParts.Add(Clean(v));
+                        // Convert the compact-form match back to the spaced normalized string.
+                        var nonWhitespace = 0;
+                        labelEnd = 0;
+                        while (labelEnd < labelSource.Length && nonWhitespace < compactIndex)
+                        {
+                            if (labelSource[labelEnd] != ' ') nonWhitespace++;
+                            labelEnd++;
+                        }
                     }
-                    else
-                    {
-                        // Bố cục CCCD thường là: "Nơi thường trú / Place of residence: Tổ 15" hoặc label rồi xuống dòng.
-                        var after = Regex.Replace(line, @".*?(?:" + string.Join("|", labels.Select(Regex.Escape)) + @")[:/\s.-]*", string.Empty, RegexOptions.IgnoreCase).Trim(" :-/".ToCharArray());
-                        if (!string.IsNullOrWhiteSpace(after) && after.Length >= 2 && !IsLabel(after))
-                            valueParts.Add(Clean(after));
-                    }
-
-                    // Với địa chỉ/ quê quán, lấy thêm tối đa 2 dòng tiếp theo nếu không phải label mới.
-                    var isAddressLike = labels.Any(x => x.Contains("que") || x.Contains("origin") || x.Contains("thuong tru") || x.Contains("dia chi") || x.Contains("residence") || x.Contains("address"));
-                    var maxNext = isAddressLike ? 2 : 1;
-                    for (var j = 1; j <= maxNext && i + j < lines.Count; j++)
-                    {
-                        var next = lines[i + j].Trim();
-                        var nextPlain = RemoveDiacritics(next);
-                        if (next.Length < 2) break;
-                        if (IsLabel(next)) break;
-                        if (Regex.IsMatch(RemoveDiacritics(nextPlain), @"(?i)noi\s+thu|place\s+of\s+resid|que\s+quan|ngay\s+sinh|gioi\s+tinh|quoc\s+tich")) break;
-                        if (Regex.IsMatch(nextPlain, @"^\d+$")) break;
-                        if (isAddressLike || valueParts.Count == 0)
-                            valueParts.Add(Clean(next));
-                    }
-
-                    var result = string.Join(", ", valueParts.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct());
-                    if (!string.IsNullOrWhiteSpace(result)) return result;
                 }
+                var after = labelEnd >= 0
+                    ? labelSource[(labelEnd + matchedLabel.Length)..].Trim(' ', ':', '/', '.', '-')
+                    : string.Empty;
+                var continuationConsumed = !labelInLine;
+                if (after.Length < 2 && i + 1 < lines.Count)
+                {
+                    var continuation = NormalizeOcrLabel(lines[i + 1]);
+                    var combined = NormalizeOcrLabel(line + " " + lines[i + 1]);
+                    if (normalizedLabels.Any(x => combined.Contains(x, StringComparison.Ordinal)))
+                    {
+                        matchedLabel = normalizedLabels.Where(x => combined.Contains(x, StringComparison.Ordinal)).OrderByDescending(x => x.Length).First();
+                        after = combined[(combined.IndexOf(matchedLabel, StringComparison.Ordinal) + matchedLabel.Length)..].Trim(' ', ':', '/', '.', '-');
+                        continuationConsumed = true;
+                    }
+                }
+                if (after.Length >= 2 && !IsLabel(after))
+                    valueParts.Add(Clean(after));
+
+                var isAddressLike = labels.Any(x =>
+                    x.Contains("que", StringComparison.OrdinalIgnoreCase)
+                    || x.Contains("origin", StringComparison.OrdinalIgnoreCase)
+                    || x.Contains("thuong tru", StringComparison.OrdinalIgnoreCase)
+                    || x.Contains("dia chi", StringComparison.OrdinalIgnoreCase)
+                    || x.Contains("residence", StringComparison.OrdinalIgnoreCase)
+                    || x.Contains("address", StringComparison.OrdinalIgnoreCase));
+                var maxNext = isAddressLike ? 2 : 1;
+                for (var j = continuationConsumed ? 2 : 1; j <= maxNext && i + j < lines.Count; j++)
+                {
+                    var next = lines[i + j].Trim();
+                    var nextPlain = NormalizeOcrLabel(next);
+                    if (next.Length < 2 || IsLabel(next) || Regex.IsMatch(nextPlain, @"^\d+$")) break;
+                    if (valueParts.Count == 0 || isAddressLike)
+                        valueParts.Add(Clean(next));
+                }
+
+                var result = string.Join(", ", valueParts.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct());
+                if (!string.IsNullOrWhiteSpace(result)) return result;
             }
             return null;
+        }
+
+        private static string NormalizeOcrLabel(string value)
+        {
+            var normalized = RemoveDiacritics(value ?? string.Empty).ToLowerInvariant();
+            normalized = normalized.Replace("đ", "d");
+            normalized = Regex.Replace(normalized, @"[^a-z0-9]+", " ");
+            normalized = Regex.Replace(normalized, @"\bquequan\b", "que quan");
+            normalized = Regex.Replace(normalized, @"\bnguyenquan\b", "nguyen quan");
+            return Regex.Replace(normalized, @"\s+", " ").Trim();
         }
 
         private static string? GuessName(List<string> lines)
@@ -707,6 +850,8 @@ namespace educodeai_server.Services.Implementation
             return cleaned;
         }
 
+        private static string Clean(string value) => CleanOcrField(value) ?? string.Empty;
+
         private static string? CleanAddressField(string? value)
         {
             var cleaned = CleanOcrField(value);
@@ -738,14 +883,22 @@ namespace educodeai_server.Services.Implementation
                 string.Empty,
                 RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-            // Fallback theo ban khong dau de bat chac OCR meo chu
-            var plain = RemoveDiacritics(cleaned);
-            var cutMarkers = new[] { "Noi thu", "Noi th", "Place of resid", "Pace of resid" };
-            var cutAt = -1;
-            foreach (var marker in cutMarkers)
+            // Fallback theo ban khong dau de bat chac OCR meo chu, nhung cat tren chuoi goc.
+            var plain = RemoveDiacritics(cleaned).ToLowerInvariant();
+            var markerPatterns = new[]
             {
-                var idx2 = plain.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-                if (idx2 >= 0 && (cutAt < 0 || idx2 < cutAt)) cutAt = idx2;
+                @"noi\s*thuong\s*tru",
+                @"place\s*of\s*residence",
+                @"residence",
+                @"address",
+                @"place\s*of\s*origin"
+            };
+            var cutAt = -1;
+            foreach (var pattern in markerPatterns)
+            {
+                var markerMatch = Regex.Match(plain, pattern, RegexOptions.IgnoreCase);
+                if (markerMatch.Success && (cutAt < 0 || markerMatch.Index < cutAt))
+                    cutAt = markerMatch.Index;
             }
             if (cutAt > 3 && cutAt <= cleaned.Length)
                 cleaned = cleaned[..cutAt];
@@ -754,6 +907,7 @@ namespace educodeai_server.Services.Implementation
             // OCR hay doc vien trai cua o thanh 1 chu cai le (i, l, j, t...) roi dinh vao dau que quan.
             // Dia danh VN khong bao gio bat dau bang 1 chu cai don tach roi, nen bo an toan.
             cleaned = Regex.Replace(cleaned, @"^[iIlLjJtT|]\s+(?=\p{Lu})", string.Empty);
+            cleaned = Regex.Replace(cleaned, @"^1\s+(?=Cát\b)", string.Empty, RegexOptions.IgnoreCase);
             cleaned = Regex.Replace(cleaned, @"Binh\s+Định", "Bình Định", RegexOptions.IgnoreCase);
             cleaned = Regex.Replace(cleaned, @"Binh\s+Dinh", "Bình Định", RegexOptions.IgnoreCase);
             cleaned = Regex.Replace(cleaned, @"\s*[.]\s*", ", ");
@@ -869,20 +1023,27 @@ namespace educodeai_server.Services.Implementation
 
         private static bool IsLabel(string value)
         {
-            var p = RemoveDiacritics(value).ToLowerInvariant();
+            var p = NormalizeOcrLabel(value);
+            var compact = p.Replace(" ", string.Empty, StringComparison.Ordinal);
             string[] labels =
             {
                 "ho va ten", "full name", "ngay sinh", "date of birth", "gioi tinh", "sex",
-                "quoc tich", "nationality", "que quan", "noi thuong tru", "dia chi", "dan toc",
+                "quoc tich", "nationality", "que quan", "nguyen quan", "place of origin", "noi thuong tru", "place of residence", "dia chi", "dan toc",
                 "ton giao", "ngay cap", "noi cap", "can cuoc", "cong hoa", "socialist", "identity",
-                "personal identification", "date, month, year", "citizen identity"
+                "personal identification", "date, month, year", "citizen identity", "placeoforigin", "placeofresidence", "quequan", "nguyenquan"
             };
-            return labels.Any(l => p.Contains(l));
+            return labels.Any(l => p.Contains(l, StringComparison.Ordinal) || compact.Contains(l.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.Ordinal));
         }
 
-        private static string Clean(string value) => Regex.Replace(value, @"\s+", " ").Trim(" :-_".ToCharArray());
         private static int CountAlphaNum(string text) => text.Count(char.IsLetterOrDigit);
-        private static GiayToScanningResponse Fail(string msg) => new() { ThanhCong = false, ThongBao = msg };
+        private static GiayToScanningResponse Fail(string msg) => new()
+        {
+            ThanhCong = false,
+            ThongBao = msg,
+            Status = "Rejected",
+            AssuranceLevel = "None",
+            FailureCode = "REQUIRED_FIELD_MISSING"
+        };
 
         private static string RemoveDiacritics(string text)
         {

@@ -1,21 +1,64 @@
 ﻿/* ===========================
-   TOOLBAR
-   (Token global từ variables.css — KHÔNG khai báo lại :root)
+   PAGE CONTAINER
+   Spacing dùng chung với các trang QTV
 =========================== */
+.user-management-container {
+    min-height: 100%;
+}
+
+.user-management-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.user-management-header .page-title {
+    margin: 0;
+}
+
+.user-management-card {
+    padding: 32px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.user-management-card-header {
+    margin-bottom: 24px;
+}
+
+.user-management-card .table-responsive {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
 .toolbar {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 0;
     flex-wrap: wrap;
 }
 
+.search-input,
+.filter-select {
+    height: 40px;
+    box-sizing: border-box;
+}
+
 .search-input {
+    flex: 1 1 50%;
+    min-width: 220px;
     padding: 8px 14px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     font-size: 14px;
-    width: 240px;
     outline: none;
     transition: border-color 0.2s;
 }
@@ -26,6 +69,8 @@
 }
 
 .filter-select {
+    flex: 1 1 20%;
+    min-width: 180px;
     padding: 8px 14px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
@@ -61,6 +106,8 @@
 =========================== */
 .user-table {
     width: 100%;
+    min-width: 980px;
+    table-layout: fixed;
     border-collapse: collapse;
     background: var(--bg-card);
     border-radius: 10px;
@@ -72,6 +119,27 @@
 .user-table thead {
     background: var(--bg-main);
     border-bottom: 2px solid var(--border-color);
+}
+
+.user-col-name { width: 23%; }
+.user-col-email { width: 27%; }
+.user-col-role { width: 13%; min-width: 110px; }
+.user-col-created { width: 13%; min-width: 120px; white-space: nowrap; }
+.user-col-status { width: 14%; min-width: 120px; }
+.user-col-actions { width: 200px; min-width: 200px; text-align: center; }
+
+.user-cell-email {
+    color: var(--text-muted);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-cell-created {
+    color: var(--text-light);
+    font-size: 12px;
+    white-space: nowrap;
 }
 
 .user-table th {
@@ -158,30 +226,48 @@
 /* ===========================
    ACTION BUTTONS – 1 HÀNG
 =========================== */
+.text-center {
+    text-align: center;
+}
+
+.user-cell-actions {
+    vertical-align: middle;
+}
+
 .action-group {
     display: flex !important;
     flex-direction: row !important;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     flex-wrap: nowrap;
     white-space: nowrap;
-    gap: 4px;
+    gap: 6px;
 }
 
 .btn-action {
-    padding: 4px 8px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    padding: 6px 9px !important;
     font-size: 12px !important;
-    border-radius: 5px !important;
+    font-weight: 600;
+    line-height: 1.2;
+    border-radius: 6px !important;
     border: 1px solid transparent;
     cursor: pointer;
     transition: 0.2s;
-    background: var(--bg-card);
 }
 
-.btn-edit   { color: var(--info);  border-color: var(--info-soft); }
-.btn-lock   { color: var(--warning); border-color: var(--warning-soft); }
-.btn-unlock { color: var(--success); border-color: var(--success-soft); }
-.btn-delete { color: var(--danger);   border-color: var(--danger-soft); }
+.btn-action i {
+    font-size: 13px;
+}
+
+.btn-edit   { color: var(--info);  background: var(--info-soft); border-color: var(--info-soft); }
+.btn-lock   { color: var(--warning-strong); background: var(--warning-soft); border-color: var(--warning-soft); }
+.btn-unlock { color: var(--success-strong); background: var(--success-soft); border-color: var(--success-soft); }
+.btn-delete { color: var(--danger-strong); background: var(--danger-soft); border-color: var(--danger-soft); }
 
 .btn-edit:hover   { background: var(--info);  color: var(--text-white); border-color: var(--info); }
 .btn-lock:hover   { background: var(--warning); color: var(--text-white); border-color: var(--warning); }
@@ -445,6 +531,29 @@ transition: 0.15s;
 
 .qlnv-error-state .btn-add {
     margin-left: 0;
+}
+
+@media (max-width: 768px) {
+    .user-management-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .user-management-header .btn-add {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .search-input,
+    .filter-select {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

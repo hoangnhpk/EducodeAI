@@ -1,0 +1,455 @@
+.qlhv-container {
+  color: var(--text-main);
+  font-family: var(--font-main);
+  min-height: 100%;
+}
+
+.qlhv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.qlhv-header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.qlhv-header-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--primary);
+  font-size: 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+.qlhv-title {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: 24px;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.25;
+}
+
+.qlhv-subtitle {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.qlhv-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--text-white);
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.qlhv-btn-primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.qlhv-card {
+  box-sizing: border-box;
+  padding: 24px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.qlhv-history-toolbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 0;
+  border-bottom: 0;
+}
+
+.qlhv-history-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.qlhv-section-title {
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--text-dark);
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.qlhv-input {
+  width: 320px;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 14px;
+  outline: none;
+}
+
+.qlhv-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.12);
+}
+
+.qlhv-btn-search {
+  height: 40px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-dark);
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+
+.qlhv-btn-export {
+  height: 40px;
+  min-height: 40px;
+  white-space: nowrap;
+  border-color: var(--border-color);
+  color: var(--text-dark);
+  background: var(--bg-card);
+}
+
+.qlhv-table-wrapper {
+  overflow-x: auto;
+}
+
+.qlhv-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: left;
+  font-size: 14px;
+}
+
+.qlhv-col-code { width: 64px; }
+.qlhv-col-course { width: 24%; }
+.qlhv-col-giver { width: 120px; }
+.qlhv-col-recipient { width: 208px; }
+.qlhv-col-type { width: 136px; }
+.qlhv-col-status { width: 136px; }
+.qlhv-col-time { width: 200px; }
+
+.qlhv-table th {
+  padding: 12px 16px;
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.qlhv-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+  font-size: 14px;
+  vertical-align: middle;
+  overflow: hidden;
+}
+
+.qlhv-code-cell {
+  white-space: nowrap;
+}
+
+.qlhv-course-cell,
+.qlhv-text-cell,
+.qlhv-truncated-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qlhv-giver-cell {
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.qlhv-course-cell {
+  max-width: 220px;
+}
+
+.qlhv-time-cell {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.qlhv-status-cell {
+  overflow: visible !important;
+  white-space: nowrap;
+}
+
+.qlhv-status-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.qlhv-status-badge--success {
+  background: var(--success-soft);
+  color: var(--success-strong);
+}
+
+.qlhv-status-badge--warning {
+  background: var(--warning-soft);
+  color: var(--warning-strong);
+}
+
+.qlhv-status-badge--danger {
+  background: var(--danger-soft);
+  color: var(--danger-strong);
+}
+
+.qlhv-status-badge--default {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+.qlhv-type-cell {
+  min-width: 0;
+  overflow: hidden !important;
+  text-align: left;
+  vertical-align: middle !important;
+}
+
+.qlhv-type-badge {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qlhv-type-badge--admin {
+  background: var(--warning-soft);
+  color: var(--warning-strong);
+}
+
+.qlhv-type-badge--teacher {
+  background: var(--primary-soft, #fff1e8);
+  color: var(--primary-hover);
+}
+
+.qlhv-type-badge--default {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+.qlhv-recipient-cell {
+  min-width: 0;
+}
+
+.qlhv-recipient-cell .qlhv-truncated-text {
+  display: block;
+  max-width: 100%;
+}
+
+.qlhv-table tbody tr:hover td {
+  background: var(--bg-main);
+}
+
+.qlhv-table small {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.qlhv-table-message {
+  padding: 32px 20px !important;
+  color: var(--text-muted) !important;
+  text-align: center;
+}
+
+.qlhv-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.qlhv-pagination b {
+  color: var(--text-dark);
+}
+
+.qlhv-page-btn {
+  min-width: 34px;
+  height: 34px;
+  margin-left: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-dark);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.qlhv-page-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary-hover);
+}
+
+.qlhv-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.qlhv-toast {
+  position: fixed;
+  top: 32px;
+  right: 32px;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-main);
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
+}
+
+.qlhv-toast button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.qlhv-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.55);
+}
+
+.qlhv-modal-card {
+  width: min(100%, 520px);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.qlhv-modal-header,
+.qlhv-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.qlhv-modal-header h2 { margin: 0; color: var(--text-dark); font-size: 20px; font-weight: var(--font-weight-bold); }
+.qlhv-modal-close { border: 0; background: transparent; color: var(--text-muted); font-size: 24px; cursor: pointer; }
+.qlhv-modal-body { display: grid; gap: 8px; padding: 24px; }
+.qlhv-modal-label { color: var(--text-dark); font-size: 14px; font-weight: var(--font-weight-semibold); }
+.qlhv-modal-input,
+.qlhv-modal-select { width: 100%; min-height: 40px; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-main); font-size: 14px; }
+.qlhv-modal-error { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--danger-soft); color: var(--danger-strong); font-size: 14px; }
+.qlhv-modal-hint { margin: 4px 0 0; color: var(--text-muted); font-size: 13px; }
+.qlhv-modal-footer { justify-content: flex-end; border-top: 1px solid var(--border-light); border-bottom: 0; }
+.qlhv-modal-btn { min-height: 40px; padding: 8px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 14px; font-weight: var(--font-weight-semibold); cursor: pointer; }
+.qlhv-modal-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.qlhv-modal-btn-secondary { background: var(--bg-card); color: var(--text-dark); }
+.qlhv-modal-btn-primary { border-color: var(--primary); background: var(--primary); color: var(--text-white); }
+@media (max-width: 768px) {
+  .qlhv-modal-overlay {
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .qlhv-modal-header,
+  .qlhv-modal-footer,
+  .qlhv-modal-body {
+    padding: 16px;
+  }
+  .qlhv-header {
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .qlhv-history-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .qlhv-history-form {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .qlhv-input {
+    width: 100%;
+  }
+}

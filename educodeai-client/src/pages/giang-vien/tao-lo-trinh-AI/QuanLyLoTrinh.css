@@ -1,568 +1,655 @@
 /* =========================================
-   CONTAINER VÀ GRID CHÍNH
+   Quản lý lộ trình — card grid hiện đại
    ========================================= */
-.quan-ly-container {
-    padding: 2.5rem;
-    background-color: var(--bg-main);
-    min-height: 100vh;
-    font-family: var(--font-main);
+
+.ql-lt-page {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-main);
+  color: var(--text-main);
 }
 
-.lo-trinh-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2rem;
-    margin-top: 2rem;
+.ql-lt-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
 }
 
-/* Card danh sách lộ trình */
-.lo-trinh-card {
-    background-color: var(--bg-card) !important;
-    border: 2px solid var(--border-color);
-    border-radius: 1.25rem;
-    padding: 1.8rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    display: flex;
+.ql-lt-title {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  letter-spacing: -0.02em;
+}
+
+.ql-lt-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.ql-lt-btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(246, 144, 80, 0.25);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.ql-lt-btn-add:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.ql-lt-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.ql-lt-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.ql-lt-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.ql-lt-stat-icon--primary {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.ql-lt-stat-icon--success {
+  background: var(--success-soft);
+  color: var(--success-strong);
+}
+
+.ql-lt-stat-icon--info {
+  background: var(--info-soft);
+  color: var(--info-strong);
+}
+
+.ql-lt-stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  line-height: 1.1;
+}
+
+.ql-lt-stat-label {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.ql-lt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.ql-lt-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.ql-lt-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+  border-color: rgba(246, 144, 80, 0.35);
+}
+
+.ql-lt-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  flex: 1;
+}
+
+.ql-lt-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ql-lt-card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.ql-lt-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ql-lt-badge.is-active {
+  background: var(--success-soft);
+  color: var(--success-strong);
+}
+
+.ql-lt-badge.is-idle {
+  background: var(--bg-main);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+
+.ql-lt-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ql-lt-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ql-lt-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-main);
+  border-radius: 12px;
+  min-height: 108px;
+}
+
+.ql-lt-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ql-lt-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ql-lt-step-name {
+  font-size: 13px;
+  color: var(--text-main);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ql-lt-step--empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 72px;
+}
+
+.ql-lt-step-more {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  padding-left: 30px;
+}
+
+.ql-lt-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.ql-lt-course-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.ql-lt-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ql-lt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ql-lt-btn-view {
+  background: #fff;
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+.ql-lt-btn-view:hover {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+}
+
+.ql-lt-btn-edit {
+  background: var(--info-soft);
+  color: var(--info-strong);
+}
+
+.ql-lt-btn-edit:hover {
+  background: var(--info);
+  color: #fff;
+}
+
+.ql-lt-btn-delete {
+  background: var(--danger-soft);
+  color: var(--danger-strong);
+}
+
+.ql-lt-btn-delete:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.ql-lt-loading,
+.ql-lt-empty {
+  text-align: center;
+  padding: 56px 20px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-color);
+  border-radius: 16px;
+}
+
+.ql-lt-empty-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 22px;
+}
+
+.ql-lt-empty-title {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-dark);
+}
+
+.ql-lt-empty p,
+.ql-lt-loading p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.ql-lt-empty .ql-lt-btn-add {
+  margin-top: 16px;
+}
+
+.ql-lt-loading p {
+  margin-top: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .ql-lt-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .ql-lt-top {
+    align-items: stretch;
+  }
+
+  .ql-lt-btn-add {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ql-lt-card-footer {
     flex-direction: column;
-    justify-content: space-between;
-    transition: all 0.3s ease;
-    border-left: 6px solid var(--ai-accent); /* Vạch màu nhấn AI (tím) nhận diện tính năng AI */
-}
+    align-items: stretch;
+  }
 
-.lo-trinh-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
+  .ql-lt-actions {
+    width: 100%;
+  }
 
-/* Header & Title của Card */
-.card-title {
-    margin-top: 10px;
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: var(--text-main);
-    line-height: 1.4;
-}
-
-/* Footer của Card - Fix lỗi ID */
-.card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1.5rem;
-    padding-top: 1.2rem;
-    border-top: 1px solid var(--border-light);
-}
-
-.id-tag {
-    font-weight: 800;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    background: var(--bg-main);
-    padding: 4px 10px;
-    border-radius: 6px;
-}
-
-/* =========================================
-   HỆ THỐNG NÚT BẤM (BUTTONS)
-   ========================================= */
-
-/* Nút Làm mới - Trắng tinh tế */
-.btn-refresh {
-    background: white !important;
-    color: var(--text-muted) !important;
-    border: 1.5px solid var(--border-color) !important;
-    padding: 10px 20px !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-refresh:hover {
-    background: var(--bg-main) !important;
-    border-color: var(--text-light) !important;
-    color: var(--text-main) !important;
-}
-
-/* Nút Thêm Mới - Xanh lá chuyên nghiệp (Sếp yêu cầu) */
-.btn-save {
-    background: var(--primary) !important; /* Màu xanh lá chuẩn Emerald */
-    color: white !important;
-    border: none !important;
-    padding: 12px 25px !important;
-    border-radius: 12px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-}
-
-.btn-save:hover {
-    background: var(--primary-hover) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px rgba(16, 185, 129, 0.4);
-}
-
-/* Nút Sửa/Xóa nhỏ trong Card */
-.btn-edit-small {
-    border: 2px solid var(--ai-accent);
-    color: var(--ai-accent);
-    font-weight: 700;
-    padding: 6px 18px;
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.btn-edit-small:hover {
-    background: var(--ai-accent);
-    color: white;
-}
-
-.btn-delete {
-    border: 2px solid var(--danger);
-    color: var(--danger);
-    font-weight: 700;
-    padding: 6px 18px;
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-}
-
-.btn-delete:hover {
-    background: var(--danger);
-    color: white;
-}
-
-/* Nút Hủy bỏ */
-.btn-cancel-pro {
-    background-color: var(--border-light);
-    color: var(--text-muted);
-    padding: 12px 25px;
-    border-radius: 12px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-}
-
-/* =========================================
-   MODAL - FIX LỖI VÀ MỞ RỘNG
-   ========================================= */
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(8px); /* Làm mờ nền cực đẹp */
-    display: flex; align-items: center; justify-content: center;
-    z-index: 2000;
-}
-
-/* Mở rộng Modal lên 900px */
-.pro-modal-v2 {
-    width: 900px; 
-    background: white;
-    border-radius: 24px;
-    display: flex;
-    flex-direction: column;
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
-    animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes modalScaleUp {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-.modal-header-pro {
-    padding: 25px 40px;
-    border-bottom: 1px solid var(--border-light);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-body-pro {
-    padding: 30px 40px;
-    overflow-y: auto;
+  .ql-lt-btn {
     flex: 1;
-    background: var(--bg-main);
+  }
 }
 
-.modal-footer-pro {
-    padding: 20px 40px;
-    border-top: 1px solid var(--border-light);
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    background: white;
-}
-
-/* =========================================
-   THIẾT KẾ CHẶNG HỌC (COURSE ITEMS)
-   ========================================= */
-.course-item-card {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    background: white;
-    padding: 15px 20px;
-    border-radius: 16px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.course-img-small {
-    width: 65px;
-    height: 65px;
-    border-radius: 12px;
-    object-fit: cover;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.pro-step-num {
-    background: var(--ai-accent-soft);
-    color: var(--ai-accent);
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900;
-    flex-shrink: 0;
-}
-
-/* Trạng thái Bắt buộc / Nâng cao */
-.status-select {
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.st-req { background: var(--danger-soft) !important; color: var(--danger-strong) !important; }
-.st-opt { background: var(--warning-soft) !important; color: var(--warning-strong) !important; }
-
-/* Badge trạng thái ngoài Card */
-.badge-status {
-    background-color: var(--success-soft);
-    color: var(--success-strong);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-/* Nút xóa item khóa học */
-.btn-del-item {
-    color: var(--text-light);
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.btn-del-item:hover {
-    color: var(--danger);
-    transform: scale(1.1);
-}
-
-.quan-ly-container, 
-.pro-modal-v2, 
-.input-pro, 
-.select-pro, 
-.status-select,
-button {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-    letter-spacing: -0.01em; /* Giúp chữ nhìn khít và sang hơn */
-}
-
-/* Fix con số bị "kì" - tạo hình tròn số thứ tự cực chuẩn */
-.pro-step-num, .course-rank {
-    background: var(--ai-accent) !important;
-    color: white !important;
-    width: 32px !important;
-    height: 32px !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    font-family: 'Inter', sans-serif !important; /* Ép font cho con số */
-    flex-shrink: 0;
-    box-shadow: 0 4px 6px rgba(139, 92, 246, 0.2);
-}
-
-/* Làm đẹp ô Input và Select cho đồng bộ font */
-.input-pro {
-    font-weight: 500;
-    color: var(--text-main);
-    border: 1.5px solid var(--border-color);
-}
-
-.select-pro {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-main);
-    cursor: pointer;
-}
-
-/* Fix tiêu đề bị thô */
-.modal-header-pro h2 {
-    font-weight: 800;
-    letter-spacing: -0.02em;
-}
-
-/* Badge trạng thái nhìn cho "mượt" */
-.status-select {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 13px !important;
-    letter-spacing: 0.02em;
-    text-transform: none; /* Không để in hoa hết nhìn sẽ thanh thoát hơn */
-}
-/* =========================================
-   1. MODAL CƠ BẢN VÀ OVERLAY (GIAO DIỆN CHÍNH)
-   ========================================= */
+/* ===== Modal / form ===== */
 .modal-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(15, 23, 42, 0.7); /* Nền tối sang trọng */
-    backdrop-filter: blur(5px); /* Làm mờ nền phía sau */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
 }
 
-/* Modal Pro V2 - Bo góc lớn và rộng rãi */
 .pro-modal-v2 {
-    width: 750px; /* Tăng độ rộng để chứa ảnh đẹp hơn */
-    background: white;
-    border-radius: 20px;
-    display: flex;
-    flex-direction: column;
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    animation: modalFadeIn 0.3s ease-out;
+  width: min(900px, 95vw);
+  max-height: 90vh;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
 }
 
-@keyframes modalFadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* =========================================
-   2. CSS MỚI CHO NÚT DẤU X (CLOSE BUTTON)
-   ========================================= */
 .modal-header-pro {
-    padding: 20px 30px;
-    border-bottom: 1px solid var(--border-light);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative; /* Để định vị nút X */
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
 }
 
 .modal-header-pro h2 {
-    font-weight: 800;
-    color: var(--text-main);
-    margin: 0;
-    font-size: 1.5rem;
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-dark);
 }
 
-/* NÚT DẤU X ĐÃ ĐƯỢC "ĐỘ" */
 .close-x {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 32px;
-    height: 32px;
-    background: var(--border-light); /* Nền xám nhạt */
-    border: none;
-    border-radius: 50%; /* Hình tròn */
-    color: var(--text-muted);
-    font-size: 1.2rem;
-    line-height: 32px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
+  width: 36px;
+  height: 36px;
+  background: var(--border-light);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .close-x:hover {
-    background: var(--danger-soft); /* Nền đỏ nhạt khi hover */
-    color: var(--danger); /* Dấu X màu đỏ rực */
-    transform: rotate(90deg); /* Xoay nhẹ cho vui mắt */
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
-/* =========================================
-   3. CSS MỚI CHO ITEM CÓ HÌNH ẢNH DƯỚI TÊN
-   ========================================= */
 .modal-body-pro {
-    padding: 30px;
-    overflow-y: auto;
-    flex: 1;
-    background: var(--bg-main);
-}
-
-/* Thẻ chứa mỗi chặng học - Có hình ảnh */
-.course-item-card {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background: white;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease;
-}
-
-.course-item-card:hover {
-    transform: translateY(-2px); /* Hiệu ứng nổi lên khi hover */
-}
-
-/* Số thứ tự chặng học */
-.pro-step-num {
-    background: var(--ai-accent-soft);
-    color: var(--ai-accent);
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 0.8rem;
-    flex-shrink: 0;
-}
-
-/* Hình ảnh khóa học con - Đã thêm vào */
-.course-img-small {
-    width: 50px;
-    height: 50px;
-    border-radius: 8px;
-    object-fit: cover; /* Đảm bảo ảnh không bị méo */
-    border: 1px solid var(--border-light);
-}
-
-/* Phần chứa tên và select */
-.course-info-select {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-/* Tên khóa học - Làm đậm lên */
-.course-info-select .course-name {
-    font-weight: 700;
-    color: var(--text-main);
-    font-size: 0.95rem;
-}
-
-/* Ô chọn trạng thái (Bắt buộc/Tự chọn) */
-.status-select {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: var(--bg-main);
-}
-
-/* Nút xóa chặng học */
-.btn-del-item {
-    color: var(--text-light);
-    background: none;
-    border: none;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.btn-del-item:hover {
-    color: var(--danger);
-}
-
-/* =========================================
-   4. CÁC THÀNH PHẦN KHÁC (FOOTER, INPUT)
-   ========================================= */
-.form-input {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    margin-top: 8px;
-}
-
-.form-input:focus {
-    border-color: var(--ai-accent);
-    outline: none;
+  padding: 24px 28px;
+  overflow-y: auto;
+  background: var(--bg-main);
+  flex: 1;
 }
 
 .modal-footer-pro {
-    padding: 20px 30px;
-    border-top: 1px solid var(--border-light);
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    background: white;
+  padding: 16px 28px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--bg-card);
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
 }
 
 .btn-save-pro {
-    background: var(--primary-hover); /* Xanh lá cây cho nút chính */
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
+  background: var(--success);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.btn-save-pro:hover:not(:disabled) {
+  background: var(--success-strong);
+}
+
+.btn-save-pro:disabled,
+.btn-cancel-pro:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.input-pro {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-top: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  background: var(--bg-card);
+}
+
+.input-pro:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.12);
+}
+
+.empty-state-pro {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--bg-card);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.btn-select-kh {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.course-item-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-card);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.course-img-small {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.course-rank,
+.pro-step-num {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.select-pro {
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-main);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  width: 100%;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.st-req {
+  background: var(--danger-soft) !important;
+  color: var(--danger-strong) !important;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.st-opt {
+  background: var(--warning-soft) !important;
+  color: var(--warning-strong) !important;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  width: 100%;
 }
 
 .btn-cancel-pro {
-    background: var(--border-light);
-    color: var(--text-muted);
-    border: none;
-    padding: 12px 24px;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
-}
-/* Nút xóa lộ trình ngoài Card danh sách */
-.btn-delete-small {
-    border: 2px solid var(--danger);
-    color: var(--danger);
-    font-weight: 700;
-    padding: 6px 18px;
-    border-radius: 8px;
-    background: transparent;
-    cursor: pointer;
-    transition: all 0.2s;
+  background: var(--border-light);
+  color: var(--text-main);
+  border: none;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.btn-delete-small:hover {
-    background: var(--danger);
-    color: white;
-    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+.btn-del-item {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 8px;
 }
 
-/* Tinh chỉnh cho Modal scroll */
-.course-scroll-area::-webkit-scrollbar {
-    width: 6px;
+.btn-del-item:hover {
+  color: var(--danger);
 }
-.course-scroll-area::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 10px;
+
+.badge-status {
+  display: inline-block;
+  background: var(--success-soft);
+  color: var(--success-strong);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
 }

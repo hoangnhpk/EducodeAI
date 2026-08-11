@@ -6,7 +6,7 @@ export interface PagedResult<T> {
 }
 
 export interface ThongKeOverview {
-  gioHocTrungBinh?: number | null;
+  gioHocTrungBinh?: number | null; // giây
   soKhoaHocDangDay?: number | null;
   tongBaiTap?: number | null;
   tyLeHoanThanhTB?: number | null;
@@ -36,7 +36,7 @@ export interface HocVien {
   diemTrungBinh?: number | null;
   tienDo?: number | null;
   soBaiDaNop?: number | null;
-  gioHoc?: number | null;
+  gioHoc?: number | null; // giây
   trangThai?: string;
 }
 

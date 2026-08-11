@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { PlaylistAnalyzeResult, YouTubeVideoItem, ChuongHocDetail } from '../types';
 import * as api from '@/services/khoa-hoc-cua-toi.service';
 import EmptyState from '../components/ui/EmptyState';
@@ -40,6 +40,28 @@ const PlaylistImportPage: React.FC<Props> = ({
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [importResult, setImportResult] = useState<{ success: number; total: number; message?: string } | null>(null);
   const [importError, setImportError] = useState('');
+  const [chapters, setChapters] = useState<ChuongHocDetail[]>(existingChapters);
+  const [chaptersLoading, setChaptersLoading] = useState(existingChapters.length === 0);
+  const [chaptersError, setChaptersError] = useState('');
+
+  const loadChapters = useCallback(async () => {
+    try {
+      setChaptersLoading(true);
+      setChaptersError('');
+      const rawUser = JSON.parse(localStorage.getItem('user_info') || '{}');
+      const maGiangVien = rawUser.maNguoiDung ?? rawUser.id ?? 1;
+      const detail = await api.getChiTietKhoaHoc(maGiangVien, maKhoaHoc);
+      setChapters([...detail.danhSachChuong].sort((a, b) => a.thuTu - b.thuTu));
+    } catch {
+      setChaptersError('Không thể tải danh sách chương của khóa học.');
+    } finally {
+      setChaptersLoading(false);
+    }
+  }, [maKhoaHoc]);
+
+  useEffect(() => {
+    void loadChapters();
+  }, [loadChapters]);
 
   // ---- Step 1: Analyze ----
   const handleAnalyze = useCallback(async () => {
@@ -60,8 +82,15 @@ const PlaylistImportPage: React.FC<Props> = ({
       const vids = await api.getPlaylistVideos(result.playlistId);
       setVideos(vids);
       setSelectedIds(new Set(vids.map(v => v.videoId)));
+      const defaultChapter = chapters[0];
       setImportGroups([
-        { id: '1', mode: 'new', newChapterName: result.title?.substring(0, 80) || 'Chương mới', targetChapterId: null, videoIds: vids.map(v => v.videoId) }
+        {
+          id: '1',
+          mode: defaultChapter ? 'existing' : 'new',
+          newChapterName: result.title?.substring(0, 80) || 'Chương mới',
+          targetChapterId: defaultChapter?.maChuong ?? null,
+          videoIds: vids.map(v => v.videoId),
+        }
       ]);
       setStep(1);
     } catch (err: unknown) {
@@ -71,7 +100,7 @@ const PlaylistImportPage: React.FC<Props> = ({
       setAnalyzing(false);
       setLoadingVideos(false);
     }
-  }, [url]);
+  }, [url, chapters]);
 
   // ---- Step 2: Selection ----
   const toggleVideo = (id: string) => {
@@ -176,7 +205,6 @@ const PlaylistImportPage: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Step indicator */}
         <div className="khm-step-indicator">
           {STEPS.map((label, i) => (
             <React.Fragment key={label}>
@@ -336,7 +364,9 @@ const PlaylistImportPage: React.FC<Props> = ({
             </div>
             <div className="khm-form-section-body">
               <div className="khm-alert khm-alert-info" style={{ marginBottom: 20 }}>
-                💡 Hiện có <strong>{selectedIds.size} video</strong> đã lọc. Bạn có thể chia số video này vào một hoặc nhiều chương.
+                {chapters.length > 0
+                  ? 'Chọn chương hiện có hoặc chủ động chọn tạo chương mới trong khóa học này.'
+                  : 'Khóa học chưa có chương. Nhập tên để tạo chương mới trong chính khóa học này.'}
               </div>
 
               {importGroups.map((g, idx) => (
@@ -347,9 +377,11 @@ const PlaylistImportPage: React.FC<Props> = ({
                       style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', color: 'var(--khm-danger)', cursor: 'pointer', fontWeight: 700 }}
                     >✕ Xóa</button>
                   )}
-                  <h4 style={{ margin: '0 0 12px', fontSize: '0.95rem', fontWeight: 700 }}>Chương {idx + 1}</h4>
+                  <h4 style={{ margin: '0 0 12px', fontSize: '0.95rem', fontWeight: 700 }}>
+                    {g.mode === 'existing' ? `Chương hiện có: ${chapters.find(c => c.maChuong === g.targetChapterId)?.tenChuong ?? 'Chưa chọn'}` : `Chương mới ${idx + 1}`}
+                  </h4>
                   
-                  {existingChapters.length > 0 && (
+                  {chapters.length > 0 && (
                     <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
                       <label style={{ display: 'flex', gap: 8, cursor: 'pointer', fontSize: '0.875rem' }}>
                         <input type="radio" checked={g.mode === 'new'} onChange={() => {
@@ -371,12 +403,17 @@ const PlaylistImportPage: React.FC<Props> = ({
                           setImportGroups(p => p.map(x => x.id === g.id ? { ...x, newChapterName: e.target.value } : x));
                         }} />
                       ) : (
-                        <select className="khm-form-select" value={g.targetChapterId ?? ''} onChange={e => {
-                          setImportGroups(p => p.map(x => x.id === g.id ? { ...x, targetChapterId: Number(e.target.value) } : x));
-                        }}>
-                          <option value="">-- Chọn chương --</option>
-                          {existingChapters.map(c => <option key={c.maChuong} value={c.maChuong}>{c.tenChuong}</option>)}
-                        </select>
+                        <div>
+                          <select className="khm-form-select" value={g.targetChapterId ?? ''} onChange={e => {
+                            setImportGroups(p => p.map(x => x.id === g.id ? { ...x, targetChapterId: Number(e.target.value) } : x));
+                          }}>
+                            <option value="">-- Chọn chương --</option>
+                            {chaptersLoading && <option value="">Đang tải danh sách chương...</option>}
+                            {!chaptersLoading && chapters.length === 0 && <option value="">Chưa có chương nào</option>}
+                            {chapters.map(c => <option key={c.maChuong} value={c.maChuong}>{c.tenChuong}</option>)}
+                          </select>
+                          {chaptersError && <div className="khm-form-error">⚠ {chaptersError} <button type="button" className="khm-btn-link" onClick={() => void loadChapters()}>Thử lại</button></div>}
+                        </div>
                       )}
                     </div>
                     <div>
@@ -389,7 +426,7 @@ const PlaylistImportPage: React.FC<Props> = ({
               ))}
 
               <button className="khm-btn khm-btn-ghost" onClick={() => {
-                setImportGroups(p => [...p, { id: Date.now().toString(), mode: 'new', newChapterName: 'Chương ' + (p.length + 1), targetChapterId: null, videoIds: [] }]);
+                setImportGroups(p => [...p, { id: Date.now().toString(), mode: chapters.length > 0 ? 'existing' : 'new', newChapterName: 'Chương ' + (p.length + 1), targetChapterId: chapters[0]?.maChuong ?? null, videoIds: [] }]);
               }} style={{ width: '100%', border: '2px dashed var(--khm-gray-300)', padding: 12 }}>
                 + Thêm khối chương
               </button>
@@ -520,7 +557,7 @@ const PlaylistImportPage: React.FC<Props> = ({
                     <img src={vi.thumbnailUrl} style={{ width: 60, height: 40, objectFit: 'cover', borderRadius: 4 }} alt="" />
                     <div style={{ flex: 1, fontSize: '0.85rem', lineHeight: 1.3 }}>
                       <div style={{ fontWeight: 600 }}>{vi.title.substring(0, 60)}{vi.title.length > 60 ? '...' : ''}</div>
-                      {otherGrp && <div style={{ fontSize: '0.75rem', color: 'var(--khm-danger)' }}>⚠ Đã gài ở: {otherGrp.mode === 'new' ? otherGrp.newChapterName : (existingChapters.find(c => c.maChuong === otherGrp.targetChapterId)?.tenChuong ?? 'Chương sãn có')}</div>}
+                      {otherGrp && <div style={{ fontSize: '0.75rem', color: 'var(--khm-danger)' }}>⚠ Đã gài ở: {otherGrp.mode === 'new' ? otherGrp.newChapterName : (chapters.find(c => c.maChuong === otherGrp.targetChapterId)?.tenChuong ?? 'Chương sẵn có')}</div>}
                     </div>
                   </label>
                 );

@@ -61,7 +61,8 @@ namespace educodeai_server.Services.Implementation
                 tyLeHoanThanhTB = await dangKyQuery.AverageAsync(dk => dk.TienDo);
             }
 
-            double tongGioHoc = await _context.TienDoBaiHocs
+            // ThoiGianHoc lưu theo GIÂY → trả về trung bình số giây / học viên
+            double tongGiayHoc = await _context.TienDoBaiHocs
                 .Where(td =>
                     _context.BaiHocs
                         .Where(bh =>
@@ -82,14 +83,15 @@ namespace educodeai_server.Services.Implementation
 
             double gioHocTrungBinh = tongHocVien == 0
                 ? 0
-                : tongGioHoc / tongHocVien;
+                : tongGiayHoc / tongHocVien;
 
             return new ThongKeOverviewDTO
             {
                 SoKhoaHocDangDay = soKhoaHocDangDay,
                 TongBaiTap = tongBaiTap,
                 TyLeHoanThanhTB = Math.Round(tyLeHoanThanhTB, 1),
-                GioHocTrungBinh = Math.Round(gioHocTrungBinh, 1)
+                // Đơn vị: giây (UI format giờ/phút/giây)
+                GioHocTrungBinh = Math.Round(gioHocTrungBinh)
             };
         }
 
@@ -396,7 +398,7 @@ namespace educodeai_server.Services.Implementation
                 }
             ).ToDictionaryAsync(x => x.MaNguoiDung, x => x.SoBaiDaNop);
 
-            // ===== 3. Tổng giờ học =====
+            // ===== 3. Tổng thời gian học (giây) =====
             var gioHocDict = await (
                 from td in _context.TienDoBaiHocs
                 join bh in _context.BaiHocs on td.MaBaiHoc equals bh.MaBaiHoc
@@ -407,9 +409,9 @@ namespace educodeai_server.Services.Implementation
                 select new
                 {
                     MaNguoiDung = g.Key,
-                    GioHoc = g.Sum(x => (double?)x.ThoiGianHoc) ?? 0
+                    TongGiay = g.Sum(x => (double?)x.ThoiGianHoc) ?? 0
                 }
-            ).ToDictionaryAsync(x => x.MaNguoiDung, x => x.GioHoc);
+            ).ToDictionaryAsync(x => x.MaNguoiDung, x => x.TongGiay);
 
             // ===== 4. Map ra DTO =====
             var data = hocVienPage.Select(x => new HocVienThongKeDTO
@@ -419,7 +421,8 @@ namespace educodeai_server.Services.Implementation
                 Email = x.Email,
                 TienDo = Math.Round(x.TienDoTB, 1),
                 SoBaiDaNop = baiDaNopDict.GetValueOrDefault(x.MaNguoiDung, 0),
-                GioHoc = Math.Round(gioHocDict.GetValueOrDefault(x.MaNguoiDung, 0), 1),
+                // Đơn vị: giây (UI format giờ/phút/giây)
+                GioHoc = gioHocDict.GetValueOrDefault(x.MaNguoiDung, 0),
                 TrangThai =
                     x.TienDoTB == 100 ? "Hoàn thành" :
                     x.TienDoTB > 0 ? "Đang học" :

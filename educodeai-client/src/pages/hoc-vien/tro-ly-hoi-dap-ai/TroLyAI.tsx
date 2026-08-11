@@ -168,9 +168,9 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                         EduCode AI
                     </div>
                     <div className="cp-chatbot-header-actions">
-                        <i className={`fas ${isExpanded ? 'fa-compress-alt' : 'fa-expand-alt'}`} title={isExpanded ? "Thu nhỏ" : "Phóng to"} role="button" tabIndex={0} aria-label={isExpanded ? "Thu nhỏ" : "Phóng to"} onClick={() => setIsExpanded(!isExpanded)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsExpanded(!isExpanded)}></i>
-                        <i className="fas fa-trash-alt" title="Xóa lịch sử" role="button" tabIndex={0} aria-label="Xóa lịch sử" onClick={handleClearChat} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClearChat()}></i>
-                        <i className="fas fa-times" title="Đóng" role="button" tabIndex={0} aria-label="Đóng" onClick={() => setIsOpen(false)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsOpen(false)}></i>
+                        <i className={`fas ${isExpanded ? 'fa-compress-alt' : 'fa-expand-alt'}`} title={isExpanded ? "Thu nhỏ" : "Phóng to"} onClick={() => setIsExpanded(!isExpanded)}></i>
+                        <i className="fas fa-trash-alt" title="Xóa lịch sử" onClick={handleClearChat}></i>
+                        <i className="fas fa-times" title="Đóng" onClick={() => setIsOpen(false)}></i>
                     </div>
                 </div>
 
@@ -201,7 +201,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <code {...props} style={{ background: 'var(--bg-main)', padding: '3px 6px', borderRadius: '4px', color: 'var(--primary-dark)', fontSize: '0.9em', fontWeight: 500 }}>
+                                                    <code {...props} style={{ background: '#f1f5f9', padding: '3px 6px', borderRadius: '4px', color: '#d97706', fontSize: '0.9em', fontWeight: 500 }}>
                                                         {children}
                                                     </code>
                                                 );
@@ -215,7 +215,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                                         className={`btn-save-ai-note ${savedContents.includes(msg.NoiDung) ? 'saved' : ''}`}
                                         onClick={() => handleSaveNote(msg.NoiDung)}
                                         title={savedContents.includes(msg.NoiDung) ? "Đã lưu vào sổ tay" : "Lưu câu trả lời này vào sổ tay"}
-                                        style={savedContents.includes(msg.NoiDung) ? { backgroundColor: 'var(--success)', color: '#fff', borderColor: 'var(--success)', cursor: 'default', opacity: 0.9 } : {}}
+                                        style={savedContents.includes(msg.NoiDung) ? { backgroundColor: '#28a745', color: '#fff', borderColor: '#28a745', cursor: 'default', opacity: 0.9 } : {}}
                                     >
                                         <i className={savedContents.includes(msg.NoiDung) ? "fas fa-check" : "far fa-bookmark"}></i>
                                         {savedContents.includes(msg.NoiDung) ? " Đã lưu kiến thức" : " Lưu kiến thức"}
@@ -241,19 +241,18 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                             type="text"
                             // Cập nhật Placeholder và Disable input nếu đang làm quiz
                             placeholder={isQuizMode ? "🔒 AI tạm khóa trong lúc làm bài thi" : "Hỏi AI về bài học..."}
-                            aria-label={isQuizMode ? "AI tạm khóa trong lúc làm bài thi" : "Hỏi AI về bài học"}
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            disabled={isLoading || isQuizMode}
+                            disabled={isLoading || isQuizMode} 
                             maxLength={MAX_CHARS}
-                            style={{
-                                width: '100%',
-                                paddingRight: '60px',
+                            style={{ 
+                                width: '100%', 
+                                paddingRight: '60px', 
                                 boxSizing: 'border-box',
-                                backgroundColor: isQuizMode ? 'var(--bg-main)' : '#fff', // Đổi màu nền xám đi khi bị khóa
+                                backgroundColor: isQuizMode ? '#f1f5f9' : '#fff', // Đổi màu nền xám đi khi bị khóa
                                 cursor: isQuizMode ? 'not-allowed' : 'text'
-                            }}
+                            }} 
                         />
                         
                         {/* Ẩn bộ đếm số khi đang làm Quiz */}
@@ -261,7 +260,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                             <div style={{
                                 position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)',
                                 fontSize: '0.7rem', fontWeight: 500, pointerEvents: 'none',
-                                color: inputValue.length >= MAX_CHARS ? 'var(--danger)' : '#9ca3af'
+                                color: inputValue.length >= MAX_CHARS ? '#ef4444' : '#9ca3af'
                             }}>
                                 {inputValue.length}/{MAX_CHARS}
                             </div>
@@ -271,7 +270,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                     <button 
                         onClick={handleSendMessage} 
                         disabled={isLoading || isQuizMode || !inputValue.trim() || inputValue.length > MAX_CHARS}
-                        style={{ flexShrink: 0, cursor: isQuizMode ? 'not-allowed' : 'pointer', backgroundColor: isQuizMode ? 'var(--border-color)' : undefined }}
+                        style={{ flexShrink: 0, cursor: isQuizMode ? 'not-allowed' : 'pointer', backgroundColor: isQuizMode ? '#cbd5e1' : undefined }}
                     >
                         {/* Đổi icon Gửi thành icon Ổ khóa khi làm quiz */}
                         <i className={isQuizMode ? "fas fa-lock" : "fas fa-paper-plane"}></i>

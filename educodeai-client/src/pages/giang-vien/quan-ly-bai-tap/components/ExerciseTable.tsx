@@ -9,6 +9,21 @@ interface ExerciseTableProps {
     onCreateClick: () => void;
 }
 
+function getTrangThaiBadge(trangThai?: string) {
+    const raw = (trangThai || '').trim();
+    const key = raw.toLowerCase();
+    const isDraft = ['draft', 'nháp', 'nhap', 'ẩn', 'an'].includes(key);
+    const label =
+        key === 'draft' || key === 'nháp' || key === 'nhap' ? 'Nháp'
+        : key === 'published' || key === 'hiển thị' || key === 'hien thi' ? 'Hiển thị'
+        : raw || '—';
+
+    return {
+        label,
+        className: `qlbt-badge ${isDraft ? 'qlbt-badge--draft' : 'qlbt-badge--published'}`,
+    };
+}
+
 export const ExerciseTable: React.FC<ExerciseTableProps> = ({
     isLoading,
     danhSachHienThi,
@@ -52,48 +67,49 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
                             </td>
                         </tr>
                     ) : (
-                        danhSachHienThi.map((baiTap) => (
-                            <tr key={baiTap.maBaiTap}>
-                                <td>
-                                    <div className="truncate-text col-ten" title={baiTap.tenBaiTap}>
-                                        <strong>{baiTap.tenBaiTap}</strong>
-                                    </div>
-                                </td>
-                                <td>{baiTap.loaiBaiTap}</td>
-                                <td>
-                                    <div className="truncate-text col-khoahoc" title={baiTap.tenKhoaHoc}>
-                                        {baiTap.tenKhoaHoc}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div className="truncate-text col-chuong" title={baiTap.tenChuong}>
-                                        {baiTap.tenChuong}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div className="truncate-text col-ten" title={baiTap.tenBaiHoc}>
-                                        {baiTap.tenBaiHoc}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className={`badge ${baiTap.trangThai === 'Draft' ? 'badge-draft' : 'badge-published'}`}>
-                                        {baiTap.trangThai}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div className="actions-group">
-                                        <button className="action-btn view-btn" onClick={() => onViewClick(baiTap.maBaiTap)}>
-                                            <i className="bi bi-eye"></i> Xem
-                                        </button>
-                                        <button className="action-btn delete-btn"
-                                            onClick={() => onDeleteClick(baiTap.maBaiTap, baiTap.tenBaiTap)}
-                                        >
-                                            <i className="bi bi-trash"></i> Xóa
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))
+                        danhSachHienThi.map((baiTap) => {
+                            const status = getTrangThaiBadge(baiTap.trangThai);
+                            return (
+                                <tr key={baiTap.maBaiTap}>
+                                    <td>
+                                        <div className="truncate-text col-ten" title={baiTap.tenBaiTap}>
+                                            <strong>{baiTap.tenBaiTap}</strong>
+                                        </div>
+                                    </td>
+                                    <td>{baiTap.loaiBaiTap}</td>
+                                    <td>
+                                        <div className="truncate-text col-khoahoc" title={baiTap.tenKhoaHoc}>
+                                            {baiTap.tenKhoaHoc}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="truncate-text col-chuong" title={baiTap.tenChuong}>
+                                            {baiTap.tenChuong}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div className="truncate-text col-ten" title={baiTap.tenBaiHoc}>
+                                            {baiTap.tenBaiHoc}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className={status.className}>{status.label}</span>
+                                    </td>
+                                    <td>
+                                        <div className="actions-group">
+                                            <button className="action-btn view-btn" onClick={() => onViewClick(baiTap.maBaiTap)}>
+                                                <i className="bi bi-eye"></i> Xem
+                                            </button>
+                                            <button className="action-btn delete-btn"
+                                                onClick={() => onDeleteClick(baiTap.maBaiTap, baiTap.tenBaiTap)}
+                                            >
+                                                <i className="bi bi-trash"></i> Xóa
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })
                     )}
                 </tbody>
             </table>

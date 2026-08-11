@@ -1,4 +1,4 @@
-namespace educodeai_server.DTOs.AI
+﻿namespace educodeai_server.DTOs.AI
 {
     public class TinNhanChatDTO
     {

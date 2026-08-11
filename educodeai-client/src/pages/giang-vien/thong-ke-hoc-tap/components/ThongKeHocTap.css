@@ -69,10 +69,11 @@
   background: var(--success);
 }
 
-/* ===== PAGE ===== */
+/* ===== PAGE =====
+   Padding ngoài do .gv-main-content (24px) — không pad thêm ở đây. */
 .thong-ke-container {
-  padding: 24px;
-  background: var(--bg-main);
+  padding: 0;
+  background: transparent;
 }
 
 /* ===== HEADER ===== */

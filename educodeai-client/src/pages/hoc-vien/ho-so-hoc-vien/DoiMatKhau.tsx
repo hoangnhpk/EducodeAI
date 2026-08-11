@@ -52,17 +52,17 @@ const DoiMatKhau: React.FC = () => {
 
                         <form onSubmit={handleUpdatePassword}>
                             <div className="form-floating mb-3">
-                                <input type="password" aria-label="Mật khẩu hiện tại" className="form-control rounded-3" placeholder="Old Pass"
+                                <input type="password" underline-none="true" className="form-control rounded-3" placeholder="Old Pass" 
                                     value={matKhauCu} onChange={e => setMatKhauCu(e.target.value)} required />
                                 <label>Mật khẩu hiện tại</label>
                             </div>
                             <div className="form-floating mb-3">
-                                <input type="password" aria-label="Mật khẩu mới" className="form-control rounded-3" placeholder="New Pass"
+                                <input type="password" underline-none="true" className="form-control rounded-3" placeholder="New Pass" 
                                     value={matKhauMoi} onChange={e => setMatKhauMoi(e.target.value)} required />
                                 <label>Mật khẩu mới</label>
                             </div>
                             <div className="form-floating mb-4">
-                                <input type="password" aria-label="Nhập lại mật khẩu mới" className="form-control rounded-3" placeholder="Confirm Pass"
+                                <input type="password" underline-none="true" className="form-control rounded-3" placeholder="Confirm Pass" 
                                     value={confirmPass} onChange={e => setConfirmPass(e.target.value)} required />
                                 <label>Nhập lại mật khẩu mới</label>
                             </div>

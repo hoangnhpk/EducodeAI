@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using educodeai_server.Data;
 using educodeai_server.DTOs.BaiTap;
 using educodeai_server.Helpers;
@@ -85,19 +84,12 @@ namespace educodeai_server.Services.Implementation
                     tr.ErrorMessage = runResult?.error ?? "Lỗi gọi API biên dịch.";
                     tr.ActualOutput = runResult?.output ?? "";
                     isAllPassed = false;
-
-                    // Không tiếp tục tạo thêm container khi dịch vụ chấm đang quá tải.
-                    if (runResult?.statusCode == 503 || tr.ErrorMessage.Contains("[INFRA]", StringComparison.OrdinalIgnoreCase))
-                    {
-                        ketQuaOut.ThanhCong = false;
-                        break;
-                    }
                 }
                 else
                 {
                     string actualRaw = runResult.output ?? "";
-                    string cleanActual = ChuanHoaOutputChamDiem(actualRaw);
-                    string cleanExpected = ChuanHoaOutputChamDiem(tc.OutputMongDoi);
+                    string cleanActual = actualRaw.Trim().Replace("\r\n", "\n");
+                    string cleanExpected = tc.OutputMongDoi.Trim().Replace("\r\n", "\n");
 
                     tr.ActualOutput = tc.LaTestAn ? "???" : actualRaw;
 
@@ -134,23 +126,6 @@ namespace educodeai_server.Services.Implementation
             await _context.SaveChangesAsync();
 
             return ketQuaOut;
-        }
-
-        /// <summary>
-        /// Chuẩn hóa output để bỏ qua khác biệt whitespace và dòng phân cách cuối.
-        /// </summary>
-        private static string ChuanHoaOutputChamDiem(string output)
-        {
-            var lines = output.Replace("\r\n", "\n").Replace('\r', '\n')
-                .Split('\n')
-                .Select(line => Regex.Replace(line.Trim(), @"[ \t]+", " "))
-                .Where(line => line.Length > 0)
-                .ToList();
-
-            while (lines.Count > 0 && Regex.IsMatch(lines[^1], @"^[\-_=~*]{3,}$"))
-                lines.RemoveAt(lines.Count - 1);
-
-            return string.Join("\n", lines);
         }
 
         /// <summary>

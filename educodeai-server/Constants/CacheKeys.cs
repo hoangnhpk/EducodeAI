@@ -7,7 +7,7 @@ namespace educodeai_server.Constants
     {
         // ===== Khóa học =====
         // Course list công khai (học viên đọc)
-        public const string CourseListPublic = "CourseList:Public:v2";
+        public const string CourseListPublic = "CourseList:Public:v3";
 
         // Course list theo giảng viên
         public static string InstructorCourseList(int maGiangVien) => $"Instructor:{maGiangVien}:CourseList";
