@@ -1,87 +1,73 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useCallback, useEffect, useMemo, useReducer, type ReactNode } from 'react';
+import { setUnauthorizedCallback } from '../../../shared/configs/api';
+import { authStorage } from '../../../shared/lib/auth-storage';
+import { normalizeApiError } from '../../../shared/types/api-error';
+import { isStudent } from '../guards/role-guard';
+import { authService } from '../services/auth.service';
+import type { AuthSession, LoginClassification } from '../types/auth.types';
+import { authReducer, initialAuthState, type AuthState, type ClearSessionReason } from './auth-reducer';
 
-export interface User {
-    maNguoiDung: number;
-    hoTen: string;
-    email: string;
-    taiKhoan: string;
-    anhDaiDien: string | null;
-    vaiTro: string;
+export interface AuthContextValue extends AuthState {
+  clearSession(reason: ClearSessionReason): Promise<void>;
+  bootstrap(): Promise<void>;
+  retryBootstrap(): Promise<void>;
+  completeLogin(session: AuthSession): Promise<boolean>;
+  login(identifier: string, password: string, captchaToken?: string): Promise<LoginClassification>;
+  logout(): Promise<void>;
+  checkAuth(): Promise<void>;
 }
-
-interface AuthContextType {
-    user: User | null;
-    token: string | null;
-    isLoading: boolean;
-    login: (token: string, userData: User) => Promise<void>;
-    logout: () => Promise<void>;
-    checkAuth: () => Promise<void>;
-}
-
-export const AuthContext = createContext<AuthContextType>({
-    user: null,
-    token: null,
-    isLoading: true,
-    login: async () => {},
-    logout: async () => {},
-    checkAuth: async () => {},
-});
+export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+  const [state, dispatch] = useReducer(authReducer, initialAuthState);
+  const clearSession = useCallback(async (reason: ClearSessionReason) => {
+    try {
+      await authStorage.clearSession();
+    } finally {
+      dispatch({ type: 'CLEARED', reason });
+    }
+  }, []);
+  const completeLogin = useCallback(async (session: AuthSession) => {
+    if (!isStudent(session.user)) {
+      await clearSession('rejectedRole');
+      return false;
+    }
 
-    const checkAuth = async () => {
-        setIsLoading(true);
-        try {
-            const storedToken = await AsyncStorage.getItem('token');
-            const storedUser = await AsyncStorage.getItem('user');
-
-            if (storedToken && storedUser) {
-                setToken(storedToken);
-                setUser(JSON.parse(storedUser));
-            } else {
-                setToken(null);
-                setUser(null);
-            }
-        } catch (error) {
-            console.error('Error checking auth', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        checkAuth();
-    }, []);
-
-    const login = async (newToken: string, userData: User) => {
-        try {
-            await AsyncStorage.setItem('token', newToken);
-            await AsyncStorage.setItem('user', JSON.stringify(userData));
-            setToken(newToken);
-            setUser(userData);
-        } catch (error) {
-            console.error('Error saving auth data', error);
-        }
-    };
-
-    const logout = async () => {
-        try {
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('user');
-            setToken(null);
-            setUser(null);
-        } catch (error) {
-            console.error('Error during logout', error);
-        }
-    };
-
-    return (
-        <AuthContext.Provider value={{ user, token, isLoading, login, logout, checkAuth }}>
-            {children}
-        </AuthContext.Provider>
-    );
+    try {
+      await authStorage.writeSession(session);
+      dispatch({ type: 'AUTHENTICATED', session });
+      return true;
+    } catch (error) {
+      await clearSession('error');
+      throw error;
+    }
+  }, [clearSession]);
+  const bootstrap = useCallback(async () => {
+    dispatch({ type: 'BOOTSTRAP_STARTED' });
+    try {
+      const session = await authStorage.readSession();
+      if (!session) { dispatch({ type: 'CLEARED', reason: 'invalidSession' }); return; }
+      if (!isStudent(session.user)) { await clearSession('rejectedRole'); return; }
+      const serverState = await authService.getSessionState();
+      if (!serverState.isValid) { await clearSession('sessionExpired'); return; }
+      dispatch({ type: 'AUTHENTICATED', session });
+    } catch (error) {
+      const apiError = normalizeApiError(error);
+      if (apiError.status === 401) {
+        await clearSession('sessionExpired');
+        return;
+      }
+      dispatch({ type: 'ERROR', message: apiError.message });
+    }
+  }, [clearSession]);
+  useEffect(() => { void bootstrap(); }, [bootstrap]);
+  useEffect(() => setUnauthorizedCallback(() => clearSession('sessionExpired')), [clearSession]);
+  const login = useCallback(async (identifier: string, password: string, captchaToken?: string): Promise<LoginClassification> => {
+    const result = await authService.login(identifier, password, captchaToken);
+    if (result.kind === 'authenticated' && !await completeLogin(result.session)) return { kind: 'invalid-response' };
+    return result;
+  }, [completeLogin]);
+  const logout = useCallback(async () => { try { await authService.logout(); } finally { await clearSession('logout'); } }, [clearSession]);
+  const value = useMemo<AuthContextValue>(() => ({ ...state, clearSession, bootstrap, retryBootstrap: bootstrap, completeLogin, login, logout, checkAuth: bootstrap }), [state, clearSession, bootstrap, completeLogin, login, logout]);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
