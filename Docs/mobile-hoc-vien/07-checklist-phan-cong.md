@@ -51,10 +51,10 @@ Tất cả thành viên phải đọc [design system và quy tắc đồng bộ 
 
 | Khu vực | Owner |
 |---|---|
-| `Mobile/src/features/auth`, account screens, AuthContext, API auth | Âu |
-| `Mobile/src/features/discovery`, course detail, commerce | Khiến |
-| `Mobile/src/features/learning`, player, quiz/review | Khôi |
-| `Mobile/src/features/ai-engagement`, native AI/challenge hiện có | Lai |
+| `educodeai-mobile/src/features/auth`, account screens, AuthContext, API auth | Âu |
+| `educodeai-mobile/src/features/discovery`, course detail, commerce | Khiến |
+| `educodeai-mobile/src/features/learning`, player, quiz/review | Khôi |
+| `educodeai-mobile/src/features/ai-engagement`, native AI/challenge hiện có | Lai |
 | Shared design tokens/components | Chỉ thay đổi sau khi cả nhóm thống nhất |
 | Root Expo Router layout | Người đầu tiên tạo skeleton; mọi thay đổi sau đó phải thông báo cả nhóm |
 

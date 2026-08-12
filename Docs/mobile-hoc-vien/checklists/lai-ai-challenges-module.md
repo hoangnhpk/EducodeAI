@@ -6,15 +6,15 @@ Chatbot, lộ trình AI, phỏng vấn AI/đồ án, sinh đồ án, thử thác
 
 ## Đọc trước
 
-- Toàn bộ `Mobile/src/app`, `Mobile/src/components`, `Mobile/src/services` để tránh viết lại code native đã có.
+- Toàn bộ `educodeai-mobile/src/app`, `educodeai-mobile/src/features/ai-engagement/components`, `educodeai-mobile/src/features/ai-engagement/services` để tránh viết lại code native đã có.
 - Web `tro-ly-hoi-dap-ai`, `yeu-cau-lo-trinh-ai`, `khoa-hoc-ca-nhan-ai`, `phong-van-ai`, `phong-van-do-an`, `sinh-do-an-ai`, `thu-thach`.
 - Service AI/roadmap/interview/challenge tương ứng và controller backend.
 - [AI specification](../06-ai-challenges-and-secondary.md) và [design system](../08-design-system-va-ui-sync.md).
 
 ## Tái sử dụng
 
-- `Mobile/src/components/chat-bot.tsx`.
-- `Mobile/src/app/phong-van-do-an.tsx`, `thu-thach.tsx`.
+- `educodeai-mobile/src/features/ai-engagement/components/chat-bot.tsx`.
+- `educodeai-mobile/src/app/phong-van-do-an.tsx`, `thu-thach.tsx`.
 - Native services `ai-roadmap`, `tro-ly-ai`, `phong-van-ai`, `thu-thach`.
 - AI accent tím; primary navigation/CTA vẫn dùng cam.
 

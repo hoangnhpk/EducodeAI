@@ -50,5 +50,5 @@ Mobile chỉ hiển thị navigation học viên. Tài khoản giảng viên ho�
 - Nghiệp vụ và quyền: backend trong `educodeai-server`.
 - Contract đang được web sử dụng: `educodeai-client/src/services` và DTO liên quan.
 - Hành vi UX tham chiếu: `educodeai-client/src/pages/hoc-vien`.
-- Native implementation: `Mobile/src`.
+- Native implementation: `educodeai-mobile/src`.
 - Tài liệu này giải thích phạm vi, ownership và trình tự; không thay thế code.
