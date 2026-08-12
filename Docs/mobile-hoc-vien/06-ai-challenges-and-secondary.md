@@ -8,9 +8,9 @@ Các chức năng này đã có code web/native ở nhiều mức khác nhau. Kh
 
 | Chức năng | Nguồn tham chiếu | Hành động |
 |---|---|---|
-| Chatbot | `Mobile/src/components/chat-bot.tsx`, `tro-ly-ai.service.ts`, web `TroLyAI.tsx` | Test và gắn vào shell; sửa contract nếu cần |
-| Thử thách | `Mobile/src/app/thu-thach.tsx`, `thu-thach.service.ts`, web `ThuThach.tsx` | Giữ code native, kiểm thử auth/navigation |
-| Phỏng vấn đồ án | `Mobile/src/app/phong-van-do-an.tsx`, `phong-van-ai.service.ts` | Giữ và kiểm thử |
+| Chatbot | `educodeai-mobile/src/features/ai-engagement/components/chat-bot.tsx`, `tro-ly-ai.service.ts`, web `TroLyAI.tsx` | Test và gắn vào shell; sửa contract nếu cần |
+| Thử thách | `educodeai-mobile/src/app/thu-thach.tsx`, `thu-thach.service.ts`, web `ThuThach.tsx` | Giữ code native, kiểm thử auth/navigation |
+| Phỏng vấn đồ án | `educodeai-mobile/src/app/phong-van-do-an.tsx`, `phong-van-ai.service.ts` | Giữ và kiểm thử |
 | Lộ trình AI | native `ai-roadmap.service.ts`, web `yeu-cau-lo-trinh-ai`, `khoa-hoc-ca-nhan-ai` | **VERIFY** route native và response |
 | Tóm tắt/video AI | web `TomTatVideoAI.tsx`, `video-ai.service.ts` | Port vào player; lỗi trả empty/non-blocking |
 | Chứng chỉ | `TabChungChi.tsx`, `khoa-hoc.service.ts` | Sau quiz/course player |
@@ -20,7 +20,7 @@ Các chức năng này đã có code web/native ở nhiều mức khác nhau. Kh
 ## Checklist chung
 
 ### Đọc và tái sử dụng
-- [ ] Trước khi tạo file mới, kiểm tra `Mobile/src/app`, `components`, `services` xem đã có chưa.
+- [ ] Trước khi tạo file mới, kiểm tra `educodeai-mobile/src/app`, `src/features/ai-engagement/components`, `src/features/ai-engagement/services` xem đã có chưa.
 - [ ] So sánh endpoint native hiện tại với service web/controller.
 - [ ] Dùng chung Axios instance và auth interceptor.
 - [ ] Không đổi prompt/contract AI nếu không có lỗi được tái hiện.

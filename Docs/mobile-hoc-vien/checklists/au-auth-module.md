@@ -6,7 +6,7 @@ Login, đăng ký học viên, OTP, bootstrap/session, logout, quên/đặt lạ
 
 ## Đọc trước
 
-- `Mobile/src/context/AuthContext.tsx`, `Mobile/src/configs/api.ts`.
+- `educodeai-mobile/src/features/auth/context/AuthContext.tsx`, `educodeai-mobile/src/shared/configs/api.ts`.
 - Web `auth.service.ts`, `authBootstrap.ts`, `deviceHelper.ts` và các page auth.
 - `ho-so-hoc-vien.service.ts`, các page hồ sơ/thiết bị.
 - `XacThucController.cs` và controller hồ sơ tương ứng.

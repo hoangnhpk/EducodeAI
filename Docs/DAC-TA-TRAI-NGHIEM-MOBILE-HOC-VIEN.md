@@ -19,7 +19,7 @@ Không xem mobile là bản thu nhỏ của toàn bộ website. Trọng tâm là
 - Web đã có đầy đủ route học viên trong `educodeai-client/src/router/index.tsx`; `/khong-gian-hoc-tap` là dashboard học tập chính.
 - Course player `NoiDungKhoaHoc.tsx` có video, lý thuyết, quiz, IDE, ghi chú, AI, đánh giá và chứng chỉ.
 - Native app hiện hẹp hơn đáng kể; route thấy rõ gồm `phong-van-do-an.tsx`, `thu-thach.tsx`, cùng các service AI/thử thách.
-- `Mobile/src/context/AuthContext.tsx` mới lưu `token` và `user` bằng AsyncStorage; chưa có refresh-cookie bootstrap, OTP, social login, đăng ký hoặc route guard theo vai trò tương đương web.
+- `educodeai-mobile/src/features/auth/context/AuthContext.tsx` mới lưu `token` và `user` bằng AsyncStorage; chưa có refresh-cookie bootstrap, OTP, social login, đăng ký hoặc route guard theo vai trò tương đương web.
 - Web responsive học viên đã có navbar thu gọn; dashboard GV/QTV chỉ reflow CSS, chưa có chặn mobile thực sự.
 - Không tìm thấy notification center, thư viện chứng chỉ, lịch sử đơn hàng hoặc support center độc lập cho học viên.
 

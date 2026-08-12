@@ -53,7 +53,7 @@ Không dùng `#fb873f` từ inline style cũ làm token mới; canonical hiện 
 - Spacing scale: 4, 8, 12, 16, 20, 24, 32.
 - Radius: 6, 10, 16 tương ứng `radiusSm/Medium/Large`.
 - Card dùng border nhẹ hoặc shadow nhỏ; không dùng glow/gradient trang trí tùy ý.
-- Motion 150–300ms. Tái sử dụng `Mobile/src/components/animated-pressable.tsx` cho press feedback phù hợp.
+- Motion 150–300ms. Tái sử dụng `educodeai-mobile/src/shared/components/animated-pressable.tsx` cho press feedback phù hợp.
 
 ## 4. Icon
 
@@ -71,7 +71,7 @@ Không dùng `#fb873f` từ inline style cũ làm token mới; canonical hiện 
 - `SectionCard`, `ListRow`, `Badge`, `BottomSheet/Modal`.
 - `LoadingState/Skeleton`, `EmptyState`, `ErrorState`, `LockedState`.
 
-Trước khi tạo component mới, tìm component tương đương trong `Mobile/src/components` và feature module.
+Trước khi tạo component mới, tìm component tương đương trong `educodeai-mobile/src/shared/components` và feature module.
 
 ## 6. Screen patterns
 

@@ -2,8 +2,8 @@
 
 ## Đọc trước
 
-- `Mobile/src/context/AuthContext.tsx`
-- `Mobile/src/configs/api.ts`
+- `educodeai-mobile/src/features/auth/context/AuthContext.tsx`
+- `educodeai-mobile/src/shared/configs/api.ts`
 - `educodeai-client/src/services/auth.service.ts`
 - `educodeai-client/src/configs/authBootstrap.ts`
 - `educodeai-client/src/utils/deviceHelper.ts`

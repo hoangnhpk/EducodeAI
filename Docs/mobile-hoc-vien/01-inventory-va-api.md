@@ -6,14 +6,14 @@
 
 | Phần | Nguồn | Trạng thái |
 |---|---|---|
-| Axios + bearer token | `Mobile/src/configs/api.ts` | Có; base URL đang hard-code IP LAN, cần cấu hình môi trường |
-| Auth state | `Mobile/src/context/AuthContext.tsx` | Có lưu token/user; chưa tương đương auth bootstrap web |
-| Phỏng vấn đồ án | `Mobile/src/app/phong-van-do-an.tsx` | Có màn hình |
-| Thử thách | `Mobile/src/app/thu-thach.tsx` | Có màn hình |
-| Chatbot | `Mobile/src/components/chat-bot.tsx` | Có component |
-| AI roadmap/chat/interview/challenge services | `Mobile/src/services/*` | Có một phần; phải test contract |
+| Axios + bearer token | `educodeai-mobile/src/shared/configs/api.ts` | Có; base URL đang hard-code IP LAN, cần cấu hình môi trường |
+| Auth state | `educodeai-mobile/src/features/auth/context/AuthContext.tsx` | Có lưu token/user; chưa tương đương auth bootstrap web |
+| Phỏng vấn đồ án | `educodeai-mobile/src/app/phong-van-do-an.tsx` | Có màn hình |
+| Thử thách | `educodeai-mobile/src/app/thu-thach.tsx` | Có màn hình |
+| Chatbot | `educodeai-mobile/src/features/ai-engagement/components/chat-bot.tsx` | Có component |
+| AI roadmap/chat/interview/challenge services | `educodeai-mobile/src/features/ai-engagement/services/*` | Có một phần; phải test contract |
 | Course/auth/profile/payment/player | Chưa có file native rõ ràng | Cần port UI và service adapter |
-| Shared interaction | `Mobile/src/components/animated-pressable.tsx` | Có; tái sử dụng cho press feedback |
+| Shared interaction | `educodeai-mobile/src/shared/components/animated-pressable.tsx` | Có; tái sử dụng cho press feedback |
 
 ## Nguồn thiết kế UI
 
