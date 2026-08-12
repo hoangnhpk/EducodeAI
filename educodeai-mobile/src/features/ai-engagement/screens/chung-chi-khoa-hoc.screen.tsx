@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { AuthContext } from '../../auth/context/AuthContext';
+import { useAuth } from '../../auth/hooks/use-auth';
 import { AnimatedPressable } from '../../../shared/components/animated-pressable';
 import { BaiKiemTraChungChi, ChungChiService, DuLieuChungChiKhoaHoc, KetQuaNopBaiKiemTraChungChi, ThongTinChungChi } from '../services/chung-chi.service';
 
@@ -15,7 +15,7 @@ function time(seconds:number){return `${String(Math.floor(seconds/60)).padStart(
 function parseQuestions(json:string):Question[]{let value:unknown;try{value=JSON.parse(json)}catch{throw new Error('Đề thi từ máy chủ không hợp lệ.')}const root=value as Record<string,unknown>|null;const rows:RawQuestion[]=Array.isArray(value)?value:Array.isArray(root?.['Câu hỏi'])?root['Câu hỏi'] as RawQuestion[]:[];const parsed=rows.map((q,i)=>({id:q.id??q.Id??i+1,content:(q.cauHoi??q.NoiDung??'').trim(),options:(Array.isArray(q.LuaChon)?q.LuaChon:[q.dapAnA,q.dapAnB,q.dapAnC,q.dapAnD]).map(x=>(x??'').trim())})).filter(q=>q.content&&q.options.length===4&&q.options.every(Boolean));if(!parsed.length)throw new Error('Đề thi chưa có câu hỏi hợp lệ.');return parsed}
 function Certificate({info,name}:{info:ThongTinChungChi;name:string}){return <View style={s.certificate}><View style={s.award}><Ionicons name="ribbon" size={38} color={C.white}/></View><Text style={s.kicker}>CHỨNG CHỈ HOÀN THÀNH</Text><Text style={s.certTitle}>{info.tenChungChi||'Chứng nhận hoàn thành'}</Text><Text style={s.muted}>Được trao cho</Text><Text style={s.student}>{info.hoTenHienThi||info.tenHocVien||'Học viên EduCode'}</Text><Text style={s.muted}>Đã hoàn thành khóa học</Text><Text style={s.course}>{info.tenKhoaHoc||name}</Text><Text style={s.meta}>Ngày cấp: {date(info.ngayCap)} · Mã: {info.maChungChi||'--'}</Text>{info.daGuiEmail&&<Text style={s.success}>Đã gửi đến {info.emailNhan||'email tài khoản'}</Text>}<Text style={s.fallback}>Bản in/chia sẻ native chưa khả dụng trong các dependency hiện tại. Bạn vẫn có thể xem mã chứng chỉ tại đây.</Text></View>}
 export default function ChungChiKhoaHocScreen(){
- const router=useRouter();const {user}=useContext(AuthContext);const p=useLocalSearchParams<{courseId?:string|string[]}>();const id=Number(one(p.courseId));
+ const router=useRouter();const {session}=useAuth();const user=session?.user;const p=useLocalSearchParams<{courseId?:string|string[]}>();const id=Number(one(p.courseId));
  const [data,setData]=useState<DuLieuChungChiKhoaHoc|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState<string|null>(null),[examMode,setExamMode]=useState(false),[answers,setAnswers]=useState<Record<number,number>>({}),[name,setName]=useState(''),[submitting,setSubmitting]=useState(false),[submission,setSubmission]=useState<KetQuaNopBaiKiemTraChungChi|null>(null),[remaining,setRemaining]=useState<number|null>(null);const submitRef=useRef(false);
  const load=useCallback(async()=>{if(!Number.isInteger(id)||id<=0)return;setLoading(true);setError(null);try{const value=await ChungChiService.layTheoKhoaHoc(id);setData(value);setName(current=>current||value.thongTinChungChi?.hoTenHienThi||user?.hoTen||'')}catch{setError('Không thể tải thông tin chứng chỉ. Vui lòng thử lại.')}finally{setLoading(false)}},[id,user?.hoTen]);useEffect(()=>{void load()},[load]);
  const exam=data?.baiKiemTraChungChi;const questions=useMemo(()=>{if(!exam)return[];try{return parseQuestions(exam.duLieuCauHoiJSON)}catch{return[]}},[exam]);

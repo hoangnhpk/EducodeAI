@@ -44,7 +44,8 @@
       "Bash(\"/d/backup code/EducodeAI/educodeai-mobile/node_modules/.bin/tsc\" --noEmit -p \"/d/backup code/EducodeAI/educodeai-mobile/tsconfig.json\")",
       "Bash(npm --prefix \"/d/backup code/EducodeAI/educodeai-mobile\" run lint)",
       "Bash(git -C \"/d/backup code/EducodeAI\" status --short)",
-      "Bash(git -C \"/d/backup code/EducodeAI\" diff --check)"
+      "Bash(git -C \"/d/backup code/EducodeAI\" diff --check)",
+      "Bash(EXPO_PUBLIC_API_URL=\"http://192.168.2.48:5000\" npm --prefix \"/d/backup code/EducodeAI/educodeai-mobile\" run start -- --tunnel --clear)"
     ]
   }
 }
