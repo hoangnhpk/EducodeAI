@@ -1,4 +1,4 @@
-import { USER_ROLES, type AuthUser, type UserRole } from '../types/auth.types';
+import { USER_ROLES, type AuthUser, type UserRole } from '../types/auth.types.ts';
 
 export const normalizeRole = (value: unknown): UserRole | null => {
   const numeric = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;

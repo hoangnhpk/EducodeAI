@@ -52,6 +52,6 @@ export function ForgotPasswordScreen() {
   return <AuthShell title="Quên mật khẩu" description="Nhập email để nhận mã xác minh."><AuthBanner message={apiError} /><AuthField label="Email" value={email} keyboardType="email-address" autoCapitalize="none" autoComplete="email" error={errors.email} onChangeText={(value) => { setEmail(value); setErrors((current) => ({ ...current, email: undefined })); }} /><CaptchaInput token={captchaToken} onTokenChange={(value) => { setCaptchaToken(value); setErrors((current) => ({ ...current, captcha: undefined })); }} error={errors.captcha} /><PrimaryButton label="Gửi mã xác minh" loading={loading} onPress={() => {
     const next = { email: emailError(email), captcha: required(captchaToken, 'CAPTCHA') };
     setErrors(next); if (Object.values(next).some(Boolean)) return;
-    run(async () => { await authService.requestPasswordReset(email.trim(), captchaToken); changeStep('otp'); });
+    run(async () => { await authService.forgotPassword(email.trim(), captchaToken); changeStep('otp'); });
   }} /></AuthShell>;
 }

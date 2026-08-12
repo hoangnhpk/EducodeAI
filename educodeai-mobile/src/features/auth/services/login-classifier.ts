@@ -1,5 +1,5 @@
-import type { AuthSession, LoginClassification } from '../types/auth.types';
-import { normalizeAuthUser } from '../guards/role-guard';
+import type { AuthSession, LoginClassification } from '../types/auth.types.ts';
+import { normalizeAuthUser } from '../guards/role-guard.ts';
 
 const record = (value: unknown): Record<string, unknown> | null => value && typeof value === 'object' ? value as Record<string, unknown> : null;
 const text = (value: unknown): string => typeof value === 'string' ? value : '';

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classifyLoginResponse } from '../services/login-classifier';
-import { normalizeRole, normalizeAuthUser, isStudent } from '../guards/role-guard';
-import { authReducer, initialAuthState } from '../context/auth-reducer';
+import { classifyLoginResponse } from '../services/login-classifier.ts';
+import { normalizeRole, normalizeAuthUser, isStudent } from '../guards/role-guard.ts';
+import { authReducer, initialAuthState } from '../context/auth-reducer.ts';
 
 test('classifier validates unknown and prioritizes OTP', () => {
   assert.equal(classifyLoginResponse(null).kind, 'invalid-response');
