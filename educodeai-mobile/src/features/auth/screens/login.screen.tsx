@@ -10,15 +10,17 @@ import { OtpField } from '../components/otp-field';
 import { PasswordField } from '../components/password-field';
 import { PrimaryButton } from '../components/primary-button';
 import { SecondaryButton } from '../components/secondary-button';
-import { authErrorMessage, authUiAdapter, invalidOutcomeMessage } from '../services/auth-ui.adapter';
-import type { AuthFlowState, LoginOutcome } from '../types/auth-ui.types';
+import { normalizeApiError } from '../../../shared/types/api-error';
+import { useAuth } from '../hooks/use-auth';
+import { authService } from '../services/auth.service';
+import type { AuthFlowState, LoginClassification } from '../types/auth.types';
 import { required } from '../utils/auth-validation';
-import { isStudent } from '../utils/classify-login-response';
 
 type FieldErrors = { identifier?: string; password?: string; otp?: string; captcha?: string };
 
 export function LoginScreen() {
   const router = useRouter();
+  const { completeLogin } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
@@ -28,19 +30,16 @@ export function LoginScreen() {
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
-  const handleOutcome = (outcome: LoginOutcome) => {
-    if (outcome.kind === 'completed') {
-      if (!isStudent(outcome.user)) {
-        router.replace('/(auth)/role-rejected');
-        return;
-      }
-      setError('Phiên đã được xác nhận. Đang chờ AuthContext hoàn tất đăng nhập.');
+  const handleOutcome = async (outcome: LoginClassification) => {
+    if (outcome.kind === 'authenticated') {
+      if (await completeLogin(outcome.session)) router.replace('/tai-khoan');
       return;
     }
-    if (outcome.kind === 'otp') setFlow({ step: 'otp', email: outcome.email, message: outcome.message });
-    else if (outcome.kind === 'replacement') setFlow({ step: 'replacementConfirm', email: outcome.email, oldestDeviceName: outcome.oldestDeviceName, message: outcome.message });
-    else if (outcome.kind === 'captcha') setFlow({ step: 'captcha', message: outcome.message });
-    else setError(invalidOutcomeMessage(outcome));
+    if (outcome.kind === 'rejected-role') return;
+    if (outcome.kind === 'otp-required') setFlow({ step: 'otp', email: outcome.email, message: outcome.message });
+    else if (outcome.kind === 'device-replacement-required') setFlow({ step: 'replacementConfirm', email: outcome.email, oldestDeviceName: outcome.oldestDeviceName, message: outcome.message });
+    else if (outcome.kind === 'captcha-required') setFlow({ step: 'captcha', message: outcome.message });
+    else setError('Phản hồi xác thực không hợp lệ. Vui lòng thử lại.');
   };
 
   const submit = async () => {
@@ -54,9 +53,9 @@ export function LoginScreen() {
     setLoading(true);
     setError(undefined);
     try {
-      handleOutcome(await authUiAdapter.login(identifier.trim(), password, captchaToken || undefined));
+      await handleOutcome(await authService.login(identifier.trim(), password, captchaToken || undefined));
     } catch (caught) {
-      setError(authErrorMessage(caught));
+      setError(normalizeApiError(caught).message);
     } finally {
       setLoading(false);
     }
@@ -71,11 +70,11 @@ export function LoginScreen() {
     setError(undefined);
     try {
       const outcome = flow.step === 'replacementOtp'
-        ? await authUiAdapter.confirmReplaceDevice(flow.email, otp)
-        : await authUiAdapter.confirmLogin(flow.step === 'otp' ? flow.email : identifier, otp);
-      handleOutcome(outcome);
+        ? await authService.confirmReplaceDevice(flow.email, otp)
+        : await authService.confirmLogin(flow.step === 'otp' ? flow.email : identifier, otp);
+      await handleOutcome(outcome);
     } catch (caught) {
-      setError(authErrorMessage(caught));
+      setError(normalizeApiError(caught).message);
     } finally {
       setLoading(false);
     }

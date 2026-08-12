@@ -1,4 +1,5 @@
 import api from '../../../shared/configs/api';
+import { authService } from '../../auth/services/auth.service';
 import type {
   ConfirmRemoteLogoutPayload,
   DeviceSession,
@@ -16,37 +17,25 @@ export const AccountService = {
     const form = new FormData();
     form.append('HoTen', fullName.trim());
     if (image) {
-      form.append('AnhDaiDien', image as unknown as Blob);
+      form.append('AnhDaiDien', image as unknown as string);
     }
     const response = await api.put<StudentProfile>('/hoc-vien/ho-so', form);
     return response.data;
   },
 
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await api.post('/XacThuc/doi-mat-khau', {
-      MatKhauCu: currentPassword,
-      MatKhauMoi: newPassword,
-    });
+    await authService.changePassword(currentPassword, newPassword);
   },
 
-  async getDevices(currentDeviceId: string): Promise<DeviceSession[]> {
-    const response = await api.get<DeviceSession[]>('/XacThuc/danh-sach-thiet-bi', {
-      params: { maThietBiHienTai: currentDeviceId },
-    });
-    return response.data;
+  async getDevices(): Promise<DeviceSession[]> {
+    return authService.getDevices() as Promise<DeviceSession[]>;
   },
 
   async requestRemoteLogoutOtp(): Promise<void> {
-    await api.post('/XacThuc/yeu-cau-otp-dang-xuat-tu-xa');
+    await authService.requestRemoteLogout();
   },
 
   async confirmRemoteLogout(payload: ConfirmRemoteLogoutPayload): Promise<void> {
-    await api.post('/XacThuc/xac-nhan-dang-xuat-tu-xa', payload);
-  },
-
-  async logoutCurrentDevice(deviceId: string): Promise<void> {
-    await api.post('/XacThuc/dang-xuat', JSON.stringify(deviceId), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    await authService.confirmRemoteLogout(payload);
   },
 };

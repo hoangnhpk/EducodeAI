@@ -62,11 +62,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [clearSession]);
   useEffect(() => { void bootstrap(); }, [bootstrap]);
   useEffect(() => setUnauthorizedCallback(() => clearSession('sessionExpired')), [clearSession]);
-  const login = useCallback(async (identifier: string, password: string, captchaToken?: string): Promise<LoginClassification> => {
-    const result = await authService.login(identifier, password, captchaToken);
-    if (result.kind === 'authenticated' && !await completeLogin(result.session)) return { kind: 'invalid-response' };
-    return result;
+  const finishClassification = useCallback(async (result: LoginClassification): Promise<LoginClassification> => {
+    if (result.kind !== 'authenticated') return result;
+    return await completeLogin(result.session) ? result : { kind: 'rejected-role' };
   }, [completeLogin]);
+  const login = useCallback(async (identifier: string, password: string, captchaToken?: string): Promise<LoginClassification> => {
+    return finishClassification(await authService.login(identifier, password, captchaToken));
+  }, [finishClassification]);
   const logout = useCallback(async () => { try { await authService.logout(); } finally { await clearSession('logout'); } }, [clearSession]);
   const value = useMemo<AuthContextValue>(() => ({ ...state, clearSession, bootstrap, retryBootstrap: bootstrap, completeLogin, login, logout, checkAuth: bootstrap }), [state, clearSession, bootstrap, completeLogin, login, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -47,8 +47,16 @@ export interface LoginReplaceDeviceResponse {
 
 export type LoginResponse = LoginSuccessResponse | LoginCaptchaResponse | LoginOtpResponse | LoginReplaceDeviceResponse;
 
+export type AuthFlowState =
+  | { step: 'credentials' }
+  | { step: 'otp'; email: string; message?: string }
+  | { step: 'replacementConfirm'; email: string; oldestDeviceName: string; message?: string }
+  | { step: 'replacementOtp'; email: string; oldestDeviceName: string; message?: string }
+  | { step: 'captcha'; message?: string };
+
 export type LoginClassification =
   | { kind: 'authenticated'; session: AuthSession }
+  | { kind: 'rejected-role' }
   | { kind: 'captcha-required'; message: string }
   | { kind: 'otp-required'; email: string; message: string }
   | { kind: 'device-replacement-required'; email: string; oldestDeviceName: string; message: string }

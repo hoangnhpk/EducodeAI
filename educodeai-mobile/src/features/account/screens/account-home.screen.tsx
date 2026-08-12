@@ -3,14 +3,13 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AccountScreen, accountColors } from '../components/account-ui';
-import { AccountService } from '../services/account.service';
-import { getCurrentDeviceId } from '../services/device-id';
+import { useAuth } from '../../auth/hooks/use-auth';
 import { getAccountErrorMessage } from '../types/account.types';
 
 export interface AccountHomeScreenProps { onLogout?: () => void | Promise<void> }
 export default function AccountHomeScreen({ onLogout }: AccountHomeScreenProps) {
-  const router = useRouter(); const [loggingOut, setLoggingOut] = useState(false);
-  const logout = async () => { if (loggingOut) return; setLoggingOut(true); try { await AccountService.logoutCurrentDevice(await getCurrentDeviceId()); await onLogout?.(); Alert.alert('Đã đăng xuất', 'Phiên hiện tại đã được thu hồi.'); } catch (e) { Alert.alert('Không thể đăng xuất', getAccountErrorMessage(e, 'Vui lòng thử lại.')); } finally { setLoggingOut(false); } };
+  const router = useRouter(); const { logout: logoutSession } = useAuth(); const [loggingOut, setLoggingOut] = useState(false);
+  const logout = async () => { if (loggingOut) return; setLoggingOut(true); try { await logoutSession(); await onLogout?.(); Alert.alert('Đã đăng xuất', 'Phiên hiện tại đã được thu hồi.'); } catch (e) { Alert.alert('Đã đăng xuất', getAccountErrorMessage(e, 'Đã xóa phiên trên thiết bị.')); } finally { setLoggingOut(false); } };
   return <AccountScreen title="Tài khoản"><View style={styles.card}>
     <Menu icon="person-outline" label="Hồ sơ cá nhân" onPress={() => router.push('/ho-so')} />
     <Menu icon="key-outline" label="Đổi mật khẩu" onPress={() => router.push('/doi-mat-khau')} />

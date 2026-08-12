@@ -13,8 +13,8 @@ export interface RemoteLogoutRequest {
 const classify = (data: LoginResponse): LoginClassification => classifyLoginResponse(data);
 
 export const authService = {
-  async login(identifier: string, password: string, captchaToken = 'SKIP_CAPTCHA') {
-    const { data } = await api.post<LoginResponse>('/XacThuc/dang-nhap', { taiKhoan: identifier, matKhau: password, captchaToken, ...await getDeviceInfo() });
+  async login(identifier: string, password: string, captchaToken?: string) {
+    const { data } = await api.post<LoginResponse>('/XacThuc/dang-nhap', { taiKhoan: identifier, matKhau: password, ...(captchaToken ? { captchaToken } : {}), ...await getDeviceInfo() });
     return classify(data);
   },
   async confirmLogin(taiKhoan: string, otpCode: string) {
@@ -29,14 +29,20 @@ export const authService = {
     return classify(data);
   },
   forgotPassword: (email: string, captchaToken: string) => api.post('/XacThuc/quen-mat-khau', { email, captchaToken }),
-  verifyForgotPassword: (email: string, otpCode: string) => api.post('/XacThuc/xac-minh-otp-quen-mat-khau', { email, otpCode }),
+  async verifyForgotPassword(email: string, otpCode: string): Promise<string> {
+    const { data } = await api.post('/XacThuc/xac-minh-otp-quen-mat-khau', { email, otpCode });
+    const payload = data as { resetToken?: unknown; ResetToken?: unknown };
+    const token = payload.resetToken ?? payload.ResetToken;
+    if (typeof token !== 'string' || !token) throw new Error('VERIFY: reset token field was not returned by the backend.');
+    return token;
+  },
   async resetPassword(email: string, newPassword: string, resetToken: string) {
     return api.post('/XacThuc/dat-lai-mat-khau', { email, newPassword, resetToken, ...await getDeviceInfo() });
   },
   async getSessionState(): Promise<SessionStateResponse> { return (await api.get<SessionStateResponse>('/XacThuc/session-state')).data; },
-  async getDevices() { const { maThietBi } = await getDeviceInfo(); return (await api.get('/XacThuc/danh-sach-thiet-bi', { params: { maThietBiHienTai: maThietBi } })).data; },
+  async getDevices() { return (await api.get('/XacThuc/danh-sach-thiet-bi')).data; },
   changePassword: (matKhauCu: string, matKhauMoi: string) => api.post('/XacThuc/doi-mat-khau', { matKhauCu, matKhauMoi }),
   requestRemoteLogout: () => api.post('/XacThuc/yeu-cau-otp-dang-xuat-tu-xa'),
   confirmRemoteLogout: (payload: RemoteLogoutRequest) => api.post('/XacThuc/xac-nhan-dang-xuat-tu-xa', payload),
-  async logout(): Promise<void> { const { maThietBi } = await getDeviceInfo(); await api.post('/XacThuc/dang-xuat', maThietBi, { headers: { 'Content-Type': 'application/json' } }); },
+  async logout(): Promise<void> { const { maThietBi } = await getDeviceInfo(); await api.post('/XacThuc/dang-xuat', JSON.stringify(maThietBi), { headers: { 'Content-Type': 'application/json' } }); },
 };

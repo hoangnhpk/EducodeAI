@@ -9,7 +9,9 @@ import { CaptchaInput } from '../components/captcha-input';
 import { OtpField } from '../components/otp-field';
 import { PasswordField } from '../components/password-field';
 import { PrimaryButton } from '../components/primary-button';
-import { authErrorMessage, authUiAdapter } from '../services/auth-ui.adapter';
+import { normalizeApiError } from '../../../shared/types/api-error';
+import { useAuth } from '../hooks/use-auth';
+import { authService } from '../services/auth.service';
 import { emailError, matchingPasswordError, passwordError, required } from '../utils/auth-validation';
 
 type Form = { fullName: string; email: string; password: string; confirm: string; captchaToken: string };
@@ -17,6 +19,7 @@ type FormErrors = Partial<Record<keyof Form | 'otp', string>>;
 
 export function RegisterScreen() {
   const router = useRouter();
+  const { completeLogin } = useAuth();
   const [form, setForm] = useState<Form>({ fullName: '', email: '', password: '', confirm: '', captchaToken: '' });
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'form' | 'otp'>('form');
@@ -38,10 +41,10 @@ export function RegisterScreen() {
     setLoading(true);
     setApiError(undefined);
     try {
-      await authUiAdapter.requestRegistration({ fullName: form.fullName.trim(), email: form.email.trim(), password: form.password, captchaToken: form.captchaToken });
+      await authService.register({ hoTen: form.fullName.trim(), taiKhoan: form.email.trim(), email: form.email.trim(), matKhau: form.password, captchaToken: form.captchaToken });
       setStep('otp');
     } catch (caught) {
-      setApiError(authErrorMessage(caught));
+      setApiError(normalizeApiError(caught).message);
     } finally {
       setLoading(false);
     }
@@ -55,10 +58,14 @@ export function RegisterScreen() {
     setLoading(true);
     setApiError(undefined);
     try {
-      await authUiAdapter.confirmRegistration(form.email, otp);
-      router.replace('/(auth)/login');
+      const result = await authService.verifyRegistration(form.email, otp);
+      if (result.kind === 'authenticated') {
+        if (await completeLogin(result.session)) router.replace('/tai-khoan');
+        return;
+      }
+      if (result.kind !== 'rejected-role') setApiError('VERIFY: phản hồi xác minh đăng ký chưa tạo phiên hoàn chỉnh.');
     } catch (caught) {
-      setApiError(authErrorMessage(caught));
+      setApiError(normalizeApiError(caught).message);
     } finally {
       setLoading(false);
     }

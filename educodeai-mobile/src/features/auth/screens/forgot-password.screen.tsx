@@ -7,7 +7,8 @@ import { CaptchaInput } from '../components/captcha-input';
 import { OtpField } from '../components/otp-field';
 import { PasswordField } from '../components/password-field';
 import { PrimaryButton } from '../components/primary-button';
-import { authErrorMessage, authUiAdapter } from '../services/auth-ui.adapter';
+import { normalizeApiError } from '../../../shared/types/api-error';
+import { authService } from '../services/auth.service';
 import { emailError, matchingPasswordError, passwordError, required } from '../utils/auth-validation';
 
 type Errors = { email?: string; captcha?: string; otp?: string; password?: string; confirm?: string };
@@ -28,7 +29,7 @@ export function ForgotPasswordScreen() {
   const run = async (action: () => Promise<void>) => {
     setLoading(true);
     setApiError(undefined);
-    try { await action(); } catch (caught) { setApiError(authErrorMessage(caught)); } finally { setLoading(false); }
+    try { await action(); } catch (caught) { setApiError(normalizeApiError(caught).message); } finally { setLoading(false); }
   };
   const changeStep = (next: typeof step) => { setErrors({}); setApiError(undefined); setStep(next); };
 
@@ -38,19 +39,19 @@ export function ForgotPasswordScreen() {
   if (step === 'otp') {
     return <AuthShell title="Xác minh OTP" description={`Nhập mã được gửi tới ${email}.`}><AuthBanner message={apiError} /><OtpField value={otp} onChangeText={(value) => { setOtp(value); setErrors((current) => ({ ...current, otp: undefined })); }} error={errors.otp} /><PrimaryButton label="Xác minh" loading={loading} disabled={otp.length !== 6} onPress={() => {
       if (!/^\d{6}$/.test(otp)) return setErrors({ otp: 'Mã OTP phải gồm 6 chữ số.' });
-      run(async () => { setToken(await authUiAdapter.verifyPasswordResetOtp(email, otp)); changeStep('reset'); });
+      run(async () => { setToken(await authService.verifyForgotPassword(email, otp)); changeStep('reset'); });
     }} /></AuthShell>;
   }
   if (step === 'reset') {
     return <AuthShell title="Đặt lại mật khẩu" description="Chọn mật khẩu mới an toàn cho tài khoản."><AuthBanner message={apiError} /><PasswordField label="Mật khẩu mới" value={password} autoComplete="new-password" error={errors.password} onChangeText={(value) => { setPassword(value); setErrors((current) => ({ ...current, password: undefined })); }} /><PasswordField label="Xác nhận mật khẩu" value={confirm} error={errors.confirm} onChangeText={(value) => { setConfirm(value); setErrors((current) => ({ ...current, confirm: undefined })); }} /><PrimaryButton label="Đặt lại mật khẩu" loading={loading} onPress={() => {
       const next = { password: passwordError(password), confirm: matchingPasswordError(password, confirm) };
       setErrors(next); if (Object.values(next).some(Boolean)) return;
-      run(async () => { await authUiAdapter.resetPassword(email, password, token); changeStep('success'); });
+      run(async () => { await authService.resetPassword(email, password, token); changeStep('success'); });
     }} /></AuthShell>;
   }
   return <AuthShell title="Quên mật khẩu" description="Nhập email để nhận mã xác minh."><AuthBanner message={apiError} /><AuthField label="Email" value={email} keyboardType="email-address" autoCapitalize="none" autoComplete="email" error={errors.email} onChangeText={(value) => { setEmail(value); setErrors((current) => ({ ...current, email: undefined })); }} /><CaptchaInput token={captchaToken} onTokenChange={(value) => { setCaptchaToken(value); setErrors((current) => ({ ...current, captcha: undefined })); }} error={errors.captcha} /><PrimaryButton label="Gửi mã xác minh" loading={loading} onPress={() => {
     const next = { email: emailError(email), captcha: required(captchaToken, 'CAPTCHA') };
     setErrors(next); if (Object.values(next).some(Boolean)) return;
-    run(async () => { await authUiAdapter.requestPasswordReset(email.trim(), captchaToken); changeStep('otp'); });
+    run(async () => { await authService.requestPasswordReset(email.trim(), captchaToken); changeStep('otp'); });
   }} /></AuthShell>;
 }
