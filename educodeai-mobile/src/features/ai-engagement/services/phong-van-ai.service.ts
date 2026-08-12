@@ -27,17 +27,21 @@ export interface AnswerPhongVanResponse {
     isFinished: boolean;
     nhanXetCauTruoc: string;
     cauHoiTiepTheo: string;
+    tinNhanAI: string;
 }
 
 export interface PhongVanDocLapTurn {
     role: string;
     message: string;
-    timestamp: Date;
+    timestamp: string;
 }
 
 export interface EndPhongVanResponse {
     diemSo: number;
     danhGiaChung: string;
+    diemManh: string[];
+    canCaiThien: string[];
+    loiKhuyen: string;
     lichSuChat: PhongVanDocLapTurn[];
 }
 
@@ -50,24 +54,51 @@ export interface LichSuPhongVan {
     diemSo: number;
     danhGiaChung: string;
     trangThai: number;
-    ngayPhongVan: Date;
+    ngayPhongVan: string;
 }
 
+interface ApiEnvelope<T> {
+    success: boolean;
+    data?: T;
+    message?: string;
+}
+
+function unwrapResponse<T>(envelope: ApiEnvelope<T>): T {
+    if (!envelope.success || envelope.data === undefined) {
+        throw new Error(envelope.message || 'Phản hồi từ máy chủ không hợp lệ.');
+    }
+    return envelope.data;
+}
+
+const AI_TIMEOUT = 120000;
+
 export const PhongVanAIService = {
-    startInterview: async (request: StartPhongVanRequest) => {
-        const response = await api.post('/PhongVanAI/start', request);
-        return response.data;
+    async startInterview(request: StartPhongVanRequest) {
+        const response = await api.post<ApiEnvelope<StartPhongVanResponse>>(
+            '/PhongVanAI/start',
+            request,
+            { timeout: AI_TIMEOUT },
+        );
+        return unwrapResponse(response.data);
     },
-    answerQuestion: async (request: AnswerPhongVanRequest) => {
-        const response = await api.post('/PhongVanAI/answer', request);
-        return response.data;
+    async answerQuestion(request: AnswerPhongVanRequest) {
+        const response = await api.post<ApiEnvelope<AnswerPhongVanResponse>>(
+            '/PhongVanAI/answer',
+            request,
+            { timeout: AI_TIMEOUT },
+        );
+        return unwrapResponse(response.data);
     },
-    endInterview: async (maPhongVan: number) => {
-        const response = await api.post(`/PhongVanAI/end/${maPhongVan}`);
-        return response.data;
+    async endInterview(maPhongVan: number) {
+        const response = await api.post<ApiEnvelope<EndPhongVanResponse>>(
+            `/PhongVanAI/end/${maPhongVan}`,
+            undefined,
+            { timeout: AI_TIMEOUT },
+        );
+        return unwrapResponse(response.data);
     },
-    getHistory: async () => {
-        const response = await api.get('/PhongVanAI/history');
-        return response.data;
+    async getHistory() {
+        const response = await api.get<ApiEnvelope<LichSuPhongVan[]>>('/PhongVanAI/history');
+        return unwrapResponse(response.data);
     }
 };
