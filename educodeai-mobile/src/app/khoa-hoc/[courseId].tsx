@@ -1,1 +1,1 @@
-export { default } from '../../features/learning/screens/CoursePlayerScreen';
+export { default } from '../../features/discovery/screens/CourseDetailScreen';
