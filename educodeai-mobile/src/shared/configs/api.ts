@@ -5,6 +5,7 @@ import { authStorage } from '../lib/auth-storage';
 const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 if (!configuredUrl) throw new Error('EXPO_PUBLIC_API_URL is required.');
 export const API_BASE_URL = configuredUrl.replace(/\/+$/, '');
+export const BASE_URL = API_BASE_URL;
 
 export type UnauthorizedReason = 'sessionExpired';
 let unauthorizedCallback: ((reason: UnauthorizedReason) => void | Promise<void>) | null = null;
