@@ -10,6 +10,7 @@ interface ChatBotProps {
     maBaiHoc?: number | null;
     tieuDeBaiHoc?: string | null;
     noiDungBaiHoc?: string | null;
+    getCurrentVideoTime?: () => number | null;
     isQuizMode?: boolean; // THÊM PROP NÀY: Xác định xem có đang làm quiz hay không
 }
 
@@ -18,7 +19,7 @@ interface TinNhan {
     NoiDung: string;
 }
 
-export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDungBaiHoc, isQuizMode = false }) => {
+export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDungBaiHoc, getCurrentVideoTime, isQuizMode = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [tinNhanList, setTinNhanList] = useState<TinNhan[]>([]);
@@ -86,10 +87,15 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
         const lichSuGuiDi = lichSuCapNhat.slice(-10);
 
         try {
+            const thoiGianVideo = getCurrentVideoTime?.();
             const response: any = await axiosClient.post('/api/ChatBotAI/tu-van-hoc-tap', {
+                MaBaiHoc: maBaiHoc || null,
                 LichSuChat: lichSuGuiDi,
                 TieuDeBaiHoc: tieuDeBaiHoc || null,
-                NoiDungBaiHoc: noiDungBaiHoc ? noiDungBaiHoc.substring(0, 3000) : null 
+                NoiDungBaiHoc: noiDungBaiHoc ? noiDungBaiHoc.substring(0, 3000) : null,
+                ThoiGianVideo: thoiGianVideo != null && Number.isFinite(thoiGianVideo)
+                    ? Math.max(0, Math.round(thoiGianVideo))
+                    : null
             }, { timeout: 120000 });
 
             const botReply: TinNhan = {

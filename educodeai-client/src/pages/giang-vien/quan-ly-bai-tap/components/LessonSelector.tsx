@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BaiTapThucHanhService } from '@/services/bai-tap-thuc-hanh.service';
 
 interface Props {
-  onBaiHocChange: (id: number | null, title: string) => void;
+  onBaiHocChange: (id: number | null, title: string, language: string) => void;
 }
 
 export default function BoChanPage({ onBaiHocChange }: Props) {
@@ -13,6 +13,7 @@ export default function BoChanPage({ onBaiHocChange }: Props) {
   const [selKhoaHoc, setSelKhoaHoc] = useState<string>('');
   const [selChuong, setSelChuong] = useState<string>('');
   const [selBaiHoc, setSelBaiHoc] = useState<string>('');
+  const [selNgonNgu, setSelNgonNgu] = useState('');
 
   const [loadingKH, setLoadingKH] = useState(false);
   const [loadingCH, setLoadingCH] = useState(false);
@@ -37,11 +38,15 @@ export default function BoChanPage({ onBaiHocChange }: Props) {
   const handleKhoaHocChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     setSelKhoaHoc(val);
+    const selectedCourse = khoaHocs.find((kh) => String(kh.maKhoaHoc) === val);
+    const language = selectedCourse?.ngonNgu || selectedCourse?.NgonNgu || '';
+    setSelNgonNgu(language);
     setSelChuong('');
     setSelBaiHoc('');
+    setSelNgonNgu('');
     setChuongHocs([]);
     setBaiHocs([]);
-    onBaiHocChange(null, '');
+    onBaiHocChange(null, '', '');
 
     if (val) {
       setLoadingCH(true);
@@ -61,8 +66,9 @@ export default function BoChanPage({ onBaiHocChange }: Props) {
     const val = e.target.value;
     setSelChuong(val);
     setSelBaiHoc('');
+    setSelNgonNgu('');
     setBaiHocs([]);
-    onBaiHocChange(null, '');
+    onBaiHocChange(null, '', '');
 
     if (val) {
       setLoadingBH(true);
@@ -83,9 +89,9 @@ export default function BoChanPage({ onBaiHocChange }: Props) {
     setSelBaiHoc(val);
     if (val) {
       const bh = baiHocs.find((b) => String(b.maBaiHoc) === val);
-      onBaiHocChange(Number(val), bh?.tieuDe || '');
+      onBaiHocChange(Number(val), bh?.tieuDe || '', selNgonNgu);
     } else {
-      onBaiHocChange(null, '');
+      onBaiHocChange(null, '', '');
     }
   };
 

@@ -515,7 +515,10 @@ namespace educodeai_server.Services.Implement
                 Console.WriteLine($"[AI Certificate] Bắt đầu gọi AI cho khóa {maKhoaHoc}");
                 Console.WriteLine($"[AI Certificate Prompt]: {prompt}");
 
-                var aiResult = await _gemini.GenerateAsync(prompt);
+                // isJsonMode = true -> gửi responseMimeType "application/json", Gemini bị ràng buộc
+                // phải trả JSON hợp lệ ở tầng API. Chỉ dặn trong prompt là không đủ: model từng
+                // trả về chuỗi bọc bằng nháy đơn khiến Deserialize chết.
+                var aiResult = await _gemini.GenerateAsync(prompt, true);
 
                 string rawTextFromAI = "";
                 try
@@ -705,7 +708,7 @@ THÔNG TIN:
 YÊU CẦU BẮT BUỘC:
 1. Không dùng markdown.
 2. Không trả về bất kỳ text nào ngoài cú pháp mảng JSON hợp lệ.
-3. TUYỆT ĐỐI KHÔNG dùng dấu ngoặc kép ("") bên trong các đoạn text/mã code của câu hỏi hay đáp án. Hãy ưu tiên dùng dấu nháy đơn ('') để tránh làm hỏng cấu trúc JSON.
+3. Mọi chuỗi trong JSON BẮT BUỘC bọc bằng dấu ngoặc kép ("") theo đúng chuẩn JSON, TUYỆT ĐỐI KHÔNG bọc chuỗi bằng nháy đơn (''). Nếu nội dung bên trong có dấu ngoặc kép thì escape thành \"".
 4. Trả về đúng 1 mảng JSON chứa các objects như ví dụ bên dưới:
 
 [

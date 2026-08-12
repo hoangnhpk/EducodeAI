@@ -209,6 +209,29 @@ input.form-control-icon:not([type="checkbox"]):not([type="radio"]) {
   padding-left: 40px;
 }
 
+/* SweetAlert2: rule input global ở trên có specificity (0,2,1) nên đè mất
+   `width: auto` của swal2 (selector dùng :where nên chỉ (0,0,2)). Input khi đó
+   rộng 100% NHƯNG vẫn giữ margin 2em hai bên -> tràn ra ngoài popup.
+   Trả lại đúng bề rộng khả dụng cho mọi ô nhập trong popup. */
+div.swal2-container input.swal2-input,
+div.swal2-container input.swal2-file,
+div.swal2-container textarea.swal2-textarea,
+div.swal2-container select.swal2-select {
+  width: calc(100% - 4em);
+  max-width: calc(100% - 4em);
+  margin-inline: 2em;
+}
+
+/* Ô nhập của swal2 tự set height cố định; padding-block 10px của rule global
+   làm chữ bị ép/lệch -> giữ padding gốc của thư viện. */
+div.swal2-container input.swal2-input {
+  padding-block: 0;
+}
+
+div.swal2-container textarea.swal2-textarea {
+  padding-block: 0.75em;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

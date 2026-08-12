@@ -7,7 +7,28 @@ import { VideoAIService, type VideoChapterDTO } from '@/services/video-ai.servic
 // 1. Định nghĩa kiểu dữ liệu cho Ref để component cha (NoiDungKhoaHoc) hiểu
 export interface NoiDungVideoRef {
   seekTo: (seconds: number) => void;
+  getCurrentTime: () => number;
 }
+
+// Sai số cho phép (giây) giữa mốc xem hợp lệ cuối cùng và thời lượng video tại
+// lúc player bắn sự kiện ENDED. Xem hết bình thường thì khoảng cách chỉ ~1-2
+// giây (interval cập nhật mỗi giây), còn tua thẳng tới cuối thì rất lớn.
+const DUNG_SAI_KET_THUC_GIAY = 5;
+
+const CHO_PHEP_TUA_TU_DO = false;
+interface TrinhPhatVideo {
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  /** Theo quy ước YouTube API: 0 = kết thúc, 1 = đang phát, 2 = tạm dừng */
+  getPlayerState: () => number;
+  getPlaybackRate: () => number;
+  playVideo: () => void;
+  pauseVideo: () => void;
+  seekTo: (giay: number, choPhepTuaTruoc?: boolean) => void;
+}
+
+/** Thẻ <video> sau khi đã được gắn các hàm mô phỏng API YouTube. */
+type VideoDaGanApi = HTMLVideoElement & TrinhPhatVideo;
 
 interface Props {
   videoUrl?: string | null;
@@ -21,7 +42,7 @@ interface Props {
 
 // 2. Bọc component trong forwardRef
 export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, videoSource, maBaiHoc, maNguoiDung, daXem, onVideoCompleted }, ref) => {
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<TrinhPhatVideo | null>(null);
   const [daSanSang, setDaSanSang] = useState(false);
   const [thoiLuongVideo, setThoiLuongVideo] = useState(0);
   const [thoiGianHienTai, setThoiGianHienTai] = useState(0);
@@ -38,29 +59,35 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
   const daLuuTienDoRef = useRef(false);
   const dangCanhBaoRef = useRef(false);
   const lastValidVideoTimeRef = useRef(0);
-  const lastRealTimeRef = useRef(Date.now());
+  // Khởi tạo 0 thay vì Date.now(): gọi hàm impure lúc render vi phạm quy tắc
+  // component phải thuần (react-hooks/purity). Mốc thật được set khi trình phát
+  // sẵn sàng (khiSanSang / onLoadedMetadata), luôn xảy ra trước khi interval
+  // anti-cheat chạy vì interval chỉ bật sau khi daSanSang = true.
+  const lastRealTimeRef = useRef(0);
 
   // 3. Expose hàm seekTo ra bên ngoài cho SidebarGhiChu gọi
   useImperativeHandle(ref, () => ({
     seekTo: (seconds: number) => {
-      if (playerRef.current) {
-        // --- QUAN TRỌNG: Bỏ qua Anti-cheat khi tua từ ghi chú ---
-        dangCanhBaoRef.current = true; // Tạm khóa cảnh báo
+      const player = playerRef.current;
+      if (!player) return;
 
-        playerRef.current.seekTo(seconds, true);
-        playerRef.current.playVideo();
+      // --- QUAN TRỌNG: Bỏ qua Anti-cheat khi tua từ ghi chú ---
+      dangCanhBaoRef.current = true; // Tạm khóa cảnh báo
 
-        // Cập nhật lại mốc chuẩn để Anti-cheat không báo lỗi
-        lastValidVideoTimeRef.current = seconds;
-        lastRealTimeRef.current = Date.now();
-        setThoiGianHienTai(seconds);
+      player.seekTo(seconds, true);
+      player.playVideo();
 
-        // Mở lại kiểm tra sau 1 giây (để video ổn định)
-        setTimeout(() => {
-          dangCanhBaoRef.current = false;
-        }, 1000);
-      }
-    }
+      // Cập nhật lại mốc chuẩn để Anti-cheat không báo lỗi
+      lastValidVideoTimeRef.current = seconds;
+      lastRealTimeRef.current = Date.now();
+      setThoiGianHienTai(seconds);
+
+      // Mở lại kiểm tra sau 1 giây (để video ổn định)
+      setTimeout(() => {
+        dangCanhBaoRef.current = false;
+      }, 1000);
+    },
+    getCurrentTime: () => playerRef.current?.getCurrentTime() || 0
   }));
 
   // Lấy Video ID từ URL YouTube
@@ -108,11 +135,20 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
 
   // --- LOGIC: Xử lý Gian lận (Anti-Cheat) ---
   const xuLyGianLan = (currentTime: number, lastValidTime: number) => {
-    return;
-    if (dangCanhBaoRef.current) return; // Nếu đang tua từ ghi chú thì bỏ qua
+    const player = playerRef.current;
+    if (!player || dangCanhBaoRef.current) return; // Nếu đang tua từ ghi chú thì bỏ qua
+
+    // Đang bật cho phép tua: chấp nhận vị trí vừa tua tới là mốc hợp lệ mới.
+    // Phải cập nhật mốc chứ không chỉ return, nếu không interval sẽ thấy chênh lệch
+    // và gọi lại hàm này liên tục mỗi giây.
+    if (CHO_PHEP_TUA_TU_DO) {
+      lastValidVideoTimeRef.current = currentTime;
+      lastRealTimeRef.current = Date.now();
+      return;
+    }
 
     dangCanhBaoRef.current = true;
-    playerRef.current.pauseVideo();
+    player.pauseVideo();
     const soGiayGianLan = Math.round(currentTime - lastValidTime);
 
     Swal.fire({
@@ -126,8 +162,8 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
       backdrop: `rgba(0,0,0,0.7)`,
       customClass: { container: 'swal-z-index-fix' }
     }).then(() => {
-      playerRef.current.seekTo(lastValidTime, true);
-      playerRef.current.playVideo();
+      player.seekTo(lastValidTime, true);
+      player.playVideo();
       lastRealTimeRef.current = Date.now();
       lastValidVideoTimeRef.current = lastValidTime;
       dangCanhBaoRef.current = false;
@@ -136,12 +172,13 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
 
   // --- LOGIC: Thêm Ghi Chú ---
   const themGhiChu = () => {
-    if (!playerRef.current) return;
+    const player = playerRef.current;
+    if (!player) return;
 
     dangCanhBaoRef.current = true;
-    playerRef.current.pauseVideo();
+    player.pauseVideo();
 
-    const thoiDiemGiay = Math.floor(playerRef.current.getCurrentTime());
+    const thoiDiemGiay = Math.floor(player.getCurrentTime());
     const thoiGianFormat = `${Math.floor(thoiDiemGiay / 60)}:${Math.floor(thoiDiemGiay % 60).toString().padStart(2, '0')}`;
 
     Swal.fire({
@@ -187,31 +224,52 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
           timer: 1500,
           showConfirmButton: false
         });
-        playerRef.current.playVideo();
-      } else {
-        playerRef.current.playVideo();
       }
+
+      player.playVideo();
     });
+  };
+
+  // --- LOGIC: Video kết thúc ---
+  // Tua thẳng tới cuối cũng làm player bắn sự kiện ENDED. Nếu lưu tiến độ ngay
+  // tại đây thì học viên vượt được toàn bộ anti-cheat, vì interval kiểm tra chỉ
+  // chạy khi playerState === 1 (đang phát) nên không bao giờ thấy cú tua đó.
+  // => Chỉ ghi nhận hoàn thành khi mốc xem hợp lệ cuối cùng đã thực sự ở gần cuối.
+  const khiVideoKetThuc = () => {
+    const thoiLuong = playerRef.current?.getDuration() || thoiLuongVideo || 0;
+    const mocHopLe = lastValidVideoTimeRef.current;
+
+    // CHO_PHEP_TUA_TU_DO: tua thẳng tới cuối cũng tính là hoàn thành, để còn test được
+    // luồng mở khóa bài kế tiếp mà không phải xem hết video.
+    if (CHO_PHEP_TUA_TU_DO || daXem || thoiLuong <= 0 || thoiLuong - mocHopLe <= DUNG_SAI_KET_THUC_GIAY) {
+      luuTienDo(thoiLuong);
+      return;
+    }
+
+    xuLyGianLan(thoiLuong, mocHopLe);
   };
 
   // --- Handlers Video ---
   const khiSanSang = (event: YouTubeEvent) => {
-    playerRef.current = event.target;
+    const player: TrinhPhatVideo = event.target;
+    playerRef.current = player;
     setDaSanSang(true);
-    setThoiLuongVideo(playerRef.current.getDuration() || 0);
+    setThoiLuongVideo(player.getDuration() || 0);
     lastValidVideoTimeRef.current = 0;
     lastRealTimeRef.current = Date.now();
   };
 
   const khiTrangThaiThayDoi = (event: YouTubeEvent) => {
     if (event.data === 0) {
-      luuTienDo(playerRef.current?.getDuration() || 0);
+      khiVideoKetThuc();
+      return;
     }
 
     if (event.data === 1) {
-      if (dangCanhBaoRef.current) return;
+      const player = playerRef.current;
+      if (!player || dangCanhBaoRef.current) return;
 
-      const currentVideoTime = playerRef.current.getCurrentTime();
+      const currentVideoTime = player.getCurrentTime();
       if (!daXem && (currentVideoTime - lastValidVideoTimeRef.current > 2)) {
         xuLyGianLan(currentVideoTime, lastValidVideoTimeRef.current);
         return;
@@ -239,9 +297,6 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
     if (dangTaiBaiRef.current === maBaiHoc) return; // Đã đang tải bài này rồi, bỏ qua
     dangTaiBaiRef.current = maBaiHoc;
 
-    chaptersRef.current = [];
-    setChapters([]);
-
     VideoAIService.khoiTaoVideoInteractive(maBaiHoc).then(data => {
       if (dangTaiBaiRef.current !== maBaiHoc) return; // Học viên đã chuyển sang bài khác rồi
       chaptersRef.current = data;
@@ -254,22 +309,23 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
     if (!daSanSang || daLuuTienDoRef.current) return;
 
     const interval = setInterval(() => {
-      if (!playerRef.current || dangCanhBaoRef.current) return;
+      const player = playerRef.current;
+      if (!player || dangCanhBaoRef.current) return;
 
-      const playerState = playerRef.current.getPlayerState();
+      const playerState = player.getPlayerState();
       if (playerState !== 1) {
         lastRealTimeRef.current = Date.now();
         return;
       }
 
-      const currentVideoTime = playerRef.current.getCurrentTime() || 0;
+      const currentVideoTime = player.getCurrentTime() || 0;
       const currentRealTime = Date.now();
 
       let realTimePassed = (currentRealTime - lastRealTimeRef.current) / 1000;
       if (realTimePassed > 3) realTimePassed = 1;
 
       const videoTimePassed = currentVideoTime - lastValidVideoTimeRef.current;
-      const playbackRate = playerRef.current.getPlaybackRate() || 1;
+      const playbackRate = player.getPlaybackRate() || 1;
       const allowedProgress = (realTimePassed * playbackRate) + 1.5;
 
       if (!daXem && videoTimePassed > allowedProgress) {
@@ -287,15 +343,15 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
       // Chỉ hiện Quiz cho những Chapter có câu hỏi (videoQuizs.length > 0)
       const currentChapters = chaptersRef.current;
       if (currentChapters.length > 0) {
-        const chuaKiemTra = currentChapters.find(c => 
-          !c.daKiemTra && 
-          c.videoQuizs && c.videoQuizs.length > 0 && 
+        const chuaKiemTra = currentChapters.find(c =>
+          !c.daKiemTra &&
+          c.videoQuizs && c.videoQuizs.length > 0 &&
           currentVideoTime >= c.thoiGianKetThuc
         );
         if (chuaKiemTra) {
           setQuizChapter(prev => {
             if (prev?.maChapter === chuaKiemTra.maChapter) return prev; // Đang hiện rồi, không làm gì
-            playerRef.current.pauseVideo();
+            player.pauseVideo();
             dangCanhBaoRef.current = true;
             setCauHoiHienTai(0);
             setDapAnDaChon("");
@@ -312,16 +368,6 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
 
     return () => clearInterval(interval);
   }, [daSanSang, thoiLuongVideo, luuTienDo, daXem]);
-
-  useEffect(() => {
-    daLuuTienDoRef.current = false;
-    dangCanhBaoRef.current = false;
-    lastValidVideoTimeRef.current = 0;
-    lastRealTimeRef.current = Date.now();
-    setDaSanSang(false);
-    setThoiLuongVideo(0);
-    setThoiGianHienTai(0);
-  }, [videoUrl]);
 
   if (!videoUrl) return (
     <div className="cp-video-frame d-flex align-items-center justify-content-center bg-dark text-white">
@@ -343,7 +389,6 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
         />
       ) : (
         <video
-          ref={playerRef}
           controls
           controlsList="nodownload"
           className="cp-video-frame w-100 h-100"
@@ -351,24 +396,29 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
           src={videoUrl ? videoUrl.replace(/\.[^/.]+$/, '.mp4') : ''}
           poster={videoUrl ? videoUrl.replace(/\.[^/.]+$/, '.jpg') : undefined}
           onLoadedMetadata={(e) => {
-            setThoiLuongVideo(e.currentTarget.duration);
-            setDaSanSang(true);
-            // mock YouTube player functions
-            playerRef.current.getCurrentTime = () => playerRef.current?.currentTime || 0;
-            playerRef.current.getDuration = () => playerRef.current?.duration || 0;
-            playerRef.current.playVideo = () => playerRef.current?.play();
-            playerRef.current.pauseVideo = () => playerRef.current?.pause();
-            playerRef.current.seekTo = (time: number) => { if (playerRef.current) playerRef.current.currentTime = time; };
+            // Gắn các hàm mô phỏng API YouTube lên thẻ <video>, rồi mới đưa vào
+            // playerRef - nhờ vậy playerRef luôn thỏa TrinhPhatVideo, không có
+            // khoảng thời gian nào ref đã có giá trị mà hàm chưa được gắn.
+            const video = e.currentTarget as VideoDaGanApi;
+            video.getCurrentTime = () => video.currentTime || 0;
+            video.getDuration = () => video.duration || 0;
+            video.playVideo = () => { void video.play(); };
+            video.pauseVideo = () => video.pause();
+            video.seekTo = (giay: number) => { video.currentTime = giay; };
             // Trạng thái giống YouTube API: 1 = đang phát, 2 = tạm dừng, 0 = kết thúc
-            playerRef.current.getPlayerState = () => {
-              const v = playerRef.current;
-              if (!v) return 2;
-              if (v.ended) return 0;
-              return v.paused ? 2 : 1;
+            video.getPlayerState = () => {
+              if (video.ended) return 0;
+              return video.paused ? 2 : 1;
             };
-            playerRef.current.getPlaybackRate = () => playerRef.current?.playbackRate || 1;
+            video.getPlaybackRate = () => video.playbackRate || 1;
+
+            playerRef.current = video;
+            lastValidVideoTimeRef.current = 0;
+            lastRealTimeRef.current = Date.now();
+            setThoiLuongVideo(video.duration);
+            setDaSanSang(true);
           }}
-          onEnded={() => luuTienDo(playerRef.current?.getDuration() || 0)}
+          onEnded={khiVideoKetThuc}
           onTimeUpdate={(e) => {
             setThoiGianHienTai(e.currentTarget.currentTime);
           }}

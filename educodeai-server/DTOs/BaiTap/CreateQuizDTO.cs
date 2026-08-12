@@ -19,5 +19,6 @@
         public string NoiDungTomTat { get; set; } = null!; // Tóm tắt nội dung bài học để AI dựa vào đó mà tạo câu hỏi
         public string DoKho { get; set; } = null!; // Ví dụ: "Easy", "Medium", "Hard"
         public int SoCauHoi { get; set; }
+        public string NgonNgu { get; set; } = string.Empty;
     }
 }

@@ -110,6 +110,19 @@ body {
   color: white !important;
 }
 
+/* Nút ghost/secondary (vd: nút "Đóng" ở modal QR thanh toán): nền hover là
+   --border-light (gần trắng) nên chữ trắng của .btn:hover phía trên bị chìm
+   mất. Trả lại chữ --text-main để đủ tương phản. Selector (0,3,0) + !important
+   để thắng .btn:hover. */
+.btn.btn-outline-secondary:hover,
+.btn.btn-outline-secondary:focus-visible,
+.btn.btn-outline-secondary:active {
+  background: var(--border-light);
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: none;
+}
+
 .btn-light {
   background-color: var(--bg-light);
   border-color: var(--bg-light);
@@ -117,10 +130,10 @@ body {
 }
 
 .btn-light:hover {
-  background-color: var(--bg-light);
-  color: var(--primary) !important;
-  border: 1px solid var(--primary) !important;
-  box-shadow: 0 2px 8px rgba(246, 144, 80, 0.2);
+  background-color: #ffffff;
+  color: var(--text-dark) !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .btn-square {

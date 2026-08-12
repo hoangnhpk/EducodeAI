@@ -38,18 +38,51 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
     setLocalCauHois(prev => prev.map((c, i) => i === idx ? { ...c, DapAnDung: value } : c));
   };
 
+  const handleGiaiThichChange = (idx: number, value: string) => {
+    setLocalCauHois(prev => prev.map((c, i) => i === idx ? { ...c, GiaiThich: value } : c));
+  };
+
   const handleXoaCau = (idx: number) => {
     setLocalCauHois(prev => prev.filter((_, i) => i !== idx));
   };
 
+  // AI trả về schema { NoiDung, LuaChon[] }, còn trang làm bài của học viên, trang chi tiết quiz
+  // và bộ đề chứng chỉ đều đọc schema { cauHoi, dapAnA..D }. Phải quy đổi trước khi lưu,
+  // nếu không câu hỏi sẽ hiện trống trơn phía học viên.
+  const chuanHoaDapAnDung = (giaTri: string): string => {
+    const chuoi = (giaTri || '').trim().toUpperCase();
+    if (DAP_AN_LABELS.includes(chuoi)) return chuoi;
+
+    // AI đôi khi trả về chỉ số "0".."3" thay vì chữ cái.
+    const chiSo = Number(chuoi);
+    if (Number.isInteger(chiSo) && chiSo >= 0 && chiSo < DAP_AN_LABELS.length) {
+      return DAP_AN_LABELS[chiSo];
+    }
+    return 'A';
+  };
+
   const handleSave = () => {
+    const cauHoiChuanHoa = localCauHois.map((cau, idx) => {
+      const luaChon = cau.LuaChon || [];
+      return {
+        id: typeof cau.Id === 'number' ? cau.Id : idx + 1,
+        cauHoi: cau.NoiDung ?? '',
+        dapAnA: luaChon[0] ?? '',
+        dapAnB: luaChon[1] ?? '',
+        dapAnC: luaChon[2] ?? '',
+        dapAnD: luaChon[3] ?? '',
+        dapAnDung: chuanHoaDapAnDung(cau.DapAnDung),
+        giaiThich: cau.GiaiThich ?? '',
+      };
+    });
+
     const dto: CreateQuizDTO = {
       MaBaiHoc: baiHocId,
       ThoiGianLamBai: thoiGian,
       DiemCanDat: diemCanDat,
       ChoPhepLamLai: choPhepLamLai,
       DaoCauHoi: daoCauHoi,
-      DuLieuCauHoi: JSON.stringify(localCauHois),
+      DuLieuCauHoi: JSON.stringify(cauHoiChuanHoa),
     };
     onSave(dto);
   };
@@ -176,6 +209,22 @@ export default function PreviewQuizAI({ data, baiHocId, isSaving, onSave, onCanc
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* Giải thích: học viên nhìn thấy sau khi nộp bài */}
+                  <div className="ms-5 mt-3">
+                    <label className="text-uppercase fw-bold mb-1 d-block"
+                      style={{ fontSize: '11px', color: 'var(--text-light)', letterSpacing: '0.05em' }}>
+                      Giải thích đáp án
+                    </label>
+                    <textarea
+                      className="form-control"
+                      rows={2}
+                      style={{ fontSize: '14px', borderRadius: '10px', resize: 'vertical' }}
+                      placeholder="Giải thích ngắn gọn vì sao đáp án đó đúng (học viên xem sau khi nộp bài)"
+                      value={cau.GiaiThich ?? ''}
+                      onChange={e => handleGiaiThichChange(qIdx, e.target.value)}
+                    />
                   </div>
 
                   <div className="ms-5 mt-2">

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using educodeai_server.Data;
 using educodeai_server.DTOs.BaiTapThucHanh;
+using educodeai_server.Exceptions;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
@@ -12,11 +13,13 @@ namespace educodeai_server.Services.Implementation
     {
         private readonly EduCodeAIDbContext _context;
         private readonly IGeminiAIService _geminiService;
+        private readonly IRedisService _redisService;
 
-        public BaiTapThucHanhService(EduCodeAIDbContext context, IGeminiAIService geminiService)
+        public BaiTapThucHanhService(EduCodeAIDbContext context, IGeminiAIService geminiService, IRedisService redisService)
         {
             _context = context;
             _geminiService = geminiService;
+            _redisService = redisService;
         }
 
         public async Task<List<KhoaHocTreeDto>> GetCayDuLieuAsync(int maGiangVien)
@@ -202,6 +205,7 @@ namespace educodeai_server.Services.Implementation
                     }
 
                     await transaction.CommitAsync();
+                    await _redisService.TangVersionKhoaHocAsync(baiHoc.ChuongHoc.MaKhoaHoc);
 
                     return await GetDetailAsync(baiTap.MaBaiTap, maGiangVien);
                 }
@@ -309,6 +313,7 @@ namespace educodeai_server.Services.Implementation
             }
 
             await _context.SaveChangesAsync();
+            await _redisService.TangVersionKhoaHocAsync(model.BaiTap.BaiHoc.ChuongHoc.MaKhoaHoc);
             return true;
         }
 
@@ -327,6 +332,14 @@ namespace educodeai_server.Services.Implementation
                 throw new UnauthorizedAccessException("Không có quyền xóa.");
             }
 
+            var daCoKetQua = await _context.KetQuaLamBais
+                .AsNoTracking()
+                .AnyAsync(kq => kq.MaBaiTap == baiTap.MaBaiTap);
+            if (daCoKetQua)
+            {
+                throw new ConflictException("Không thể xóa bài tập vì đã có học viên làm bài. Bạn có thể ẩn hoặc ngừng nhận bài thay vì xóa.");
+            }
+
             if (baiTap.BaiTapThucHanh != null)
             {
                 _context.TestCaseThucHanhs.RemoveRange(baiTap.BaiTapThucHanh.TestCases);
@@ -334,6 +347,7 @@ namespace educodeai_server.Services.Implementation
             }
             _context.BaiTaps.Remove(baiTap);
             await _context.SaveChangesAsync();
+            await _redisService.TangVersionKhoaHocAsync(baiTap.BaiHoc.ChuongHoc.MaKhoaHoc);
             return true;
         }
     }

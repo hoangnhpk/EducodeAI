@@ -186,15 +186,30 @@ namespace educodeai_server.Helpers
                 throw new Exception("Output khong phai JSON hop le (Gemini response)");
             }
 
-            var text = root["candidates"]?
+            var parts = root["candidates"]?
                 .First?["content"]?["parts"]?
-                .Select(p => p?["text"]?.ToString())
-                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+                .OfType<JObject>()
+                .ToList();
 
-            if (string.IsNullOrWhiteSpace(text))
-                throw new Exception("Khong tim thay noi dung text tu Gemini");
+            // Cac model 2.5 tro len co the tra ve part suy luan (thought=true) dung truoc part
+            // dap an that. Phai loai chung ra, neu khong se lay nham doan suy luan lam cau tra loi.
+            var texts = parts?
+                .Where(p => p["thought"]?.Value<bool>() != true)
+                .Select(p => p["text"]?.ToString())
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList();
 
-            return text;
+            if (texts == null || texts.Count == 0)
+            {
+                // Kem finishReason vao thong bao de doc log biet ngay ly do (VD: MAX_TOKENS, SAFETY).
+                var finishReason = root["candidates"]?.First?["finishReason"]?.ToString();
+                throw new Exception(string.IsNullOrWhiteSpace(finishReason)
+                    ? "Khong tim thay noi dung text tu Gemini"
+                    : $"Khong tim thay noi dung text tu Gemini (finishReason: {finishReason})");
+            }
+
+            // Gemini co the cat cau tra loi thanh nhieu part -> phai noi lai, khong lay moi part dau.
+            return string.Concat(texts);
         }
 
         public static string ExtractJson(string text)

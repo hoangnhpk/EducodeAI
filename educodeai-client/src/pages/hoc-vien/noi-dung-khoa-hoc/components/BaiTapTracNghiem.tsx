@@ -1,16 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 
-// 1. Interface mô tả chính xác file JSON bạn truyền vào
+// 1. Interface mô tả JSON câu hỏi lưu trong DB.
+// Trong DB đang tồn tại 2 định dạng: quiz giảng viên gõ tay (cauHoi + dapAnA..D) và
+// quiz sinh bằng AI đời cũ (NoiDung + LuaChon[]). Phải đọc được cả hai.
 interface RawCauHoi {
     id?: number;
-    cauHoi: string;
-    dapAnA: string;
-    dapAnB: string;
-    dapAnC: string;
-    dapAnD: string;
-    dapAnDung: string; // "A", "B", "C" hoặc "D"
-    giaiThich: string;
+    cauHoi?: string;
+    dapAnA?: string;
+    dapAnB?: string;
+    dapAnC?: string;
+    dapAnD?: string;
+    dapAnDung?: string; // "A", "B", "C" hoặc "D"
+    giaiThich?: string;
+
+    // Định dạng cũ do AI sinh ra
+    Id?: number;
+    NoiDung?: string;
+    LuaChon?: string[];
+    DapAnDung?: string; // chữ cái "A".."D" hoặc chỉ số "0".."3"
+    GiaiThich?: string;
 }
 
 // 2. Interface sử dụng nội bộ trong Component
@@ -59,16 +68,34 @@ export const BaiTapTracNghiem: React.FC<DaoCu> = ({ duLieu, khiHoanThanh }) => {
     useEffect(() => {
         try {
             if (duLieu.duLieuCauHoi) {
-                const rawData: RawCauHoi[] = JSON.parse(duLieu.duLieuCauHoi);
+                const duLieuGoc = JSON.parse(duLieu.duLieuCauHoi);
+                // Một số bản ghi cũ lưu cả cục { "Câu hỏi": [...] } thay vì mảng thuần.
+                const rawData: RawCauHoi[] = Array.isArray(duLieuGoc)
+                    ? duLieuGoc
+                    : (duLieuGoc?.['Câu hỏi'] ?? []);
                 const bangChuCai: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
 
-                let cauHoiParsed: CauHoiDTO[] = rawData.map((item, index) => ({
-                    Id: typeof item.id === 'number' ? item.id : index + 1,
-                    NoiDung: item.cauHoi,
-                    LuaChon: [item.dapAnA, item.dapAnB, item.dapAnC, item.dapAnD],
-                    DapAnDung: bangChuCai[item.dapAnDung?.toUpperCase()] ?? 0,
-                    GiaiThich: item.giaiThich
-                }));
+                // Đáp án đúng có thể là chữ cái ("A".."D") hoặc chỉ số ("0".."3").
+                const docDapAnDung = (giaTri?: string): number => {
+                    const chuoi = (giaTri ?? '').trim().toUpperCase();
+                    if (chuoi in bangChuCai) return bangChuCai[chuoi];
+                    const chiSo = Number(chuoi);
+                    return Number.isInteger(chiSo) && chiSo >= 0 && chiSo <= 3 ? chiSo : 0;
+                };
+
+                let cauHoiParsed: CauHoiDTO[] = rawData.map((item, index) => {
+                    const luaChon = Array.isArray(item.LuaChon)
+                        ? item.LuaChon
+                        : [item.dapAnA, item.dapAnB, item.dapAnC, item.dapAnD];
+
+                    return {
+                        Id: item.id ?? item.Id ?? index + 1,
+                        NoiDung: item.cauHoi ?? item.NoiDung ?? '',
+                        LuaChon: [0, 1, 2, 3].map((i) => luaChon[i] ?? ''),
+                        DapAnDung: docDapAnDung(item.dapAnDung ?? item.DapAnDung),
+                        GiaiThich: item.giaiThich ?? item.GiaiThich ?? ''
+                    };
+                });
 
                 if (duLieu.daoCauHoi) {
                     cauHoiParsed = [...cauHoiParsed].sort(() => Math.random() - 0.5);

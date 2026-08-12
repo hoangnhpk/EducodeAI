@@ -46,6 +46,20 @@ interface BaiTapIDEProps {
     khiHoanThanh?: (phanTram: number, daDat: boolean) => void;
 }
 
+type TrangThaiTest = { status: 'idle' | 'running' | 'pass' | 'fail'; output: string; error?: string };
+
+// Bài làm được giữ lại theo từng bài tập, để chuyển bài hoặc tải lại trang không mất code
+// và không phải gọi AI chẩn đoán lại từ đầu.
+interface BaiLamDaLuu {
+    code?: string;
+    testResults?: TrangThaiTest[];
+    aiDoctorResult?: string | null;
+    aiDoctorCode?: string | null;
+    daSai?: boolean;
+}
+
+const layKhoaLuuBaiLam = (maBaiTap: number) => `bai_tap_thuc_hanh_${maBaiTap}`;
+
 const parseGoiY = (goiY: string | null) => {
     if (!goiY) return { cleanGoiY: null, vars: [] };
     const match = goiY.match(/\[VARS:\s*(.*?)\]/i);
@@ -96,6 +110,8 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
     const [aiDoctorOpen, setAiDoctorOpen] = useState(false);
     const [aiDoctorLoading, setAiDoctorLoading] = useState(false);
     const [aiDoctorResult, setAiDoctorResult] = useState<string | null>(null);
+    // Code ứng với kết quả chẩn đoán đang giữ. Code đổi -> kết quả cũ hết hiệu lực, mới cần gọi AI lại.
+    const [aiDoctorCodeDaPhanTich, setAiDoctorCodeDaPhanTich] = useState<string | null>(null);
     const aiDoctorRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -172,8 +188,38 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                     defaultCode = '// Viết mã của bạn tại đây\n';
                 }
 
-                setCode(defaultCode);
                 setTestResults(data.testCases.map(() => ({ status: 'idle', output: '' })));
+
+                // Khôi phục bài làm cũ nếu có, chỉ dùng code mẫu khi chưa từng làm bài này.
+                let daKhoiPhucCode = false;
+                try {
+                    const duLieuLuu = localStorage.getItem(layKhoaLuuBaiLam(maBaiTap));
+                    if (duLieuLuu) {
+                        const luu = JSON.parse(duLieuLuu) as BaiLamDaLuu;
+
+                        if (typeof luu.code === 'string' && luu.code.trim()) {
+                            setCode(luu.code);
+                            daKhoiPhucCode = true;
+                        }
+
+                        // Chỉ nhận lại kết quả test khi số lượng còn khớp (bài tập có thể đã sửa test case).
+                        if (Array.isArray(luu.testResults) && luu.testResults.length === data.testCases.length) {
+                            setTestResults(luu.testResults.map(r => ({
+                                ...r,
+                                // 'running' là trạng thái dở dang, không có ý nghĩa sau khi tải lại.
+                                status: r.status === 'running' ? 'idle' : r.status
+                            })));
+                        }
+
+                        setAiDoctorResult(luu.aiDoctorResult ?? null);
+                        setAiDoctorCodeDaPhanTich(luu.aiDoctorCode ?? null);
+                        setDaSai(luu.daSai ?? false);
+                    }
+                } catch {
+                    // Dữ liệu lưu hỏng thì bỏ qua, coi như làm mới.
+                }
+
+                if (!daKhoiPhucCode) setCode(defaultCode);
             } catch (err: unknown) {
                 const error = err as any;
                 setError(error.response?.data?.message || 'Lỗi khi tải bài tập.');
@@ -184,6 +230,25 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
 
         void fetchDuLieu();
     }, [maBaiTap]);
+
+    // Lưu lại bài làm + kết quả chẩn đoán mỗi khi có thay đổi.
+    useEffect(() => {
+        if (loading || !duLieu || maBaiTap <= 0) return;
+
+        const duLieuLuu: BaiLamDaLuu = {
+            code,
+            testResults,
+            aiDoctorResult,
+            aiDoctorCode: aiDoctorCodeDaPhanTich,
+            daSai
+        };
+
+        try {
+            localStorage.setItem(layKhoaLuuBaiLam(maBaiTap), JSON.stringify(duLieuLuu));
+        } catch {
+            // Hết dung lượng localStorage thì thôi, không được chặn người dùng làm bài.
+        }
+    }, [code, testResults, aiDoctorResult, aiDoctorCodeDaPhanTich, daSai, loading, duLieu, maBaiTap]);
 
     // Hàm gọi API chạy code
     const handleRunCode = async () => {
@@ -246,6 +311,14 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
     // Hàm gọi AI Code Doctor phân tích lỗi
     const handleAiDoctor = async () => {
         if (!duLieu || !code.trim()) return;
+
+        // Code không đổi kể từ lần chẩn đoán trước -> mở lại kết quả đã lưu, khỏi tốn lượt gọi AI.
+        if (aiDoctorResult && aiDoctorCodeDaPhanTich === code) {
+            setAiDoctorOpen(true);
+            setTimeout(() => aiDoctorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+            return;
+        }
+
         setAiDoctorLoading(true);
         setAiDoctorResult(null);
         setAiDoctorOpen(true);
@@ -274,8 +347,11 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
             }) as { thanhCong: boolean; noiDungPhanTich: string };
 
             setAiDoctorResult(res.noiDungPhanTich);
+            setAiDoctorCodeDaPhanTich(code);
         } catch {
             setAiDoctorResult('❌ AI đang bận hoặc gặp lỗi. Vui lòng thử lại sau.');
+            // Không gắn code vào lỗi, nếu không bấm lại sẽ chỉ mở lại thông báo lỗi cũ.
+            setAiDoctorCodeDaPhanTich(null);
         } finally {
             setAiDoctorLoading(false);
             // Scroll xuống panel AI
@@ -287,6 +363,9 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
     if (error || !duLieu) return <div className="p-4 text-red-500">{error || 'Bài tập không tồn tại.'}</div>;
 
     const { cleanGoiY, vars } = parseGoiY(duLieu.goiY);
+
+    // Kết quả chẩn đoán chỉ còn giá trị khi code chưa bị sửa kể từ lúc phân tích.
+    const coKetQuaConHieuLuc = !!aiDoctorResult && aiDoctorCodeDaPhanTich === code;
 
     return (
         <div className="cp-ide-wrapper">
@@ -490,13 +569,17 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                 </div>
 
                 {/* AI CODE DOCTOR PANEL - hiện khi daSai */}
-                {daSai && (
+                {(daSai || aiDoctorResult) && (
                     <div className="cp-ai-doctor-bar">
                         <div className="cp-ai-doctor-bar__left">
                             <span className="cp-ai-doctor-bar__icon">🤖</span>
                             <span className="cp-ai-doctor-bar__text">
                                 <strong>AI Code Doctor</strong>
-                                <span> — Bạn muốn AI phân tích lỗi và gợi ý hướng suy nghĩ?</span>
+                                <span> — {coKetQuaConHieuLuc
+                                    ? 'Đã có kết quả chẩn đoán cho code hiện tại.'
+                                    : aiDoctorResult
+                                        ? 'Code đã thay đổi từ lần chẩn đoán trước.'
+                                        : 'Bạn muốn AI phân tích lỗi và gợi ý hướng suy nghĩ?'}</span>
                             </span>
                         </div>
                         <button
@@ -506,7 +589,11 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                         >
                             {aiDoctorLoading
                                 ? <><i className="fas fa-circle-notch fa-spin" /> Đang phân tích...</>
-                                : <><i className="fas fa-stethoscope" /> Chẩn đoán lỗi</>
+                                : coKetQuaConHieuLuc
+                                    ? <><i className="fas fa-eye" /> Xem lại chẩn đoán</>
+                                    : aiDoctorResult
+                                        ? <><i className="fas fa-stethoscope" /> Chẩn đoán lại</>
+                                        : <><i className="fas fa-stethoscope" /> Chẩn đoán lỗi</>
                             }
                         </button>
                     </div>
@@ -522,8 +609,8 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                             </div>
                             <button
                                 className="cp-ai-doctor-panel__close"
-                                onClick={() => { setAiDoctorOpen(false); setAiDoctorResult(null); }}
-                                title="Đóng"
+                                onClick={() => setAiDoctorOpen(false)}
+                                title="Đóng (kết quả vẫn được giữ lại)"
                             >
                                 <i className="fas fa-times" />
                             </button>

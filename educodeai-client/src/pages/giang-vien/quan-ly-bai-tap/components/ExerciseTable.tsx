@@ -33,16 +33,16 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
 }) => {
     return (
         <div className="table-container" style={{ overflowX: 'auto' }}>
-            <table className="table">
+            <table className="table qlbt-table">
                 <thead>
                     <tr>
-                        <th>Tên BT</th>
-                        <th>Loại</th>
-                        <th>Khóa học</th>
-                        <th>Chương</th>
-                        <th>Bài học</th>
-                        <th>Trạng thái</th>
-                        <th>Hành động</th>
+                        <th className="qlbt-col-ten">Tên BT</th>
+                        <th className="qlbt-col-loai">Loại</th>
+                        <th className="qlbt-col-khoa-hoc">Khóa học</th>
+                        <th className="qlbt-col-chuong">Chương</th>
+                        <th className="qlbt-col-bai-hoc">Bài học</th>
+                        <th className="qlbt-col-trang-thai">Trạng thái</th>
+                        <th className="qlbt-col-hanh-dong">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -71,31 +71,31 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
                             const status = getTrangThaiBadge(baiTap.trangThai);
                             return (
                                 <tr key={baiTap.maBaiTap}>
-                                    <td>
-                                        <div className="truncate-text col-ten" title={baiTap.tenBaiTap}>
+                                    <td className="qlbt-col-ten">
+                                        <div className="truncate-text" title={baiTap.tenBaiTap}>
                                             <strong>{baiTap.tenBaiTap}</strong>
                                         </div>
                                     </td>
-                                    <td>{baiTap.loaiBaiTap}</td>
-                                    <td>
-                                        <div className="truncate-text col-khoahoc" title={baiTap.tenKhoaHoc}>
+                                    <td className="qlbt-col-loai">{baiTap.loaiBaiTap}</td>
+                                    <td className="qlbt-col-khoa-hoc">
+                                        <div className="truncate-text" title={baiTap.tenKhoaHoc}>
                                             {baiTap.tenKhoaHoc}
                                         </div>
                                     </td>
-                                    <td>
-                                        <div className="truncate-text col-chuong" title={baiTap.tenChuong}>
+                                    <td className="qlbt-col-chuong">
+                                        <div className="truncate-text" title={baiTap.tenChuong}>
                                             {baiTap.tenChuong}
                                         </div>
                                     </td>
-                                    <td>
-                                        <div className="truncate-text col-ten" title={baiTap.tenBaiHoc}>
+                                    <td className="qlbt-col-bai-hoc">
+                                        <div className="truncate-text" title={baiTap.tenBaiHoc}>
                                             {baiTap.tenBaiHoc}
                                         </div>
                                     </td>
-                                    <td>
+                                    <td className="qlbt-col-trang-thai">
                                         <span className={status.className}>{status.label}</span>
                                     </td>
-                                    <td>
+                                    <td className="qlbt-col-hanh-dong">
                                         <div className="actions-group">
                                             <button className="action-btn view-btn" onClick={() => onViewClick(baiTap.maBaiTap)}>
                                                 <i className="bi bi-eye"></i> Xem

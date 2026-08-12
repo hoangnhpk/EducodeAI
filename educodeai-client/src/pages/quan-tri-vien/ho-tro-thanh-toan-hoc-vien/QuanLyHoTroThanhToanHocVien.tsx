@@ -154,35 +154,35 @@ export default function QuanLyHoTroThanhToanHocVien() {
         </div>
       ) : (
         <div className="table-responsive">
-          <table className="user-table">
+          <table className="user-table httt-table">
             <thead>
               <tr>
-                <th>Mã hỗ trợ</th>
-                <th>Mã đơn</th>
-                <th>Nội dung CK</th>
-                <th>Học viên</th>
-                <th>Khóa học</th>
-                <th>Liên hệ</th>
-                <th>Trạng thái</th>
-                <th>Ngày gửi</th>
-                <th style={{ width: 130, textAlign: "center" }}>Thao tác</th>
+                <th className="httt-col-ma" title="Mã hỗ trợ">Mã HT</th>
+                <th className="httt-col-don" title="Mã đơn hàng">Mã đơn</th>
+                <th className="httt-col-noi-dung">Nội dung CK</th>
+                <th className="httt-col-hoc-vien">Học viên</th>
+                <th className="httt-col-khoa-hoc">Khóa học</th>
+                <th className="httt-col-lien-he">Liên hệ</th>
+                <th className="httt-col-trang-thai">Trạng thái</th>
+                <th className="httt-col-ngay">Ngày gửi</th>
+                <th className="httt-col-thao-tac">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {danhSach.map((item) => (
                 <tr key={item.maGiaoDichHoTro}>
-                  <td>{item.maGiaoDichHoTro}</td>
-                  <td>#{item.maDonHang}</td>
-                  <td><code>{item.noiDungChuyenKhoan}</code></td>
-                  <td>
+                  <td className="httt-col-ma">{item.maGiaoDichHoTro}</td>
+                  <td className="httt-col-don">#{item.maDonHang}</td>
+                  <td className="httt-col-noi-dung"><code>{item.noiDungChuyenKhoan}</code></td>
+                  <td className="httt-col-hoc-vien">
                     <div>{item.tenHocVien}</div>
-                    <small className="text-muted">{item.emailHocVien || "—"}</small>
+                    <small className="text-muted httt-email">{item.emailHocVien || "—"}</small>
                   </td>
-                  <td>{item.khoaHocDaiDien || "—"}</td>
-                  <td>{item.thongTinLienLac || "—"}</td>
-                  <td>{hienThiTrangThai(item.trangThaiHoTro)}</td>
-                  <td>{item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : "—"}</td>
-                  <td style={{ textAlign: "center" }}>
+                  <td className="httt-col-khoa-hoc">{item.khoaHocDaiDien || "—"}</td>
+                  <td className="httt-col-lien-he">{item.thongTinLienLac || "—"}</td>
+                  <td className="httt-col-trang-thai">{hienThiTrangThai(item.trangThaiHoTro)}</td>
+                  <td className="httt-col-ngay">{item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : "—"}</td>
+                  <td className="httt-col-thao-tac">
                     <button
                       type="button"
                       className="btn-action btn-edit"

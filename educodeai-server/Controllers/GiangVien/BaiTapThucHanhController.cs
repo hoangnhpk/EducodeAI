@@ -1,4 +1,5 @@
 using educodeai_server.DTOs.BaiTapThucHanh;
+using educodeai_server.Exceptions;
 using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
@@ -110,6 +111,14 @@ namespace educodeai_server.Controllers.GiangVien
                 int maGiangVien = LayNguoiDungID.LayID(User);
                 await _service.DeleteAsync(id, maGiangVien);
                 return Ok(new { success = true, message = "Xóa bài tập thành công", data = new { } });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { success = false, message = ex.Message, errors = new List<object>() });
+            }
+            catch (ConflictException ex)
+            {
+                return Conflict(new { success = false, message = ex.Message, errors = new List<object>() });
             }
             catch (Exception ex)
             {

@@ -31,6 +31,7 @@ const NoiDungKhoaHoc = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [khoaHoc, setKhoaHoc] = useState<KhoaHocData | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [idBaiHoc, setIdBaiHoc] = useState(0);
     const [hienSidebar, setHienSidebar] = useState(false);
     const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia' | 'quiz' | 'chungchi' | 'ide'>('hoc');
@@ -53,6 +54,12 @@ const NoiDungKhoaHoc = () => {
         if (!id) return;
 
         const realId = decodeId(id);
+        if (!realId) {
+            setLoadError('Đường dẫn khóa học không hợp lệ hoặc đã hết hạn.');
+            return;
+        }
+
+        setLoadError(null);
         const data = await KhoaHocService.layDuLieuKhoaHoc(realId);
         setKhoaHoc(data);
 
@@ -177,33 +184,16 @@ const NoiDungKhoaHoc = () => {
     const handleVideoCompleted = useCallback((maBaiHocVuaXong: number) => {
         const baiHocVuaXong = flatList.find((bai) => bai.id === maBaiHocVuaXong);
 
+        // Xem xong lý thuyết thì chuyển thẳng sang tab bài tập, không hiện popup.
         if (baiHocVuaXong?.thongTinQuiz) {
             setVideoDaXongLocal((prev) => [...prev, maBaiHocVuaXong]);
-
-            void Swal.fire({
-                title: 'Đã hoàn thành lý thuyết!',
-                text: 'Hãy hoàn thành bài trắc nghiệm để mở khóa bài học tiếp theo.',
-                icon: 'info',
-                timer: 3000,
-                showConfirmButton: false
-            }).then(() => {
-                setTabActive('quiz');
-            });
+            setTabActive('quiz');
             return;
         }
 
         if (baiHocVuaXong?.maBaiTapThucHanh) {
             setVideoDaXongLocal((prev) => [...prev, maBaiHocVuaXong]);
-
-            void Swal.fire({
-                title: 'Đã hoàn thành lý thuyết!',
-                text: 'Hãy hoàn thành bài tập thực hành IDE để mở khóa bài học tiếp theo.',
-                icon: 'info',
-                timer: 3000,
-                showConfirmButton: false
-            }).then(() => {
-                setTabActive('ide');
-            });
+            setTabActive('ide');
             return;
         }
 
@@ -475,8 +465,20 @@ const NoiDungKhoaHoc = () => {
         return <div>Vui lòng đăng nhập để xem nội dung khóa học.</div>;
     }
 
+    if (loadError) {
+        return (
+            <div className="p-5 text-center">
+                <h3>Không thể mở khóa học</h3>
+                <p className="text-muted">{loadError}</p>
+                <button type="button" className="btn btn-primary" onClick={() => navigate(-1)}>
+                    Quay lại
+                </button>
+            </div>
+        );
+    }
+
     if (!khoaHoc || !baiHocHienTai) {
-        return <div>Đang tải khóa học...</div>;
+        return <NoiDungKhoaHocLoading />;
     }
 
     const dangLamQuiz = tabActive === 'quiz' || dangLamKiemTraChungChi || (tabActive === 'hoc' && baiHocHienTai.loaiBaiHoc === 'Quiz');
@@ -702,7 +704,6 @@ const NoiDungKhoaHoc = () => {
                                             hoTenHienThi={hoTenHienThiChungChi}
                                             emailNhan={emailNhanChungChi}
                                             onThayDoiHoTenHienThi={setHoTenHienThiChungChi}
-                                            onThayDoiEmailNhan={setEmailNhanChungChi}
                                             onBatDauThi={xuLyBatDauKiemTraChungChi}
                                             onNopBai={xuLyNopBaiChungChi}
                                             onInChungChi={xuLyInChungChi}
@@ -763,10 +764,98 @@ const NoiDungKhoaHoc = () => {
                 maBaiHoc={baiHocHienTai.id}
                 tieuDeBaiHoc={baiHocHienTai.tieuDe}
                 noiDungBaiHoc={baiHocHienTai.noiDung}
+                getCurrentVideoTime={() => videoRef.current?.getCurrentTime() ?? null}
                 isQuizMode={dangLamQuiz}
             />
         </div>
     );
 };
+
+const NoiDungKhoaHocLoading = () => {
+    const [progress, setProgress] = useState(15);
+    const [stepIndex, setStepIndex] = useState(0);
+
+    const steps = [
+        "Đang kết nối môi trường học tập EduCodeAI...",
+        "Đang tải cấu trúc chương học & danh sách bài giảng...",
+        "Đang chuẩn bị trình phát video & trợ lý AI...",
+        "Sẵn sàng! Đang khởi chạy bài học..."
+    ];
+
+    const tips = [
+        "Mẹo: Bạn có thể đặt câu hỏi cho Trợ lý AI bất cứ lúc nào trong khi học.",
+        "Mẹo: Bạn có thể lưu lại các ghi chú trực tiếp tại mốc thời gian của video.",
+        "Mẹo: Hoàn thành bài trắc nghiệm cuối khóa để nhận chứng chỉ chính thức từ EduCodeAI."
+    ];
+
+    const [tipIndex, setTipIndex] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setProgress((prev) => {
+                if (prev >= 92) return 92;
+                return prev + Math.floor(Math.random() * 15) + 8;
+            });
+        }, 350);
+
+        const stepTimer = setInterval(() => {
+            setStepIndex((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
+        }, 700);
+
+        const tipTimer = setInterval(() => {
+            setTipIndex((prev) => (prev + 1) % tips.length);
+        }, 2500);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(stepTimer);
+            clearInterval(tipTimer);
+        };
+    }, []);
+
+    return (
+        <div className="cp-modern-loader-container">
+            <div className="cp-modern-loader-backdrop" />
+
+            <div className="cp-modern-loader-card">
+                <div className="cp-loader-orb-wrapper">
+                    <div className="cp-loader-ring-outer" />
+                    <div className="cp-loader-ring-inner" />
+                    <div className="cp-loader-core-icon">
+                        <i className="fas fa-graduation-cap" />
+                    </div>
+                </div>
+
+                <h3 className="cp-loader-title">EduCodeAI Learning</h3>
+
+                <div className="cp-loader-status-text">
+                    <span>{steps[stepIndex]}</span>
+                </div>
+
+                <div className="cp-loader-progress-track">
+                    <div
+                        className="cp-loader-progress-fill"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+
+                <div className="cp-loader-step-dots">
+                    {steps.map((_, i) => (
+                        <div
+                            key={i}
+                            className={`cp-loader-dot ${i <= stepIndex ? 'active' : ''}`}
+                        />
+                    ))}
+                </div>
+
+                <div className="cp-loader-tip-box">
+                    <i className="fas fa-lightbulb" />
+                    <span>{tips[tipIndex]}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 export default NoiDungKhoaHoc;
