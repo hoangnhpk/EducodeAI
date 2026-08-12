@@ -1,14 +1,14 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { AuthContext } from '../../auth/context/AuthContext';
+import { useAuth } from '../../auth/hooks/use-auth';
 import { DiscoveryService, DiscoveryCourse } from '../services/discovery.service';
 
 const C = { primary: '#f69050', dark: '#111827', muted: '#6b7280', bg: '#f9fafb', border: '#e5e7eb', white: '#fff' };
 export default function PublicHomeScreen() {
-  const router = useRouter(); const { user, logout } = useContext(AuthContext);
+  const router = useRouter(); const { session, logout } = useAuth(); const user = session?.user;
   const [courses, setCourses] = useState<DiscoveryCourse[]>([]); const [search, setSearch] = useState(''); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const load = async (value = '') => { try { setLoading(true); setError(''); setCourses(await DiscoveryService.getCourses(value)); } catch { setError('Không thể tải danh sách khóa học.'); } finally { setLoading(false); } };
   useEffect(() => { const timer = setTimeout(() => void load(search), 350); return () => clearTimeout(timer); }, [search]);

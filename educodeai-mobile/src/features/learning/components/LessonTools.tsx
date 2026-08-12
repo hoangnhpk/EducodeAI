@@ -1,11 +1,11 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { AuthContext } from '../../auth/context/AuthContext';
+import { useAuth } from '../../auth/hooks/use-auth';
 import { CourseLearningService } from '../services/course-learning.service';
 import type { Lesson, Note } from '../types/learning.types';
 
 export function LessonTools({ lesson }: { lesson: Lesson }) {
-  const { user } = useContext(AuthContext); const [visible, setVisible] = useState(false); const [note, setNote] = useState(''); const [notes, setNotes] = useState<Note[]>([]); const [loading, setLoading] = useState(false); const [saving, setSaving] = useState(false); const [message, setMessage] = useState('');
+  const { session } = useAuth(); const user = session?.user; const [visible, setVisible] = useState(false); const [note, setNote] = useState(''); const [notes, setNotes] = useState<Note[]>([]); const [loading, setLoading] = useState(false); const [saving, setSaving] = useState(false); const [message, setMessage] = useState('');
   const loadNotes = async () => { if (!user?.maNguoiDung) return; setLoading(true); setMessage(''); try { setNotes(await CourseLearningService.getNotes(lesson.id, user.maNguoiDung)); } catch { setMessage('Không thể tải ghi chú.'); } finally { setLoading(false); } };
   useEffect(() => { if (visible) void loadNotes(); }, [visible, lesson.id, user?.maNguoiDung]);
   const saveNote = async () => { if (!user?.maNguoiDung || !note.trim() || saving) return; setSaving(true); setMessage(''); try { await CourseLearningService.saveNote({ MaBaiHoc: lesson.id, MaNguoiDung: user.maNguoiDung, ThoiGianVideo: 0, NoiDung: note.trim() }); setNote(''); setMessage('Đã lưu ghi chú.'); await loadNotes(); } catch { setMessage('Không thể lưu ghi chú. Nội dung vẫn được giữ lại.'); } finally { setSaving(false); } };

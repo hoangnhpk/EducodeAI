@@ -1,40 +1,32 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create, isAxiosError } from 'axios';
 
-// Cấu hình Base URL
-// Khi test thật trên điện thoại hoặc máy ảo, thay IP bằng IP mạng LAN của bạn.
-export const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+import { authStorage } from '../lib/auth-storage';
 
-const api = axios.create({
-    baseURL: BASE_URL + '/api',
-    timeout: 30000,
+const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+if (!configuredUrl) throw new Error('EXPO_PUBLIC_API_URL is required.');
+export const API_BASE_URL = configuredUrl.replace(/\/+$/, '');
+
+export type UnauthorizedReason = 'sessionExpired';
+let unauthorizedCallback: ((reason: UnauthorizedReason) => void | Promise<void>) | null = null;
+let unauthorizedInProgress = false;
+
+export const setUnauthorizedCallback = (callback: ((reason: UnauthorizedReason) => void | Promise<void>) | null): (() => void) => {
+  unauthorizedCallback = callback;
+  return () => { if (unauthorizedCallback === callback) unauthorizedCallback = null; };
+};
+
+const api = create({ baseURL: `${API_BASE_URL}/api`, timeout: 30_000 });
+api.interceptors.request.use(async (config) => {
+  const token = await authStorage.getAccessToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
-
-// Interceptor: Tự động đính kèm Token
-api.interceptors.request.use(
-    async (config) => {
-        const token = await AsyncStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-// Interceptor: Xử lý Response lỗi
-api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-        if (error.response && error.response.status === 401) {
-            // Token hết hạn hoặc không hợp lệ -> Xoá token
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('user');
-        }
-        return Promise.reject(error);
-    }
-);
+api.interceptors.response.use((response) => response, async (error: unknown) => {
+  if (isAxiosError(error) && error.response?.status === 401 && !unauthorizedInProgress) {
+    unauthorizedInProgress = true;
+    try { await unauthorizedCallback?.('sessionExpired'); } finally { unauthorizedInProgress = false; }
+  }
+  return Promise.reject(error);
+});
 
 export default api;

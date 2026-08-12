@@ -1,9 +1,9 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { AuthContext } from '../../auth/context/AuthContext';
+import { useAuth } from '../../auth/hooks/use-auth';
 import { CourseLearningService, calculateProgress, flattenLessons, getNextLesson, getPreviousLesson } from '../services/course-learning.service';
 import type { CourseContent, Lesson } from '../types/learning.types';
 import { LessonTools } from '../components/LessonTools';
@@ -17,7 +17,9 @@ const C = { primary: '#f69050', dark: '#111827', muted: '#6b7280', bg: '#f9fafb'
 export default function CoursePlayerScreen() {
   const router = useRouter();
   const { courseId, lessonId } = useLocalSearchParams<{ courseId: string; lessonId?: string }>();
-  const { user, isLoading: authLoading } = useContext(AuthContext);
+  const { session, status: authStatus } = useAuth();
+  const user = session?.user;
+  const authLoading = authStatus === 'bootstrapping';
   const [course, setCourse] = useState<CourseContent | null>(null);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
