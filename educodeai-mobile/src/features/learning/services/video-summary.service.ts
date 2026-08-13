@@ -6,7 +6,7 @@ export interface VideoSummaryResult { ketQua: string; }
 export async function getVideoSummary(lesson: Lesson): Promise<string> {
   const response = await api.post<VideoSummaryResult>('/ChatBotAI/tom-tat-video', {
     MaBaiHoc: lesson.id,
-    PhuDeVideo: '',
+    PhuDeVideo: lesson.phuDeVideo || lesson.noiDung || '',
     VideoId: getYouTubeId(lesson.linkVideo),
     TieuDe: lesson.tieuDe || '',
   }, { timeout: 120000 });

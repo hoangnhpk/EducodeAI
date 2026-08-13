@@ -32,7 +32,7 @@ export function LoginScreen() {
 
   const handleOutcome = async (outcome: LoginClassification) => {
     if (outcome.kind === 'authenticated') {
-      if (await completeLogin(outcome.session)) router.replace('/tai-khoan');
+      if (await completeLogin(outcome.session)) router.replace('/(tabs)/home');
       return;
     }
     if (outcome.kind === 'rejected-role') return;
@@ -55,7 +55,12 @@ export function LoginScreen() {
     try {
       await handleOutcome(await authService.login(identifier.trim(), password, captchaToken || undefined));
     } catch (caught) {
-      setError(normalizeApiError(caught).message);
+      const normalized = normalizeApiError(caught);
+      console.error('[Auth] login request failed', { baseUrl: process.env.EXPO_PUBLIC_API_URL, status: normalized.status, code: normalized.code, message: normalized.message, details: normalized.details });
+      if (normalized.status === 400 && normalized.details && typeof normalized.details === 'object' && 'CaptchaToken' in normalized.details) {
+        setFlow({ step: 'captcha', message: 'Vui lòng xác thực CAPTCHA trước khi đăng nhập.' });
+      }
+      setError(normalized.status === null ? `Không thể gửi yêu cầu đăng nhập tới Backend. ${normalized.message}` : normalized.message);
     } finally {
       setLoading(false);
     }
@@ -74,7 +79,12 @@ export function LoginScreen() {
         : await authService.confirmLogin(flow.step === 'otp' ? flow.email : identifier, otp);
       await handleOutcome(outcome);
     } catch (caught) {
-      setError(normalizeApiError(caught).message);
+      const normalized = normalizeApiError(caught);
+      console.error('[Auth] login request failed', { baseUrl: process.env.EXPO_PUBLIC_API_URL, status: normalized.status, code: normalized.code, message: normalized.message, details: normalized.details });
+      if (normalized.status === 400 && normalized.details && typeof normalized.details === 'object' && 'CaptchaToken' in normalized.details) {
+        setFlow({ step: 'captcha', message: 'Vui lòng xác thực CAPTCHA trước khi đăng nhập.' });
+      }
+      setError(normalized.status === null ? `Không thể gửi yêu cầu đăng nhập tới Backend. ${normalized.message}` : normalized.message);
     } finally {
       setLoading(false);
     }

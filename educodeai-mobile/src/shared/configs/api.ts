@@ -17,8 +17,18 @@ export const setUnauthorizedCallback = (callback: ((reason: UnauthorizedReason) 
 };
 
 const api = create({ baseURL: `${API_BASE_URL}/api`, timeout: 30_000 });
+const readTokenSafely = async (): Promise<string | null> => {
+  try {
+    return await Promise.race([
+      authStorage.getAccessToken(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 2_000)),
+    ]);
+  } catch {
+    return null;
+  }
+};
 api.interceptors.request.use(async (config) => {
-  const token = await authStorage.getAccessToken();
+  const token = await readTokenSafely();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

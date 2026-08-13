@@ -21,6 +21,8 @@ export interface Lesson {
   videoSource?: string | null;
   videoPublicId?: string | null;
   videoStatus?: string | null;
+  phuDeVideo?: string | null;
+  thoiGianDaXem?: number | null;
   daXem?: boolean;
   laHocThu?: boolean;
   biKhoa?: boolean;

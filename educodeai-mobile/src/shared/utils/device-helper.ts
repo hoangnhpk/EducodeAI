@@ -13,11 +13,16 @@ export interface DeviceInfo {
 }
 
 export const getDeviceInfo = async (): Promise<DeviceInfo> => {
-  let id = await AsyncStorage.getItem(AUTH_STORAGE_KEYS.deviceId);
-  if (!id) {
-    id = generateDeviceId();
-    await AsyncStorage.setItem(AUTH_STORAGE_KEYS.deviceId, id);
+  try {
+    const id = await Promise.race([
+      AsyncStorage.getItem(AUTH_STORAGE_KEYS.deviceId),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 2_000)),
+    ]);
+    if (id) return { maThietBi: id, tenThietBi: buildDeviceName(Constants.expoConfig?.name, Platform.OS) };
+  } catch {
+    // Fall back to a generated device id when native storage is unavailable.
   }
-
+  const id = generateDeviceId();
+  void AsyncStorage.setItem(AUTH_STORAGE_KEYS.deviceId, id).catch(() => undefined);
   return { maThietBi: id, tenThietBi: buildDeviceName(Constants.expoConfig?.name, Platform.OS) };
 };

@@ -109,7 +109,7 @@ export default function CourseDetailScreen() {
 
   const goLearn = () => {
     // Deep-link sang module Learning (Khôi) — chỉ truyền courseId theo contract module.
-    router.push(`/learn/${maKhoaHoc}`);
+    router.push(`/khoa-hoc/hoc/${maKhoaHoc}`);
   };
 
   const goHocThu = () => {
