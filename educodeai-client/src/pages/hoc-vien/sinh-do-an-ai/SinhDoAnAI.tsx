@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
+import JSZip from 'jszip';
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 interface IYeuCauChucNang {
@@ -18,6 +19,9 @@ interface IProjectResult {
     moTa: string;
     yeuCauChucNang: IYeuCauChucNang[];
     cauTrucDatabase: string;
+    daHoanThanh?: boolean;
+    tongDiem?: number;
+    nhanXetTong?: string;
 }
 
 interface IHistoryItem {
@@ -128,8 +132,11 @@ const SinhDoAnAI: React.FC = () => {
     const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
 
     // Timer for cooldown
-    const [currentTime, setCurrentTime] = useState(Date.now());
+    // Khởi tạo 0 thay vì Date.now() (gọi hàm impure lúc render vi phạm
+    // react-hooks/purity); effect bên dưới set ngay mốc thật khi mount.
+    const [currentTime, setCurrentTime] = useState(0);
     useEffect(() => {
+        setCurrentTime(Date.now());
         const t = setInterval(() => setCurrentTime(Date.now()), 1000);
         return () => clearInterval(t);
     }, []);
@@ -302,12 +309,116 @@ const SinhDoAnAI: React.FC = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    // ── Chấm điểm từng tính năng (Mới - Quay lại nộp 1 file) ──
+    // ── Đọc nội dung file (hỗ trợ cả file đơn và file ZIP) ──
+    const CODE_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.cs', '.html', '.css', '.json', '.md', '.py', '.java', '.go', '.rb', '.php', '.vue', '.svelte', '.sql', '.yml', '.yaml', '.env', '.txt', '.cfg', '.ini', '.sh', '.bat', '.xml', '.scss', '.less', '.graphql', '.prisma'];
+
+    const extractFileContent = async (file: File): Promise<{ fileName: string; content: string }> => {
+        if (file.name.endsWith('.rar')) {
+            // Giải nén RAR bằng node-unrar-js (WASM)
+            try {
+                const { createExtractorFromData } = await import('node-unrar-js/esm');
+                const wasmBinary = await fetch(new URL('node-unrar-js/esm/js/unrar.wasm', import.meta.url)).then(r => r.arrayBuffer());
+                const arrayBuffer = await file.arrayBuffer();
+                const extractor = await createExtractorFromData({ wasmBinary, data: arrayBuffer });
+                const extracted = extractor.extract();
+                
+                const parts: string[] = [];
+                let totalLines = 0;
+                const MAX_TOTAL_LINES = 600;
+                let fileCount = 0;
+
+                for (const f of extracted.files as unknown as Array<{ extraction?: Uint8Array; fileHeader: { flags: { directory: boolean }; name: string } }>) {
+                    if (!f.extraction || f.fileHeader.flags.directory) continue;
+                    const path = f.fileHeader.name;
+                    // Bỏ qua thư mục rác
+                    if (/(\/|\\|^)(node_modules|\.git|bin|obj|dist|build|\.vs|\.idea|__pycache__)(\/|\\)/i.test(path)) continue;
+                    // Chỉ lấy file code
+                    const ext = '.' + path.split('.').pop()?.toLowerCase();
+                    if (!CODE_EXTENSIONS.includes(ext)) continue;
+                    
+                    if (totalLines >= MAX_TOTAL_LINES) {
+                        parts.push(`\n// ... (đã cắt bớt, còn nhiều file khác chưa hiển thị để tiết kiệm Token)`);
+                        break;
+                    }
+                    
+                    const text = new TextDecoder().decode(f.extraction);
+                    const lines = text.split('\n');
+                    const remaining = MAX_TOTAL_LINES - totalLines;
+                    const truncated = lines.length > remaining ? lines.slice(0, remaining).join('\n') + '\n// ... (file bị cắt bớt)' : text;
+                    parts.push(`\n// ========== FILE: ${path} ==========\n${truncated}`);
+                    totalLines += Math.min(lines.length, remaining);
+                    fileCount++;
+                }
+
+                if (parts.length === 0) {
+                    throw new Error('Không tìm thấy file code nào trong RAR.');
+                }
+
+                return {
+                    fileName: `${file.name} (${fileCount} files)`,
+                    content: parts.join('\n')
+                };
+            } catch (e: any) {
+                if (e.message?.includes('file code')) throw e;
+                throw new Error(`Không thể giải nén file RAR: ${e.message}. Vui lòng thử nén lại bằng .zip.`);
+            }
+        }
+        if (file.name.endsWith('.zip')) {
+            const zip = await JSZip.loadAsync(file);
+            const parts: string[] = [];
+            let totalLines = 0;
+            const MAX_TOTAL_LINES = 600;
+
+            const entries = Object.entries(zip.files)
+                .filter(([path, entry]) => {
+                    const zipEntry = entry as JSZip.JSZipObject;
+                    if (zipEntry.dir) return false;
+                    // Bỏ qua thư mục node_modules, .git, bin, obj, dist, build
+                    if (/(\/|^)(node_modules|.git|bin|obj|dist|build|\.vs|\.idea|__pycache__)\//i.test(path)) return false;
+                    // Chỉ lấy file code
+                    const ext = '.' + path.split('.').pop()?.toLowerCase();
+                    return CODE_EXTENSIONS.includes(ext);
+                })
+                .sort(([a], [b]) => a.localeCompare(b));
+
+            for (const [path, entry] of entries) {
+                if (totalLines >= MAX_TOTAL_LINES) {
+                    parts.push(`\n// ... (đã cắt bớt, còn nhiều file khác chưa hiển thị để tiết kiệm Token)`);
+                    break;
+                }
+                const zipEntry = entry as JSZip.JSZipObject;
+                const text = await zipEntry.async('text');
+                const lines = text.split('\n');
+                const remaining = MAX_TOTAL_LINES - totalLines;
+                const truncated = lines.length > remaining ? lines.slice(0, remaining).join('\n') + '\n// ... (file bị cắt bớt)' : text;
+                parts.push(`\n// ========== FILE: ${path} ==========\n${truncated}`);
+                totalLines += Math.min(lines.length, remaining);
+            }
+
+            if (parts.length === 0) {
+                throw new Error('Không tìm thấy file code nào trong ZIP. Hãy đảm bảo ZIP chứa các file .ts, .cs, .js, .py, v.v.');
+            }
+
+            return {
+                fileName: `${file.name} (${entries.length} files)`,
+                content: parts.join('\n')
+            };
+        } else {
+            const textContent = await file.text();
+            const lines = textContent.split('\n');
+            const truncatedContent = lines.length > 500 ? lines.slice(0, 500).join('\n') + '\n\n// ... (đã cắt bớt để tiết kiệm Token)' : textContent;
+            return { fileName: file.name, content: truncatedContent };
+        }
+    };
+
+    // ── Chấm điểm từng tính năng (hỗ trợ file đơn + ZIP) ──
     const handleGradeFeature = async (idx: number, yc: any, file: File) => {
         if (!resultData) return;
 
-        if (file.size > 50 * 1024) {
-            addToast('error', 'File quá lớn (>50KB). Vui lòng chỉ tải lên file code trọng tâm của tính năng để tiết kiệm Token AI.');
+        const isArchive = file.name.endsWith('.zip') || file.name.endsWith('.rar');
+        const maxSize = isArchive ? 5 * 1024 * 1024 : 50 * 1024; // ZIP/RAR: 5MB, file đơn: 50KB
+        if (file.size > maxSize) {
+            addToast('error', isArchive ? 'File nén quá lớn (>5MB).' : 'File quá lớn (>50KB). Vui lòng chỉ tải lên file code trọng tâm.');
             return;
         }
 
@@ -317,9 +428,7 @@ const SinhDoAnAI: React.FC = () => {
         setFeatureGrades(prev => ({ ...prev, [idx]: { ...prev[idx], isLoading: true, error: undefined } }));
 
         try {
-            const textContent = await file.text();
-            const lines = textContent.split('\n');
-            const truncatedContent = lines.length > 500 ? lines.slice(0, 500).join('\n') + '\n\n// ... (đã cắt bớt để tiết kiệm Token)' : textContent;
+            const { fileName, content } = await extractFileContent(file);
 
             const tenChucNangText = typeof yc === 'string' ? yc : (yc.tenChucNang || yc.TenChucNang || `Tính năng ${idx + 1}`);
             const ngay = typeof yc === 'string' ? idx + 1 : (yc.ngay || yc.Ngay || idx + 1);
@@ -330,8 +439,8 @@ const SinhDoAnAI: React.FC = () => {
                 tenDoAn: resultData.tenDoAn,
                 moTa: resultData.moTa,
                 tenTinhNang: tenChucNangText,
-                tenFile: file.name,
-                noiDungFile: truncatedContent,
+                tenFile: fileName,
+                noiDungFile: content,
                 khoKhan: featureKhoKhan,
                 suaDoi: featureSuaDoi
             });
@@ -344,7 +453,6 @@ const SinhDoAnAI: React.FC = () => {
 
             if (diem >= 50 && !completedFeatures.includes(idx)) {
                 setCompletedFeatures(prev => [...prev, idx]);
-                // Update local resultData to persist the completion time
                 setResultData(prev => {
                     if (!prev) return prev;
                     const newFeatures = [...prev.yeuCauChucNang];
@@ -358,7 +466,7 @@ const SinhDoAnAI: React.FC = () => {
                 });
             }
         } catch (err: any) {
-            const msg = err?.response?.data?.details || err?.response?.data?.message || 'Lỗi khi chấm điểm';
+            const msg = err?.response?.data?.details || err?.response?.data?.message || err?.message || 'Lỗi khi chấm điểm';
             setFeatureGrades(prev => ({
                 ...prev,
                 [idx]: { ...prev[idx], isLoading: false, error: msg }
@@ -499,7 +607,7 @@ const SinhDoAnAI: React.FC = () => {
                             Lịch sử
                             {history.length > 0 && <span className="sda-history-count">{history.length}</span>}
                         </button>
-                        <button className="sda-back-btn" onClick={() => navigate(-1)} aria-label="Quay lại">
+                        <button className="sda-back-btn" onClick={() => navigate('/')} aria-label="Quay lại">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                                 <path d="M19 12H5M12 5l-7 7 7 7" />
                             </svg>
@@ -846,10 +954,12 @@ const SinhDoAnAI: React.FC = () => {
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                                             <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                                         </svg>
-                                        Yêu cầu chức năng
-                                        <span className="sda-tab-count" aria-label={`${resultData.yeuCauChucNang.length} chức năng`}>
-                                            {resultData.yeuCauChucNang.length}
-                                        </span>
+                                        {resultData.daHoanThanh ? 'Kết quả đồ án' : 'Yêu cầu chức năng'}
+                                        {!resultData.daHoanThanh && (
+                                            <span className="sda-tab-count" aria-label={`${resultData.yeuCauChucNang.length} chức năng`}>
+                                                {resultData.yeuCauChucNang.length}
+                                            </span>
+                                        )}
                                     </button>
                                     <button
                                         id="tab-database"
@@ -874,9 +984,42 @@ const SinhDoAnAI: React.FC = () => {
                                         aria-labelledby="tab-features"
                                         className="sda-features-list"
                                     >
-                                        {resultData.yeuCauChucNang.map((yc: any, idx) => {
-                                            // Handle backward compatibility or case issues
-                                            const tenChucNangText = typeof yc === 'string' ? yc : (yc.tenChucNang || yc.TenChucNang || `Tính năng ${idx + 1}`);
+                                        {resultData.daHoanThanh ? (
+                                            <div className="sda-result-summary" style={{ padding: '2.5rem 1.5rem', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                                                <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🏆</div>
+                                                <h3 style={{ color: '#0f172a', fontSize: '1.5rem', marginBottom: '0.5rem', fontWeight: 700 }}>Đã Hoàn Thành Xuất Sắc</h3>
+                                                <p style={{ fontSize: '1.25rem', color: '#10b981', fontWeight: 'bold', marginBottom: '2rem' }}>
+                                                    Tổng điểm phỏng vấn: {resultData.tongDiem ?? 100}/100
+                                                </p>
+                                                <div style={{ backgroundColor: '#ffffff', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left', lineHeight: '1.7', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                                                    <h4 style={{ color: '#334155', fontSize: '1.05rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{ fontSize: '1.2rem' }}>📝</span> Nhận xét từ AI Interviewer
+                                                    </h4>
+                                                    <p style={{ color: '#475569', margin: 0, whiteSpace: 'pre-line' }}>
+                                                        {(() => {
+                                                            let text = resultData.nhanXetTong;
+                                                            if (!text) return 'Bạn đã hoàn thành rất tốt đồ án này. Hãy tiếp tục phát huy và tự tin đưa dự án này vào CV nhé!';
+                                                            
+                                                            // Dọn dẹp tất cả các loại lỗi rò rỉ prompt tiếng Anh (Tone:, Role:, Draft:, v.v.)
+                                                            // Bằng cách lấy đoạn văn tiếng Việt cuối cùng
+                                                            if (text.includes('Tone:') || text.includes('Role:') || text.includes('Draft') || text.includes('*')) {
+                                                                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                                                                // Lấy dòng cuối cùng (thường là câu tiếng Việt)
+                                                                if (lines.length > 0) {
+                                                                    const lastLine = lines[lines.length - 1];
+                                                                    // Xóa dấu * ở đầu/cuối nếu có
+                                                                    return lastLine.replace(/^\*+|\*+$/g, '').trim();
+                                                                }
+                                                            }
+                                                            return text;
+                                                        })()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            resultData.yeuCauChucNang.map((yc: any, idx) => {
+                                                // Handle backward compatibility or case issues
+                                                const tenChucNangText = typeof yc === 'string' ? yc : (yc.tenChucNang || yc.TenChucNang || `Tính năng ${idx + 1}`);
                                             const chiTietYeuCauText = typeof yc === 'string' ? '' : (yc.chiTietYeuCau || yc.ChiTietYeuCau || '');
                                             const ngay = typeof yc === 'string' ? idx + 1 : (yc.ngay || yc.Ngay || idx + 1);
                                             const diem = typeof yc === 'string' ? 0 : (yc.diem || yc.Diem || 0);
@@ -980,7 +1123,7 @@ const SinhDoAnAI: React.FC = () => {
                                                                     type="file"
                                                                     id={`file-upload-${idx}`}
                                                                     className="sda-file-input-hidden"
-                                                                    accept=".js,.jsx,.ts,.tsx,.cs,.html,.css,.json,.md"
+                                                                    accept=".js,.jsx,.ts,.tsx,.cs,.html,.css,.json,.md,.py,.java,.go,.rb,.php,.vue,.zip,.rar,application/zip,application/x-zip-compressed"
                                                                     onChange={(e) => {
                                                                         const file = e.target.files?.[0];
                                                                         if (file) handleGradeFeature(idx, yc, file);
@@ -989,7 +1132,7 @@ const SinhDoAnAI: React.FC = () => {
                                                                     disabled={gradeData?.isLoading}
                                                                 />
                                                                 <label htmlFor={`file-upload-${idx}`} className={`sda-upload-btn ${gradeData?.isLoading ? 'loading' : ''}`}>
-                                                                    {gradeData?.isLoading ? 'Đang chấm điểm...' : 'Tải file cốt lõi lên chấm (.ts, .cs...)'}
+                                                                    {gradeData?.isLoading ? 'Đang chấm điểm...' : '📁 Tải file, ZIP hoặc RAR lên chấm'}
                                                                 </label>
                                                             </div>
 
@@ -1013,7 +1156,7 @@ const SinhDoAnAI: React.FC = () => {
                                                     )}
                                                 </div>
                                             );
-                                        })}
+                                        }))}
                                     </div>
                                 )}
 
@@ -1046,47 +1189,48 @@ const SinhDoAnAI: React.FC = () => {
                                 )}
 
                                 {/* ── NỘP ĐỒ ÁN CTA ── */}
-                                <div className="sda-submit-cta">
-                                    <div className="sda-submit-info">
-                                        <span className="sda-submit-icon">🎯</span>
-                                        <div>
-                                            <strong>Sẵn sàng chứng minh bản thân?</strong>
-                                            <p>Nộp đồ án và bước vào Trạm Hỏi Cung AI – hoàn thành để nhận Chứng Chỉ Thực Chiến</p>
+                                {!resultData.daHoanThanh && (
+                                    <div className="sda-submit-cta">
+                                        <div className="sda-submit-info">
+                                            <span className="sda-submit-icon">🎯</span>
+                                            <div>
+                                                <strong>Sẵn sàng chứng minh bản thân?</strong>
+                                                <p>Nộp đồ án và bước vào Trạm Hỏi Cung AI – hoàn thành để nhận Chứng Chỉ Thực Chiến</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="sda-submit-note-wrapper" style={{ width: '100%', marginTop: '0.5rem' }}>
+                                            <label htmlFor="khoKhan" style={{ display: 'block', fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.4rem', fontWeight: 600 }}>
+                                                Bạn gặp những khó khăn gì trong quá trình làm đồ án này? (Tuỳ chọn)
+                                            </label>
+                                            <textarea
+                                                id="khoKhan"
+                                                className="sda-textarea"
+                                                placeholder="Ví dụ: Cấu hình Redux rườm rà, hoặc khó khăn khi tối ưu truy vấn Database..."
+                                                value={khoKhan}
+                                                onChange={e => setKhoKhan(e.target.value)}
+                                                rows={2}
+                                                style={{ width: '100%', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', padding: '0.75rem', color: 'var(--text-main, #111827)', fontSize: '0.85rem', resize: 'vertical' }}
+                                            />
+                                        </div>
+
+                                        <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                                            <button
+                                                id="sda-submit-btn"
+                                                className={`sda-submit-btn ${submitting ? 'loading' : ''}`}
+                                                onClick={handleNopDoAn}
+                                                disabled={submitting}
+                                                aria-busy={submitting}
+                                            >
+                                                {submitting ? (
+                                                    <><span className="sda-gen-spinner" aria-hidden="true" />Đang nộp...</>
+                                                ) : (
+                                                    <><span>🚀</span> Nộp Đồ Án &amp; Bắt Đầu Phỏng Vấn AI</>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
-
-
-                                    <div className="sda-submit-note-wrapper" style={{ width: '100%', marginTop: '0.5rem' }}>
-                                        <label htmlFor="khoKhan" style={{ display: 'block', fontSize: '0.82rem', color: 'var(--text-light)', marginBottom: '0.4rem', fontWeight: 600 }}>
-                                            Bạn gặp những khó khăn gì trong quá trình làm đồ án này? (Tuỳ chọn)
-                                        </label>
-                                        <textarea
-                                            id="khoKhan"
-                                            className="sda-textarea"
-                                            placeholder="Ví dụ: Cấu hình Redux rườm rà, hoặc khó khăn khi tối ưu truy vấn Database..."
-                                            value={khoKhan}
-                                            onChange={e => setKhoKhan(e.target.value)}
-                                            rows={2}
-                                            style={{ width: '100%', background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '10px', padding: '0.75rem', color: 'var(--text-main, #111827)', fontSize: '0.85rem', resize: 'vertical' }}
-                                        />
-                                    </div>
-
-                                    <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                                        <button
-                                            id="sda-submit-btn"
-                                            className={`sda-submit-btn ${submitting ? 'loading' : ''}`}
-                                            onClick={handleNopDoAn}
-                                            disabled={submitting}
-                                            aria-busy={submitting}
-                                        >
-                                            {submitting ? (
-                                                <><span className="sda-gen-spinner" aria-hidden="true" />Đang nộp...</>
-                                            ) : (
-                                                <><span>🚀</span> Nộp Đồ Án &amp; Bắt Đầu Phỏng Vấn AI</>
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
+                                )}
 
                             </div>
                         )}

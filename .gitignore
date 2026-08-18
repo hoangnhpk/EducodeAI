@@ -391,3 +391,9 @@ scratch/
 
 # Frontend test coverage output
 educodeai-client/coverage/
+
+# Expo / React Native
+educodeai-mobile/.expo/
+educodeai-mobile/node_modules/
+educodeai-mobile/.expo-shared/
+educodeai-mobile/dist/

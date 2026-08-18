@@ -159,6 +159,48 @@
 }
 
 /* ── Form Elements ── */
+.btth-input-addon {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.btth-input-addon .form-control {
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+}
+
+.btth-input-addon .form-control:focus {
+  box-shadow: none;
+}
+
+.btth-language-title-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 767.98px) {
+  .btth-language-title-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+.btth-input-addon__suffix {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  color: #374151;
+  font-size: 14px;
+}
+
 .form-control {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);

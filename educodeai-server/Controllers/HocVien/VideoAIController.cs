@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using educodeai_server.Data;
 using educodeai_server.Models;
 using educodeai_server.Helpers;
-using educodeai_server.Helpers;
 using educodeai_server.DTOs.VideoAI;
 using educodeai_server.Services.Interface;
 using Microsoft.Extensions.Configuration;

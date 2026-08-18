@@ -539,7 +539,19 @@ namespace educodeai_server.Repository.Implementation
             }
 
             dto.HoTenHienThi = dto.HoTenHienThi?.Trim() ?? string.Empty;
-            dto.EmailNhan = dto.EmailNhan?.Trim() ?? string.Empty;
+
+            // Chứng chỉ luôn gửi về email của chính tài khoản đang học. Không dùng email client gửi lên
+            // để tránh gửi nhầm (hoặc cố ý gửi) chứng chỉ sang địa chỉ của người khác.
+            // MaNguoiDung ở đây đã được controller ghi đè bằng ID lấy từ token nên tin được.
+            var emailTaiKhoan = await _context.NguoiDungs
+                .AsNoTracking()
+                .Where(x => x.MaNguoiDung == dto.MaNguoiDung)
+                .Select(x => x.Email)
+                .FirstOrDefaultAsync();
+
+            dto.EmailNhan = !string.IsNullOrWhiteSpace(emailTaiKhoan)
+                ? emailTaiKhoan.Trim()
+                : (dto.EmailNhan?.Trim() ?? string.Empty);
 
             if (string.IsNullOrWhiteSpace(dto.HoTenHienThi))
             {

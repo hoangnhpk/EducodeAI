@@ -194,8 +194,19 @@ const MuaKhoaHoc = () => {
     const ketQua = await Swal.fire({
       title: "Gửi yêu cầu admin hỗ trợ?",
       html: `
-        <input id="ht-lien-lac" class="swal2-input" placeholder="SĐT/Zalo/Email liên hệ nhanh" />
-        <textarea id="ht-noi-dung" class="swal2-textarea" placeholder="Mô tả ngắn (tùy chọn)"></textarea>
+        <div style="display:flex;flex-direction:column;gap:10px;text-align:left;">
+          <input
+            id="ht-lien-lac"
+            placeholder="SĐT/Zalo/Email liên hệ nhanh"
+            style="width:100%;margin:0;box-sizing:border-box;height:auto;padding:10px 12px;font-size:1rem;border:1px solid #d9d9d9;border-radius:8px;"
+          />
+          <textarea
+            id="ht-noi-dung"
+            rows="3"
+            placeholder="Mô tả ngắn (tùy chọn)"
+            style="width:100%;margin:0;box-sizing:border-box;height:auto;padding:10px 12px;font-size:1rem;border:1px solid #d9d9d9;border-radius:8px;resize:vertical;"
+          ></textarea>
+        </div>
       `,
       showCancelButton: true,
       confirmButtonText: "Gửi yêu cầu",

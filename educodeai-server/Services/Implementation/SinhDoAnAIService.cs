@@ -342,7 +342,7 @@ Nhiệm vụ của bạn là đánh giá mã nguồn xem học viên đã thực
 - Kiểm tra dấu hiệu copy code/cheat: Nếu code quá hoàn hảo, sử dụng các thư viện ngoài không cần thiết, hoặc có format/comment bất thường (như do AI sinh ra), hãy trừ điểm nặng.
 - Chấm điểm (0-100). Đạt là >= 50.
 - Trả về JSON: {{ ""Diem"": <điểm>, ""NhanXet"": ""<nhận xét>"" }}
-- LƯU Ý: Nhận xét CỰC KỲ NGẮN GỌN (tối đa 2-3 câu), chỉ nêu đúng trọng tâm để tiết kiệm token. Bắt buộc escape ký tự đặc biệt, không dùng Enter (xuống dòng), dùng nháy đơn thay nháy kép trong chuỗi.
+- LƯU Ý: Nhận xét CỰC KỲ NGẮN GỌN (tối đa 2-3 câu), chỉ nêu đúng trọng tâm để tiết kiệm token. BẮT BUỘC VIẾT BẰNG TIẾNG VIỆT CÓ DẤU (ví dụ: 'Học viên đã triển khai tốt' chứ KHÔNG ĐƯỢC viết 'Hoc vien da trien khai tot'). Bắt buộc escape ký tự đặc biệt, không dùng Enter (xuống dòng), dùng nháy đơn thay nháy kép trong chuỗi.
 ";
             try
             {
@@ -359,19 +359,26 @@ Nhiệm vụ của bạn là đánh giá mã nguồn xem học viên đã thực
                     var doAn = await _dbContext.DoAnThucChiens.FindAsync(request.MaDoAn);
                     if (doAn != null && doAn.MaNguoiDung == maNguoiDung)
                     {
-                        var lstYeuCau = JsonSerializer.Deserialize<List<YeuCauChucNangDto>>(doAn.YeuCauChucNangJSON) ?? new List<YeuCauChucNangDto>();
-                        var currentFeature = lstYeuCau.FirstOrDefault(f => f.Ngay == request.Ngay);
-                        if (currentFeature != null)
+                        try
                         {
-                            currentFeature.Diem = diem;
-                            currentFeature.NhanXet = nx;
-                            if (diem >= 50)
+                            var lstYeuCau = JsonSerializer.Deserialize<List<YeuCauChucNangDto>>(doAn.YeuCauChucNangJSON, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<YeuCauChucNangDto>();
+                            var currentFeature = lstYeuCau.FirstOrDefault(f => f.Ngay == request.Ngay);
+                            if (currentFeature != null)
                             {
-                                currentFeature.NgayHoanThanh = DateTime.UtcNow;
-                                currentFeature.TrangThai = "Done";
+                                currentFeature.Diem = diem;
+                                currentFeature.NhanXet = nx;
+                                if (diem >= 50)
+                                {
+                                    currentFeature.NgayHoanThanh = DateTime.UtcNow;
+                                    currentFeature.TrangThai = "Done";
+                                }
+                                doAn.YeuCauChucNangJSON = JsonSerializer.Serialize(lstYeuCau);
+                                await _dbContext.SaveChangesAsync();
                             }
-                            doAn.YeuCauChucNangJSON = JsonSerializer.Serialize(lstYeuCau);
-                            await _dbContext.SaveChangesAsync();
+                        }
+                        catch (JsonException)
+                        {
+                            // Dữ liệu cũ không đúng format, bỏ qua việc cập nhật DB
                         }
                     }
                 }
@@ -567,19 +574,27 @@ JSON CÓ ĐÚNG 2 TRƯỜNG:
                 sb.AppendLine($"Câu {t.SoCau} ({t.Diem}/20): {t.NhanXet}");
 
             var prompt = $@"
+BẠN LÀ MỘT GIÁM KHẢO NGƯỜI VIỆT NAM.
 Vừa kết thúc phỏng vấn đồ án '{phien.TenDoAn}'. 
 Tổng điểm: {tongDiem}/100. Kết quả: {(daDat ? "ĐẠT" : "CHƯA ĐẠT")}.
 Chi tiết: {sb}
 
-Viết nhận xét tổng (3-4 câu): điểm mạnh, điểm cần cải thiện, lời khuyên.
-Xưng ""anh"", gọi ""em"". Chỉ trả về đoạn văn, không markdown.
+Nhiệm vụ: Viết nhận xét tổng (3-4 câu) bằng TIẾNG VIỆT về: điểm mạnh, điểm cần cải thiện, lời khuyên.
+Xưng ""anh"", gọi ""em"".
+
+BẮT BUỘC TRẢ VỀ JSON DUY NHẤT NHƯ SAU (KHÔNG DÙNG MARKDOWN KHÁC, KHÔNG GIẢI THÍCH):
+{{
+  ""nhanXet"": ""<nội dung nhận xét bằng tiếng Việt>""
+}}
 ";
             try
             {
                 try
                 {
                     var raw = await _gemini.GenerateAsync(prompt);
-                    return ChuanHoaJsonTuAIHelper.LayTextChatTuAI(raw).Trim();
+                    var json = ChuanHoaJsonTuAIHelper.ChuanHoa(raw);
+                    var parsed = JsonSerializer.Deserialize<JsonElement>(json);
+                    return parsed.GetProperty("nhanXet").GetString() ?? (daDat ? "Chúc mừng em đã vượt qua!" : "Em cần ôn tập thêm và thử lại.");
                 }
                 catch (Exception ex)
                 {

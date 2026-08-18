@@ -123,7 +123,7 @@ const PhongVanDoAn: React.FC = () => {
                 confirmButtonText: 'Đã hiểu',
                 allowOutsideClick: false
             }).then(() => {
-                navigate('/sinh-do-an-ai');
+                navigate('/sinh-do-an-ai', { replace: true });
             });
             return;
         }
@@ -198,6 +198,23 @@ const PhongVanDoAn: React.FC = () => {
                         const kq = await axiosInstance.get<IKetQua>(`/api/SinhDoAnAI/ket-qua?sessionId=${sessionId}`) as any;
                         setKetQua(kq);
                         setShowKetQua(true);
+                        if (kq.daDat) {
+                            try {
+                                const historyStr = localStorage.getItem('sda_history_v1');
+                                if (historyStr) {
+                                    const history = JSON.parse(historyStr);
+                                    const item = history.find((h: any) => h.result.tenDoAn === tenDoAn);
+                                    if (item) {
+                                        item.result.daHoanThanh = true;
+                                        item.result.tongDiem = kq.tongDiem;
+                                        item.result.nhanXetTong = kq.nhanXetTong;
+                                        localStorage.setItem('sda_history_v1', JSON.stringify(history));
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error updating history:', e);
+                            }
+                        }
                     } catch {
                         setShowKetQua(true);
                     }
@@ -270,7 +287,7 @@ const PhongVanDoAn: React.FC = () => {
                         )}
                         <button
                             className="pvd-exit-btn"
-                            onClick={() => navigate('/sinh-do-an-ai')}
+                            onClick={() => navigate('/sinh-do-an-ai', { replace: true })}
                             aria-label="Thoát phỏng vấn"
                         >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
@@ -401,19 +418,12 @@ const PhongVanDoAn: React.FC = () => {
                                 <p className="pvd-result-score">
                                     Tổng điểm: <strong>{ketQua.tongDiem}/100</strong>
                                 </p>
-                                {ketQua.maChungChi && (
-                                    <div className="pvd-cert-box" aria-label="Mã chứng chỉ">
-                                        <span className="pvd-cert-label">🎓 Mã Chứng Chỉ Thực Chiến</span>
-                                        <code className="pvd-cert-code">{ketQua.maChungChi}</code>
-                                        <button
-                                            className="pvd-cert-copy"
-                                            onClick={() => navigator.clipboard.writeText(ketQua.maChungChi!)}
-                                            aria-label="Sao chép mã chứng chỉ"
-                                        >
-                                            Sao chép
-                                        </button>
-                                    </div>
-                                )}
+                                <div className="pvd-cert-box" aria-label="Hoàn thành đồ án">
+                                    <span className="pvd-cert-label">🎓 Chúc mừng!</span>
+                                    <p style={{ marginTop: '8px', marginBottom: 0, fontSize: '15px', fontWeight: '500', color: 'var(--success-color, #10b981)', textAlign: 'center' }}>
+                                        Bạn hãy đẩy dự án {tenDoAn} lên Github để có thể gắn vào để hoàn thiện CV hơn!
+                                    </p>
+                                </div>
                             </>
                         ) : (
                             <>
@@ -457,14 +467,14 @@ const PhongVanDoAn: React.FC = () => {
                             <button
                                 id="pvd-btn-new"
                                 className="pvd-btn-primary"
-                                onClick={() => navigate('/sinh-do-an-ai')}
+                                onClick={() => navigate('/sinh-do-an-ai', { replace: true })}
                             >
                                 {ketQua?.daDat ? '🎉 Tạo Đồ Án Mới' : '🔄 Thử Lại Với Đồ Án Mới'}
                             </button>
                             <button
                                 id="pvd-btn-home"
                                 className="pvd-btn-secondary"
-                                onClick={() => navigate('/')}
+                                onClick={() => navigate('/', { replace: true })}
                             >
                                 Về Trang Chủ
                             </button>

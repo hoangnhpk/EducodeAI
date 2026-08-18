@@ -4,13 +4,13 @@ import type { GenerateBaiTapThucHanhDTO } from '../types';
 interface Props {
   baiHocId: number | null;
   tenBaiHoc: string;
+  language: string;
   isGenerating: boolean;
   onGenerate: (dto: GenerateBaiTapThucHanhDTO) => void;
 }
 
-export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onGenerate }: Props) {
+export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, language, isGenerating, onGenerate }: Props) {
   const [mucDo, setMucDo] = useState('Trung bình');
-  const [ngonNgu, setNgonNgu] = useState('Python');
   const [thoiGian, setThoiGian] = useState(30);
   const [yeuCau, setYeuCau] = useState('');
 
@@ -23,7 +23,7 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
       maBaiHoc: baiHocId,
       MaBaiHoc: baiHocId, // Thêm cả PascalCase cho chắc
       difficulty: mucDo,
-      language: ngonNgu,
+      language,
       topicTags: [], // Gửi mảng rỗng vì backend yêu cầu field này
       estimatedTime: thoiGian,
       customInstructions: yeuCau,
@@ -47,15 +47,11 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
           {/* Tên bài học hiển thị readonly */}
           <div className="col-12 mb-4">
             <label className="btth-label">Bài học đang chọn</label>
-            <div className="input-group">
-              <span className="input-group-text bg-light border-end-0" style={{ borderRadius: 'var(--radius-md) 0 0 var(--radius-md)' }}><i className="bi bi-journal-text" aria-hidden="true" /></span>
-              <input
-                type="text"
-                className="form-control border-start-0"
-                style={{ borderRadius: '0 var(--radius-md) var(--radius-md) 0', background: 'var(--bg-main)', fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}
-                value={tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
-                readOnly
-              />
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '40px', width: '100%', overflow: 'hidden', border: '1px solid var(--border-color, #dee2e6)', borderRadius: 'var(--radius-md)', background: 'var(--bg-main)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '48px', flex: '0 0 48px', background: '#f8f9fa', borderRight: '1px solid var(--border-color, #dee2e6)' }}><i className="bi bi-journal-text" aria-hidden="true" /></span>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 12px', fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}>
+                {tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
+              </span>
             </div>
           </div>
 
@@ -70,23 +66,10 @@ export default function FormTaoBaiTapAI({ baiHocId, tenBaiHoc, isGenerating, onG
 
           <div className="col-md-4 mb-3">
             <label className="btth-label">Ngôn ngữ lập trình</label>
-            <select className="form-select form-control" value={ngonNgu} onChange={(e) => setNgonNgu(e.target.value)}>
-              <option value="Python">Python</option>
-              <option value="C++">C++</option>
-              <option value="C">C</option>
-              <option value="C#">C#</option>
-              <option value="Java">Java</option>
-              <option value="JavaScript">JavaScript</option>
-              <option value="TypeScript">TypeScript</option>
-              <option value="Go">Go</option>
-              <option value="Rust">Rust</option>
-              <option value="Ruby">Ruby</option>
-              <option value="PHP">PHP</option>
-              <option value="Swift">Swift</option>
-              <option value="Scala">Scala</option>
-              <option value="R">R</option>
-              <option value="Kotlin">Kotlin</option>
-            </select>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '40px', width: '100%', overflow: 'hidden', border: '1px solid var(--border-color, #dee2e6)', borderRadius: 'var(--radius-md)', background: 'var(--bg-main)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '48px', flex: '0 0 48px', background: '#f8f9fa', borderRight: '1px solid var(--border-color, #dee2e6)' }}><i className="bi bi-code-slash" aria-hidden="true" /></span>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 12px' }}>{language || 'Lấy theo khóa học'}</span>
+            </div>
           </div>
 
           <div className="col-md-4 mb-3">

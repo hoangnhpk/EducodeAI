@@ -31,6 +31,7 @@ const NoiDungKhoaHoc = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [khoaHoc, setKhoaHoc] = useState<KhoaHocData | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [idBaiHoc, setIdBaiHoc] = useState(0);
     const [hienSidebar, setHienSidebar] = useState(false);
     const [tabActive, setTabActive] = useState<'hoc' | 'tomtat' | 'danhgia' | 'quiz' | 'chungchi' | 'ide'>('hoc');
@@ -53,6 +54,12 @@ const NoiDungKhoaHoc = () => {
         if (!id) return;
 
         const realId = decodeId(id);
+        if (!realId) {
+            setLoadError('Đường dẫn khóa học không hợp lệ hoặc đã hết hạn.');
+            return;
+        }
+
+        setLoadError(null);
         const data = await KhoaHocService.layDuLieuKhoaHoc(realId);
         setKhoaHoc(data);
 
@@ -177,33 +184,16 @@ const NoiDungKhoaHoc = () => {
     const handleVideoCompleted = useCallback((maBaiHocVuaXong: number) => {
         const baiHocVuaXong = flatList.find((bai) => bai.id === maBaiHocVuaXong);
 
+        // Xem xong lý thuyết thì chuyển thẳng sang tab bài tập, không hiện popup.
         if (baiHocVuaXong?.thongTinQuiz) {
             setVideoDaXongLocal((prev) => [...prev, maBaiHocVuaXong]);
-
-            void Swal.fire({
-                title: 'Đã hoàn thành lý thuyết!',
-                text: 'Hãy hoàn thành bài trắc nghiệm để mở khóa bài học tiếp theo.',
-                icon: 'info',
-                timer: 3000,
-                showConfirmButton: false
-            }).then(() => {
-                setTabActive('quiz');
-            });
+            setTabActive('quiz');
             return;
         }
 
         if (baiHocVuaXong?.maBaiTapThucHanh) {
             setVideoDaXongLocal((prev) => [...prev, maBaiHocVuaXong]);
-
-            void Swal.fire({
-                title: 'Đã hoàn thành lý thuyết!',
-                text: 'Hãy hoàn thành bài tập thực hành IDE để mở khóa bài học tiếp theo.',
-                icon: 'info',
-                timer: 3000,
-                showConfirmButton: false
-            }).then(() => {
-                setTabActive('ide');
-            });
+            setTabActive('ide');
             return;
         }
 
@@ -475,6 +465,18 @@ const NoiDungKhoaHoc = () => {
         return <div>Vui lòng đăng nhập để xem nội dung khóa học.</div>;
     }
 
+    if (loadError) {
+        return (
+            <div className="p-5 text-center">
+                <h3>Không thể mở khóa học</h3>
+                <p className="text-muted">{loadError}</p>
+                <button type="button" className="btn btn-primary" onClick={() => navigate(-1)}>
+                    Quay lại
+                </button>
+            </div>
+        );
+    }
+
     if (!khoaHoc || !baiHocHienTai) {
         return <NoiDungKhoaHocLoading />;
     }
@@ -702,7 +704,6 @@ const NoiDungKhoaHoc = () => {
                                             hoTenHienThi={hoTenHienThiChungChi}
                                             emailNhan={emailNhanChungChi}
                                             onThayDoiHoTenHienThi={setHoTenHienThiChungChi}
-                                            onThayDoiEmailNhan={setEmailNhanChungChi}
                                             onBatDauThi={xuLyBatDauKiemTraChungChi}
                                             onNopBai={xuLyNopBaiChungChi}
                                             onInChungChi={xuLyInChungChi}

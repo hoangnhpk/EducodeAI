@@ -122,9 +122,9 @@ namespace educodeai_server.Services.Implementation
         }
 
         // ================== TIẾN ĐỘ THEO THỜI GIAN (STUB) ==================
-        public async Task<List<TienDoTheoThoiGianDTO>> GetTienDoTheoThoiGianAsync(int maGiangVien)
+        public Task<List<TienDoTheoThoiGianDTO>> GetTienDoTheoThoiGianAsync(int maGiangVien)
         {
-            return new List<TienDoTheoThoiGianDTO>();
+            return Task.FromResult(new List<TienDoTheoThoiGianDTO>());
         }
 
         public async Task<ThuNhapTongQuanDTO> GetThuNhapTongQuanAsync(int maGiangVien)

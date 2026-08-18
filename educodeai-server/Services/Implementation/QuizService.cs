@@ -1,9 +1,11 @@
 ﻿using educodeai_server.DTOs.BaiTap;
+using educodeai_server.Data;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Repository.Implementation;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
+using Microsoft.EntityFrameworkCore;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -11,11 +13,15 @@ namespace educodeai_server.Services.Implementation
     {
         private readonly IBaiTapRepository _baiTapRepository;
         private readonly IGeminiAIService _gemini;
+        private readonly EduCodeAIDbContext _context;
+        private readonly IRedisService _redisService;
 
-        public QuizService(IBaiTapRepository baiTapRepository, IGeminiAIService gemini)
+        public QuizService(IBaiTapRepository baiTapRepository, IGeminiAIService gemini, EduCodeAIDbContext context, IRedisService redisService)
         {
             _baiTapRepository = baiTapRepository;
             _gemini = gemini;
+            _context = context;
+            _redisService = redisService;
         }
 
         // Hàm xử lý logic tạo quiz
@@ -44,7 +50,16 @@ namespace educodeai_server.Services.Implementation
             };
 
             // Gọi đệ Repository chốt sổ vào Database
-            return await _baiTapRepository.CreateQuizAsync(baiTap, quiz);
+            var quizId = await _baiTapRepository.CreateQuizAsync(baiTap, quiz);
+            var maKhoaHoc = await _context.BaiHocs
+                .Where(bh => bh.MaBaiHoc == dto.MaBaiHoc)
+                .Select(bh => (int?)bh.ChuongHoc.MaKhoaHoc)
+                .FirstOrDefaultAsync();
+            if (maKhoaHoc.HasValue)
+            {
+                await _redisService.TangVersionKhoaHocAsync(maKhoaHoc.Value);
+            }
+            return quizId;
         }
         public async Task<string> GenerateQuizByAIAsync(GenerateQuizAIDTO dto, int maGiangVien)
         {
@@ -71,7 +86,8 @@ namespace educodeai_server.Services.Implementation
                         "",
                         ""
                     ],
-                    "DapAnDung": "0",
+                    "DapAnDung": "A",
+                    "GiaiThich": "Giải thích ngắn gọn vì sao đáp án đó đúng"
                   }
                 ]
             }
@@ -80,6 +96,7 @@ namespace educodeai_server.Services.Implementation
             var prompt = $"""
                 Bạn là một chuyên gia giáo dục và tạo đề thi của hệ thống EduCodeAI.
                 Dựa vào NỘI DUNG BÀI HỌC dưới đây, hãy tạo ra đúng {dto.SoCauHoi} câu hỏi trắc nghiệm với độ khó: {dto.DoKho}.
+                Ngôn ngữ lập trình của khóa học: {dto.NgonNgu}. Hãy giữ nguyên thuật ngữ và ví dụ phù hợp với ngôn ngữ này.
 
                 == TIÊU ĐỀ VÀ NỘI DUNG TÓM TẮT TỪ NGƯỜI DÙNG ==
                 - Tiêu đề: {dto.TieuDe}
@@ -91,8 +108,8 @@ namespace educodeai_server.Services.Implementation
                 === YÊU CẦU BẮT BUỘC ===
                 1. Đọc kỹ nội dung và tạo câu hỏi bám sát kiến thức.
                 2. Mỗi câu hỏi có 4 đáp án (A, B, C, D) và chỉ có 1 đáp án đúng.
-                3. Trường "dapAnDung" chỉ được điền 1 ký tự: "A", "B", "C", hoặc "D".
-                4. Phải có lời giải thích ngắn gọn, dễ hiểu cho mỗi câu.
+                3. Trường "DapAnDung" chỉ được điền 1 ký tự: "A", "B", "C", hoặc "D" (tương ứng phần tử thứ 1..4 của "LuaChon").
+                4. Trường "GiaiThich" bắt buộc có, giải thích ngắn gọn dễ hiểu vì sao đáp án đó đúng.
                 5. Đảm bảo các câu hỏi không bị trùng lặp ý tưởng và nội dung.
 
                 === OUTPUT FORMAT (JSON) ===
@@ -115,7 +132,19 @@ namespace educodeai_server.Services.Implementation
         {
             if (maBaiTap <= 0) throw new ArgumentException("M? b?i t?p kh?ng h?p l?.");
             ValidateQuiz(dto);
-            return await _baiTapRepository.CapNhatQuizAsync(maBaiTap, maGiangVien, dto);
+            var updated = await _baiTapRepository.CapNhatQuizAsync(maBaiTap, maGiangVien, dto);
+            if (updated)
+            {
+                var maKhoaHoc = await _context.BaiTaps
+                    .Where(bt => bt.MaBaiTap == maBaiTap)
+                    .Select(bt => (int?)bt.BaiHoc.ChuongHoc.MaKhoaHoc)
+                    .FirstOrDefaultAsync();
+                if (maKhoaHoc.HasValue)
+                {
+                    await _redisService.TangVersionKhoaHocAsync(maKhoaHoc.Value);
+                }
+            }
+            return updated;
         }
 
         private static void ValidateQuiz(CreateQuizDTO dto)

@@ -87,6 +87,7 @@ export interface GenerateQuizAIDTO {
   DoKho: string;        // "Dễ" | "Trung bình" | "Khó"
   TieuDe: string;
   NoiDungTomTat: string;
+  NgonNgu: string;
 }
 
 // 7. Câu hỏi trắc nghiệm (match backend output schema)
@@ -95,6 +96,7 @@ export interface CauHoiQuizDTO {
   NoiDung: string;
   LuaChon: string[];    // Mảng 4 đáp án A, B, C, D
   DapAnDung: string;    // "A" | "B" | "C" | "D"
+  GiaiThich?: string;   // Hiển thị cho học viên sau khi nộp bài
 }
 
 // 8. Kết quả AI trả về (match backend GenerateQuizByAIAsync output)

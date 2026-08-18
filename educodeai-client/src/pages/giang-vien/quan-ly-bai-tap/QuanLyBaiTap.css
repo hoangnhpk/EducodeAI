@@ -5,15 +5,16 @@
 
 /* 1. Badge trạng thái (tránh đụng Bootstrap .badge — chữ trắng trên nền nhạt) */
 .qlbt-badge {
-    padding: 7px 14px;
+    padding: 6px 10px;
     font-size: 11px;
     border-radius: var(--radius-sm);
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.4px;
     display: inline-block;
     line-height: 1.2;
     border: 1px solid transparent;
+    white-space: nowrap;
 }
 
 .qlbt-badge--draft {
@@ -38,13 +39,42 @@
 .actions-group {
     display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
 }
 
+/* Bảng danh sách bài tập.
+   Với table-layout mặc định (auto), các cột chữ dài giành thêm bề rộng theo nội
+   dung khiến tổng vượt khung -> cột cuối bị cắt mất. Chuyển sang fixed và khai
+   báo % cho đủ 7 cột (tổng = 100%) để bố cục luôn khớp đúng bề rộng khung. */
+.qlbt-table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 1040px; /* hẹp hơn mức này thì .table-container cho cuộn ngang */
+}
+
+/* table.qlbt-table (0,1,2) để chắc chắn thắng `.table th/td` (0,1,1) của
+   UI_GiangVien_QuanTriVien_Kit.css, khỏi phụ thuộc thứ tự import CSS. */
+table.qlbt-table th,
+table.qlbt-table td {
+    padding: 12px 10px;
+}
+
+table.qlbt-table th {
+    white-space: nowrap;
+}
+
+.qlbt-col-ten { width: 20%; }
+.qlbt-col-loai { width: 6%; }
+.qlbt-col-khoa-hoc { width: 17%; }
+.qlbt-col-chuong { width: 13%; }
+.qlbt-col-bai-hoc { width: 17%; }
+.qlbt-col-trang-thai { width: 11%; }
+.qlbt-col-hanh-dong { width: 16%; }
+
 .action-btn {
-    padding: 7px 14px;
-    font-size: 13px;
+    padding: 6px 11px;
+    font-size: 12.5px;
     font-weight: 700;
     border-radius: var(--radius-sm);
     border: 1.5px solid transparent;
@@ -52,7 +82,7 @@
     transition: all var(--transition-fast);
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
     white-space: nowrap;
 }
 
@@ -134,26 +164,16 @@
     transform: translateY(-2px);
 }
 
+/* Bề rộng đã do cột quy định (table-layout: fixed), ô chữ chỉ cần lấp đầy cột
+   rồi cắt bằng ellipsis - không đặt max-width cố định nữa để màn hình rộng
+   hiển thị được nhiều chữ hơn thay vì cắt sớm ở 150-200px. */
 .truncate-text {
-    max-width: 150px;
+    max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: inline-block;
-    vertical-align: middle;
+    display: block;
     cursor: pointer;
-}
-
-.col-ten {
-    max-width: 200px;
-}
-
-.col-khoahoc {
-    max-width: 200px;
-}
-
-.col-chuong {
-    max-width: 150px;
 }
 
 .view-btn {
