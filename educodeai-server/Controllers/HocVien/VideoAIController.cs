@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using educodeai_server.Data;
 using educodeai_server.Models;
 using educodeai_server.Helpers;
-using educodeai_server.Helpers;
 using educodeai_server.DTOs.VideoAI;
 using educodeai_server.Services.Interface;
 using Microsoft.Extensions.Configuration;
@@ -56,7 +55,7 @@ namespace educodeai_server.Controllers.HocVien
 
             try
             {
-                var aiResult = await _chatBotAIService.PhanTichVideoAsync(baiHoc.LinkVideo, baiHoc.TieuDe, baiHoc.SubtitleUrl);
+                var aiResult = await _chatBotAIService.PhanTichVideoAsync(baiHoc.LinkVideo, baiHoc.TieuDe);
                 if (aiResult?.Chapters == null) return BadRequest("AI không trả về kết quả.");
 
                 // Xóa dữ liệu cũ của bài học này trước khi lưu mới để tránh trùng lặp

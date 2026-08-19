@@ -4,9 +4,24 @@ import type { DanhSachBaiTapDTO } from '../types';
 interface ExerciseTableProps {
     isLoading: boolean;
     danhSachHienThi: DanhSachBaiTapDTO[];
-    onViewClick: (item: DanhSachBaiTapDTO, trigger: HTMLButtonElement) => void;
+    onViewClick: (maBaiTap: number) => void;
     onDeleteClick: (maBaiTap: number, tenBaiTap: string) => void;
     onCreateClick: () => void;
+}
+
+function getTrangThaiBadge(trangThai?: string) {
+    const raw = (trangThai || '').trim();
+    const key = raw.toLowerCase();
+    const isDraft = ['draft', 'nháp', 'nhap', 'ẩn', 'an'].includes(key);
+    const label =
+        key === 'draft' || key === 'nháp' || key === 'nhap' ? 'Nháp'
+        : key === 'published' || key === 'hiển thị' || key === 'hien thi' ? 'Hiển thị'
+        : raw || '—';
+
+    return {
+        label,
+        className: `qlbt-badge ${isDraft ? 'qlbt-badge--draft' : 'qlbt-badge--published'}`,
+    };
 }
 
 export const ExerciseTable: React.FC<ExerciseTableProps> = ({
@@ -18,16 +33,16 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
 }) => {
     return (
         <div className="table-container" style={{ overflowX: 'auto' }}>
-            <table className="table">
+            <table className="table qlbt-table">
                 <thead>
                     <tr>
-                        <th>Tên BT</th>
-                        <th>Loại</th>
-                        <th>Khóa học</th>
-                        <th>Chương</th>
-                        <th>Bài học</th>
-                        <th>Trạng thái</th>
-                        <th className="exercise-actions-column">Hành động</th>
+                        <th className="qlbt-col-ten">Tên BT</th>
+                        <th className="qlbt-col-loai">Loại</th>
+                        <th className="qlbt-col-khoa-hoc">Khóa học</th>
+                        <th className="qlbt-col-chuong">Chương</th>
+                        <th className="qlbt-col-bai-hoc">Bài học</th>
+                        <th className="qlbt-col-trang-thai">Trạng thái</th>
+                        <th className="qlbt-col-hanh-dong">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,48 +67,49 @@ export const ExerciseTable: React.FC<ExerciseTableProps> = ({
                             </td>
                         </tr>
                     ) : (
-                        danhSachHienThi.map((baiTap) => (
-                            <tr key={baiTap.maBaiTap}>
-                                <td>
-                                    <div className="truncate-text col-ten" title={baiTap.tenBaiTap}>
-                                        <strong>{baiTap.tenBaiTap}</strong>
-                                    </div>
-                                </td>
-                                <td>{baiTap.loaiBaiTap}</td>
-                                <td>
-                                    <div className="truncate-text col-khoahoc" title={baiTap.tenKhoaHoc}>
-                                        {baiTap.tenKhoaHoc}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div className="truncate-text col-chuong" title={baiTap.tenChuong}>
-                                        {baiTap.tenChuong}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div className="truncate-text col-ten" title={baiTap.tenBaiHoc}>
-                                        {baiTap.tenBaiHoc}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className={`badge ${baiTap.trangThai === 'Draft' ? 'badge-draft' : 'badge-published'}`}>
-                                        {baiTap.trangThai}
-                                    </span>
-                                </td>
-                                <td className="exercise-actions-column">
-                                    <div className="actions-group">
-                                        <button className="action-btn view-btn" onClick={(event) => onViewClick(baiTap, event.currentTarget)}>
-                                            <i className="bi bi-eye"></i> Xem
-                                        </button>
-                                        <button className="action-btn delete-btn"
-                                            onClick={() => onDeleteClick(baiTap.maBaiTap, baiTap.tenBaiTap)}
-                                        >
-                                            <i className="bi bi-trash"></i> Xóa
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))
+                        danhSachHienThi.map((baiTap) => {
+                            const status = getTrangThaiBadge(baiTap.trangThai);
+                            return (
+                                <tr key={baiTap.maBaiTap}>
+                                    <td className="qlbt-col-ten">
+                                        <div className="truncate-text" title={baiTap.tenBaiTap}>
+                                            <strong>{baiTap.tenBaiTap}</strong>
+                                        </div>
+                                    </td>
+                                    <td className="qlbt-col-loai">{baiTap.loaiBaiTap}</td>
+                                    <td className="qlbt-col-khoa-hoc">
+                                        <div className="truncate-text" title={baiTap.tenKhoaHoc}>
+                                            {baiTap.tenKhoaHoc}
+                                        </div>
+                                    </td>
+                                    <td className="qlbt-col-chuong">
+                                        <div className="truncate-text" title={baiTap.tenChuong}>
+                                            {baiTap.tenChuong}
+                                        </div>
+                                    </td>
+                                    <td className="qlbt-col-bai-hoc">
+                                        <div className="truncate-text" title={baiTap.tenBaiHoc}>
+                                            {baiTap.tenBaiHoc}
+                                        </div>
+                                    </td>
+                                    <td className="qlbt-col-trang-thai">
+                                        <span className={status.className}>{status.label}</span>
+                                    </td>
+                                    <td className="qlbt-col-hanh-dong">
+                                        <div className="actions-group">
+                                            <button className="action-btn view-btn" onClick={() => onViewClick(baiTap.maBaiTap)}>
+                                                <i className="bi bi-eye"></i> Xem
+                                            </button>
+                                            <button className="action-btn delete-btn"
+                                                onClick={() => onDeleteClick(baiTap.maBaiTap, baiTap.tenBaiTap)}
+                                            >
+                                                <i className="bi bi-trash"></i> Xóa
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })
                     )}
                 </tbody>
             </table>

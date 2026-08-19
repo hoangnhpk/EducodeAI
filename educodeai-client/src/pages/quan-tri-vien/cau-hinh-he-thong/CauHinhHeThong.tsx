@@ -254,7 +254,7 @@ const CauHinhHeThong = () => {
                                         <input 
                                             type="number" 
                                             className="input-config" 
-                                            style={{width: '200px', cursor: 'not-allowed', backgroundColor: 'var(--border-light)'}} 
+                                            style={{width: '200px', cursor: 'not-allowed', backgroundColor: 'var(--border-light)'}}
                                             value={configs.GioiHanDungLuong} 
                                             disabled 
                                         />

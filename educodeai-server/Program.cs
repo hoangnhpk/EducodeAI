@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using educodeai_server.Config;
 using educodeai_server.Data;
@@ -12,7 +12,6 @@ using educodeai_server.Services.Interface;
 using educodeai_server.Services.RefreshTokens;
 using educodeai_server.Services.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CloudinaryDotNet;
@@ -23,10 +22,7 @@ using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using educodeai_server.Hubs;
 using educodeai_server.Workers;
-using educodeai_server.Exceptions;
 using FFMpegCore;
-using educodeai_server.Services.RefreshTokens;
-using educodeai_server.Services.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -120,10 +116,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // 3. CẤU HÌNH KẾT NỐI CƠ SỞ DỮ LIỆU
 // ==========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (!string.IsNullOrEmpty(connectionString) && !connectionString.Contains("Maximum Pool Size", StringComparison.OrdinalIgnoreCase))
-{
-    connectionString += ";Maximum Pool Size=10;Minimum Pool Size=0;Pooling=true;";
-}
 builder.Services.AddDbContext<EduCodeAIDbContext>(options =>
     options.UseNpgsql(connectionString, sqlOptions =>
     {
@@ -159,7 +151,7 @@ try
         }
 
         builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
-        builder.Services.AddSingleton<IRedisService, RedisService>();
+        builder.Services.AddScoped<IRedisService, RedisService>();
 
         // Đăng ký Distributed Cache cho Redis
         builder.Services.AddStackExchangeRedisCache(options =>
@@ -172,7 +164,7 @@ try
     {
         var reason = !isRedisActive ? "turned OFF in appsettings" : "empty connection string";
         Console.WriteLine($"Redis is {reason} – using MemoryCache fallback");
-        builder.Services.AddSingleton<IRedisService, FallbackRedisService>();
+        builder.Services.AddScoped<IRedisService, FallbackRedisService>();
 
         // Đăng ký Distributed Memory Cache khi Redis không khả dụng
         builder.Services.AddDistributedMemoryCache();
@@ -181,7 +173,7 @@ try
 catch (Exception ex)
 {
     Console.WriteLine($"Redis setup failed, using MemoryCache fallback: {ex.Message}");
-    builder.Services.AddSingleton<IRedisService, FallbackRedisService>();
+    builder.Services.AddScoped<IRedisService, FallbackRedisService>();
 
     // Đăng ký Distributed Memory Cache khi Redis fail
     builder.Services.AddDistributedMemoryCache();
@@ -196,7 +188,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
 // Dịch vụ Xác thực và Captcha mới
-builder.Services.AddHttpClient<ICaptchaService, CaptchaService>();
+builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddScoped<IXacThucService, XacThucService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 // Cache trạng thái user/session cho hot-path middleware (G.1); chạy trên IDistributedCache (Redis/memory fallback).
@@ -210,17 +202,6 @@ builder.Services.AddScoped<IOtpRateLimiter, OtpRateLimiter>();
 builder.Services.Configure<RefreshTokenCleanupOptions>(builder.Configuration.GetSection("RefreshTokenCleanup"));
 builder.Services.AddSingleton<RefreshTokenCleanupService>();
 builder.Services.AddHostedService<RefreshTokenCleanupWorker>();
-
-builder.Services.Configure<RequestOriginOptions>(builder.Configuration.GetSection("Security:RequestOrigin"));
-builder.Services.AddSingleton<IValidateOptions<RequestOriginOptions>, RequestOriginOptionsValidator>();
-builder.Services.AddOptions<RequestOriginOptions>().ValidateOnStart();
-builder.Services.Configure<RefreshCookieOptions>(builder.Configuration.GetSection("Security:RefreshCookie"));
-builder.Services.Configure<TrustedProxyOptions>(options =>
-    options.Proxies = builder.Configuration.GetSection("Security:TrustedProxies").Get<string[]>() ?? []);
-builder.Services.AddSingleton<IValidateOptions<TrustedProxyOptions>, TrustedProxyOptionsValidator>();
-builder.Services.AddOptions<TrustedProxyOptions>().ValidateOnStart();
-builder.Services.AddSingleton<IRequestOriginValidator, RequestOriginValidator>();
-
 // Khóa học & Bài tập
 builder.Services.AddScoped<IKhamPhaLoTrinhService, KhamPhaLoTrinhService>();
 builder.Services.AddScoped<IKhoaHocRepository, educodeai_server.Repository.Implementation.KhoaHocRepository>();
@@ -255,8 +236,6 @@ builder.Services.AddScoped<IKhoaHocCuaToiService, KhoaHocCuaToiService>();
 builder.Services.AddScoped<IQuanLyNguoiDungRepository, QuanLyNguoiDungRepository>();
 builder.Services.AddScoped<IQuanLyNguoiDungService, QuanLyNguoiDungService>();
 builder.Services.AddScoped<IQuanLyHocVienService,QuanLyHocVienService>();
-builder.Services.AddSingleton<IGiangVienReviewEmailQueue, GiangVienReviewEmailQueue>();
-builder.Services.AddHostedService<GiangVienReviewEmailWorker>();
 builder.Services.AddSingleton<LopHocEmailQueue>();
 builder.Services.AddHostedService<LopHocEmailWorker>();
 builder.Services.AddSingleton<IGiangVienReviewEmailQueue, GiangVienReviewEmailQueue>();
@@ -363,23 +342,14 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        var allowedOrigins = builder.Configuration.GetSection("Security:RequestOrigin:AllowedOrigins").Get<string[]>() ?? [];
-        policy.WithOrigins(allowedOrigins)
+        policy.WithOrigins("https://educodeai-client.vercel.app",
+                           "http://localhost:3000", "http://localhost:3001", "http://localhost:5173",
+                           "http://127.0.0.1:3000", "http://127.0.0.1:3001", "http://127.0.0.1:5173",
+                           "http://[::1]:3000", "http://[::1]:3001", "http://[::1]:5173")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
     });
-});
-
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.ForwardLimit = 1;
-    var proxies = builder.Configuration.GetSection("Security:TrustedProxies").Get<string[]>() ?? [];
-    foreach (var proxy in proxies)
-    {
-        if (System.Net.IPAddress.TryParse(proxy, out var address)) options.KnownProxies.Add(address);
-    }
 });
 
 // ==========================================
@@ -389,8 +359,6 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddPolicy("RemoteLogoutOtpSend", httpContext => CreateRemoteLogoutLimiter(httpContext, 3));
-    options.AddPolicy("RemoteLogoutOtpVerify", httpContext => CreateRemoteLogoutLimiter(httpContext, 10));
     options.AddPolicy("QuetGiayToPolicy", httpContext =>
     {
         var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -406,25 +374,7 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-static System.Threading.RateLimiting.RateLimitPartition<string> CreateRemoteLogoutLimiter(HttpContext context, int permitLimit)
-{
-    var userId = context.User.FindFirst("id")?.Value ?? "anonymous";
-    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-    var partition = $"{userId}:{ip}";
-    return System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-        partition,
-        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
-        {
-            PermitLimit = permitLimit,
-            Window = TimeSpan.FromMinutes(5),
-            QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst,
-            QueueLimit = 0
-        });
-}
-
 builder.Services.AddControllers();
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -456,113 +406,23 @@ var app = builder.Build();
 
 // Khởi tạo dữ liệu nền của module thử thách nếu môi trường hiện tại còn thiếu.
 // Initializer chỉ thêm theo MaCode, không ghi đè cấu hình nhiệm vụ/danh hiệu đã tồn tại.
-await ThuThachDataInitializer.InitializeAsync(app.Services);
+try
+{
+    await ThuThachDataInitializer.InitializeAsync(app.Services);
+}
+catch (Exception ex)
+{
+    // Không chặn ứng dụng khởi động nếu database tạm thời chưa sẵn sàng.
+    // Các endpoint cần database vẫn sẽ trả lỗi phù hợp cho đến khi DB kết nối lại.
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    logger.LogError(ex, "Không thể khởi tạo dữ liệu module thử thách; ứng dụng vẫn tiếp tục khởi động.");
+}
 
 // Khởi tạo cấu hình cho EmailHelper để có thể đọc appsettings.json
 educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 
-// Tự vá các cột/bảng mới của phase gift-code để tránh lỗi 500 khi DB chưa chạy migration kịp.
-try
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
-    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
-    {
-        db.Database.ExecuteSqlRaw(
-            """
-            ALTER TABLE "DonHangKhoaHocs"
-            ADD COLUMN IF NOT EXISTS "LoaiDonHang" character varying(30) NOT NULL DEFAULT 'COURSE_PURCHASE';
-            """);
-
-        db.Database.ExecuteSqlRaw(
-            """
-            CREATE TABLE IF NOT EXISTS "MaQuaTangHocViens" (
-                "MaQuaTang" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "Code" character varying(40) NOT NULL,
-                "MaDonHang" integer NOT NULL,
-                "MaKhoaHoc" integer NOT NULL,
-                "MaNguoiTang" integer NOT NULL,
-                "MaNguoiNhan" integer NULL,
-                "TrangThai" character varying(30) NOT NULL,
-                "CreatedAt" timestamp with time zone NOT NULL,
-                "ActivatedAt" timestamp with time zone NULL,
-                "RedeemedAt" timestamp with time zone NULL,
-                "ExpiredAt" timestamp with time zone NULL
-            );
-            """);
-
-        db.Database.ExecuteSqlRaw(
-            """
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1
-                    FROM pg_constraint
-                    WHERE conname = 'FK_MaQuaTangHocViens_DonHangKhoaHocs_MaDonHang'
-                ) THEN
-                    ALTER TABLE "MaQuaTangHocViens"
-                    ADD CONSTRAINT "FK_MaQuaTangHocViens_DonHangKhoaHocs_MaDonHang"
-                    FOREIGN KEY ("MaDonHang") REFERENCES "DonHangKhoaHocs" ("MaDonHang") ON DELETE CASCADE;
-                END IF;
-            END
-            $$;
-            """);
-
-        db.Database.ExecuteSqlRaw(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS "IX_MaQuaTangHocViens_Code" ON "MaQuaTangHocViens" ("Code");
-            CREATE INDEX IF NOT EXISTS "IX_MaQuaTangHocViens_MaDonHang" ON "MaQuaTangHocViens" ("MaDonHang");
-            CREATE INDEX IF NOT EXISTS "IX_MaQuaTangHocViens_MaKhoaHoc" ON "MaQuaTangHocViens" ("MaKhoaHoc");
-            CREATE INDEX IF NOT EXISTS "IX_MaQuaTangHocViens_MaNguoiNhan" ON "MaQuaTangHocViens" ("MaNguoiNhan");
-            CREATE INDEX IF NOT EXISTS "IX_MaQuaTangHocViens_MaNguoiTang_TrangThai_CreatedAt"
-                ON "MaQuaTangHocViens" ("MaNguoiTang", "TrangThai", "CreatedAt");
-            """);
-
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "DonHangKhoaHocs" ADD COLUMN IF NOT EXISTS "TongTienGoc" numeric(18,2) NOT NULL DEFAULT 0;""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "DonHangKhoaHocs" ADD COLUMN IF NOT EXISTS "SoTienGiam" numeric(18,2) NOT NULL DEFAULT 0;""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "DonHangKhoaHocs" ADD COLUMN IF NOT EXISTS "MaVoucher" integer NULL;""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "DonHangKhoaHocs" ADD COLUMN IF NOT EXISTS "CodeVoucher" character varying(40) NULL;""");
-        db.Database.ExecuteSqlRaw("""UPDATE "DonHangKhoaHocs" SET "TongTienGoc" = "TongTien" WHERE "TongTienGoc" = 0;""");
-
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "MaGiamGias" ADD COLUMN IF NOT EXISTS "MaNguoiTao" integer NOT NULL DEFAULT 1;""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "MaGiamGias" ADD COLUMN IF NOT EXISTS "LoaiNguoiTao" character varying(20) NOT NULL DEFAULT 'ADMIN';""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "MaGiamGias" ADD COLUMN IF NOT EXISTS "PhamViApDung" character varying(30) NOT NULL DEFAULT 'SPECIFIC_COURSES';""");
-        db.Database.ExecuteSqlRaw("""ALTER TABLE "MaGiamGias" ADD COLUMN IF NOT EXISTS "ChoPhepApDungChoQuaTang" boolean NOT NULL DEFAULT TRUE;""");
-
-        db.Database.ExecuteSqlRaw(
-            """
-            CREATE TABLE IF NOT EXISTS "MaGiamGiaKhoaHocs" (
-                "MaLienKet" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                "MaVoucher" integer NOT NULL,
-                "MaKhoaHoc" integer NOT NULL
-            );
-            """);
-        db.Database.ExecuteSqlRaw("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_MaGiamGiaKhoaHocs_MaVoucher_MaKhoaHoc" ON "MaGiamGiaKhoaHocs" ("MaVoucher", "MaKhoaHoc");""");
-        db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGiaKhoaHocs_MaKhoaHoc" ON "MaGiamGiaKhoaHocs" ("MaKhoaHoc");""");
-        db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_DonHangKhoaHocs_MaVoucher" ON "DonHangKhoaHocs" ("MaVoucher");""");
-        db.Database.ExecuteSqlRaw("""CREATE INDEX IF NOT EXISTS "IX_MaGiamGias_MaNguoiTao" ON "MaGiamGias" ("MaNguoiTao");""");
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Schema bootstrap (gift-code) bỏ qua: {ex.Message}");
-}
-
-// === SELF-HEALING: cột video/phụ đề + bảng phụ trợ của phase upload video cloud ===
-// Khối này không tạo schema auth; RefreshToken đã thuộc EF migration.
-try
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
-    if (string.Equals(db.Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
-    {
-        DatabaseSchemaSync.ApplyAsync(db).GetAwaiter().GetResult();
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Schema sync (legacy/domain) bỏ qua: {ex.Message}");
-}
+// Schema persistent được quản lý bằng EF Core migrations.
+// Chạy `dotnet ef database update` trong bước deploy trước khi khởi động ứng dụng.
 
 // PostgreSQL: seed InsertData gán PK cố định; cột identity dùng pg_get_identity_sequence (serial_sequence thường NULL).
 // Nếu setval không chạy → trùng PK → 500 khi tạo mã QR.
@@ -664,16 +524,11 @@ if (app.Environment.IsDevelopment())
 // app.UseSwaggerUI();
 // Local frontend ch?y HTTP (http://localhost:3000), n?n kh?ng redirect preflight OPTIONS sang HTTPS ? Development.
 // Production v?n b?t bu?c HTTPS.
-// Forwarded headers must run before HTTPS redirection and security middleware.
-app.UseForwardedHeaders();
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
 app.UseStaticFiles();
-
-// Global exception handler phải đứng trước các middleware xử lý request.
-app.UseExceptionHandler();
 
 // CORS: phải đặt sau UseRouting và trước UseAuthentication/UseAuthorization
 // (https://learn.microsoft.com/en-us/aspnet/core/security/cors)

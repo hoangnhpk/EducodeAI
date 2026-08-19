@@ -6,6 +6,7 @@ import type { ChiTietKhoaHocDTO, DanhGiaDTO } from "../../../services/chi-tiet-k
 import "./ChiTietKhoaHocGiaoDien.css";
 import { getMediaUrl } from "../../../utils/mediaUrl";
 import { getAccessToken } from '../../../utils/authStorage';
+import '../noi-dung-khoa-hoc/style.css';
 
 type VideoPreview = { type: 'youtube' | 'direct'; src: string };
 
@@ -38,6 +39,55 @@ const getVideoPreview = (value?: string | null): VideoPreview | null => {
   return null;
 };
 
+const ChiTietKhoaHocLoading = () => {
+  const [progress, setProgress] = useState(15);
+  const [stepIndex, setStepIndex] = useState(0);
+  const steps = [
+    'Đang kết nối môi trường học tập EduCodeAI...',
+    'Đang tải cấu trúc chương học & danh sách bài giảng...',
+    'Đang chuẩn bị trình phát video & trợ lý AI...',
+    'Sẵn sàng! Đang khởi chạy bài học...'
+  ];
+  const tips = [
+    'Mẹo: Bạn có thể đặt câu hỏi cho Trợ lý AI bất cứ lúc nào trong khi học.',
+    'Mẹo: Bạn có thể lưu lại các ghi chú trực tiếp tại mốc thời gian của video.',
+    'Mẹo: Hoàn thành bài trắc nghiệm cuối khóa để nhận chứng chỉ chính thức từ EduCodeAI.'
+  ];
+  const [tipIndex, setTipIndex] = useState(0);
+
+  useEffect(() => {
+    const progressTimer = setInterval(() => setProgress(prev => prev >= 92 ? 92 : prev + Math.floor(Math.random() * 15) + 8), 350);
+    const stepTimer = setInterval(() => setStepIndex(prev => prev < steps.length - 1 ? prev + 1 : prev), 700);
+    const tipTimer = setInterval(() => setTipIndex(prev => (prev + 1) % tips.length), 2500);
+    return () => {
+      clearInterval(progressTimer);
+      clearInterval(stepTimer);
+      clearInterval(tipTimer);
+    };
+  }, []);
+
+  return (
+    <div className="cp-modern-loader-container">
+      <div className="cp-modern-loader-backdrop" />
+      <div className="cp-modern-loader-card">
+        <div className="cp-loader-orb-wrapper">
+          <div className="cp-loader-ring-outer" />
+          <div className="cp-loader-ring-inner" />
+          <div className="cp-loader-core-icon"><i className="fas fa-graduation-cap" /></div>
+        </div>
+        <h3 className="cp-loader-title">EduCodeAI Learning</h3>
+        <div className="cp-loader-status-text"><span>{steps[stepIndex]}</span></div>
+        <div className="cp-loader-progress-track"><div className="cp-loader-progress-fill" style={{ width: `${progress}%` }} /></div>
+        <div className="cp-loader-step-dots">
+          {steps.map((_, i) => <div key={i} className={`cp-loader-dot ${i <= stepIndex ? 'active' : ''}`} />)}
+        </div>
+        <div className="cp-loader-tip-box"><i className="fas fa-lightbulb" /><span>{tips[tipIndex]}</span></div>
+      </div>
+    </div>
+  );
+};
+
+
 const ChiTietKhoaHoc = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -58,12 +108,12 @@ const ChiTietKhoaHoc = () => {
       setLoading(true);
       const data = await ChiTietKhoaHocService.getChiTietKhoaHoc(courseId);
       setKhoaHoc(data);
-
+      
       // Expand the first chapter by default
       if (data.chuongs && data.chuongs.length > 0) {
         setExpandedSections([data.chuongs[0].maChuong]);
       }
-
+      
       const danhGiaRes = await ChiTietKhoaHocService.getDanhGiaKhoaHoc(courseId);
       setDanhGias(danhGiaRes.items || []);
     } catch (error) {
@@ -127,7 +177,7 @@ const ChiTietKhoaHoc = () => {
   };
 
   if (loading) {
-    return <div className="text-center p-5">Đang tải chi tiết khóa học...</div>;
+    return <ChiTietKhoaHocLoading />;
   }
 
   if (!khoaHoc) {
@@ -154,7 +204,7 @@ const ChiTietKhoaHoc = () => {
               )}
               <span className="ctgd-badge ctgd-badge-category">{khoaHoc.linhVuc || "Chung"}</span>
             </div>
-
+            
             <h1 className="ctgd-title">{khoaHoc.tenKhoaHoc}</h1>
             <p className="ctgd-subtitle">
               {khoaHoc.moTa || "Làm chủ ngôn ngữ lập trình mạnh mẽ nhất hiện nay thông qua các dự án thực tế."}
@@ -177,9 +227,9 @@ const ChiTietKhoaHoc = () => {
             </div>
 
             <div className="ctgd-instructor-top">
-              <img
-                src={khoaHoc.giangVien?.anhDaiDien || "https://ui-avatars.com/api/?name=" + (khoaHoc.giangVien?.hoTen || "GV")}
-                alt="Instructor"
+              <img 
+                src={khoaHoc.giangVien?.anhDaiDien || "https://ui-avatars.com/api/?name=" + (khoaHoc.giangVien?.hoTen || "GV")} 
+                alt="Instructor" 
                 className="ctgd-instructor-avatar"
               />
               <div className="ctgd-instructor-info-top">
@@ -196,7 +246,7 @@ const ChiTietKhoaHoc = () => {
       {/* MAIN CONTENT */}
       <div className="ctgd-main">
         <div className="ctgd-content">
-
+          
           {/* WHAT YOU'LL LEARN (Lấy dữ liệu từ API) */}
           {khoaHoc.banSeHocDuocGi && khoaHoc.banSeHocDuocGi.length > 0 && (
             <section className="ctgd-section-learn">
@@ -267,17 +317,17 @@ const ChiTietKhoaHoc = () => {
           <section className="ctgd-instructor-box">
             <h2 className="ctgd-section-title" style={{ fontSize: '20px', marginBottom: '20px' }}>Thông tin giảng viên</h2>
             <div className="ctgd-instructor-profile">
-              <img
-                src={khoaHoc.giangVien?.anhDaiDien || "https://ui-avatars.com/api/?name=" + (khoaHoc.giangVien?.hoTen || "GV")}
-                alt={khoaHoc.giangVien?.hoTen || "Giảng viên"}
-                className="ctgd-instructor-avatar-large"
+              <img 
+                src={khoaHoc.giangVien?.anhDaiDien || "https://ui-avatars.com/api/?name=" + (khoaHoc.giangVien?.hoTen || "GV")} 
+                alt={khoaHoc.giangVien?.hoTen || "Giảng viên"} 
+                className="ctgd-instructor-avatar-large" 
               />
               <div className="ctgd-instructor-details">
                 <h3 className="ctgd-instructor-name">{khoaHoc.giangVien?.hoTen || "Đang cập nhật"}</h3>
                 <div className="ctgd-instructor-headline">Giảng viên tại EducodeAI</div>
                 <div className="ctgd-instructor-stats">
                   <div className="ctgd-instructor-stats-item">
-                    <i className="fas fa-star" style={{ color: 'var(--primary)' }}></i>
+                    <i className="fas fa-star" style={{color: '#f69050'}}></i>
                     <span>Giảng viên uy tín</span>
                   </div>
                 </div>
@@ -310,10 +360,10 @@ const ChiTietKhoaHoc = () => {
                 danhGias.map(dg => (
                   <div className="ctgd-review-item" key={dg.maDanhGia}>
                     <div className="ctgd-review-header">
-                      <img
-                        src={dg.nguoiDung.anhDaiDien || "https://ui-avatars.com/api/?name=" + dg.nguoiDung.hoTen}
-                        alt="Avatar"
-                        style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '15px' }}
+                      <img 
+                        src={dg.nguoiDung.anhDaiDien || "https://ui-avatars.com/api/?name=" + dg.nguoiDung.hoTen} 
+                        alt="Avatar" 
+                        style={{width: '40px', height: '40px', borderRadius: '50%', marginRight: '15px'}}
                       />
                       <div className="ctgd-reviewer-info">
                         <div className="ctgd-reviewer-name">{dg.nguoiDung.hoTen}</div>
@@ -363,9 +413,9 @@ const ChiTietKhoaHoc = () => {
                 )
               ) : (
                 <>
-                  <img
-                    src={khoaHoc.hinhAnh || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800&h=450"}
-                    alt="Video Preview"
+                  <img 
+                    src={khoaHoc.hinhAnh || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800&h=450"} 
+                    alt="Video Preview" 
                     className="ctgd-video-thumb"
                   />
                   <div className="ctgd-play-btn">
@@ -375,7 +425,7 @@ const ChiTietKhoaHoc = () => {
                 </>
               )}
             </div>
-
+            
             <div className="ctgd-card-body">
               <div className="ctgd-price-section">
                 <div className="ctgd-price-current">
@@ -393,7 +443,7 @@ const ChiTietKhoaHoc = () => {
                     Đăng ký ngay
                   </button>
                 )}
-
+                
                 {!khoaHoc.khoaHocDaDangKy && <button className="ctgd-btn-secondary">Thêm vào giỏ hàng</button>}
               </div>
 

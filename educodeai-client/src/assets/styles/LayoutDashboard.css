@@ -154,18 +154,46 @@
   white-space: nowrap;
 }
 
-/* ===== MAIN CONTENT CHUNG ===== */
+/* ===== MAIN CONTENT CHUNG =====
+   Chuẩn padding trang GV: 24px (theo trang Thống kê).
+   Các page con KHÔNG thêm padding ngoài ở root wrapper. */
 .gv-main-content,
 .qtv-main-content {
+  --gv-content-padding: 24px;
   flex: 1;
-  padding: 24px;
+  padding: var(--gv-content-padding);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
+.gv-page {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 /* ===== PAGE CONTENT QTV DÙNG CHUNG ===== */
+.qtv-main-content > div {
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Card nội dung cấp trang admin dùng khoảng đệm chuẩn 32px. */
+.qtv-content-card,
+.qtv-main-content .akm-table-card,
+.qtv-main-content .qtrv-table-card,
+.qtv-main-content .qlhv-card,
+.qtv-main-content .adm-wd-card,
+.qtv-main-content .adm-revenue,
+.qtv-main-content .adm-top,
+.qtv-main-content .adm-widget,
+.qtv-main-content .quan-tri-config-container {
+  padding: 32px;
+  box-sizing: border-box;
+}
+
 .qtv-page-content {
   padding: 36px 40px;
   min-height: 100%;

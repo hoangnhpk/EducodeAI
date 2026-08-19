@@ -14,6 +14,7 @@ export type PageState = 'idle' | 'generating' | 'preview' | 'saving';
 export const useAIGenerator = (onSuccess: () => void) => {
   const [selectedBaiHocId, setSelectedBaiHocId] = useState<number | null>(null);
   const [tenBaiHoc, setTenBaiHoc] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
 
   // Practice State
   const [practiceState, setPracticeState] = useState<PageState>('idle');
@@ -25,9 +26,10 @@ export const useAIGenerator = (onSuccess: () => void) => {
   const [quizData, setQuizData] = useState<QuizAIData | null>(null);
   const [quizError, setQuizError] = useState<string | null>(null);
 
-  const handleLessonChange = (id: number | null, title: string) => {
+  const handleLessonChange = (id: number | null, title: string, language: string) => {
     setSelectedBaiHocId(id);
     setTenBaiHoc(title);
+    setSelectedLanguage(language);
     setPreviewData(null);
     setPracticeState('idle');
     setPracticeError(null);
@@ -121,6 +123,7 @@ export const useAIGenerator = (onSuccess: () => void) => {
   return {
     selectedBaiHocId,
     tenBaiHoc,
+    selectedLanguage,
     handleLessonChange,
     resetState,
     practice: {

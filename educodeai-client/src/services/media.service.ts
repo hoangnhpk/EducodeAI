@@ -54,20 +54,17 @@ export const uploadVideoToCloudinary = async (
   file: File,
   signatureData: ChuKyUploadVideoDTO,
   onProgress?: (percent: number) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ) => {
   const chunkSize = 20 * 1024 * 1024; // 20MB mỗi chunk
   const totalChunks = Math.ceil(file.size / chunkSize);
   // Tạo unique ID cho phiên upload
   const uniqueUploadId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-
+  
   const url = `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/video/upload`;
   let uploadResult: any = null;
 
   for (let i = 0; i < totalChunks; i++) {
-    // Hủy giữa chừng: dừng trước khi gửi chunk kế tiếp, không đẩy tiếp lên Cloudinary.
-    if (signal?.aborted) throw new DOMException('Upload đã bị hủy', 'AbortError');
-
     const start = i * chunkSize;
     const end = Math.min(start + chunkSize, file.size);
     const chunk = file.slice(start, end);
@@ -86,18 +83,18 @@ export const uploadVideoToCloudinary = async (
         'X-Unique-Upload-Id': uniqueUploadId,
         'Content-Range': `bytes ${start}-${end - 1}/${file.size}`
       },
-      signal
+      signal,
     });
 
     if (onProgress) {
       const percentCompleted = Math.round((end * 100) / file.size);
       onProgress(percentCompleted);
     }
-
+    
     uploadResult = res.data; // Lưu lại kết quả của chunk cuối cùng
   }
 
-  return uploadResult;
+  return uploadResult; 
 };
 
 export const taiLenPhuDe = async (file: File, maBaiHoc: number) => {

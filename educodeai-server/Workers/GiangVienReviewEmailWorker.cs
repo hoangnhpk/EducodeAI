@@ -8,8 +8,6 @@ namespace educodeai_server.Workers;
 public sealed class GiangVienReviewEmailWorker : BackgroundService
 {
     private readonly IGiangVienReviewEmailQueue _queue;
-
-
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IDataProtector _protector;
     private readonly ILogger<GiangVienReviewEmailWorker> _logger;
@@ -22,7 +20,6 @@ public sealed class GiangVienReviewEmailWorker : BackgroundService
         _logger = logger;
     }
 
-
     protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.WhenAll(RunRedisAsync(stoppingToken), RunMemoryAsync(stoppingToken));
 
     private async Task RunRedisAsync(CancellationToken ct)
@@ -31,11 +28,9 @@ public sealed class GiangVienReviewEmailWorker : BackgroundService
         {
             try
             {
-
                 using var scope = _scopeFactory.CreateScope();
                 var redis = scope.ServiceProvider.GetRequiredService<IRedisService>();
                 var jobs = await redis.LayTuDauListAsync(GiangVienReviewEmailQueue.RedisKey, 10);
-
                 foreach (var raw in jobs) await ProcessAsync(raw, ct);
             }
             catch (Exception ex) { _logger.LogWarning(ex, "Không đọc được hàng đợi email Redis."); }

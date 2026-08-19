@@ -17,8 +17,7 @@ export const useExerciseList = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-    const [chiTietBaiTap, setChiTietBaiTap] = useState<any>(null);
-    const [modalType, setModalType] = useState<'Quiz' | 'IDE' | null>(null);
+    const [chiTietQuiz, setChiTietQuiz] = useState<any>(null);
 
     const fetchDanhSach = async () => {
         try {
@@ -54,47 +53,39 @@ export const useExerciseList = () => {
                         Swal.fire({ icon: 'error', text: "Có lỗi xảy ra: " + response.message });
                     }
                 } catch (error: any) {
-                    Swal.fire({ icon: 'error', text: "Lỗi hệ thống khi xóa." });
+                    const message = error?.response?.data?.message || error?.message || 'Lỗi hệ thống khi xóa.';
+                    Swal.fire({ icon: 'error', text: message });
                 }
             }
         });
     };
 
-    const handleViewClick = async (baiTap: DanhSachBaiTapDTO) => {
-        const maBaiTap = baiTap.maBaiTap;
-        const exerciseType = (baiTap.loaiBaiTap || '').trim().toUpperCase();
-        const isIde = exerciseType === 'IDE' || exerciseType === 'PRACTICE' || exerciseType.includes('THỰC HÀNH');
-        console.log('[ExerciseModal] Fetching exercise:', { id: maBaiTap, type: baiTap.loaiBaiTap });
+    const handleViewClick = async (maBaiTap: number) => {
         setIsModalOpen(true);
         setIsLoadingDetails(true);
-        setModalType(isIde ? 'IDE' : 'Quiz');
-        setChiTietBaiTap(null);
+
+        const baiTap = danhSachBaiTap.find(b => b.maBaiTap === maBaiTap);
+        if (!baiTap) return;
 
         try {
             let response;
-            if (isIde) {
+            if (baiTap.loaiBaiTap === 'IDE') {
                 response = await BaiTapThucHanhService.getChiTiet(maBaiTap);
-                const payload = response?.data ?? response;
-                console.log('[ExerciseModal] IDE detail response:', payload);
-                const ideData = payload as any;
-                setChiTietBaiTap({
-                    metadata: { title: ideData?.metadata?.title ?? ideData?.TieuDe ?? baiTap.tenBaiTap, difficulty: ideData?.metadata?.difficulty ?? ideData?.MucDo ?? 'Chưa xác định', language: ideData?.metadata?.language ?? ideData?.NgonNgu ?? 'Chưa xác định' },
-                    problemContent: { description: ideData?.problemContent?.description ?? ideData?.MoTaDeBai ?? '' },
-                    hints: ideData?.hints ?? [],
-                    solution: { code: ideData?.solution?.code ?? ideData?.LoiGiaiMau ?? '', explanation: ideData?.solution?.explanation ?? ideData?.GoiY ?? '' },
-                    evaluation: { testCases: ideData?.evaluation?.testCases ?? ideData?.DanhSachTestCase ?? [] },
-                    system: ideData?.system ?? { version: '', generatedAt: '', generatedBy: '', validated: false }
-                });
+                setChiTietQuiz({ ...(response?.data ?? response), loaiBaiTap: 'IDE' });
             } else {
-                const response = await BaiTapService.getChiTietBaiTap(maBaiTap);
+                response = await BaiTapService.getChiTietBaiTap(maBaiTap);
                 const payload = response?.data ?? response;
-                console.log('[ExerciseModal] Quiz detail response:', payload);
+                let danhSachCauHoi: any[] = [];
                 const rawData = payload?.duLieuCauHoiJSON || payload?.duLieuCauHoi || payload?.danhSachCauHoi || '[]';
 
                 const parsedData = typeof rawData === 'string' ? JSON.parse(rawData || '[]') : rawData;
-                const danhSachCauHoi = Array.isArray(parsedData) ? parsedData : parsedData?.['C\u00e2u h\u1ecfi'] || parsedData?.cauHoi || parsedData?.questions || [];
+                if (Array.isArray(parsedData)) {
+                    danhSachCauHoi = parsedData;
+                } else if (parsedData && typeof parsedData === 'object') {
+                    danhSachCauHoi = parsedData['C\u00e2u h\u1ecfi'] || parsedData['C\u00c3\u00a2u h\u00e1\u00bb\u008fi'] || parsedData.cauHoi || parsedData.questions || [];
+                }
 
-                setChiTietBaiTap({
+                setChiTietQuiz({
                     ...payload,
                     tenBaiTap: baiTap.tenBaiTap,
                     tenKhoaHoc: baiTap.tenKhoaHoc,
@@ -104,9 +95,8 @@ export const useExerciseList = () => {
                     loaiBaiTap: 'Quiz'
                 });
             }
-        } catch (error: any) {
-            console.error('[ExerciseModal] Failed to fetch detail:', { id: maBaiTap, type: baiTap.loaiBaiTap, status: error?.response?.status, url: error?.config?.url, response: error?.response?.data, error });
-            Swal.fire({ icon: 'error', text: 'Lỗi tải chi tiết bài tập!' });
+        } catch (error) {
+            Swal.fire({ icon: 'error', text: "Lỗi tải chi tiết bài tập!" });
             setIsModalOpen(false);
         } finally {
             setIsLoadingDetails(false);
@@ -115,8 +105,32 @@ export const useExerciseList = () => {
 
     const closeModal = () => {
         setIsModalOpen(false);
-        setChiTietBaiTap(null);
-        setModalType(null);
+        setChiTietQuiz(null);
+    };
+
+    const handleUpdatePractice = async (updatedData: any) => {
+        const maBaiTap = updatedData?.maBaiTap;
+        const maBaiHoc = updatedData?.maBaiHoc;
+        if (!maBaiTap || !maBaiHoc) {
+            Swal.fire({ icon: 'error', text: 'Không xác định được bài tập hoặc bài học để cập nhật.' });
+            return;
+        }
+
+        try {
+            const response = await BaiTapThucHanhService.updateBaiTap(maBaiTap, {
+                ...updatedData,
+                maBaiHoc,
+            });
+            if (response?.success !== false) {
+                Swal.fire({ icon: 'success', text: 'Đã cập nhật bài tập thành công!', timer: 1500, showConfirmButton: false });
+                setChiTietQuiz({ ...updatedData, loaiBaiTap: 'IDE' });
+                await fetchDanhSach();
+            } else {
+                Swal.fire({ icon: 'error', text: response?.message || 'Không thể cập nhật bài tập.' });
+            }
+        } catch (error) {
+            Swal.fire({ icon: 'error', text: 'Lỗi hệ thống khi cập nhật bài tập.' });
+        }
     };
 
     const danhSachKhoaHocFilter = useMemo(() => {
@@ -155,7 +169,7 @@ export const useExerciseList = () => {
     };
 
     const modalState = {
-        isModalOpen, closeModal, isLoadingDetails, chiTietBaiTap, modalType
+        isModalOpen, closeModal, isLoadingDetails, chiTietQuiz
     };
 
     return {
@@ -166,6 +180,7 @@ export const useExerciseList = () => {
         modalState,
         fetchDanhSach,
         handleDeleteClick,
-        handleViewClick
+        handleViewClick,
+        handleUpdatePractice
     };
 };

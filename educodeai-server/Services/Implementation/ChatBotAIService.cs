@@ -89,7 +89,18 @@ namespace educodeai_server.Services.Implementation
                 }
                 if (!string.IsNullOrWhiteSpace(phuDeVideo))
                 {
-                    promptBuilder.AppendLine($"Lời giảng phụ đề trong video (có mốc thời gian [MM:SS]):\n{phuDeVideo.Substring(0, Math.Min(phuDeVideo.Length, 6000))}");
+                    if (yeuCau.ThoiGianVideo.HasValue && yeuCau.ThoiGianVideo.Value >= 0)
+                    {
+                        int thoiGianHienTai = (int)Math.Round(yeuCau.ThoiGianVideo.Value);
+                        string phuDeGanThoiDiem = LayPhuDeQuanhThoiDiem(phuDeVideo, thoiGianHienTai);
+                        promptBuilder.AppendLine($"Thời điểm video học viên đang xem: [{thoiGianHienTai / 60:D2}:{thoiGianHienTai % 60:D2}]");
+                        if (!string.IsNullOrWhiteSpace(phuDeGanThoiDiem))
+                        {
+                            promptBuilder.AppendLine($"Phụ đề quanh đoạn đang xem (ưu tiên dùng để hiểu các từ như 'đoạn này', 'ý này'):\n{phuDeGanThoiDiem}");
+                        }
+                    }
+
+                    promptBuilder.AppendLine($"Ngữ cảnh phụ đề tổng quát của video:\n{phuDeVideo.Substring(0, Math.Min(phuDeVideo.Length, 6000))}");
                 }
                 else if (!string.IsNullOrWhiteSpace(yeuCau.NoiDungBaiHoc))
                 {
@@ -123,7 +134,7 @@ namespace educodeai_server.Services.Implementation
 
             try
             {
-                string cauTraLoi = await _gemini.GenerateAsync(finalPrompt, false, systemInstruction);
+                string cauTraLoi = await _gemini.GenerateAsync($"{systemInstruction}\n\n{finalPrompt}");
                 var resultChuanHoa = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(cauTraLoi);
                 return resultChuanHoa;
             }
@@ -207,7 +218,7 @@ Hãy trình bày ngắn gọn bằng tiếng Việt, dùng gạch đầu dòng v
 
             try
             {
-                string rawJsonResult = await _gemini.GenerateAsync(promptTomTat, false, systemInstruction);
+                string rawJsonResult = await _gemini.GenerateAsync($"{systemInstruction}\n\n{promptTomTat}");
                 string ketQuaTomTat = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawJsonResult);
                 return ketQuaTomTat;
             }
@@ -216,6 +227,33 @@ Hãy trình bày ngắn gọn bằng tiếng Việt, dùng gạch đầu dòng v
                 Console.WriteLine($"Lỗi: {loi.Message}");
                 throw new Exception("Lỗi gọi AI tóm tắt.");
             }
+        }
+
+        internal static string LayPhuDeQuanhThoiDiem(string phuDe, int thoiGianHienTai, int khoangThoiGian = 90)
+        {
+            if (string.IsNullOrWhiteSpace(phuDe) || thoiGianHienTai < 0) return string.Empty;
+
+            int batDau = Math.Max(0, thoiGianHienTai - khoangThoiGian);
+            int ketThuc = thoiGianHienTai + khoangThoiGian;
+            var ketQua = new List<string>();
+
+            foreach (string line in phuDe.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var match = Regex.Match(line, @"^\[(?:(\d+):)?(\d{2}):(\d{2})\]");
+                if (!match.Success) continue;
+
+                int gio = string.IsNullOrEmpty(match.Groups[1].Value) ? 0 : int.Parse(match.Groups[1].Value);
+                int phut = int.Parse(match.Groups[2].Value);
+                int giay = int.Parse(match.Groups[3].Value);
+                int tongGiay = gio * 3600 + phut * 60 + giay;
+
+                if (tongGiay >= batDau && tongGiay <= ketThuc)
+                {
+                    ketQua.Add(line.Trim());
+                }
+            }
+
+            return string.Join("\n", ketQua);
         }
 
         private static (string CleanText, int TotalSeconds) CleanVttOrSrtSubtitleWithTimestamps(string rawSubtitle)
@@ -358,7 +396,7 @@ Cấu trúc JSON bắt buộc:
 
             try
             {
-                string rawResponse = await _gemini.GenerateAsync(prompt, true, systemInstruction);
+                string rawResponse = await _gemini.GenerateAsync($"{systemInstruction}\n\n{prompt}", true);
                 rawResponse = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse);
                 rawResponse = LamSachJson(rawResponse);
 

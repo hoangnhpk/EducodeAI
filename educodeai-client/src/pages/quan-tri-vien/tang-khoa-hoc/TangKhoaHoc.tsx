@@ -204,9 +204,14 @@ export default function TangKhoaHoc() {
       )}
 
       <header className="qlhv-header">
-        <div>
-          <h1 className="qlhv-title">Tặng Khóa Học</h1>
-          <p className="qlhv-subtitle">Quản lý và theo dõi danh sách lượt tặng khóa học trong hệ thống.</p>
+        <div className="qlhv-header-title-group">
+          <div className="qlhv-header-icon" aria-hidden="true">
+            <i className="bi bi-gift-fill" />
+          </div>
+          <div>
+            <h1 className="qlhv-title">Tặng Khóa Học</h1>
+            <p className="qlhv-subtitle">Quản lý và theo dõi danh sách lượt tặng khóa học trong hệ thống.</p>
+          </div>
         </div>
         <button type="button" className="qlhv-btn-primary" onClick={moModal}>+ Tặng Khóa Học</button>
       </header>

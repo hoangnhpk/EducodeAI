@@ -1,0 +1,81 @@
+.httt-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.httt-toolbar select.httt-filter-select {
+  width: 220px !important;
+  min-width: 220px;
+  max-width: 220px;
+  flex: 0 0 220px;
+}
+
+.httt-toolbar input.httt-search-input {
+  width: 320px !important;
+  min-width: 220px;
+  max-width: 420px;
+  flex: 1 1 320px;
+}
+
+.httt-toolbar button.httt-filter-btn {
+  margin-left: 0;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  width: auto;
+}
+
+@media (max-width: 768px) {
+  .httt-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .httt-toolbar select.httt-filter-select,
+  .httt-toolbar input.httt-search-input {
+    width: 100% !important;
+    max-width: none;
+    flex: 1 1 100%;
+  }
+}
+
+/* ===========================
+   BẢNG DANH SÁCH
+   .user-table dùng table-layout: fixed nên 9 cột không khai báo width sẽ chia
+   đều nhau -> cột học viên quá hẹp, email dài (không có chỗ ngắt dòng) tràn
+   đè sang cột trạng thái. Khai báo width từng cột: bóp 2 cột mã lại để dồn
+   chỗ cho học viên/email.
+=========================== */
+.httt-table {
+  min-width: 1240px;
+}
+
+.httt-table th,
+.httt-table td {
+  overflow-wrap: anywhere;
+}
+
+.httt-col-ma { width: 78px; }
+.httt-col-don { width: 78px; }
+.httt-col-noi-dung { width: 110px; }
+.httt-col-hoc-vien { width: 260px; }
+.httt-col-khoa-hoc { width: 180px; }
+.httt-col-lien-he { width: 120px; }
+.httt-col-trang-thai { width: 140px; }
+.httt-col-ngay { width: 150px; white-space: nowrap; }
+.httt-col-thao-tac { width: 120px; text-align: center; }
+
+/* 2 cột mã rất hẹp: giảm padding ngang để tiêu đề không phải xuống dòng. */
+.httt-table th.httt-col-ma,
+.httt-table td.httt-col-ma,
+.httt-table th.httt-col-don,
+.httt-table td.httt-col-don {
+  padding-inline: 10px;
+}
+
+.httt-email {
+  display: block;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}

@@ -13,7 +13,6 @@ using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 using educodeai_server.Config;
 using educodeai_server.Common;
-using educodeai_server.Workers;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -26,9 +25,8 @@ namespace educodeai_server.Services.Implementation
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<QuanLyHoSoGiangVienService> _logger;
         private readonly ITokenService _tokenService;
-        private readonly IGiangVienReviewEmailQueue _emailQueue;
 
-        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env, IDataProtectionProvider dataProtectionProvider, IHttpContextAccessor httpContextAccessor, ILogger<QuanLyHoSoGiangVienService> logger, ITokenService tokenService, IGiangVienReviewEmailQueue emailQueue)
+        public QuanLyHoSoGiangVienService(EduCodeAIDbContext context, IOptions<PaymentMailOptions> mailOptions, IWebHostEnvironment env, IDataProtectionProvider dataProtectionProvider, IHttpContextAccessor httpContextAccessor, ILogger<QuanLyHoSoGiangVienService> logger, ITokenService tokenService)
         {
             _context = context;
             _mailOptions = mailOptions.Value;
@@ -37,7 +35,6 @@ namespace educodeai_server.Services.Implementation
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
             _tokenService = tokenService;
-            _emailQueue = emailQueue;
         }
 
         private string? ActorIp() =>
@@ -261,7 +258,7 @@ namespace educodeai_server.Services.Implementation
             </div>";
             try
             {
-                await _emailQueue.EnqueueAsync(new GiangVienReviewEmailPayload(hoSo.Email, subject, body));
+                await EmailHelper.SendEmailAsync(hoSo.Email, subject, body);
             }
             catch (Exception exMail)
             {
@@ -322,7 +319,7 @@ namespace educodeai_server.Services.Implementation
             </div>";
             try
             {
-                await _emailQueue.EnqueueAsync(new GiangVienReviewEmailPayload(hoSo.Email, subject, body));
+                await EmailHelper.SendEmailAsync(hoSo.Email, subject, body);
             }
             catch (Exception exMail)
             {
@@ -393,7 +390,7 @@ namespace educodeai_server.Services.Implementation
 
             try
             {
-                await _emailQueue.EnqueueAsync(new GiangVienReviewEmailPayload(hoSo.Email, subject, body));
+                await EmailHelper.SendEmailAsync(hoSo.Email, subject, body);
             }
             catch (Exception exMail)
             {

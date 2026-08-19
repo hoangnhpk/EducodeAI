@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import './QuanLyBaiTap.css';
 import './components/QuanLyBaiTapThucHanh.css';
 import QuizDetailView from './components/QuizDetailView';
@@ -16,8 +16,6 @@ import StatusSinhAI from './components/StatusSinhAI';
 
 export default function QuanLyBaiTapPage() {
     const [cheDoManHinh, setCheDoManHinh] = useState<'list' | 'createPractice' | 'createQuiz'>('list');
-    const modalTriggerRef = useRef<HTMLButtonElement | null>(null);
-    const modalContentRef = useRef<HTMLDivElement | null>(null);
 
     const {
         isLoading,
@@ -27,7 +25,8 @@ export default function QuanLyBaiTapPage() {
         modalState,
         fetchDanhSach,
         handleDeleteClick,
-        handleViewClick
+        handleViewClick,
+        handleUpdatePractice
     } = useExerciseList();
 
     const handleAIGeneratorSuccess = () => {
@@ -36,50 +35,6 @@ export default function QuanLyBaiTapPage() {
     };
 
     const ai = useAIGenerator(handleAIGeneratorSuccess);
-
-    useEffect(() => {
-        if (!modalState.isModalOpen) return;
-
-        const modal = modalContentRef.current;
-        const focusableSelector = 'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
-        const focusableElements = () => Array.from(modal?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
-        focusableElements()[0]?.focus();
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape' || event.key === 'Esc') {
-                modalState.closeModal();
-                return;
-            }
-            if (event.key !== 'Tab') return;
-
-            const elements = focusableElements();
-            if (elements.length === 0) {
-                event.preventDefault();
-                modal?.focus();
-                return;
-            }
-            const first = elements[0];
-            const last = elements[elements.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
-        };
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-            modalTriggerRef.current?.focus();
-        };
-    }, [modalState.isModalOpen, modalState.closeModal]);
-
-    const handleViewItem = (item: Parameters<typeof handleViewClick>[0], trigger: HTMLButtonElement) => {
-        modalTriggerRef.current = trigger;
-        handleViewClick(item);
-    };
 
     const switchToCreatePractice = () => {
         setCheDoManHinh('createPractice');
@@ -97,14 +52,14 @@ export default function QuanLyBaiTapPage() {
     };
 
     return (
-        <div className="container-fluid py-4" style={{ backgroundColor: 'var(--bg-main)', minHeight: '100vh' }}>
+        <div className="gv-page">
             <div className="d-flex justify-content-between align-items-end mb-4">
                 <div>
                     <h2 className="mb-2" style={{ fontWeight: 800, color: 'var(--text-dark)', fontSize: '28px' }}>
                         <i className="bi bi-journal-code text-primary me-2"></i>
                         Quản lý Bài Tập & Quiz
                     </h2>
-                    <p className="btth-page-subtitle mb-0">Hệ thống sinh bài tập và câu hỏi trắc nghiệm thông minh bằng AI</p>
+                    <p className="text-muted mb-0">Hệ thống sinh bài tập và câu hỏi trắc nghiệm thông minh bằng AI</p>
                 </div>
             </div>
 
@@ -128,7 +83,7 @@ export default function QuanLyBaiTapPage() {
                         onClick={switchToCreateQuiz}
                     >
                         <i className="bi bi-patch-question me-2"></i> Tạo Quiz AI
-                        <span className="badge ms-2 btth-new-badge" style={{ background: 'var(--warning-soft)', color: 'var(--warning-strong)', fontSize: '10px', padding: '2px 7px', borderRadius: '999px' }}>MỚI</span>
+                        <span className="badge ms-2" style={{ background: 'var(--warning-soft)', color: 'var(--warning-strong)', fontSize: '10px', padding: '2px 7px', borderRadius: '999px' }}>Mới</span>
                     </button>
                 </div>
             </div>
@@ -142,7 +97,7 @@ export default function QuanLyBaiTapPage() {
                         <ExerciseTable 
                             isLoading={isLoading} 
                             danhSachHienThi={danhSachHienThi} 
-                            onViewClick={handleViewItem}
+                            onViewClick={handleViewClick} 
                             onDeleteClick={handleDeleteClick} 
                             onCreateClick={switchToCreatePractice}
                         />
@@ -167,33 +122,40 @@ export default function QuanLyBaiTapPage() {
                     )}
 
                     {modalState.isModalOpen && (
-                        <div className="modal-backdrop-custom" onClick={modalState.closeModal}>
+                        <div
+                            className="modal-backdrop-custom"
+                            onClick={modalState.closeModal}
+                            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1040, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
                             <div
-                                ref={modalContentRef}
                                 className="modal-dialog-custom"
-                                role="dialog"
-                                aria-modal="true"
-                                aria-labelledby="exercise-detail-modal-title"
-                                tabIndex={-1}
-                                onClick={(event) => event.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{ background: 'white', borderRadius: '12px', width: '80%', maxWidth: '900px', maxHeight: '90vh', overflow: 'hidden', padding: 0, zIndex: 1041, position: 'relative', display: 'flex', flexDirection: 'column' }}
                             >
-                                <h2 id="exercise-detail-modal-title" className="visually-hidden">Chi tiết bài tập</h2>
-                                <button
-                                    type="button"
-                                    className="btn-close modal-close-button"
-                                    onClick={modalState.closeModal}
-                                    aria-label="Đóng"
-                                />
-                                <div className="modal-scroll-body">
+                                <div style={{ position: 'relative', flex: '0 0 56px', minHeight: '56px', borderBottom: '1px solid #e9ecef', background: 'white' }}>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        aria-label="Đóng cửa sổ chi tiết"
+                                        onClick={modalState.closeModal}
+                                        style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }}
+                                    />
+                                </div>
+                                <div style={{ overflowY: 'auto', minHeight: 0, flex: '1 1 auto', padding: '24px' }}>
                                     {modalState.isLoadingDetails ? (
                                         <div className="text-center p-5"><i className="bi bi-arrow-repeat fs-1 text-primary" style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}></i><div className="mt-2 text-muted">Đang tải dữ liệu...</div></div>
                                     ) : (
                                         <Suspense fallback={<div className="text-center p-5">Đang tải...</div>}>
-                                            {modalState.modalType === 'IDE' ? (
-                                                <PreviewBaiTapAI data={modalState.chiTietBaiTap} editable={false} onCancel={modalState.closeModal} />
-                                            ) : modalState.modalType === 'Quiz' ? (
-                                                <QuizDetailView data={modalState.chiTietBaiTap} />
-                                            ) : null}
+                                            {modalState.chiTietQuiz?.loaiBaiTap === 'IDE' ? (
+                                                <PreviewBaiTapAI
+                                                    data={modalState.chiTietQuiz}
+                                                    onSave={handleUpdatePractice}
+                                                    onCancel={modalState.closeModal}
+                                                    editable={true}
+                                                />
+                                            ) : (
+                                                <QuizDetailView data={modalState.chiTietQuiz} />
+                                            )}
                                         </Suspense>
                                     )}
                                 </div>
@@ -214,6 +176,7 @@ export default function QuanLyBaiTapPage() {
                             <FormTaoBaiTapAI 
                                 baiHocId={ai.selectedBaiHocId}
                                 tenBaiHoc={ai.tenBaiHoc}
+                                language={ai.selectedLanguage}
                                 isGenerating={ai.practice.state === 'generating'}
                                 onGenerate={ai.practice.generate}
                             />
@@ -248,6 +211,7 @@ export default function QuanLyBaiTapPage() {
                             <FormTaoQuizAI 
                                 baiHocId={ai.selectedBaiHocId}
                                 tenBaiHoc={ai.tenBaiHoc}
+                                language={ai.selectedLanguage}
                                 isGenerating={ai.quiz.state === 'generating'}
                                 onGenerate={ai.quiz.generate}
                             />

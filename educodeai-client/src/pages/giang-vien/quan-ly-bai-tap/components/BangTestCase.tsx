@@ -51,7 +51,7 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
             <tr style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
               <th className="ps-4" style={{ width: '38%', fontWeight: 700, borderBottom: '1px solid var(--border-light)' }}>Dữ liệu đầu vào (Input)</th>
               <th style={{ width: '38%', fontWeight: 700, borderBottom: '1px solid var(--border-light)' }}>Kết quả mong đợi (Output)</th>
-              <th className="text-center" style={{ width: '136px', fontWeight: 700, borderBottom: '1px solid var(--border-light)' }}>Loại</th>
+              <th className="text-center" style={{ width: '110px', fontWeight: 700, borderBottom: '1px solid var(--border-light)' }}>Loại</th>
               <th className="text-center" style={{ width: '85px', fontWeight: 700, borderBottom: '1px solid var(--border-light)' }}>Điểm</th>
               {editable && <th className="text-center" style={{ width: '60px', borderBottom: '1px solid var(--border-light)' }}></th>}
             </tr>
@@ -70,7 +70,7 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
                   <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
                     <td className="ps-4">
                       <textarea
-                        className="form-control font-monospace test-case-textarea"
+                        className="form-control font-monospace"
                         style={{ height: '75px', fontSize: '13px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '10px' }}
                         value={tc.input}
                         onChange={(e) => handleUpdate(idx, 'input', e.target.value)}
@@ -80,7 +80,7 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
                     </td>
                     <td>
                       <textarea
-                        className="form-control font-monospace test-case-textarea"
+                        className="form-control font-monospace"
                         style={{ height: '75px', fontSize: '13px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '10px' }}
                         value={outputDisplay}
                         onChange={(e) => handleUpdate(idx, 'output', e.target.value)}
@@ -88,10 +88,10 @@ export default function BangTestCase({ testCases, onChange, editable = true }: P
                         placeholder="Output mong đợi..."
                       />
                     </td>
-                    <td className="text-center test-case-type-cell">
+                    <td className="text-center">
                       <select
-                        className="form-select form-select-sm test-case-type-select"
-                        style={{ minWidth: '120px', padding: '6px 28px 6px 12px', fontSize: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}
+                        className="form-select form-select-sm"
+                        style={{ fontSize: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}
                         value={tc.isHidden ? 'Hidden' : 'Public'}
                         onChange={(e) => handleUpdate(idx, 'isHidden', e.target.value === 'Hidden')}
                         disabled={!editable}

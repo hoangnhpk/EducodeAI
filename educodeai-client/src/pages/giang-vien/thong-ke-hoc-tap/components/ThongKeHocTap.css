@@ -69,10 +69,11 @@
   background: var(--success);
 }
 
-/* ===== PAGE ===== */
+/* ===== PAGE =====
+   Padding ngoài do .gv-main-content (24px) — không pad thêm ở đây. */
 .thong-ke-container {
-  padding: 24px;
-  background: var(--bg-main);
+  padding: 0;
+  background: transparent;
 }
 
 /* ===== HEADER ===== */
@@ -118,49 +119,33 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 
 .student-header h3 {
-  margin: 0;
   font-size: 20px;
-  font-weight: 700;
-  color: var(--text-dark);
+  font-weight: 600;
 }
 
 /* ===== SEARCH ===== */
 .search-box {
   position: relative;
-  min-width: 240px;
-  flex: 0 1 280px;
 }
 
 .search-box svg,
 .search-box > i {
   position: absolute;
-  left: 12px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-light);
-  pointer-events: none;
-  font-size: 13px;
 }
 
 .search-box input {
-  width: 100%;
-  padding: 9px 12px 9px 36px;
+  padding: 8px 12px 8px 36px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
-  background: var(--bg-card);
-  color: var(--text-main);
-  font-size: 14px;
   outline: none;
-}
-
-.search-box input::placeholder {
-  color: var(--text-light);
 }
 
 .search-box input:focus {

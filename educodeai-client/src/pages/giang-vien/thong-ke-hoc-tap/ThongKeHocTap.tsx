@@ -8,6 +8,7 @@ import TopStudents from "./components/TopStudents";
 import AtRiskStudents from "./components/AtRiskStudents";
 
 import "./components/ThongKeHocTap.css";
+import { formatThoiGianTuGiay } from "@/utils/format-thoi-gian-hoc";
 
 export default function ThongKeHocTap() {
   // ================== STATES ==================
@@ -76,7 +77,7 @@ export default function ThongKeHocTap() {
   // ================== LOADING STATE ==================
   if (loading) {
     return (
-      <div className="thong-ke-container" style={{ 
+      <div className="gv-page thong-ke-container" style={{ 
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
@@ -93,7 +94,7 @@ export default function ThongKeHocTap() {
   // ================== ERROR STATE ==================
   if (error) {
     return (
-      <div className="thong-ke-container">
+      <div className="gv-page thong-ke-container">
         <div style={{
           padding: '20px',
           background: 'var(--danger-soft)',
@@ -123,7 +124,7 @@ export default function ThongKeHocTap() {
   }
 
   return (
-    <div className="thong-ke-container">
+    <div className="gv-page thong-ke-container">
       {/* Header */}
       <div className="thong-ke-page-header">
         <h2>Thống kê học tập</h2>
@@ -133,8 +134,8 @@ export default function ThongKeHocTap() {
       {/* STAT CARDS */}
       <div className="stat-grid">
         <StatCard
-          title="GIỜ HỌC TB / HỌC VIÊN"
-          value={`${Number(overview?.gioHocTrungBinh ?? 0).toFixed(1)}h`}
+          title="THỜI GIAN HỌC TB / HỌC VIÊN"
+          value={formatThoiGianTuGiay(overview?.gioHocTrungBinh)}
           subtitle="Trung bình mỗi học viên"
           icon="fa-clock"
           gradient="icon-purple"

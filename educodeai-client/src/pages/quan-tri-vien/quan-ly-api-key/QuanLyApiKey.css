@@ -39,6 +39,156 @@
   margin-top: 2px;
 }
 
+/* ── Add-key modal overlay/header ──────────────────────────────────────── */
+.akm-modal-overlay {
+  overflow-y: auto;
+}
+
+.akm-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 20px !important;
+  padding-bottom: 12px !important;
+}
+
+.akm-modal .modal-title {
+  min-width: 0;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.akm-modal .btn-close {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 8px;
+  align-self: center;
+  opacity: 0.7;
+}
+
+.akm-modal .btn-close:hover {
+  opacity: 1;
+}
+
+/* ── Add-key modal form ─────────────────────────────────────────────────── */
+.akm-modal .modal-body {
+  padding-top: 16px;
+  padding-bottom: 20px;
+}
+
+.akm-modal .modal-body form > .mb-3 {
+  margin-bottom: 16px !important;
+}
+
+.akm-modal .modal-body form > .mb-1 {
+  margin-bottom: 0 !important;
+}
+
+.akm-key-fetch-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.akm-key-fetch-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+.akm-key-fetch-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  min-height: 40px;
+  min-width: 108px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-dark);
+  white-space: nowrap;
+}
+
+.akm-key-fetch-btn:hover,
+.akm-key-fetch-btn:focus,
+.akm-key-fetch-btn:focus-visible,
+.akm-key-fetch-btn:active {
+  color: var(--text-dark) !important;
+  background: var(--bg-main) !important;
+  border-color: var(--primary) !important;
+  box-shadow: none;
+}
+
+.akm-key-fetch-btn:hover > i,
+.akm-key-fetch-btn:hover > span,
+.akm-key-fetch-btn:focus-visible > i,
+.akm-key-fetch-btn:focus-visible > span,
+.akm-key-fetch-btn:active > i,
+.akm-key-fetch-btn:active > span {
+  color: var(--text-dark) !important;
+}
+
+.akm-key-fetch-btn > i,
+.akm-key-fetch-btn > .spinner-border {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.akm-key-fetch-btn > span:not(.spinner-border) {
+  display: inline-block;
+}
+
+
+.akm-modal-control,
+.akm-modal .akm-modal-control {
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.akm-modal-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.12);
+}
+
+.akm-modal .form-control:not(.akm-key-fetch-input),
+.akm-modal .form-select:not(.akm-modal-control) {
+  min-height: 40px;
+}
+
+.akm-modal .modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-bottom: 20px;
+}
+
+@media (max-width: 575.98px) {
+  .akm-key-fetch-btn {
+    min-width: 40px;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+}
+
 /* ── Add-key button ────────────────────────────────────────────────────── */
 .akm-btn-add {
   display: inline-flex;
@@ -148,6 +298,10 @@
   color: var(--text-dark);
 }
 
+.akm-table-card {
+  padding: 32px;
+}
+
 .akm-table-card .card-header {
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
@@ -193,17 +347,12 @@
 }
 
 .akm-search-group .form-control:hover {
-  border-color: var(--primary-dark);
+  border-color: var(--primary-light);
 }
 
 .akm-search-group .form-control:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(246, 144, 80, 0.12);
-}
-
-.akm-search-group .form-control:focus-visible {
-  outline: 2px solid var(--primary-dark);
-  outline-offset: 2px;
 }
 
 .akm-refresh-btn {
@@ -219,25 +368,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 767px) {
-  .akm-pool-tools {
-    width: 100%;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    margin-left: 0;
-  }
-
-  .akm-search-group {
-    flex: 1 1 100%;
-    width: 100% !important;
-  }
-
-  .akm-refresh-btn {
-    flex: 0 0 auto;
-  }
-}
-
-
+/* ── Table ─────────────────────────────────────────────────────────────── */
 .akm-tbl thead th {
   font-size: 12px;
   font-weight: var(--font-weight-semibold);

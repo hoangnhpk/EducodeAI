@@ -3,81 +3,78 @@
    (bỏ xanh dương thương hiệu → cam --primary)
    ========================================= */
 
-/* 1. Badge (Trạng thái) */
-.badge {
-    padding: 7px 16px;
+/* 1. Badge trạng thái (tránh đụng Bootstrap .badge — chữ trắng trên nền nhạt) */
+.qlbt-badge {
+    padding: 6px 10px;
     font-size: 11px;
     border-radius: var(--radius-sm);
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.4px;
     display: inline-block;
+    line-height: 1.2;
+    border: 1px solid transparent;
+    white-space: nowrap;
 }
 
-.table .badge.badge-draft {
-    background-color: #f1f5f9 !important;
-    color: #475569 !important;
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 13px;
-    font-weight: 600;
+.qlbt-badge--draft {
+    background: #e5e7eb;
+    color: #374151;
+    border-color: #d1d5db;
 }
 
-.table .badge.badge-published {
-    background-color: #f0fdf4 !important;
-    color: #16a34a !important;
-    border: 1px solid #bbf7d0 !important;
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 500 !important;
+.qlbt-badge--published {
+    background: #d1fae5;
+    color: #065f46;
+    border-color: #a7f3d0;
 }
 
-.btth-page-subtitle {
-    color: #64748b;
-}
-
-.exercise-filter-bar input::placeholder {
-    color: #475569;
-    opacity: 1;
-}
-
-.exercise-filter-bar input,
-.exercise-filter-bar select {
-    color: #334155;
-}
-
-.exercise-filter-bar select option {
-    color: #334155;
-}
-
-.table tbody tr {
-    vertical-align: middle;
-}
-
-.exercise-actions-column {
-    text-align: center;
-    vertical-align: middle;
-}
-
-.actions-group {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-
-/* Vàng: Sửa/Đang chờ */
-.badge-sửa {
+.qlbt-badge--pending {
     background: var(--warning-soft);
     color: var(--warning-strong);
+    border-color: #fde68a;
 }
 
 /* 2. Nút Hành động */
+.actions-group {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+}
+
+/* Bảng danh sách bài tập.
+   Với table-layout mặc định (auto), các cột chữ dài giành thêm bề rộng theo nội
+   dung khiến tổng vượt khung -> cột cuối bị cắt mất. Chuyển sang fixed và khai
+   báo % cho đủ 7 cột (tổng = 100%) để bố cục luôn khớp đúng bề rộng khung. */
+.qlbt-table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 1040px; /* hẹp hơn mức này thì .table-container cho cuộn ngang */
+}
+
+/* table.qlbt-table (0,1,2) để chắc chắn thắng `.table th/td` (0,1,1) của
+   UI_GiangVien_QuanTriVien_Kit.css, khỏi phụ thuộc thứ tự import CSS. */
+table.qlbt-table th,
+table.qlbt-table td {
+    padding: 12px 10px;
+}
+
+table.qlbt-table th {
+    white-space: nowrap;
+}
+
+.qlbt-col-ten { width: 20%; }
+.qlbt-col-loai { width: 6%; }
+.qlbt-col-khoa-hoc { width: 17%; }
+.qlbt-col-chuong { width: 13%; }
+.qlbt-col-bai-hoc { width: 17%; }
+.qlbt-col-trang-thai { width: 11%; }
+.qlbt-col-hanh-dong { width: 16%; }
+
 .action-btn {
-    padding: 7px 14px;
-    font-size: 13px;
+    padding: 6px 11px;
+    font-size: 12.5px;
     font-weight: 700;
     border-radius: var(--radius-sm);
     border: 1.5px solid transparent;
@@ -85,7 +82,8 @@
     transition: all var(--transition-fast);
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
+    white-space: nowrap;
 }
 
 /* Nút Sửa: dùng cam --primary */
@@ -166,26 +164,16 @@
     transform: translateY(-2px);
 }
 
+/* Bề rộng đã do cột quy định (table-layout: fixed), ô chữ chỉ cần lấp đầy cột
+   rồi cắt bằng ellipsis - không đặt max-width cố định nữa để màn hình rộng
+   hiển thị được nhiều chữ hơn thay vì cắt sớm ở 150-200px. */
 .truncate-text {
-    max-width: 150px;
+    max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: inline-block;
-    vertical-align: middle;
+    display: block;
     cursor: pointer;
-}
-
-.col-ten {
-    max-width: 200px;
-}
-
-.col-khoahoc {
-    max-width: 200px;
-}
-
-.col-chuong {
-    max-width: 150px;
 }
 
 .view-btn {
@@ -353,71 +341,3 @@
 .btn-modal-next { background: var(--primary) !important; color: var(--text-white) !important; }
 .btn-modal-next:hover:not(:disabled) { background: var(--primary-hover) !important; color: var(--text-white) !important; transform: translateY(-2px) !important; box-shadow: var(--shadow-md) !important; }
 .btn-modal-nav:disabled { opacity: 0.5 !important; cursor: not-allowed !important; }
-
-/* Popup xem Quiz/Bài tập: chỉ body cuộn, nút đóng luôn nằm trên dialog */
-.modal-backdrop-custom {
-    position: fixed;
-    inset: 0;
-    z-index: 1040;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    background: rgba(17, 24, 39, 0.6);
-    backdrop-filter: blur(4px);
-}
-
-.modal-dialog-custom {
-    position: relative;
-    z-index: 1041;
-    display: flex;
-    flex-direction: column;
-    width: 80%;
-    max-width: 900px;
-    max-height: 90vh;
-    overflow: hidden;
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-}
-
-.modal-scroll-body {
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: 24px;
-}
-
-.modal-close-button {
-    position: absolute;
-    top: 16px;
-    right: 20px;
-    z-index: 50;
-    width: 32px;
-    height: 32px;
-    padding: 8px;
-    border-radius: 50%;
-    background-color: var(--bg-card);
-    box-shadow: var(--shadow-sm);
-}
-
-.modal-close-button:focus-visible {
-    outline: 3px solid var(--primary-soft);
-    outline-offset: 2px;
-}
-
-@media (max-width: 768px) {
-    .modal-dialog-custom {
-        width: 100%;
-        max-height: calc(100vh - 32px);
-    }
-
-    .modal-scroll-body {
-        padding: 16px;
-    }
-
-    .modal-close-button {
-        top: 16px;
-        right: 16px;
-    }
-}

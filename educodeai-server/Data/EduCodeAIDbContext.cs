@@ -108,7 +108,7 @@ namespace educodeai_server.Data
 
             // Session hot-path indexes (Phase G realtime session)
             modelBuilder.Entity<PhienDangNhapModel>().HasIndex(p => new { p.MaNguoiDung, p.DangHoatDong });
-            modelBuilder.Entity<PhienDangNhapModel>().HasIndex(p => new { p.MaNguoiDung, p.MaThietBi }).IsUnique();
+            modelBuilder.Entity<PhienDangNhapModel>().HasIndex(p => new { p.MaNguoiDung, p.MaThietBi });
 
             // Refresh token indexes (Phase C auth hardening)
             modelBuilder.Entity<RefreshTokenModel>().HasIndex(r => r.TokenHash).IsUnique();

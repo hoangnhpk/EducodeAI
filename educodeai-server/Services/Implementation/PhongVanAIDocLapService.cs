@@ -5,6 +5,7 @@ using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using educodeai_server.Exceptions;
 
 namespace educodeai_server.Services.Implementation
 {
@@ -19,6 +20,33 @@ namespace educodeai_server.Services.Implementation
             _context = context;
             _geminiService = geminiService;
             _logger = logger;
+        }
+
+        public async Task<PhongVanSessionDto> GetInterviewAsync(int userId, int maPhongVan)
+        {
+            var session = await _context.LichSuPhongVans.FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaPhongVan == maPhongVan);
+            if (session == null) throw new NotFoundException("Không tìm thấy buổi phỏng vấn.");
+
+            return new PhongVanSessionDto
+            {
+                MaPhongVan = session.MaPhongVan,
+                ViTriUngTuyen = session.ViTriUngTuyen,
+                CapDo = session.CapDo,
+                TinhCachAI = session.TinhCachAI,
+                SoLuongCauHoi = session.SoLuongCauHoi,
+                TrangThai = session.TrangThai,
+                GhiChu = session.GhiChu,
+                LichSuChat = string.IsNullOrEmpty(session.ChiTietChatJSON) ? new List<PhongVanDocLapTurnDto>() : System.Text.Json.JsonSerializer.Deserialize<List<PhongVanDocLapTurnDto>>(session.ChiTietChatJSON)!
+            };
+        }
+
+        public async Task UpdateNoteAsync(int userId, int maPhongVan, string ghiChu)
+        {
+            var session = await _context.LichSuPhongVans.FirstOrDefaultAsync(p => p.MaNguoiDung == userId && p.MaPhongVan == maPhongVan);
+            if (session == null) throw new NotFoundException("Không tìm thấy buổi phỏng vấn.");
+
+            session.GhiChu = ghiChu;
+            await _context.SaveChangesAsync();
         }
 
         public async Task<StartPhongVanResponseDto> StartInterviewAsync(int userId, StartPhongVanRequestDto request)
@@ -38,16 +66,13 @@ namespace educodeai_server.Services.Implementation
             await _context.SaveChangesAsync();
 
             string prompt = $@"
-Bạn là một chuyên gia phỏng vấn tuyển dụng NGƯỜI VIỆT NAM.
-Vị trí ứng tuyển: {request.ViTriUngTuyen}
-Cấp độ: {request.CapDo}
-Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện hướng dẫn, Strict = Khó tính xoáy sâu vào lỗi sai, Normal = Bình thường).
+Đóng vai là một nhà tuyển dụng người VIỆT NAM, đang phỏng vấn ứng viên cho vị trí: {request.ViTriUngTuyen} (Cấp độ: {request.CapDo}).
+Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện, Strict = Khó tính, Normal = Bình thường).
 
-=== YÊU CẦU BẮT BUỘC ===
-1. BẮT BUỘC trả lời hoàn toàn bằng TIẾNG VIỆT. KHÔNG ĐƯỢC dùng tiếng Anh.
-2. Bạn ĐANG TRONG CUỘC HỘI THOẠI TRỰC TIẾP với ứng viên. Hãy đóng vai và đưa ra CÂU HỎI ĐẦU TIÊN ngay lập tức.
-3. TRẢ VỀ DUY NHẤT một câu hỏi ngắn gọn (tối đa 2-3 câu). KHÔNG suy nghĩ, KHÔNG giải thích, KHÔNG in ra kịch bản, danh sách, hay các lựa chọn.
-4. KHÔNG ĐƯỢC viết tiếng Anh, KHÔNG liệt kê Option, KHÔNG dùng format Role/Personality/Constraint.";
+Nhiệm vụ của bạn lúc này: Hãy đưa ra câu hỏi đầu tiên bằng tiếng Việt để bắt đầu buổi phỏng vấn (có thể chào hỏi ngắn gọn rồi hỏi thẳng vào chuyên môn).
+Lưu ý RẤT QUAN TRỌNG:
+- Bạn phải phản hồi bằng tiếng Việt 100%.
+- Chỉ đưa ra duy nhất câu hỏi của bạn. Không suy nghĩ, không giải thích, không ghi thêm bất kỳ chữ nào ngoài câu hỏi.";
 
             var rawResponse = await _geminiService.GenerateAsync(prompt);
             string cauHoiDauTien = "";
@@ -100,15 +125,16 @@ Tính cách của bạn: {request.TinhCachAI} (Friendly = Thân thiện hướng
             string chatContext = string.Join("\n", chatHistory.Select(x => $"{(x.Role == "ai" ? "Người phỏng vấn" : "Ứng viên")}: {x.Message}"));
 
             string prompt = $@"
-Bạn là người phỏng vấn VIỆT NAM, đang phỏng vấn ứng viên cho vị trí: {lichSu.ViTriUngTuyen} (Cấp độ: {lichSu.CapDo}).
+Đóng vai là nhà tuyển dụng người VIỆT NAM, đang phỏng vấn ứng viên cho vị trí: {lichSu.ViTriUngTuyen} (Cấp độ: {lichSu.CapDo}).
 Tính cách của bạn: {lichSu.TinhCachAI}.
-Dưới đây là lịch sử cuộc trò chuyện:
+Dưới đây là lịch sử cuộc trò chuyện từ trước đến nay:
 {chatContext}
 
-Hãy đánh giá câu trả lời gần nhất và trả về đúng JSON:
+Nhiệm vụ của bạn: Hãy đánh giá câu trả lời gần nhất của ứng viên và đưa ra câu hỏi tiếp theo.
+Bắt buộc phải trả về đúng định dạng JSON như sau, và toàn bộ giá trị bên trong phải bằng TIẾNG VIỆT 100%:
 {{
-    ""nhanXetCauTruoc"": ""Nhận xét ngắn gọn 2-3 câu bằng tiếng Việt"",
-    ""cauHoiTiepTheo"": ""{(isFinished ? "" : "Câu hỏi tiếp theo ngắn gọn bằng tiếng Việt")}""
+    ""nhanXetCauTruoc"": ""Nhận xét ngắn gọn 1-2 câu về câu trả lời của ứng viên"",
+    ""cauHoiTiepTheo"": ""{(isFinished ? "" : "Câu hỏi chuyên môn tiếp theo ngắn gọn")}""
 }}
 Yêu cầu:
 - Chỉ trả về JSON, không markdown hoặc giải thích thêm.
@@ -136,6 +162,21 @@ Yêu cầu:
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi phân tích câu trả lời phỏng vấn. RawResponse: {Raw}", rawResponse);
+
+                // ===== TẠM THỜI - CHẨN ĐOÁN, XOÁ SAU KHI TÌM RA NGUYÊN NHÂN =====
+                // Dự án chưa có file logging nên ghi nguyên văn phản hồi Gemini ra file để đối chiếu.
+                // Body phản hồi không chứa API key (key nằm ở query string) nên an toàn.
+                try
+                {
+                    var debugDir = Path.Combine(AppContext.BaseDirectory, "ai-debug");
+                    Directory.CreateDirectory(debugDir);
+                    File.WriteAllText(
+                        Path.Combine(debugDir, $"phongvan-{DateTime.Now:yyyyMMdd-HHmmss-fff}.json"),
+                        $"// Loi: {ex.GetType().Name}: {ex.Message}{Environment.NewLine}{rawResponse}");
+                }
+                catch { /* chan doan that bai thi bo qua, khong lam hong luong chinh */ }
+                // ===== HẾT PHẦN TẠM THỜI =====
+
                 nhanXet = isFinished
                     ? "Cảm ơn bạn đã trả lời. Buổi phỏng vấn kết thúc tại đây."
                     : "Cảm ơn bạn đã trả lời. Hãy tiếp tục thể hiện rõ cách suy nghĩ và kinh nghiệm của bạn.";

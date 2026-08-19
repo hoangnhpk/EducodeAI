@@ -117,7 +117,7 @@ export default function QuanLyMaGiamGiaAdmin() {
           </div>
         </div>
       </div>
-      <div className="card border-0 shadow-sm">
+      <div className="card border-0 shadow-sm qtv-content-card">
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light">

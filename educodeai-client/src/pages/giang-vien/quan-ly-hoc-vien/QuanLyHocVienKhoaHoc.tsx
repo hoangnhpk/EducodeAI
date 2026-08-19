@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import './QuanLyHocVienKhoaHoc.css';
 import Swal from 'sweetalert2';
 import quaTangKhoaHocService from '@/services/qua-tang-khoa-hoc.service';
@@ -165,10 +166,11 @@ const formatGiftTime = (raw: string) => {
 };
 
 export default function QuanLyHocVienKhoaHoc() {
+  const [searchParams] = useSearchParams();
   const [khoaHocs, setKhoaHocs] = useState<KhoaHoc[]>([]);
   const [hocViens, setHocViens] = useState<HocVien[]>([]);
   const [selectedKhoaHoc, setSelectedKhoaHoc] = useState<string>('0');
-  const [searchInput, setSearchInput] = useState<string>('');
+  const [searchInput, setSearchInput] = useState<string>(() => searchParams.get('search')?.trim() || '');
   const [loading, setLoading] = useState<boolean>(false);
 
   // --- STATE CHO PHÂN TRANG ---
@@ -527,7 +529,7 @@ export default function QuanLyHocVienKhoaHoc() {
   }, [selectedKhoaHoc, fetchLichSuQuaTang, tuKhoaLichSu]);
 
   return (
-    <div className="qllh-container">
+    <div className="gv-page qllh-container">
       <div className="qllh-header">
         <div className="qllh-header__main">
           <h1 className="qllh-title">
@@ -573,8 +575,8 @@ export default function QuanLyHocVienKhoaHoc() {
 
       <div className="qllh-filter-bar">
         <div className="qllh-search-form">
-          <div className="qllh-search-wrap">
-            <i className="bi bi-search qllh-search-icon" aria-hidden="true" />
+          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+            <i className="bi bi-search" style={{ position: 'absolute', left: '14px', color: '#94a3b8' }} aria-hidden="true" />
             <input
               type="search"
               placeholder="Tìm theo Họ tên hoặc Email học viên..."

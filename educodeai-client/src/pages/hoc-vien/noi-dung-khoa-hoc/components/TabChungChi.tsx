@@ -45,7 +45,6 @@ interface TabChungChiProps {
     hoTenHienThi: string;
     emailNhan: string;
     onThayDoiHoTenHienThi: (value: string) => void;
-    onThayDoiEmailNhan: (value: string) => void;
     onBatDauThi: () => void;
     onNopBai: (
         diem: number,
@@ -83,7 +82,6 @@ export const TabChungChi = ({
     hoTenHienThi,
     emailNhan,
     onThayDoiHoTenHienThi,
-    onThayDoiEmailNhan,
     onBatDauThi,
     onNopBai,
     onInChungChi: _onInChungChi
@@ -206,12 +204,18 @@ export const TabChungChi = ({
                         </label>
                         <label className="cp-certificate-field">
                             <span>Email nhận chứng chỉ</span>
+                            {/* Luôn là email của tài khoản đang học, không cho sửa để chứng chỉ
+                                không bị gửi nhầm sang địa chỉ khác. */}
                             <input
                                 type="email"
                                 value={emailNhan}
-                                onChange={(event) => onThayDoiEmailNhan(event.target.value)}
-                                placeholder="Nhập email nhận file PDF"
+                                readOnly
+                                title="Chứng chỉ được gửi về email của tài khoản đang học"
+                                style={{ cursor: 'not-allowed', opacity: 0.85 }}
                             />
+                            <small className="cp-certificate-hint">
+                                Chứng chỉ sẽ gửi về email của tài khoản đang học. Muốn đổi, hãy cập nhật email trong hồ sơ cá nhân.
+                            </small>
                         </label>
                     </div>
 
@@ -227,8 +231,13 @@ export const TabChungChi = ({
                     {!baiKiemTraChungChi.duDieuKienDuThi && baiKiemTraChungChi.lyDoChuaDuDieuKien && (
                         <p className="cp-certificate-hint">{baiKiemTraChungChi.lyDoChuaDuDieuKien}</p>
                     )}
-                    {baiKiemTraChungChi.duDieuKienDuThi && (!hoTenHienThi.trim() || !emailNhan.trim()) && (
-                        <p className="cp-certificate-hint">Vui lòng nhập đủ họ tên và email trước khi bắt đầu bài kiểm tra.</p>
+                    {baiKiemTraChungChi.duDieuKienDuThi && !emailNhan.trim() && (
+                        <p className="cp-certificate-hint">
+                            Tài khoản của bạn chưa có email. Vui lòng cập nhật email trong hồ sơ cá nhân trước khi thi.
+                        </p>
+                    )}
+                    {baiKiemTraChungChi.duDieuKienDuThi && emailNhan.trim() && !hoTenHienThi.trim() && (
+                        <p className="cp-certificate-hint">Vui lòng nhập họ và tên hiển thị trên chứng chỉ.</p>
                     )}
                 </div>
 

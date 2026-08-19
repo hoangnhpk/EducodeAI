@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import { encodeId } from "@/utils/id-helper";
 import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
-import { jobOpenings } from './data/jobOpenings';
 
 interface IKhoaHoc {
     maKhoaHoc: number;

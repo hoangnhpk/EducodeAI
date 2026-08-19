@@ -1,12 +1,14 @@
 ﻿using System.Security.Claims;
 using System.Text.Json;
 using educodeai_server.DTOs.BaiTap;
+using educodeai_server.Data;
 using educodeai_server.Helpers;
 using educodeai_server.Repository.Interface;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace educodeai_server.Controllers.GiangVien
 {
@@ -17,11 +19,17 @@ namespace educodeai_server.Controllers.GiangVien
     {
         private readonly IBaiTapRepository _baiTapRepository;
         private readonly IQuizService _quizService;
+        private readonly EduCodeAIDbContext _context;
+        private readonly IRedisService _redisService;
+        private readonly ILogger<BaiTapController> _logger;
 
-        public BaiTapController(IQuizService quizService, IBaiTapRepository baiTapRepository)
+        public BaiTapController(IQuizService quizService, IBaiTapRepository baiTapRepository, EduCodeAIDbContext context, IRedisService redisService, ILogger<BaiTapController> logger)
         {
             _quizService = quizService;
             _baiTapRepository = baiTapRepository;
+            _context = context;
+            _redisService = redisService;
+            _logger = logger;
         }
 
         [HttpGet("ds-bai-tap")]
@@ -140,9 +148,16 @@ namespace educodeai_server.Controllers.GiangVien
             {
                  int maGiangVien = LayNguoiDungID.LayID(User);
                  if (maGiangVien <= 0) return Unauthorized(new { success = false, message = "Vui l?ng ??ng nh?p." });
-
+                 var maKhoaHoc = await _context.BaiTaps
+                    .Where(bt => bt.MaBaiTap == maBaiTap)
+                    .Select(bt => (int?)bt.BaiHoc.ChuongHoc.MaKhoaHoc)
+                    .FirstOrDefaultAsync();
                  var daXoa = await _baiTapRepository.XoaBaiTapAsync(maBaiTap, maGiangVien);
                  if (!daXoa) return NotFound(new { success = false, message = "Kh?ng t?m th?y b?i t?p ho?c b?n kh?ng c? quy?n x?a." });
+                if (maKhoaHoc.HasValue)
+                {
+                    await _redisService.TangVersionKhoaHocAsync(maKhoaHoc.Value);
+                }
                 return Ok(new
                 {
                     success = true,
@@ -151,10 +166,11 @@ namespace educodeai_server.Controllers.GiangVien
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Không thể xóa bài tập {MaBaiTap}", maBaiTap);
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "Ôi không, có lỗi xảy ra khi xóa bài tập: " + ex.Message
+                    message = "Không thể xóa bài tập lúc này. Vui lòng thử lại sau."
                 });
             }
         }

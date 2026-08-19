@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getDeviceInfo } from "../utils/deviceHelper";
 import { clearAuthTokens, getAuthTokens, setAuthTokens } from "../utils/authStorage";
+import { getSessionGeneration, isLoggingOut } from "../utils/authLifecycle";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -58,13 +59,21 @@ axiosClient.interceptors.response.use(
 
     // Nếu lỗi 401
     if (error.response?.status === 401) {
+      const requestUrl = String(originalRequest?.url || '');
+      const isAuthLifecycleRequest = requestUrl.includes('/dang-nhap')
+        || requestUrl.includes('/refresh-token')
+        || requestUrl.includes('/dang-xuat');
+      if (isLoggingOut() || isAuthLifecycleRequest) {
+        return Promise.reject(error);
+      }
+
       // KIỂM TRA XEM CÓ PHẢI BỊ KHÓA TÀI KHOẢN KHÔNG (Từ Middleware mới)
       const data = error.response.data;
       if (data?.isBanned) {
         import("sweetalert2").then((Swal) => {
           Swal.default.fire({
             title: "Tài khoản đã bị khóa!",
-            text: `Lý do: ${data.reason || "Vi phạm quy định hệ thống"}. Hệ thống sẽ tự động đăng xuất sau 5 giây...`,
+            html: `Lý do: <b>${data.reason || "Vi phạm quy định hệ thống"}</b><br/>Hệ thống sẽ tự động đăng xuất sau <b>5</b> giây...`,
             icon: "error",
             timer: 5000,
             timerProgressBar: true,
@@ -108,6 +117,7 @@ axiosClient.interceptors.response.use(
         const { maThietBi } = getDeviceInfo();
 
         try {
+          const refreshGeneration = getSessionGeneration();
           // Refresh token nằm trong cookie HttpOnly (JS không đọc được);
           // gửi kèm tự động nhờ withCredentials. Không truyền token qua URL.
           const response: any = await axios.post(
@@ -117,6 +127,9 @@ axiosClient.interceptors.response.use(
           );
 
           const { token } = response.data;
+          if (isLoggingOut() || refreshGeneration !== getSessionGeneration()) {
+            return Promise.reject(error);
+          }
           setAuthTokens(token);
 
           axiosClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -132,9 +145,9 @@ axiosClient.interceptors.response.use(
           import("sweetalert2").then((Swal) => {
             Swal.default.fire({
               title: isLocked ? "Tài khoản bị khóa!" : "Hết phiên đăng nhập!",
-            text: isLocked
-                ? `Lý do: ${errorData?.reason || "Vi phạm quy định"}. Hệ thống sẽ chuyển hướng sau 5 giây...`
-                : "Phiên làm việc của bạn đã kết thúc. Hệ thống sẽ chuyển hướng sau 3 giây...",
+              html: isLocked 
+                ? `Lý do: <b>${errorData?.reason || "Vi phạm quy định"}</b>. Hệ thống sẽ chuyển hướng sau <b>5</b> giây...`
+                : "Phiên làm việc của bạn đã kết thúc. Hệ thống sẽ chuyển hướng sau <b>3</b> giây...",
               icon: "error",
               timer: isLocked ? 5000 : 3000,
               timerProgressBar: true,

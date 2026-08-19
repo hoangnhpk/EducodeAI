@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { HoTroThanhToanAdminService, type HoTroThanhToanDanhSachItemDTO } from "@/services/ho-tro-thanh-toan-admin.service";
 import type { HoTroThanhToanChiTietDTO } from "@/services/thanh-toan-khoa-hoc.service";
+import "../quan-ly-nguoi-dung/QuanLyNguoiDung.css";
+import "./QuanLyHoTroThanhToanHocVien.css";
 
 const hienThiTrangThai = (trangThai: string) => {
   switch (trangThai) {
@@ -115,15 +117,17 @@ export default function QuanLyHoTroThanhToanHocVien() {
   const coTheXuLy = chiTiet?.trangThaiHoTro === "SUPPORT_PENDING";
 
   return (
-    <div>
-      <h2>Hỗ trợ thanh toán học viên</h2>
+    <div className="qtv-page-content">
+      <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h3 className="fw-bold mb-0">Hỗ trợ thanh toán học viên</h3>
+      </div>
 
-      <div style={{ marginBottom: 12, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="toolbar httt-toolbar">
         <select
-          className="form-select"
-          style={{ maxWidth: 260 }}
+          className="filter-select httt-filter-select"
           value={trangThaiLoc}
           onChange={(e) => setTrangThaiLoc(e.target.value)}
+          aria-label="Lọc theo trạng thái"
         >
           <option value="">Tất cả trạng thái</option>
           <option value="SUPPORT_PENDING">Chờ admin xử lý</option>
@@ -131,51 +135,59 @@ export default function QuanLyHoTroThanhToanHocVien() {
           <option value="SUPPORT_REJECTED">Đã từ chối</option>
         </select>
         <input
-          className="form-control"
-          style={{ maxWidth: 320 }}
+          className="search-input httt-search-input"
           placeholder="Tìm theo mã đơn, học viên, email, khóa học, liên hệ..."
           value={tuKhoa}
           onChange={(e) => setTuKhoa(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void taiDanhSach();
+          }}
         />
-        <button className="btn btn-primary" onClick={() => void taiDanhSach()}>
+        <button type="button" className="btn-add httt-filter-btn" onClick={() => void taiDanhSach()}>
           Lọc / Tìm kiếm
         </button>
       </div>
 
       {dangTai ? (
-        <div>Đang tải dữ liệu...</div>
+        <div style={{ padding: "60px", textAlign: "center", color: "var(--text-muted)" }}>
+          Đang tải dữ liệu...
+        </div>
       ) : (
         <div className="table-responsive">
-          <table className="table table-striped table-bordered align-middle">
-            <thead className="table-light">
+          <table className="user-table httt-table">
+            <thead>
               <tr>
-                <th>Mã hỗ trợ</th>
-                <th>Mã đơn</th>
-                <th>Nội dung CK</th>
-                <th>Học viên</th>
-                <th>Khóa học</th>
-                <th>Liên hệ</th>
-                <th>Trạng thái</th>
-                <th>Ngày gửi</th>
-                <th style={{ width: 130 }}>Thao tác</th>
+                <th className="httt-col-ma" title="Mã hỗ trợ">Mã HT</th>
+                <th className="httt-col-don" title="Mã đơn hàng">Mã đơn</th>
+                <th className="httt-col-noi-dung">Nội dung CK</th>
+                <th className="httt-col-hoc-vien">Học viên</th>
+                <th className="httt-col-khoa-hoc">Khóa học</th>
+                <th className="httt-col-lien-he">Liên hệ</th>
+                <th className="httt-col-trang-thai">Trạng thái</th>
+                <th className="httt-col-ngay">Ngày gửi</th>
+                <th className="httt-col-thao-tac">Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {danhSach.map((item) => (
                 <tr key={item.maGiaoDichHoTro}>
-                  <td>{item.maGiaoDichHoTro}</td>
-                  <td>#{item.maDonHang}</td>
-                  <td><code>{item.noiDungChuyenKhoan}</code></td>
-                  <td>
+                  <td className="httt-col-ma">{item.maGiaoDichHoTro}</td>
+                  <td className="httt-col-don">#{item.maDonHang}</td>
+                  <td className="httt-col-noi-dung"><code>{item.noiDungChuyenKhoan}</code></td>
+                  <td className="httt-col-hoc-vien">
                     <div>{item.tenHocVien}</div>
-                    <small className="text-muted">{item.emailHocVien || "—"}</small>
+                    <small className="text-muted httt-email">{item.emailHocVien || "—"}</small>
                   </td>
-                  <td>{item.khoaHocDaiDien || "—"}</td>
-                  <td>{item.thongTinLienLac || "—"}</td>
-                  <td>{hienThiTrangThai(item.trangThaiHoTro)}</td>
-                  <td>{item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : "—"}</td>
-                  <td>
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => void xemChiTiet(item.maGiaoDichHoTro)}>
+                  <td className="httt-col-khoa-hoc">{item.khoaHocDaiDien || "—"}</td>
+                  <td className="httt-col-lien-he">{item.thongTinLienLac || "—"}</td>
+                  <td className="httt-col-trang-thai">{hienThiTrangThai(item.trangThaiHoTro)}</td>
+                  <td className="httt-col-ngay">{item.createdAt ? new Date(item.createdAt).toLocaleString("vi-VN") : "—"}</td>
+                  <td className="httt-col-thao-tac">
+                    <button
+                      type="button"
+                      className="btn-action btn-edit"
+                      onClick={() => void xemChiTiet(item.maGiaoDichHoTro)}
+                    >
                       Xem chi tiết
                     </button>
                   </td>
@@ -183,7 +195,7 @@ export default function QuanLyHoTroThanhToanHocVien() {
               ))}
               {danhSach.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center text-muted">
+                  <td colSpan={9} style={{ textAlign: "center", color: "var(--text-light)", padding: 40 }}>
                     Không có yêu cầu hỗ trợ nào.
                   </td>
                 </tr>
@@ -199,7 +211,7 @@ export default function QuanLyHoTroThanhToanHocVien() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Chi tiết yêu cầu hỗ trợ #{chiTiet?.maGiaoDichHoTro}</h5>
-                <button className="btn-close" onClick={dongChiTiet} />
+                <button type="button" className="btn-close" onClick={dongChiTiet} />
               </div>
               <div className="modal-body">
                 {!chiTiet ? (
@@ -237,13 +249,13 @@ export default function QuanLyHoTroThanhToanHocVien() {
                 )}
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={dongChiTiet}>Đóng</button>
+                <button type="button" className="btn btn-secondary" onClick={dongChiTiet}>Đóng</button>
                 {coTheXuLy && (
                   <>
-                    <button className="btn btn-success" onClick={() => void chapThuan()}>
+                    <button type="button" className="btn btn-success" onClick={() => void chapThuan()}>
                       Chấp thuận
                     </button>
-                    <button className="btn btn-danger" onClick={() => void tuChoi()}>
+                    <button type="button" className="btn btn-danger" onClick={() => void tuChoi()}>
                       Từ chối
                     </button>
                   </>

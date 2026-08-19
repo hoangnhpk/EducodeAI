@@ -4,11 +4,12 @@ import type { GenerateQuizAIDTO } from '../types';
 interface Props {
   baiHocId: number | null;
   tenBaiHoc: string;
+  language: string;
   isGenerating: boolean;
   onGenerate: (dto: GenerateQuizAIDTO) => void;
 }
 
-export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGenerate }: Props) {
+export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, language, isGenerating, onGenerate }: Props) {
   const [soCau, setSoCau] = useState(5);
   const [doKho, setDoKho] = useState('Trung bình');
   const [tieuDe, setTieuDe] = useState('');
@@ -23,6 +24,7 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
       DoKho: doKho,
       TieuDe: tieuDe || `Quiz - ${tenBaiHoc}`,
       NoiDungTomTat: tomTat,
+      NgonNgu: language,
     });
   };
 
@@ -43,52 +45,59 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
           {/* Bài học readonly */}
           <div className="col-12 mb-4">
             <label className="btth-label">Bài học đang chọn</label>
-            <div className="selected-lesson-box selected-quiz-lesson">
-              <i className="bi bi-journal-text" aria-hidden="true" />
-              <span style={{ fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}>
-                {tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '40px', width: '100%', overflow: 'hidden', border: '1px solid var(--border-color, #dee2e6)', borderRadius: 'var(--radius-md)', background: 'var(--bg-main)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '48px', flex: '0 0 48px', background: '#f8f9fa', borderRight: '1px solid var(--border-color, #dee2e6)' }}><i className="bi bi-journal-text" aria-hidden="true" /></span>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 12px', fontWeight: 600, color: baiHocId ? 'var(--text-main)' : 'var(--text-light)' }}>{tenBaiHoc || 'Vui lòng chọn bài học ở bước 1...'}</span>
             </div>
           </div>
 
-          {/* Tiêu đề quiz */}
-          <div className="col-12 mb-3">
-            <label className="btth-label">Tiêu đề Quiz</label>
-            <input
-              type="text"
-              className="form-control"
-              value={tieuDe}
-              onChange={(e) => setTieuDe(e.target.value)}
-              placeholder={`Quiz - ${tenBaiHoc || 'tên bài học'}`}
-            />
-          </div>
-
-            <div className="quiz-config-row">
-              <div className="quiz-question-field">
-                <label className="btth-label">Số câu hỏi</label>
-                <div className="quiz-question-input">
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={soCau}
-                    onChange={(e) => setSoCau(Math.min(20, Math.max(3, Number(e.target.value))))}
-                    min={3}
-                    max={20}
-                  />
-                  <span className="quiz-question-suffix">câu</span>
-                </div>
-                <small className="quiz-help-text">Tối thiểu 3, tối đa 20 câu</small>
-              </div>
-
-              <div className="quiz-difficulty-field">
-                <label className="btth-label">Độ khó</label>
-                <select className="form-select form-control" value={doKho} onChange={(e) => setDoKho(e.target.value)}>
-                  <option value="Dễ">Dễ — Câu hỏi cơ bản, nhận biết</option>
-                  <option value="Trung bình">Trung bình — Câu hỏi ứng dụng</option>
-                  <option value="Khó">Khó — Câu hỏi phân tích, tổng hợp</option>
-                </select>
+          <div className="btth-language-title-grid">
+            {/* Ngôn ngữ lấy theo khóa học */}
+            <div className="mb-3">
+              <label className="btth-label">Ngôn ngữ lập trình</label>
+              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '40px', width: '100%', overflow: 'hidden', border: '1px solid var(--border-color, #dee2e6)', borderRadius: 'var(--radius-md)', background: 'var(--bg-main)' }}>
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '48px', flex: '0 0 48px', background: '#f8f9fa', borderRight: '1px solid var(--border-color, #dee2e6)' }}><i className="bi bi-code-slash" aria-hidden="true" /></span>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 12px' }}>{language || 'Lấy theo khóa học'}</span>
               </div>
             </div>
+
+            <div className="mb-3">
+              <label className="btth-label">Tiêu đề Quiz</label>
+              <input
+                type="text"
+                className="form-control"
+                value={tieuDe}
+                onChange={(e) => setTieuDe(e.target.value)}
+                placeholder={`Quiz - ${tenBaiHoc || 'tên bài học'}`}
+              />
+            </div>
+          </div>
+
+          {/* Số câu + Độ khó */}
+          <div className="col-md-6 mb-3">
+            <label className="btth-label">Số câu hỏi</label>
+            <div className="btth-input-addon" role="group" aria-label="Số câu hỏi">
+              <input
+                type="number"
+                className="form-control"
+                value={soCau}
+                onChange={(e) => setSoCau(Math.min(20, Math.max(3, Number(e.target.value))))}
+                min={3}
+                max={20}
+              />
+              <span className="btth-input-addon__suffix">câu</span>
+            </div>
+            <small className="text-muted">Tối thiểu 3, tối đa 20 câu</small>
+          </div>
+
+          <div className="col-md-6 mb-3">
+            <label className="btth-label">Độ khó</label>
+            <select className="form-select form-control" value={doKho} onChange={(e) => setDoKho(e.target.value)}>
+              <option value="Dễ">Dễ — Câu hỏi cơ bản, nhận biết</option>
+              <option value="Trung bình">Trung bình — Câu hỏi ứng dụng</option>
+              <option value="Khó">Khó — Câu hỏi phân tích, tổng hợp</option>
+            </select>
+          </div>
 
           {/* Nội dung tóm tắt bổ sung */}
           <div className="col-12 mb-3">
@@ -107,7 +116,7 @@ export default function FormTaoQuizAI({ baiHocId, tenBaiHoc, isGenerating, onGen
         <div className="mt-4 pt-2">
           <button
             type="submit"
-            className="btn w-100 py-3 d-flex align-items-center justify-content-center gap-2 quiz-generate-btn"
+            className="btn w-100 py-3 d-flex align-items-center justify-content-center gap-2"
             style={{ borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '15px', background: 'var(--ai-accent)', color: 'var(--text-white)', boxShadow: 'var(--shadow-md)' }}
             disabled={!baiHocId || isGenerating}
           >

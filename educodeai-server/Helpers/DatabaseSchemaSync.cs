@@ -60,9 +60,6 @@ public static class DatabaseSchemaSync
                 "ProcessedAt" timestamp with time zone NOT NULL DEFAULT now()
             );
 
-            ALTER TABLE "LichSuPhongVans" ADD COLUMN IF NOT EXISTS "CapNhatGhiChuLuc" timestamp with time zone NULL;
-            ALTER TABLE "LichSuPhongVans" ADD COLUMN IF NOT EXISTS "GhiChu" character varying(5000) NOT NULL DEFAULT '';
-
             -- I.2: unique index (partial) chống TOCTOU race tạo 2 hồ sơ giảng viên trùng
             -- email/tài khoản/số giấy tờ khi đang chờ xử lý. Chỉ ràng buộc hồ sơ chưa bị từ chối
             -- (TuChoi) để cho phép nộp lại sau khi bị từ chối. Là hàng phòng thủ cuối sau check AnyAsync.
@@ -72,7 +69,6 @@ public static class DatabaseSchemaSync
                 ON "HoSoDangKyGiangViens" (lower("TaiKhoan")) WHERE "TrangThaiHoSo" <> 'TuChoi';
             CREATE UNIQUE INDEX IF NOT EXISTS "UX_HoSoGV_SoGiayTo_DangXuLy"
                 ON "HoSoDangKyGiangViens" ("SoGiayTo") WHERE "TrangThaiHoSo" <> 'TuChoi';
-
             """,
             cancellationToken);
     }

@@ -293,7 +293,7 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
   return (
     <div className="khm-wrapper">
       <ToastContainer />
-      <div className="khm-page khm-course-form-page">
+      <div className="khm-page khm-form-page">
         {/* Breadcrumb */}
         <div className="khm-breadcrumb">
           <button onClick={onCancel}>Khóa học của tôi</button>

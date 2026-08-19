@@ -36,8 +36,14 @@ export const useLessonManagement = ({ maChuong, maKhoaHoc, initialLessons }: Use
   
   const [deleteTarget, setDeleteTarget] = useState<BaiHocDetail | null>(null);
   const [deleting, setDeleting] = useState(false);
-  
+
   const [previewLesson, setPreviewLesson] = useState<BaiHocDetail | null>(null);
+
+  useEffect(() => {
+    setLessons([...initialLessons].sort((a, b) => a.thuTu - b.thuTu));
+    setLoading(false);
+    setError(null);
+  }, [initialLessons]);
 
   const loadLessons = useCallback(async (imLang = false) => {
     if (!maChuong || !maKhoaHoc) return;
