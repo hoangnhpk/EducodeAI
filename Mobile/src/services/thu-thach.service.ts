@@ -54,15 +54,15 @@ export interface BangXepHangResponse {
 
 export const ThuThachService = {
   getThuThachTuan: async () => {
-    return api.get<ThuThachTuanResponse>('/api/ThuThach/tuan-hien-tai');
+    return api.get<ThuThachTuanResponse>('/ThuThach/tuan-hien-tai');
   },
   nhanThuong: async (maMau: number) => {
-    return api.post<NhanThuongResponse>('/api/ThuThach/nhan-thuong-nhiem-vu', { maMau });
+    return api.post<NhanThuongResponse>('/ThuThach/nhan-thuong-nhiem-vu', { maMau });
   },
   doiDanhHieu: async (maDanhHieu: number) => {
-    return api.post('/api/ThuThach/doi-danh-hieu', { maDanhHieu });
+    return api.post('/ThuThach/doi-danh-hieu', { maDanhHieu });
   },
   getBangXepHang: async () => {
-    return api.get<BangXepHangResponse>('/api/ThuThach/bang-xep-hang');
+    return api.get<BangXepHangResponse>('/ThuThach/bang-xep-hang');
   }
 };

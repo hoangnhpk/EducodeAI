@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Cấu hình Base URL
 // Khi test thật trên điện thoại hoặc máy ảo, thay IP bằng IP mạng LAN của bạn.
-export const BASE_URL = 'http://192.168.2.10:5000'; 
+export const BASE_URL = 'http://192.168.2.10:5210'; 
 
 const api = axios.create({
     baseURL: BASE_URL + '/api',

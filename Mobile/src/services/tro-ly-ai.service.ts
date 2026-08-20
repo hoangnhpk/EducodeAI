@@ -17,6 +17,6 @@ export interface TuVanHocTapResponse {
 
 export const TroLyAIService = {
     async tuVanHocTap(data: TuVanHocTapRequest) {
-        return api.post<TuVanHocTapResponse>('/api/ChatBotAI/tu-van-hoc-tap', data, { timeout: 120000 });
+        return api.post<TuVanHocTapResponse>('/ChatBotAI/tu-van-hoc-tap', data, { timeout: 120000 });
     }
 };

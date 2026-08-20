@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, Alert, ActivityIndicator, StatusBar, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ThuThachService, NhiemVuThuThach } from '../services/thu-thach.service';
+import { ThuThachService, NhiemVuThuThach, BangXepHangResponse, BangXepHangItem } from '../services/thu-thach.service';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedPressable } from '../components/animated-pressable';
 
@@ -22,9 +22,11 @@ export default function ThuThachScreen() {
   const [activeTab, setActiveTab] = useState<'nhiem-vu' | 'bxh'>('nhiem-vu');
   const [nhiemVus, setNhiemVus] = useState<NhiemVuThuThach[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bxh, setBxh] = useState<BangXepHangResponse | null>(null);
 
   useEffect(() => {
     if (activeTab === 'nhiem-vu') fetchNhiemVu();
+    else fetchBxh();
   }, [activeTab]);
 
   const fetchNhiemVu = async () => {
@@ -33,6 +35,15 @@ export default function ThuThachScreen() {
       const res = await ThuThachService.getThuThachTuan();
       setNhiemVus(res.data.danhSachNhiemVu);
     } catch (e) { Alert.alert('Lỗi', 'Không thể lấy danh sách nhiệm vụ'); }
+    finally { setLoading(false); }
+  };
+
+  const fetchBxh = async () => {
+    setLoading(true);
+    try {
+      const res = await ThuThachService.getBangXepHang();
+      setBxh(res.data);
+    } catch (e) { Alert.alert('Lỗi', 'Không thể tải bảng xếp hạng'); }
     finally { setLoading(false); }
   };
 
@@ -106,6 +117,50 @@ export default function ThuThachScreen() {
     );
   };
 
+  const renderBxh = () => {
+    if (loading) return <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />;
+    if (!bxh || !bxh.topUsers || bxh.topUsers.length === 0) return <Text style={{ textAlign: 'center', marginTop: 20 }}>Chưa có dữ liệu xếp hạng.</Text>;
+
+    return (
+      <View>
+        <LinearGradient colors={['#e0e7ff', '#c7d2fe']} style={[styles.heroCard, SHADOWS.medium]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.heroTitle, { color: '#3730a3' }]}>Bảng Xếp Hạng</Text>
+            <Text style={[styles.heroDesc, { color: '#4338ca' }]}>Top học viên xuất sắc nhất hệ thống EducodeAI.</Text>
+          </View>
+          <Ionicons name="trophy" size={60} color="#6366f1" />
+        </LinearGradient>
+
+        <View style={styles.bxhList}>
+          {bxh.topUsers.map((user, index) => {
+            const isTop3 = index < 3;
+            const rankColors = ['#fbbf24', '#94a3b8', '#b45309'];
+            const iconColor = isTop3 ? rankColors[index] : COLORS.gray;
+
+            return (
+              <View key={user.maHocVien || index} style={[styles.bxhItem, SHADOWS.small, user.maHocVien === bxh.currentUser?.maHocVien && styles.bxhItemActive]}>
+                <View style={styles.rankBadge}>
+                  {isTop3 ? (
+                    <Ionicons name="medal" size={24} color={iconColor} />
+                  ) : (
+                    <Text style={styles.rankText}>{index + 1}</Text>
+                  )}
+                </View>
+                <View style={styles.bxhAvatar}>
+                  <Text style={styles.bxhAvatarText}>{user.tenHocVien?.charAt(0) || 'U'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.bxhName} numberOfLines={1}>{user.tenHocVien}</Text>
+                  <Text style={styles.bxhExp}>{user.tongExp} EXP • {user.tenDanhHieu || 'Tập sự'}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
@@ -127,12 +182,7 @@ export default function ThuThachScreen() {
       </View>
 
       <ScrollView style={styles.contentContainer} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        {activeTab === 'nhiem-vu' ? renderNhiemVu() : (
-          <View style={{ alignItems: 'center', marginTop: 50 }}>
-            <Ionicons name="trophy-outline" size={64} color={COLORS.gold} />
-            <Text style={{ color: COLORS.gray, marginTop: 10 }}>Bảng xếp hạng đang được cập nhật mùa mới.</Text>
-          </View>
-        )}
+        {activeTab === 'nhiem-vu' ? renderNhiemVu() : renderBxh()}
       </ScrollView>
     </View>
   );
@@ -166,5 +216,14 @@ const styles = StyleSheet.create({
   btnAction: { height: 48, justifyContent: 'center', alignItems: 'center' },
   btnActionText: { color: COLORS.white, fontWeight: '900', fontSize: 15 },
   btnDone: { height: 48, backgroundColor: COLORS.lightGray, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  btnDoneText: { color: COLORS.gray, fontWeight: '800', fontSize: 15 }
+  btnDoneText: { color: COLORS.gray, fontWeight: '800', fontSize: 15 },
+  bxhList: { marginTop: 15 },
+  bxhItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, padding: 15, borderRadius: 20, marginBottom: 12 },
+  bxhItemActive: { borderWidth: 2, borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
+  rankBadge: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  rankText: { fontSize: 18, fontWeight: '900', color: COLORS.gray },
+  bxhAvatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#cbd5e1', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  bxhAvatarText: { fontSize: 20, fontWeight: 'bold', color: COLORS.dark },
+  bxhName: { fontSize: 16, fontWeight: '800', color: COLORS.dark, marginBottom: 4 },
+  bxhExp: { fontSize: 14, color: COLORS.gray, fontWeight: '600' }
 });

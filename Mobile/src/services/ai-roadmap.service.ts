@@ -58,7 +58,7 @@ export const aiRoadmapService = {
       khoKhanHienTai: data.khoKhan
     };
 
-    const res = await api.post<{ maLoTrinh: number; noiDungJSON: string }>('/api/lo-trinh-ai/them', payload);
+    const res = await api.post<{ maLoTrinh: number; noiDungJSON: string }>('/lo-trinh-ai/them', payload);
     const noiDung = JSON.parse(res.data.noiDungJSON) as KetQuaLoTrinhAI;
 
     return {
@@ -69,10 +69,10 @@ export const aiRoadmapService = {
   },
 
   getAllLoTrinh: async () => {
-    return api.get<LoTrinhAICuaToiDTO[]>('/api/lo-trinh-ai/lay-tat-ca-lo-trinh');
+    return api.get<LoTrinhAICuaToiDTO[]>('/lo-trinh-ai/lay-tat-ca-lo-trinh');
   },
 
   getChiTietLoTrinh: async (maLoTrinh: number) => {
-    return api.get<LoTrinhAICuaToiDTO>(`/api/lo-trinh-ai/chi-tiet/${maLoTrinh}`);
+    return api.get<LoTrinhAICuaToiDTO>(`/lo-trinh-ai/chi-tiet/${maLoTrinh}`);
   }
 };

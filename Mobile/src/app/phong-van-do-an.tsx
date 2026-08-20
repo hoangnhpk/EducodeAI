@@ -1,136 +1,243 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, Alert, ActivityIndicator, StatusBar, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, TextInput, ActivityIndicator, StatusBar, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import api from '../configs/api';
+import { COLORS, RADIUS, SHADOWS } from '../configs/theme';
 import { AnimatedPressable } from '../components/animated-pressable';
-
-const COLORS = {
-  primary: '#fb873f', primaryGradient: ['#ff9955', '#fb873f'] as const,
-  dark: '#0f172a', darkLight: '#1e293b', bg: '#020617', white: '#ffffff', gray: '#94a3b8',
-  success: '#10b981', danger: '#ef4444'
-};
-const SHADOWS = {
-  small: { shadowColor: '#0f172a', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  medium: { shadowColor: '#0f172a', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 4 },
-  glow: { shadowColor: '#fb873f', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 14, elevation: 8 }
-};
 
 export default function PhongVanDoAnScreen() {
   const router = useRouter();
-  const { sessionId } = useLocalSearchParams();
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
-  const [timer, setTimer] = useState(15);
-  const [score, setScore] = useState<number | null>(null);
+  const { sessionId, cauHoiDauTien, tenDoAn } = useLocalSearchParams();
+
+  const [loading, setLoading] = useState(false);
+  const [cauHoiHienTai, setCauHoiHienTai] = useState(cauHoiDauTien as string || 'Đang tải câu hỏi...');
+  const [cauTraLoi, setCauTraLoi] = useState('');
+  const [soCauHienTai, setSoCauHienTai] = useState(1);
+  const [tongSoCau, setTongSoCau] = useState(3);
+  
+  const [nhanXetTruoc, setNhanXetTruoc] = useState<string | null>(null);
+  const [diemCauTruoc, setDiemCauTruoc] = useState<number | null>(null);
+  
+  const [daKetThuc, setDaKetThuc] = useState(false);
+  const [ketQuaCuoiCung, setKetQuaCuoiCung] = useState<any>(null);
+
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    if (sessionId) fetchQues();
-    else { Alert.alert('Lỗi', 'Không có session.'); router.back(); }
+    if (!sessionId) {
+      Alert.alert('Lỗi', 'Không tìm thấy phiên phỏng vấn.');
+      router.back();
+    }
   }, [sessionId]);
 
-  const fetchQues = async () => {
+  const submitAnswer = async () => {
+    if (!cauTraLoi.trim() || !sessionId) return;
+
+    setLoading(true);
+    try {
+      const res = await api.post('/SinhDoAnAI/tra-loi-phong-van', {
+        sessionId,
+        soCauHienTai,
+        cauTraLoi: cauTraLoi.trim()
+      });
+
+      const data = res.data;
+
+      if (data.daKetThuc) {
+        setDaKetThuc(true);
+        fetchFinalResult();
+      } else {
+        setNhanXetTruoc(data.nhanXet);
+        setDiemCauTruoc(data.diemCauVua);
+        setCauHoiHienTai(data.cauHoiTiepTheo);
+        setSoCauHienTai(data.soCauHienTai + 1);
+        setTongSoCau(data.tongSoCau || 3);
+        setCauTraLoi('');
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      }
+    } catch (e: any) {
+      Alert.alert('Lỗi', e.response?.data?.message || 'Không thể gửi câu trả lời. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFinalResult = async () => {
+    setLoading(true);
     try {
       const res = await api.get(`/SinhDoAnAI/result/${sessionId}`);
-      setData(res.data);
-    } catch (e) { Alert.alert('Lỗi', 'Không tải được câu hỏi.'); }
-    finally { setLoading(false); }
+      setKetQuaCuoiCung(res.data);
+    } catch (e) {
+      Alert.alert('Lỗi', 'Không thể lấy kết quả đánh giá cuối cùng.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    let interval: any;
-    if (isRecording && timer > 0) interval = setInterval(() => setTimer(prev => prev - 1), 1000);
-    else if (timer === 0 && isRecording) handleStopRecording();
-    return () => clearInterval(interval);
-  }, [isRecording, timer]);
+  const renderChat = () => (
+    <ScrollView ref={scrollViewRef} contentContainerStyle={styles.chatContainer} showsVerticalScrollIndicator={false}>
+      <Text style={styles.projectTitle}>Đồ án: {tenDoAn || 'Đang bảo vệ'}</Text>
+      
+      {nhanXetTruoc && (
+        <View style={styles.feedbackCard}>
+          <View style={styles.feedbackHeader}>
+            <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+            <Text style={styles.feedbackTitle}>Điểm câu trước: {diemCauTruoc}/20</Text>
+          </View>
+          <Text style={styles.feedbackText}>{nhanXetTruoc}</Text>
+        </View>
+      )}
 
-  const handleStartRecording = () => { setIsRecording(true); setTimer(15); setScore(null); };
+      <View style={styles.aiCard}>
+        <View style={styles.aiHeader}>
+          <View style={styles.avatarGlow}>
+            <Ionicons name="person-circle" size={40} color={COLORS.primary} />
+          </View>
+          <View>
+            <Text style={styles.aiName}>Hội đồng đánh giá AI</Text>
+            <Text style={styles.aiStatus}>Câu hỏi {soCauHienTai} / {tongSoCau}</Text>
+          </View>
+        </View>
+        <Text style={styles.aiQuestion}>{cauHoiHienTai}</Text>
+      </View>
 
-  const handleStopRecording = () => {
-    setIsRecording(false);
-    Alert.alert('Xử lý', 'Đang nộp câu trả lời cho Tech Lead AI...');
-    setTimeout(() => {
-      setScore(Math.floor(Math.random() * 3) + 7); // Random 7-9
-      Alert.alert('Chấm điểm', 'Bạn nhận được điểm khá tốt từ Tech Lead!');
-    }, 2000);
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Câu trả lời của bạn:</Text>
+        <TextInput
+          style={styles.textArea}
+          multiline
+          placeholder="Trình bày câu trả lời của bạn một cách rõ ràng..."
+          placeholderTextColor={COLORS.grayLight}
+          value={cauTraLoi}
+          onChangeText={setCauTraLoi}
+        />
+        <AnimatedPressable style={styles.btnActionWrapper} onPress={submitAnswer} disabled={loading || !cauTraLoi.trim()}>
+          <LinearGradient colors={cauTraLoi.trim() ? COLORS.primaryGradient : ['#334155', '#475569']} style={styles.btnAction}>
+            {loading ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.btnActionText}>Nộp câu trả lời</Text>}
+          </LinearGradient>
+        </AnimatedPressable>
+      </View>
+    </ScrollView>
+  );
+
+  const renderResult = () => {
+    if (!ketQuaCuoiCung) {
+      return (
+        <View style={[styles.resultContainer, { justifyContent: 'center' }]}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={{ color: COLORS.white, marginTop: 20 }}>Đang tổng hợp kết quả...</Text>
+        </View>
+      );
+    }
+
+    const { TongDiem, NhanXetTong, DatYeuCau, MaChungChi } = ketQuaCuoiCung;
+
+    return (
+      <View style={styles.resultContainer}>
+        <Ionicons 
+          name={DatYeuCau ? "medal" : "sad-outline"} 
+          size={80} 
+          color={DatYeuCau ? COLORS.gold : COLORS.danger} 
+          style={{ marginBottom: 20 }} 
+        />
+        <Text style={styles.resultTitle}>{DatYeuCau ? 'Bảo Vệ Thành Công!' : 'Chưa Đạt Yêu Cầu'}</Text>
+        
+        <View style={styles.scoreCard}>
+          <Text style={styles.scoreLabel}>Điểm tổng (thang 100):</Text>
+          <Text style={[styles.scoreValue, { color: DatYeuCau ? COLORS.success : COLORS.danger }]}>
+            {TongDiem}
+          </Text>
+        </View>
+
+        {MaChungChi && (
+          <View style={styles.certificateCard}>
+            <Ionicons name="document-text" size={24} color={COLORS.primary} style={{ marginRight: 10 }} />
+            <View>
+              <Text style={{ color: COLORS.grayLight, fontSize: 12 }}>Mã chứng chỉ (cấp phát tự động):</Text>
+              <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 16 }}>{MaChungChi}</Text>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.feedbackCard}>
+          <Text style={styles.feedbackTitle}>Nhận xét từ hội đồng AI:</Text>
+          <Text style={styles.feedbackText}>{NhanXetTong}</Text>
+        </View>
+
+        <AnimatedPressable style={[styles.btnActionWrapper, { marginTop: 30, width: '100%' }]} onPress={() => router.replace('/trang-chu')}>
+          <LinearGradient colors={COLORS.primaryGradient} style={styles.btnAction}>
+            <Text style={styles.btnActionText}>Về trang chủ</Text>
+          </LinearGradient>
+        </AnimatedPressable>
+      </View>
+    );
   };
-
-  if (loading) return <View style={[styles.safeArea, {justifyContent: 'center', alignItems: 'center'}]}><ActivityIndicator size="large" color={COLORS.primary}/></View>;
-  if (!data) return <View style={styles.safeArea}><Text style={{color: COLORS.white}}>Lỗi dữ liệu.</Text></View>;
 
   return (
     <View style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <AnimatedPressable style={styles.backBtn} onPress={() => router.back()}>
+        <AnimatedPressable style={styles.backBtn} onPress={() => {
+          if (!daKetThuc) {
+            Alert.alert('Thoát', 'Bỏ dở buổi bảo vệ sẽ không lưu lại kết quả. Bạn có chắc muốn thoát?', [
+              { text: 'Tiếp tục phỏng vấn', style: 'cancel' },
+              { text: 'Thoát', onPress: () => router.back(), style: 'destructive' }
+            ]);
+          } else {
+            router.replace('/trang-chu');
+          }
+        }}>
           <Ionicons name="arrow-back" size={24} color={COLORS.white} />
         </AnimatedPressable>
-        <Text style={styles.headerTitle}>Phòng Phỏng Vấn</Text>
+        <Text style={styles.headerTitle}>Bảo Vệ Đồ Án AI</Text>
         <View style={{ width: 44 }} />
       </View>
 
-      <View style={styles.contentContainer}>
-        {/* Tech Lead Avatar Glow */}
-        <View style={styles.avatarContainer}>
-          <View style={[styles.avatarGlow, isRecording && styles.avatarRecordingGlow]}>
-            <Image source={{ uri: 'https://ui-avatars.com/api/?name=Tech+Lead&background=fb873f&color=fff' }} style={styles.avatar} />
-          </View>
-          <Text style={styles.avatarName}>Educode Tech Lead</Text>
-          <Text style={styles.avatarStatus}>{isRecording ? 'Đang lắng nghe...' : 'Đang đợi câu trả lời'}</Text>
-        </View>
-
-        <View style={styles.quesCard}>
-          <Ionicons name="chatbubble-ellipses" size={30} color={COLORS.primary} style={{marginBottom: 10}} />
-          <Text style={styles.quesTitle}>Câu hỏi từ Tech Lead:</Text>
-          <Text style={styles.quesText}>"Giải thích kiến trúc {data.TenDoAn} mà bạn vừa thiết kế?"</Text>
-        </View>
-
-        {score !== null && (
-          <View style={styles.scoreCard}>
-             <Ionicons name="checkmark-circle" size={40} color={COLORS.success} />
-             <Text style={styles.scoreText}>Điểm: {score}/10</Text>
-             <Text style={{color: COLORS.gray}}>Tech Lead đánh giá cao câu trả lời của bạn.</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Footer Voice Record */}
-      <BlurView intensity={40} tint="dark" style={styles.footer}>
-        <Text style={styles.timerText}>{isRecording ? `00:${timer.toString().padStart(2, '0')}` : 'Nhấn để bắt đầu Voice Chat'}</Text>
-        <AnimatedPressable onPress={isRecording ? handleStopRecording : handleStartRecording}>
-          <LinearGradient colors={isRecording ? ['#ef4444', '#b91c1c'] : COLORS.primaryGradient} style={[styles.recordBtn, isRecording && { width: 80, height: 80, borderRadius: 40 }]}>
-            <Ionicons name={isRecording ? 'stop' : 'mic'} size={isRecording ? 36 : 40} color={COLORS.white} />
-          </LinearGradient>
-        </AnimatedPressable>
-      </BlurView>
+      {daKetThuc ? renderResult() : renderChat()}
     </View>
   );
 }
 
-// Dummy import for Image to avoid error in this script
-import { Image } from 'react-native';
-
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: COLORS.bg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 15 },
+  safeArea: { flex: 1, backgroundColor: COLORS.darkBg, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: COLORS.darkBorder },
   backBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 20, fontWeight: '900', color: COLORS.white, letterSpacing: -0.5 },
-  contentContainer: { flex: 1, padding: 20, alignItems: 'center', justifyContent: 'center' },
-  avatarContainer: { alignItems: 'center', marginBottom: 40 },
-  avatarGlow: { padding: 8, borderRadius: 80, backgroundColor: 'rgba(251, 135, 63, 0.2)' },
-  avatarRecordingGlow: { backgroundColor: 'rgba(239, 68, 68, 0.4)' },
-  avatar: { width: 120, height: 120, borderRadius: 60 },
-  avatarName: { fontSize: 22, fontWeight: '900', color: COLORS.white, marginTop: 15, letterSpacing: -0.5 },
-  avatarStatus: { fontSize: 15, color: COLORS.gray, marginTop: 5 },
-  quesCard: { backgroundColor: COLORS.darkLight, padding: 25, borderRadius: 28, width: '100%', borderWidth: 1, borderColor: '#334155' },
-  quesTitle: { fontSize: 15, color: COLORS.primary, fontWeight: '800', marginBottom: 10 },
-  quesText: { fontSize: 18, color: COLORS.white, lineHeight: 28, fontWeight: '600' },
-  scoreCard: { marginTop: 20, alignItems: 'center', backgroundColor: '#064e3b', padding: 20, borderRadius: 24, width: '100%' },
-  scoreText: { fontSize: 24, fontWeight: '900', color: COLORS.white, marginTop: 10, marginBottom: 5 },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingBottom: Platform.OS === 'ios' ? 40 : 25, paddingTop: 20, alignItems: 'center', borderTopLeftRadius: 32, borderTopRightRadius: 32 },
-  timerText: { fontSize: 16, fontWeight: '700', color: COLORS.white, marginBottom: 20 },
-  recordBtn: { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', shadowColor: COLORS.primary, shadowOffset: {width:0,height:0}, shadowOpacity: 0.8, shadowRadius: 20, elevation: 10 }
+  
+  chatContainer: { padding: 20, paddingBottom: 40 },
+  projectTitle: { fontSize: 16, color: COLORS.primary, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  
+  aiCard: { backgroundColor: COLORS.darkLight, padding: 20, borderRadius: RADIUS.card, borderWidth: 1, borderColor: COLORS.darkBorder, marginBottom: 20 },
+  aiHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  avatarGlow: { padding: 4, borderRadius: 30, backgroundColor: 'rgba(251, 135, 63, 0.2)', marginRight: 12 },
+  aiName: { fontSize: 18, fontWeight: 'bold', color: COLORS.white },
+  aiStatus: { fontSize: 14, color: COLORS.primary, fontWeight: '600' },
+  aiQuestion: { fontSize: 18, color: COLORS.white, lineHeight: 28 },
+  
+  feedbackCard: { backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: 16, borderRadius: RADIUS.card, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.3)', marginBottom: 20, width: '100%' },
+  feedbackHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  feedbackTitle: { fontSize: 15, fontWeight: 'bold', color: COLORS.success, marginLeft: 8 },
+  feedbackText: { fontSize: 15, color: COLORS.white, lineHeight: 24 },
+  
+  inputContainer: { marginTop: 10 },
+  inputLabel: { fontSize: 16, fontWeight: 'bold', color: COLORS.white, marginBottom: 12 },
+  textArea: {
+    backgroundColor: COLORS.darkLight, borderRadius: RADIUS.card,
+    borderWidth: 1, borderColor: COLORS.darkBorder,
+    color: COLORS.white, fontSize: 16, minHeight: 150,
+    padding: 20, textAlignVertical: 'top', marginBottom: 20
+  },
+  
+  resultContainer: { flex: 1, padding: 24, alignItems: 'center' },
+  resultTitle: { fontSize: 28, fontWeight: '900', color: COLORS.white, marginBottom: 30 },
+  scoreCard: { backgroundColor: COLORS.darkLight, padding: 30, borderRadius: RADIUS.card, alignItems: 'center', marginBottom: 20, width: '100%', borderWidth: 1, borderColor: COLORS.darkBorder },
+  scoreLabel: { fontSize: 16, color: COLORS.grayLight, marginBottom: 10 },
+  scoreValue: { fontSize: 48, fontWeight: '900' },
+  certificateCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(251, 135, 63, 0.1)', padding: 15, borderRadius: RADIUS.card, borderWidth: 1, borderColor: 'rgba(251, 135, 63, 0.3)', marginBottom: 20, width: '100%' },
+  
+  btnActionWrapper: { borderRadius: RADIUS.button, overflow: 'hidden', ...SHADOWS.glow },
+  btnAction: { height: 56, justifyContent: 'center', alignItems: 'center' },
+  btnActionText: { color: COLORS.white, fontSize: 16, fontWeight: 'bold' }
 });

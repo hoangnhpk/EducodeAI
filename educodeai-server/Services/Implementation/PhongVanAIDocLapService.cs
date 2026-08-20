@@ -138,7 +138,7 @@ Bắt buộc phải trả về đúng định dạng JSON như sau, và toàn b�
     ""cauHoiTiepTheo"": ""{(isFinished ? "" : "Câu hỏi chuyên môn tiếp theo ngắn gọn")}""
 }}
 Yêu cầu:
-- Chỉ trả về JSON, không markdown hoặc giải thích thêm.
+- Chỉ trả về JSON, không markdown hoặc giải thích thêm. Bắt buộc dùng dấu ngoặc kép đôi ("""") cho key và value.
 - Toàn bộ nội dung bằng tiếng Việt.
 - {(isFinished ? "Đây là câu cuối, cauHoiTiepTheo bắt buộc là chuỗi rỗng và nhận xét kết thúc bằng lời cảm ơn." : "cauHoiTiepTheo phải là một câu hỏi mới, phù hợp với lịch sử phỏng vấn.")}";
 
@@ -149,7 +149,14 @@ Yêu cầu:
             {
                 var responseText = ChuanHoaJsonTuAIHelper.LayTextChatTuAI(rawResponse);
                 var json = ChuanHoaJsonTuAIHelper.ExtractJson(responseText);
-                var aiResponse = JsonSerializer.Deserialize<JsonElement>(json);
+                
+                var options = new JsonSerializerOptions 
+                { 
+                    PropertyNameCaseInsensitive = true,
+                    AllowTrailingCommas = true,
+                    ReadCommentHandling = JsonCommentHandling.Skip
+                };
+                var aiResponse = JsonSerializer.Deserialize<JsonElement>(json, options);
                 nhanXet = aiResponse.GetProperty("nhanXetCauTruoc").GetString()?.Trim() ?? "";
                 cauHoiTiepTheo = isFinished
                     ? ""
