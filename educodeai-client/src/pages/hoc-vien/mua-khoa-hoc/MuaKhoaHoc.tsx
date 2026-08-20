@@ -353,7 +353,7 @@ const MuaKhoaHoc = () => {
               <img
                 src={duLieuQr.duongDanAnhQr}
                 alt="Ma QR thanh toan"
-                style={{ width: 280, height: 280, objectFit: "contain" }}
+                style={{ width: 'min(280px, 100%)', height: 'auto', aspectRatio: '1', objectFit: 'contain' }}
               />
             </div>
 
@@ -411,7 +411,7 @@ const MuaKhoaHoc = () => {
             <h4 className="fw-bold mb-2">Mã quà tặng: {duLieuGift.code}</h4>
             <p className="text-muted mb-3">Thanh toán xong, mã sẽ tự kích hoạt để người nhận nhập.</p>
             <div className="text-center mb-3">
-              <img src={duLieuGift.duongDanAnhQr} alt="Ma QR qua tang" style={{ width: 280, height: 280, objectFit: "contain" }} />
+              <img src={duLieuGift.duongDanAnhQr} alt="Ma QR qua tang" style={{ width: 'min(280px, 100%)', height: 'auto', aspectRatio: '1', objectFit: 'contain' }} />
             </div>
             <div className="bg-light rounded p-3 mb-3">
               <div className="d-flex justify-content-between">

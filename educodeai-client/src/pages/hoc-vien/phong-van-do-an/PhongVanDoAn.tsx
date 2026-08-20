@@ -814,7 +814,23 @@ const PhongVanDoAn: React.FC = () => {
                 box-shadow: 0 8px 28px rgba(246,144,80,0.5);
             }
             .sda-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        `}</style>
+            /* ── RESPONSIVE ── */
+            @media (max-width: 600px) {
+                .pvd-header { padding: 0.75rem 1rem; gap: 0.5rem; }
+                .pvd-header-right { gap: 0.5rem; }
+                .pvd-progress-info, .pvd-score-badge { display: none; }
+                .pvd-exit-btn { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
+                .pvd-intro-banner { margin: 0.75rem 1rem 0; font-size: 0.78rem; }
+                .pvd-chat { padding: 1rem; gap: 1rem; }
+                .pvd-bubble-wrap { max-width: calc(100% - 48px); }
+                .pvd-bubble { padding: 0.7rem 0.85rem; font-size: 0.86rem; }
+                .pvd-input-area { padding: 0.75rem 1rem 0; }
+                .pvd-input-wrap { align-items: stretch; }
+                .pvd-input { min-width: 0; padding: 0.75rem; }
+                .pvd-modal { padding: 1.25rem; border-radius: 16px; }
+                .pvd-modal-actions { flex-direction: column; }
+            }
+            `}</style>
         </>
     );
 };

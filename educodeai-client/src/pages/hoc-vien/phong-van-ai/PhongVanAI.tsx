@@ -1366,6 +1366,56 @@ const PhongVanAI: React.FC = () => {
                 }
                 .iv-result-review::-webkit-scrollbar { width: 4px; }
                 .iv-result-review::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+                /* ── RESPONSIVE ── */
+                @media (max-width: 900px) {
+                    #interview-main { flex-direction: column; overflow-y: auto; }
+                    #interview-left { width: 100%; height: 42vh; min-height: 280px; flex-shrink: 0; border-right: 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+                    #interview-right { min-height: 58vh; padding: 16px; }
+                    .iv-cam-card { min-height: 220px; }
+                }
+                @media (max-width: 600px) {
+                    #interview-header { height: auto; min-height: 60px; padding: 10px 12px; gap: 8px; }
+                    .iv-header-title { font-size: 13px; }
+                    .iv-header-sub { display: none; }
+                    .iv-header-center { display: none; }
+                    .iv-btn-end { padding: 8px 10px; font-size: 12px; }
+                    #interview-left { height: 36vh; min-height: 230px; }
+                    #interview-right { min-height: 64vh; padding: 12px; gap: 12px; }
+                    .iv-cam-info { padding: 12px; }
+                    .iv-chat-messages { gap: 12px; padding-right: 0; }
+                    .iv-msg-group { max-width: calc(100% - 44px); }
+                    .iv-msg-bubble { padding: 10px 12px; font-size: 13px; }
+                    .iv-input-wrapper {
+                        flex-wrap: nowrap;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .iv-textarea {
+                        min-width: 0;
+                        width: auto;
+                        height: 44px;
+                        min-height: 44px;
+                        max-height: 44px;
+                        padding: 11px 12px;
+                        line-height: 20px;
+                        overflow-y: auto;
+                    }
+                    .iv-actions { width: 100%; justify-content: flex-end; }
+                    .iv-btn-mic {
+                        flex: 0 0 44px;
+                        width: 44px;
+                        height: 44px;
+                        padding: 0;
+                        justify-content: center;
+                    }
+                    .iv-btn-send {
+                        width: 44px;
+                        height: 44px;
+                        flex: 0 0 44px;
+                    }
+                    .iv-modal { padding: 24px 16px; }
+                    .iv-modal-actions, .iv-finished-actions { flex-direction: column; }
+                }
             `}</style>
         </>
     );

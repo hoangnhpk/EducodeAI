@@ -63,23 +63,23 @@ export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai
                     <span className="d-none d-md-inline">Kiến thức AI</span>
                 </button> */}
 
-                <div className="cp-progress-inline" style={{ gap: '12px', display: 'flex', alignItems: 'center' }}>
-                    <div style={{ position: 'relative', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="40" height="40" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle cx="20" cy="20" r={radius} stroke="rgba(255,255,255,0.2)" strokeWidth="3" fill="transparent" />
-                            <circle cx="20" cy="20" r={radius} stroke="#fff" strokeWidth="3" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
-                        </svg>
-                        <span style={{ position: 'absolute', fontSize: '0.65rem', fontWeight: '700', color: '#fff' }}>
-                            {Math.round(percent)}%
-                        </span>
-                    </div>
+                <div className="cp-progress-inline cp-header-progress" style={{ gap: '12px', display: 'flex', alignItems: 'center' }}>
+                <div className="cp-progress-circle" aria-label={`Tiến độ ${Math.round(percent)}%`}>
+                    <svg className="cp-progress-circle-svg" width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+                        <circle className="cp-progress-circle-track" cx="20" cy="20" r={radius} strokeDasharray={circumference} />
+                        <circle className="cp-progress-circle-fill" cx="20" cy="20" r={radius} strokeDasharray={circumference} strokeDashoffset={offset} />
+                    </svg>
+                    <span className="cp-progress-circle-value">
+                        {Math.round(percent)}%
+                    </span>
+                </div>
 
                     <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#fff' }}>
                         {soBaiDaHoc}/{tongSoBai} bài học
                     </span>
                 </div>
 
-                <div className="cp-user-chip" style={{ marginLeft: '15px' }}>
+                <div className="cp-user-chip cp-header-user" style={{ marginLeft: '15px' }}>
                     <div className="cp-user-avatar">HV</div>
                     <span>{getUserInfo()?.hoTen || 'Học viên'}</span>
                 </div>

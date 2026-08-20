@@ -514,7 +514,7 @@ const NoiDungKhoaHoc = () => {
                     />
                 );
             case 'Text':
-                return <div dangerouslySetInnerHTML={{ __html: baiHocHienTai.noiDung || '' }} />;
+                return <div className="cp-text-content-wrapper"><div className="cp-text-body" dangerouslySetInnerHTML={{ __html: baiHocHienTai.noiDung || '' }} /></div>;
             case 'Ide':
                 return (
                     <BaiTapIDE
@@ -528,7 +528,7 @@ const NoiDungKhoaHoc = () => {
                 );
             case 'Quiz':
                 return (
-                    <div style={{ height: '100%', overflowY: 'auto', backgroundColor: '#fff' }}>
+                    <div className="cp-interactive-content cp-quiz-content">
                         {baiHocHienTai.thongTinQuiz && (
                             <BaiTapTracNghiem
                                 duLieu={{
@@ -651,7 +651,7 @@ const NoiDungKhoaHoc = () => {
 
                     <div className="cp-main-content">
                         {tabActive === 'quiz' ? (
-                            <div style={{ height: '100%', overflowY: 'auto', backgroundColor: '#fff' }}>
+                            <div className="cp-interactive-content cp-quiz-content">
                                 {baiHocHienTai.thongTinQuiz && (
                                     <BaiTapTracNghiem
                                         duLieu={{
@@ -666,7 +666,7 @@ const NoiDungKhoaHoc = () => {
                                 )}
                             </div>
                         ) : tabActive === 'ide' ? (
-                            <div style={{ height: '100%', overflowY: 'auto', backgroundColor: '#fff' }}>
+                            <div className="cp-interactive-content cp-ide-content">
                                 {baiHocHienTai.maBaiTapThucHanh && (
                                     <BaiTapIDE
                                         maBaiTap={baiHocHienTai.maBaiTapThucHanh}

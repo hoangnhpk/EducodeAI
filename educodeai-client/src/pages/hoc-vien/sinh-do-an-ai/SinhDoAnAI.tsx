@@ -1602,6 +1602,38 @@ const SinhDoAnAI: React.FC = () => {
                 box-shadow: 0 8px 28px rgba(246,144,80,0.5);
             }
             .sda-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+            /* ── RESPONSIVE ── */
+            @media (max-width: 900px) {
+                .sda-config-panel { position: static; }
+                .sda-main { padding-left: 20px; padding-right: 20px; }
+            }
+            @media (max-width: 600px) {
+                .sda-header { height: auto; min-height: 64px; padding: 10px 14px; gap: 8px; }
+                .sda-brand-sub, .sda-header-center { display: none; }
+                .sda-header-right { gap: 6px; }
+                .sda-history-btn, .sda-back-btn { padding: 8px 10px; font-size: 12px; }
+                .sda-history-btn span, .sda-back-btn span { display: none; }
+                .sda-hero { padding: 36px 16px 24px; }
+                .sda-hero-desc { font-size: 13px; }
+                .sda-main { padding: 0 12px 40px; gap: 16px; }
+                .sda-config-panel { padding: 18px; border-radius: 16px; gap: 20px; }
+                .sda-career-grid { grid-template-columns: 1fr; }
+                .sda-result-panel { min-height: 380px; border-radius: 16px; }
+                .sda-result-header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+                .sda-result-actions { width: 100%; }
+                .sda-icon-btn { flex: 1; justify-content: center; }
+                .sda-project-title-block { padding: 18px 16px; }
+                .sda-project-name { font-size: 18px; }
+                .sda-tabs { overflow-x: auto; padding: 10px 12px; }
+                .sda-tab { white-space: nowrap; padding: 8px 10px; }
+                .sda-features-list { padding: 12px; }
+                .sda-db-block { margin: 12px; }
+                .sda-db-code { font-size: 11px; padding: 14px; }
+                .sda-submit-cta { align-items: stretch; padding: 1rem; }
+                .sda-submit-info { min-width: 0; }
+                .sda-submit-btn { width: 100%; justify-content: center; }
+                .sda-drawer-header { padding: 16px; }
+            }
         `}</style>
 
         </>

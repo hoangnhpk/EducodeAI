@@ -279,8 +279,8 @@ const TrangChu: React.FC = () => {
                         <p className="text-muted fs-5 max-w-3xl mx-auto">Không chỉ là xem video, hệ thống cung cấp các công cụ thực chiến độc quyền giúp bạn sẵn sàng cho môi trường doanh nghiệp.</p>
                     </div>
 
-                    <div className="row g-4">
-                        <div className="col-md-4">
+                    <div className="row g-4 feature-carousel">
+                        <div className="col-md-4 feature-carousel-item">
                             <div className="feature-card bg-white p-5 rounded-4 shadow-sm h-100">
                                 <div className="icon-box bg-primary-subtle text-primary mb-4">
                                     <i className="fas fa-map-signs"></i>
@@ -292,7 +292,7 @@ const TrangChu: React.FC = () => {
                                 </Link>
                             </div>
                         </div>
-                        <div className="col-md-4">
+                        <div className="col-md-4 feature-carousel-item">
                             <div className="feature-card bg-white p-5 rounded-4 shadow-sm h-100">
                                 <div className="icon-box bg-warning-subtle text-warning mb-4">
                                     <i className="fas fa-laptop-code"></i>
@@ -304,7 +304,7 @@ const TrangChu: React.FC = () => {
                                 </Link>
                             </div>
                         </div>
-                        <div className="col-md-4">
+                        <div className="col-md-4 feature-carousel-item">
                             <div className="feature-card bg-white p-5 rounded-4 shadow-sm h-100">
                                 <div className="icon-box bg-success-subtle text-success mb-4">
                                     <i className="fas fa-user-tie"></i>
@@ -1083,6 +1083,148 @@ const TrangChu: React.FC = () => {
                     .instructor-card:hover,
                     .hero-cta-btn:hover {
                         transform: none !important;
+                    }
+                }
+                /* Mobile home layout fixes */
+                @media (max-width: 767px) {
+                    .home-page-modern .hero-section {
+                        height: auto;
+                        min-height: 620px;
+                        padding: 3.5rem 1rem 5rem;
+                    }
+                    .home-page-modern .hero-section > .container {
+                        width: 100%;
+                        max-width: 100%;
+                        padding-inline: 0.25rem;
+                    }
+                    .home-page-modern .hero-section .col-lg-8 {
+                        width: 100%;
+                        padding-inline: 0.5rem;
+                    }
+                    .home-page-modern .hero-title {
+                        font-size: clamp(2rem, 9vw, 3rem);
+                        line-height: 1.15;
+                        margin-bottom: 1.5rem !important;
+                    }
+                    .home-page-modern .hero-title > span {
+                        margin-top: 0.35rem !important;
+                        padding-bottom: 0.65rem;
+                    }
+                    .home-page-modern .hero-underline {
+                        bottom: -0.55rem;
+                        height: 0.7rem;
+                    }
+                    .home-page-modern .hero-section .lead {
+                        margin-bottom: 1.75rem !important;
+                        font-size: 1rem !important;
+                        line-height: 1.65;
+                    }
+                    .home-page-modern .hero-cta-group {
+                        width: 100%;
+                        flex-direction: column;
+                        align-items: stretch;
+                        gap: 0.85rem;
+                        padding-inline: 0.25rem;
+                    }
+                    .home-page-modern .hero-cta-btn {
+                        width: 100%;
+                        min-height: 3.25rem;
+                        padding-inline: 1rem;
+                    }
+                    .home-page-modern .stats-section {
+                        margin-top: -2rem;
+                        padding: 0 1rem 2rem;
+                    }
+                    .home-page-modern .stats-section .container {
+                        padding-inline: 0;
+                    }
+                    .home-page-modern .stats-card {
+                        padding: 0.75rem 0.25rem;
+                        overflow: visible;
+                    }
+                    .home-page-modern .stat-item {
+                        min-width: 0;
+                        padding: 0.85rem 0.5rem 1rem;
+                    }
+                    .home-page-modern .stat-label {
+                        white-space: normal;
+                        word-break: normal;
+                        overflow-wrap: normal;
+                        line-height: 1.35;
+                        font-size: clamp(0.72rem, 3vw, 0.9rem);
+                    }
+                    .home-page-modern #features-section {
+                        padding-block: 2.5rem !important;
+                    }
+                    .home-page-modern #features-section > .container {
+                        padding-block: 0 !important;
+                        padding-inline: 1rem;
+                    }
+                    .home-page-modern #features-section .feature-carousel {
+                        --bs-gutter-x: 0;
+                        display: flex;
+                        flex-direction: row;
+                        flex-wrap: nowrap;
+                        width: calc(100% + 2rem);
+                        max-width: none;
+                        margin-inline: -1rem;
+                        padding-inline: 1rem;
+                        column-gap: 1rem;
+                        row-gap: 0 !important;
+                        overflow-x: auto;
+                        overflow-y: visible;
+                        scroll-snap-type: x mandatory;
+                        scroll-padding-inline: 1rem;
+                        scrollbar-width: none;
+                        -webkit-overflow-scrolling: touch;
+                        overscroll-behavior-x: contain;
+                        touch-action: pan-x pan-y;
+                    }
+                    .home-page-modern #features-section .feature-carousel::-webkit-scrollbar {
+                        display: none;
+                    }
+                    .home-page-modern #features-section .feature-carousel-item {
+                        flex: 0 0 85%;
+                        width: auto;
+                        max-width: none;
+                        padding-inline: 0;
+                        scroll-snap-align: center;
+                        scroll-snap-stop: always;
+                    }
+                    .home-page-modern .feature-card {
+                        height: auto !important;
+                        min-height: 0;
+                        padding: 1.35rem !important;
+                        overflow: visible;
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .home-page-modern .feature-card p {
+                        overflow-wrap: normal;
+                        word-break: normal;
+                        line-height: 1.6;
+                    }
+                    .home-page-modern .feature-link {
+                        margin-top: auto;
+                    }
+                }
+
+                @media (max-width: 390px) {
+                    .home-page-modern .hero-section {
+                        min-height: 590px;
+                        padding-inline: 0.85rem;
+                    }
+                    .home-page-modern .hero-section .col-lg-8 {
+                        padding-inline: 0.25rem;
+                    }
+                    .home-page-modern .stats-section {
+                        padding-inline: 0.75rem;
+                    }
+                    .home-page-modern .stat-item {
+                        padding-inline: 0.35rem;
+                    }
+                    .home-page-modern .feature-card {
+                        padding: 1.15rem !important;
                     }
                 }
             `}</style>

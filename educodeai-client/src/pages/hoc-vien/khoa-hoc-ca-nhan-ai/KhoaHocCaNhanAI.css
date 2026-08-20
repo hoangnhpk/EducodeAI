@@ -1,6 +1,20 @@
-.page-header{
-    background-image: url('../../../assets/image.png');
+.khoa-hoc-ca-nhan-ai-page {
+    min-width: 0;
+    overflow-x: hidden;
 }
+
+@media (max-width: 600px) {
+    .roadmap-wrapper { padding: 1.5rem 1rem; border-radius: 18px; }
+    .roadmap-eyebrow { font-size: 0.75rem; letter-spacing: 0.12em; }
+    .roadmap-heading h2 { font-size: 1.5rem; }
+    .roadmap-heading p { font-size: 0.9rem; }
+    .roadmap-grid { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+    .roadmap-card { padding: 1.25rem; border-radius: 18px; }
+    .roadmap-card .d-flex { flex-wrap: wrap; }
+    .roadmap-card .d-flex .btn:first-child { min-width: 0; }
+    .saved-roadmap-section { padding-top: 2rem !important; }
+}
+
 .roadmap-wrapper {
     border-radius: 28px;
     background: #ffffff;

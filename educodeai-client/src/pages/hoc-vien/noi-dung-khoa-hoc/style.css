@@ -3405,6 +3405,631 @@ video::-webkit-media-controls-playback-rate-button {
     margin-bottom: 2rem;
 }
 
+
+
+.cp-progress-circle {
+    position: relative;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    filter: none;
+    opacity: 1;
+}
+
+.cp-progress-circle-svg {
+    display: block;
+    width: 40px;
+    height: 40px;
+    overflow: visible;
+    transform: rotate(-90deg);
+    shape-rendering: geometricPrecision;
+}
+
+.cp-progress-circle-track,
+.cp-progress-circle-fill {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.cp-progress-circle-track {
+    stroke: rgba(255, 255, 255, 0.28);
+}
+
+.cp-progress-circle-fill {
+    stroke: #ffffff;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.cp-progress-circle-value {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+    text-shadow: none;
+    filter: none;
+    opacity: 1;
+}
+
+.cp-video-player > *,
+.cp-video-player iframe,
+.cp-video-player video {
+    pointer-events: auto;
+}
+
+.cp-video-player::before,
+.cp-video-player::after {
+    pointer-events: none;
+}
+
+.cp-floating-nav-reveal-zone {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    z-index: 100;
+    width: min(520px, calc(100vw - 16px));
+    min-height: 76px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.cp-floating-nav-reveal-zone .cp-floating-nav {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    transform: none;
+}
+
+.cp-floating-nav-reveal-zone .cp-floating-nav.hidden {
+    transform: translateY(90px);
+    pointer-events: none;
+}
+
+@media (max-width: 767px) {
+    .cp-progress-circle {
+        flex-basis: 32px;
+        width: 32px;
+        height: 32px;
+    }
+
+    .cp-progress-circle-svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .cp-floating-nav-reveal-zone {
+        width: min(420px, calc(100vw - 24px));
+        min-height: 92px;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .cp-floating-nav-reveal-zone .cp-floating-nav,
+    .cp-floating-nav-reveal-zone .cp-floating-nav.visible,
+    .cp-floating-nav-reveal-zone .cp-floating-nav.hidden {
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        width: 100%;
+        transform: none;
+    }
+
+    .cp-floating-nav-reveal-zone .cp-floating-nav.hidden {
+        transform: translateY(90px);
+    }
+}
+
+.cp-video-content {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.cp-video-player {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    overflow: hidden;
+    border-radius: 8px 8px 0 0;
+}
+
+.cp-video-player .cp-video-frame,
+.cp-video-player .cp-youtube-iframe,
+.cp-video-player video {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100%;
+    object-fit: contain;
+    border: 0;
+    aspect-ratio: auto !important;
+}
+
+.cp-video-controls {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem !important;
+}
+
+.cp-video-controls > div:first-child {
+    display: flex !important;
+    flex: 1 1 18rem;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem !important;
+}
+
+.cp-video-controls > div:first-child > div {
+    flex: 0 1 auto;
+    white-space: nowrap;
+}
+
+.cp-video-controls > button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+    .cp-video-controls {
+        padding: 0.65rem !important;
+        gap: 0.5rem !important;
+    }
+
+    .cp-video-controls > div:first-child {
+        flex-basis: 100%;
+        justify-content: flex-start;
+        gap: 0.4rem !important;
+    }
+
+    .cp-video-controls > div:first-child > div {
+        font-size: 0.72rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+
+    .cp-video-controls > button {
+        width: 100%;
+        min-height: 38px;
+    }
+
+    .cp-video-content {
+        overflow: hidden;
+    }
+}
+
+/* ========================================================
+   RESPONSIVE CONTENT SAFETY
+======================================================== */
+.cp-header,
+.cp-header-left,
+.cp-header-right,
+.cp-course-title-meta,
+.cp-shell,
+.cp-left,
+.cp-main-content,
+.cp-text-content-wrapper,
+.cp-interactive-content {
+    min-width: 0;
+}
+
+.cp-course-title-meta span:last-child,
+.cp-user-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cp-text-content-wrapper {
+    width: 100%;
+    min-height: 0;
+    padding: 1rem 1.25rem;
+    overflow-wrap: anywhere;
+}
+
+.cp-text-body {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-height: 1.7;
+}
+
+.cp-text-body img,
+.cp-text-body video,
+.cp-text-body iframe,
+.cp-text-body svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.cp-text-body iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+.cp-text-body table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+}
+
+.cp-text-body pre,
+.cp-text-body code {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-wrap: normal;
+}
+
+.cp-text-body pre {
+    padding: 0.85rem;
+    border-radius: 0.5rem;
+    white-space: pre;
+}
+
+.cp-interactive-content {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow: auto;
+    background: #fff;
+}
+
+.cp-quiz-content,
+.cp-ide-content {
+    align-items: stretch;
+}
+
+.cp-floating-nav {
+    max-width: calc(100vw - 24px);
+}
+
+.cp-lesson-item,
+.cp-chapter-header {
+    min-height: 44px;
+}
+
+.cp-lesson-item > span,
+.cp-chapter-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+    .cp-course-title-meta span:last-child {
+        max-width: min(48vw, 220px);
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-height: 1.15;
+    }
+
+    .cp-header-right {
+        max-width: 42vw;
+    }
+
+    .cp-mobile-toggle-sidebar {
+        bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+        right: 14px !important;
+    }
+
+    .cp-floating-nav,
+    .cp-floating-nav.visible {
+        bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .cp-chatbot-toggle {
+        bottom: calc(62px + env(safe-area-inset-bottom)) !important;
+        right: 14px !important;
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 21px !important;
+    }
+
+    .cp-chatbot-window {
+        right: 12px !important;
+        bottom: calc(122px + env(safe-area-inset-bottom)) !important;
+        width: calc(100vw - 24px) !important;
+        max-width: 380px;
+        height: min(580px, calc(100vh - 150px)) !important;
+    }
+
+    .cp-chatbot-window.expanded {
+        right: 50vw !important;
+        bottom: 50vh !important;
+        width: 94vw !important;
+        height: 82vh !important;
+    }
+
+    .cp-video-controls > div:first-child > div {
+        white-space: normal;
+        line-height: 1.2;
+    }
+
+
+    .cp-header-left {
+        flex: 1 1 auto;
+        gap: 0.5rem;
+    }
+
+    .cp-header-right {
+        flex: 0 0 auto;
+        gap: 0.35rem;
+    }
+
+    .cp-course-title-meta {
+        max-width: 100%;
+    }
+
+    .cp-course-title-meta span:first-child {
+        font-size: 0.62rem;
+    }
+
+    .cp-course-title-meta span:last-child {
+        max-width: 42vw;
+        font-size: 0.78rem;
+    }
+
+    .cp-header-progress {
+        gap: 0 !important;
+    }
+
+    .cp-header-progress > div {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .cp-header-progress svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .cp-header-progress > span {
+        display: none;
+    }
+
+    .cp-header-user {
+        margin-left: 0 !important;
+        padding: 0.2rem !important;
+        border: 0;
+        background: transparent;
+    }
+
+    .cp-header-user > span {
+        display: none;
+    }
+
+    .cp-btn-so-tay {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .cp-text-content-wrapper {
+        padding: 0.85rem 0.75rem 4rem;
+    }
+
+    .cp-text-body {
+        font-size: 0.92rem;
+    }
+
+    .cp-interactive-content {
+        height: auto;
+        min-height: 70vh;
+        overflow: auto;
+    }
+
+    .cp-right-header {
+        padding: 1rem 0.9rem 0.65rem;
+    }
+
+    .cp-lesson-item {
+        border-radius: 0.65rem;
+        padding: 0.65rem 0.55rem;
+    }
+
+    .cp-floating-nav {
+        left: 12px;
+        right: 12px;
+        width: auto;
+        justify-content: center;
+        padding: 7px 8px;
+        gap: 5px;
+    }
+
+    .cp-nav-btn {
+        min-width: 0;
+        max-width: 48%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cp-certificate-tab,
+    .cp-certificate-exam {
+        padding: 0.75rem;
+    }
+
+    .cp-certificate-hero,
+    .cp-certificate-exam-head,
+    .cp-certificate-last-result,
+    .cp-certificate-email-status {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .cp-certificate-stats {
+        min-width: 0;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .cp-certificate-stat {
+        padding: 0.7rem 0.35rem;
+    }
+
+    .cp-certificate-stat strong {
+        font-size: 0.9rem;
+    }
+
+    .cp-certificate-stat span {
+        font-size: 0.7rem;
+        overflow-wrap: anywhere;
+    }
+
+    .cp-certificate-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cp-certificate-actions-row {
+        flex-direction: column;
+    }
+
+    .cp-certificate-action {
+        width: 100%;
+    }
+}
+
+@media (max-width: 360px) {
+    .cp-course-title-meta span:last-child {
+        max-width: 34vw;
+    }
+
+    .cp-header-progress {
+        display: none !important;
+    }
+
+    .cp-tab {
+        padding-inline: 0.55rem;
+    }
+
+    .cp-certificate-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
+/* Final mobile interaction overrides */
+@media (max-width: 767px) {
+    .cp-header {
+        align-items: center;
+    }
+
+    .cp-header-left {
+        min-width: 0;
+    }
+
+    .cp-header-right {
+        max-width: none;
+    }
+
+    .cp-course-title-meta span:last-child {
+        max-width: min(44vw, 190px);
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cp-video-player {
+        flex: 0 0 auto;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
+
+    .cp-video-player > * {
+        pointer-events: auto;
+    }
+
+    .cp-video-controls {
+        justify-content: flex-start !important;
+    }
+
+    .cp-video-meta {
+        display: flex !important;
+        flex: 1 1 auto !important;
+        min-width: 0;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem !important;
+    }
+
+    .cp-video-time,
+    .cp-video-meta > div {
+        white-space: nowrap;
+    }
+
+    .cp-video-controls > button {
+        width: auto;
+        min-height: 38px;
+        margin-left: auto;
+    }
+
+    .cp-floating-nav,
+    .cp-floating-nav.visible,
+    .cp-floating-nav.hidden {
+        left: 50% !important;
+        right: auto !important;
+        width: min(420px, calc(100vw - 24px));
+        transform: translateX(-50%);
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        padding: 6px;
+        gap: 6px;
+    }
+
+    .cp-floating-nav.hidden {
+        transform: translate(-50%, 90px);
+    }
+
+    .cp-nav-btn {
+        flex: 1 1 0;
+        width: 0;
+        max-width: none;
+        min-height: 40px;
+        padding-inline: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cp-mobile-toggle-sidebar {
+        bottom: calc(132px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .cp-chatbot-toggle {
+        bottom: calc(68px + env(safe-area-inset-bottom)) !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .cp-video-controls > button {
+        flex-basis: 100%;
+        margin-left: 0;
+    }
+
+    .cp-nav-btn span {
+        font-size: 0.72rem;
+    }
+}
+
 .cp-loader-ring-outer {
     position: absolute;
     inset: 0;

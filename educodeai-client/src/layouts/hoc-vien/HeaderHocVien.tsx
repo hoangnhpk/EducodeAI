@@ -29,6 +29,9 @@ export default function HeaderHocVien() {
     }
   };
 
+  const [isBaoMatOpen, setIsBaoMatOpen] = useState(false);
+  const displayName = user?.hoTen || user?.name || "Học viên";
+
   return (
     <nav className="navbar navbar-expand-lg bg-white navbar-light shadow sticky-top p-0">
       <Link
@@ -100,7 +103,7 @@ export default function HeaderHocVien() {
                 aria-expanded="false"
                 aria-label="Mở menu tài khoản"
               >
-                <span className="fw-bold d-none d-lg-inline">{user.hoTen || user.name}</span>
+                <span className="hoc-vien-account-name">{displayName}</span>
               </button>
 
               {/* DANH SÁCH MENU XỔ XUỐNG */}
@@ -125,14 +128,20 @@ export default function HeaderHocVien() {
                 </Link>
 
                 {/* --- ĐÂY LÀ PHẦN BẢO MẬT TÀI KHOẢN XỔ SANG TRÁI --- */}
-                <div className="dropdown-submenu position-relative"> {/* Thêm position-relative vào đây */}
-                  <Link
-                    to="#"
-                    className="dropdown-item d-flex justify-content-between align-items-center"
-                    onClick={(e) => e.preventDefault()}
+                <div className={`dropdown-submenu position-relative ${isBaoMatOpen ? 'is-open' : ''}`}>
+                  <button
+                    type="button"
+                    className="dropdown-item d-flex justify-content-between align-items-center border-0 bg-transparent w-100"
+                    aria-expanded={isBaoMatOpen}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setIsBaoMatOpen((current) => !current);
+                    }}
                   >
-                    Bảo mật tài khoản <i className="fa fa-chevron-left ms-2 text-muted" style={{ fontSize: '12px' }}></i>
-                  </Link>
+                    <span>Bảo mật tài khoản</span>
+                    <i className={`fa fa-chevron-${isBaoMatOpen ? 'down' : 'left'} ms-2 text-muted`} style={{ fontSize: '12px' }} aria-hidden="true"></i>
+                  </button>
 
                   {/* Submenu con */}
                   <div className="dropdown-menu shadow border-0">

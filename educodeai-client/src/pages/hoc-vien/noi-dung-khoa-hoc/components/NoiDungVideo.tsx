@@ -376,15 +376,16 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
   );
 
   return (
-    <div className="cp-tab-pane active" style={{ display: 'block', height: '100%' }}>
-      {laYouTube ? (
-        <YouTube
+    <div className="cp-video-content">
+      <div className="cp-video-player">
+        {laYouTube ? (
+          <YouTube
           videoId={videoId ?? undefined}
           opts={tuyChinh}
           onReady={khiSanSang}
           onStateChange={khiTrangThaiThayDoi}
           className="cp-video-frame w-100 h-100"
-          iframeClassName="w-100 h-100"
+          iframeClassName="cp-youtube-iframe"
           style={{ aspectRatio: '16/9', borderRadius: '8px 8px 0 0' }}
         />
       ) : (
@@ -428,9 +429,10 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
           }}
         />
       )}
+      </div>
 
       {daSanSang && (
-        <div style={{
+        <div className="cp-video-controls" style={{
           padding: '12px',
           background: '#f8f9fa',
           border: '1px solid #dee2e6',
@@ -440,8 +442,8 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ fontWeight: '600', color: '#555', fontSize: '0.95rem' }}>
+          <div className="cp-video-meta">
+            <div className="cp-video-time" style={{ fontWeight: '600', color: '#555', fontSize: '0.95rem' }}>
               <i className="far fa-clock me-2"></i>
               {Math.floor(thoiGianHienTai / 60)}:{Math.floor(thoiGianHienTai % 60).toString().padStart(2, '0')} /{' '}
               {Math.floor(thoiLuongVideo / 60)}:{Math.floor(thoiLuongVideo % 60).toString().padStart(2, '0')}

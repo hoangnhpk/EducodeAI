@@ -236,7 +236,7 @@
 }
 
 .kp-modal-content {
-    width: 850px; /* Mở rộng chiều rộng */
+    width: min(850px, calc(100vw - 2rem));
     background: white;
     border-radius: 24px;
     display: flex; flex-direction: column;
@@ -440,4 +440,23 @@
     transform: translateY(-2px);
     box-shadow: 0 15px 20px -3px rgba(16, 185, 129, 0.4);
     filter: brightness(1.1);
+}
+
+@media (max-width: 600px) {
+    .kp-container { padding: 24px 12px; }
+    .kp-header { align-items: stretch; margin-bottom: 24px; gap: 14px; }
+    .kp-header-title h1 { font-size: 1.7rem; }
+    .kp-header-title p { font-size: 0.92rem; }
+    .kp-search-box { max-width: none; }
+    .kp-grid { grid-template-columns: 1fr; gap: 16px; }
+    .kp-card-content { padding: 18px; }
+    .kp-card-footer { padding: 12px 18px; flex-direction: column; }
+    .kp-modal-content { width: calc(100vw - 1.5rem); max-height: 92vh; border-radius: 16px; }
+    .kp-modal-header { padding: 16px; }
+    .kp-modal-body { padding: 18px 16px; max-height: 65vh; }
+    .kp-modal-footer { padding: 14px 16px; }
+    .kp-timeline-item { align-items: flex-start; gap: 10px; padding: 12px; }
+    .kp-item-img { width: 56px !important; height: 56px !important; min-width: 56px; }
+    .kp-item-info h4 { font-size: 0.95rem; }
+    .btn-save-final { width: 100%; }
 }
