@@ -1,87 +1,79 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
-export interface User {
-    maNguoiDung: number;
-    hoTen: string;
-    email: string;
-    taiKhoan: string;
-    anhDaiDien: string | null;
-    vaiTro: string;
+import { setUnauthorizedHandler } from '../../../shared/configs/api';
+import { authStorage, type AuthSession } from '../../../shared/lib/auth-storage';
+import type { AuthPublicApi, AuthStatus, AuthUser, SessionEndReason } from '../../../shared/types/auth-public';
+
+export interface AuthContextValue extends AuthPublicApi {
+  establishSession(session: AuthSession): Promise<void>;
 }
 
-interface AuthContextType {
-    user: User | null;
-    token: string | null;
-    isLoading: boolean;
-    login: (token: string, userData: User) => Promise<void>;
-    logout: () => Promise<void>;
-    checkAuth: () => Promise<void>;
-}
-
-export const AuthContext = createContext<AuthContextType>({
-    user: null,
-    token: null,
-    isLoading: true,
-    login: async () => {},
-    logout: async () => {},
-    checkAuth: async () => {},
-});
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+  const [status, setStatus] = useState<AuthStatus>('bootstrapping');
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const epoch = useRef(0);
+  const mounted = useRef(true);
 
-    const checkAuth = async () => {
-        setIsLoading(true);
-        try {
-            const storedToken = await AsyncStorage.getItem('token');
-            const storedUser = await AsyncStorage.getItem('user');
+  useEffect(() => () => { mounted.current = false; }, []);
 
-            if (storedToken && storedUser) {
-                setToken(storedToken);
-                setUser(JSON.parse(storedUser));
-            } else {
-                setToken(null);
-                setUser(null);
-            }
-        } catch (error) {
-            console.error('Error checking auth', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const clearSession = useCallback(async (reason: SessionEndReason = 'logout') => {
+    const operation = ++epoch.current;
+    setToken(null); setUser(null);
+    setStatus(reason === 'unauthorized' || reason === 'revoked' ? 'sessionExpired' : reason === 'role-change' ? 'roleRejected' : 'anonymous');
+    try { await authStorage.clearSession(); } catch { /* local memory is already cleared */ }
+    if (operation !== epoch.current) return;
+  }, []);
 
-    useEffect(() => {
-        checkAuth();
-    }, []);
+  const establishSession = useCallback(async (session: AuthSession) => {
+    const operation = ++epoch.current;
+    const nextUser = session.user;
+    if (nextUser.vaiTro !== 2) {
+      await clearSession('role-change');
+      return;
+    }
+    await authStorage.setSession(session);
+    if (operation !== epoch.current || !mounted.current) return;
+    setToken(session.token); setUser(nextUser); setStatus('authenticated');
+  }, [clearSession]);
 
-    const login = async (newToken: string, userData: User) => {
-        try {
-            await AsyncStorage.setItem('token', newToken);
-            await AsyncStorage.setItem('user', JSON.stringify(userData));
-            setToken(newToken);
-            setUser(userData);
-        } catch (error) {
-            console.error('Error saving auth data', error);
-        }
-    };
+  const logout = useCallback(async () => { await clearSession('logout'); }, [clearSession]);
 
-    const logout = async () => {
-        try {
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('user');
-            setToken(null);
-            setUser(null);
-        } catch (error) {
-            console.error('Error during logout', error);
-        }
-    };
+  const updateUser = useCallback(async (patch: Partial<Pick<AuthUser, 'hoTen' | 'anhDaiDien'>>) => {
+    const operation = epoch.current;
+    if (!user || operation !== epoch.current) return;
+    const nextUser = { ...user, ...(patch.hoTen !== undefined ? { hoTen: patch.hoTen } : {}), ...(patch.anhDaiDien !== undefined ? { anhDaiDien: patch.anhDaiDien } : {}) };
+    const session = await authStorage.getSession();
+    if (operation !== epoch.current || !session) return;
+    await authStorage.setSession({ ...session, user: nextUser });
+    if (operation === epoch.current && mounted.current) setUser(nextUser);
+  }, [user]);
 
-    return (
-        <AuthContext.Provider value={{ user, token, isLoading, login, logout, checkAuth }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  useEffect(() => {
+    const operation = epoch.current;
+    let active = true;
+    void authStorage.getSession().then((session) => {
+      if (!active || !mounted.current || operation !== epoch.current) return;
+      if (session) { setToken(session.token); setUser(session.user); setStatus('authenticated'); }
+      else { setStatus('anonymous'); }
+    }).catch(() => {
+      if (active && mounted.current && operation === epoch.current) setStatus('anonymous');
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => setUnauthorizedHandler(() => clearSession('unauthorized')), [clearSession]);
+
+  const value = useMemo<AuthContextValue>(() => ({ status, user, token, isLoading: status === 'bootstrapping', isAuthenticated: status === 'authenticated' && user?.vaiTro === 2, logout, clearSession, updateUser, establishSession }), [status, user, token, logout, clearSession, updateUser, establishSession]);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+export const useAuth = (): AuthContextValue => {
+  const value = useContext(AuthContext);
+  if (!value) throw new Error('useAuth must be used inside AuthProvider');
+  return value;
+};
+
+export { AuthContext };

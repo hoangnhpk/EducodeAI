@@ -1,40 +1,51 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create, isAxiosError } from 'axios';
 
-// Cấu hình Base URL
-// Khi test thật trên điện thoại hoặc máy ảo, thay IP bằng IP mạng LAN của bạn.
-export const BASE_URL = 'http://192.168.2.10:5000'; 
+import { authStorage } from '../lib/auth-storage';
 
-const api = axios.create({
-    baseURL: BASE_URL + '/api',
-    timeout: 30000,
+const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+export const API_BASE_URL = (configuredUrl || 'http://localhost:5000').replace(/\/+$/, '');
+
+export type UnauthorizedReason = 'unauthorized';
+type UnauthorizedHandler = (reason: UnauthorizedReason) => void | Promise<void>;
+
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+let unauthorizedNotification: Promise<void> | null = null;
+
+export const setUnauthorizedHandler = (handler: UnauthorizedHandler | null): (() => void) => {
+  unauthorizedHandler = handler;
+  return () => {
+    if (unauthorizedHandler === handler) unauthorizedHandler = null;
+  };
+};
+
+export const notifyUnauthorized = (): Promise<void> => {
+  if (!unauthorizedNotification) {
+    unauthorizedNotification = Promise.resolve(unauthorizedHandler?.('unauthorized')).finally(() => {
+      unauthorizedNotification = null;
+    });
+  }
+  return unauthorizedNotification;
+};
+
+const api = create({
+  baseURL: `${API_BASE_URL}/api`,
+  timeout: 30_000,
 });
 
-// Interceptor: Tự động đính kèm Token
-api.interceptors.request.use(
-    async (config) => {
-        const token = await AsyncStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
+api.interceptors.request.use(async (config) => {
+  const token = await authStorage.getAccessToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
-// Interceptor: Xử lý Response lỗi
 api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-        if (error.response && error.response.status === 401) {
-            // Token hết hạn hoặc không hợp lệ -> Xoá token
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('user');
-        }
-        return Promise.reject(error);
+  (response) => response,
+  async (error: unknown) => {
+    if (isAxiosError(error) && error.response?.status === 401) {
+      await notifyUnauthorized();
     }
+    return Promise.reject(error);
+  },
 );
 
 export default api;
