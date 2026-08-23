@@ -61,6 +61,8 @@ axiosClient.interceptors.response.use(
     if (error.response?.status === 401) {
       const requestUrl = String(originalRequest?.url || '');
       const isAuthLifecycleRequest = requestUrl.includes('/dang-nhap')
+        || requestUrl.includes('/google-login')
+        || requestUrl.includes('/facebook-login')
         || requestUrl.includes('/refresh-token')
         || requestUrl.includes('/dang-xuat');
       if (isLoggingOut() || isAuthLifecycleRequest) {

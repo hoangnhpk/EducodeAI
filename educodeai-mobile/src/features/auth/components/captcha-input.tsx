@@ -6,7 +6,6 @@ import { AuthField } from './auth-field';
 export type CaptchaInputProps = { token: string; onTokenChange(token: string): void; error?: string };
 
 const siteKey = process.env.EXPO_PUBLIC_RECAPTCHA_SITE_KEY?.trim();
-const challengeOrigin = 'https://www.google.com';
 
 export function CaptchaInput({ token, onTokenChange, error }: CaptchaInputProps) {
   const [loaded, setLoaded] = useState(false);

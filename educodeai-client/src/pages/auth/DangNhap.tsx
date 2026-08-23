@@ -11,6 +11,12 @@ import { classifyLoginResponse, type LoginUser } from './loginFlow';
 import PasswordInput from '../../components/PasswordInput';
 import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim();
+
+if (!GOOGLE_CLIENT_ID) {
+    throw new Error('Thiếu cấu hình VITE_GOOGLE_CLIENT_ID.');
+}
+
 const DangNhap: React.FC = () => {
     const navigate = useNavigate();
     const recaptchaRef = useRef<any>(null);
@@ -29,8 +35,7 @@ const DangNhap: React.FC = () => {
     const [showCaptcha, setShowCaptcha] = useState(false); 
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
-    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "335320969122-3e5a0uoj7scbhmgi83utlesvf5rbrtdt.apps.googleusercontent.com";
-    
+
     const redirectByUserRole = (user: LoginUser) => {
         const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
         if (role === 0) navigate('/quan-tri-vien');
