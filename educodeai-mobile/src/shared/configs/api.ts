@@ -4,6 +4,7 @@ import { authStorage } from '../lib/auth-storage';
 
 const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 export const API_BASE_URL = (configuredUrl || 'http://localhost:5000').replace(/\/+$/, '');
+export const BASE_URL = API_BASE_URL;
 
 export type UnauthorizedReason = 'unauthorized';
 type UnauthorizedHandler = (reason: UnauthorizedReason) => void | Promise<void>;

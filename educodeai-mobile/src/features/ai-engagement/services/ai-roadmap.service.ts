@@ -11,12 +11,10 @@ export interface DuLieuYeuCauLoTrinh {
   khoKhan: string;
 }
 
-export interface KetQuaLoTrinhAI {
-  tenLoTrinh: string;
-  mucTieu: string;
-  tongThoiGian: string;
-  loTrinh: ChiTietGiaiDoan[];
-  maLoTrinh?: number;
+export interface NoiDungHoc {
+  chuDe: string;
+  moTa: string;
+  kyNangDatDuoc: string[];
 }
 
 export interface ChiTietGiaiDoan {
@@ -27,10 +25,12 @@ export interface ChiTietGiaiDoan {
   noiDung: NoiDungHoc[];
 }
 
-export interface NoiDungHoc {
-  chuDe: string;
-  moTa: string;
-  kyNangDatDuoc: string[];
+export interface KetQuaLoTrinhAI {
+  tenLoTrinh: string;
+  mucTieu: string;
+  tongThoiGian: string;
+  loTrinh: ChiTietGiaiDoan[];
+  maLoTrinh?: number;
 }
 
 export interface LoTrinhAICuaToiDTO {
@@ -39,40 +39,74 @@ export interface LoTrinhAICuaToiDTO {
   trangThai: string;
   ngayTao: string;
   noiDungJSON: string;
-  baiHocs?: any[];
+  baiHocs?: unknown[];
 }
 
-export const aiRoadmapService = {
-  taoLoTrinh: async (data: DuLieuYeuCauLoTrinh) => {
-    const thoiGianHocDuKien = data.thoiGianHoc ? Number(data.thoiGianHoc) : undefined;
-    const thoiGianMoiTuan = data.mucDoCamKet ? Number(data.mucDoCamKet) : undefined;
-
-    const payload = {
-      trinhDoHienTai: data.trinhDo,
-      phongCachHoc: data.phongCachHoc,
-      mucTieuNgheNghiep: data.mucTieuNgheNghiep,
-      thoiGianHocDuKien,
-      thoiGianMoiTuan,
-      kienThucHienCo: data.kienThucHienCo,
-      kinhNghiemThucTe: data.kinhNghiem,
-      khoKhanHienTai: data.khoKhan
-    };
-
-    const res = await api.post<{ maLoTrinh: number; noiDungJSON: string }>('/api/lo-trinh-ai/them', payload);
-    const noiDung = JSON.parse(res.data.noiDungJSON) as KetQuaLoTrinhAI;
-
-    return {
-      ...noiDung,
-      loTrinh: noiDung.loTrinh ?? [],
-      maLoTrinh: res.data.maLoTrinh
-    };
-  },
-
-  getAllLoTrinh: async () => {
-    return api.get<LoTrinhAICuaToiDTO[]>('/api/lo-trinh-ai/lay-tat-ca-lo-trinh');
-  },
-
-  getChiTietLoTrinh: async (maLoTrinh: number) => {
-    return api.get<LoTrinhAICuaToiDTO>(`/api/lo-trinh-ai/chi-tiet/${maLoTrinh}`);
+function parseRoadmap(noiDungJSON: string): KetQuaLoTrinhAI {
+  let value: unknown;
+  try {
+    value = JSON.parse(noiDungJSON);
+  } catch {
+    throw new Error('Nội dung lộ trình từ máy chủ không hợp lệ.');
   }
+  if (!value || typeof value !== 'object') {
+    throw new Error('Nội dung lộ trình từ máy chủ không hợp lệ.');
+  }
+  const roadmap = value as Partial<KetQuaLoTrinhAI>;
+  const stages = Array.isArray(roadmap.loTrinh)
+    ? roadmap.loTrinh.filter((stage): stage is ChiTietGiaiDoan => (
+      Boolean(stage)
+      && typeof stage === 'object'
+      && typeof stage.giaiDoan === 'number'
+      && typeof stage.tenGiaiDoan === 'string'
+      && Array.isArray(stage.noiDung)
+    ))
+    : [];
+  return {
+    tenLoTrinh: typeof roadmap.tenLoTrinh === 'string' ? roadmap.tenLoTrinh : 'Lộ trình AI',
+    mucTieu: typeof roadmap.mucTieu === 'string' ? roadmap.mucTieu : '',
+    tongThoiGian: typeof roadmap.tongThoiGian === 'string' ? roadmap.tongThoiGian : '',
+    loTrinh: stages,
+  };
+}
+
+function parsePositiveNumber(value: string | undefined, fieldName: string, fallback?: number) {
+  if (!value?.trim() && fallback !== undefined) return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`${fieldName} phải là số lớn hơn 0.`);
+  }
+  return parsed;
+}
+
+const AI_TIMEOUT = 120000;
+
+export const aiRoadmapService = {
+  async taoLoTrinh(data: DuLieuYeuCauLoTrinh) {
+    const response = await api.post<{ maLoTrinh: number; noiDungJSON: string }>(
+      '/lo-trinh-ai/them',
+      {
+        trinhDoHienTai: data.trinhDo,
+        phongCachHoc: data.phongCachHoc,
+        mucTieuNgheNghiep: data.mucTieuNgheNghiep,
+        thoiGianHocDuKien: parsePositiveNumber(data.thoiGianHoc, 'Số tuần dự kiến'),
+        thoiGianMoiTuan: parsePositiveNumber(data.mucDoCamKet, 'Số giờ học mỗi tuần', 1),
+        kienThucHienCo: data.kienThucHienCo,
+        kinhNghiemThucTe: data.kinhNghiem,
+        khoKhanHienTai: data.khoKhan,
+      },
+      { timeout: AI_TIMEOUT },
+    );
+    return { ...parseRoadmap(response.data.noiDungJSON), maLoTrinh: response.data.maLoTrinh };
+  },
+
+  async getAllLoTrinh() {
+    const response = await api.get<LoTrinhAICuaToiDTO[]>('/lo-trinh-ai/lay-tat-ca-lo-trinh');
+    return response.data;
+  },
+
+  async getChiTietLoTrinh(maLoTrinh: number) {
+    const response = await api.get<LoTrinhAICuaToiDTO>(`/lo-trinh-ai/chi-tiet/${maLoTrinh}`);
+    return { record: response.data, roadmap: parseRoadmap(response.data.noiDungJSON) };
+  },
 };
