@@ -12,6 +12,7 @@ namespace educodeai_server.Repository.Interface
         // 2. Các hàm AI và tìm kiếm
         Task<List<KhoaHocAISnapshotDto>> GetKhoaHocPhuHopAsync(CreateLoTrinhAIDto dto);
         Task<List<KhoaHocAISnapshotDto>> GetKhoaHocTheoKeywordAsync(List<string> keywords);
+        Task<List<KhoaHocAISnapshotDto>> GetKhoaHocByIdsAsync(List<int> maKhoaHoc);
 
         // 3. Nội dung chi tiết và quản lý khóa học
         Task<KhoaHoc_NoiDungKhoaHocDTO?> GetNoiDungKhoaHocAsync(int maKhoaHoc, int maNguoiDung);
