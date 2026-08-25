@@ -41,7 +41,23 @@
 
 /* ── Add-key modal overlay/header ──────────────────────────────────────── */
 .akm-modal-overlay {
+  overflow-x: hidden;
   overflow-y: auto;
+}
+
+.akm-modal-overlay .modal-dialog {
+  width: min(800px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  margin-inline: auto;
+}
+
+.akm-modal,
+.akm-modal .modal-body,
+.akm-modal form,
+.akm-modal .row,
+.akm-modal [class*="col-"] {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .akm-modal .modal-header {
@@ -150,17 +166,23 @@
 
 .akm-modal-control,
 .akm-modal .akm-modal-control {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 40px;
   min-height: 40px;
   box-sizing: border-box;
-  padding: 8px 12px;
+  padding: 8px 40px 8px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: var(--bg-card);
   color: var(--text-main);
   font-size: 14px;
   line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .akm-modal-control:focus {
@@ -389,9 +411,18 @@
   border-bottom: 1px solid var(--border-light);
 }
 
-/* Fix dropdown clipping off the bottom */
+/* Giữ bảng trong card và cho phép cuộn ngang trên màn hình hẹp. */
 .akm-table-visible-overflow {
-  overflow: visible !important;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.akm-tbl {
+  width: 100%;
+  min-width: 960px;
 }
 
 .akm-tbl.table-hover tbody tr:hover > td {
