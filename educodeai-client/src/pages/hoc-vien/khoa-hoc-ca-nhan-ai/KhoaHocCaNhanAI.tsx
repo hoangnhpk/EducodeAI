@@ -212,7 +212,9 @@ const KhoaHocCaNhanAI = () => {
                         <div className="roadmap-heading">
                             <h2 className="display-6 mb-1">Danh sách lộ trình phát triển</h2>
                             <p className="text-muted">Lộ trình được thiết kế riêng dựa trên mục tiêu và trình độ của sếp.</p>
-                            <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold">Tạo lộ trình mới</Link>
+                            {roadmaps.length > 0 && (
+                                <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold">Tạo lộ trình mới</Link>
+                            )}
                         </div>
                         
                         <div className="roadmap-grid">
@@ -256,8 +258,9 @@ const KhoaHocCaNhanAI = () => {
                                 ))
                             ) : (
                                 <div className="roadmap-empty-state">
-                                    <p className="mb-3">Sếp chưa có lộ trình cá nhân nào.</p>
-                                    <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary btn-sm">Tạo mới ngay</Link>
+                                    <i className="fa fa-route roadmap-empty-state-icon" aria-hidden="true"></i>
+                                    <p className="roadmap-empty-state-text">Sếp chưa có lộ trình cá nhân nào.</p>
+                                    <Link to="/yeu-cau-lo-trinh-ai" className="roadmap-empty-state-link">Tạo lộ trình mới <span aria-hidden="true">&rarr;</span></Link>
                                 </div>
                             )}
                         </div>
@@ -306,9 +309,9 @@ const KhoaHocCaNhanAI = () => {
                                 })
                             ) : (
                                 <div className="roadmap-empty-state saved-roadmap-empty">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" className="saved-roadmap-empty-icon" alt="Chưa có lộ trình đã lưu" />
-                                    <p className="saved-roadmap-empty-text">Sếp chưa lưu lộ trình nào từ trang Khám phá.</p>
-                                    <Link to="/kham-pha-lo-trinh" className="saved-roadmap-empty-link">Tìm lộ trình hay ngay <span aria-hidden="true">&rarr;</span></Link>
+                                    <i className="fa fa-bookmark roadmap-empty-state-icon" aria-hidden="true"></i>
+                                    <p className="roadmap-empty-state-text">Sếp chưa lưu lộ trình nào từ trang Khám phá.</p>
+                                    <Link to="/kham-pha-lo-trinh" className="roadmap-empty-state-link">Tìm lộ trình hay ngay <span aria-hidden="true">&rarr;</span></Link>
                                 </div>
                             )}
                         </div>

@@ -145,13 +145,42 @@
 .saved-card { border-left: 3px solid #f59e0b !important; }
 
 .roadmap-empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    width: min(100%, 52rem);
+    min-height: 12rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-inline: auto;
     padding: 2.5rem 1.25rem;
     border: 1px dashed var(--roadmap-border);
     border-radius: var(--roadmap-radius);
     color: var(--roadmap-muted);
     text-align: center;
 }
-.roadmap-empty-state i { color: #94a3b8; font-size: 2rem; }
+.roadmap-empty-state-icon {
+    margin-bottom: .75rem;
+    color: var(--roadmap-accent);
+    font-size: 2rem;
+}
+.roadmap-empty-state-text {
+    max-width: 28rem;
+    margin: 0 0 .75rem;
+    color: var(--roadmap-muted);
+    font-size: .875rem;
+}
+.roadmap-empty-state-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    color: var(--roadmap-accent);
+    font-size: .875rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.roadmap-empty-state-link:hover { color: var(--roadmap-accent-dark); text-decoration: underline; }
 
 .roadmap-modal-overlay {
     position: fixed;
