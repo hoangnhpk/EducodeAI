@@ -5,7 +5,6 @@ export type TrangThaiAI = "cho" | "dang_phan_tich" | "da_co_ket_qua";
 export interface DuLieuYeuCauLoTrinh {
   hoTen: string;
   trinhDo: TrinhDo;
-  phongCachHoc: string;
   mucTieuNgheNghiep: string;
   thoiGianHoc: string;
   mucDoCamKet: string;
@@ -21,6 +20,8 @@ export interface KhoaHocSuDung {
   tenKhoaHoc: string;
   noiDungChinh: string;
   ghiChu: string;
+  giaKhoaHoc: number;
+  donViTienTe: string;
 }
 
 export interface GiaiDoanLoTrinh {

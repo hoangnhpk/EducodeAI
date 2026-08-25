@@ -132,7 +132,10 @@ export const authService = {
     });
   },
 
-  getDevices: async (maThietBiHienTai: string) => {
+  getDevices: async (maThietBiHienTai?: string) => {
+    if (maThietBiHienTai === undefined) {
+      return await api.get('/api/XacThuc/danh-sach-thiet-bi');
+    }
     return await api.get('/api/XacThuc/danh-sach-thiet-bi', { params: { maThietBiHienTai } });
   },
 

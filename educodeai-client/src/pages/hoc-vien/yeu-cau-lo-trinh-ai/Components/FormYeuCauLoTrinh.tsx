@@ -12,7 +12,6 @@ interface Props {
 const INITIAL_STATE: DuLieuYeuCauLoTrinh = {
   hoTen: "",
   trinhDo: "Người mới",
-  phongCachHoc: "video",
   mucTieuNgheNghiep: "",
   thoiGianHoc: "3",
   mucDoCamKet: "10",
@@ -128,23 +127,6 @@ export default function FormYeuCauLoTrinh({ onSubmit, isSubmitting = false, isAI
             </select>
             <label className="required-field">Trình độ hiện tại</label>
             <div className="invalid-feedback">{errors.trinhDo}</div>
-          </div>
-        </div>
-
-        <div className="col-12">
-          <div className="form-floating">
-            <select
-              name="phongCachHoc"
-              className="form-select"
-              value={formData.phongCachHoc}
-              onChange={handleChange}
-            >
-              <option value="video">Video và bài giảng</option>
-              <option value="reading">Đọc sách và tài liệu</option>
-              <option value="hands-on">Thực hành dự án</option>
-              <option value="mixed">Kết hợp nhiều cách</option>
-            </select>
-            <label className="required-field">Phong cách học ưa thích</label>
           </div>
         </div>
       </div>

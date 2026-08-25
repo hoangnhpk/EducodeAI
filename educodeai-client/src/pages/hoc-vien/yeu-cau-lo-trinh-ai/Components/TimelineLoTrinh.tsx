@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { KetQuaLoTrinhAI } from "./types";
 import "./YeuCauLoTrinhAI.css";
 
@@ -29,9 +30,12 @@ export default function TimelineLoTrinh({
                 </div>
 
                 <div className="timeline-content">
-                  <h6 className="mb-1 text-primary">Khoá học: {khoaHoc.tenKhoaHoc}</h6>
-                  
-                  
+                  <Link to={`/khoa-hoc/${khoaHoc.maKhoaHoc}`} className="text-primary text-decoration-none fw-bold">
+                    Khoá học: {khoaHoc.tenKhoaHoc}
+                  </Link>
+                  <div className="small text-success fw-semibold mt-1">
+                    {Number(khoaHoc.giaKhoaHoc || 0).toLocaleString("vi-VN")} {khoaHoc.donViTienTe || "VND"}
+                  </div>
                   <p className="mb-0 small text-dark mt-2">
                     {khoaHoc.noiDungChinh}
                   </p>
