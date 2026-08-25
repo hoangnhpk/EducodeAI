@@ -12,6 +12,7 @@ using educodeai_server.Services.Interface;
 using educodeai_server.Services.RefreshTokens;
 using educodeai_server.Services.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using CloudinaryDotNet;
@@ -25,6 +26,15 @@ using educodeai_server.Workers;
 using FFMpegCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Caddy kết thúc TLS ở reverse proxy và chuyển tiếp scheme/IP thật cho ứng dụng.
+// Backend không publish cổng ra host, vì vậy có thể tin proxy trong Docker network.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Configure FFMpegCore to use ffmpeg from project directory
 var ffmpegPath = Path.Combine(AppContext.BaseDirectory, "ffmpeg");
@@ -338,14 +348,33 @@ builder.Services.AddHttpClient<IYouTubeService, YouTubeService>();
 // ==========================================
 // 6. CẤU HÌNH CORS & SWAGGER
 // ==========================================
+var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var allowedOrigins = configuredOrigins
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .Select(origin => origin.Trim().TrimEnd('/'))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToList();
+
+if (builder.Environment.IsDevelopment())
+{
+    allowedOrigins.AddRange([
+        "https://educodeai-client.vercel.app",
+        "http://localhost:3000", "http://localhost:3001", "http://localhost:5173",
+        "http://127.0.0.1:3000", "http://127.0.0.1:3001", "http://127.0.0.1:5173",
+        "http://[::1]:3000", "http://[::1]:3001", "http://[::1]:5173"
+    ]);
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("https://educodeai-client.vercel.app",
-                           "http://localhost:3000", "http://localhost:3001", "http://localhost:5173",
-                           "http://127.0.0.1:3000", "http://127.0.0.1:3001", "http://127.0.0.1:5173",
-                           "http://[::1]:3000", "http://[::1]:3001", "http://[::1]:5173")
+        if (allowedOrigins.Count == 0)
+        {
+            throw new InvalidOperationException("Cors:AllowedOrigins must contain at least one origin outside Development.");
+        }
+
+        policy.WithOrigins(allowedOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToArray())
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -403,6 +432,17 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// Migration chạy trong container one-shot trước khi API được khởi động.
+// Không tự migrate trong tiến trình web để tránh nhiều instance tranh chấp schema.
+if (args.Contains("--migrate", StringComparer.OrdinalIgnoreCase))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<EduCodeAIDbContext>();
+    await db.Database.MigrateAsync();
+    app.Logger.LogInformation("Database migrations completed successfully.");
+    return;
+}
 
 // Khởi tạo dữ liệu nền của module thử thách nếu môi trường hiện tại còn thiếu.
 // Initializer chỉ thêm theo MaCode, không ghi đè cấu hình nhiệm vụ/danh hiệu đã tồn tại.
@@ -515,6 +555,8 @@ educodeai_server.Helpers.EmailHelper.Initialize(app.Configuration);
 // ==========================================
 // 7. PIPELINE REQUEST (Middleware)
 // ==========================================
+app.UseForwardedHeaders();
+
 if (app.Environment.IsDevelopment())
 {
    app.UseSwagger();
@@ -546,6 +588,9 @@ app.UseAuthorization();
 app.MapHub<SystemConfigHub>("/systemConfigHub").RequireCors("AllowReactApp");
 app.MapHub<SessionHub>("/sessionHub").RequireCors("AllowReactApp");
 
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
+    .AllowAnonymous()
+    .ExcludeFromDescription();
 app.MapControllers();
 
 app.Run();

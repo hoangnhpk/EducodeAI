@@ -1,0 +1,204 @@
+name: ${COMPOSE_PROJECT_NAME:-educodeai}
+
+x-backend-environment: &backend-environment
+  ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+  ASPNETCORE_URLS: http://+:8080
+  ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SSL Mode=Disable
+  ConnectionStrings__Redis: redis:6379,password=${REDIS_PASSWORD},abortConnect=false
+  RedisConfig__IsActive: "true"
+  Jwt__Key: ${JWT_KEY}
+  Jwt__Issuer: ${JWT_ISSUER:-educodeai-server}
+  Jwt__Audience: ${JWT_AUDIENCE:-educodeai-client}
+  Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGIN:-https://educodeai.top}
+  GeminiAI__BaseUrl: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/}
+  GeminiAI__Model: ${GEMINI_MODEL:-gemini-2.5-flash}
+  GeminiAI__ApiKey: ${GEMINI_API_KEY}
+  Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME}
+  Cloudinary__ApiKey: ${CLOUDINARY_API_KEY}
+  Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET}
+  Cloudinary__UploadPreset: ${CLOUDINARY_UPLOAD_PRESET:-EduCodeAI}
+  Cloudinary__OrphanCleanupEnabled: ${CLOUDINARY_ORPHAN_CLEANUP_ENABLED:-true}
+  Cloudinary__OrphanCleanupDryRun: ${CLOUDINARY_ORPHAN_CLEANUP_DRY_RUN:-true}
+  EmailConfig__SmtpServer: ${SMTP_SERVER:-smtp.gmail.com}
+  EmailConfig__Port: ${SMTP_PORT:-587}
+  EmailConfig__SenderName: ${SMTP_SENDER_NAME:-EduCodeAI}
+  EmailConfig__SenderEmail: ${SMTP_SENDER_EMAIL}
+  EmailConfig__Password: ${SMTP_PASSWORD}
+  Captcha__SecretKey: ${RECAPTCHA_SECRET_KEY}
+  SocialLogin__Google__ClientId: ${GOOGLE_OAUTH_CLIENT_ID}
+  SocialLogin__Facebook__AppId: ${FACEBOOK_APP_ID}
+  SocialLogin__Facebook__AppSecret: ${FACEBOOK_APP_SECRET}
+  ApiSecurity__SecretKey: ${API_SECURITY_SECRET_KEY}
+  YouTube__ApiKey: ${YOUTUBE_API_KEY}
+  YouTube__DailyQuotaLimit: ${YOUTUBE_DAILY_QUOTA_LIMIT:-10000}
+  GoogleCloud__ProjectId: ${GCP_PROJECT_ID}
+  GoogleCloud__ServiceAccountJsonPath: /run/secrets/gcp-service-account.json
+  GoogleCloud__AudioStagingBucket: ${GCP_AUDIO_STAGING_BUCKET}
+  GoogleCloud__SpeechToText__Language: ${GCP_SPEECH_LANGUAGE:-vi-VN}
+  GoogleCloud__SpeechToText__Model: ${GCP_SPEECH_MODEL:-latest_long}
+  GoogleCloud__SpeechToText__PricePerMinuteUsd: ${GCP_SPEECH_PRICE_PER_MINUTE_USD:-0.024}
+  GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcp-service-account.json
+  PaymentMail__Enabled: ${PAYMENT_MAIL_ENABLED:-true}
+  PaymentMail__FrontendCourseUrl: ${PAYMENT_MAIL_COURSE_URL:-https://educodeai.top/hoc-vien/khoa-hoc-cua-toi}
+  PaymentMail__FrontendGiangVienRutTienUrl: ${PAYMENT_MAIL_WITHDRAWAL_URL:-https://educodeai.top/giang-vien/rut-tien}
+  PaymentMail__FrontendGiangVienBoSungUrl: ${PAYMENT_MAIL_PROFILE_URL:-https://educodeai.top/bo-sung-ho-so}
+  ThanhToanSePay__MaNganHang: ${SEPAY_BANK_CODE:-MB}
+  ThanhToanSePay__SoTaiKhoan: ${SEPAY_ACCOUNT_NUMBER}
+  ThanhToanSePay__TenTaiKhoan: ${SEPAY_ACCOUNT_NAME}
+  HocThu__SoVideoMacDinh: ${TRIAL_DEFAULT_VIDEO_COUNT:-2}
+  OcrOffline__TessDataPath: ${OCR_TESSDATA_PATH:-/app/tessdata}
+  CurrencyExchange__ApiUrl: ${CURRENCY_API_URL:-https://api.exchangerate-api.com/v4/latest/USD}
+  CurrencyExchange__DefaultVndToUsdRate: ${CURRENCY_DEFAULT_VND_TO_USD_RATE:-25000}
+  CurrencyExchange__CacheDurationHours: ${CURRENCY_CACHE_DURATION_HOURS:-24}
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  frontend:
+    build:
+      context: ./educodeai-client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://educodeai.top}
+        VITE_APP_NAME: ${VITE_APP_NAME:-EduCodeAI}
+        HASHIDS_SALT: ${HASHIDS_SALT}
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
+        VITE_FIREBASE_MEASUREMENT_ID: ${VITE_FIREBASE_MEASUREMENT_ID}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+        VITE_RECAPTCHA_SITE_KEY: ${VITE_RECAPTCHA_SITE_KEY}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${APP_PORT:-8082}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    mem_limit: 256m
+    cpus: 0.50
+    logging: *default-logging
+
+  backend:
+    build:
+      context: ./educodeai-server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment: *backend-environment
+    expose:
+      - "8080"
+    volumes:
+      - backend_uploads:/app/wwwroot/uploads
+      - backend_tessdata:/app/tessdata
+      - ${GCP_SERVICE_ACCOUNT_HOST_PATH:-./secrets/gcp-service-account.json}:/run/secrets/gcp-service-account.json:ro
+    tmpfs:
+      - /tmp
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    networks:
+      - app
+      - data
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1536m
+    cpus: 1.50
+    logging: *default-logging
+
+  migrate:
+    build:
+      context: ./educodeai-server
+      dockerfile: Dockerfile
+    command: ["--migrate"]
+    restart: "no"
+    environment: *backend-environment
+    volumes:
+      - backend_tessdata:/app/tessdata
+      - ${GCP_SERVICE_ACCOUNT_HOST_PATH:-./secrets/gcp-service-account.json}:/run/secrets/gcp-service-account.json:ro
+    tmpfs:
+      - /tmp
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - data
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - data
+    security_opt:
+      - no-new-privileges:true
+    shm_size: 256m
+    mem_limit: 1g
+    cpus: 1.00
+    logging: *default-logging
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping 2>/dev/null | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - data
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 384m
+    cpus: 0.50
+    logging: *default-logging
+
+networks:
+  app:
+    driver: bridge
+  data:
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_uploads:
+  backend_tessdata:
