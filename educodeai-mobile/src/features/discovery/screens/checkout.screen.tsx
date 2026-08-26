@@ -96,7 +96,7 @@ export default function CheckoutScreen() {
   const goLearn = useCallback(() => {
     if (navigatedRef.current || !info) return;
     navigatedRef.current = true;
-    router.replace(`/learn/${info.maKhoaHoc}`);
+    router.replace(`/khoa-hoc/hoc/${info.maKhoaHoc}`);
   }, [info, router]);
 
   // C2: polling trạng thái thanh toán QR — dừng khi background/unmount, resume foreground.

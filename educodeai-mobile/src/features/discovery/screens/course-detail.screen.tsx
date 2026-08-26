@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -76,6 +76,7 @@ const ReviewItem = ({ review }: { review: ReviewDTO }) => (
 
 export default function CourseDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { courseId } = useLocalSearchParams<{ courseId: string }>();
   const maKhoaHoc = Number(courseId);
 
@@ -89,22 +90,30 @@ export default function CourseDetailScreen() {
   const loadData = useCallback(async () => {
     if (!maKhoaHoc) return;
     setError(null);
+    setLoading(true);
     try {
-      const data = await CourseDetailService.layChiTiet(maKhoaHoc);
+      // Hiện chi tiết trước; đánh giá tải song song, lỗi review không chặn trang.
+      const detailPromise = CourseDetailService.layChiTiet(maKhoaHoc);
+      const reviewPromise = CourseDetailService.layDanhGia(maKhoaHoc).catch(() => null);
+
+      const data = await detailPromise;
       setCourse(data);
-      const reviewPage = await CourseDetailService.layDanhGia(maKhoaHoc).catch(() => null);
+      setImageError(false);
+      setLoading(false);
+
+      const reviewPage = await reviewPromise;
       setReviews(reviewPage?.items ?? []);
     } catch {
-      setError('Không tải được chi tiết khóa học. Vui lòng thử lại.');
+      setCourse(null);
+      setError('Không tải được chi tiết khóa học. Kiểm tra mạng Wi‑Fi rồi thử lại.');
+      setLoading(false);
     }
   }, [maKhoaHoc]);
 
   useEffect(() => {
-    void (async () => {
-      setLoading(true);
-      await loadData();
-      setLoading(false);
-    })();
+    setCourse(null);
+    setReviews([]);
+    void loadData();
   }, [loadData]);
 
   const goLearn = () => {
@@ -115,7 +124,8 @@ export default function CourseDetailScreen() {
   const goHocThu = () => {
     // Học thử như web: vào thẳng trang học, backend tự mở chế độ học thử
     // (laCheDoHocThu — chỉ xem được N video đầu) khi user chưa sở hữu khóa.
-    router.push(`/learn/${maKhoaHoc}?hocThu=1`);
+    // Path chính = /khoa-hoc/hoc/...; /learn/... là alias cùng player.
+    router.push(`/khoa-hoc/hoc/${maKhoaHoc}?hocThu=1`);
   };
 
   const dangKyMienPhi = async () => {
@@ -148,7 +158,11 @@ export default function CourseDetailScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ErrorState
           message={error ?? 'Không tìm thấy khóa học.'}
-          onRetry={() => void loadData()}
+          onRetry={() => {
+            setLoading(true);
+            setError(null);
+            void loadData();
+          }}
         />
       </SafeAreaView>
     );
@@ -322,7 +336,7 @@ export default function CourseDetailScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.ctaBar}>
+      <View style={[styles.ctaBar, { paddingBottom: Math.max(insets.bottom, spacing.md) + spacing.sm }]}>
         {/* Khóa trả phí: giá đã nằm trong nút "Mua ngay", nhường chỗ cho nút "Học thử". */}
         {!isOwned && isFree && (
           <View style={styles.priceWrap}>
@@ -541,7 +555,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xxl,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,

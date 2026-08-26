@@ -52,10 +52,17 @@ export default function CoursePlayerScreen() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { if (!authLoading && !user) router.replace(`/auth/login?courseId=${courseId}` as never); }, [authLoading, router, user, courseId]);
+  useEffect(() => { if (!authLoading && !user) router.replace(`/(auth)/login?courseId=${courseId}` as never); }, [authLoading, router, user, courseId]);
   useEffect(() => { void loadCourse(); }, [courseId, lessonId]);
 
-  const selectLesson = (lesson: Lesson) => { const index = lessons.findIndex((item) => item.id === lesson.id); const prerequisite = index > 0 ? lessons[index - 1] : undefined; if (lesson.biKhoa || (prerequisite && !prerequisite.daXem && !lesson.daXem)) return; setCurrentLesson(lesson); setShowLessons(false); setShowTools(false); };
+  const selectLesson = (lesson: Lesson) => {
+    const index = lessons.findIndex((item) => item.id === lesson.id);
+    const prerequisite = index > 0 ? lessons[index - 1] : undefined;
+    if (lesson.biKhoa || (prerequisite && !prerequisite.daXem && !lesson.daXem)) return;
+    setCurrentLesson(lesson);
+    setShowLessons(false);
+    setShowTools(false);
+  };
   const markLessonViewed = async () => {
     if (!currentLesson || !userId) return;
     const completedLessonId = currentLesson.id;
@@ -64,7 +71,14 @@ export default function CoursePlayerScreen() {
     setCurrentLesson((value) => value && value.id === completedLessonId ? { ...value, daXem: true } : value);
     setCourse((value) => value ? { ...value, danhSachChuongHoc: value.danhSachChuongHoc.map((chapter) => ({ ...chapter, danhSachBaiHoc: chapter.danhSachBaiHoc.map((lesson) => lesson.id === completedLessonId ? { ...lesson, daXem: true } : lesson) })) } : value);
   };
-  const moveLesson = (target?: Lesson) => { if (target && !target.biKhoa && (target.daXem || !currentLesson || target.id < currentLesson.id)) { setCurrentLesson(target); setShowTools(false); } };
+  // Dùng cùng rule với selectLesson: được tiến khi bài hiện tại đã xem / bài đích không khóa.
+  // Bug cũ so sánh `target.id < currentLesson.id` + yêu cầu target.daXem → không bao giờ sang bài tiếp chưa học.
+  const moveLesson = (target?: Lesson) => {
+    if (!target) return;
+    selectLesson(target);
+  };
+
+  const canGoNext = Boolean(next && currentLesson?.daXem && !next.biKhoa);
 
   if (authLoading || !user) return <CenteredState text="Đang kiểm tra phiên đăng nhập..." loading />;
   if (loading) return <CenteredState text="Đang tải nội dung khóa học..." loading />;
@@ -84,7 +98,18 @@ export default function CoursePlayerScreen() {
       {showTools && <LessonTools lesson={currentLesson} videoTime={videoTime} />}
       <ReviewPanel courseId={course.maKhoaHoc} userId={userId} canReview={progress >= 100} />
       {progress >= 100 && <View style={styles.certificateCard}><Ionicons name="ribbon-outline" size={26} color={C.primary} /><View style={{ flex: 1, marginLeft: 10 }}><Text style={styles.certificateTitle}>Chứng chỉ hoàn thành</Text><Text style={styles.lessonMeta}>Bạn đã hoàn thành khóa học. Chứng chỉ sẽ được xử lý theo tài khoản học viên.</Text></View></View>}
-      <View style={styles.navigation}><Pressable style={[styles.navButton, !previous && styles.disabled]} disabled={!previous} onPress={() => moveLesson(previous)}><Ionicons name="arrow-back" size={18} color={C.primary} /><Text style={styles.navText}>Bài trước</Text></Pressable><Pressable style={[styles.navButton, (!next || !currentLesson.daXem) && styles.disabled]} disabled={!next || !currentLesson.daXem} onPress={() => moveLesson(next)}><Text style={styles.navText}>{currentLesson.daXem ? 'Bài tiếp' : 'Xem hết video để tiếp tục'}</Text><Ionicons name="arrow-forward" size={18} color={C.primary} /></Pressable></View>
+      <View style={styles.navigation}>
+        <Pressable style={[styles.navButton, !previous && styles.disabled]} disabled={!previous} onPress={() => moveLesson(previous)}>
+          <Ionicons name="arrow-back" size={18} color={C.primary} />
+          <Text style={styles.navText}>Bài trước</Text>
+        </Pressable>
+        <Pressable style={[styles.navButton, !canGoNext && styles.disabled]} disabled={!canGoNext} onPress={() => moveLesson(next)}>
+          <Text style={styles.navText}>
+            {!currentLesson.daXem ? 'Xem hết video để tiếp tục' : next?.biKhoa ? 'Bài tiếp bị khóa' : 'Bài tiếp'}
+          </Text>
+          <Ionicons name="arrow-forward" size={18} color={C.primary} />
+        </Pressable>
+      </View>
     </ScrollView>
     <LessonNavigator visible={showLessons} course={course} currentId={currentLesson.id} progress={progress} onClose={() => setShowLessons(false)} onSelect={selectLesson} />
   </SafeAreaView>;

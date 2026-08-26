@@ -4,14 +4,42 @@ import type { CourseListItemDTO, HomeInstructorDTO, HomeReviewDTO } from '../typ
 /**
  * Adapter cho các endpoint trang chủ/danh sách — contract từ TrangChu.tsx (web).
  * Lưu ý: baseURL của `api` đã có sẵn `/api`, nên path ở đây KHÔNG prefix `/api`.
- * (Web gọi `api/KhoaHoc/all` với baseURL root.)
  */
+
+type CourseListCache = {
+  key: string;
+  at: number;
+  data: CourseListItemDTO[];
+};
+
+const COURSE_LIST_TTL_MS = 60_000;
+let courseListCache: CourseListCache | null = null;
+
+const cacheKey = (search: string, maGiangVien: number | null) =>
+  `${search.trim().toLowerCase()}::${maGiangVien ?? ''}`;
+
 export const DiscoveryHomeService = {
-  /** GET /api/KhoaHoc/all — danh sách + tìm kiếm + lọc theo giảng viên. */
-  layDanhSachKhoaHoc: async (search = '', maGiangVien: number | null = null): Promise<CourseListItemDTO[]> => {
+  /** GET /api/KhoaHoc/all — danh sách + tìm kiếm + lọc theo giảng viên (cache 60s). */
+  layDanhSachKhoaHoc: async (
+    search = '',
+    maGiangVien: number | null = null,
+    opts?: { bypassCache?: boolean },
+  ): Promise<CourseListItemDTO[]> => {
+    const key = cacheKey(search, maGiangVien);
+    const now = Date.now();
+    if (
+      !opts?.bypassCache &&
+      courseListCache &&
+      courseListCache.key === key &&
+      now - courseListCache.at < COURSE_LIST_TTL_MS
+    ) {
+      return courseListCache.data;
+    }
+
     const res = await api.get<CourseListItemDTO[]>('/KhoaHoc/all', {
       params: { search: search || undefined, maGiangVien: maGiangVien ?? undefined },
     });
+    courseListCache = { key, at: now, data: res.data };
     return res.data;
   },
 
