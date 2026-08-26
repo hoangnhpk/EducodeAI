@@ -25,6 +25,11 @@ import type {
 } from '../types';
 import { CourseCard } from '../components/course-card';
 import { CourseCardSkeleton, EmptyState, ErrorState } from '../components/state-views';
+import {
+  CoursePagination,
+  paginateCourses,
+  totalCoursePages,
+} from '../components/course-pagination';
 import { FALLBACK_COURSE_IMAGE, resolveCourseImage } from '../services/media-url';
 import { datBoLocKhoaHoc } from '../services/course-filter-bus';
 
@@ -44,6 +49,7 @@ const AI_FEATURES = [
     soft: colors.primarySoft,
     title: 'AI Sinh Lộ Trình',
     desc: 'Phân tích kỹ năng hiện tại và tạo lộ trình học cá nhân hóa 100% cho bạn.',
+    href: '/lo-trinh-ai' as const,
   },
   {
     mciIcon: 'laptop' as const,
@@ -51,6 +57,7 @@ const AI_FEATURES = [
     soft: '#FEF3C7',
     title: 'AI Sinh Đồ Án',
     desc: 'Tự động thiết kế yêu cầu, CSDL và API cho đồ án thực chiến khớp trình độ.',
+    href: '/sinh-do-an-ai' as const,
   },
   {
     mciIcon: 'account-tie' as const,
@@ -58,6 +65,7 @@ const AI_FEATURES = [
     soft: '#D1FAE5',
     title: 'Phỏng Vấn Giả Lập',
     desc: 'Luyện tập với Tech Lead AI, trả lời bằng giọng nói và nhận review ngay.',
+    href: '/phong-van-ai' as const,
   },
 ];
 
@@ -339,6 +347,7 @@ const ReviewCard = ({ review, index }: { review: HomeReviewDTO; index: number })
 export default function HomeScreen() {
   const router = useRouter();
   const [courses, setCourses] = useState<CourseListItemDTO[]>([]);
+  const [coursePage, setCoursePage] = useState(1);
   const [myCourses, setMyCourses] = useState<MyCourseDTO[]>([]);
   const [reviews, setReviews] = useState<HomeReviewDTO[]>([]);
   const [instructors, setInstructors] = useState<HomeInstructorDTO[]>([]);
@@ -346,37 +355,46 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (opts?: { keepVisible?: boolean; bypassCache?: boolean }) => {
     setError(null);
     try {
-      const [allCourses, mine, danhGia, giangVien] = await Promise.all([
-        DiscoveryHomeService.layDanhSachKhoaHoc(),
-        // Chưa đăng nhập / lỗi phiên → ẩn khối "học tiếp", không chặn Home.
+      // Ưu tiên danh sách khóa học để hiện UI sớm; phần còn lại tải nền.
+      const allCourses = await DiscoveryHomeService.layDanhSachKhoaHoc('', null, {
+        bypassCache: opts?.bypassCache,
+      });
+      setCourses(allCourses);
+      setCoursePage(1);
+      if (!opts?.keepVisible) setLoading(false);
+
+      const [mine, danhGia, giangVien] = await Promise.all([
         MyCoursesService.layDanhSach().catch(() => [] as MyCourseDTO[]),
-        // Reviews/instructors lỗi cũng không chặn Home (giống web chỉ console.error).
         DiscoveryHomeService.layDanhGiaTrangChu(10).catch(() => [] as HomeReviewDTO[]),
         DiscoveryHomeService.layGiangVienTieuBieu(4).catch(() => [] as HomeInstructorDTO[]),
       ]);
-      setCourses(allCourses);
       setMyCourses(mine.filter((c) => c.tienDo < 100));
       setReviews(danhGia);
       setInstructors(giangVien);
     } catch {
       setError('Không thể kết nối máy chủ. Kiểm tra mạng và thử lại.');
+      if (!opts?.keepVisible) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     void (async () => {
       setLoading(true);
       await loadData();
-      setLoading(false);
+      if (cancelled) return;
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [loadData]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData();
+    await loadData({ keepVisible: true, bypassCache: true });
     setRefreshing(false);
   }, [loadData]);
 
@@ -398,6 +416,16 @@ export default function HomeScreen() {
     // Ghi bộ lọc vào bus (params của Tabs không tin cậy) rồi chuyển tab.
     datBoLocKhoaHoc(filter ?? {});
     router.navigate('/courses');
+  };
+
+  const pagedCourses = useMemo(
+    () => paginateCourses(courses, coursePage),
+    [courses, coursePage],
+  );
+
+  const changeCoursePage = (next: number) => {
+    const max = totalCoursePages(courses.length);
+    setCoursePage(Math.min(Math.max(1, next), max));
   };
 
   if (loading) {
@@ -478,7 +506,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* 3. Hệ sinh thái AI — port features-section (route AI thuộc module Lai, sẽ gắn sau) */}
+      {/* 3. Hệ sinh thái AI */}
       <View style={styles.section}>
         <SectionHeading eyebrow="Tại sao chọn EduCode?" title="Hệ sinh thái Trí Tuệ Nhân Tạo" />
         <ScrollView
@@ -487,13 +515,19 @@ export default function HomeScreen() {
           contentContainerStyle={styles.hScroll}
         >
           {AI_FEATURES.map((f) => (
-            <View key={f.title} style={styles.featureCard}>
+            <AnimatedPressable
+              key={f.title}
+              style={styles.featureCard}
+              onPress={() => router.push(f.href as never)}
+              accessibilityRole="button"
+              accessibilityLabel={f.title}
+            >
               <View style={[styles.featureIcon, { backgroundColor: f.soft }]}>
                 <MaterialCommunityIcons name={f.mciIcon} size={22} color={f.tint} />
               </View>
               <Text style={styles.featureTitle}>{f.title}</Text>
               <Text style={styles.featureDesc}>{f.desc}</Text>
-            </View>
+            </AnimatedPressable>
           ))}
         </ScrollView>
       </View>
@@ -531,6 +565,12 @@ export default function HomeScreen() {
 
   const ListFooter = (
     <View>
+      <CoursePagination
+        page={coursePage}
+        totalItems={courses.length}
+        onChange={changeCoursePage}
+      />
+
       {/* 6. Giảng viên tiêu biểu — dữ liệu thật từ API như web */}
       <View style={styles.section}>
         <SectionHeading eyebrow="Đội ngũ chuyên gia" title="Giảng viên tiêu biểu" />
@@ -573,7 +613,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <FlatList
-        data={courses}
+        data={pagedCourses}
         keyExtractor={(item) => String(item.maKhoaHoc)}
         numColumns={2}
         columnWrapperStyle={styles.courseRow}

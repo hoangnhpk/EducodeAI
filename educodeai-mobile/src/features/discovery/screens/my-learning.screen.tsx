@@ -131,7 +131,7 @@ export default function MyLearningScreen() {
           renderItem={({ item }) => (
             <MyCourseCard
               course={item}
-              // Chuyển sang chi tiết; từ đó CTA "Học ngay" sẽ deep-link /learn/[courseId] (module Learning).
+              // Chuyển sang chi tiết; từ đó CTA "Học ngay" deep-link /khoa-hoc/hoc/[courseId].
               onPress={() => router.push(`/course/${item.maKhoaHoc}`)}
             />
           )}

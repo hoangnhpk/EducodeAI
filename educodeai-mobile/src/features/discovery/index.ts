@@ -2,9 +2,11 @@
  * Public API của module Discovery & Commerce (Khiến).
  *
  * Contract bàn giao cho các module khác:
- * - Learning (Khôi): Discovery điều hướng `router.push('/learn/[courseId]')` với
- *   `courseId: string` (số dạng chuỗi). Ownership đã được backend xác nhận trước khi
- *   điều hướng (khoaHocDaDangKy / daMua / sau thanh toán thành công).
+ * - Learning (Khôi): path học chính `router.push('/khoa-hoc/hoc/[courseId]')`
+ *   với `courseId: string` (số dạng chuỗi). Alias `/learn/[courseId]` cũng trỏ
+ *   cùng CoursePlayerScreen (giữ contract cũ). Ownership đã được backend xác nhận
+ *   trước khi điều hướng (khoaHocDaDangKy / daMua / sau thanh toán thành công).
+ *   Học thử: thêm query `?hocThu=1`.
  * - Routes module này expose:
  *   /home, /courses, /my-learning (tabs)
  *   /course/[courseId], /course/[courseId]/checkout
