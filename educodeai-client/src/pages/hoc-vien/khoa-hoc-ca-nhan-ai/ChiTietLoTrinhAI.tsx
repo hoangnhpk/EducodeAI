@@ -33,16 +33,10 @@ const ChiTietLoTrinhAI = () => {
         fetchData();
     }, [id]);
 
-    const getStageBadgeClass = (stageIndex: number, totalStages: number) => {
-        if (stageIndex === 1) return 'beginner';
-        if (stageIndex === totalStages) return 'advanced';
-        return 'intermediate';
-    };
-
     const getStageLabel = (stageIndex: number, totalStages: number) => {
-        if (stageIndex === 1) return 'Beginner';
-        if (stageIndex === totalStages) return 'Advanced';
-        return 'Intermediate';
+        if (stageIndex === 1) return 'Bắt đầu';
+        if (stageIndex === totalStages) return 'Hoàn thiện';
+        return 'Đang học';
     };
 
     if (loading) {
@@ -60,114 +54,94 @@ const ChiTietLoTrinhAI = () => {
     }
 
     return (
-        <div className="roadmap-detail-container">
+        <main className="roadmap-detail-container">
             <div className="roadmap-detail-card">
-                {/* Back Link */}
-                <div onClick={() => navigate(-1)} className="back-link">
-                    <i className="fas fa-arrow-left"></i>
+                <button type="button" onClick={() => navigate(-1)} className="back-link">
+                    <i className="fas fa-arrow-left" aria-hidden="true"></i>
                     Quay lại danh sách lộ trình
-                </div>
+                </button>
 
-                {/* Header Section */}
-                <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                <header className="roadmap-detail-header">
                     <div className="roadmap-header">
-                        <h2>Chi tiết {roadmap.tenLoTrinh}</h2>
+                        <p className="roadmap-eyebrow">Lộ trình học tập cá nhân hóa</p>
+                        <h1>Chi tiết {roadmap.tenLoTrinh}</h1>
                         <p>{roadmap.moTaChung}</p>
                     </div>
-                    <div className="mt-3 mt-md-0">
-                        <div className="mb-2 text-end">
-                            <strong>Tiến độ tổng thể</strong>
+                </header>
+
+                <section className="roadmap-overview-bar" aria-label="Tổng quan lộ trình">
+                    <div className="overview-progress">
+                        <div className="overview-progress-heading">
+                            <span>Tiến độ tổng thể</span>
+                            <strong>{roadmap.phanTramHoanThanh}%</strong>
                         </div>
-                        <div className="progress-track-custom mb-2">
-                            <div
-                                className="progress-bar-custom"
-                                style={{ width: `${roadmap.phanTramHoanThanh}%` }}
-                            ></div>
+                        <div className="progress-track-custom" role="progressbar" aria-valuenow={roadmap.phanTramHoanThanh} aria-valuemin={0} aria-valuemax={100} aria-label={`Tiến độ ${roadmap.phanTramHoanThanh}%`}>
+                            <div className="progress-bar-custom" style={{ width: `${roadmap.phanTramHoanThanh}%` }}></div>
                         </div>
-                        <div className="progress-meta">
-                            <span className="text-muted">{roadmap.phanTramHoanThanh}% hoàn thành</span>
-                            <span className="text-muted fw-bold text-primary">
-                                {roadmap.soGiaiDoanHoanThanh}/{roadmap.tongSoGiaiDoan} Giai đoạn
-                            </span>
-                        </div>
-                        <div className="timeline-summary-card" aria-label="Tổng thời gian học">
-                            <span className="summary-label">Tổng thời gian học</span>
-                            <strong className="summary-value">{roadmap.tongThoiGianTuan} tuần</strong>
-                        </div>
+                        <span className="overview-progress-caption">{roadmap.soGiaiDoanHoanThanh}/{roadmap.tongSoGiaiDoan} giai đoạn đã hoàn thành</span>
                     </div>
-                </div>
+                    <div className="overview-stat">
+                        <i className="fas fa-layer-group" aria-hidden="true"></i>
+                        <span>Giai đoạn</span>
+                        <strong>{roadmap.tongSoGiaiDoan}</strong>
+                    </div>
+                    <div className="overview-stat">
+                        <i className="fas fa-clock" aria-hidden="true"></i>
+                        <span>Thời gian học</span>
+                        <strong>{roadmap.tongThoiGianTuan} tuần</strong>
+                    </div>
+                </section>
 
-                {/* Timeline Section */}
-                <div className="roadmap-timeline">
+                <section className="roadmap-timeline" aria-label="Các giai đoạn học tập">
                     {roadmap.giaiDoan?.map((gd: ChiTietGiaiDoanDTO, index: number) => (
-                        <div
-                            key={gd.giaiDoan}
-                            className="stage-card"
-                            data-stage={gd.giaiDoan}
-                            style={{ animationDelay: `${index * 0.1}s` }}
-                        >
-                            <span className={`stage-badge ${getStageBadgeClass(gd.giaiDoan, roadmap.tongSoGiaiDoan)}`}>
-                                Giai đoạn {gd.giaiDoan} • {getStageLabel(gd.giaiDoan, roadmap.tongSoGiaiDoan)}
-                            </span>
-
-                            {/* Trạng thái giai đoạn */}
-                            <div className="float-end">
-                                {gd.hoanThanh ? (
-                                    <span className="badge bg-success"><i className="fas fa-check me-1"></i> Hoàn thành</span>
-                                ) : (
-                                    <span className="badge bg-light text-dark border">Đang thực hiện</span>
-                                )}
+                        <article key={gd.giaiDoan} className="stage-card" data-stage={gd.giaiDoan} style={{ animationDelay: `${index * 0.1}s` }}>
+                            <div className="stage-card-header">
+                                <span className="stage-badge">Giai đoạn {gd.giaiDoan} <span aria-hidden="true">•</span> {getStageLabel(gd.giaiDoan, roadmap.tongSoGiaiDoan)}</span>
+                                <span className={`stage-status-badge ${gd.hoanThanh ? 'is-complete' : ''}`}>
+                                    <i className={`fas ${gd.hoanThanh ? 'fa-check' : 'fa-hourglass-half'}`} aria-hidden="true"></i>
+                                    {gd.hoanThanh ? 'Hoàn thành' : 'Đang thực hiện'}
+                                </span>
                             </div>
 
-                            <h4>{gd.mucTieu}</h4> {/* Tạm dùng Mục tiêu làm tiêu đề giai đoạn */}
-
+                            <h2>{gd.mucTieu}</h2>
                             <div className="stage-desc">
-                                Mục tiêu chính: {gd.mucTieu}. Hoàn thành các khóa học bên dưới để vượt qua giai đoạn này.
+                                <strong>Mục tiêu chính</strong>
+                                <span>{gd.mucTieu}. Hoàn thành các khóa học bên dưới để vượt qua giai đoạn này.</span>
                             </div>
 
                             <div className="stage-courses">
                                 {gd.danhSachKhoaHoc && gd.danhSachKhoaHoc.length > 0 ? (
                                     gd.danhSachKhoaHoc.map((kh) => (
-                                        <div
-                                            key={kh.maKhoaHoc}
-                                            className="course-item"
-                                            style={{ cursor: 'pointer', transition: 'transform 0.2s' }} // Thêm tí css cho mượt
-                                            onClick={() => handleNavigateToCourse(kh)}
-                                        >
-                                            <h6 className="text-primary">{kh.tenKhoaHoc}</h6>
-                                            <small>{kh.noiDungChinh}</small>
-                                        </div>
+                                        <button type="button" key={kh.maKhoaHoc} className="course-item" onClick={() => handleNavigateToCourse(kh)}>
+                                            <span className="course-item-icon"><i className="fas fa-book-open" aria-hidden="true"></i></span>
+                                            <span className="course-item-content">
+                                                <strong>{kh.tenKhoaHoc}</strong>
+                                                <small>{kh.noiDungChinh}</small>
+                                                <span className="course-item-meta"><i className="fas fa-arrow-right" aria-hidden="true"></i> Xem chi tiết khóa học</span>
+                                            </span>
+                                        </button>
                                     ))
                                 ) : (
-                                    // Placeholder khi chưa có dữ liệu chi tiết khóa học từ BE
-                                    <>
-                                        <div className="course-item">
-                                            <h6>Khóa học đang cập nhật...</h6>
+                                    <div className="course-item course-item-placeholder">
+                                        <span className="course-item-icon"><i className="fas fa-hourglass-half" aria-hidden="true"></i></span>
+                                        <span className="course-item-content">
+                                            <strong>Khóa học đang cập nhật...</strong>
                                             <small>Dữ liệu chi tiết khóa học cần được map từ Backend.</small>
-                                        </div>
-                                    </>
+                                        </span>
+                                    </div>
                                 )}
                             </div>
 
                             <div className="stage-stats">
-                                <div className="stat-item">
-                                    <i className="fas fa-book"></i>
-                                    <span>{gd.tongKhoaHoc} khóa học</span>
-                                </div>
-                                <div className="stat-item">
-                                    <i className="fas fa-check-circle"></i>
-                                    <span>Đã xong: {gd.khoaHocHoanThanh}</span>
-                                </div>
-                                <div className="stat-item">
-                                    <i className="fas fa-chart-line"></i>
-                                    <span>Tiến độ: {gd.phanTram}%</span>
-                                </div>
+                                <div className="stat-item"><i className="fas fa-book" aria-hidden="true"></i><span>{gd.tongKhoaHoc} khóa học</span></div>
+                                <div className="stat-item"><i className="fas fa-check-circle" aria-hidden="true"></i><span>Đã xong: {gd.khoaHocHoanThanh}</span></div>
+                                <div className="stat-item"><i className="fas fa-chart-line" aria-hidden="true"></i><span>Tiến độ: {gd.phanTram}%</span></div>
                             </div>
-                        </div>
+                        </article>
                     ))}
-                </div>
+                </section>
             </div>
-        </div>
+        </main>
     );
 };
 

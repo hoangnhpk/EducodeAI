@@ -4,12 +4,15 @@ import { Animated, Pressable, PressableProps, StyleProp, ViewStyle } from 'react
 interface AnimatedPressableProps extends PressableProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  /** Style cho Pressable ngoài cùng — cần khi card phải fill chiều cao trong grid (flex: 1). */
+  containerStyle?: StyleProp<ViewStyle>;
   scaleTo?: number;
 }
 
 export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({ 
   children, 
   style, 
+  containerStyle,
   scaleTo = 0.96,
   onPressIn,
   onPressOut,
@@ -38,7 +41,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   };
 
   return (
-    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} {...props}>
+    <Pressable style={containerStyle} onPressIn={handlePressIn} onPressOut={handlePressOut} {...props}>
       <Animated.View style={[style, { transform: [{ scale: scaleValue }] }]}>
         {children}
       </Animated.View>

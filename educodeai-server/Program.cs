@@ -247,6 +247,7 @@ builder.Services.AddScoped<IQuanLyHoSoGiangVienService, QuanLyHoSoGiangVienServi
 builder.Services.AddScoped<ILoTrinhAIGvService, LoTrinhAIGvService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
+builder.Services.AddScoped<ILoTrinhAIQuotaService, LoTrinhAIQuotaService>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
 builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();

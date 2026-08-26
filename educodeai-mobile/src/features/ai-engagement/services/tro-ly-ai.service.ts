@@ -7,8 +7,10 @@ export interface ChatMessage {
 
 export interface TuVanHocTapRequest {
     LichSuChat: ChatMessage[];
+    MaBaiHoc?: number | null;
     TieuDeBaiHoc: string | null;
     NoiDungBaiHoc: string | null;
+    ThoiGianVideo?: number | null;
 }
 
 export interface TuVanHocTapResponse {
@@ -17,6 +19,7 @@ export interface TuVanHocTapResponse {
 
 export const TroLyAIService = {
     async tuVanHocTap(data: TuVanHocTapRequest) {
-        return api.post<TuVanHocTapResponse>('/api/ChatBotAI/tu-van-hoc-tap', data, { timeout: 120000 });
+        // api.ts hiện đã thêm /api vào baseURL. Owner Auth sẽ quản lý boundary này.
+        return api.post<TuVanHocTapResponse>('/ChatBotAI/tu-van-hoc-tap', data, { timeout: 120000 });
     }
 };
