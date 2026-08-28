@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -16,6 +16,11 @@ import { DiscoveryHomeService } from '../services/discovery-home.service';
 import type { CourseListItemDTO } from '../types';
 import { CourseCard } from '../components/course-card';
 import { CourseCardSkeleton, EmptyState, ErrorState } from '../components/state-views';
+import {
+  CoursePagination,
+  paginateCourses,
+  totalCoursePages,
+} from '../components/course-pagination';
 import { useDebounce } from '../hooks/use-debounce';
 import { layBoLocKhoaHoc } from '../services/course-filter-bus';
 
@@ -26,6 +31,7 @@ export default function CoursesScreen() {
   const [filterMaGV, setFilterMaGV] = useState<number | null>(null);
   const [filterTenGV, setFilterTenGV] = useState('');
   const [courses, setCourses] = useState<CourseListItemDTO[]>([]);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,17 +45,20 @@ export default function CoursesScreen() {
       setSearchTerm(boLoc.search ?? '');
       setFilterMaGV(boLoc.maGiangVien ?? null);
       setFilterTenGV(boLoc.tenGiangVien ?? '');
+      setPage(1);
     }, []),
   );
 
-  const loadData = useCallback(async (search: string, maGiangVien: number | null) => {
+  const loadData = useCallback(async (search: string, maGiangVien: number | null, bypassCache = false) => {
     setError(null);
     try {
-      const data = await DiscoveryHomeService.layDanhSachKhoaHoc(search, maGiangVien);
+      const data = await DiscoveryHomeService.layDanhSachKhoaHoc(search, maGiangVien, { bypassCache });
       setCourses(data);
+      setPage(1);
     } catch {
       setError('Không thể tải danh sách khóa học. Kiểm tra mạng và thử lại.');
       setCourses([]);
+      setPage(1);
     }
   }, []);
 
@@ -63,13 +72,21 @@ export default function CoursesScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData(debouncedSearch, filterMaGV);
+    await loadData(debouncedSearch, filterMaGV, true);
     setRefreshing(false);
   }, [debouncedSearch, filterMaGV, loadData]);
 
   const clearInstructorFilter = () => {
     setFilterMaGV(null);
     setFilterTenGV('');
+    setPage(1);
+  };
+
+  const pagedCourses = useMemo(() => paginateCourses(courses, page), [courses, page]);
+
+  const changePage = (next: number) => {
+    const max = totalCoursePages(courses.length);
+    setPage(Math.min(Math.max(1, next), max));
   };
 
   const renderBody = () => {
@@ -87,7 +104,7 @@ export default function CoursesScreen() {
     }
     return (
       <FlatList
-        data={courses}
+        data={pagedCourses}
         keyExtractor={(item) => String(item.maKhoaHoc)}
         numColumns={2}
         columnWrapperStyle={styles.courseRow}
@@ -100,6 +117,9 @@ export default function CoursesScreen() {
         keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+        }
+        ListFooterComponent={
+          <CoursePagination page={page} totalItems={courses.length} onChange={changePage} />
         }
         ListEmptyComponent={
           <EmptyState
@@ -136,14 +156,20 @@ export default function CoursesScreen() {
             placeholder="Bạn muốn học gì? (VD: Java, Python...)"
             placeholderTextColor={colors.textMuted}
             value={searchTerm}
-            onChangeText={setSearchTerm}
+            onChangeText={(text) => {
+              setSearchTerm(text);
+              setPage(1);
+            }}
             returnKeyType="search"
             autoCorrect={false}
           />
           {searchTerm.length > 0 && (
             <AnimatedPressable
               style={styles.clearBtn}
-              onPress={() => setSearchTerm('')}
+              onPress={() => {
+                setSearchTerm('');
+                setPage(1);
+              }}
               accessibilityLabel="Xóa tìm kiếm"
             >
               <Ionicons name="close-circle" size={18} color={colors.textMuted} />
