@@ -489,10 +489,6 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                 <h3 className="khm-form-section-title">Cài đặt khóa học</h3>
               </div>
               <div className="khm-form-section-body">
-                <div className="khm-alert khm-alert-info" style={{ marginBottom: 20 }}>
-                  ℹ️ Các tính năng quản lý trạng thái khóa học đang phát triển.
-                </div>
-
                 <div className="khm-toggle-row">
                   <div>
                     <div className="khm-toggle-label">Cho phép mua khóa học</div>

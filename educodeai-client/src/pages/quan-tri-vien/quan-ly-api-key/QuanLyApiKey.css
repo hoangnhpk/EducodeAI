@@ -582,8 +582,16 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
+  white-space: nowrap;
+  min-width: max-content;
   transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.akm-action-toggle + .dropdown-menu .dropdown-item {
+  white-space: nowrap;
+  min-width: max-content;
 }
 
 .akm-action-toggle:hover {
