@@ -1,8 +1,9 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { HoSoGiangVienAdminService } from "@/services/ho-so-giang-vien-admin.service";
 import type { HoSoGiangVienListItem, HoSoGiangVienDetail } from "@/services/ho-so-giang-vien-admin.service";
+import { getAnhDaiDienUrl, layChuCaiAvatar, layMauAvatar } from "@/utils/avatarHelper";
 import "@/assets/styles/AdminTableControls.css";
 import "./DuyetGiangVien.css";
 
@@ -43,11 +44,36 @@ const toExternalUrl = (value?: string | null) => {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 };
 
+const chuanHoaTuKhoa = (value?: string | null) => (value ?? "")
+  .normalize("NFD")
+  .replace(/[̀-ͯ]/g, "")
+  .toLowerCase()
+  .replace(/đ/g, "d")
+  .trim();
+
 const modalWarningSwal = {
   icon: "warning" as const,
   customClass: {
     container: "qlnv-swal-over-modal"
   }
+};
+
+const InstructorApplicationAvatar = ({ src, name }: { src?: string | null; name: string }) => {
+  const [imageError, setImageError] = useState(false);
+  const avatarUrl = getAnhDaiDienUrl(src);
+  const avatarColor = layMauAvatar(name);
+
+  useEffect(() => setImageError(false), [avatarUrl]);
+
+  if (avatarUrl && !imageError) {
+    return <img src={avatarUrl} alt={name} className="lecturer-review-avatar" onError={() => setImageError(true)} />;
+  }
+
+  return (
+    <div className="lecturer-review-avatar lecturer-review-avatar--fallback" style={{ background: avatarColor.bg, color: avatarColor.color }}>
+      {layChuCaiAvatar(name)}
+    </div>
+  );
 };
 
 const CCCD_FIELD_LABELS: Record<string, string> = {
@@ -67,6 +93,9 @@ const CCCD_FIELD_LABELS: Record<string, string> = {
 export default function DuyetGiangVien() {
   const [dangTai, setDangTai] = useState(true);
   const [trangThaiLoc, setTrangThaiLoc] = useState("");
+  const [tuKhoa, setTuKhoa] = useState("");
+  const [linhVucLoc, setLinhVucLoc] = useState("");
+  const [loaiGiayToLoc, setLoaiGiayToLoc] = useState("");
   const [danhSach, setDanhSach] = useState<HoSoGiangVienListItem[]>([]);
   const [chiTiet, setChiTiet] = useState<HoSoGiangVienDetail | null>(null);
   const [moModal, setMoModal] = useState(false);
@@ -83,10 +112,10 @@ export default function DuyetGiangVien() {
   useModalA11y(maHoSoBoSung !== null, () => { setMaHoSoBoSung(null); setNoiDungBoSung(""); }, boSungModalRef);
   useModalA11y(maHoSoTuChoi !== null, () => { setMaHoSoTuChoi(null); setLyDoTuChoi(""); }, tuChoiModalRef);
 
-  const taiDanhSach = async (tt?: string) => {
+  const taiDanhSach = async () => {
     try {
       setDangTai(true);
-      const duLieu = await HoSoGiangVienAdminService.layDanhSach(tt);
+      const duLieu = await HoSoGiangVienAdminService.layDanhSach();
       setDanhSach(duLieu);
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không tải được danh sách hồ sơ.", "error");
@@ -99,10 +128,41 @@ export default function DuyetGiangVien() {
     void taiDanhSach();
   }, []);
 
-  const handleLoc = (tt: string) => {
-    setTrangThaiLoc(tt);
-    void taiDanhSach(tt);
+  const linhVucOptions = useMemo(() => Array.from(new Set(
+    danhSach.map((hs) => hs.linhVucGiangDay?.trim()).filter(Boolean)
+  )).sort((a, b) => a.localeCompare(b, "vi")), [danhSach]);
+
+  const loaiGiayToOptions = useMemo(() => Array.from(new Set(
+    danhSach.map((hs) => hs.loaiGiayTo?.trim()).filter(Boolean)
+  )).sort((a, b) => a.localeCompare(b, "vi")), [danhSach]);
+
+  const danhSachHienThi = useMemo(() => {
+    const keyword = chuanHoaTuKhoa(tuKhoa);
+    return danhSach.filter((hs) => {
+      const khopTuKhoa = !keyword || [
+        hs.hoTen,
+        hs.email,
+        hs.soDienThoai,
+        hs.linhVucGiangDay,
+        hs.loaiGiayTo,
+        String(hs.maHoSoDangKyGiangVien)
+      ].some((value) => chuanHoaTuKhoa(value).includes(keyword));
+
+      return khopTuKhoa
+        && (!trangThaiLoc || hs.trangThaiHoSo === trangThaiLoc)
+        && (!linhVucLoc || hs.linhVucGiangDay?.trim() === linhVucLoc)
+        && (!loaiGiayToLoc || hs.loaiGiayTo?.trim() === loaiGiayToLoc);
+    });
+  }, [danhSach, linhVucLoc, loaiGiayToLoc, trangThaiLoc, tuKhoa]);
+
+  const xoaBoLoc = () => {
+    setTuKhoa("");
+    setTrangThaiLoc("");
+    setLinhVucLoc("");
+    setLoaiGiayToLoc("");
   };
+
+  const coBoLoc = Boolean(tuKhoa || trangThaiLoc || linhVucLoc || loaiGiayToLoc);
 
 
 
@@ -133,7 +193,7 @@ export default function DuyetGiangVien() {
       await HoSoGiangVienAdminService.duyetHoSo(maHoSo);
       Swal.fire("Thành công", "Đã duyệt hồ sơ và tạo tài khoản giảng viên.", "success");
       setMoModal(false);
-      void taiDanhSach(trangThaiLoc);
+      void taiDanhSach();
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể duyệt hồ sơ.", "error");
     }
@@ -167,7 +227,7 @@ export default function DuyetGiangVien() {
       await HoSoGiangVienAdminService.tuChoiHoSo(maHoSoTuChoi, lyDo);
       dongModalTuChoi();
       Swal.fire("Thành công", "Đã từ chối hồ sơ và gửi email thông báo.", "success");
-      void taiDanhSach(trangThaiLoc);
+      void taiDanhSach();
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể từ chối hồ sơ.", "error");
     }
@@ -201,13 +261,12 @@ export default function DuyetGiangVien() {
       await HoSoGiangVienAdminService.yeuCauBoSung(maHoSoBoSung, noiDung);
       dongModalBoSung();
       Swal.fire("Thành công", "Đã gửi yêu cầu bổ sung hồ sơ.", "success");
-      void taiDanhSach(trangThaiLoc);
+      void taiDanhSach();
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể gửi yêu cầu bổ sung.", "error");
     }
   };
 
-  const baseUrl = import.meta.env.VITE_API_URL || "";
   return (
     <div className="qtv-page-content lecturer-review-page">
       <div className="lecturer-review-header">
@@ -215,25 +274,49 @@ export default function DuyetGiangVien() {
       </div>
 
       <div className="lecturer-review-card">
-        <div className="toolbar">
-          <select
-          className="filter-select"
-          value={trangThaiLoc}
-          onChange={(e) => handleLoc(e.target.value)}
-        >
-          {TRANG_THAI_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
+        <div className="lecturer-review-toolbar">
+          <div className="lecturer-review-search">
+            <i className="bi bi-search" aria-hidden="true"></i>
+            <input
+              className="search-input"
+              value={tuKhoa}
+              onChange={(e) => setTuKhoa(e.target.value)}
+              placeholder="Tìm theo tên, email, SĐT, lĩnh vực..."
+              aria-label="Tìm kiếm hồ sơ giảng viên"
+            />
+          </div>
+          <select className="filter-select" value={trangThaiLoc} onChange={(e) => setTrangThaiLoc(e.target.value)} aria-label="Lọc theo trạng thái">
+            {TRANG_THAI_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <select className="filter-select" value={linhVucLoc} onChange={(e) => setLinhVucLoc(e.target.value)} aria-label="Lọc theo lĩnh vực">
+            <option value="">Tất cả lĩnh vực</option>
+            {linhVucOptions.map((linhVuc) => <option key={linhVuc} value={linhVuc}>{linhVuc}</option>)}
+          </select>
+          <select className="filter-select" value={loaiGiayToLoc} onChange={(e) => setLoaiGiayToLoc(e.target.value)} aria-label="Lọc theo loại giấy tờ">
+            <option value="">Tất cả giấy tờ</option>
+            {loaiGiayToOptions.map((loaiGiayTo) => <option key={loaiGiayTo} value={loaiGiayTo}>{loaiGiayTo}</option>)}
+          </select>
+          {coBoLoc && (
+            <button type="button" className="lecturer-review-clear" onClick={xoaBoLoc}>
+              <i className="bi bi-x-circle" aria-hidden="true"></i>
+              Xóa lọc
+            </button>
+          )}
+        </div>
+
+        {!dangTai && (
+          <div className="lecturer-review-result-count">
+            Hiển thị <strong>{danhSachHienThi.length}</strong> / {danhSach.length} hồ sơ
+          </div>
+        )}
 
       {dangTai ? (
         <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
           Đang tải danh sách hồ sơ...
         </div>
-      ) : danhSach.length === 0 ? (
+      ) : danhSachHienThi.length === 0 ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-light)' }}>
           Không tìm thấy hồ sơ nào
         </div>
@@ -251,28 +334,13 @@ export default function DuyetGiangVien() {
               </tr>
             </thead>
             <tbody>
-              {danhSach.map((hs) => {
+              {danhSachHienThi.map((hs) => {
                 const tt = hienThiTrangThai(hs.trangThaiHoSo);
                 return (
                   <tr key={hs.maHoSoDangKyGiangVien}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                        {hs.anhDaiDienUrl ? (
-                          <img
-                            src={`${baseUrl}${hs.anhDaiDienUrl}`}
-                            alt={hs.hoTen}
-                            style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-light)', flexShrink: 0 }}
-                          />
-                        ) : (
-                          <div style={{
-                            width: 32, height: 32, borderRadius: '50%',
-                            background: 'var(--border-light)', color: 'var(--text-muted)',
-                            display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0
-                          }}>
-                            {hs.hoTen ? hs.hoTen[0].toUpperCase() : '?'}
-                          </div>
-                        )}
+                        <InstructorApplicationAvatar src={hs.anhDaiDienUrl} name={hs.hoTen} />
                         <span style={{ ...ellipsisStyle, fontWeight: 600, color: 'var(--text-dark)' }} title={hs.hoTen}>
                           {hs.hoTen}
                         </span>
@@ -403,9 +471,9 @@ export default function DuyetGiangVien() {
                   </div>
                   <div className="col-12">
                     <p><b>Ảnh đại diện:</b></p>
-                    {chiTiet.anhDaiDienUrl ? (
-                      <img src={`${baseUrl}${chiTiet.anhDaiDienUrl}`} alt="Avatar" style={{ maxWidth: 120, borderRadius: 8 }} />
-                    ) : <span className="text-muted">Không có</span>}
+                    <div className="lecturer-review-detail-avatar">
+                      <InstructorApplicationAvatar src={chiTiet.anhDaiDienUrl} name={chiTiet.hoTen} />
+                    </div>
                   </div>
                   <div className="col-12 mt-4">
                     <div className="d-flex align-items-center mb-3">

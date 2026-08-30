@@ -188,7 +188,7 @@ const DangNhap: React.FC = () => {
     };
 
     return (
-        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID} locale="vi">
             <div className="min-vh-100 d-flex align-items-center justify-content-center py-5" 
                 style={{ 
                     backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/img/carousel-1.jpg")',
@@ -264,7 +264,7 @@ const DangNhap: React.FC = () => {
 
                                         {!showCaptcha && (
                                             <>
-                                                <div className="col-12 my-3 text-center position-relative">
+                                                <div className="col-12 text-center position-relative">
                                                     <hr />
                                                     <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted">Hoặc đăng nhập với</span>
                                                 </div>
@@ -294,6 +294,8 @@ const DangNhap: React.FC = () => {
                                                             }}
                                                             ux_mode="popup"
                                                             theme="outline"
+                                                            text="signin_with"
+                                                            size="large"
                                                             width="560"
                                                         />
                                                     </div>

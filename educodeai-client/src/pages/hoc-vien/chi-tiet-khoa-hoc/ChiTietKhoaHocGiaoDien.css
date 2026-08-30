@@ -115,6 +115,31 @@
   border: 2px solid #f69050;
 }
 
+.ctgd-instructor-avatar,
+.ctgd-instructor-avatar-large {
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ctgd-instructor-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f69050, #e97936);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.ctgd-instructor-avatar-fallback.ctgd-instructor-avatar {
+  font-size: 15px;
+}
+
+.ctgd-instructor-avatar-fallback.ctgd-instructor-avatar-large {
+  border: 3px solid #fff2e8;
+  font-size: 28px;
+}
+
 .ctgd-instructor-info-top {
   display: flex;
   flex-direction: column;
