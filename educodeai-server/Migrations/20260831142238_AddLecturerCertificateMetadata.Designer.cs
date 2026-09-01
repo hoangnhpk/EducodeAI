@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using educodeai_server.Data;
@@ -11,9 +12,11 @@ using educodeai_server.Data;
 namespace educodeai_server.Migrations
 {
     [DbContext(typeof(EduCodeAIDbContext))]
-    partial class EduCodeAIDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260831142238_AddLecturerCertificateMetadata")]
+    partial class AddLecturerCertificateMetadata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -38534,9 +38537,6 @@ namespace educodeai_server.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<bool>("HienThiCongKhai")
-                        .HasColumnType("boolean");
-
                     b.Property<long>("KichThuoc")
                         .HasColumnType("bigint");
 
@@ -40767,116 +40767,6 @@ namespace educodeai_server.Migrations
                     b.ToTable("WebhookLogs");
                 });
 
-            modelBuilder.Entity("educodeai_server.Models.YeuCauChungChiGiangVienModel", b =>
-                {
-                    b.Property<long>("MaYeuCauChungChi")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("MaYeuCauChungChi"));
-
-                    b.Property<Guid>("ClientRequestId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("DonViCap")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<bool>("HienThiCongKhai")
-                        .HasColumnType("boolean");
-
-                    b.Property<long>("KichThuoc")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("LyDoXuLy")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("MaChungChi")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<Guid>("MaDotGui")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("MaGiangVien")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("MaQuanTriVienDuyet")
-                        .HasColumnType("integer");
-
-                    b.Property<DateOnly?>("NgayCap")
-                        .HasColumnType("date");
-
-                    b.Property<DateTime>("NgayCapNhat")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("NgayDuyet")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateOnly?>("NgayHetHan")
-                        .HasColumnType("date");
-
-                    b.Property<DateTime>("NgayTao")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("PhienBan")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Sha256")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("StorageKey")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("TenChungChi")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("TenFileGoc")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("TrangThai")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("UrlXacMinh")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("MaYeuCauChungChi");
-
-                    b.HasIndex("MaDotGui");
-
-                    b.HasIndex("StorageKey")
-                        .IsUnique();
-
-                    b.HasIndex("MaGiangVien", "ClientRequestId")
-                        .IsUnique();
-
-                    b.HasIndex("TrangThai", "NgayTao");
-
-                    b.HasIndex("MaGiangVien", "TrangThai", "NgayDuyet");
-
-                    b.ToTable("YeuCauChungChiGiangViens", t =>
-                        {
-                            t.HasCheckConstraint("CK_YeuCauChungChiGiangViens_NgayHetHan", "\"NgayHetHan\" IS NULL OR \"NgayCap\" IS NULL OR \"NgayHetHan\" >= \"NgayCap\"");
-                        });
-                });
-
             modelBuilder.Entity("educodeai_server.Models.YeuCauRutTienGiangVienModel", b =>
                 {
                     b.Property<int>("MaYeuCauRutTien")
@@ -41614,17 +41504,6 @@ namespace educodeai_server.Migrations
                         .IsRequired();
 
                     b.Navigation("Chapter");
-                });
-
-            modelBuilder.Entity("educodeai_server.Models.YeuCauChungChiGiangVienModel", b =>
-                {
-                    b.HasOne("educodeai_server.Models.NguoiDungModel", "GiangVien")
-                        .WithMany()
-                        .HasForeignKey("MaGiangVien")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("GiangVien");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.YeuCauRutTienGiangVienModel", b =>

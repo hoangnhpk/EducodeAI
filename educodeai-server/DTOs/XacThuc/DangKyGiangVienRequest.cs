@@ -26,12 +26,15 @@ namespace educodeai_server.DTOs.XacThuc
         [Required]
         public string LinhVucGiangDay { get; set; } = string.Empty;
 
-        [Required]
-        public string TieuSu { get; set; } = string.Empty;
+        public string? TieuSu { get; set; }
 
         public string? LinkedInUrl { get; set; }
 
         public string? WebsiteUrl { get; set; }
+
+        public List<IFormFile> CvFiles { get; set; } = new();
+
+        public List<ChungChiUploadRequest> Certificates { get; set; } = new();
 
         [Required]
         public string LoaiGiayTo { get; set; } = "CCCD";

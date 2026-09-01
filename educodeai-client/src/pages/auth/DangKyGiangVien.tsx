@@ -6,6 +6,12 @@ import { authService } from '../../services/auth.service';
 import { DANH_MUC_NGAN_HANG_MAC_DINH } from '../../constants/danh-muc-ngan-hang-mac-dinh';
 import './DangKyGiangVien.css';
 import PasswordInput from '../../components/PasswordInput';
+import LecturerDocumentUpload, {
+  isLecturerDocumentError,
+  validateCertificateMetadata,
+  validateLecturerDocuments,
+  type LecturerCertificateUpload
+} from '../../components/LecturerDocumentUpload';
 import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
 
 type PaymentMethod = 'BANK' | 'PAYPAL' | 'PAYONEER';
@@ -31,9 +37,6 @@ type FormState = {
   matKhau: string;
   soDienThoai: string;
   linhVucGiangDay: string;
-  tieuSu: string;
-  linkedInUrl: string;
-  websiteUrl: string;
   soGiayTo: string;
   noiCap: string;
   nguyenQuan: string;
@@ -61,8 +64,8 @@ const FILE_ERROR = 'Chỉ chấp nhận file ảnh JPG, JPEG, PNG hoặc WEBP. K
 const DANG_KY_GIANG_VIEN_SESSION_KEY = 'educodeai:dang-ky-giang-vien:draft';
 const clearDangKyGiangVienDraft = () => sessionStorage.removeItem(DANG_KY_GIANG_VIEN_SESSION_KEY);
 const PERSISTED_FORM_KEYS: Array<keyof FormState> = [
-  'hoTen', 'email', 'taiKhoan', 'soDienThoai', 'linhVucGiangDay', 'tieuSu',
-  'linkedInUrl', 'websiteUrl', 'soGiayTo', 'noiCap', 'nguyenQuan',
+  'hoTen', 'email', 'taiKhoan', 'soDienThoai', 'linhVucGiangDay',
+  'soGiayTo', 'noiCap', 'nguyenQuan',
   'tenNganHang', 'soTaiKhoanNhanTien', 'tenChuTaiKhoan', 'maSoThue', 'loaiDoiTuongThue'
 ];
 
@@ -106,9 +109,6 @@ export default function DangKyGiangVien() {
     matKhau: '',
     soDienThoai: '',
     linhVucGiangDay: '',
-    tieuSu: '',
-    linkedInUrl: '',
-    websiteUrl: '',
     soGiayTo: '',
     noiCap: '',
     nguyenQuan: '',
@@ -124,6 +124,8 @@ export default function DangKyGiangVien() {
     anhGiayToMatTruoc: null as File | null,
     anhGiayToMatSau: null as File | null
   });
+  const [cvFiles, setCvFiles] = useState<File[]>([]);
+  const [certificates, setCertificates] = useState<LecturerCertificateUpload[]>([]);
 
   useEffect(() => {
     try {
@@ -309,7 +311,7 @@ export default function DangKyGiangVien() {
     setVerification((prev) => ({ ...prev, bankStatus: 'idle', bankInfo: null }));
   };
 
-  const validateStep1 = () => {
+  const validateStep1 = async () => {
     const nextErrors: Record<string, string> = {};
     const hoTen = form.hoTen.trim();
     const email = form.email.trim();
@@ -331,8 +333,10 @@ export default function DangKyGiangVien() {
     else if (!PASSWORD_REGEX.test(matKhau)) nextErrors.matKhau = 'Mật khẩu phải từ 8-50 ký tự và chứa ít nhất 1 chữ cái, 1 chữ số.';
 
     if (!form.linhVucGiangDay.trim()) nextErrors.linhVucGiangDay = 'Vui lòng chọn hoặc nhập lĩnh vực giảng dạy.';
-    if (!form.tieuSu.trim()) nextErrors.tieuSu = 'Vui lòng nhập tiểu sử ngắn.';
-    else if (form.tieuSu.trim().length < 30) nextErrors.tieuSu = 'Tiểu sử cần ít nhất 30 ký tự.';
+
+    const documentError = await validateLecturerDocuments(cvFiles, certificates.map((item) => item.file));
+    const certificateError = validateCertificateMetadata(certificates);
+    if (documentError || certificateError) nextErrors.taiLieuChuyenMon = documentError || certificateError || '';
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -578,8 +582,8 @@ export default function DangKyGiangVien() {
     Swal.fire('Đã xác nhận', 'Thông tin ngân hàng/STK đã được ghi nhận để admin đối chiếu khi duyệt hồ sơ.', 'success');
   };
 
-  const goNext = () => {
-    if (step === 1 && validateStep1()) {
+  const goNext = async () => {
+    if (step === 1 && await validateStep1()) {
       setStep(2);
       return;
     }
@@ -589,7 +593,7 @@ export default function DangKyGiangVien() {
   };
 
   const handleSubmit = async () => {
-    const ok1 = validateStep1();
+    const ok1 = await validateStep1();
     const ok2 = validateStep2();
     const ok3 = validateStep3();
     if (!ok1 || !ok2 || !ok3) {
@@ -606,9 +610,7 @@ export default function DangKyGiangVien() {
     fd.append('MatKhau', form.matKhau);
     fd.append('SoDienThoai', form.soDienThoai);
     fd.append('LinhVucGiangDay', form.linhVucGiangDay);
-    fd.append('TieuSu', form.tieuSu);
-    fd.append('LinkedInUrl', form.linkedInUrl);
-    fd.append('WebsiteUrl', form.websiteUrl);
+    fd.append('TieuSu', '');
     fd.append('LoaiGiayTo', docType === 'cccd' ? 'CCCD' : 'Passport');
     fd.append('SoGiayTo', form.soGiayTo);
     fd.append('NoiCap', form.noiCap.trim());
@@ -625,6 +627,19 @@ export default function DangKyGiangVien() {
     if (files.anhDaiDien) fd.append('AnhDaiDien', files.anhDaiDien);
     if (files.anhGiayToMatTruoc) fd.append('AnhGiayToMatTruoc', files.anhGiayToMatTruoc);
     if (files.anhGiayToMatSau) fd.append('AnhGiayToMatSau', files.anhGiayToMatSau);
+    cvFiles.forEach((file) => fd.append('CvFiles', file));
+    certificates.forEach((certificate, index) => {
+      const prefix = `Certificates[${index}]`;
+      fd.append(`${prefix}.ClientId`, certificate.clientId);
+      fd.append(`${prefix}.File`, certificate.file);
+      fd.append(`${prefix}.TenChungChi`, certificate.tenChungChi.trim());
+      if (certificate.donViCap.trim()) fd.append(`${prefix}.DonViCap`, certificate.donViCap.trim());
+      if (certificate.ngayCap) fd.append(`${prefix}.NgayCap`, certificate.ngayCap);
+      if (certificate.ngayHetHan) fd.append(`${prefix}.NgayHetHan`, certificate.ngayHetHan);
+      if (certificate.maChungChi.trim()) fd.append(`${prefix}.MaChungChi`, certificate.maChungChi.trim());
+      if (certificate.urlXacMinh.trim()) fd.append(`${prefix}.UrlXacMinh`, certificate.urlXacMinh.trim());
+      fd.append(`${prefix}.RelativePath`, certificate.relativePath);
+    });
 
     try {
       setIsSubmitting(true);
@@ -633,7 +648,14 @@ export default function DangKyGiangVien() {
       clearDangKyGiangVienDraft();
       navigate('/dang-nhap');
     } catch (error: any) {
-      Swal.fire('Lỗi', error?.response?.data?.message || 'Không thể gửi hồ sơ.', 'error');
+      const message = error?.response?.data?.message || 'Không thể gửi hồ sơ.';
+      if (isLecturerDocumentError(message)) {
+        setErrors((prev) => ({ ...prev, taiLieuChuyenMon: message }));
+        setStep(1);
+        await Swal.fire('Tài liệu không hợp lệ', `${message} Vui lòng chọn lại file tại bước Hồ sơ chuyên môn.`, 'error');
+      } else {
+        await Swal.fire('Lỗi', message, 'error');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -758,9 +780,26 @@ export default function DangKyGiangVien() {
               <div className="row g-3">
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Họ và tên</label><input className={`dkgv-form-control ${errors.hoTen ? 'is-invalid' : ''}`} placeholder="Nhập họ và tên đầy đủ" maxLength={150} value={form.hoTen} onChange={(e) => setField('hoTen', e.target.value)} />{errors.hoTen && <div className="text-danger small mt-1">{errors.hoTen}</div>}</div></div>
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Lĩnh vực giảng dạy chính</label><select className={`dkgv-form-control ${errors.linhVucGiangDay ? 'is-invalid' : ''}`} value={form.linhVucGiangDay} onChange={(e) => setField('linhVucGiangDay', e.target.value)}><option value="">Chọn lĩnh vực</option><option value="Lập trình Web">Lập trình Web</option><option value="Mobile">Mobile</option><option value="Data / AI">Data / AI</option><option value="DevOps / Cloud">DevOps / Cloud</option><option value="UI/UX Design">UI/UX Design</option><option value="Kiểm thử phần mềm">Kiểm thử phần mềm</option></select>{errors.linhVucGiangDay && <div className="text-danger small mt-1">{errors.linhVucGiangDay}</div>}</div></div>
-                <div className="col-12"><div className="dkgv-form-group"><label className="dkgv-form-label">Tiểu sử ngắn</label><textarea className={`dkgv-form-control ${errors.tieuSu ? 'is-invalid' : ''}`} rows={5} maxLength={500} placeholder="Giới thiệu ngắn về kinh nghiệm và chuyên môn của bạn..." value={form.tieuSu} onChange={(e) => setField('tieuSu', e.target.value)} /><div className="dkgv-char-count">{form.tieuSu.length} / 500 ký tự</div>{errors.tieuSu && <div className="text-danger small mt-1">{errors.tieuSu}</div>}</div></div>
-                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label"><i className="bi bi-link-45deg me-2" />Link LinkedIn</label><input className="dkgv-form-control" placeholder="https://linkedin.com/in/username" maxLength={255} value={form.linkedInUrl} onChange={(e) => setField('linkedInUrl', e.target.value)} /></div></div>
-                <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label"><i className="bi bi-globe2 me-2" />Portfolio / Website</label><input className="dkgv-form-control" placeholder="https://yourwebsite.com" maxLength={255} value={form.websiteUrl} onChange={(e) => setField('websiteUrl', e.target.value)} /></div></div>
+                <div className="col-12">
+                  <div className="dkgv-section-title"><i className="bi bi-award" /><span>CV và chứng chỉ chuyên môn</span></div>
+                  <LecturerDocumentUpload
+                    cvFiles={cvFiles}
+                    certificates={certificates}
+                    onCvFilesChange={(nextFiles) => {
+                      setCvFiles(nextFiles);
+                      setErrors((prev) => ({ ...prev, taiLieuChuyenMon: '' }));
+                    }}
+                    onCertificatesChange={(nextCertificates) => {
+                      setCertificates(nextCertificates);
+                      setErrors((prev) => ({ ...prev, taiLieuChuyenMon: '' }));
+                    }}
+                    onError={(message) => {
+                      setErrors((prev) => ({ ...prev, taiLieuChuyenMon: message }));
+                      void Swal.fire('Tài liệu không hợp lệ', message, 'warning');
+                    }}
+                  />
+                  {errors.taiLieuChuyenMon && <div className="text-danger small mt-2" role="alert">{errors.taiLieuChuyenMon}</div>}
+                </div>
                 <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tài khoản</label><input className={`dkgv-form-control ${errors.taiKhoan ? 'is-invalid' : ''}`} placeholder="Tên tài khoản đăng nhập" maxLength={50} value={form.taiKhoan} onChange={(e) => setField('taiKhoan', e.target.value.replace(/\s/g, ''))} />{errors.taiKhoan && <div className="text-danger small mt-1">{errors.taiKhoan}</div>}</div></div>
                 <div className="col-md-6"><PasswordInput id="giang-vien-mat-khau" label="Mật khẩu" autoComplete="new-password" containerClassName="dkgv-form-group" inputClassName={`dkgv-form-control ${errors.matKhau ? 'is-invalid' : ''}`} placeholder="Mật khẩu tối thiểu 8 ký tự" maxLength={50} value={form.matKhau} onChange={(e) => setField('matKhau', e.target.value)} error={errors.matKhau} /></div>
                 <div className="col-md-6">

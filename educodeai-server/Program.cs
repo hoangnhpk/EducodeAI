@@ -200,6 +200,7 @@ builder.Services.AddDataProtection();
 // Dịch vụ Xác thực và Captcha mới
 builder.Services.AddScoped<ICaptchaService, CaptchaService>();
 builder.Services.AddScoped<IXacThucService, XacThucService>();
+builder.Services.AddScoped<IHoSoGiangVienTaiLieuStorage, HoSoGiangVienTaiLieuStorage>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 // Cache trạng thái user/session cho hot-path middleware (G.1); chạy trên IDistributedCache (Redis/memory fallback).
 builder.Services.AddScoped<ISessionStateCache, SessionStateCache>();
@@ -254,6 +255,7 @@ builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocSer
 builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
 builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
 builder.Services.AddScoped<IQuanLyHoSoGiangVienService, QuanLyHoSoGiangVienService>();
+builder.Services.AddScoped<IGiangVienChungChiService, GiangVienChungChiService>();
 builder.Services.AddScoped<ILoTrinhAIGvService, LoTrinhAIGvService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();

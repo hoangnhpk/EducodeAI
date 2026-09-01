@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import { Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import ReCAPTCHA from "react-google-recaptcha";
+import { markLoginSucceeded } from '../../utils/authLifecycle';
 import { setAuthTokens } from '../../utils/authStorage';
 
 import { FaArrowLeft } from 'react-icons/fa';
@@ -38,6 +39,7 @@ const QuenMatKhau: React.FC = () => {
             return;
         }
 
+        markLoginSucceeded();
         setAuthTokens(res.token);
         // Refresh token do backend đặt trong cookie HttpOnly; frontend không lưu/đọc.
         localStorage.setItem('user_info', JSON.stringify(res.user));
