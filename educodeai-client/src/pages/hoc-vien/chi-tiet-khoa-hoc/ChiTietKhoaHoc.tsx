@@ -363,6 +363,39 @@ const ChiTietKhoaHoc = () => {
             <div className="ctgd-instructor-bio">
               Luôn đồng hành cùng học viên trong hành trình chinh phục kiến thức công nghệ.
             </div>
+            {khoaHoc.giangVien?.chungChi?.length ? (
+              <div className="ctgd-instructor-certificates">
+                <div className="ctgd-instructor-certificates-title">
+                  <i className="fas fa-shield-alt" aria-hidden="true"></i>
+                  Chứng chỉ giảng viên
+                </div>
+                <div className="ctgd-instructor-certificates-list">
+                  {khoaHoc.giangVien.chungChi.map((chungChi) => (
+                    <article className="ctgd-instructor-certificate" key={chungChi.maChungChi}>
+                      <i className="fas fa-award" aria-hidden="true"></i>
+                      <div className="ctgd-instructor-certificate-content">
+                        <h3>{chungChi.tenChungChi}</h3>
+                        {chungChi.donViCap && <p>Đơn vị cấp: {chungChi.donViCap}</p>}
+                        {(chungChi.ngayCap || chungChi.ngayHetHan) && (
+                          <p>
+                            {chungChi.ngayCap && <>Cấp ngày {new Date(`${chungChi.ngayCap}T00:00:00`).toLocaleDateString('vi-VN')}</>}
+                            {chungChi.ngayCap && chungChi.ngayHetHan && <> · </>}
+                            {chungChi.ngayHetHan && <>Hết hạn {new Date(`${chungChi.ngayHetHan}T00:00:00`).toLocaleDateString('vi-VN')}</>}
+                          </p>
+                        )}
+                        {chungChi.maChungChiChe && <p>Mã chứng chỉ: {chungChi.maChungChiChe}</p>}
+                        <span>Tài liệu đã được EduCodeAI duyệt.</span>
+                        {chungChi.urlXacMinh && (
+                          <a href={chungChi.urlXacMinh} target="_blank" rel="noopener noreferrer">
+                            Xác minh chứng chỉ <i className="fas fa-external-link-alt" aria-hidden="true"></i>
+                          </a>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </section>
 
           {/* REVIEWS */}

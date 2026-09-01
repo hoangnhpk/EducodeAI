@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using educodeai_server.Data;
@@ -11,9 +12,11 @@ using educodeai_server.Data;
 namespace educodeai_server.Migrations
 {
     [DbContext(typeof(EduCodeAIDbContext))]
-    partial class EduCodeAIDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260831180950_AddIndependentLecturerCertificateRequests")]
+    partial class AddIndependentLecturerCertificateRequests
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40801,9 +40804,6 @@ namespace educodeai_server.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<Guid>("MaDotGui")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("MaGiangVien")
                         .HasColumnType("integer");
 
@@ -40824,9 +40824,6 @@ namespace educodeai_server.Migrations
 
                     b.Property<DateTime>("NgayTao")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("PhienBan")
-                        .HasColumnType("bigint");
 
                     b.Property<string>("Sha256")
                         .IsRequired()
@@ -40858,8 +40855,6 @@ namespace educodeai_server.Migrations
                         .HasColumnType("character varying(500)");
 
                     b.HasKey("MaYeuCauChungChi");
-
-                    b.HasIndex("MaDotGui");
 
                     b.HasIndex("StorageKey")
                         .IsUnique();

@@ -4,6 +4,7 @@ import { useModalA11y } from "@/hooks/useModalA11y";
 import { HoSoGiangVienAdminService } from "@/services/ho-so-giang-vien-admin.service";
 import type { HoSoGiangVienListItem, HoSoGiangVienDetail } from "@/services/ho-so-giang-vien-admin.service";
 import { getAnhDaiDienUrl, layChuCaiAvatar, layMauAvatar } from "@/utils/avatarHelper";
+import DuyetChungChiTab from "./DuyetChungChiTab";
 import "@/assets/styles/AdminTableControls.css";
 import "./DuyetGiangVien.css";
 
@@ -51,6 +52,12 @@ const chuanHoaTuKhoa = (value?: string | null) => (value ?? "")
   .replace(/đ/g, "d")
   .trim();
 
+const formatFileSize = (bytes: number) => bytes < 1024 * 1024
+  ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+  : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+const safeDownloadName = (name: string) => name.replace(/[\\/:*?"<>|]/g, "_") || "tai-lieu";
+
 const modalWarningSwal = {
   icon: "warning" as const,
   customClass: {
@@ -91,6 +98,7 @@ const CCCD_FIELD_LABELS: Record<string, string> = {
 
 
 export default function DuyetGiangVien() {
+  const [activeTab, setActiveTab] = useState<"accounts" | "certificates">("accounts");
   const [dangTai, setDangTai] = useState(true);
   const [trangThaiLoc, setTrangThaiLoc] = useState("");
   const [tuKhoa, setTuKhoa] = useState("");
@@ -104,6 +112,7 @@ export default function DuyetGiangVien() {
   const [noiDungBoSung, setNoiDungBoSung] = useState("");
   const [maHoSoTuChoi, setMaHoSoTuChoi] = useState<number | null>(null);
   const [lyDoTuChoi, setLyDoTuChoi] = useState("");
+  const [maHoSoDangDuyet, setMaHoSoDangDuyet] = useState<number | null>(null);
 
   const chiTietModalRef = useRef<HTMLDivElement>(null);
   const boSungModalRef = useRef<HTMLDivElement>(null);
@@ -177,6 +186,23 @@ export default function DuyetGiangVien() {
     }
   };
 
+  const taiTaiLieu = async (maTaiLieu: number, tenFile: string) => {
+    if (!chiTiet) return;
+    try {
+      const blob = await HoSoGiangVienAdminService.taiTaiLieu(chiTiet.maHoSoDangKyGiangVien, maTaiLieu);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = safeDownloadName(tenFile);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      Swal.fire("Lỗi", error?.response?.data?.message ?? "Không tải được tài liệu.", "error");
+    }
+  };
+
   const xacNhanDuyet = async (maHoSo: number) => {
     const confirm = await Swal.fire({
       title: "Duyệt hồ sơ?",
@@ -185,17 +211,23 @@ export default function DuyetGiangVien() {
       showCancelButton: true,
       confirmButtonText: "Duyệt",
       cancelButtonText: "Huỷ",
-      confirmButtonColor: "var(--success)"
+      confirmButtonColor: "var(--success)",
+      customClass: {
+        container: "qlnv-swal-over-modal"
+      }
     });
     if (!confirm.isConfirmed) return;
 
     try {
-      await HoSoGiangVienAdminService.duyetHoSo(maHoSo);
-      Swal.fire("Thành công", "Đã duyệt hồ sơ và tạo tài khoản giảng viên.", "success");
+      setMaHoSoDangDuyet(maHoSo);
+      const result = await HoSoGiangVienAdminService.duyetHoSo(maHoSo);
       setMoModal(false);
-      void taiDanhSach();
+      await taiDanhSach();
+      await Swal.fire("Thành công", result?.message ?? "Đã duyệt hồ sơ và tạo tài khoản giảng viên.", "success");
     } catch (error: any) {
-      Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể duyệt hồ sơ.", "error");
+      await Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể duyệt hồ sơ.", "error");
+    } finally {
+      setMaHoSoDangDuyet(null);
     }
   };
 
@@ -270,9 +302,19 @@ export default function DuyetGiangVien() {
   return (
     <div className="qtv-page-content lecturer-review-page">
       <div className="lecturer-review-header">
-        <h3 className="fw-bold mb-0">Duyệt hồ sơ đăng ký giảng viên</h3>
+        <h3 className="fw-bold mb-0">Duyệt giảng viên</h3>
       </div>
 
+      <div className="lecturer-review-tabs" role="tablist" aria-label="Loại yêu cầu cần duyệt">
+        <button type="button" role="tab" aria-selected={activeTab === "accounts"} className={`lecturer-review-tab ${activeTab === "accounts" ? "active" : ""}`} onClick={() => setActiveTab("accounts")}>
+          <i className="bi bi-person-check" aria-hidden="true" /> Tài khoản
+        </button>
+        <button type="button" role="tab" aria-selected={activeTab === "certificates"} className={`lecturer-review-tab ${activeTab === "certificates" ? "active" : ""}`} onClick={() => setActiveTab("certificates")}>
+          <i className="bi bi-award" aria-hidden="true" /> Chứng chỉ
+        </button>
+      </div>
+
+      {activeTab === "certificates" ? <DuyetChungChiTab /> : <>
       <div className="lecturer-review-card">
         <div className="lecturer-review-toolbar">
           <div className="lecturer-review-search">
@@ -369,9 +411,15 @@ export default function DuyetGiangVien() {
                         </button>
                         {hs.trangThaiHoSo === "ChoDuyet" && (
                           <>
-                            <button className="btn-action btn-unlock" title="Duyệt hồ sơ" aria-label={`Duyệt hồ sơ ${hs.hoTen}`} onClick={() => xacNhanDuyet(hs.maHoSoDangKyGiangVien)}>
-                              <i className="bi bi-check-lg" aria-hidden="true"></i>
-                              <span>Duyệt</span>
+                            <button
+                              className="btn-action btn-unlock"
+                              title="Duyệt hồ sơ"
+                              aria-label={`Duyệt hồ sơ ${hs.hoTen}`}
+                              disabled={maHoSoDangDuyet !== null}
+                              onClick={() => xacNhanDuyet(hs.maHoSoDangKyGiangVien)}
+                            >
+                              <i className={`bi ${maHoSoDangDuyet === hs.maHoSoDangKyGiangVien ? "bi-arrow-repeat lecturer-review-spin" : "bi-check-lg"}`} aria-hidden="true"></i>
+                              <span>{maHoSoDangDuyet === hs.maHoSoDangKyGiangVien ? "Đang duyệt" : "Duyệt"}</span>
                             </button>
                             <button className="btn-action btn-lock" title="Yêu cầu bổ sung" aria-label={`Yêu cầu bổ sung hồ sơ ${hs.hoTen}`} onClick={() => xacNhanBoSung(hs.maHoSoDangKyGiangVien)}>
                               <i className="bi bi-pencil" aria-hidden="true"></i>
@@ -476,6 +524,44 @@ export default function DuyetGiangVien() {
                     </div>
                   </div>
                   <div className="col-12 mt-4">
+                    <h6 className="mb-3 fw-bold">CV và chứng chỉ chuyên môn</h6>
+                    {chiTiet.taiLieus?.length ? (
+                      <div className="lecturer-document-review-list">
+                        {chiTiet.taiLieus.map((taiLieu) => (
+                          <div className="lecturer-document-review-item" key={taiLieu.maTaiLieu}>
+                            <div className="lecturer-document-review-icon">
+                              <i className={`bi ${taiLieu.loaiTaiLieu === "CV" ? "bi-file-earmark-person" : "bi-award"}`} aria-hidden="true" />
+                            </div>
+                            <div className="lecturer-document-review-info">
+                              <strong>{taiLieu.loaiTaiLieu === "ChungChi" ? (taiLieu.tenChungChi || "Chứng chỉ chuyên môn (dữ liệu cũ)") : taiLieu.tenFile}</strong>
+                              <span>
+                                {taiLieu.loaiTaiLieu === "CV" ? "CV" : "Chứng chỉ"} · {formatFileSize(taiLieu.kichThuoc)} · {hienThiTrangThai(taiLieu.trangThai).text}
+                              </span>
+                              {taiLieu.loaiTaiLieu === "ChungChi" && (
+                                <div className="lecturer-certificate-review-metadata">
+                                  <span><b>File:</b> {taiLieu.tenFile}</span>
+                                  {taiLieu.donViCap && <span><b>Đơn vị cấp:</b> {taiLieu.donViCap}</span>}
+                                  {(taiLieu.ngayCapChungChi || taiLieu.ngayHetHanChungChi) && (
+                                    <span><b>Hiệu lực:</b> {taiLieu.ngayCapChungChi ? new Date(`${taiLieu.ngayCapChungChi}T00:00:00`).toLocaleDateString("vi-VN") : "—"} đến {taiLieu.ngayHetHanChungChi ? new Date(`${taiLieu.ngayHetHanChungChi}T00:00:00`).toLocaleDateString("vi-VN") : "không thời hạn"}</span>
+                                  )}
+                                  {taiLieu.maChungChi && <span><b>Mã chứng chỉ:</b> {taiLieu.maChungChi}</span>}
+                                  {taiLieu.urlXacMinh && <a href={taiLieu.urlXacMinh} target="_blank" rel="noopener noreferrer">Mở trang xác minh</a>}
+                                </div>
+                              )}
+                              {taiLieu.lyDoTuChoi && <small>Lý do: {taiLieu.lyDoTuChoi}</small>}
+                            </div>
+                            <button type="button" className="btn-action btn-edit" onClick={() => void taiTaiLieu(taiLieu.maTaiLieu, taiLieu.tenFile)}>
+                              <i className="bi bi-download" aria-hidden="true" />
+                              <span>Tải xuống</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="alert alert-warning mb-0">Hồ sơ chưa có CV hoặc chứng chỉ chuyên môn.</div>
+                    )}
+                  </div>
+                  <div className="col-12 mt-4">
                     <div className="d-flex align-items-center mb-3">
                       <h6 className="mb-0 me-2 fw-bold">Giấy tờ tùy thân</h6>
                       <button 
@@ -534,8 +620,13 @@ export default function DuyetGiangVien() {
             <div className="modal-actions">
                 {chiTiet.trangThaiHoSo === "ChoDuyet" && (
                   <>
-                    <button className="btn-save" onClick={() => xacNhanDuyet(chiTiet.maHoSoDangKyGiangVien)}>
-                      <i className="bi bi-check-lg" /> Duyệt & tạo tài khoản
+                    <button
+                      className="btn-save"
+                      disabled={maHoSoDangDuyet !== null}
+                      onClick={() => xacNhanDuyet(chiTiet.maHoSoDangKyGiangVien)}
+                    >
+                      <i className={`bi ${maHoSoDangDuyet === chiTiet.maHoSoDangKyGiangVien ? "bi-arrow-repeat lecturer-review-spin" : "bi-check-lg"}`} />
+                      {maHoSoDangDuyet === chiTiet.maHoSoDangKyGiangVien ? " Đang duyệt..." : " Duyệt & tạo tài khoản"}
                     </button>
                     <button className="btn-cancel" onClick={() => xacNhanBoSung(chiTiet.maHoSoDangKyGiangVien)}>
                       <i className="bi bi-pencil" /> Yêu cầu bổ sung
@@ -554,6 +645,7 @@ export default function DuyetGiangVien() {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }

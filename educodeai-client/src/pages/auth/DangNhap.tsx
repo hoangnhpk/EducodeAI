@@ -6,6 +6,7 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { getDeviceInfo } from '../../utils/deviceHelper';
 import { FaArrowLeft } from 'react-icons/fa';
 import ReCAPTCHA from "react-google-recaptcha";
+import { markLoginSucceeded } from '../../utils/authLifecycle';
 import { setAuthTokens } from '../../utils/authStorage';
 import { classifyLoginResponse, type LoginUser } from './loginFlow';
 import PasswordInput from '../../components/PasswordInput';
@@ -52,6 +53,7 @@ const DangNhap: React.FC = () => {
     };
 
     const handleLoginSuccess = async (token: string, user: LoginUser) => {
+        markLoginSucceeded();
         setAuthTokens(token);
         localStorage.setItem('user_info', JSON.stringify(user));
         redirectByUserRole(user);

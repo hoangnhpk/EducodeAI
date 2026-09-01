@@ -209,6 +209,7 @@ namespace educodeai_server.Controllers
 
         [HttpPost("dang-ky-giang-vien")]
         [Consumes("multipart/form-data")]
+        [RequestFormLimits(MultipartBodyLengthLimit = 60 * 1024 * 1024)]
         public async Task<IActionResult> DangKyGiangVien([FromForm] DangKyGiangVienRequest request)
         {
             if (!ModelState.IsValid)
@@ -266,6 +267,7 @@ namespace educodeai_server.Controllers
         /// <summary>Giảng viên nộp lại hồ sơ bổ sung (public, xác thực bằng token từ email).</summary>
         [HttpPut("bo-sung-ho-so/{maHoSo}")]
         [Consumes("multipart/form-data")]
+        [RequestFormLimits(MultipartBodyLengthLimit = 60 * 1024 * 1024)]
         public async Task<IActionResult> BoSungHoSo(long maHoSo, [FromForm] BoSungHoSoRequest request)
         {
             if (!ModelState.IsValid)
