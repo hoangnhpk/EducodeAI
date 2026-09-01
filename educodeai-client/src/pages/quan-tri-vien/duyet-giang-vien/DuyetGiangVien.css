@@ -41,9 +41,18 @@
   margin-bottom: 16px;
 }
 
+.lecturer-review-card .certificate-review-toolbar {
+  align-items: end;
+}
+
+.lecturer-review-card .certificate-review-toolbar > :not(.certificate-date-filter) {
+  min-height: 40px;
+}
+
 .certificate-date-filter {
   display: grid;
   gap: 4px;
+  margin-bottom: 0;
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 650;
@@ -85,9 +94,20 @@
   color: var(--text-muted);
   font-size: 13px;
 }
-.certificate-pagination label { display: flex; align-items: center; gap: 7px; }
+.certificate-pagination label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+.certificate-pagination label select {
+  width: auto;
+  flex: 0 0 auto;
+}
+.certificate-pagination > span { white-space: nowrap; }
 .certificate-pagination select { min-height: 34px; }
-.certificate-pagination > div { display: flex; gap: 6px; }
+.certificate-pagination > div { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .certificate-pagination button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); color: var(--text-dark); cursor: pointer; }
 .certificate-pagination button:disabled { cursor: not-allowed; opacity: .45; }
 
@@ -220,6 +240,15 @@
   border-color: var(--danger);
   color: var(--danger);
   background: var(--danger-soft);
+}
+
+@media (min-width: 769px) {
+  .certificate-review-card .certificate-review-toolbar > .btn-action,
+  .certificate-review-card .certificate-review-toolbar > .lecturer-review-clear {
+    width: 80px;
+    box-sizing: border-box;
+    justify-self: start;
+  }
 }
 
 .lecturer-review-result-count {

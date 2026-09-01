@@ -352,12 +352,6 @@ const ChiTietKhoaHoc = () => {
               <div className="ctgd-instructor-details">
                 <h3 className="ctgd-instructor-name">{instructorName}</h3>
                 <div className="ctgd-instructor-headline">Giảng viên tại EducodeAI</div>
-                <div className="ctgd-instructor-stats">
-                  <div className="ctgd-instructor-stats-item">
-                    <i className="fas fa-star" style={{color: '#f69050'}}></i>
-                    <span>Giảng viên uy tín</span>
-                  </div>
-                </div>
               </div>
             </div>
             <div className="ctgd-instructor-bio">

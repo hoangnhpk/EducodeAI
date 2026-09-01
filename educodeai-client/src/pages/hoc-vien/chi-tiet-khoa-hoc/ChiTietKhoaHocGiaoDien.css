@@ -249,6 +249,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 32px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -261,6 +262,8 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  min-width: 0;
+  flex: 1;
 }
 
 .ctgd-chapter-icon {
@@ -276,6 +279,8 @@
 }
 
 .ctgd-chapter-meta {
+  flex-shrink: 0;
+  white-space: nowrap;
   font-size: 14px;
   color: #65676b;
 }
