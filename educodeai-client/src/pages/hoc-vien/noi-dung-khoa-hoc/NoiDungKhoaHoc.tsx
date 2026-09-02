@@ -770,6 +770,7 @@ const NoiDungKhoaHoc = () => {
                 noiDungBaiHoc={baiHocHienTai.noiDung}
                 getCurrentVideoTime={() => videoRef.current?.getCurrentTime() ?? null}
                 isQuizMode={dangLamQuiz}
+                isNotebookOpen={hienSidebar}
             />
         </div>
     );

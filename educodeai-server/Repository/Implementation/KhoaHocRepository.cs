@@ -522,8 +522,12 @@ namespace educodeai_server.Repository.Implementation
             var ghiChu = await _context.GhiChuAIs.FindAsync(id);
             if (ghiChu == null) return false;
 
+            if (ghiChu.NoiDung == noiDung) return true;
+
             ghiChu.NoiDung = noiDung;
-            return await _context.SaveChangesAsync() > 0;
+            ghiChu.NgayCapNhat = DateTime.Now;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> DeleteGhiChuAI(int id)
@@ -532,7 +536,8 @@ namespace educodeai_server.Repository.Implementation
             if (ghiChu == null) return false;
 
             _context.GhiChuAIs.Remove(ghiChu);
-            return await _context.SaveChangesAsync() > 0;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<List<DanhGiaModel>> LayDanhSachTheoKhoaHocAsync(int maKhoaHoc, int maNguoiDung)

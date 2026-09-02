@@ -12,6 +12,7 @@ interface ChatBotProps {
     noiDungBaiHoc?: string | null;
     getCurrentVideoTime?: () => number | null;
     isQuizMode?: boolean; // THÊM PROP NÀY: Xác định xem có đang làm quiz hay không
+    isNotebookOpen?: boolean; // Trạng thái mở sổ tay để dịch chuyển chatbot không che khuất sổ tay
 }
 
 interface TinNhan {
@@ -19,7 +20,7 @@ interface TinNhan {
     NoiDung: string;
 }
 
-export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDungBaiHoc, getCurrentVideoTime, isQuizMode = false }) => {
+export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDungBaiHoc, getCurrentVideoTime, isQuizMode = false, isNotebookOpen = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [tinNhanList, setTinNhanList] = useState<TinNhan[]>([]);
@@ -29,7 +30,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
 
     const [savedContents, setSavedContents] = useState<string[]>([]);
 
-    const MAX_CHARS = 500; 
+    const MAX_CHARS = 500;
 
     // 1. Khởi tạo & Lấy lịch sử chat
     useEffect(() => {
@@ -127,6 +128,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                 setSavedContents([]);
                 localStorage.setItem('educodeai_chat_history', JSON.stringify(clearData));
                 localStorage.removeItem('educodeai_saved_indices');
+                window.dispatchEvent(new Event('storage_updated'));
                 Swal.fire({ icon: 'success', text: 'Đã xóa lịch sử', timer: 1500, showConfirmButton: false });
             }
         });
@@ -150,6 +152,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
             const updatedSaved = [...savedContents, noiDung];
             setSavedContents(updatedSaved);
             localStorage.setItem('educodeai_saved_indices', JSON.stringify(updatedSaved));
+            window.dispatchEvent(new Event('storage_updated'));
 
             Swal.fire({ icon: 'success', text: "Đã lưu vào Sổ tay bài học!", timer: 1500, showConfirmButton: false });
         } catch (error) {
@@ -158,9 +161,11 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
         }
     };
 
+    const shiftClass = isNotebookOpen ? 'shift-left' : '';
+
     return (
         <>
-            <div className={`cp-chatbot-window ${!isOpen ? 'hidden' : ''} ${isExpanded ? 'expanded' : ''}`}>
+            <div className={`cp-chatbot-window ${!isOpen ? 'hidden' : ''} ${isExpanded ? 'expanded' : ''} ${shiftClass}`}>
                 {/* Header */}
                 <div className="cp-chatbot-header">
                     <div>
@@ -244,17 +249,17 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            disabled={isLoading || isQuizMode} 
+                            disabled={isLoading || isQuizMode}
                             maxLength={MAX_CHARS}
-                            style={{ 
-                                width: '100%', 
-                                paddingRight: '60px', 
+                            style={{
+                                width: '100%',
+                                paddingRight: '60px',
                                 boxSizing: 'border-box',
                                 backgroundColor: isQuizMode ? '#f1f5f9' : '#fff', // Đổi màu nền xám đi khi bị khóa
                                 cursor: isQuizMode ? 'not-allowed' : 'text'
-                            }} 
+                            }}
                         />
-                        
+
                         {/* Ẩn bộ đếm số khi đang làm Quiz */}
                         {!isQuizMode && (
                             <div style={{
@@ -267,8 +272,8 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                         )}
                     </div>
 
-                    <button 
-                        onClick={handleSendMessage} 
+                    <button
+                        onClick={handleSendMessage}
                         disabled={isLoading || isQuizMode || !inputValue.trim() || inputValue.length > MAX_CHARS}
                         style={{ flexShrink: 0, cursor: isQuizMode ? 'not-allowed' : 'pointer', backgroundColor: isQuizMode ? '#cbd5e1' : undefined }}
                     >
@@ -278,7 +283,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ maBaiHoc, tieuDeBaiHoc, noiDun
                 </div>
             </div>
 
-            <button className="cp-chatbot-toggle" onClick={() => setIsOpen(!isOpen)}>
+            <button className={`cp-chatbot-toggle ${shiftClass} ${isOpen ? 'open-hidden' : ''}`} onClick={() => setIsOpen(!isOpen)}>
                 {isOpen ? <i className="fas fa-times"></i> : <i className="fas fa-comment-dots"></i>}
             </button>
         </>
