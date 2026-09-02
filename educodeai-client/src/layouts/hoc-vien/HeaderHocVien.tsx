@@ -36,7 +36,7 @@ export default function HeaderHocVien() {
         className="navbar-brand d-flex align-items-center px-4 px-lg-5"
       >
         <p className="m-0 fw-bold" style={{ fontSize: 25 }}>
-          <img src="/img/icon.png" alt="" height={50} />
+          <img src="/img/logo.png" alt="" height={50} />
           EDUCODE<span style={{ color: "#fb873f" }}>AI</span>
         </p>
       </Link>

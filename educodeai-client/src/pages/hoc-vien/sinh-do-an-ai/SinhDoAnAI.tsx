@@ -574,19 +574,6 @@ const SinhDoAnAI: React.FC = () => {
 
                 {/* ── HEADER ── */}
                 <header className="sda-header">
-                    <div className="sda-header-brand">
-                        <div className="sda-brand-icon" aria-label="EduCode AI">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                                <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                                <polyline points="2 17 12 22 22 17" />
-                                <polyline points="2 12 12 17 22 12" />
-                            </svg>
-                        </div>
-                        <div>
-                            <span className="sda-brand-name">EduCode AI</span>
-                            <span className="sda-brand-sub">Project Generator</span>
-                        </div>
-                    </div>
                     <div className="sda-header-center">
                         <span className="sda-header-badge">
                             <span className="sda-live-dot" />
@@ -1357,15 +1344,12 @@ const SinhDoAnAI: React.FC = () => {
 
             /* ── HEADER ── */
             .sda-header { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; height: 64px; background: rgba(255,255,255,0.92); border-bottom: 1px solid var(--border-color, #e5e7eb); backdrop-filter: blur(20px); }
-            .sda-header-brand { display: flex; align-items: center; gap: 12px; }
-            .sda-brand-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #f69050, #e67e22); display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(246,144,80,0.35); flex-shrink: 0; }
-            .sda-brand-name { display: block; font-size: 15px; font-weight: 800; color: var(--text-main, #111827); }
-            .sda-brand-sub  { display: block; font-size: 10px; color: var(--text-muted, #6b7280); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 1px; }
-            .sda-header-center {}
+            /* Tách khỏi luồng flex để canh giữa theo cả header, không bị nhóm nút bên phải đẩy lệch */
+            .sda-header-center { position: absolute; left: 50%; transform: translateX(-50%); }
             .sda-header-badge { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted, #6b7280); background: rgba(246,144,80,0.06); border: 1px solid rgba(246,144,80,0.15); padding: 6px 14px; border-radius: 20px; }
             .sda-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; animation: livePulse 2s infinite; }
             @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-            .sda-header-right { display: flex; align-items: center; gap: 10px; }
+            .sda-header-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
             .sda-history-btn { position: relative; display: flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 8px; background: rgba(0,0,0,0.03); border: 1px solid var(--border-color, #e5e7eb); color: var(--text-muted, #6b7280); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
             .sda-history-btn:hover { background: rgba(246,144,80,0.06); color: var(--text-main, #111827); border-color: rgba(246,144,80,0.3); }
             .sda-history-count { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: #f69050; color: white; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg-main, #f9fafb); }
@@ -1382,6 +1366,8 @@ const SinhDoAnAI: React.FC = () => {
             /* ── MAIN LAYOUT ── */
             .sda-main { display: grid; grid-template-columns: 380px 1fr; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 0 28px 60px; position: relative; z-index: 1; align-items: start; }
             @media (max-width: 900px) { .sda-main { grid-template-columns: 1fr; } }
+            /* Dưới ngưỡng này badge canh giữa sẽ đè lên nhóm nút bên phải */
+            @media (max-width: 720px) { .sda-header-center { display: none; } }
 
             /* ── CONFIG PANEL ── */
             .sda-config-panel { background: white; border: 1px solid var(--border-color, #e5e7eb); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 80px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
