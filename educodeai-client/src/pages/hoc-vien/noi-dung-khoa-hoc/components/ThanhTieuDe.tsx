@@ -1,5 +1,6 @@
 import { getUserInfo } from '@/utils/authHelper';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Props { 
     tenKhoaHoc: string; 
@@ -12,26 +13,46 @@ interface Props {
 }
 
 export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai, onMoGhiChu, laCheDoHocThu, soVideoHocThu, onMuaKhoaHoc }) => {
+    const navigate = useNavigate();
+    const userInfo = getUserInfo();
+    const userDisplayName = userInfo?.hoTen || userInfo?.taiKhoan || 'Học viên';
+    const userInitial = userDisplayName.trim().charAt(0).toUpperCase() || 'H';
+    const userAvatar = userInfo?.anhDaiDien;
+
     // Logic vẽ vòng tròn tiến độ SVG
     const radius = 16; 
     const circumference = 2 * Math.PI * radius; 
     const percent = tongSoBai > 0 ? (soBaiDaHoc / tongSoBai) * 100 : 0;
     const offset = circumference - (percent / 100) * circumference;
 
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+        } else {
+            navigate('/khoa-hoc-cua-toi');
+        }
+    };
+
     return (
         <header className="cp-header">
             <div className="cp-header-left">
-                <a href="/" className="cp-back" title="Quay lại danh sách khóa học">
+                <button
+                    type="button"
+                    onClick={handleBack}
+                    className="cp-back"
+                    title="Quay lại danh sách khóa học"
+                    style={{ background: 'rgba(255, 255, 255, 0.2)', border: '1px solid rgba(255, 255, 255, 0.4)', borderRadius: '50%', width: 36, height: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}
+                >
                     <i className="fas fa-arrow-left"></i>
-                </a>
+                </button>
                 <div className="cp-course-title-meta">
                     <span>Nội dung khóa học</span>
-                    <span id="cpCourseTitle" style={{ fontWeight: 600 }}>{tenKhoaHoc}</span>
+                    <span id="cpCourseTitle" style={{ fontWeight: 600 }} title={tenKhoaHoc}>{tenKhoaHoc}</span>
                 </div>
             </div>
 
             {laCheDoHocThu && (
-                <div className="cp-header-center d-none d-lg-flex align-items-center gap-3">
+                <div className="cp-header-center d-none d-lg-flex align-items-center gap-3 me-3">
                     <div 
                         className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill"
                         style={{
@@ -101,8 +122,14 @@ export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai
                 </div>
 
                 <div className="cp-user-chip" style={{ marginLeft: '15px' }}>
-                    <div className="cp-user-avatar">HV</div>
-                    <span>{getUserInfo()?.hoTen || 'Học viên'}</span>
+                    <div className="cp-user-avatar" style={{ overflow: 'hidden' }}>
+                        {userAvatar ? (
+                            <img src={userAvatar} alt={userDisplayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                            userInitial
+                        )}
+                    </div>
+                    <span>{userDisplayName}</span>
                 </div>
             </div>
         </header>

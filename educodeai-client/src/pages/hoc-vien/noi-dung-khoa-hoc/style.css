@@ -44,6 +44,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1.25rem;
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
 }
 
@@ -121,15 +122,18 @@ a {
     display: flex;
     align-items: center;
     gap: 0.8rem;
+    min-width: 0;
+    flex: 1;
 }
 
 /* Container nút quay lại */
-a.cp-back {
+a.cp-back, button.cp-back {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 36px;
     height: 36px;
+    flex-shrink: 0;
 
     /* Màu sắc: Trắng để nổi bật trên nền cam */
     background-color: rgba(255, 255, 255, 0.2);
@@ -149,12 +153,13 @@ a.cp-back {
 /* Loại bỏ gạch chân cho mọi trạng thái */
 a.cp-back:visited,
 a.cp-back:hover,
-a.cp-back:active {
+a.cp-back:active,
+button.cp-back:hover {
     text-decoration: none !important;
 }
 
 /* Hiệu ứng Hover: Sáng rực lên */
-a.cp-back:hover {
+a.cp-back:hover, button.cp-back:hover {
     background-color: #ffffff;
     /* Trắng đặc */
     color: var(--primary) !important;
@@ -173,6 +178,9 @@ a.cp-back:hover {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
 }
 
 .cp-course-title-meta span:first-child {
@@ -180,11 +188,17 @@ a.cp-back:hover {
     text-transform: uppercase;
     letter-spacing: 0.09em;
     opacity: 0.85;
+    white-space: nowrap;
 }
 
 .cp-course-title-meta span:last-child {
     font-size: 1rem;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 100%;
 }
 
 .cp-header-right {
@@ -192,6 +206,7 @@ a.cp-back:hover {
     align-items: center;
     gap: 1.25rem;
     font-size: 0.82rem;
+    flex-shrink: 0;
 }
 
 .cp-progress-inline {

@@ -192,7 +192,10 @@ export const SidebarGhiChu: React.FC<Props> = ({ isOpen, onClose, maBaiHoc, maNg
                     window.dispatchEvent(new Event('storage_updated'));
                 }
             }
+
+            Swal.fire({ icon: 'success', text: "Cập nhật thành công!", timer: 1500, showConfirmButton: false });
         } catch (error) {
+            console.error("Lỗi cập nhật ghi chú AI:", error);
             Swal.fire({ icon: 'error', text: "Cập nhật thất bại!" });
         }
     };
