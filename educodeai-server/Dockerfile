@@ -33,11 +33,11 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=build /app/publish .
 
-RUN groupadd --gid 10001 app \
-    && useradd --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app \
+RUN if ! getent group app >/dev/null; then groupadd --gid 10001 app; fi \
+    && if ! id app >/dev/null 2>&1; then useradd --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app; fi \
     && mkdir -p /app/ffmpeg /app/wwwroot/uploads /app/tessdata \
-    && ln -s /usr/bin/ffmpeg /app/ffmpeg/ffmpeg \
-    && ln -s /usr/bin/ffprobe /app/ffmpeg/ffprobe \
+    && ln -sf /usr/bin/ffmpeg /app/ffmpeg/ffmpeg \
+    && ln -sf /usr/bin/ffprobe /app/ffmpeg/ffprobe \
     && chown -R app:app /app
 
 ENV ASPNETCORE_URLS=http://+:8080 \
