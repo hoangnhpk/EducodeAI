@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/auth.service";
 import { redirectToLoginOnce } from "../../utils/sessionTermination";
+import Swal from "sweetalert2";
 
 export default function HeaderHocVien() {
   const navigate = useNavigate();
@@ -21,6 +22,19 @@ export default function HeaderHocVien() {
 
   // Hàm xử lý đăng xuất
   const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Xác nhận",
+      text: "Bạn có chắc chắn muốn đăng xuất?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#f69050",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Đăng xuất",
+      cancelButtonText: "Hủy",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       await authService.logout();
     } finally {
