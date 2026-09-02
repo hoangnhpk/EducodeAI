@@ -376,5 +376,57 @@ namespace EduCodeAI.Controllers.HocVien
 
             return Ok(topInstructors);
         }
+
+        /// <summary>
+        /// API công khai: Danh mục (lĩnh vực) đang có khóa học, xếp theo số khóa học giảm dần
+        /// </summary>
+        [HttpGet("danh-muc-trang-chu")]
+        public async Task<IActionResult> GetDanhMucTrangChu([FromQuery] int soLuong = 8)
+        {
+            var danhMucs = await _context.KhoaHocs.AsNoTracking()
+                .Where(k => k.TrangThai == "Hoạt động" && !string.IsNullOrEmpty(k.LinhVuc))
+                .GroupBy(k => k.LinhVuc)
+                .Select(g => new
+                {
+                    tenLinhVuc = g.Key,
+                    soKhoaHoc = g.Count()
+                })
+                .OrderByDescending(x => x.soKhoaHoc)
+                .ThenBy(x => x.tenLinhVuc)
+                .Take(soLuong)
+                .ToListAsync();
+
+            return Ok(danhMucs);
+        }
+
+        /// <summary>
+        /// API công khai: Số liệu tổng quan cho thanh thống kê trang chủ
+        /// </summary>
+        [HttpGet("thong-ke-trang-chu")]
+        public async Task<IActionResult> GetThongKeTrangChu()
+        {
+            var tongHocVien = await _context.NguoiDungs.AsNoTracking()
+                .CountAsync(u => u.VaiTro == 2 && u.TrangThai == "Hoạt động");
+
+            // Cùng bộ lọc với danh sách khóa học hiển thị ngoài trang chủ
+            var tongKhoaHoc = await _context.KhoaHocs.AsNoTracking()
+                .CountAsync(k => k.TrangThai == "Hoạt động");
+
+            var tongGiangVien = await _context.NguoiDungs.AsNoTracking()
+                .CountAsync(u => u.VaiTro == 1 && u.TrangThai == "Hoạt động");
+
+            // Chỉ tính đánh giá đã duyệt để con số công khai phản ánh đúng thực tế
+            var diemDanhGiaTB = await _context.DanhGias.AsNoTracking()
+                .Where(d => d.TrangThai == "DaDuyet")
+                .AverageAsync(d => (double?)d.SoSao) ?? 0;
+
+            return Ok(new
+            {
+                tongHocVien,
+                tongKhoaHoc,
+                tongGiangVien,
+                diemDanhGiaTB = Math.Round(diemDanhGiaTB, 1)
+            });
+        }
     }
 }

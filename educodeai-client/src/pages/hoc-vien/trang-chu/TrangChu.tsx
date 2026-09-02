@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '@/configs/axios';
 import { encodeId } from "@/utils/id-helper";
 import { laKhoaHocMienPhi } from "@/utils/format-gia-khoa-hoc";
+import { getMediaUrl, getBannerUrl } from "@/utils/mediaUrl";
+import { useSystemConfig } from "@/contexts/SystemConfigContext";
 
 interface IKhoaHoc {
     maKhoaHoc: number;
@@ -20,9 +22,96 @@ interface IKhoaHoc {
     donViTienTe: string;
 }
 
+interface IThongKeTrangChu {
+    tongHocVien: number;
+    tongKhoaHoc: number;
+    tongGiangVien: number;
+    diemDanhGiaTB: number;
+}
+
+interface IDanhMuc {
+    tenLinhVuc: string;
+    soKhoaHoc: number;
+}
+
+// Lĩnh vực do giảng viên tự nhập nên khớp theo từ khóa, không khớp cả chuỗi.
+// Quy tắc đứng trước được ưu tiên; không khớp cái nào thì dùng icon mặc định.
+const DANH_MUC_ICONS: { mau: RegExp; icon: string }[] = [
+    { mau: /back[\s-]?end/i, icon: 'fa-server' },
+    { mau: /front[\s-]?end/i, icon: 'fa-window-maximize' },
+    { mau: /full[\s-]?stack/i, icon: 'fa-layer-group' },
+    { mau: /web/i, icon: 'fa-code' },
+    { mau: /mobile|android|ios/i, icon: 'fa-mobile-screen-button' },
+    { mau: /desktop/i, icon: 'fa-desktop' },
+    { mau: /database|sql|dữ liệu/i, icon: 'fa-database' },
+    { mau: /devops|cloud|aws|azure/i, icon: 'fa-cloud' },
+    { mau: /machine learning|\bai\b|trí tuệ/i, icon: 'fa-brain' },
+    { mau: /data/i, icon: 'fa-chart-line' },
+    { mau: /algorithm|thuật toán|cấu trúc/i, icon: 'fa-diagram-project' },
+    { mau: /system|embedded|nhúng/i, icon: 'fa-microchip' },
+    { mau: /tool|công cụ/i, icon: 'fa-screwdriver-wrench' },
+    { mau: /security|bảo mật/i, icon: 'fa-shield-halved' },
+    { mau: /test|kiểm thử/i, icon: 'fa-vial' },
+    { mau: /game/i, icon: 'fa-gamepad' },
+    { mau: /ui|ux|design|thiết kế/i, icon: 'fa-pen-nib' }
+];
+
+const DANH_MUC_MAU = [
+    { chu: 'text-primary', nen: 'bg-primary-subtle' },
+    { chu: 'text-warning', nen: 'bg-warning-subtle' },
+    { chu: 'text-danger', nen: 'bg-danger-subtle' },
+    { chu: 'text-info', nen: 'bg-info-subtle' },
+    { chu: 'text-success', nen: 'bg-success-subtle' },
+    { chu: 'text-secondary', nen: 'bg-secondary-subtle' }
+];
+
+const layIconDanhMuc = (tenLinhVuc: string): string =>
+    DANH_MUC_ICONS.find((quyTac) => quyTac.mau.test(tenLinhVuc))?.icon ?? 'fa-shapes';
+
+const ANH_KHOA_HOC_MAC_DINH = 'https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=500&q=80';
+
+const KHOA_HOC_MOI_TRANG = 12;
+
+// Dùng khi admin chưa cấu hình banner, hoặc file cấu hình tải lỗi
+const ANH_HERO_MAC_DINH = '/img/carousel-1.jpg';
+
+// Header dính trên cùng nên phải trừ chiều cao của nó, không cuộn thẳng tới offsetTop
+const cuonToiDanhSachKhoaHoc = () => {
+    const el = document.getElementById('courses-section');
+    if (!el) return;
+    const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
+    const offset = navbar ? navbar.offsetHeight + 10 : 70;
+    window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
+};
+
+// Rút gọn dãy số trang: luôn giữ trang đầu, trang cuối và lân cận trang hiện tại
+const taoDaySoTrang = (trangHienTai: number, tongSoTrang: number): (number | '...')[] => {
+    if (tongSoTrang <= 7) {
+        return Array.from({ length: tongSoTrang }, (_, i) => i + 1);
+    }
+
+    const day: (number | '...')[] = [1];
+    const dau = Math.max(2, trangHienTai - 1);
+    const cuoi = Math.min(tongSoTrang - 1, trangHienTai + 1);
+
+    if (dau > 2) day.push('...');
+    for (let i = dau; i <= cuoi; i++) day.push(i);
+    if (cuoi < tongSoTrang - 1) day.push('...');
+
+    day.push(tongSoTrang);
+    return day;
+};
+
 const parseKyNangTags = (raw?: string): string[] => {
     if (!raw?.trim()) return [];
     return raw.split(',').map((item) => item.trim()).filter(Boolean);
+};
+
+// Làm tròn xuống rồi thêm dấu "+" để con số hiển thị không vượt quá số liệu thật
+const formatSoLuongThongKe = (soLuong: number): string => {
+    if (soLuong >= 1000) return `${Math.floor(soLuong / 1000)}K+`;
+    if (soLuong >= 10) return `${Math.floor(soLuong / 10) * 10}+`;
+    return `${soLuong}`;
 };
 
 const CourseRating: React.FC<{ level: string; rating: number }> = ({ level, rating }) => (
@@ -48,7 +137,7 @@ const CourseCard: React.FC<{ course: IKhoaHoc }> = ({ course: kh }) => {
     const learnUrl = `/khoa-hoc/${kh.slug}/${encodeId(kh.maKhoaHoc)}`;
     return <article className="course-card">
         <div className="course-card-thumbnail">
-            <img src={`/img/${kh.hinhAnh}`} alt={kh.tenKhoaHoc} className="course-img" onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&w=500&q=80'; }} />
+            <img src={getMediaUrl(kh.hinhAnh) || ANH_KHOA_HOC_MAC_DINH} alt={kh.tenKhoaHoc} className="course-img" loading="lazy" onError={(e) => { e.currentTarget.src = ANH_KHOA_HOC_MAC_DINH; }} />
             <span className="course-card-category">{kh.linhVuc}</span>
         </div>
         <div className="course-card-body">
@@ -67,6 +156,10 @@ const CourseCard: React.FC<{ course: IKhoaHoc }> = ({ course: kh }) => {
 };
 
 const TrangChu: React.FC = () => {
+    // Banner lấy từ cấu hình hệ thống, admin đổi được và tự cập nhật realtime qua SignalR
+    const { configs } = useSystemConfig();
+    const anhHero = getBannerUrl(configs?.BannerChinh) || ANH_HERO_MAC_DINH;
+
     const [courses, setCourses] = useState<IKhoaHoc[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -77,11 +170,16 @@ const TrangChu: React.FC = () => {
     const [displayedReviews, setDisplayedReviews] = useState<any[]>([]);
     const [reviewFading, setReviewFading] = useState(false);
     const [giangVienTieuBieu, setGiangVienTieuBieu] = useState<any[]>([]);
+    const [thongKe, setThongKe] = useState<IThongKeTrangChu | null>(null);
+    const [danhMuc, setDanhMuc] = useState<IDanhMuc[]>([]);
     const [filterMaGV, setFilterMaGV] = useState<number | null>(null);
     const [filterTenGV, setFilterTenGV] = useState<string>('');
+    const [trangHienTai, setTrangHienTai] = useState(1);
 
     const loadData = async (search: string = '', maGV: number | null = null) => {
         setIsLoading(true);
+        // Mỗi lần đổi từ khóa/bộ lọc thì danh sách khác hẳn, phải về trang đầu
+        setTrangHienTai(1);
         try {
             const data = await axiosInstance.get<IKhoaHoc[]>('api/KhoaHoc/all', {
                 params: { search: search, maGiangVien: maGV }
@@ -95,6 +193,18 @@ const TrangChu: React.FC = () => {
         }
     };
 
+    const tongSoTrang = Math.ceil(courses.length / KHOA_HOC_MOI_TRANG);
+    const khoaHocTrangNay = courses.slice(
+        (trangHienTai - 1) * KHOA_HOC_MOI_TRANG,
+        trangHienTai * KHOA_HOC_MOI_TRANG
+    );
+
+    const doiTrang = (trang: number) => {
+        if (trang < 1 || trang > tongSoTrang || trang === trangHienTai) return;
+        setTrangHienTai(trang);
+        cuonToiDanhSachKhoaHoc();
+    };
+
     useEffect(() => {
         const delay = setTimeout(() => {
             loadData(searchTerm, filterMaGV);
@@ -106,12 +216,16 @@ const TrangChu: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [danhGiaRes, giangVienRes] = await Promise.all([
+                const [danhGiaRes, giangVienRes, thongKeRes, danhMucRes] = await Promise.all([
                     axiosInstance.get<any[]>('api/hocvien/chitietkhoahoc/danh-gia-trang-chu?soLuong=10'),
-                    axiosInstance.get<any[]>('api/hocvien/chitietkhoahoc/giang-vien-tieu-bieu?soLuong=4')
+                    axiosInstance.get<any[]>('api/hocvien/chitietkhoahoc/giang-vien-tieu-bieu?soLuong=4'),
+                    axiosInstance.get<IThongKeTrangChu>('api/hocvien/chitietkhoahoc/thong-ke-trang-chu'),
+                    axiosInstance.get<IDanhMuc[]>('api/hocvien/chitietkhoahoc/danh-muc-trang-chu?soLuong=8')
                 ]);
                 setDanhGiaTrangChu(danhGiaRes);
                 setGiangVienTieuBieu(giangVienRes);
+                setThongKe(thongKeRes as unknown as IThongKeTrangChu);
+                setDanhMuc(danhMucRes as unknown as IDanhMuc[]);
             } catch (err) {
                 console.error('Lỗi lấy dữ liệu trang chủ:', err);
             }
@@ -197,7 +311,17 @@ const TrangChu: React.FC = () => {
             {/* 1. Hero Section */}
             <section className="hero-section">
                 <div className="hero-bg">
-                    <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&auto=format&fit=crop&w=2072&q=80" alt="Banner" />
+                    <img
+                        src={anhHero}
+                        alt=""
+                        aria-hidden="true"
+                        onError={(e) => {
+                            // Tránh lặp vô hạn nếu chính ảnh mặc định cũng lỗi
+                            if (!e.currentTarget.src.endsWith(ANH_HERO_MAC_DINH)) {
+                                e.currentTarget.src = ANH_HERO_MAC_DINH;
+                            }
+                        }}
+                    />
                 </div>
                 <div className="hero-overlay"></div>
                 <div className="hero-orb hero-orb--1" aria-hidden="true"></div>
@@ -224,12 +348,7 @@ const TrangChu: React.FC = () => {
                             <div className="hero-cta-group">
                                 <a href="#courses-section" className="hero-cta-btn hero-cta-btn--primary" onClick={(e) => {
                                     e.preventDefault();
-                                    const el = document.getElementById('courses-section');
-                                    if (el) {
-                                        const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
-                                        const offset = navbar ? navbar.offsetHeight + 10 : 70;
-                                        window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
-                                    }
+                                    cuonToiDanhSachKhoaHoc();
                                 }}>
                                     <span>Khám phá khóa học</span>
                                     <i className="fa fa-arrow-right" aria-hidden="true"></i>
@@ -252,14 +371,16 @@ const TrangChu: React.FC = () => {
                     <div className="stats-card">
                         <div className="row text-center g-0">
                             {[
-                                { icon: 'fa-user-graduate', value: '10K+', label: 'Học viên tin tưởng' },
-                                { icon: 'fa-book-open', value: '150+', label: 'Khóa học chất lượng' },
-                                { icon: 'fa-chalkboard-user', value: '50+', label: 'Chuyên gia giảng dạy' },
-                                { icon: 'fa-star', value: '4.8/5', label: 'Đánh giá trung bình' }
+                                { icon: 'fa-user-graduate', value: thongKe && formatSoLuongThongKe(thongKe.tongHocVien), label: 'Học viên tin tưởng' },
+                                { icon: 'fa-book-open', value: thongKe && formatSoLuongThongKe(thongKe.tongKhoaHoc), label: 'Khóa học chất lượng' },
+                                { icon: 'fa-chalkboard-user', value: thongKe && formatSoLuongThongKe(thongKe.tongGiangVien), label: 'Chuyên gia giảng dạy' },
+                                { icon: 'fa-star', value: thongKe && `${thongKe.diemDanhGiaTB.toFixed(1)}/5`, label: 'Đánh giá trung bình' }
                             ].map((s, i) => (
                                 <div key={i} className="col-6 col-md-3 stat-item">
                                     <div className="stat-icon"><i className={`fa-solid ${s.icon}`} aria-hidden="true"></i></div>
-                                    <div className="stat-value">{s.value}</div>
+                                    <div className="stat-value">
+                                        {s.value ?? <span className="stat-value-skeleton skeleton-shimmer" aria-label="Đang tải" />}
+                                    </div>
                                     <p className="stat-label">{s.label}</p>
                                 </div>
                             ))}
@@ -320,19 +441,6 @@ const TrangChu: React.FC = () => {
                 </div>
             </section>
 
-            {/* 3. Search Bar — ghim trên cùng khi cuộn, ghi đè header */}
-            <div
-                ref={searchPlaceholderRef}
-                className="home-search-wrapper"
-                aria-hidden={isSearchPinned}
-            >
-                {isSearchPinned ? (
-                    <div style={{ height: searchBarHeightRef.current }} />
-                ) : (
-                    <div className="home-search-bar my-4">{renderSearchBar()}</div>
-                )}
-            </div>
-
             {isSearchPinned && createPortal(
                 <div
                     className="home-search-bar home-search-bar--pinned"
@@ -349,38 +457,34 @@ const TrangChu: React.FC = () => {
                 <div className="container py-4">
                     <div className="text-center mb-5">
                         <h6 className="section-eyebrow mb-3">Danh mục</h6>
-                        <h2 className="display-6 fw-bold text-dark">Chủ đề phổ biến</h2>
+                        <h2 className="display-6 fw-bold text-dark">Chủ đề</h2>
                     </div>
                     <div className="row g-4 justify-content-center">
-                        {[
-                            { name: "C#", icon: "fa-brands fa-microsoft", color: "text-primary", bg: "bg-primary-subtle" },
-                            { name: "Python", icon: "fa-brands fa-python", color: "text-warning", bg: "bg-warning-subtle" },
-                            { name: "Java", icon: "fa-brands fa-java", color: "text-danger", bg: "bg-danger-subtle" },
-                            { name: "AWS", icon: "fa-brands fa-aws", color: "text-warning", bg: "bg-warning-subtle" },
-                            { name: "Web Design", icon: "fa-solid fa-palette", color: "text-info", bg: "bg-info-subtle" },
-                            { name: "ReactJS", icon: "fa-brands fa-react", color: "text-info", bg: "bg-info-subtle" },
-                            { name: "MySQL", icon: "fa-solid fa-database", color: "text-secondary", bg: "bg-secondary-subtle" },
-                            { name: "UI/UX", icon: "fa-solid fa-pen-nib", color: "text-success", bg: "bg-success-subtle" }
-                        ].map((cat, index) => (
-                            <div key={index} className="col-6 col-md-3 col-lg-2" onClick={() => {
-                                setSearchTerm(cat.name);
-                                setTimeout(() => {
-                                    const el = document.getElementById('courses-section');
-                                    if (el) {
-                                        const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
-                                        const offset = navbar ? navbar.offsetHeight + 10 : 70;
-                                        window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
-                                    }
-                                }, 100);
-                            }}>
-                                <div className="category-card text-center p-4 bg-white border rounded-4 cursor-pointer transition-all h-100">
-                                    <div className={`icon-wrapper d-inline-flex align-items-center justify-content-center rounded-4 fs-2 mb-3 ${cat.bg} ${cat.color}`} style={{ width: '60px', height: '60px' }}>
-                                        <i className={cat.icon}></i>
+                        {danhMuc.map((cat, index) => {
+                            const mau = DANH_MUC_MAU[index % DANH_MUC_MAU.length];
+                            // Tên lĩnh vực dài hơn nhãn cũ (C#, Java...) nên ô cần rộng hơn
+                            return (
+                                <div key={cat.tenLinhVuc} className="col-6 col-md-4 col-lg-3" onClick={() => {
+                                    setSearchTerm(cat.tenLinhVuc);
+                                    setFilterMaGV(null);
+                                    setFilterTenGV('');
+                                    setTimeout(cuonToiDanhSachKhoaHoc, 100);
+                                }}>
+                                    <div className="category-card text-center p-4 bg-white border rounded-4 cursor-pointer transition-all h-100">
+                                        <div className={`icon-wrapper d-inline-flex align-items-center justify-content-center rounded-4 fs-2 mb-3 ${mau.nen} ${mau.chu}`} style={{ width: '60px', height: '60px' }}>
+                                            <i className={`fa-solid ${layIconDanhMuc(cat.tenLinhVuc)}`} aria-hidden="true"></i>
+                                        </div>
+                                        <h5 className="h6 fw-bold text-dark m-0">{cat.tenLinhVuc}</h5>
+                                        <p className="text-muted small m-0 mt-2">{cat.soKhoaHoc} khóa học</p>
                                     </div>
-                                    <h5 className="h6 fw-bold text-dark m-0">{cat.name}</h5>
                                 </div>
+                            );
+                        })}
+                        {danhMuc.length === 0 && (
+                            <div className="col-12 text-center py-4">
+                                <p className="text-secondary fs-5 mb-0">Chưa có danh mục nào.</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             </section>
@@ -390,6 +494,20 @@ const TrangChu: React.FC = () => {
                 <div className="container py-5">
                     <div className="text-center mb-5">
                         <h6 className="section-eyebrow mb-3">Hành trình tri thức</h6>
+
+                        {/* Search Bar — ghim trên cùng khi cuộn, ghi đè header */}
+                        <div
+                            ref={searchPlaceholderRef}
+                            className="home-search-wrapper"
+                            aria-hidden={isSearchPinned}
+                        >
+                            {isSearchPinned ? (
+                                <div style={{ height: searchBarHeightRef.current }} />
+                            ) : (
+                                renderSearchBar()
+                            )}
+                        </div>
+
                         <h2 className="display-6 fw-bold text-dark mb-4">
                             {filterMaGV && filterTenGV ? `Khóa học của giảng viên: ${filterTenGV}` : (searchTerm ? `Kết quả cho: "${searchTerm}"` : "Khám Phá Các Khóa Học")}
                         </h2>
@@ -397,7 +515,7 @@ const TrangChu: React.FC = () => {
 
                     <div className="row g-4">
                         {isLoading ? (
-                            Array.from({ length: 8 }).map((_, i) => (
+                            Array.from({ length: KHOA_HOC_MOI_TRANG }).map((_, i) => (
                                 <div key={`skeleton-${i}`} className="col-md-6 col-lg-3" aria-hidden="true">
                                     <div className="course-card card h-100 border-0 overflow-hidden">
                                         <div className="course-skeleton-thumb skeleton-shimmer" />
@@ -419,8 +537,8 @@ const TrangChu: React.FC = () => {
                                     </div>
                                 </div>
                             ))
-                        ) : courses.length > 0 ? (
-                            courses.map((kh) => (
+                        ) : khoaHocTrangNay.length > 0 ? (
+                            khoaHocTrangNay.map((kh) => (
                                 <div key={kh.maKhoaHoc} className="col-md-6 col-lg-3 d-flex">
                                     <CourseCard course={kh} />
                                 </div>
@@ -443,8 +561,55 @@ const TrangChu: React.FC = () => {
                         )}
                     </div>
 
+                    {!isLoading && tongSoTrang > 1 && (
+                        <nav className="course-pagination mt-5" aria-label="Phân trang khóa học">
+                            <ul className="course-pagination-list">
+                                <li>
+                                    <button
+                                        type="button"
+                                        className="course-page-btn"
+                                        onClick={() => doiTrang(trangHienTai - 1)}
+                                        disabled={trangHienTai === 1}
+                                        aria-label="Trang trước"
+                                    >
+                                        <i className="fa fa-angle-left" aria-hidden="true" />
+                                    </button>
+                                </li>
+
+                                {taoDaySoTrang(trangHienTai, tongSoTrang).map((muc, i) => (
+                                    <li key={`trang-${muc}-${i}`}>
+                                        {muc === '...' ? (
+                                            <span className="course-page-ellipsis">…</span>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                className={`course-page-btn ${muc === trangHienTai ? 'course-page-btn--active' : ''}`}
+                                                onClick={() => doiTrang(muc)}
+                                                aria-current={muc === trangHienTai ? 'page' : undefined}
+                                            >
+                                                {muc}
+                                            </button>
+                                        )}
+                                    </li>
+                                ))}
+
+                                <li>
+                                    <button
+                                        type="button"
+                                        className="course-page-btn"
+                                        onClick={() => doiTrang(trangHienTai + 1)}
+                                        disabled={trangHienTai === tongSoTrang}
+                                        aria-label="Trang sau"
+                                    >
+                                        <i className="fa fa-angle-right" aria-hidden="true" />
+                                    </button>
+                                </li>
+                            </ul>
+                        </nav>
+                    )}
+
                     {filterMaGV && courses.length > 0 && (
-                        <div className="text-center mt-5">
+                        <div className="text-center mt-4">
                             <button className="btn btn-outline-primary rounded-pill px-5 py-2" onClick={() => { setSearchTerm(''); setFilterMaGV(null); setFilterTenGV(''); }}>
                                 <i className="fa fa-list me-2"></i>Xem tất cả khóa học
                             </button>
@@ -495,14 +660,7 @@ const TrangChu: React.FC = () => {
                                                 setSearchTerm('');
                                                 setFilterMaGV(gv.maGiangVien);
                                                 setFilterTenGV(hoTen);
-                                                setTimeout(() => {
-                                                    const el = document.getElementById('courses-section');
-                                                    if (el) {
-                                                        const navbar = document.querySelector<HTMLElement>('.navbar.sticky-top');
-                                                        const offset = navbar ? navbar.offsetHeight + 10 : 70;
-                                                        window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
-                                                    }
-                                                }, 100);
+                                                setTimeout(cuonToiDanhSachKhoaHoc, 100);
                                             }}
                                         >
                                             <i className="fas fa-search me-2"></i>Xem khóa học
@@ -605,18 +763,53 @@ const TrangChu: React.FC = () => {
             </section>
 
             {/* 9. CTA */}
-            <section className="py-5 bg-primary">
-                <div className="container py-4">
-                    <div className="bg-white rounded-4 p-5 p-md-5 d-flex flex-column flex-md-row align-items-center justify-content-between shadow-lg position-relative overflow-hidden">
-                        <div className="position-absolute" style={{ right: '-50px', top: '-50px', width: '250px', height: '250px', background: 'rgba(246, 144, 80, 0.1)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }}></div>
-                        <div className="text-center text-md-start mb-4 mb-md-0 position-relative z-index-1">
-                            <h2 className="display-6 fw-bold text-dark mb-3">Bạn muốn truyền cảm hứng?</h2>
-                            <p className="text-muted fs-5 mb-0" style={{ maxWidth: '600px' }}>Trở thành giảng viên trên EduCode để chia sẻ kiến thức, xây dựng thương hiệu cá nhân và tạo thu nhập thụ động.</p>
+            <section className="cta-section">
+                <div className="cta-orb cta-orb--1" aria-hidden="true"></div>
+                <div className="cta-orb cta-orb--2" aria-hidden="true"></div>
+                <div className="cta-grid" aria-hidden="true"></div>
+
+                <div className="container position-relative z-index-1">
+                    <div className="row align-items-center g-5">
+                        <div className="col-lg-7">
+                            <span className="cta-eyebrow">Dành cho giảng viên</span>
+                            <h2 className="cta-title">Bạn muốn truyền cảm hứng?</h2>
+                            <p className="cta-desc">
+                                Trở thành giảng viên trên EduCode để chia sẻ kiến thức, xây dựng
+                                thương hiệu cá nhân và tạo thu nhập thụ động.
+                            </p>
+
+                            <ul className="cta-benefits">
+                                {[
+                                    { icon: 'fa-wand-magic-sparkles', text: 'Công cụ AI hỗ trợ soạn lộ trình và bài tập' },
+                                    { icon: 'fa-chart-simple', text: 'Thống kê tiến độ học viên theo thời gian thực' },
+                                    { icon: 'fa-wallet', text: 'Theo dõi doanh thu và rút tiền ngay trên hệ thống' }
+                                ].map((loiIch) => (
+                                    <li key={loiIch.text}>
+                                        <span className="cta-benefit-icon">
+                                            <i className={`fa-solid ${loiIch.icon}`} aria-hidden="true"></i>
+                                        </span>
+                                        {loiIch.text}
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-                        <div className="position-relative z-index-1">
-                            <Link to="/dang-ky-giang-vien" className="btn btn-dark btn-lg rounded-4 px-5 py-3 fw-bold shadow text-decoration-none">
-                                Đăng ký Giảng viên ngay
-                            </Link>
+
+                        <div className="col-lg-5">
+                            <div className="cta-card">
+                                <div className="cta-card-icon">
+                                    <i className="fa-solid fa-chalkboard-user" aria-hidden="true"></i>
+                                </div>
+                                <h3 className="cta-card-title">Bắt đầu hành trình giảng dạy</h3>
+                                <p className="cta-card-desc">
+                                    Gửi hồ sơ để đội ngũ EduCode xét duyệt. Sau khi được duyệt, bạn có
+                                    thể xuất bản khóa học đầu tiên.
+                                </p>
+
+                                <Link to="/dang-ky-giang-vien" className="cta-btn cta-btn--primary">
+                                    <span>Đăng ký giảng viên</span>
+                                    <i className="fa fa-arrow-right" aria-hidden="true"></i>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -768,9 +961,13 @@ const TrangChu: React.FC = () => {
                 }
 
                 /* Search Bar */
+                /* Margin đặt ở wrapper (không ở ô nhập) để lúc ghim, div giữ chỗ
+                   vẫn chừa đúng khoảng cách này, tránh nội dung nhảy lên */
                 .home-search-wrapper {
                     position: relative;
+                    margin-bottom: 1.75rem;
                 }
+                /* Chỉ dùng cho bản ghim trên cùng: dải trắng full-width đè lên header */
                 .home-search-bar {
                     background: #fff;
                     border-bottom: 1px solid var(--border-color);
@@ -811,6 +1008,8 @@ const TrangChu: React.FC = () => {
                     outline: none;
                     font-weight: 600;
                     color: var(--text-main);
+                    /* Khối tiêu đề bao ngoài là .text-center, input phải tự canh trái lại */
+                    text-align: left;
                 }
                 .search-input:focus-visible {
                     outline: 2px solid var(--primary);
@@ -876,6 +1075,13 @@ const TrangChu: React.FC = () => {
                     color: var(--text-muted);
                     font-weight: 600;
                     font-size: 0.9rem;
+                }
+                .stat-value-skeleton {
+                    display: inline-block;
+                    width: 4.5rem;
+                    height: 1.5rem;
+                    border-radius: var(--radius-sm);
+                    vertical-align: middle;
                 }
                 @media (max-width: 768px) {
                     .stats-section { margin-top: -2rem; }
@@ -968,6 +1174,226 @@ const TrangChu: React.FC = () => {
                 .btn-course-continue { border: 1px solid #059669; background: #059669; color: #fff; }
                 .btn-course-continue:hover { border-color: #047857; background: #047857; color: #fff; }
                 @media (prefers-reduced-motion: reduce) { .course-card, .course-img { transition: none; } .course-card:hover { transform: none; } .course-card:hover .course-img { transform: none; } }
+
+                /* === CTA === */
+                /* Bootstrap .bg-primary là xanh mặc định, không phải cam thương hiệu,
+                   nên section này tự dựng nền bằng token thay vì dùng utility class */
+                .cta-section {
+                    position: relative;
+                    overflow: hidden;
+                    padding: 5rem 0;
+                    background:
+                        linear-gradient(118deg, #b85f1e 0%, var(--primary-hover) 42%, var(--primary) 78%, #ffb27a 100%);
+                }
+                .cta-orb {
+                    position: absolute;
+                    border-radius: 50%;
+                    filter: blur(80px);
+                    opacity: .45;
+                    pointer-events: none;
+                    z-index: 0;
+                }
+                .cta-orb--1 {
+                    width: 360px; height: 360px;
+                    left: -80px; top: -120px;
+                    background: radial-gradient(circle, #fff, transparent 70%);
+                }
+                .cta-orb--2 {
+                    width: 300px; height: 300px;
+                    right: 4%; bottom: -110px;
+                    background: radial-gradient(circle, var(--ai-accent), transparent 70%);
+                }
+                .cta-grid {
+                    position: absolute;
+                    inset: 0;
+                    z-index: 0;
+                    background-image:
+                        linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+                    background-size: 46px 46px;
+                    mask-image: radial-gradient(ellipse 70% 70% at 30% 50%, #000 20%, transparent 75%);
+                    -webkit-mask-image: radial-gradient(ellipse 70% 70% at 30% 50%, #000 20%, transparent 75%);
+                }
+                .cta-eyebrow {
+                    display: inline-block;
+                    margin-bottom: 1.1rem;
+                    padding: .4rem 1rem;
+                    border: 1px solid rgba(255,255,255,.45);
+                    border-radius: 50rem;
+                    background: rgba(255,255,255,.15);
+                    backdrop-filter: blur(8px);
+                    -webkit-backdrop-filter: blur(8px);
+                    color: #fff;
+                    font-size: .75rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: .1em;
+                }
+                .cta-title {
+                    margin: 0 0 1rem;
+                    color: #fff;
+                    font-size: clamp(2rem, 4vw, 2.9rem);
+                    font-weight: 800;
+                    line-height: 1.15;
+                    letter-spacing: -.02em;
+                    text-shadow: 0 2px 24px rgba(0,0,0,.18);
+                }
+                .cta-desc {
+                    max-width: 34rem;
+                    margin: 0 0 1.75rem;
+                    color: rgba(255,255,255,.92);
+                    font-size: 1.1rem;
+                    line-height: 1.7;
+                }
+                .cta-benefits {
+                    display: flex;
+                    flex-direction: column;
+                    gap: .85rem;
+                    margin: 0;
+                    padding: 0;
+                    list-style: none;
+                }
+                .cta-benefits li {
+                    display: flex;
+                    align-items: center;
+                    gap: .8rem;
+                    color: #fff;
+                    font-weight: 600;
+                }
+                .cta-benefit-icon {
+                    display: grid;
+                    place-items: center;
+                    flex: 0 0 2.25rem;
+                    width: 2.25rem;
+                    height: 2.25rem;
+                    border: 1px solid rgba(255,255,255,.35);
+                    border-radius: var(--radius-md);
+                    background: rgba(255,255,255,.18);
+                    font-size: .9rem;
+                }
+                .cta-card {
+                    padding: 2.25rem;
+                    border: 1px solid rgba(255,255,255,.5);
+                    border-radius: var(--radius-lg);
+                    background: #fff;
+                    box-shadow: 0 24px 48px -12px rgba(74, 35, 6, .35);
+                }
+                .cta-card-icon {
+                    display: grid;
+                    place-items: center;
+                    width: 3.25rem;
+                    height: 3.25rem;
+                    margin-bottom: 1.25rem;
+                    border-radius: var(--radius-md);
+                    background: var(--primary-soft);
+                    color: var(--primary-dark);
+                    font-size: 1.35rem;
+                }
+                .cta-card-title {
+                    margin: 0 0 .6rem;
+                    color: var(--text-main);
+                    font-size: 1.4rem;
+                    font-weight: 800;
+                }
+                .cta-card-desc {
+                    margin: 0 0 1.5rem;
+                    color: var(--text-muted);
+                    font-size: .95rem;
+                    line-height: 1.65;
+                }
+                .cta-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: .5rem;
+                    width: 100%;
+                    min-height: 3rem;
+                    border: 2px solid transparent;
+                    border-radius: 50rem;
+                    font-weight: 700;
+                    text-align: center;
+                    text-decoration: none;
+                    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+                }
+                .cta-btn--primary {
+                    background: var(--primary);
+                    border-color: var(--primary);
+                    color: #fff;
+                    box-shadow: 0 10px 22px rgba(246, 144, 80, .35);
+                }
+                .cta-btn--primary:hover {
+                    background: var(--primary-hover);
+                    border-color: var(--primary-hover);
+                    color: #fff;
+                    transform: translateY(-2px);
+                }
+                @media (max-width: 991.98px) {
+                    .cta-section { padding: 3.5rem 0; }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .cta-btn { transition: none; }
+                    .cta-btn:hover { transform: none; }
+                }
+
+                /* Pagination */
+                .course-pagination {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 1rem;
+                }
+                .course-pagination-list {
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    align-items: center;
+                    gap: .4rem;
+                    margin: 0;
+                    padding: 0;
+                    list-style: none;
+                }
+                .course-page-btn {
+                    display: grid;
+                    place-items: center;
+                    min-width: 2.5rem;
+                    height: 2.5rem;
+                    padding: 0 .6rem;
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--radius-md);
+                    background: #fff;
+                    color: var(--text-main);
+                    font-weight: 700;
+                    font-size: .9rem;
+                    cursor: pointer;
+                    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+                }
+                .course-page-btn:hover:not(:disabled):not(.course-page-btn--active) {
+                    border-color: var(--primary);
+                    background: var(--primary-soft);
+                    color: var(--primary-dark);
+                }
+                .course-page-btn:disabled {
+                    color: var(--text-light);
+                    cursor: not-allowed;
+                    opacity: .55;
+                }
+                .course-page-btn--active {
+                    border-color: var(--primary);
+                    background: var(--primary);
+                    color: #fff;
+                    box-shadow: 0 4px 10px rgba(246, 144, 80, .25);
+                    cursor: default;
+                }
+                .course-page-ellipsis {
+                    display: grid;
+                    place-items: center;
+                    min-width: 1.75rem;
+                    height: 2.5rem;
+                    color: var(--text-light);
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .course-page-btn { transition: none; }
+                }
 
                 /* Instructor Card */
                 .instructor-card {

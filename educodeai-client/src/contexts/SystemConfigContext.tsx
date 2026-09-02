@@ -7,7 +7,7 @@ const defaultConfigs = {
     EmailLienHe: 'support@educodeai.vn',
     SoDienThoai: '0901234567',
     DiaChi: 'Việt Nam',
-    LogoUrl: 'icon.png',
+    LogoUrl: 'logo.png',
     BannerChinh: '',
 };
 

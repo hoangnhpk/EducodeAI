@@ -550,69 +550,146 @@ body {
 }
 
 /* ========== FOOTER ========== */
-.footer .btn.btn-social {
-  margin-right: 5px;
-  width: 35px;
-  height: 35px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--bg-light);
-  font-weight: normal;
-  border: 1px solid white;
-  border-radius: 35px;
-  transition: var(--transition-fast);
+.site-footer {
+  margin-top: 5rem;
+  background: var(--bg-sidebar);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.95rem;
 }
 
-.footer .btn.btn-social:hover {
+.site-footer-main {
+  padding: 4rem 0 3rem;
+}
+
+.site-footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.site-footer-brand:hover {
   color: var(--primary);
 }
 
-.footer .btn.btn-link {
-  display: block;
-  margin-bottom: 5px;
+/* File logoedu_trang_cam.png còn ~88% bề ngang là vùng trong suốt, để width:auto
+   thì hình bị lọt thỏm và cách xa chữ. object-fit:cover cắt bớt hai bên rìa.
+   Khi nào trim lại file gốc thì đổi về: width:auto; height:40px; object-fit:initial */
+.site-footer-logo {
+  width: 56px;
+  height: 52px;
+  object-fit: cover;
+}
+
+.site-footer-tagline {
+  max-width: 24rem;
+  margin: 0 0 1.5rem;
+  line-height: 1.7;
+}
+
+.site-footer-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50rem;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.site-footer-cta:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.site-footer-heading {
+  margin-bottom: 1.25rem;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.site-footer-links,
+.site-footer-contact {
+  margin: 0;
   padding: 0;
-  text-align: left;
-  color: white;
-  font-size: 15px;
-  font-weight: normal;
-  text-transform: capitalize;
-  transition: var(--transition-fast);
+  list-style: none;
 }
 
-.footer .btn.btn-link::before {
-  position: relative;
-  content: "\f105";
-  font-family: "Font Awesome 5 Free";
-  font-weight: 900;
-  margin-right: 10px;
+.site-footer-links li {
+  margin-bottom: 0.7rem;
 }
 
-.footer .btn.btn-link:hover {
-  letter-spacing: 1px;
-  box-shadow: none;
+.site-footer-links a {
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  transition: color var(--transition-fast), padding-left var(--transition-fast);
 }
 
-.footer .copyright {
-  padding: 25px 0;
-  font-size: 15px;
-  border-top: 1px solid rgba(256, 256, 256, 0.1);
+.site-footer-links a:hover {
+  padding-left: 0.35rem;
+  color: var(--primary);
 }
 
-.footer .copyright a {
-  color: var(--bg-light);
+.site-footer-contact li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  line-height: 1.6;
 }
 
-.footer .footer-menu a {
-  margin-right: 15px;
-  padding-right: 15px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+.site-footer-contact i {
+  flex: 0 0 1rem;
+  margin-top: 0.3rem;
+  color: var(--primary);
 }
 
-.footer .footer-menu a:last-child {
-  margin-right: 0;
-  padding-right: 0;
-  border-right: none;
+.site-footer-contact a {
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.site-footer-contact a:hover {
+  color: var(--primary);
+}
+
+.site-footer-bottom {
+  padding: 1.5rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.site-footer-bottom p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 991.98px) {
+  .site-footer-main {
+    padding: 3rem 0 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-footer-links a,
+  .site-footer-cta {
+    transition: none;
+  }
+  .site-footer-links a:hover {
+    padding-left: 0;
+  }
 }
 
 /* ========== PASSWORD RESET & FORGOT PASSWORD ========== */
