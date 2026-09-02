@@ -200,6 +200,23 @@ const NoiDungKhoaHoc = () => {
         danhDauHoanThanhBai(maBaiHocVuaXong);
     }, [flatList]);
 
+    const handleThoiLuongRealLoaded = useCallback((maBaiHoc: number, thoiLuongGiay: number) => {
+        setKhoaHoc((prevData) => {
+            if (!prevData) return null;
+            return {
+                ...prevData,
+                danhSachChuongHoc: prevData.danhSachChuongHoc.map((chuong) => ({
+                    ...chuong,
+                    danhSachBaiHoc: chuong.danhSachBaiHoc.map((bai) =>
+                        bai.id === maBaiHoc && Math.abs((bai.thoiLuong ?? 0) - thoiLuongGiay) > 2
+                            ? { ...bai, thoiLuong: Math.round(thoiLuongGiay) }
+                            : bai
+                    )
+                }))
+            };
+        });
+    }, []);
+
     const handleChonBaiHoc = (maBaiHoc: number, tabDeMo: 'hoc' | 'quiz' | 'ide' = 'hoc') => {
         const index = flatList.findIndex((bai) => bai.id === maBaiHoc);
         if (index < 0) return;
@@ -511,6 +528,7 @@ const NoiDungKhoaHoc = () => {
                         maNguoiDung={maNguoiDung}
                         daXem={baiHocHienTai.daXem}
                         onVideoCompleted={handleVideoCompleted}
+                        onThoiLuongRealLoaded={handleThoiLuongRealLoaded}
                     />
                 );
             case 'Text':
@@ -555,24 +573,10 @@ const NoiDungKhoaHoc = () => {
                 soBaiDaHoc={soBaiDaHoc}
                 tongSoBai={tongSoBai}
                 onMoGhiChu={() => setHienSidebar(true)}
+                laCheDoHocThu={khoaHoc.laCheDoHocThu}
+                soVideoHocThu={khoaHoc.soVideoHocThu}
+                onMuaKhoaHoc={() => navigate(`/mua-khoa-hoc/${khoaHoc.maKhoaHoc}`)}
             />
-
-            {khoaHoc.laCheDoHocThu && (
-                <div className="container py-2">
-                    <div className="alert alert-info d-flex flex-wrap justify-content-between align-items-center mb-0">
-                        <span>
-                            Bạn đang học thử {khoaHoc.soVideoHocThu ?? 2} video đầu tiên. Mua khóa để mở khóa toàn bộ nội dung.
-                        </span>
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-primary mt-2 mt-md-0"
-                            onClick={() => navigate(`/mua-khoa-hoc/${khoaHoc.maKhoaHoc}`)}
-                        >
-                            Mua khóa học
-                        </button>
-                    </div>
-                </div>
-            )}
 
             <button
                 className="cp-mobile-toggle-sidebar btn btn-sm"

@@ -34,6 +34,71 @@ namespace educodeai_server.Controllers.QuanTriVien
             return Ok(result);
         }
 
+        /// <summary>Tải tài liệu riêng tư của hồ sơ. Chỉ Admin đã xác thực được truy cập.</summary>
+        [HttpGet("{maHoSo}/tai-lieu/{maTaiLieu}")]
+        public async Task<IActionResult> TaiTaiLieu(long maHoSo, long maTaiLieu)
+        {
+            var taiLieu = await _service.TaiTaiLieuAsync(maHoSo, maTaiLieu);
+            Response.Headers.CacheControl = "private, no-store";
+            Response.Headers.XContentTypeOptions = "nosniff";
+            return File(taiLieu.NoiDung, taiLieu.ContentType, taiLieu.TenFile, enableRangeProcessing: true);
+        }
+
+        [HttpGet("chung-chi")]
+        public async Task<IActionResult> LayDanhSachChungChi([FromQuery] ChungChiAdminFilterRequest filter)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { message = "Bộ lọc chứng chỉ không hợp lệ." });
+            return Ok(await _service.LayDanhSachChungChiAsync(filter));
+        }
+
+        [HttpGet("chung-chi/{maTaiLieu:long}/tai-lieu")]
+        public async Task<IActionResult> TaiChungChi(long maTaiLieu)
+        {
+            var taiLieu = await _service.TaiChungChiAsync(maTaiLieu);
+            Response.Headers.CacheControl = "private, no-store";
+            Response.Headers.XContentTypeOptions = "nosniff";
+            return File(taiLieu.NoiDung, taiLieu.ContentType, taiLieu.TenFile, enableRangeProcessing: true);
+        }
+
+        [HttpPut("chung-chi/dot-gui/{maDotGui:guid}/quyet-dinh")]
+        public async Task<IActionResult> QuyetDinhChungChi(
+            Guid maDotGui,
+            [FromBody] QuyetDinhDotChungChiRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { message = "Quyết định chứng chỉ không hợp lệ." });
+            if (!int.TryParse(User.FindFirst("id")?.Value, out var maQuanTriVien) || maQuanTriVien <= 0)
+                return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
+            return Ok(await _service.QuyetDinhChungChiAsync(maDotGui, maQuanTriVien, request));
+        }
+
+        [HttpPut("chung-chi/dot-gui/{maDotGui:guid}/duyet")]
+        public async Task<IActionResult> DuyetChungChi(Guid maDotGui)
+        {
+            var maQuanTriVien = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            if (maQuanTriVien <= 0) return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
+            return Ok(await _service.DuyetChungChiAsync(maDotGui, maQuanTriVien));
+        }
+
+        [HttpPut("chung-chi/dot-gui/{maDotGui:guid}/tu-choi")]
+        public async Task<IActionResult> TuChoiChungChi(Guid maDotGui, [FromBody] XuLyChungChiRequest request)
+        {
+            if (!ModelState.IsValid) return BadRequest(new { message = "Vui lòng nhập lý do từ chối." });
+            var maQuanTriVien = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            if (maQuanTriVien <= 0) return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
+            return Ok(await _service.XuLyChungChiAsync(maDotGui, maQuanTriVien, "TuChoi", request));
+        }
+
+        [HttpPut("chung-chi/dot-gui/{maDotGui:guid}/yeu-cau-bo-sung")]
+        public async Task<IActionResult> YeuCauBoSungChungChi(Guid maDotGui, [FromBody] XuLyChungChiRequest request)
+        {
+            if (!ModelState.IsValid) return BadRequest(new { message = "Vui lòng nhập nội dung cần bổ sung." });
+            var maQuanTriVien = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            if (maQuanTriVien <= 0) return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ." });
+            return Ok(await _service.XuLyChungChiAsync(maDotGui, maQuanTriVien, "CanBoSung", request));
+        }
+
         /// <summary>Đếm số hồ sơ đang chờ duyệt (cho badge thông báo trên menu admin).</summary>
         [HttpGet("dem-cho-duyet")]
         public async Task<IActionResult> DemChoDuyet()

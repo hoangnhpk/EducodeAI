@@ -37,7 +37,7 @@ a {
 .cp-header {
     position: sticky;
     top: 0;
-    z-index: 20;
+    z-index: 100;
     background: linear-gradient(90deg, var(--primary), var(--primary-hover));
     color: #fff;
     padding: 0.8rem 1.5rem;
@@ -45,6 +45,25 @@ a {
     align-items: center;
     justify-content: space-between;
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+}
+
+.btn-buy-glow {
+    position: relative;
+    background: #ffffff !important;
+    color: #d97706 !important;
+    border: none !important;
+    font-weight: 800 !important;
+    font-size: 0.85rem !important;
+    letter-spacing: 0.04em !important;
+    padding: 7px 20px !important;
+    border-radius: 999px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    cursor: pointer;
+}
+
+.btn-buy-glow:hover {
+    background: #fffbeb !important;
+    color: #b45309 !important;
 }
 
 .cp-btn-mua-khoa-hoc {

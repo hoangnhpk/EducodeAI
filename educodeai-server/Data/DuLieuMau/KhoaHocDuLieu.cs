@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
 using educodeai_server.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace educodeai_server.Data.DuLieuMau
 {
@@ -8,158 +8,44 @@ namespace educodeai_server.Data.DuLieuMau
         public static void SeedKhoaHoc(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<KhoaHocModel>().HasData(
-                // Khóa học 1: C++
-                new KhoaHocModel
-                {
-                    MaKhoaHoc = 1,
-                    MaGiangVien = 1,
-                    TenKhoaHoc = "Lập trình C++ cơ bản, nâng cao",
-                    MoTa = "Khóa học toàn diện về lập trình C++, từ cú pháp cơ bản đến các kỹ thuật lập trình nâng cao như con trỏ, OOP, xử lý file",
-                    HinhAnh = "cpp-course.jpg",
-                    TrangThai = "Hoạt động",
-                    DiemDanhGiaTB = 4.7,
-                    LinhVuc = "Lập trình hệ thống",
-                    TrinhDo = "Người mới",
-                    ThoiLuongGio = 35,
-                    KyNangChinh = "C++, OOP, Con trỏ, Cấu trúc dữ liệu",
-                    GiaKhoaHoc = 12000,
-                    DonViTienTe = "VND",
-                    ChoPhepMua = true,
-                    NgayTao = new DateTime(2026, 1, 1)
-                },
-                // Khóa học 2: Kiến Thức Nhập Môn IT
-                new KhoaHocModel
-                {
-                    MaKhoaHoc = 2,
-                    MaGiangVien = 1,
-                    TenKhoaHoc = "Kiến Thức Nhập Môn IT",
-                    MoTa = "Khóa học cung cấp kiến thức nền tảng về công nghệ thông tin, mô hình client-server, domain, và định hướng nghề nghiệp cho người mới bắt đầu",
-                    HinhAnh = "it-foundation.jpg",
-                    TrangThai = "Hoạt động",
-                    DiemDanhGiaTB = 4.9,
-                    LinhVuc = "Công nghệ thông tin",
-                    TrinhDo = "Người mới",
-                    ThoiLuongGio = 8,
-                    KyNangChinh = "IT Foundation, Client-Server, Domain, Career Guidance",
-                    GiaKhoaHoc = 10000,
-                    DonViTienTe = "VND",
-                    ChoPhepMua = true,
-                    NgayTao = new DateTime(2026, 1, 1)
-                },
-                // Khóa học 3: JavaScript Nâng Cao
-                new KhoaHocModel
-                {
-                    MaKhoaHoc = 3,
-                    MaGiangVien = 1,
-                    TenKhoaHoc = "Lập Trình Javascript nâng cao",
-                    MoTa = "Khóa học nâng cao về JavaScript, tập trung vào các khái niệm quan trọng như IIFE, Scope, Closure, Hoisting, This, Bind, Call, Apply và thực hành với Redux",
-                    HinhAnh = "js-advanced.jpg",
-                    TrangThai = "Hoạt động",
-                    DiemDanhGiaTB = 4.8,
-                    LinhVuc = "Web Development",
-                    TrinhDo = "Trung cấp",
-                    ThoiLuongGio = 15,
-                    KyNangChinh = "JavaScript, Closure, This, Bind, Call, Apply, Redux",
-                    GiaKhoaHoc = 13500,
-                    DonViTienTe = "VND",
-                    ChoPhepMua = true,
-                    NgayTao = new DateTime(2026, 1, 1)
-                },
-                // KHÓA HỌC MỚI: Lập Trình JavaScript Cơ Bản
-                new KhoaHocModel
-                {
-                    MaKhoaHoc = 4,
-                    MaGiangVien = 1,
-                    TenKhoaHoc = "Lập Trình JavaScript Cơ Bản",
-                    MoTa = "Khóa học JavaScript cơ bản dành cho người mới bắt đầu, từ biến, toán tử, hàm, mảng đến thực hành form validation",
-                    HinhAnh = "js-basic.jpg",
-                    TrangThai = "Hoạt động",
-                    DiemDanhGiaTB = 4.6,
-                    LinhVuc = "Web Development",
-                    TrinhDo = "Người mới",
-                    ThoiLuongGio = 20,
-                    KyNangChinh = "JavaScript, Functions, Arrays, DOM, Form Validation",
-                    GiaKhoaHoc = 11000,
-                    DonViTienTe = "VND",
-                    ChoPhepMua = true,
-                    NgayTao = new DateTime(2026, 1, 1)
-                },
-                // KHÓA 5: App "Đừng Chạm Tay Lên Mặt"
-                new KhoaHocModel
-                {
-                    MaKhoaHoc = 5,
-                    MaGiangVien = 1,
-                    TenKhoaHoc = "App 'Đừng Chạm Tay Lên Mặt' - Xây dựng ứng dụng AI với React và TensorFlow",
-                    MoTa = "Khóa học thực hành xây dựng ứng dụng AI phát hiện hành vi chạm tay lên mặt sử dụng React, TensorFlow.js và machine learning",
-                    HinhAnh = "dont-touch-face.jpg",
-                    TrangThai = "Hoạt động",
-                    DiemDanhGiaTB = 4.9,
-                    LinhVuc = "AI & Machine Learning",
-                    TrinhDo = "Trung cấp",
-                    ThoiLuongGio = 12,
-                    KyNangChinh = "React, TensorFlow.js, Machine Learning, Computer Vision",
-                    GiaKhoaHoc = 14900,
-                    DonViTienTe = "VND",
-                    ChoPhepMua = true,
-                    NgayTao = new DateTime(2026, 1, 1)
-                },
-                // KHÓA 6: Node & ExpressJS
-                new KhoaHocModel
-                {
-                    MaKhoaHoc = 6,
-                    MaGiangVien = 1,
-                    TenKhoaHoc = "Node & ExpressJS - Xây dựng Backend chuyên nghiệp",
-                    MoTa = "Khóa học toàn diện về Node.js và ExpressJS, từ cơ bản đến nâng cao, xây dựng RESTful API, MVC pattern, kết nối MongoDB và triển khai ứng dụng web hoàn chỉnh",
-                    HinhAnh = "node-express.jpg",
-                    TrangThai = "Hoạt động",
-                    DiemDanhGiaTB = 4.7,
-                    LinhVuc = "Backend Development",
-                    TrinhDo = "Người mới",
-                    ThoiLuongGio = 25,
-                    KyNangChinh = "Node.js, ExpressJS, MongoDB, REST API, MVC Pattern",
-                    GiaKhoaHoc = 12500,
-                    DonViTienTe = "VND",
-                    ChoPhepMua = true,
-                    NgayTao = new DateTime(2026, 1, 1)
-                },
-                // KHÓA 7: Responsive Với Grid System
-                new KhoaHocModel
-                {
-                    MaKhoaHoc = 7,
-                    MaGiangVien = 1,
-                    TenKhoaHoc = "Responsive Với Grid System - Thiết kế website đa thiết bị",
-                    MoTa = "Khóa học chuyên sâu về responsive web design, Grid System, media queries, viewport và kỹ thuật thiết kế website tương thích trên mọi thiết bị",
-                    HinhAnh = "responsive-grid.jpg",
-                    TrangThai = "Hoạt động",
-                    DiemDanhGiaTB = 4.8,
-                    LinhVuc = "Web Design & UI/UX",
-                    TrinhDo = "Người mới",
-                    ThoiLuongGio = 10,
-                    KyNangChinh = "CSS Grid, Responsive Design, Media Queries, Flexbox, Viewport",
-                    GiaKhoaHoc = 10500,
-                    DonViTienTe = "VND",
-                    ChoPhepMua = true,
-                    NgayTao = new DateTime(2026, 1, 1)
-                },
-                // KHÓA 8: Làm việc với Terminal & Ubuntu
-                new KhoaHocModel
-                {
-                    MaKhoaHoc = 8,
-                    MaGiangVien = 1,
-                    TenKhoaHoc = "Làm việc với Terminal & Ubuntu - Lập trình chuyên nghiệp với Linux",
-                    MoTa = "Khóa học toàn diện về làm việc với Terminal, WSL, Ubuntu, các lệnh Linux cơ bản đến nâng cao, cài đặt môi trường phát triển và deploy ứng dụng web lên server thật",
-                    HinhAnh = "terminal-ubuntu.jpg",
-                    TrangThai = "Hoạt động",
-                    DiemDanhGiaTB = 4.9,
-                    LinhVuc = "System Administration & DevOps",
-                    TrinhDo = "Người mới",
-                    ThoiLuongGio = 18,
-                    KyNangChinh = "Linux, Ubuntu, WSL, Terminal Commands, Server Deployment, Nginx",
-                    GiaKhoaHoc = 14000,
-                    DonViTienTe = "VND",
-                    ChoPhepMua = true,
-                    NgayTao = new DateTime(2026, 1, 1)
-                }
+                new KhoaHocModel { MaKhoaHoc = 1, MaGiangVien = 1, TenKhoaHoc = "HTML, CSS cơ bản dễ hiểu- học lập trình online miễn phí- Khóa học  HTML, CSS từ Zero Tới Hero", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Gà Lại Lập Trình. Gồm 291 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/Z6uylatF5VY/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Người mới", ThoiLuongGio = 55, KyNangChinh = "HTML, CSS, Responsive Web", GiaKhoaHoc = 11000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 2, MaGiangVien = 1, TenKhoaHoc = "JavaScript siêu tốc - Khóa học lập trình JavaScript từ cơ bản đến nâng cao - JS Full Course for free - JavaScript từ A đến Z - Javascript cơ bản", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Gà Lại Lập Trình. Gồm 146 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/736X8yW3Dzw/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Người mới", ThoiLuongGio = 28, KyNangChinh = "JavaScript, DOM, ES6", GiaKhoaHoc = 12000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 3, MaGiangVien = 1, TenKhoaHoc = "Tự Học TypeScript Cơ Bản Từ A đến Z Cho Người Mới Bắt Đầu | Khóa Học TS với Hỏi Dân IT", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Hỏi Dân IT. Gồm 42 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/lE4DfZKlwDA/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Người mới", ThoiLuongGio = 7, KyNangChinh = "TypeScript, JavaScript", GiaKhoaHoc = 13000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 4, MaGiangVien = 1, TenKhoaHoc = "[2024] Học Next.js 14 miễn phí | Khóa học NextJs TypeScript siêu chi tiết | Được Dev", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Được Dev. Gồm 41 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/ucdjfU_XKpw/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Trung cấp", ThoiLuongGio = 17, KyNangChinh = "Next.js, React, TypeScript", GiaKhoaHoc = 14000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 5, MaGiangVien = 1, TenKhoaHoc = "React JS từ cơ bản đến nâng cao - reactjs full course for free - React JS 2025 - Reactjs cho người mới", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Gà Lại Lập Trình. Gồm 86 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/NclbvXqvnyA/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Trung cấp", ThoiLuongGio = 18, KyNangChinh = "React, Hooks, JavaScript", GiaKhoaHoc = 15000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 6, MaGiangVien = 1, TenKhoaHoc = "Khóa học Fullstack SERN (SQL, Express.js, React.js, Node.js) Web Developer  Miễn Phí với Hỏi Dân IT", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Hỏi Dân IT. Gồm 138 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/VvvXhNbFWKY/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Full-stack Development", TrinhDo = "Trung cấp", ThoiLuongGio = 94, KyNangChinh = "SQL, Express, React, Node.js", GiaKhoaHoc = 10000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 7, MaGiangVien = 1, TenKhoaHoc = "Khóa học Angular Mới Nhất 2024", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Ninedev. Gồm 35 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/dxWC3jB30yE/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Trung cấp", ThoiLuongGio = 5, KyNangChinh = "NestJS, TypeScript, API", GiaKhoaHoc = 11000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 8, MaGiangVien = 1, TenKhoaHoc = "Khóa học NestJS 2024", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Hoàng An Unicode. Gồm 21 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/zSEZTe6ouYk/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Trung cấp", ThoiLuongGio = 8, KyNangChinh = "Angular, TypeScript", GiaKhoaHoc = 12000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 9, MaGiangVien = 1, TenKhoaHoc = "FastAPI Book Management API – Học FastAPI Từ A Đến Z", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh DevDien. Gồm 9 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/qnW_ANzZU6s/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Trung cấp", ThoiLuongGio = 7, KyNangChinh = "FastAPI, Python, REST API", GiaKhoaHoc = 13000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 10, MaGiangVien = 1, TenKhoaHoc = "[Python] Lập trình Python cơ bản - Howkteam", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh K team. Gồm 36 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/NZj6LI5a9vc/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Người mới", ThoiLuongGio = 13, KyNangChinh = "Python, Lập trình cơ bản", GiaKhoaHoc = 14000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 11, MaGiangVien = 1, TenKhoaHoc = "LẬP TRÌNH PYTHON TỪ CƠ BẢN TỚI NÂNG CAO", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh 28tech. Gồm 18 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/c2sorFXCLU4/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Người mới", ThoiLuongGio = 6, KyNangChinh = "Python, Lập trình cơ bản", GiaKhoaHoc = 15000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 12, MaGiangVien = 1, TenKhoaHoc = "Lập trình giao diện người dùng bằng Python sử dụng Tkinter cho người mới bắt đầu", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Ga Con Hoc Code. Gồm 11 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/m9kzSDlzpLE/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Desktop Development", TrinhDo = "Người mới", ThoiLuongGio = 3, KyNangChinh = "Python, Tkinter, GUI", GiaKhoaHoc = 10000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 13, MaGiangVien = 1, TenKhoaHoc = "Lập trình Machine learning cơ bản với Python", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh K team. Gồm 8 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/_ZjIv2D6T40/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "AI & Machine Learning", TrinhDo = "Trung cấp", ThoiLuongGio = 3, KyNangChinh = "Python, Machine Learning", GiaKhoaHoc = 11000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 14, MaGiangVien = 1, TenKhoaHoc = "Lập trình Java", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh TITV. Gồm 105 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/xfOp0izFnu0/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Trung cấp", ThoiLuongGio = 42, KyNangChinh = "Java, Spring Boot", GiaKhoaHoc = 12000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 15, MaGiangVien = 1, TenKhoaHoc = "Khóa học lập trình Java Spring boot 3 miễn phí cho người mới (2024)", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Devteria. Gồm 35 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/H2gquNz1bvs/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Người mới", ThoiLuongGio = 18, KyNangChinh = "Java, OOP", GiaKhoaHoc = 13000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 16, MaGiangVien = 1, TenKhoaHoc = "Tự Học Java Core Từ A tới Z Dành cho Beginners | Hỏi Dân IT", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Hỏi Dân IT. Gồm 82 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/7L0RLrfrBHE/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Người mới", ThoiLuongGio = 34, KyNangChinh = "C#, .NET", GiaKhoaHoc = 14000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 17, MaGiangVien = 1, TenKhoaHoc = "Lập trình C# cơ bản - HowKteam", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh K team. Gồm 28 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/9kohr6pMwag/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Người mới", ThoiLuongGio = 9, KyNangChinh = "Java Core, OOP", GiaKhoaHoc = 15000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 18, MaGiangVien = 1, TenKhoaHoc = "Tự học lập trình C# - Lập trình C# cơ bản cho người mới - Hướng dẫn C# 2022", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Gà Lại Lập Trình. Gồm 83 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/AHsL5cJVq9o/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Trung cấp", ThoiLuongGio = 30, KyNangChinh = "ASP.NET Core, MVC", GiaKhoaHoc = 10000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 19, MaGiangVien = 1, TenKhoaHoc = "Lập trình ASP.NET MVC Core", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh XuanThuLab. Gồm 40 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/haz3Ta4lvw4/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Người mới", ThoiLuongGio = 28, KyNangChinh = "C#, .NET", GiaKhoaHoc = 11000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 20, MaGiangVien = 1, TenKhoaHoc = "Hướng dẫn lập trình Blazor căn bản", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Teduco Labs. Gồm 38 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/R2Ttnd47T9Q/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Trung cấp", ThoiLuongGio = 7, KyNangChinh = "Blazor, C#", GiaKhoaHoc = 12000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 21, MaGiangVien = 1, TenKhoaHoc = "Ngôn Ngữ Lập trình C++", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh 28tech. Gồm 83 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/hu20Ld4Yf-A/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Systems Programming", TrinhDo = "Người mới", ThoiLuongGio = 83, KyNangChinh = "C++, OOP", GiaKhoaHoc = 13000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 22, MaGiangVien = 1, TenKhoaHoc = "Tự học lập trình React Native từ A đến Z", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Thạch Phạm. Gồm 33 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/atPKL_H0wxY/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Database", TrinhDo = "Người mới", ThoiLuongGio = 7, KyNangChinh = "SQL Server, SQL", GiaKhoaHoc = 14000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 23, MaGiangVien = 1, TenKhoaHoc = "Khóa học SQL Server cho người mới (2023)", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh TITV. Gồm 47 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/kQRpe1HkALE/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Database", TrinhDo = "Người mới", ThoiLuongGio = 18, KyNangChinh = "MongoDB, NoSQL", GiaKhoaHoc = 15000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 24, MaGiangVien = 1, TenKhoaHoc = "Tự Học SQL cùng Vịt - Khóa Cơ Bản cho Người Mới Bắt Đầu", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Vịt làm Data. Gồm 94 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/Hf3IJiSlQ5o/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Mobile Development", TrinhDo = "Trung cấp", ThoiLuongGio = 11, KyNangChinh = "React Native, JavaScript", GiaKhoaHoc = 10000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 25, MaGiangVien = 1, TenKhoaHoc = "Học MongoDB - Toàn Bộ Khóa Học Cho Người Mới Bắt Đầu", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Sơn Thích Học. Gồm 25 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/otF2K8mi2Ds/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Database", TrinhDo = "Người mới", ThoiLuongGio = 3, KyNangChinh = "SQL, Phân tích dữ liệu", GiaKhoaHoc = 11000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 26, MaGiangVien = 1, TenKhoaHoc = "Học Git và Github", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh TITV. Gồm 24 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/beuKZ9PW_rI/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Developer Tools", TrinhDo = "Người mới", ThoiLuongGio = 8, KyNangChinh = "Git, GitHub", GiaKhoaHoc = 12000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 27, MaGiangVien = 1, TenKhoaHoc = "Khóa học lập trình Golang Từ Cơ Bản Đến Nâng Cao – Lập Trình Go Cho Người Mới [FULL COURSE A - Z]", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Code With Tuan. Gồm 99 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/EdD8kuiFStY/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "DevOps & Cloud", TrinhDo = "Người mới", ThoiLuongGio = 19, KyNangChinh = "Docker, Container", GiaKhoaHoc = 13000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 28, MaGiangVien = 1, TenKhoaHoc = "Master RESTful API với Golang và Gin: Khóa Học Lập Trình Thực Chiến Xây Dựng Backend  [FULL COURSE A - Z]", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Code With Tuan. Gồm 96 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/TWThsqJCQ8U/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Người mới", ThoiLuongGio = 43, KyNangChinh = "Go, Golang", GiaKhoaHoc = 14000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 29, MaGiangVien = 1, TenKhoaHoc = "Docker cơ bản", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Học Lập Trình Online. Gồm 26 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/P1IpryhFeLM/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "DevOps & Cloud", TrinhDo = "Trung cấp", ThoiLuongGio = 5, KyNangChinh = "Kubernetes, Container", GiaKhoaHoc = 15000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 30, MaGiangVien = 1, TenKhoaHoc = "Học Kubernetes Tiếng Việt Full", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Viet Tran. Gồm 40 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/v5wZlQnHU3A/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Backend Development", TrinhDo = "Trung cấp", ThoiLuongGio = 7, KyNangChinh = "Go, Gin, REST API", GiaKhoaHoc = 10000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 31, MaGiangVien = 1, TenKhoaHoc = "Tự học lập trình Flutter 2023", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh TinCoder. Gồm 53 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/ZTbPz2i2Dms/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Mobile Development", TrinhDo = "Người mới", ThoiLuongGio = 13, KyNangChinh = "Flutter, Dart", GiaKhoaHoc = 11000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 32, MaGiangVien = 1, TenKhoaHoc = "Lập trình Android với Kotlin - Jetpack Compose", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Duy Le - MSc IT Hust. Gồm 20 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/-3Jf2Mwgkpo/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Mobile Development", TrinhDo = "Trung cấp", ThoiLuongGio = 8, KyNangChinh = "Android, Kotlin, Jetpack Compose", GiaKhoaHoc = 12000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 33, MaGiangVien = 1, TenKhoaHoc = "Tự Học Machine Learning cơ bản - Nhập Môn ML", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Gà AI. Gồm 105 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/4DU5WEXQAV4/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Data Science", TrinhDo = "Người mới", ThoiLuongGio = 25, KyNangChinh = "Python, Data Science", GiaKhoaHoc = 13000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 34, MaGiangVien = 1, TenKhoaHoc = "Tự Học Data Science Cho Người Mới Bắt Đầu", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh CodeXplore. Gồm 11 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/HPGYTWYM13s/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Algorithms", TrinhDo = "Trung cấp", ThoiLuongGio = 9, KyNangChinh = "Thuật toán, Cấu trúc dữ liệu", GiaKhoaHoc = 14000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 35, MaGiangVien = 1, TenKhoaHoc = "Khóa học: MIT 6.006 Introduction to Algorithms (Full) | Việt Nam - Lồng tiếng - Song Ngữ by The Compiler", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Tri Thức Mở by The Compiler. Gồm 32 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/vu8YfwZoPBg/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "AI & Machine Learning", TrinhDo = "Người mới", ThoiLuongGio = 36, KyNangChinh = "Machine Learning, Python", GiaKhoaHoc = 15000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 36, MaGiangVien = 1, TenKhoaHoc = "Php Mysql: Hướng dẫn cho người mới bắt đầu | Unitop.vn", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Phan Văn Cương. Gồm 12 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/ax4F93wQ2R0/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Người mới", ThoiLuongGio = 5, KyNangChinh = "PHP, MySQL", GiaKhoaHoc = 10000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 37, MaGiangVien = 1, TenKhoaHoc = "Khóa học Laravel Framework 12 cơ bản", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Học Lập Trình - Hienu. Gồm 76 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/buBaqIhuY2M/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Trung cấp", ThoiLuongGio = 22, KyNangChinh = "Laravel, PHP", GiaKhoaHoc = 11000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) },
+                new KhoaHocModel { MaKhoaHoc = 38, MaGiangVien = 1, TenKhoaHoc = "Khoá học Vuejs từ cơ bản đến nâng cao", MoTa = "Khóa học tiếng Việt từ playlist YouTube của kênh Tech Mely. Gồm 64 bài học theo đúng thứ tự của danh sách phát.", HinhAnh = "https://i.ytimg.com/vi/Vg9n_YRGPIY/hqdefault.jpg", TrangThai = "Hoạt động", DiemDanhGiaTB = 0, LinhVuc = "Web Development", TrinhDo = "Trung cấp", ThoiLuongGio = 7, KyNangChinh = "Vue.js, JavaScript", GiaKhoaHoc = 12000, DonViTienTe = "VND", ChoPhepMua = true, NgayTao = new DateTime(2026, 8, 19, 0, 0, 0, DateTimeKind.Utc) }
             );
         }
     }

@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "EduCodeAI",
+    "slug": "educodeai-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "educodeai",
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "EduCodeAI cần quyền truy cập ảnh để cập nhật ảnh đại diện."
+        }
+      ]
+    ],
+    "android": {
+      "permissions": ["android.permission.READ_MEDIA_IMAGES"]
+    },
+    "ios": {
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "EduCodeAI cần quyền truy cập ảnh để cập nhật ảnh đại diện."
+      }
+    }
+  }
+}

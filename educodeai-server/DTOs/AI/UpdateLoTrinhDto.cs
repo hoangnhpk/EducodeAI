@@ -2,9 +2,8 @@
 {
     public class UpdateLoTrinhDto
     {
-        public int MaLoTrinh { get; set; }
+        public string NoiDungJSON { get; set; } = null!;
 
-        // Yêu cầu mới của user
         public string YeuCauMoi { get; set; } = null!;
     }
 }

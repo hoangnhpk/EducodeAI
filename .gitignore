@@ -389,6 +389,16 @@ educodeai-server/tessdata/
 # Scratch / temporary working dir
 scratch/
 
+# Production deployment secrets and local container data
+.env.production
+.env.production.*
+!.env.production.example
+secrets/
+!secrets/.gitkeep
+postgres_data/
+redis_data/
+caddy_data/
+
 # Frontend test coverage output
 educodeai-client/coverage/
 

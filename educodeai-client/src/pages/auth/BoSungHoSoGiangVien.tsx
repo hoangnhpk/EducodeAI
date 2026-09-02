@@ -3,6 +3,12 @@ import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom"
 import { FaArrowLeft, FaUpload, FaCheckCircle, FaEnvelope, FaClock } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { hoSoGiangVienService } from "@/services/ho-so-giang-vien.service";
+import LecturerDocumentUpload, {
+  isLecturerDocumentError,
+  validateCertificateMetadata,
+  validateLecturerDocuments,
+  type LecturerCertificateUpload
+} from "@/components/LecturerDocumentUpload";
 import "./DangKyGiangVien.css";
 
 export default function BoSungHoSoGiangVien() {
@@ -21,9 +27,6 @@ export default function BoSungHoSoGiangVien() {
     hoTen: "",
     soDienThoai: "",
     linhVucGiangDay: "",
-    tieuSu: "",
-    linkedInUrl: "",
-    websiteUrl: "",
     soGiayTo: "",
     tenNganHang: "",
     soTaiKhoanNhanTien: "",
@@ -36,6 +39,10 @@ export default function BoSungHoSoGiangVien() {
     anhGiayToMatTruoc: null as File | null,
     anhGiayToMatSau: null as File | null,
   });
+
+  const [cvFiles, setCvFiles] = useState<File[]>([]);
+  const [certificates, setCertificates] = useState<LecturerCertificateUpload[]>([]);
+  const [documentError, setDocumentError] = useState("");
 
   const [dangTai, setDangTai] = useState(false);
   const avatarRef = useRef<HTMLInputElement>(null);
@@ -85,14 +92,19 @@ export default function BoSungHoSoGiangVien() {
       return;
     }
 
+    const documentValidationError = await validateLecturerDocuments(cvFiles, certificates.map((item) => item.file), false)
+      || validateCertificateMetadata(certificates);
+    if (documentValidationError) {
+      setDocumentError(documentValidationError);
+      Swal.fire("Tài liệu không hợp lệ", documentValidationError, "warning");
+      return;
+    }
+
     const fd = new FormData();
     fd.append("Token", tokenFromUrl);
     if (form.hoTen.trim()) fd.append("HoTen", form.hoTen.trim());
     if (form.soDienThoai.trim()) fd.append("SoDienThoai", form.soDienThoai.trim());
     if (form.linhVucGiangDay.trim()) fd.append("LinhVucGiangDay", form.linhVucGiangDay.trim());
-    if (form.tieuSu.trim()) fd.append("TieuSu", form.tieuSu.trim());
-    if (form.linkedInUrl.trim()) fd.append("LinkedInUrl", form.linkedInUrl.trim());
-    if (form.websiteUrl.trim()) fd.append("WebsiteUrl", form.websiteUrl.trim());
     if (form.soGiayTo.trim()) fd.append("SoGiayTo", form.soGiayTo.trim());
     if (form.tenNganHang.trim()) fd.append("TenNganHang", form.tenNganHang.trim());
     if (form.soTaiKhoanNhanTien.trim()) fd.append("SoTaiKhoanNhanTien", form.soTaiKhoanNhanTien.trim());
@@ -101,6 +113,19 @@ export default function BoSungHoSoGiangVien() {
     if (files.anhDaiDien) fd.append("AnhDaiDien", files.anhDaiDien);
     if (files.anhGiayToMatTruoc) fd.append("AnhGiayToMatTruoc", files.anhGiayToMatTruoc);
     if (files.anhGiayToMatSau) fd.append("AnhGiayToMatSau", files.anhGiayToMatSau);
+    cvFiles.forEach((file) => fd.append("CvFiles", file));
+    certificates.forEach((certificate, index) => {
+      const prefix = `Certificates[${index}]`;
+      fd.append(`${prefix}.ClientId`, certificate.clientId);
+      fd.append(`${prefix}.File`, certificate.file);
+      fd.append(`${prefix}.TenChungChi`, certificate.tenChungChi.trim());
+      if (certificate.donViCap.trim()) fd.append(`${prefix}.DonViCap`, certificate.donViCap.trim());
+      if (certificate.ngayCap) fd.append(`${prefix}.NgayCap`, certificate.ngayCap);
+      if (certificate.ngayHetHan) fd.append(`${prefix}.NgayHetHan`, certificate.ngayHetHan);
+      if (certificate.maChungChi.trim()) fd.append(`${prefix}.MaChungChi`, certificate.maChungChi.trim());
+      if (certificate.urlXacMinh.trim()) fd.append(`${prefix}.UrlXacMinh`, certificate.urlXacMinh.trim());
+      fd.append(`${prefix}.RelativePath`, certificate.relativePath);
+    });
 
     try {
       setDangTai(true);
@@ -111,7 +136,9 @@ export default function BoSungHoSoGiangVien() {
         setThongBao("Hồ sơ của bạn đã được cập nhật, vui lòng đợi kết quả.");
       });
     } catch (error: any) {
-      Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể cập nhật hồ sơ.", "error");
+      const message = error?.response?.data?.message ?? "Không thể cập nhật hồ sơ.";
+      if (isLecturerDocumentError(message)) setDocumentError(message);
+      await Swal.fire(isLecturerDocumentError(message) ? "Tài liệu không hợp lệ" : "Lỗi", message, "error");
     } finally {
       setDangTai(false);
     }
@@ -221,14 +248,23 @@ export default function BoSungHoSoGiangVien() {
             <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Số điện thoại</label><input className="dkgv-form-control" placeholder="Bỏ trống nếu không đổi" value={form.soDienThoai} onChange={(e) => setField("soDienThoai", e.target.value)} /></div></div>
             <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Lĩnh vực giảng dạy</label><input className="dkgv-form-control" placeholder="Bỏ trống nếu không đổi" value={form.linhVucGiangDay} onChange={(e) => setField("linhVucGiangDay", e.target.value)} /></div></div>
             <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Số giấy tờ</label><input className="dkgv-form-control" placeholder="Bỏ trống nếu không đổi" value={form.soGiayTo} onChange={(e) => setField("soGiayTo", e.target.value)} /></div></div>
-            <div className="col-12"><div className="dkgv-form-group"><label className="dkgv-form-label">Tiểu sử</label><textarea className="dkgv-form-control" rows={4} maxLength={500} placeholder="Bỏ trống nếu không đổi" value={form.tieuSu} onChange={(e) => setField("tieuSu", e.target.value)} /></div></div>
-            <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">LinkedIn</label><input className="dkgv-form-control" placeholder="Bỏ trống nếu không đổi" value={form.linkedInUrl} onChange={(e) => setField("linkedInUrl", e.target.value)} /></div></div>
-            <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Website</label><input className="dkgv-form-control" placeholder="Bỏ trống nếu không đổi" value={form.websiteUrl} onChange={(e) => setField("websiteUrl", e.target.value)} /></div></div>
             <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tên ngân hàng</label><input className="dkgv-form-control" placeholder="Bỏ trống nếu không đổi" value={form.tenNganHang} onChange={(e) => setField("tenNganHang", e.target.value)} /></div></div>
             <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Số tài khoản</label><input className="dkgv-form-control" placeholder="Bỏ trống nếu không đổi" value={form.soTaiKhoanNhanTien} onChange={(e) => setField("soTaiKhoanNhanTien", e.target.value)} /></div></div>
             <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Tên chủ tài khoản</label><input className="dkgv-form-control" placeholder="Bỏ trống nếu không đổi" value={form.tenChuTaiKhoan} onChange={(e) => setField("tenChuTaiKhoan", e.target.value)} /></div></div>
             <div className="col-md-6"><div className="dkgv-form-group"><label className="dkgv-form-label">Mã số thuế</label><input className="dkgv-form-control" placeholder="Bỏ trống nếu không đổi" value={form.maSoThue} onChange={(e) => setField("maSoThue", e.target.value)} /></div></div>
           </div>
+
+          <div className="dkgv-section-title mt-4"><FaUpload /><span>CV và chứng chỉ chuyên môn</span></div>
+          <p className="text-muted small">Chỉ chọn tài liệu nếu cần thay thế nhóm tương ứng. Tài liệu cũ sẽ được giữ nguyên nếu không chọn file mới.</p>
+          <LecturerDocumentUpload
+            cvFiles={cvFiles}
+            certificates={certificates}
+            onCvFilesChange={(nextFiles) => { setCvFiles(nextFiles); setDocumentError(""); }}
+            onCertificatesChange={(nextCertificates) => { setCertificates(nextCertificates); setDocumentError(""); }}
+            onError={(message) => { setDocumentError(message); void Swal.fire("Tài liệu không hợp lệ", message, "warning"); }}
+            requireCv={false}
+          />
+          {documentError && <div className="text-danger small mt-2" role="alert">{documentError}</div>}
 
           <div className="dkgv-section-title mt-4"><FaUpload /><span>Tải lại giấy tờ (nếu admin yêu cầu)</span></div>
           <div className="dkgv-upload-grid">

@@ -27,7 +27,7 @@
           </li>
           <li>
             <strong>Tối ưu hóa lộ trình:</strong> Đề xuất các khóa học và dự án phù
-            hợp với phong cách học của bạn
+            phù hợp với mục tiêu và trình độ của bạn
           </li>
           <li>
             <strong>Phân bổ thời gian:</strong> Lập kế hoạch học tập chi tiết theo

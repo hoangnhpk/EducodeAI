@@ -8,5 +8,7 @@
         public string LinhVuc { get; set; } = null!;
         public string KyNangChinh { get; set; } = null!;
         public int ThoiLuongGio { get; set; }
+        public decimal GiaKhoaHoc { get; set; }
+        public string DonViTienTe { get; set; } = "VND";
     }
 }

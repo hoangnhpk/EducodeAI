@@ -1,0 +1,130 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: educodeai-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify application and Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore backend
+        run: dotnet restore educodeai-server/educodeai-server.csproj
+
+      - name: Build backend
+        run: dotnet build educodeai-server/educodeai-server.csproj --configuration Release --no-restore
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: educodeai-client/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: educodeai-client
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: educodeai-client
+        run: npm run build
+
+      - name: Validate production Compose
+        run: docker compose --env-file .env.production.example -f docker-compose.prod.yml config --quiet
+
+  deploy:
+    name: Deploy to VPS
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@2ead5e36573f08b82fbfce1504f1a4b05a647c6f # v1.2.2
+        env:
+          PROJECT_PATH: ${{ vars.VPS_PROJECT_PATH || '/home/deploy/duan2' }}
+          EXPECTED_REPOSITORY: ${{ github.repository }}
+          DEPLOY_SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT || '22' }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          envs: PROJECT_PATH,EXPECTED_REPOSITORY,DEPLOY_SHA
+          command_timeout: 25m
+          script_stop: true
+          script: |
+            set -Eeuo pipefail
+
+            test -n "${PROJECT_PATH:-}" || { echo "PROJECT_PATH is empty" >&2; exit 1; }
+            test -d "$PROJECT_PATH/.git" || { echo "$PROJECT_PATH is not a Git repository" >&2; exit 1; }
+            cd "$PROJECT_PATH"
+
+            remote_url="$(git remote get-url origin)"
+            case "$remote_url" in
+              *"${EXPECTED_REPOSITORY}.git"|*"${EXPECTED_REPOSITORY}") ;;
+              *) echo "Repository mismatch: refusing to deploy" >&2; exit 1 ;;
+            esac
+
+            test -f .env.production || { echo ".env.production is missing" >&2; exit 1; }
+            test -f docker-compose.prod.yml || { echo "docker-compose.prod.yml is missing" >&2; exit 1; }
+
+            git fetch --prune origin main
+            git checkout main
+            git pull --ff-only origin main
+            test "$(git rev-parse HEAD)" = "$DEPLOY_SHA" || {
+              echo "VPS checkout does not match the workflow commit" >&2
+              exit 1
+            }
+
+            compose() {
+              docker compose --env-file .env.production -f docker-compose.prod.yml "$@"
+            }
+
+            compose config --quiet
+            compose up -d --build --remove-orphans
+
+            for attempt in $(seq 1 24); do
+              backend_id="$(compose ps -q backend)"
+              frontend_id="$(compose ps -q frontend)"
+              backend_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$backend_id" 2>/dev/null || true)"
+              frontend_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$frontend_id" 2>/dev/null || true)"
+
+              if [ "$backend_health" = healthy ] && [ "$frontend_health" = healthy ]; then
+                break
+              fi
+
+              if [ "$attempt" -eq 24 ]; then
+                compose ps
+                compose logs --tail=100 backend migrate frontend
+                exit 1
+              fi
+              sleep 5
+            done
+
+            app_port="$(grep -E '^APP_PORT=' .env.production | cut -d= -f2- | tr -d '[:space:]' || true)"
+            app_port="${app_port:-8082}"
+            case "$app_port" in
+              *[!0-9]*|'') echo "APP_PORT must be numeric" >&2; exit 1 ;;
+            esac
+            curl --fail --silent --show-error "http://127.0.0.1:${app_port}/health" >/dev/null
+            compose ps
+            docker image prune -f

@@ -78,7 +78,9 @@ export const authService = {
   },
 
   googleLogin: async (payload: { credential: string }, maThietBi: string, tenThietBi: string) => {
-    return await api.post(`/api/XacThuc/google-login?maThietBi=${maThietBi}&tenThietBi=${tenThietBi}`, payload);
+    return await api.post('/api/XacThuc/google-login', payload, {
+      params: { maThietBi, tenThietBi }
+    });
   },
 
   facebookLogin: async (payload: { accessToken: string }, maThietBi: string, tenThietBi: string) => {
@@ -130,7 +132,10 @@ export const authService = {
     });
   },
 
-  getDevices: async (maThietBiHienTai: string) => {
+  getDevices: async (maThietBiHienTai?: string) => {
+    if (maThietBiHienTai === undefined) {
+      return await api.get('/api/XacThuc/danh-sach-thiet-bi');
+    }
     return await api.get('/api/XacThuc/danh-sach-thiet-bi', { params: { maThietBiHienTai } });
   },
 

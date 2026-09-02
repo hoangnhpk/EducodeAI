@@ -1,30 +1,42 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator, Animated } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TroLyAIService, ChatMessage } from '../services/tro-ly-ai.service';
 import Markdown from 'react-native-markdown-display';
 import { AnimatedPressable } from '../../../shared/components/animated-pressable';
+import { ChatMessage, TroLyAIService } from '../services/tro-ly-ai.service';
 
 const COLORS = {
-  primary: '#fb873f',
-  primaryGradient: ['#ff9955', '#fb873f'] as const,
-  background: '#f8fafc',
-  white: '#ffffff',
-  text: '#1e293b',
-  gray: '#64748b',
-  lightGray: '#f1f5f9',
-  border: '#e2e8f0',
-  aiBubble: '#ffffff',
-  userBubble: '#fb873f',
-  success: '#10b981',
+  primary: '#F69050',
+  primaryPressed: '#E67E22',
+  aiAccent: '#8B5CF6',
+  background: '#F9FAFB',
+  white: '#FFFFFF',
+  text: '#111827',
+  gray: '#6B7280',
+  lightGray: '#F3F4F6',
+  border: '#E5E7EB',
+  danger: '#EF4444',
 };
 
-const SHADOWS = {
-  glow: { shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10, elevation: 8 }
-};
+const HISTORY_PREFIX = 'mobile_chat_history';
+const MAX_HISTORY_MESSAGES = 50;
+const MAX_CONTEXT_MESSAGES = 10;
+const MAX_LESSON_CONTENT_LENGTH = 2000;
 
 interface ChatBotProps {
   courseId?: number;
@@ -33,98 +45,166 @@ interface ChatBotProps {
   noiDungBaiHoc?: string | null;
 }
 
-export const ChatBot: React.FC<ChatBotProps> = ({ courseId, courseName, tieuDeBaiHoc, noiDungBaiHoc }) => {
+function createWelcomeMessage(courseName?: string): ChatMessage {
+  const courseContext = courseName ? ` về khóa ${courseName}` : '';
+  return {
+    VaiTro: 'assistant',
+    NoiDung: `Chào bạn! Mình là trợ lý AI EduCode. Bạn cần hỗ trợ gì${courseContext}?`,
+  };
+}
+
+function isChatMessage(value: unknown): value is ChatMessage {
+  if (!value || typeof value !== 'object') return false;
+  const message = value as Partial<ChatMessage>;
+  return (message.VaiTro === 'user' || message.VaiTro === 'assistant')
+    && typeof message.NoiDung === 'string';
+}
+
+function parseHistory(value: string | null): ChatMessage[] | null {
+  if (!value) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed) || !parsed.every(isChatMessage)) return null;
+    return parsed.slice(-MAX_HISTORY_MESSAGES);
+  } catch {
+    return null;
+  }
+}
+
+export const ChatBot: React.FC<ChatBotProps> = ({
+  courseId,
+  courseName,
+  tieuDeBaiHoc,
+  noiDungBaiHoc,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
-
-  // Pulse Animation cho nút float
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [failedQuestion, setFailedQuestion] = useState<string | null>(null);
+  const flatListRef = useRef<FlatList<ChatMessage>>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const requestInFlightRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  const historyKey = useMemo(() => {
+    if (courseId !== undefined) return `${HISTORY_PREFIX}:course:${courseId}`;
+    return `${HISTORY_PREFIX}:general`;
+  }, [courseId]);
+
+  const welcomeMessage = useMemo(() => createWelcomeMessage(courseName), [courseName]);
+
+  const saveHistory = useCallback(async (nextMessages: ChatMessage[]) => {
+    try {
+      await AsyncStorage.setItem(
+        historyKey,
+        JSON.stringify(nextMessages.slice(-MAX_HISTORY_MESSAGES)),
+      );
+    } catch {
+      // Lỗi lưu cục bộ không được làm gián đoạn cuộc trò chuyện.
+    }
+  }, [historyKey]);
+
+  const loadHistory = useCallback(async () => {
+    setIsHistoryLoading(true);
+    try {
+      const storedHistory = parseHistory(await AsyncStorage.getItem(historyKey));
+      if (mountedRef.current) setMessages(storedHistory?.length ? storedHistory : [welcomeMessage]);
+    } catch {
+      if (mountedRef.current) setMessages([welcomeMessage]);
+    } finally {
+      if (mountedRef.current) setIsHistoryLoading(false);
+    }
+  }, [historyKey, welcomeMessage]);
 
   useEffect(() => {
-    loadHistory();
-    // Chạy pulse effect liên tục
-    Animated.loop(
+    mountedRef.current = true;
+    void loadHistory();
+
+    const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.1, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.06, duration: 800, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
+      ]),
+    );
+    animation.start();
 
-  const loadHistory = async () => {
-    try {
-      const historyStr = await AsyncStorage.getItem('mobile_chat_history');
-      if (historyStr) {
-        setMessages(JSON.parse(historyStr));
-      } else {
-        setMessages([{ VaiTro: 'assistant', NoiDung: `Chào bạn! Mình là trợ lý AI thông minh của Educode. Bạn có câu hỏi nào về khóa ${courseName || ''} không?` }]);
-      }
-    } catch (e) {
-      console.error('Failed to load history', e);
-    }
-  };
+    return () => {
+      mountedRef.current = false;
+      animation.stop();
+    };
+  }, [loadHistory, pulseAnim]);
 
-  const saveHistory = async (newMessages: ChatMessage[]) => {
-    try {
-      await AsyncStorage.setItem('mobile_chat_history', JSON.stringify(newMessages));
-    } catch (e) {}
-  };
+  const sendQuestion = useCallback(async (question: string) => {
+    const trimmedQuestion = question.trim();
+    if (!trimmedQuestion || requestInFlightRef.current) return;
 
-  const handleSend = async () => {
-    if (!inputText.trim()) return;
-
-    const newUserMsg: ChatMessage = { VaiTro: 'user', NoiDung: inputText.trim() };
-    const newHistory = [...messages, newUserMsg];
-    setMessages(newHistory);
-    setInputText('');
+    requestInFlightRef.current = true;
     setIsLoading(true);
+    setErrorMessage(null);
+    setFailedQuestion(null);
+    setInputText('');
 
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    const userMessage: ChatMessage = { VaiTro: 'user', NoiDung: trimmedQuestion };
+    const nextHistory = [...messages, userMessage].slice(-MAX_HISTORY_MESSAGES);
+    setMessages(nextHistory);
 
     try {
-      const payloadHistory = newHistory.slice(-10);
-      const res = await TroLyAIService.tuVanHocTap({
-        LichSuChat: payloadHistory,
+      const response = await TroLyAIService.tuVanHocTap({
+        LichSuChat: nextHistory.slice(-MAX_CONTEXT_MESSAGES),
         TieuDeBaiHoc: tieuDeBaiHoc || courseName || null,
-        NoiDungBaiHoc: noiDungBaiHoc ? noiDungBaiHoc.substring(0, 2000) : null
+        NoiDungBaiHoc: noiDungBaiHoc?.slice(0, MAX_LESSON_CONTENT_LENGTH) || null,
       });
+      const answer = response.data?.cauTraLoi?.trim();
+      if (!answer) throw new Error('EMPTY_AI_RESPONSE');
 
-      if (res && res.data) {
-        const aiMsg: ChatMessage = { VaiTro: 'assistant', NoiDung: res.data.cauTraLoi || 'Lỗi phản hồi' };
-        const finalHistory = [...newHistory, aiMsg];
-        setMessages(finalHistory);
-        saveHistory(finalHistory);
+      const finalHistory = [
+        ...nextHistory,
+        { VaiTro: 'assistant', NoiDung: answer } as ChatMessage,
+      ].slice(-MAX_HISTORY_MESSAGES);
+      if (mountedRef.current) setMessages(finalHistory);
+      await saveHistory(finalHistory);
+    } catch {
+      if (mountedRef.current) {
+        setErrorMessage('Không thể nhận phản hồi từ AI. Vui lòng thử lại.');
+        setFailedQuestion(trimmedQuestion);
       }
-    } catch (error) {
-      const errorMsg: ChatMessage = { VaiTro: 'assistant', NoiDung: 'Xin lỗi, AI đang bận. Vui lòng thử lại sau.' };
-      const finalHistory = [...newHistory, errorMsg];
-      setMessages(finalHistory);
-      saveHistory(finalHistory);
     } finally {
-      setIsLoading(false);
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      requestInFlightRef.current = false;
+      if (mountedRef.current) setIsLoading(false);
     }
-  };
+  }, [courseName, messages, noiDungBaiHoc, saveHistory, tieuDeBaiHoc]);
 
-  const clearHistory = () => {
-    const reset = [{ VaiTro: 'assistant', NoiDung: 'Chào bạn! Mình là trợ lý AI. Cần hỗ trợ gì thêm không?' }];
-    setMessages(reset as ChatMessage[]);
-    saveHistory(reset as ChatMessage[]);
-  };
+  const clearHistory = useCallback(() => {
+    if (isLoading) return;
+    Alert.alert('Xóa lịch sử trò chuyện?', 'Thao tác này chỉ xóa lịch sử trên thiết bị này.', [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => {
+          const reset = [welcomeMessage];
+          setMessages(reset);
+          setErrorMessage(null);
+          setFailedQuestion(null);
+          void saveHistory(reset);
+        },
+      },
+    ]);
+  }, [isLoading, saveHistory, welcomeMessage]);
 
-  const renderItem = ({ item }: { item: ChatMessage }) => {
+  const renderItem = useCallback(({ item }: { item: ChatMessage }) => {
     const isUser = item.VaiTro === 'user';
     return (
       <View style={[styles.bubbleContainer, isUser ? styles.userContainer : styles.aiContainer]}>
         {!isUser && (
           <View style={styles.aiAvatar}>
-            <Ionicons name="hardware-chip" size={18} color={COLORS.white} />
+            <Ionicons name="sparkles" size={17} color={COLORS.white} />
           </View>
         )}
-        <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble, !isUser && styles.shadow]}>
+        <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
           {isUser ? (
             <Text style={styles.userText}>{item.NoiDung}</Text>
           ) : (
@@ -133,59 +213,79 @@ export const ChatBot: React.FC<ChatBotProps> = ({ courseId, courseName, tieuDeBa
         </View>
       </View>
     );
-  };
+  }, []);
+
+  const canSend = inputText.trim().length > 0 && !isLoading && !isHistoryLoading;
 
   return (
     <>
       <Animated.View style={[styles.floatingButtonWrapper, { transform: [{ scale: pulseAnim }] }]}>
-        <AnimatedPressable onPress={() => setIsOpen(true)}>
-          <LinearGradient colors={COLORS.primaryGradient} style={styles.floatingButton}>
-            <Ionicons name="chatbubbles" size={30} color="#fff" />
-          </LinearGradient>
+        <AnimatedPressable onPress={() => setIsOpen(true)} accessibilityLabel="Mở trợ lý AI">
+          <View style={styles.floatingButton}>
+            <Ionicons name="chatbubbles" size={28} color={COLORS.white} />
+          </View>
         </AnimatedPressable>
       </Animated.View>
 
-      <Modal visible={isOpen} animationType="slide" transparent={true}>
+      <Modal visible={isOpen} animationType="slide" transparent onRequestClose={() => setIsOpen(false)}>
         <BlurView intensity={20} tint="dark" style={styles.modalOverlay}>
           <KeyboardAvoidingView style={styles.modalContent} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerTitle}>
-                <LinearGradient colors={COLORS.primaryGradient} style={styles.headerIconBg}>
-                  <Ionicons name="hardware-chip" size={20} color={COLORS.white} />
-                </LinearGradient>
-                <View style={{ marginLeft: 10 }}>
-                  <Text style={styles.headerText}>Trợ Lý EduCode AI</Text>
-                  <Text style={styles.headerSub}>Luôn sẵn sàng hỗ trợ</Text>
+                <View style={styles.headerIconBg}>
+                  <Ionicons name="sparkles" size={20} color={COLORS.white} />
+                </View>
+                <View style={styles.headerCopy}>
+                  <Text style={styles.headerText}>Trợ lý EduCode AI</Text>
+                  <Text style={styles.headerSub}>{isLoading ? 'Đang xử lý câu hỏi' : 'Sẵn sàng hỗ trợ'}</Text>
                 </View>
               </View>
               <View style={styles.headerActions}>
-                <AnimatedPressable onPress={clearHistory} style={{ marginRight: 15 }}>
-                  <Ionicons name="trash-outline" size={24} color={COLORS.gray} />
+                <AnimatedPressable onPress={clearHistory} style={styles.iconButton} disabled={isLoading} accessibilityLabel="Xóa lịch sử">
+                  <Ionicons name="trash-outline" size={22} color={COLORS.gray} />
                 </AnimatedPressable>
-                <AnimatedPressable onPress={() => setIsOpen(false)}>
-                  <Ionicons name="close-circle" size={28} color={COLORS.gray} />
+                <AnimatedPressable onPress={() => setIsOpen(false)} style={styles.iconButton} accessibilityLabel="Đóng trợ lý AI">
+                  <Ionicons name="close" size={25} color={COLORS.gray} />
                 </AnimatedPressable>
               </View>
             </View>
 
-            {/* Chat List */}
-            <FlatList
-              ref={flatListRef}
-              data={messages}
-              keyExtractor={(_, index) => index.toString()}
-              renderItem={renderItem}
-              contentContainerStyle={styles.listContent}
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            />
+            {isHistoryLoading ? (
+              <View style={styles.centerState}>
+                <ActivityIndicator color={COLORS.aiAccent} />
+                <Text style={styles.stateText}>Đang tải lịch sử...</Text>
+              </View>
+            ) : (
+              <FlatList
+                ref={flatListRef}
+                data={messages}
+                keyExtractor={(_, index) => `${historyKey}:${index}`}
+                renderItem={renderItem}
+                contentContainerStyle={styles.listContent}
+                onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                keyboardShouldPersistTaps="handled"
+              />
+            )}
+
             {isLoading && (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color={COLORS.primary} />
+                <ActivityIndicator size="small" color={COLORS.aiAccent} />
                 <Text style={styles.loadingText}>AI đang suy nghĩ...</Text>
               </View>
             )}
 
-            {/* Input Box */}
+            {errorMessage && (
+              <View style={styles.errorState}>
+                <Ionicons name="alert-circle-outline" size={20} color={COLORS.danger} />
+                <Text style={styles.errorText}>{errorMessage}</Text>
+                {failedQuestion && (
+                  <AnimatedPressable onPress={() => void sendQuestion(failedQuestion)} disabled={isLoading} style={styles.retryButton}>
+                    <Text style={styles.retryText}>Thử lại</Text>
+                  </AnimatedPressable>
+                )}
+              </View>
+            )}
+
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -193,11 +293,18 @@ export const ChatBot: React.FC<ChatBotProps> = ({ courseId, courseName, tieuDeBa
                 placeholderTextColor={COLORS.gray}
                 value={inputText}
                 onChangeText={setInputText}
+                editable={!isLoading}
                 multiline
+                maxLength={2000}
               />
-              <AnimatedPressable style={[styles.sendButton, !inputText.trim() && { opacity: 0.5 }]} onPress={handleSend} disabled={isLoading || !inputText.trim()}>
-                <LinearGradient colors={COLORS.primaryGradient} style={styles.sendGradient}>
-                  <Ionicons name="send" size={18} color={COLORS.white} style={{ marginLeft: 2 }} />
+              <AnimatedPressable
+                style={[styles.sendButton, !canSend && styles.disabledButton]}
+                onPress={() => void sendQuestion(inputText)}
+                disabled={!canSend}
+                accessibilityLabel="Gửi câu hỏi"
+              >
+                <LinearGradient colors={[COLORS.aiAccent, '#7C3AED']} style={styles.sendGradient}>
+                  <Ionicons name="send" size={18} color={COLORS.white} />
                 </LinearGradient>
               </AnimatedPressable>
             </View>
@@ -209,39 +316,48 @@ export const ChatBot: React.FC<ChatBotProps> = ({ courseId, courseName, tieuDeBa
 };
 
 const styles = StyleSheet.create({
-  floatingButtonWrapper: { position: 'absolute', bottom: 30, right: 20, zIndex: 999, ...SHADOWS.glow },
-  floatingButton: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center' },
+  floatingButtonWrapper: { position: 'absolute', bottom: 30, right: 20, zIndex: 999 },
+  floatingButton: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.aiAccent, elevation: 4 },
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' },
-  modalContent: { height: '85%', backgroundColor: COLORS.background, borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: -5 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  headerTitle: { flexDirection: 'row', alignItems: 'center' },
-  headerIconBg: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  headerText: { fontSize: 18, fontWeight: '800', color: COLORS.text, letterSpacing: -0.5 },
-  headerSub: { fontSize: 13, color: COLORS.success, fontWeight: '600' },
+  modalContent: { height: '85%', backgroundColor: COLORS.background, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTitle: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  headerIconBg: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.aiAccent },
+  headerCopy: { marginLeft: 10, flex: 1 },
+  headerText: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  headerSub: { fontSize: 13, color: COLORS.gray, fontWeight: '500', marginTop: 2 },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
-  listContent: { padding: 20, paddingBottom: 10 },
-  bubbleContainer: { marginBottom: 20, flexDirection: 'row', alignItems: 'flex-end', maxWidth: '85%' },
+  iconButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  listContent: { padding: 16, paddingBottom: 8, flexGrow: 1 },
+  centerState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  stateText: { marginTop: 10, color: COLORS.gray },
+  bubbleContainer: { marginBottom: 16, flexDirection: 'row', alignItems: 'flex-end', maxWidth: '90%' },
   userContainer: { alignSelf: 'flex-end' },
   aiContainer: { alignSelf: 'flex-start' },
-  aiAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginRight: 10, marginBottom: 5 },
-  bubble: { padding: 15, borderRadius: 20 },
-  shadow: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 1 },
-  userBubble: { backgroundColor: COLORS.userBubble, borderBottomRightRadius: 5 },
-  aiBubble: { backgroundColor: COLORS.aiBubble, borderBottomLeftRadius: 5, borderWidth: 1, borderColor: COLORS.border },
+  aiAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.aiAccent, justifyContent: 'center', alignItems: 'center', marginRight: 8, marginBottom: 4 },
+  bubble: { padding: 14, borderRadius: 16, flexShrink: 1 },
+  userBubble: { backgroundColor: COLORS.primary, borderBottomRightRadius: 6 },
+  aiBubble: { backgroundColor: COLORS.white, borderBottomLeftRadius: 6, borderWidth: 1, borderColor: COLORS.border },
   userText: { color: COLORS.white, fontSize: 16, lineHeight: 22 },
-  loadingContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, paddingLeft: 20 },
-  loadingText: { marginLeft: 10, color: COLORS.gray, fontStyle: 'italic' },
-  inputContainer: { flexDirection: 'row', padding: 15, paddingBottom: Platform.OS === 'ios' ? 30 : 15, backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border, alignItems: 'flex-end' },
-  input: { flex: 1, backgroundColor: COLORS.lightGray, borderRadius: 20, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 14, fontSize: 16, color: COLORS.text, maxHeight: 120, minHeight: 48 },
-  sendButton: { marginLeft: 12, marginBottom: 2 },
-  sendGradient: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' }
+  loadingContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
+  loadingText: { marginLeft: 10, color: COLORS.gray },
+  errorState: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 10, backgroundColor: '#FEF2F2' },
+  errorText: { flex: 1, marginHorizontal: 8, color: COLORS.text, fontSize: 14 },
+  retryButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  retryText: { color: COLORS.danger, fontWeight: '700' },
+  inputContainer: { flexDirection: 'row', padding: 12, paddingBottom: Platform.OS === 'ios' ? 28 : 12, backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border, alignItems: 'flex-end' },
+  input: { flex: 1, backgroundColor: COLORS.lightGray, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, color: COLORS.text, maxHeight: 120, minHeight: 48 },
+  sendButton: { marginLeft: 10, marginBottom: 2 },
+  disabledButton: { opacity: 0.5 },
+  sendGradient: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
 });
 
 const markdownStyles = StyleSheet.create({
-  body: { color: COLORS.text, fontSize: 15, lineHeight: 24 },
-  code_inline: { backgroundColor: COLORS.lightGray, borderRadius: 6, padding: 4, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', color: COLORS.primary },
-  code_block: { backgroundColor: COLORS.text, borderRadius: 12, padding: 12, marginVertical: 8 },
-  fence: { backgroundColor: COLORS.text, borderRadius: 12, padding: 12, marginVertical: 8 },
-  strong: { fontWeight: 'bold', color: COLORS.text },
-  link: { color: COLORS.primary, textDecorationLine: 'underline' },
+  body: { color: COLORS.text, fontSize: 15, lineHeight: 23, flexShrink: 1 },
+  paragraph: { flexShrink: 1 },
+  code_inline: { backgroundColor: COLORS.lightGray, borderRadius: 6, padding: 4, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', color: COLORS.aiAccent },
+  code_block: { backgroundColor: COLORS.text, color: COLORS.white, borderRadius: 10, padding: 12, marginVertical: 8, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  fence: { backgroundColor: COLORS.text, color: COLORS.white, borderRadius: 10, padding: 12, marginVertical: 8, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  strong: { fontWeight: '700', color: COLORS.text },
+  link: { color: COLORS.aiAccent, textDecorationLine: 'underline' },
 });

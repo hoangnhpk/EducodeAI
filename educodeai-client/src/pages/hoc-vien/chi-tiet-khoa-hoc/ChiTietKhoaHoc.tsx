@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { ChiTietKhoaHocService } from "../../../services/chi-tiet-khoa-hoc.service";
@@ -11,6 +11,22 @@ import '../noi-dung-khoa-hoc/style.css';
 type VideoPreview = { type: 'youtube' | 'direct'; src: string };
 
 const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg'];
+const MO_TA_CAN_AN = 'Khóa học tiếng Việt từ playlist YouTube của kênh Gà Lại Lập Trình. Gồm 146 bài học theo đúng thứ tự của danh sách phát.';
+
+const InstructorAvatar = ({ src, name, large = false }: { src?: string | null; name: string; large?: boolean }) => {
+  const [imageError, setImageError] = useState(false);
+  const imageUrl = getMediaUrl(src);
+  const initials = name.trim().split(/\s+/).filter(Boolean).slice(-2).map(part => part[0]).join('').toUpperCase() || 'GV';
+  const className = large ? 'ctgd-instructor-avatar-large' : 'ctgd-instructor-avatar';
+
+  useEffect(() => setImageError(false), [imageUrl]);
+
+  if (imageUrl && !imageError) {
+    return <img src={imageUrl} alt={name} className={className} onError={() => setImageError(true)} />;
+  }
+
+  return <div className={`${className} ctgd-instructor-avatar-fallback`} aria-label={`Ảnh đại diện của ${name}`}>{initials}</div>;
+};
 
 const getYouTubeVideoId = (url: URL): string | null => {
   const host = url.hostname.replace(/^www\./, '').toLowerCase();
@@ -176,6 +192,32 @@ const ChiTietKhoaHoc = () => {
     }
   };
 
+  const totalVideoDurationSeconds = useMemo(() => {
+    return khoaHoc?.chuongs.reduce((courseTotal, chuong) => {
+      const chapterTotal = chuong.baiHocs.reduce((total, baiHoc) => {
+        return total + (Number.isFinite(baiHoc.thoiLuong) && baiHoc.thoiLuong > 0 ? baiHoc.thoiLuong : 0);
+      }, 0);
+
+      return courseTotal + chapterTotal;
+    }, 0) ?? 0;
+  }, [khoaHoc]);
+
+  const totalVideoDuration = useMemo(() => {
+    const hours = Math.floor(totalVideoDurationSeconds / 3600);
+    const minutes = Math.floor((totalVideoDurationSeconds % 3600) / 60);
+    const seconds = totalVideoDurationSeconds % 60;
+
+    if (hours > 0) {
+      return minutes > 0 ? `${hours} giờ ${minutes} phút` : `${hours} giờ`;
+    }
+
+    if (minutes > 0) {
+      return `${minutes} phút`;
+    }
+
+    return seconds > 0 ? `${seconds} giây` : '0 phút';
+  }, [totalVideoDurationSeconds]);
+
   if (loading) {
     return <ChiTietKhoaHocLoading />;
   }
@@ -188,6 +230,8 @@ const ChiTietKhoaHoc = () => {
   const totalLessons = khoaHoc.chuongs.reduce((acc, chuong) => acc + chuong.baiHocs.length, 0);
   const videoPreview = getVideoPreview(khoaHoc.videoGioiThieu);
   const bannerImageUrl = getMediaUrl(khoaHoc.hinhAnh);
+  const instructorName = khoaHoc.giangVien?.hoTen || "Đang cập nhật";
+  const moTaHienThi = khoaHoc.moTa?.replace(MO_TA_CAN_AN, '').trim();
 
   return (
     <div className="chi-tiet-giao-dien-container">
@@ -206,9 +250,6 @@ const ChiTietKhoaHoc = () => {
             </div>
             
             <h1 className="ctgd-title">{khoaHoc.tenKhoaHoc}</h1>
-            <p className="ctgd-subtitle">
-              {khoaHoc.moTa || "Làm chủ ngôn ngữ lập trình mạnh mẽ nhất hiện nay thông qua các dự án thực tế."}
-            </p>
 
             <div className="ctgd-stats">
               <div className="ctgd-rating">
@@ -227,14 +268,10 @@ const ChiTietKhoaHoc = () => {
             </div>
 
             <div className="ctgd-instructor-top">
-              <img 
-                src={khoaHoc.giangVien?.anhDaiDien || "https://ui-avatars.com/api/?name=" + (khoaHoc.giangVien?.hoTen || "GV")} 
-                alt="Instructor" 
-                className="ctgd-instructor-avatar"
-              />
+              <InstructorAvatar src={khoaHoc.giangVien?.anhDaiDien} name={instructorName} />
               <div className="ctgd-instructor-info-top">
                 <span className="ctgd-instructor-label">Giảng viên bởi</span>
-                <span className="ctgd-instructor-name-top">{khoaHoc.giangVien?.hoTen || "Đang cập nhật"}</span>
+                <span className="ctgd-instructor-name-top">{instructorName}</span>
               </div>
             </div>
           </div>
@@ -246,7 +283,13 @@ const ChiTietKhoaHoc = () => {
       {/* MAIN CONTENT */}
       <div className="ctgd-main">
         <div className="ctgd-content">
-          
+          {moTaHienThi && (
+            <section className="ctgd-description">
+              <h2 className="ctgd-section-title">Mô tả khóa học</h2>
+              <p>{moTaHienThi}</p>
+            </section>
+          )}
+
           {/* WHAT YOU'LL LEARN (Lấy dữ liệu từ API) */}
           {khoaHoc.banSeHocDuocGi && khoaHoc.banSeHocDuocGi.length > 0 && (
             <section className="ctgd-section-learn">
@@ -267,7 +310,7 @@ const ChiTietKhoaHoc = () => {
             <h2 className="ctgd-section-title">Nội dung khóa học</h2>
             <div className="ctgd-curriculum-header">
               <div className="ctgd-curriculum-stats">
-                {khoaHoc.chuongs.length} phần • {totalLessons} bài giảng • {khoaHoc.thoiLuongGio} giờ tổng thời lượng
+                {khoaHoc.chuongs.length} phần • {totalLessons} bài giảng • {totalVideoDuration} tổng thời lượng
               </div>
               <button className="ctgd-expand-btn" onClick={expandAll}>Mở rộng tất cả</button>
             </div>
@@ -301,41 +344,52 @@ const ChiTietKhoaHoc = () => {
             ))}
           </section>
 
-          {/* DESCRIPTION */}
-          <section className="ctgd-description">
-            <h2 className="ctgd-section-title">Mô tả khóa học</h2>
-            <p>Chào mừng bạn đến với khóa học <strong>{khoaHoc.tenKhoaHoc}</strong>.</p>
-            <p>Khóa học này sẽ giúp bạn trang bị đầy đủ kỹ năng: {khoaHoc.moTa}</p>
-            <ul>
-              <li>Bài giảng video chất lượng cao.</li>
-              <li>Hệ thống bài tập tự động chấm điểm trên nền tảng EducodeAI.</li>
-              {khoaHoc.coChungChi && <li>Chứng chỉ hoàn thành: {khoaHoc.tenChungChi || khoaHoc.tenKhoaHoc}.</li>}
-            </ul>
-          </section>
-
           {/* INSTRUCTOR INFO */}
           <section className="ctgd-instructor-box">
             <h2 className="ctgd-section-title" style={{ fontSize: '20px', marginBottom: '20px' }}>Thông tin giảng viên</h2>
             <div className="ctgd-instructor-profile">
-              <img 
-                src={khoaHoc.giangVien?.anhDaiDien || "https://ui-avatars.com/api/?name=" + (khoaHoc.giangVien?.hoTen || "GV")} 
-                alt={khoaHoc.giangVien?.hoTen || "Giảng viên"} 
-                className="ctgd-instructor-avatar-large" 
-              />
+              <InstructorAvatar src={khoaHoc.giangVien?.anhDaiDien} name={instructorName} large />
               <div className="ctgd-instructor-details">
-                <h3 className="ctgd-instructor-name">{khoaHoc.giangVien?.hoTen || "Đang cập nhật"}</h3>
+                <h3 className="ctgd-instructor-name">{instructorName}</h3>
                 <div className="ctgd-instructor-headline">Giảng viên tại EducodeAI</div>
-                <div className="ctgd-instructor-stats">
-                  <div className="ctgd-instructor-stats-item">
-                    <i className="fas fa-star" style={{color: '#f69050'}}></i>
-                    <span>Giảng viên uy tín</span>
-                  </div>
-                </div>
               </div>
             </div>
             <div className="ctgd-instructor-bio">
               Luôn đồng hành cùng học viên trong hành trình chinh phục kiến thức công nghệ.
             </div>
+            {khoaHoc.giangVien?.chungChi?.length ? (
+              <div className="ctgd-instructor-certificates">
+                <div className="ctgd-instructor-certificates-title">
+                  <i className="fas fa-shield-alt" aria-hidden="true"></i>
+                  Chứng chỉ giảng viên
+                </div>
+                <div className="ctgd-instructor-certificates-list">
+                  {khoaHoc.giangVien.chungChi.map((chungChi) => (
+                    <article className="ctgd-instructor-certificate" key={chungChi.maChungChi}>
+                      <i className="fas fa-award" aria-hidden="true"></i>
+                      <div className="ctgd-instructor-certificate-content">
+                        <h3>{chungChi.tenChungChi}</h3>
+                        {chungChi.donViCap && <p>Đơn vị cấp: {chungChi.donViCap}</p>}
+                        {(chungChi.ngayCap || chungChi.ngayHetHan) && (
+                          <p>
+                            {chungChi.ngayCap && <>Cấp ngày {new Date(`${chungChi.ngayCap}T00:00:00`).toLocaleDateString('vi-VN')}</>}
+                            {chungChi.ngayCap && chungChi.ngayHetHan && <> · </>}
+                            {chungChi.ngayHetHan && <>Hết hạn {new Date(`${chungChi.ngayHetHan}T00:00:00`).toLocaleDateString('vi-VN')}</>}
+                          </p>
+                        )}
+                        {chungChi.maChungChiChe && <p>Mã chứng chỉ: {chungChi.maChungChiChe}</p>}
+                        <span>Tài liệu đã được EduCodeAI duyệt.</span>
+                        {chungChi.urlXacMinh && (
+                          <a href={chungChi.urlXacMinh} target="_blank" rel="noopener noreferrer">
+                            Xác minh chứng chỉ <i className="fas fa-external-link-alt" aria-hidden="true"></i>
+                          </a>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </section>
 
           {/* REVIEWS */}
@@ -443,8 +497,6 @@ const ChiTietKhoaHoc = () => {
                     Đăng ký ngay
                   </button>
                 )}
-                
-                {!khoaHoc.khoaHocDaDangKy && <button className="ctgd-btn-secondary">Thêm vào giỏ hàng</button>}
               </div>
 
               <div className="ctgd-includes">
@@ -452,7 +504,7 @@ const ChiTietKhoaHoc = () => {
                 <div className="ctgd-includes-list">
                   <div className="ctgd-includes-item">
                     <i className="fas fa-video ctgd-includes-icon"></i>
-                    <span>{khoaHoc.thoiLuongGio} giờ video HD</span>
+                    <span>{totalVideoDuration} video HD</span>
                   </div>
                   <div className="ctgd-includes-item">
                     <i className="fas fa-laptop-code ctgd-includes-icon"></i>

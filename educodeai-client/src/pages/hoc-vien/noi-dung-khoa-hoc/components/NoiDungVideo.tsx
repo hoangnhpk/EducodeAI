@@ -38,10 +38,11 @@ interface Props {
   maNguoiDung: number;
   daXem?: boolean;
   onVideoCompleted?: (maBaiHoc: number) => void;
+  onThoiLuongRealLoaded?: (maBaiHoc: number, thoiLuongGiay: number) => void;
 }
 
 // 2. Bọc component trong forwardRef
-export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, videoSource, maBaiHoc, maNguoiDung, daXem, onVideoCompleted }, ref) => {
+export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, videoSource, maBaiHoc, maNguoiDung, daXem, onVideoCompleted, onThoiLuongRealLoaded }, ref) => {
   const playerRef = useRef<TrinhPhatVideo | null>(null);
   const [daSanSang, setDaSanSang] = useState(false);
   const [thoiLuongVideo, setThoiLuongVideo] = useState(0);
@@ -254,7 +255,11 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
     const player: TrinhPhatVideo = event.target;
     playerRef.current = player;
     setDaSanSang(true);
-    setThoiLuongVideo(player.getDuration() || 0);
+    const durationSec = player.getDuration() || 0;
+    setThoiLuongVideo(durationSec);
+    if (durationSec > 0) {
+      onThoiLuongRealLoaded?.(maBaiHoc, durationSec);
+    }
     lastValidVideoTimeRef.current = 0;
     lastRealTimeRef.current = Date.now();
   };
@@ -416,6 +421,9 @@ export const NoiDungVideo = forwardRef<NoiDungVideoRef, Props>(({ videoUrl, vide
             lastValidVideoTimeRef.current = 0;
             lastRealTimeRef.current = Date.now();
             setThoiLuongVideo(video.duration);
+            if (video.duration > 0) {
+              onThoiLuongRealLoaded?.(maBaiHoc, video.duration);
+            }
             setDaSanSang(true);
           }}
           onEnded={khiVideoKetThuc}

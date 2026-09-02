@@ -29,5 +29,8 @@ namespace educodeai_server.DTOs.XacThuc
         public IFormFile? AnhDaiDien { get; set; }
         public IFormFile? AnhGiayToMatTruoc { get; set; }
         public IFormFile? AnhGiayToMatSau { get; set; }
+
+        public List<IFormFile> CvFiles { get; set; } = new();
+        public List<ChungChiUploadRequest> Certificates { get; set; } = new();
     }
 }

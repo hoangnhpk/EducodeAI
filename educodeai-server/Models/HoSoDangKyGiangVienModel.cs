@@ -86,5 +86,7 @@ namespace educodeai_server.Models
         public DateTime NgayCapNhat { get; set; } = DateTime.UtcNow;
 
         public DateTime? NgayDuyet { get; set; }
+
+        public ICollection<HoSoGiangVienTaiLieuModel> TaiLieus { get; set; } = new List<HoSoGiangVienTaiLieuModel>();
     }
 }

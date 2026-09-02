@@ -1,6 +1,7 @@
-import { useState, memo } from "react";
+import { useEffect, useState, memo } from "react";
 import Swal from 'sweetalert2';
 import { type NguoiDung } from "@/pages/quan-tri-vien/quan-ly-nguoi-dung/DuLieuNguoiDungDTO";
+import { getAnhDaiDienUrl, layChuCaiAvatar, layMauAvatar } from "@/utils/avatarHelper";
 import ModalKhoaNguoiDung from "./ModalKhoaNguoiDung";
 
 type Props = {
@@ -24,6 +25,37 @@ const getStatusClass = (status: string) => {
     if (status === "Hoạt động") return "user-status-active";
     if (status === "Khóa vĩnh viễn") return "user-status-permanent-locked";
     return "user-status-locked"; // Tạm khóa
+};
+
+const UserAvatar = ({ anhDaiDien, hoTen }: { anhDaiDien?: string; hoTen?: string }) => {
+    const [imageError, setImageError] = useState(false);
+    const displayName = hoTen?.trim() || "Người dùng";
+    const avatarUrl = getAnhDaiDienUrl(anhDaiDien);
+    const avatarColor = layMauAvatar(displayName);
+
+    useEffect(() => setImageError(false), [avatarUrl]);
+
+    if (avatarUrl && !imageError) {
+        return (
+            <img
+                src={avatarUrl}
+                alt={displayName}
+                onError={() => setImageError(true)}
+                style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-light)', flexShrink: 0 }}
+            />
+        );
+    }
+
+    return (
+        <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: avatarColor.bg, color: avatarColor.color,
+            display: 'flex', alignItems: 'center', flexShrink: 0,
+            justifyContent: 'center', fontWeight: 700, fontSize: 13
+        }}>
+            {layChuCaiAvatar(displayName)}
+        </div>
+    );
 };
 
 const DanhSachNguoiDung = memo(({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai }: Props) => {
@@ -109,18 +141,7 @@ const DanhSachNguoiDung = memo(({ duLieu, dangTai, onSua, onXoa, onDoiTrangThai 
                                 <tr key={u.maNguoiDung}>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                            {u.anhDaiDien
-                                                ? <img src={u.anhDaiDien} alt={u.hoTen}
-                                                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-light)' }} />
-                                                : <div style={{
-                                                    width: 32, height: 32, borderRadius: '50%',
-                                                    background: 'var(--border-light)', color: 'var(--text-muted)',
-                                                    display: 'flex', alignItems: 'center',
-                                                    justifyContent: 'center', fontWeight: 700, fontSize: 13
-                                                }}>
-                                                    {u.hoTen ? u.hoTen[0].toUpperCase() : '?'}
-                                                </div>
-                                            }
+                                            <UserAvatar anhDaiDien={u.anhDaiDien} hoTen={u.hoTen} />
                                             <span style={{ fontWeight: 600, color: 'var(--text-dark)' }}>
                                                 {u.hoTen}
                                             </span>

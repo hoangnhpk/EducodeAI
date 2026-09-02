@@ -5,10 +5,13 @@ interface Props {
     tenKhoaHoc: string; 
     soBaiDaHoc: number; 
     tongSoBai: number; 
-    onMoGhiChu?: () => void;   // Mở sổ tay tự viết
+    onMoGhiChu?: () => void;
+    laCheDoHocThu?: boolean;
+    soVideoHocThu?: number;
+    onMuaKhoaHoc?: () => void;
 }
 
-export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai, onMoGhiChu }) => {
+export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai, onMoGhiChu, laCheDoHocThu, soVideoHocThu, onMuaKhoaHoc }) => {
     // Logic vẽ vòng tròn tiến độ SVG
     const radius = 16; 
     const circumference = 2 * Math.PI * radius; 
@@ -26,8 +29,48 @@ export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai
                     <span id="cpCourseTitle" style={{ fontWeight: 600 }}>{tenKhoaHoc}</span>
                 </div>
             </div>
+
+            {laCheDoHocThu && (
+                <div className="cp-header-center d-none d-lg-flex align-items-center gap-3">
+                    <div 
+                        className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill"
+                        style={{
+                            background: 'rgba(0, 0, 0, 0.25)',
+                            border: '1px solid rgba(255, 255, 255, 0.4)',
+                            color: '#fff',
+                            fontSize: '0.82rem'
+                        }}
+                    >
+                        <span className="badge bg-warning text-dark fw-bold px-2 py-1" style={{ fontSize: '0.72rem', borderRadius: '6px' }}>
+                            <i className="fas fa-crown me-1 text-danger"></i> DÙNG THỬ
+                        </span>
+                        <span>Đang xem {soVideoHocThu ?? 2} bài học đầu tiên</span>
+                    </div>
+
+                    <button
+                        type="button"
+                        className="btn btn-buy-glow d-inline-flex align-items-center gap-2"
+                        onClick={onMuaKhoaHoc}
+                    >
+                        <i className="fas fa-shopping-cart text-warning me-1"></i>
+                        <span>MUA KHÓA HỌC NGAY</span>
+                        <i className="fas fa-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            )}
             
             <div className="cp-header-right">
+                {laCheDoHocThu && (
+                    <button
+                        type="button"
+                        className="btn btn-buy-glow btn-sm d-lg-none me-2"
+                        onClick={onMuaKhoaHoc}
+                        style={{ padding: '6px 14px !important', fontSize: '0.78rem !important' }}
+                    >
+                        <i className="fas fa-shopping-cart me-1"></i> Mua ngay
+                    </button>
+                )}
+
                 {/* ======================================= */}
                 {/* 1. NÚT SỔ TAY CÁ NHÂN (Tự viết) */}
                 {/* ======================================= */}
@@ -40,28 +83,6 @@ export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai
                     <i className="fas fa-edit" style={{ color: '#3b82f6' }}></i>
                     <span className="d-none d-md-inline">Sổ tay</span>
                 </button>
-
-                {/* ======================================= */}
-                {/* 2. NÚT SỔ TAY AI (Tóm tắt tự động) */}
-                {/* ======================================= */}
-                {/* <button 
-                    className="btn btn-light btn-sm" 
-                    style={{ 
-                        marginRight: '15px', 
-                        marginLeft: '10px',
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '6px',
-                        border: '1px solid #fbd38d', 
-                        background: '#fffaf0',      
-                        color: '#c05621'        
-                    }}
-                    onClick={onMoGhiChuAI}
-                    title="Xem các bản tóm tắt AI đã lưu"
-                >
-                    <i className="fas fa-robot" style={{ color: '#dd6b20' }}></i>
-                    <span className="d-none d-md-inline">Kiến thức AI</span>
-                </button> */}
 
                 <div className="cp-progress-inline" style={{ gap: '12px', display: 'flex', alignItems: 'center' }}>
                     <div style={{ position: 'relative', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

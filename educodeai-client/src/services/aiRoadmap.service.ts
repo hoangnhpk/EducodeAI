@@ -9,7 +9,6 @@ export const aiRoadmapService = {
 
     const payload = {
       trinhDoHienTai: data.trinhDo,
-      phongCachHoc: data.phongCachHoc,
       mucTieuNgheNghiep: data.mucTieuNgheNghiep,
       thoiGianHocDuKien,
       thoiGianMoiTuan,
@@ -42,28 +41,31 @@ export const aiRoadmapService = {
     return {
       ...noiDung,
       loTrinh: noiDung.loTrinh ?? [],
-      maLoTrinh: res.maLoTrinh
+      maLoTrinh: undefined
     };
   },
 
-  async capNhatLoTrinh(maLoTrinh: number, yeuCauMoi: string) {
+  async capNhatLoTrinh(draft: KetQuaLoTrinhAI, yeuCauMoi: string) {
     const res = await (axios as any).put(
       "/api/lo-trinh-ai/cap-nhat",
-      { maLoTrinh, yeuCauMoi },
+      { noiDungJSON: JSON.stringify(draft), yeuCauMoi },
       { timeout: 120000 }
-    ) as { maLoTrinh: number; noiDungJSON: string };
+    ) as { maLoTrinh?: number; noiDungJSON: string };
 
     const noiDung = JSON.parse(res.noiDungJSON);
 
     return {
       ...noiDung,
       loTrinh: noiDung.loTrinh ?? [],
-      maLoTrinh: res.maLoTrinh
+      maLoTrinh: undefined
     } as KetQuaLoTrinhAI;
   },
 
-  async xacNhanLoTrinh(maLoTrinh: number) {
-    return await axios.post(`/api/lo-trinh-ai/xac-nhan/${maLoTrinh}`);
+  async xacNhanLoTrinh(draft: KetQuaLoTrinhAI, yeuCau?: string) {
+    return await axios.post("/api/lo-trinh-ai/xac-nhan", {
+      noiDungJSON: JSON.stringify(draft),
+      yeuCau
+    });
   },
 
   async getAllLoTrinh(): Promise<LoTrinhAICuaToiDTO[]> {

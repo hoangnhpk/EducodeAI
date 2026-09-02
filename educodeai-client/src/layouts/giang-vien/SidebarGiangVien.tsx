@@ -27,6 +27,10 @@ export default function SidebarGiangVien() {
           <i className="fas fa-code" aria-hidden="true" /> Quản lý bài tập
         </Link>
 
+        <Link to="/giang-vien/chung-chi" className={`gv-nav-link ${isActive('/giang-vien/chung-chi') ? 'active' : ''}`}>
+          <i className="fas fa-certificate" aria-hidden="true" /> Chứng Chỉ
+        </Link>
+
         <Link to="/giang-vien/lop-hoc" className={`gv-nav-link ${isActive('/giang-vien/lop-hoc') ? 'active' : ''}`}>
           <i className="fas fa-users" aria-hidden="true" /> Quản Lý Lớp Học
         </Link>

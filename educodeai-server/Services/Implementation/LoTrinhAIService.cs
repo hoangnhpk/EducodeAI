@@ -52,38 +52,26 @@ namespace educodeai_server.Services.Implementation
             var aiResult = await _gemini.GenerateAsync(prompt);
 
             var resultChuanHoa = ChuanHoaJsonTuAIHelper.ChuanHoa(aiResult);
+            resultChuanHoa = await EnrichCoursePricesAsync(resultChuanHoa);
 
             var resultusageMetadata = ChuanHoaJsonTuAIHelper.usageMetadata(aiResult);
             Console.WriteLine("[LoTrinhAIService] AI result usageMetadata: " + resultusageMetadata);
 
-            var loTrinh = new LoTrinhAIModel
-            {
-                MaNguoiDung = maNguoiDung,
-                YeuCau = prompt,
-                NoiDungJSON = resultChuanHoa,
-                TrangThai = "Nháp",
-                NgayTao = DateTime.Now
-            };
-
-            await _loTrinhRepo.AddAsync(loTrinh);
-
+            // Generation is intentionally client-side draft only. Persist only on Apply.
             return new LoTrinhAIResponseDto
             {
-                MaLoTrinh = loTrinh.MaLoTrinh,
+                MaLoTrinh = null,
                 NoiDungJSON = resultChuanHoa
             };
         }
 
-        public async Task<bool> XacNhanLoTrinhAsync(int maLoTrinh, int maNguoiDung)
+        public async Task<bool> XacNhanLoTrinhAsync(int maNguoiDung, SaveLoTrinhDto dto)
         {
-            var loTrinh = await _loTrinhRepo.GetByIdAsync(maLoTrinh);
-            if (loTrinh == null) throw new Exception("Không tìm thấy lộ trình");
+            if (string.IsNullOrWhiteSpace(dto.NoiDungJSON))
+                throw new ArgumentException("Nội dung lộ trình không được để trống.");
 
-            if (loTrinh.MaNguoiDung != maNguoiDung)
-                throw new UnauthorizedAccessException("Không có quyền áp dụng lộ trình này");
-
-            var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(loTrinh.NoiDungJSON) ??
-                throw new Exception("Nội dung lộ trình không hợp lệ");
+            var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(dto.NoiDungJSON)
+                ?? throw new ArgumentException("Nội dung lộ trình không hợp lệ.");
 
             var danhSachMaKhoaHoc = noiDung.LoTrinh
                 .SelectMany(gd => gd.KhoaHocSuDung)
@@ -92,33 +80,43 @@ namespace educodeai_server.Services.Implementation
                 .ToList();
 
             if (!danhSachMaKhoaHoc.Any())
-                throw new Exception("Lộ trình không có khóa học");
+                throw new ArgumentException("Lộ trình không có khóa học.");
 
-            var maKhoaHocDaDangKy = await _khoaHocRepo.GetMaKhoaHocDaDangKyAsync(maNguoiDung, danhSachMaKhoaHoc);
-
-            var dangKyMoi = danhSachMaKhoaHoc
-                .Where(maKH => !maKhoaHocDaDangKy.Contains(maKH))
-                .Select(maKH => new DangKyKhoaHocModel
-                {
-                    MaNguoiDung = maNguoiDung,
-                    MaKhoaHoc = maKH,
-                    TrangThai = "Đang học",
-                    TienDo = 0,
-                    NgayDangKy = DateTime.Now
-                })
-                .ToList();
-
-            if (dangKyMoi.Any())
+            // Apply only persists the roadmap. It never enrolls or starts payment.
+            var loTrinh = new LoTrinhAIModel
             {
-                await _khoaHocRepo.AddDangKyKhoaHocAsync(dangKyMoi);
-            }
+                MaNguoiDung = maNguoiDung,
+                YeuCau = dto.YeuCau ?? noiDung.TenLoTrinh,
+                NoiDungJSON = dto.NoiDungJSON,
+                TrangThai = "Hoạt động",
+                NgayTao = DateTime.UtcNow
+            };
 
-            loTrinh.TrangThai = "Hoạt động"; // Chuyển sang chính thức
-            await _loTrinhRepo.UpdateAsync(loTrinh);
-
+            await _loTrinhRepo.AddAsync(loTrinh);
             return true;
         }
 
+        private async Task<string> EnrichCoursePricesAsync(string noiDungJson)
+        {
+            var noiDung = JsonSerializer.Deserialize<NoiDungLoTrinhDTO>(noiDungJson)
+                ?? throw new ArgumentException("Nội dung lộ trình không hợp lệ.");
+            var ids = noiDung.LoTrinh.SelectMany(x => x.KhoaHocSuDung)
+                .Select(x => x.MaKhoaHoc).Distinct().ToList();
+            var courses = await _khoaHocRepo.GetKhoaHocByIdsAsync(ids);
+            var byId = courses.ToDictionary(x => x.MaKhoaHoc);
+
+            foreach (var course in noiDung.LoTrinh.SelectMany(x => x.KhoaHocSuDung))
+            {
+                if (byId.TryGetValue(course.MaKhoaHoc, out var source))
+                {
+                    course.TenKhoaHoc = source.TenKhoaHoc;
+                    course.GiaKhoaHoc = source.GiaKhoaHoc;
+                    course.DonViTienTe = source.DonViTienTe;
+                }
+            }
+
+            return JsonSerializer.Serialize(noiDung);
+        }
         public static string Build(
             CreateLoTrinhAIDto dto,
             string khoaHocJson)
@@ -155,7 +153,6 @@ namespace educodeai_server.Services.Implementation
 
                 === INPUT: HỌC VIÊN ===
                 Trình độ hiện tại: {dto.TrinhDoHienTai}
-                Phong cách học: {dto.PhongCachHoc}
                 Mục tiêu nghề nghiệp: {dto.MucTieuNgheNghiep}
                 Thời gian học dự kiến: {dto.ThoiGianHocDuKien} tuần
                 Thời gian học mỗi tuần: {dto.ThoiGianMoiTuan} giờ
@@ -316,43 +313,21 @@ namespace educodeai_server.Services.Implementation
 
         public async Task<LoTrinhAIResponseDto> CapNhatLoTrinhAsync(int maNguoiDung, UpdateLoTrinhDto dto)
         {
-            var loTrinhCu = await _loTrinhRepo.GetByIdAsync(dto.MaLoTrinh);
-            if (loTrinhCu == null)
-                throw new Exception("Không tìm thấy lộ trình");
+            if (string.IsNullOrWhiteSpace(dto.NoiDungJSON))
+                throw new ArgumentException("Nội dung bản nháp không được để trống.");
 
             var tuKhoa = Extract(dto.YeuCauMoi);
-
-            Console.WriteLine("[LoTrinhAIService] Từ khoá trích xuất: " + string.Join(", ", tuKhoa));
-
             var keywordChuanHoa = ChuanHoa(tuKhoa);
-
-            Console.WriteLine("[LoTrinhAIService] Từ khoá sau chuẩn hoá: " + string.Join(", ", keywordChuanHoa));
-
             var khoaHoc = await _khoaHocRepo.GetKhoaHocTheoKeywordAsync(keywordChuanHoa);
-            Console.WriteLine($"[LoTrinhAIService] Tìm thấy {khoaHoc.Count} khoá học phù hợp để cập nhật.");
             var khoaHocJson = JsonSerializer.Serialize(khoaHoc);
-
-            var prompt = TaoPromptChinhSua(
-                loTrinhCu.NoiDungJSON!,
-                dto.YeuCauMoi,
-                khoaHocJson);
-
-
+            var prompt = TaoPromptChinhSua(dto.NoiDungJSON, dto.YeuCauMoi, khoaHocJson);
             var aiResult = await _gemini.GenerateAsync(prompt);
-
-            Console.WriteLine("[LoTrinhAIService] AI response received for update: " + aiResult);
-
             var resultChuanHoa = ChuanHoaJsonTuAIHelper.ChuanHoa(aiResult);
-
-            loTrinhCu.NoiDungJSON = resultChuanHoa;
-            loTrinhCu.YeuCau = dto.YeuCauMoi;
-            loTrinhCu.TrangThai = "Updated";
-
-            await _loTrinhRepo.UpdateAsync(loTrinhCu);
+            resultChuanHoa = await EnrichCoursePricesAsync(resultChuanHoa);
 
             return new LoTrinhAIResponseDto
             {
-                MaLoTrinh = loTrinhCu.MaLoTrinh,
+                MaLoTrinh = null,
                 NoiDungJSON = resultChuanHoa
             };
         }
