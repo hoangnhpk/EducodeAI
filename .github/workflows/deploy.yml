@@ -114,7 +114,7 @@ jobs:
 
               if [ "$attempt" -eq 24 ]; then
                 compose ps
-                compose logs --tail=100 backend migrate frontend
+                compose logs --tail=100 backend frontend
                 exit 1
               fi
               sleep 5

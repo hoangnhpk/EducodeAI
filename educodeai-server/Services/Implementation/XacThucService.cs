@@ -5,6 +5,7 @@ using EduCodeAI.DTOs;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
+using educodeai_server.Services.IdentityDocuments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
@@ -1396,7 +1397,7 @@ namespace educodeai_server.Services.Implementation
                         try
                         {
                             var fullAvatarPath = Path.Combine(avatarRoot, Path.GetFileName(avatarPath));
-                            if (File.Exists(fullAvatarPath)) File.Delete(fullAvatarPath);
+                            AvatarStorageCleanup.TryDeleteIfInsideRoot(avatarRoot, fullAvatarPath, _logger);
                         }
                         catch { }
                     }
