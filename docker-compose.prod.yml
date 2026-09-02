@@ -108,8 +108,6 @@ services:
     tmpfs:
       - /tmp
     depends_on:
-      migrate:
-        condition: service_completed_successfully
       redis:
         condition: service_healthy
     networks:
@@ -119,27 +117,6 @@ services:
       - no-new-privileges:true
     mem_limit: 1536m
     cpus: 1.50
-    logging: *default-logging
-
-  migrate:
-    build:
-      context: ./educodeai-server
-      dockerfile: Dockerfile
-    command: ["--migrate"]
-    restart: "no"
-    environment: *backend-environment
-    volumes:
-      - backend_tessdata:/app/tessdata
-      - ${GCP_SERVICE_ACCOUNT_HOST_PATH:-./secrets/gcp-service-account.json}:/run/secrets/gcp-service-account.json:ro
-    tmpfs:
-      - /tmp
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - data
-    security_opt:
-      - no-new-privileges:true
     logging: *default-logging
 
   redis:
