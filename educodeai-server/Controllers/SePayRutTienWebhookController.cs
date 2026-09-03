@@ -1,4 +1,5 @@
 using educodeai_server.DTOs.ThanhToan;
+using educodeai_server.Helpers;
 using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ namespace educodeai_server.Controllers
         /// SePay gọi khi có giao dịch chiều <c>out</c> khớp TK đã liên kết; nội dung khớp mã CK đã gán cho yêu cầu (hoặc định dạng cũ <c>RUT{ma}</c>).
         /// </summary>
         [AllowAnonymous]
+        [XacThucWebhookSePay]
         [HttpPost("rut-tien-giang-vien")]
         public async Task<IActionResult> NhanWebhookTienRa([FromBody] ThongBaoWebhookSePayDTO duLieuWebhook)
         {

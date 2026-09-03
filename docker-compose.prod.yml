@@ -45,6 +45,8 @@ x-backend-environment: &backend-environment
   ThanhToanSePay__MaNganHang: ${SEPAY_BANK_CODE:-MB}
   ThanhToanSePay__SoTaiKhoan: ${SEPAY_ACCOUNT_NUMBER}
   ThanhToanSePay__TenTaiKhoan: ${SEPAY_ACCOUNT_NAME}
+  SePayWebhook__BatBuocApiKey: ${SEPAY_WEBHOOK_REQUIRE_API_KEY:-false}
+  SePayWebhook__ApiKey: ${SEPAY_WEBHOOK_API_KEY:-}
   HocThu__SoVideoMacDinh: ${TRIAL_DEFAULT_VIDEO_COUNT:-2}
   OcrOffline__TessDataPath: ${OCR_TESSDATA_PATH:-/app/tessdata}
   CurrencyExchange__ApiUrl: ${CURRENCY_API_URL:-https://api.exchangerate-api.com/v4/latest/USD}

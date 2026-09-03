@@ -254,6 +254,7 @@ namespace educodeai_server.Controllers.HocVien
 
         /// <summary>Chỉ xử lý <b>tiền vào</b> (mua khóa học). Webhook <b>tiền ra</b> dùng <c>POST /api/sepay/webhook/rut-tien-giang-vien</c>.</summary>
         [AllowAnonymous]
+        [XacThucWebhookSePay]
         [HttpPost("sepay/webhook")]
         public async Task<IActionResult> NhanThongBaoSePay([FromBody] ThongBaoWebhookSePayDTO duLieuWebhook)
         {

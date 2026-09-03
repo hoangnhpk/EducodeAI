@@ -5,6 +5,8 @@ import type { HoTroThanhToanChiTietDTO } from "@/services/thanh-toan-khoa-hoc.se
 import "../quan-ly-nguoi-dung/QuanLyNguoiDung.css";
 import "./QuanLyHoTroThanhToanHocVien.css";
 
+const SO_DONG_MOI_TRANG = 10;
+
 const hienThiTrangThai = (trangThai: string) => {
   switch (trangThai) {
     case "SUPPORT_PENDING":
@@ -25,6 +27,7 @@ export default function QuanLyHoTroThanhToanHocVien() {
   const [danhSach, setDanhSach] = useState<HoTroThanhToanDanhSachItemDTO[]>([]);
   const [chiTiet, setChiTiet] = useState<HoTroThanhToanChiTietDTO | null>(null);
   const [moChiTiet, setMoChiTiet] = useState(false);
+  const [trangHienTai, setTrangHienTai] = useState(1);
 
   const taiDanhSach = async (imLang = false) => {
     try {
@@ -34,6 +37,7 @@ export default function QuanLyHoTroThanhToanHocVien() {
         tuKhoa || undefined
       );
       setDanhSach(duLieu);
+      if (!imLang) setTrangHienTai(1);
     } catch (error: any) {
       if (!imLang) {
         await Swal.fire("Lỗi", error?.response?.data?.thongBao || "Không tải được danh sách hỗ trợ.", "error");
@@ -116,6 +120,12 @@ export default function QuanLyHoTroThanhToanHocVien() {
 
   const coTheXuLy = chiTiet?.trangThaiHoTro === "SUPPORT_PENDING";
 
+  const tongSoTrang = Math.max(1, Math.ceil(danhSach.length / SO_DONG_MOI_TRANG));
+  // Kẹp lại phòng khi danh sách co lại sau khi duyệt/từ chối khiến trang hiện tại vượt quá tổng số trang.
+  const trangAnToan = Math.min(trangHienTai, tongSoTrang);
+  const viTriDau = (trangAnToan - 1) * SO_DONG_MOI_TRANG;
+  const danhSachTrangHienTai = danhSach.slice(viTriDau, viTriDau + SO_DONG_MOI_TRANG);
+
   return (
     <div className="qtv-page-content">
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
@@ -169,7 +179,7 @@ export default function QuanLyHoTroThanhToanHocVien() {
               </tr>
             </thead>
             <tbody>
-              {danhSach.map((item) => (
+              {danhSachTrangHienTai.map((item) => (
                 <tr key={item.maGiaoDichHoTro}>
                   <td className="httt-col-ma">{item.maGiaoDichHoTro}</td>
                   <td className="httt-col-don">#{item.maDonHang}</td>
@@ -202,6 +212,45 @@ export default function QuanLyHoTroThanhToanHocVien() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!dangTai && danhSach.length > 0 && (
+        <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 14, marginTop: 12 }}>
+          Hiển thị {viTriDau + 1}–{viTriDau + danhSachTrangHienTai.length} trên tổng {danhSach.length} yêu cầu
+        </div>
+      )}
+
+      {!dangTai && tongSoTrang > 1 && (
+        <div className="pagination-wrapper">
+          <button
+            type="button"
+            className="btn-pagination-nav"
+            disabled={trangAnToan === 1}
+            onClick={() => setTrangHienTai(trangAnToan - 1)}
+          >
+            Trước
+          </button>
+          <div className="pagination-pages">
+            {Array.from({ length: tongSoTrang }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={`btn-pagination-page ${p === trangAnToan ? "active" : ""}`}
+                onClick={() => setTrangHienTai(p)}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn-pagination-nav"
+            disabled={trangAnToan === tongSoTrang}
+            onClick={() => setTrangHienTai(trangAnToan + 1)}
+          >
+            Sau
+          </button>
         </div>
       )}
 
