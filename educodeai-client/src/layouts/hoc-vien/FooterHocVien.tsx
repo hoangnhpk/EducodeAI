@@ -1,130 +1,108 @@
-import React, { useEffect } from "react";
+import React from "react";
+import { Link } from "react-router-dom";
 import { useSystemConfig } from "../../contexts/SystemConfigContext";
 
+// Footer nền tối nên dùng bản logo cam-trắng, không dùng logo chính của header.
+// Không lấy từ configs.LogoUrl vì ô cấu hình đó đang bị khóa (disabled) bên admin.
+const LOGO_FOOTER = "/img/logoedu_trang_cam.png";
+
+const NHOM_LIEN_KET: { tieuDe: string; muc: { nhan: string; duong: string }[] }[] = [
+  {
+    tieuDe: "Khám phá",
+    muc: [
+      { nhan: "Trang chủ", duong: "/" },
+      { nhan: "Khám phá lộ trình", duong: "/kham-pha-lo-trinh" },
+      { nhan: "Khóa học của tôi", duong: "/hoc-vien/khoa-hoc-cua-toi" },
+      { nhan: "Không gian học tập", duong: "/khong-gian-hoc-tap" },
+      { nhan: "Thử thách học tập", duong: "/thu-thach-hoc-tap" }
+    ]
+  },
+  {
+    tieuDe: "Công cụ AI",
+    muc: [
+      { nhan: "Sinh lộ trình AI", duong: "/yeu-cau-lo-trinh-ai" },
+      { nhan: "Sinh đồ án AI", duong: "/sinh-do-an-ai" },
+      { nhan: "Phỏng vấn AI", duong: "/phong-van-ai" },
+      { nhan: "Khóa học AI của tôi", duong: "/khoa-hoc-ai-cua-toi" }
+    ]
+  }
+];
+
 const FooterHocVien: React.FC = () => {
-  // Lấy dữ liệu cấu hình từ Context
   const { configs } = useSystemConfig();
 
-  // Thêm useEffect để theo dõi sự thay đổi của configs (Realtime)
-  useEffect(() => {
-    // Component sẽ tự động re-render khi configs trong Context thay đổi
-  }, [configs]);
+  const tenWebsite = configs?.TenWebsite || "EduCodeAI";
+  const soDienThoai = configs?.SoDienThoai;
+  const emailLienHe = configs?.EmailLienHe;
+  const diaChi = configs?.DiaChi;
 
   return (
-    <div
-      className="container-fluid bg-dark text-light footer pt-5 mt-5 wow fadeIn"
-      data-wow-delay="0.1s"
-    >
-      <div className="container py-5">
-        <div className="row g-5">
-          {/* Cột 1 */}
-          <div className="col-lg-4 col-md-6">
-            <h4 className="text-white mb-3">Liên kết nhanh</h4>
-            <p>
-              <a className="text-light" href="/about">
-                Về chúng tôi
-              </a>
-            </p>
-            <p>
-              <a className="text-light" href="/contact">
-                Liên hệ
-              </a>
-            </p>
-            <p>
-              <a className="text-light" href="#">
-                Chính sách bảo mật
-              </a>
-            </p>
-            <p>
-              <a className="text-light" href="#">
-                Điều khoản &amp; Điều kiện
-              </a>
-            </p>
-            <p>
-              <a className="text-light" href="#">
-                Câu hỏi thường gặp &amp; Trợ giúp
-              </a>
-            </p>
-          </div>
-
-          {/* Cột 2 */}
-          <div className="col-lg-4 col-md-6">
-            <h4 className="text-white mb-3">Liên hệ</h4>
-            <p className="mb-2">
-              <i className="fa fa-map-marker-alt me-3"></i>
-              {configs?.DiaChi || "123 Đường, TP.HCM, Việt Nam"}
-            </p>
-            <p className="mb-2">
-              <i className="fa fa-phone-alt me-3"></i>
-              {configs?.SoDienThoai || "+84 123 456 789"}
-            </p>
-            <p className="mb-2">
-              <i className="fa fa-envelope me-3"></i>
-              {configs?.EmailLienHe || "support@educodeai.vn"}
-            </p>
-
-            <div className="d-flex pt-2">
-              <a className="btn btn-outline-light btn-social" href="#">
-                <i className="fab fa-twitter"></i>
-              </a>
-              <a className="btn btn-outline-light btn-social" href="#">
-                <i className="fab fa-facebook-f"></i>
-              </a>
-              <a className="btn btn-outline-light btn-social" href="#">
-                <i className="fab fa-youtube"></i>
-              </a>
-              <a className="btn btn-outline-light btn-social" href="#">
-                <i className="fab fa-linkedin-in"></i>
-              </a>
-            </div>
-          </div>
-
-          {/* Cột 3 */}
-          <div className="col-lg-4 col-md-6">
-            <h4 className="text-white mb-3">Đăng ký nhận bản tin</h4>
-            <p>
-              Đăng ký ngay và tham gia cộng đồng học viên đang phát triển của
-              chúng tôi, cam kết với giáo dục suốt đời!
-            </p>
-
-            <div
-              className="position-relative mx-auto"
-              style={{ maxWidth: 400 }}
-            >
-              <form>
-                <input
-                  className="form-control border-0 w-100 py-3 ps-4 pe-5"
-                  type="email"
-                  placeholder="Email của bạn"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="btn btn-primary py-2 position-absolute top-0 end-0 mt-2 me-2"
-                >
-                  Đăng ký
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Copyright */}
+    <footer className="site-footer">
       <div className="container">
-        <div className="copyright">
-          <div className="row">
-            <div className="col-md-6 text-center text-md-start mb-3 mb-md-0">
-              ©{" "}
-              <a className="border-bottom" href="/">
-                {configs?.TenWebsite || "EduCodeAI"}
-              </a>
-              , All Rights Reserved.
+        <div className="row g-5 site-footer-main">
+          {/* Thương hiệu */}
+          <div className="col-lg-4 col-md-12">
+            <Link to="/" className="site-footer-brand">
+              <img src={LOGO_FOOTER} alt={tenWebsite} className="site-footer-logo" />
+              <span>{tenWebsite}</span>
+            </Link>
+            <p className="site-footer-tagline">
+              Nền tảng e-learning với lộ trình bài bản, đồ án thực chiến và
+              phòng phỏng vấn ảo được hỗ trợ bởi Trí tuệ nhân tạo.
+            </p>
+            <Link to="/dang-ky-giang-vien" className="site-footer-cta">
+              <i className="fa-solid fa-chalkboard-user" aria-hidden="true"></i>
+              Trở thành giảng viên
+            </Link>
+          </div>
+
+          {/* Các nhóm liên kết */}
+          {NHOM_LIEN_KET.map((nhom) => (
+            <div key={nhom.tieuDe} className="col-lg-2 col-md-4 col-6">
+              <h5 className="site-footer-heading">{nhom.tieuDe}</h5>
+              <ul className="site-footer-links">
+                {nhom.muc.map((muc) => (
+                  <li key={muc.duong}>
+                    <Link to={muc.duong}>{muc.nhan}</Link>
+                  </li>
+                ))}
+              </ul>
             </div>
+          ))}
+
+          {/* Liên hệ */}
+          <div className="col-lg-4 col-md-4 col-12">
+            <h5 className="site-footer-heading">Liên hệ</h5>
+            <ul className="site-footer-contact">
+              {diaChi && (
+                <li>
+                  <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
+                  <span>{diaChi}</span>
+                </li>
+              )}
+              {soDienThoai && (
+                <li>
+                  <i className="fa-solid fa-phone" aria-hidden="true"></i>
+                  <a href={`tel:${soDienThoai.replace(/\s/g, "")}`}>{soDienThoai}</a>
+                </li>
+              )}
+              {emailLienHe && (
+                <li>
+                  <i className="fa-solid fa-envelope" aria-hidden="true"></i>
+                  <a href={`mailto:${emailLienHe}`}>{emailLienHe}</a>
+                </li>
+              )}
+            </ul>
           </div>
         </div>
+
+        <div className="site-footer-bottom">
+          <p>
+            © {new Date().getFullYear()} {tenWebsite}. Bảo lưu mọi quyền.
+          </p>
+        </div>
       </div>
-    </div>
+    </footer>
   );
 };
 

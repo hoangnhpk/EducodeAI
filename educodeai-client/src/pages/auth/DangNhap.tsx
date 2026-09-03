@@ -11,6 +11,7 @@ import { setAuthTokens } from '../../utils/authStorage';
 import { classifyLoginResponse, type LoginUser } from './loginFlow';
 import PasswordInput from '../../components/PasswordInput';
 import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
+import '../../assets/styles/hoc-vien-global.css';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim();
 
@@ -200,7 +201,7 @@ const DangNhap: React.FC = () => {
                 }}>
                 <div className="container">
                     <div className="row g-4 justify-content-center">
-                        <div className="col-lg-5 shadow-lg p-4 bg-white rounded-4 animate__animated animate__fadeIn">
+                        <div className="col-lg-5 login-card shadow-lg p-4 bg-white rounded-4 animate__animated animate__fadeIn">
                             
                             {step === 1 ? (
                                 <form onSubmit={handleLogin} noValidate>
@@ -260,7 +261,7 @@ const DangNhap: React.FC = () => {
                                             <button className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill" 
                                                 type="submit" style={{ backgroundColor: '#fb873f' }} 
                                                 disabled={isLoading || (showCaptcha && !captchaToken)}>
-                                                {isLoading ? "Đang xử lý..." : "Tiếp theo"}
+                                                {isLoading ? "Đang xử lý..." : "Đăng nhập"}
                                             </button>
                                         </div>
 
@@ -295,10 +296,13 @@ const DangNhap: React.FC = () => {
                                                                 Swal.fire('Lỗi', `Google OAuth thất bại trước khi gọi API. Kiểm tra OAuth Client ID và Authorized JavaScript origins có ${currentOrigin}.`, 'error');
                                                             }}
                                                             ux_mode="popup"
+                                                            use_fedcm_for_button={false}
                                                             theme="outline"
                                                             text="signin_with"
+                                                            shape="rectangular"
+                                                            logo_alignment="left"
                                                             size="large"
-                                                            width="560"
+                                                            width="400"
                                                         />
                                                     </div>
                                                 </div>
