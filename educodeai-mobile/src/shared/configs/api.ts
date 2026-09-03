@@ -3,7 +3,9 @@ import { create, isAxiosError, type AxiosError, type InternalAxiosRequestConfig 
 import { authStorage } from '../lib/auth-storage';
 
 const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
-export const API_BASE_URL = (configuredUrl || 'http://localhost:5000').replace(/\/+$/, '');
+// Production API is served through the public domain by Caddy. Override this
+// with EXPO_PUBLIC_API_URL for local development.
+export const API_BASE_URL = (configuredUrl || 'https://educodeai.top').replace(/\/+$/, '');
 export const BASE_URL = API_BASE_URL;
 
 export type UnauthorizedReason = 'unauthorized';
