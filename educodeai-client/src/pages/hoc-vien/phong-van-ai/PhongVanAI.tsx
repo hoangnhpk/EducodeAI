@@ -341,18 +341,13 @@ const PhongVanAI: React.FC = () => {
                         </select>
                     </div>
 
-                    <div style={{ marginBottom: '20px' }}>
+                    <div style={{ marginBottom: '32px' }}>
                         <label htmlFor="pv-tinhCach" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Tính cách AI</label>
                         <select id="pv-tinhCach" value={tinhCach.toString()} onChange={e => setTinhCach(parseInt(e.target.value) as TinhCachAI)} style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', outline: 'none' }}>
                             <option value={TinhCachAI.Friendly}>Thân thiện (Hướng dẫn)</option>
                             <option value={TinhCachAI.Normal}>Bình thường (Tiêu chuẩn)</option>
                             <option value={TinhCachAI.Strict}>Khó tính (Xoáy sâu vào lỗi sai)</option>
                         </select>
-                    </div>
-
-                    <div style={{ marginBottom: '32px' }}>
-                        <label htmlFor="pv-soCauHoi" style={{ display: 'block', color: 'var(--text-main)', marginBottom: '8px', fontWeight: '500' }}>Số lượng câu hỏi (Tạm khóa mặc định)</label>
-                        <input id="pv-soCauHoi" type="number" value={3} disabled style={{ width: '100%', padding: '12px 16px', background: 'var(--bg-light)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-muted)', outline: 'none', cursor: 'not-allowed' }} />
                     </div>
 
                     <button onClick={handleStart} disabled={isStarting} style={{ width: '100%', padding: '14px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: isStarting ? 'not-allowed' : 'pointer', opacity: isStarting ? 0.7 : 1 }}>
