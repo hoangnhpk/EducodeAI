@@ -15,7 +15,7 @@ export interface NoiDungVideoRef {
 // giây (interval cập nhật mỗi giây), còn tua thẳng tới cuối thì rất lớn.
 const DUNG_SAI_KET_THUC_GIAY = 5;
 
-const CHO_PHEP_TUA_TU_DO = false;
+const CHO_PHEP_TUA_TU_DO = true;
 interface TrinhPhatVideo {
   getCurrentTime: () => number;
   getDuration: () => number;
