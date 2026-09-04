@@ -5,6 +5,7 @@ using EduCodeAI.DTOs;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
+using educodeai_server.Services.Security;
 using educodeai_server.Services.IdentityDocuments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -48,8 +49,9 @@ namespace educodeai_server.Services.Implementation
         private readonly ILogger<XacThucService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHoSoGiangVienTaiLieuStorage _taiLieuStorage;
+        private readonly RefreshCookiePolicy _refreshCookiePolicy;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IDistributedCache distributedCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter, ILogger<XacThucService> logger, IHttpClientFactory httpClientFactory, IHoSoGiangVienTaiLieuStorage taiLieuStorage)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IDistributedCache distributedCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter, ILogger<XacThucService> logger, IHttpClientFactory httpClientFactory, IHoSoGiangVienTaiLieuStorage taiLieuStorage, RefreshCookiePolicy refreshCookiePolicy)
         {
             _context = context;
             _config = config;
@@ -68,6 +70,7 @@ namespace educodeai_server.Services.Implementation
             _logger = logger;
             _httpClientFactory = httpClientFactory;
             _taiLieuStorage = taiLieuStorage;
+            _refreshCookiePolicy = refreshCookiePolicy;
         }
 
         // IP client cho rate-limit; null nếu không xác định được (rate-limiter tự bỏ qua phần IP).
@@ -439,7 +442,7 @@ namespace educodeai_server.Services.Implementation
             var httpContext = _httpContextAccessor.HttpContext;
 
             // Refresh token chỉ được chấp nhận từ cookie HttpOnly.
-            var plainToken = httpContext?.Request.Cookies[RefreshCookieName];
+            var plainToken = _refreshCookiePolicy.Read(httpContext?.Request ?? throw ApiException.AuthenticationFailed("Phiên làm việc đã hết hạn hoặc bị đăng xuất."));
 
             if (string.IsNullOrWhiteSpace(plainToken))
             {
@@ -485,7 +488,8 @@ namespace educodeai_server.Services.Implementation
                 throw ApiException.AuthenticationFailed("Phiên làm việc đã bị vô hiệu hóa do phát hiện sử dụng lại token.");
             }
 
-            if (stored.ThoiGianHetHan <= DateTime.UtcNow)
+            if (stored.ThoiGianHetHan <= DateTime.UtcNow
+                || (stored.AbsoluteExpiresAtUtc.HasValue && stored.AbsoluteExpiresAtUtc.Value <= DateTime.UtcNow))
             {
                 stored.NgayThuHoi = DateTime.UtcNow;
                 stored.LyDoThuHoi = "EXPIRED";
@@ -543,7 +547,10 @@ namespace educodeai_server.Services.Implementation
                 TokenHash = newMaterial.TokenHash,
                 FamilyId = stored.FamilyId,
                 Jti = newMaterial.Jti,
-                ThoiGianHetHan = newMaterial.ExpiresAtUtc,
+                ThoiGianHetHan = stored.AbsoluteExpiresAtUtc.HasValue
+                    ? new[] { newMaterial.ExpiresAtUtc, stored.AbsoluteExpiresAtUtc.Value }.Min()
+                    : newMaterial.ExpiresAtUtc,
+                AbsoluteExpiresAtUtc = stored.AbsoluteExpiresAtUtc,
                 NgayTao = DateTime.UtcNow,
                 IpTao = ipCurrent,
                 UserAgentTao = uaCurrent != null && uaCurrent.Length > 256 ? uaCurrent.Substring(0, 256) : uaCurrent
@@ -674,6 +681,7 @@ namespace educodeai_server.Services.Implementation
                 FamilyId = material.FamilyId,
                 Jti = material.Jti,
                 ThoiGianHetHan = material.ExpiresAtUtc,
+                AbsoluteExpiresAtUtc = _tokenService.GetRefreshFamilyDeadlineUtc(DateTime.UtcNow),
                 NgayTao = DateTime.UtcNow,
                 IpTao = ipTao,
                 UserAgentTao = uaTao
@@ -712,18 +720,8 @@ namespace educodeai_server.Services.Implementation
         {
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return;
-
-            var isHttps = httpContext.Request.IsHttps;
-            var options = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = isHttps,
-                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
-                Path = "/api/XacThuc",
-                Expires = expiresAtUtc,
-                IsEssential = true
-            };
-            httpContext.Response.Cookies.Append(RefreshCookieName, plainToken, options);
+            httpContext.Response.Cookies.Append(_refreshCookiePolicy.Name, plainToken,
+                _refreshCookiePolicy.Create(new DateTimeOffset(DateTime.SpecifyKind(expiresAtUtc, DateTimeKind.Utc))));
         }
 
         // Lấy MaPhien từ JWT của request hiện tại (căn cứ revoke — G.4/G.6).
@@ -737,18 +735,7 @@ namespace educodeai_server.Services.Implementation
         {
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return;
-
-            var isHttps = httpContext.Request.IsHttps;
-            var options = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = isHttps,
-                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
-                Path = "/api/XacThuc",
-                Expires = DateTime.UtcNow.AddDays(-1),
-                IsEssential = true
-            };
-            httpContext.Response.Cookies.Append(RefreshCookieName, string.Empty, options);
+            httpContext.Response.Cookies.Append(_refreshCookiePolicy.Name, string.Empty, _refreshCookiePolicy.CreateExpired());
         }
 
         // --- Triá»ƒn khai cÃ¡c hÃ m OTP báº£o máº­t qua MemoryCache ---

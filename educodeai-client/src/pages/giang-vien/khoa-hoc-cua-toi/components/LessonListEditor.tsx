@@ -388,7 +388,7 @@ interface Props {
   onBackToChapters: () => void;
 }
 
-const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, tenChuong, initialLessons = [], onImportYT, onBackToChapters }) => {
+const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, initialLessons = [], onImportYT, onBackToChapters }) => {
   const {
     lessons, loading, error, modalOpen, editTarget, saving, deleteTarget, deleting, previewLesson,
     uploadProgress, setLessons,

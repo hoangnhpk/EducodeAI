@@ -4,7 +4,6 @@ import { View } from 'react-native';
 
 import { getApiErrorMessage } from '../../../shared/lib/api-error';
 import { getDeviceMetadata } from '../../../shared/lib/device-metadata';
-import { getPublicAuthCaptchaToken } from '../lib/captcha';
 import { authService } from '../services/auth.service';
 import { classifyLoginResponse, parseAuthResponse } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -29,7 +28,7 @@ export default function LoginScreen() {
     setLoading(true); setError(null); setCaptchaError(undefined);
     try {
       const device = await getDeviceMetadata();
-      const submittedCaptchaToken = captchaRequired ? captchaToken : getPublicAuthCaptchaToken();
+      const submittedCaptchaToken = captchaRequired ? captchaToken : undefined;
       const result = classifyLoginResponse(await authService.login({ taiKhoan: taiKhoan.trim(), matKhau, captchaToken: submittedCaptchaToken, ...device }));
       if (result.kind === 'authenticated') await establishSession(result.session);
       else if (result.kind === 'requiresOtp') { setPendingAccount(result.email ?? taiKhoan.trim()); setMode('otp'); }

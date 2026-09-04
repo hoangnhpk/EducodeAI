@@ -198,7 +198,15 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
 // Dịch vụ Xác thực và Captcha mới
-builder.Services.AddScoped<ICaptchaService, CaptchaService>();
+builder.Services.AddHttpClient<ICaptchaService, CaptchaService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+builder.Services.AddSingleton<IRefreshRequestOriginPolicy, RefreshRequestOriginPolicy>();
+builder.Services.Configure<RefreshCookieOptions>(builder.Configuration.GetSection("Authentication:RefreshCookie"));
+builder.Services.AddScoped<RefreshCookiePolicy>(sp => new RefreshCookiePolicy(
+    sp.GetRequiredService<IOptions<RefreshCookieOptions>>(),
+    sp.GetRequiredService<IWebHostEnvironment>().IsDevelopment()));
 builder.Services.AddScoped<IXacThucService, XacThucService>();
 builder.Services.AddScoped<IHoSoGiangVienTaiLieuStorage, HoSoGiangVienTaiLieuStorage>();
 builder.Services.AddScoped<ITokenService, TokenService>();

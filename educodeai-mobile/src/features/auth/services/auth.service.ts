@@ -2,7 +2,7 @@ import api from '../../../shared/configs/api';
 import { getDeviceMetadata, type DeviceMetadata } from '../../../shared/lib/device-metadata';
 import type { AuthResponse } from '../types';
 
-export interface LoginPayload { taiKhoan: string; matKhau: string; captchaToken: string; maThietBi: string; tenThietBi?: string }
+export interface LoginPayload { taiKhoan: string; matKhau: string; captchaToken?: string; maThietBi: string; tenThietBi?: string }
 export interface OtpPayload { taiKhoan: string; otpCode: string; maThietBi: string; tenThietBi?: string }
 export interface RegisterPayload { hoTen: string; email: string; matKhau: string; captchaToken: string }
 export interface ResetPasswordPayload { email: string; NewPassword: string; ResetToken: string; maThietBi?: string; tenThietBi?: string }

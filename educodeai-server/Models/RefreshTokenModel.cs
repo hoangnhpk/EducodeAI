@@ -30,6 +30,8 @@ namespace educodeai_server.Models
 
         public DateTime ThoiGianHetHan { get; set; }
 
+        public DateTime? AbsoluteExpiresAtUtc { get; set; }
+
         public DateTime NgayTao { get; set; }
 
         public DateTime? NgayThuHoi { get; set; }
