@@ -385,9 +385,10 @@ interface Props {
   tenChuong: string;
   initialLessons?: BaiHocDetail[];
   onImportYT?: () => void;
+  onBackToChapters: () => void;
 }
 
-const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, tenChuong, initialLessons = [], onImportYT }) => {
+const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, tenChuong, initialLessons = [], onImportYT, onBackToChapters }) => {
   const {
     lessons, loading, error, modalOpen, editTarget, saving, deleteTarget, deleting, previewLesson,
     uploadProgress, setLessons,
@@ -416,11 +417,14 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, tenChuong, ini
   return (
     <div>
       <ToastContainer />
-      <div className="khm-flex-between khm-mb-16" style={{ flexWrap: 'wrap', gap: 8 }}>
-        <p className="khm-text-muted" style={{ margin: 0 }}>
-          Chương: <strong>{tenChuong}</strong> · {lessons.length} bài học
-        </p>
-        <div className="khm-flex khm-gap-8">
+      <div className="khm-flex-between khm-mb-16" style={{ gap: 16 }}>
+        <button
+          className="khm-btn khm-btn-outline khm-btn-sm"
+          onClick={onBackToChapters}
+        >
+          ← Quay lại danh sách chương
+        </button>
+        <div className="khm-flex khm-gap-8" style={{ flexShrink: 0, flexWrap: 'nowrap' }}>
           {onImportYT && (
             <button className="khm-btn khm-btn-outline khm-btn-sm" onClick={onImportYT}>
               ▶ Import YouTube

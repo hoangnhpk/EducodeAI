@@ -82,6 +82,8 @@ export const useLessonManagement = ({ maChuong, maKhoaHoc, initialLessons }: Use
       await api.reorderBaiHoc(maGiangVien, maChuong, {
         lessonOrders: reordered.map(l => ({ maBaiHoc: l.maBaiHoc, thuTu: l.thuTu })),
       });
+      // Đọc lại dữ liệu sau khi lưu để đồng bộ với thứ tự thực tế trong DB/cache.
+      await loadLessons(true);
       showToast('success', 'Sắp xếp bài học thành công!');
     } catch {
       showToast('error', 'Lỗi sắp xếp. Đã khôi phục thứ tự cũ.');

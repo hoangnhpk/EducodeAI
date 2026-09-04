@@ -275,9 +275,11 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                   </div>
                 </div>
                 <div>
-                  <label className="khm-form-label">Giá khóa học</label>
+                    <span className="khm-form-label">Giá khóa học</span>
                   <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--khm-gray-800)' }}>
-                    {detail.giaKhoaHoc.toLocaleString()} {detail.donViTienTe}
+                    {detail.donViTienTe?.toUpperCase() === 'FREE'
+                      ? 'Miễn phí'
+                      : `${detail.giaKhoaHoc.toLocaleString()} ${detail.donViTienTe}`}
                   </div>
                 </div>
                 <div>
@@ -345,12 +347,13 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                 {selectedChapter ? (
                   <LessonListEditor
                     key={selectedChapter.maChuong}
-                    maChuong={selectedChapter.maChuong}
-                    maKhoaHoc={maKhoaHoc}
-                    tenChuong={selectedChapter.tenChuong}
-                    initialLessons={detail.danhSachChuong.find(c => c.maChuong === selectedChapter.maChuong)?.danhSachBaiHoc ?? []}
-                    onImportYT={onImportPlaylist}
-                  />
+                      maChuong={selectedChapter.maChuong}
+                      maKhoaHoc={maKhoaHoc}
+                      tenChuong={selectedChapter.tenChuong}
+                      initialLessons={detail.danhSachChuong.find(c => c.maChuong === selectedChapter.maChuong)?.danhSachBaiHoc ?? []}
+                      onImportYT={onImportPlaylist}
+                      onBackToChapters={() => setSelectedChapter(null)}
+                    />
                 ) : (
                   <ChapterListEditor
                     maKhoaHoc={maKhoaHoc}

@@ -18,12 +18,8 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
     categories, filtered, paginatedCourses, totalPages, totalStudents, avgRating,
     setFilter, setCategoryFilter, setCurrentPage, setConfirmTarget,
     handleSearchChange, handleConfirmArchive, handleRestore, loadCourses,
-    ToastContainer, showToast
+    ToastContainer
   } = useCourseList();
-
-  const handleDuplicate = (_maKhoaHoc: number) => {
-    showToast('info', 'Tính năng nhân bản khóa học đang phát triển.');
-  };
 
   return (
     <div className="khm-wrapper">
@@ -160,7 +156,6 @@ const CourseListPage: React.FC<Props> = ({ onCreateNew, onEdit, onManage }) => {
                   onEdit={onEdit}
                   onManage={onManage}
                   onArchive={setConfirmTarget}
-                  onDuplicate={handleDuplicate}
                   onRestore={handleRestore}
                   isDeleting={deletingId === c.maKhoaHoc}
                 />
