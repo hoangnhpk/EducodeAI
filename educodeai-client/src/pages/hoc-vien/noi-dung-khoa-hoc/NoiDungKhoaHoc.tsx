@@ -620,7 +620,7 @@ const NoiDungKhoaHoc = () => {
                                         setTabActive('hoc');
                                     } else if (baiHocHienTai.loaiBaiHoc === 'Quiz' || (tabActive !== 'quiz' && baiHocHienTai.thongTinQuiz && !baiHocHienTai.linkVideo)) {
                                         setTabActive('quiz');
-                                    } else if (baiHocHienTai.loaiBaiHoc === 'Ide' || baiHocHienTai.loaiBaiHoc === 'Code' || (tabActive !== 'ide' && baiHocHienTai.maBaiTapThucHanh && !baiHocHienTai.linkVideo)) {
+                                    } else if (baiHocHienTai.loaiBaiHoc === 'Ide' || (tabActive !== 'ide' && baiHocHienTai.maBaiTapThucHanh && !baiHocHienTai.linkVideo)) {
                                         setTabActive('ide');
                                     } else {
                                         setTabActive('hoc');
