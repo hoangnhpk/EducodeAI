@@ -2,6 +2,7 @@ using educodeai_server.Data;
 using educodeai_server.DTOs.KhoaHoc;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
+using educodeai_server.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -137,6 +138,68 @@ namespace EduCodeAI.Controllers.HocVien
             var tongDanhGia = await _context.DanhGias.AsNoTracking()
                 .CountAsync(d => d.MaKhoaHoc == id);
 
+            var chungChiGiangVien = new List<object>();
+            if (khoaHocEntity.GiangVien != null)
+            {
+                var maGiangVien = khoaHocEntity.GiangVien.MaNguoiDung;
+                var legacyCertificates = await _context.HoSoGiangVienTaiLieus
+                    .AsNoTracking()
+                    .Where(t =>
+                        t.HoSoDangKyGiangVien.MaNguoiDung == maGiangVien &&
+                        t.HoSoDangKyGiangVien.TrangThaiHoSo == "DaDuyet" &&
+                        t.LoaiTaiLieu == "ChungChi" &&
+                        t.TrangThai == "DaDuyet" &&
+                        t.HienThiCongKhai)
+                    .Select(t => new PublicInstructorCertificate
+                    {
+                        MaChungChi = t.MaTaiLieu,
+                        TenChungChi = t.TenChungChi,
+                        DonViCap = t.DonViCap,
+                        NgayCap = t.NgayCapChungChi,
+                        NgayHetHan = t.NgayHetHanChungChi,
+                        CredentialId = t.MaChungChi,
+                        NgayDuyet = t.NgayDuyet
+                    })
+                    .ToListAsync();
+
+                var independentCertificates = await _context.YeuCauChungChiGiangViens
+                    .AsNoTracking()
+                    .Where(t =>
+                        t.MaGiangVien == maGiangVien &&
+                        t.TrangThai == "DaDuyet" &&
+                        t.HienThiCongKhai)
+                    .Select(t => new PublicInstructorCertificate
+                    {
+                        MaChungChi = t.MaYeuCauChungChi,
+                        TenChungChi = t.TenChungChi,
+                        DonViCap = t.DonViCap,
+                        NgayCap = t.NgayCap,
+                        NgayHetHan = t.NgayHetHan,
+                        CredentialId = t.MaChungChi,
+                        NgayDuyet = t.NgayDuyet
+                    })
+                    .ToListAsync();
+
+                chungChiGiangVien = legacyCertificates
+                    .Concat(independentCertificates)
+                    .OrderByDescending(t => t.NgayDuyet)
+                    .ThenByDescending(t => t.MaChungChi)
+                    .Select(t => (object)new
+                    {
+                        maChungChi = t.MaChungChi,
+                        tenChungChi = string.IsNullOrWhiteSpace(t.TenChungChi) ? "Chứng chỉ chuyên môn" : t.TenChungChi,
+                        donViCap = t.DonViCap,
+                        ngayCap = t.NgayCap,
+                        ngayHetHan = t.NgayHetHan,
+                        maChungChiChe = MaskCredentialId(t.CredentialId),
+                        // URL do giảng viên cung cấp chỉ dành cho admin đối chiếu. Không công khai
+                        // cho tới khi có quy trình duyệt riêng đối với tên miền của đơn vị cấp.
+                        urlXacMinh = (string?)null,
+                        ngayDuyet = t.NgayDuyet
+                    })
+                    .ToList();
+            }
+
             var khoaHoc = new
             {
                 khoaHocEntity.MaKhoaHoc,
@@ -161,7 +224,8 @@ namespace EduCodeAI.Controllers.HocVien
                 {
                     maGiangVien = khoaHocEntity.GiangVien.MaNguoiDung,
                     hoTen = khoaHocEntity.GiangVien.HoTen,
-                    anhDaiDien = khoaHocEntity.GiangVien.AnhDaiDien
+                    anhDaiDien = khoaHocEntity.GiangVien.AnhDaiDien,
+                    chungChi = chungChiGiangVien
                 } : null,
                 chuongs = khoaHocEntity.ChuongHocs
                     .OrderBy(c => c.ThuTu)
@@ -229,6 +293,25 @@ namespace EduCodeAI.Controllers.HocVien
             });
         }
 
+        private sealed class PublicInstructorCertificate
+        {
+            public long MaChungChi { get; init; }
+            public string? TenChungChi { get; init; }
+            public string? DonViCap { get; init; }
+            public DateOnly? NgayCap { get; init; }
+            public DateOnly? NgayHetHan { get; init; }
+            public string? CredentialId { get; init; }
+            public DateTime? NgayDuyet { get; init; }
+        }
+
+        private static string? MaskCredentialId(string? credentialId)
+        {
+            if (string.IsNullOrWhiteSpace(credentialId)) return null;
+            var value = credentialId.Trim();
+            if (value.Length <= 4) return "••••";
+            return $"••••{value[^4..]}";
+        }
+
         /// <summary>
         /// API công khai: Lấy đánh giá đã duyệt (ngẫu nhiên) để hiển thị trên trang chủ
         /// </summary>
@@ -292,6 +375,58 @@ namespace EduCodeAI.Controllers.HocVien
                 .ToListAsync();
 
             return Ok(topInstructors);
+        }
+
+        /// <summary>
+        /// API công khai: Danh mục (lĩnh vực) đang có khóa học, xếp theo số khóa học giảm dần
+        /// </summary>
+        [HttpGet("danh-muc-trang-chu")]
+        public async Task<IActionResult> GetDanhMucTrangChu([FromQuery] int soLuong = 8)
+        {
+            var danhMucs = await _context.KhoaHocs.AsNoTracking()
+                .Where(k => k.TrangThai == "Hoạt động" && !string.IsNullOrEmpty(k.LinhVuc))
+                .GroupBy(k => k.LinhVuc)
+                .Select(g => new
+                {
+                    tenLinhVuc = g.Key,
+                    soKhoaHoc = g.Count()
+                })
+                .OrderByDescending(x => x.soKhoaHoc)
+                .ThenBy(x => x.tenLinhVuc)
+                .Take(soLuong)
+                .ToListAsync();
+
+            return Ok(danhMucs);
+        }
+
+        /// <summary>
+        /// API công khai: Số liệu tổng quan cho thanh thống kê trang chủ
+        /// </summary>
+        [HttpGet("thong-ke-trang-chu")]
+        public async Task<IActionResult> GetThongKeTrangChu()
+        {
+            var tongHocVien = await _context.NguoiDungs.AsNoTracking()
+                .CountAsync(u => u.VaiTro == 2 && u.TrangThai == "Hoạt động");
+
+            // Cùng bộ lọc với danh sách khóa học hiển thị ngoài trang chủ
+            var tongKhoaHoc = await _context.KhoaHocs.AsNoTracking()
+                .CountAsync(k => k.TrangThai == "Hoạt động");
+
+            var tongGiangVien = await _context.NguoiDungs.AsNoTracking()
+                .CountAsync(u => u.VaiTro == 1 && u.TrangThai == "Hoạt động");
+
+            // Chỉ tính đánh giá đã duyệt để con số công khai phản ánh đúng thực tế
+            var diemDanhGiaTB = await _context.DanhGias.AsNoTracking()
+                .Where(d => d.TrangThai == "DaDuyet")
+                .AverageAsync(d => (double?)d.SoSao) ?? 0;
+
+            return Ok(new
+            {
+                tongHocVien,
+                tongKhoaHoc,
+                tongGiangVien,
+                diemDanhGiaTB = Math.Round(diemDanhGiaTB, 1)
+            });
         }
     }
 }

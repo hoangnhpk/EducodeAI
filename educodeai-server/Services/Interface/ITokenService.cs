@@ -18,6 +18,8 @@ namespace educodeai_server.Services.Interface
 
         /// <summary>Thời hạn sống của refresh token.</summary>
         TimeSpan RefreshTokenLifetime { get; }
+
+        DateTime GetRefreshFamilyDeadlineUtc(DateTime nowUtc);
     }
 
     public sealed record AccessTokenResult(string Token, string Jti, DateTime IssuedAtUtc, DateTime ExpiresAtUtc);

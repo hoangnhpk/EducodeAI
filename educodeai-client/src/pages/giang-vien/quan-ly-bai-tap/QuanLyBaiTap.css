@@ -341,3 +341,79 @@ table.qlbt-table th {
 .btn-modal-next { background: var(--primary) !important; color: var(--text-white) !important; }
 .btn-modal-next:hover:not(:disabled) { background: var(--primary-hover) !important; color: var(--text-white) !important; transform: translateY(-2px) !important; box-shadow: var(--shadow-md) !important; }
 .btn-modal-nav:disabled { opacity: 0.5 !important; cursor: not-allowed !important; }
+
+@media (max-width: 768px) {
+    .tabs {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 24px;
+        overflow-x: auto;
+    }
+
+    .tab {
+        flex: 0 0 auto;
+        padding: 10px 16px;
+        white-space: nowrap;
+    }
+
+    .card {
+        min-width: 0;
+        padding: 16px;
+    }
+
+    .table-container {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .actions-group {
+        flex-wrap: wrap;
+    }
+
+    .quiz-modal-overlay {
+        padding: 8px !important;
+        align-items: flex-end !important;
+    }
+
+    .quiz-modal-content {
+        width: 100% !important;
+        max-height: calc(100dvh - 16px) !important;
+    }
+
+    .quiz-modal-header,
+    .quiz-modal-body,
+    .quiz-modal-footer {
+        padding: 16px !important;
+    }
+
+    .quiz-modal-footer {
+        flex-wrap: wrap !important;
+    }
+
+    .btn-modal-nav {
+        flex: 1 1 140px;
+        padding-inline: 16px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .qlbt-table {
+        min-width: 880px;
+    }
+
+    .modal-overlay {
+        padding: 8px;
+        align-items: flex-end;
+    }
+
+    .modal-content {
+        width: 100%;
+        max-height: calc(100dvh - 16px);
+    }
+
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 16px;
+    }
+}

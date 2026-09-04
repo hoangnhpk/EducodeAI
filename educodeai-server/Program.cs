@@ -198,8 +198,17 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
 // Dịch vụ Xác thực và Captcha mới
-builder.Services.AddScoped<ICaptchaService, CaptchaService>();
+builder.Services.AddHttpClient<ICaptchaService, CaptchaService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+builder.Services.AddSingleton<IRefreshRequestOriginPolicy, RefreshRequestOriginPolicy>();
+builder.Services.Configure<RefreshCookieOptions>(builder.Configuration.GetSection("Authentication:RefreshCookie"));
+builder.Services.AddScoped<RefreshCookiePolicy>(sp => new RefreshCookiePolicy(
+    sp.GetRequiredService<IOptions<RefreshCookieOptions>>(),
+    sp.GetRequiredService<IWebHostEnvironment>().IsDevelopment()));
 builder.Services.AddScoped<IXacThucService, XacThucService>();
+builder.Services.AddScoped<IHoSoGiangVienTaiLieuStorage, HoSoGiangVienTaiLieuStorage>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 // Cache trạng thái user/session cho hot-path middleware (G.1); chạy trên IDistributedCache (Redis/memory fallback).
 builder.Services.AddScoped<ISessionStateCache, SessionStateCache>();
@@ -254,9 +263,11 @@ builder.Services.AddScoped<IQuanLyHocVienKhoaHocService, QuanLyHocVienKhoaHocSer
 builder.Services.AddScoped<IQuanLyDanhGiaService, QuanLyDanhGiaService>();
 builder.Services.AddScoped<ILoTrinhAIGvRepository, LoTrinhAIGvRepository>();
 builder.Services.AddScoped<IQuanLyHoSoGiangVienService, QuanLyHoSoGiangVienService>();
+builder.Services.AddScoped<IGiangVienChungChiService, GiangVienChungChiService>();
 builder.Services.AddScoped<ILoTrinhAIGvService, LoTrinhAIGvService>();
 // C. Cấu hình CORS (Cho phép React/Giao diện gọi API)
 builder.Services.AddScoped<ILoTrinhAIRepository, LoTrinhAIRepository>();
+builder.Services.AddScoped<ILoTrinhAIQuotaService, LoTrinhAIQuotaService>();
 builder.Services.AddScoped<ILoTrinhAIService, LoTrinhAIService>();
 builder.Services.AddScoped<IChatBotAIService, ChatBotAIService>();
 builder.Services.AddScoped<IKeyApiRepository, KeyApiRepository>();

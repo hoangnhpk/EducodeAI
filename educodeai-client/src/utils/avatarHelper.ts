@@ -36,8 +36,9 @@ const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 
 /** Ghép base API với đường dẫn avatar tương đối từ DB */
 export function getAnhDaiDienUrl(path?: string | null): string {
-  if (!path?.trim()) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  const normalized = path.startsWith('/') ? path : `/${path}`;
+  const trimmedPath = path?.trim();
+  if (!trimmedPath) return '';
+  if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) return trimmedPath;
+  const normalized = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
   return `${API_BASE}${normalized}`;
 }

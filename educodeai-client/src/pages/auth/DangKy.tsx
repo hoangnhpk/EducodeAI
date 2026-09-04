@@ -4,6 +4,7 @@ import { authService } from '../../services/auth.service';
 import Swal from 'sweetalert2';
 // 1. IMPORT THƯ VIỆN CAPTCHA
 import ReCAPTCHA from "react-google-recaptcha";
+import { markLoginSucceeded } from '../../utils/authLifecycle';
 import { setAuthTokens } from '../../utils/authStorage';
 import { FaArrowLeft } from 'react-icons/fa';
 import PasswordInput from '../../components/PasswordInput';
@@ -123,6 +124,7 @@ const RegisterPage = () => {
 
             if (token) {
                 // 3. Lưu vào localStorage để tạo "phiên đăng nhập"
+                markLoginSucceeded();
                 setAuthTokens(token);
                 // Refresh token do backend đặt trong cookie HttpOnly; frontend không lưu/đọc.
                 localStorage.setItem('user_info', JSON.stringify(user));

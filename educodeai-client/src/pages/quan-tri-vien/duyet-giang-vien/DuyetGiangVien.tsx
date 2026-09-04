@@ -1,8 +1,10 @@
-﻿import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { HoSoGiangVienAdminService } from "@/services/ho-so-giang-vien-admin.service";
 import type { HoSoGiangVienListItem, HoSoGiangVienDetail } from "@/services/ho-so-giang-vien-admin.service";
+import { getAnhDaiDienUrl, layChuCaiAvatar, layMauAvatar } from "@/utils/avatarHelper";
+import DuyetChungChiTab from "./DuyetChungChiTab";
 import "@/assets/styles/AdminTableControls.css";
 import "./DuyetGiangVien.css";
 
@@ -43,11 +45,42 @@ const toExternalUrl = (value?: string | null) => {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 };
 
+const chuanHoaTuKhoa = (value?: string | null) => (value ?? "")
+  .normalize("NFD")
+  .replace(/[̀-ͯ]/g, "")
+  .toLowerCase()
+  .replace(/đ/g, "d")
+  .trim();
+
+const formatFileSize = (bytes: number) => bytes < 1024 * 1024
+  ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+  : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+const safeDownloadName = (name: string) => name.replace(/[\\/:*?"<>|]/g, "_") || "tai-lieu";
+
 const modalWarningSwal = {
   icon: "warning" as const,
   customClass: {
     container: "qlnv-swal-over-modal"
   }
+};
+
+const InstructorApplicationAvatar = ({ src, name }: { src?: string | null; name: string }) => {
+  const [imageError, setImageError] = useState(false);
+  const avatarUrl = getAnhDaiDienUrl(src);
+  const avatarColor = layMauAvatar(name);
+
+  useEffect(() => setImageError(false), [avatarUrl]);
+
+  if (avatarUrl && !imageError) {
+    return <img src={avatarUrl} alt={name} className="lecturer-review-avatar" onError={() => setImageError(true)} />;
+  }
+
+  return (
+    <div className="lecturer-review-avatar lecturer-review-avatar--fallback" style={{ background: avatarColor.bg, color: avatarColor.color }}>
+      {layChuCaiAvatar(name)}
+    </div>
+  );
 };
 
 const CCCD_FIELD_LABELS: Record<string, string> = {
@@ -65,8 +98,12 @@ const CCCD_FIELD_LABELS: Record<string, string> = {
 
 
 export default function DuyetGiangVien() {
+  const [activeTab, setActiveTab] = useState<"accounts" | "certificates">("accounts");
   const [dangTai, setDangTai] = useState(true);
   const [trangThaiLoc, setTrangThaiLoc] = useState("");
+  const [tuKhoa, setTuKhoa] = useState("");
+  const [linhVucLoc, setLinhVucLoc] = useState("");
+  const [loaiGiayToLoc, setLoaiGiayToLoc] = useState("");
   const [danhSach, setDanhSach] = useState<HoSoGiangVienListItem[]>([]);
   const [chiTiet, setChiTiet] = useState<HoSoGiangVienDetail | null>(null);
   const [moModal, setMoModal] = useState(false);
@@ -75,6 +112,7 @@ export default function DuyetGiangVien() {
   const [noiDungBoSung, setNoiDungBoSung] = useState("");
   const [maHoSoTuChoi, setMaHoSoTuChoi] = useState<number | null>(null);
   const [lyDoTuChoi, setLyDoTuChoi] = useState("");
+  const [maHoSoDangDuyet, setMaHoSoDangDuyet] = useState<number | null>(null);
 
   const chiTietModalRef = useRef<HTMLDivElement>(null);
   const boSungModalRef = useRef<HTMLDivElement>(null);
@@ -83,10 +121,10 @@ export default function DuyetGiangVien() {
   useModalA11y(maHoSoBoSung !== null, () => { setMaHoSoBoSung(null); setNoiDungBoSung(""); }, boSungModalRef);
   useModalA11y(maHoSoTuChoi !== null, () => { setMaHoSoTuChoi(null); setLyDoTuChoi(""); }, tuChoiModalRef);
 
-  const taiDanhSach = async (tt?: string) => {
+  const taiDanhSach = async () => {
     try {
       setDangTai(true);
-      const duLieu = await HoSoGiangVienAdminService.layDanhSach(tt);
+      const duLieu = await HoSoGiangVienAdminService.layDanhSach();
       setDanhSach(duLieu);
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không tải được danh sách hồ sơ.", "error");
@@ -99,10 +137,41 @@ export default function DuyetGiangVien() {
     void taiDanhSach();
   }, []);
 
-  const handleLoc = (tt: string) => {
-    setTrangThaiLoc(tt);
-    void taiDanhSach(tt);
+  const linhVucOptions = useMemo(() => Array.from(new Set(
+    danhSach.map((hs) => hs.linhVucGiangDay?.trim()).filter(Boolean)
+  )).sort((a, b) => a.localeCompare(b, "vi")), [danhSach]);
+
+  const loaiGiayToOptions = useMemo(() => Array.from(new Set(
+    danhSach.map((hs) => hs.loaiGiayTo?.trim()).filter(Boolean)
+  )).sort((a, b) => a.localeCompare(b, "vi")), [danhSach]);
+
+  const danhSachHienThi = useMemo(() => {
+    const keyword = chuanHoaTuKhoa(tuKhoa);
+    return danhSach.filter((hs) => {
+      const khopTuKhoa = !keyword || [
+        hs.hoTen,
+        hs.email,
+        hs.soDienThoai,
+        hs.linhVucGiangDay,
+        hs.loaiGiayTo,
+        String(hs.maHoSoDangKyGiangVien)
+      ].some((value) => chuanHoaTuKhoa(value).includes(keyword));
+
+      return khopTuKhoa
+        && (!trangThaiLoc || hs.trangThaiHoSo === trangThaiLoc)
+        && (!linhVucLoc || hs.linhVucGiangDay?.trim() === linhVucLoc)
+        && (!loaiGiayToLoc || hs.loaiGiayTo?.trim() === loaiGiayToLoc);
+    });
+  }, [danhSach, linhVucLoc, loaiGiayToLoc, trangThaiLoc, tuKhoa]);
+
+  const xoaBoLoc = () => {
+    setTuKhoa("");
+    setTrangThaiLoc("");
+    setLinhVucLoc("");
+    setLoaiGiayToLoc("");
   };
+
+  const coBoLoc = Boolean(tuKhoa || trangThaiLoc || linhVucLoc || loaiGiayToLoc);
 
 
 
@@ -117,6 +186,23 @@ export default function DuyetGiangVien() {
     }
   };
 
+  const taiTaiLieu = async (maTaiLieu: number, tenFile: string) => {
+    if (!chiTiet) return;
+    try {
+      const blob = await HoSoGiangVienAdminService.taiTaiLieu(chiTiet.maHoSoDangKyGiangVien, maTaiLieu);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = safeDownloadName(tenFile);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      Swal.fire("Lỗi", error?.response?.data?.message ?? "Không tải được tài liệu.", "error");
+    }
+  };
+
   const xacNhanDuyet = async (maHoSo: number) => {
     const confirm = await Swal.fire({
       title: "Duyệt hồ sơ?",
@@ -125,17 +211,23 @@ export default function DuyetGiangVien() {
       showCancelButton: true,
       confirmButtonText: "Duyệt",
       cancelButtonText: "Huỷ",
-      confirmButtonColor: "var(--success)"
+      confirmButtonColor: "var(--success)",
+      customClass: {
+        container: "qlnv-swal-over-modal"
+      }
     });
     if (!confirm.isConfirmed) return;
 
     try {
-      await HoSoGiangVienAdminService.duyetHoSo(maHoSo);
-      Swal.fire("Thành công", "Đã duyệt hồ sơ và tạo tài khoản giảng viên.", "success");
+      setMaHoSoDangDuyet(maHoSo);
+      const result = await HoSoGiangVienAdminService.duyetHoSo(maHoSo);
       setMoModal(false);
-      void taiDanhSach(trangThaiLoc);
+      await taiDanhSach();
+      await Swal.fire("Thành công", result?.message ?? "Đã duyệt hồ sơ và tạo tài khoản giảng viên.", "success");
     } catch (error: any) {
-      Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể duyệt hồ sơ.", "error");
+      await Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể duyệt hồ sơ.", "error");
+    } finally {
+      setMaHoSoDangDuyet(null);
     }
   };
 
@@ -167,7 +259,7 @@ export default function DuyetGiangVien() {
       await HoSoGiangVienAdminService.tuChoiHoSo(maHoSoTuChoi, lyDo);
       dongModalTuChoi();
       Swal.fire("Thành công", "Đã từ chối hồ sơ và gửi email thông báo.", "success");
-      void taiDanhSach(trangThaiLoc);
+      void taiDanhSach();
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể từ chối hồ sơ.", "error");
     }
@@ -201,39 +293,72 @@ export default function DuyetGiangVien() {
       await HoSoGiangVienAdminService.yeuCauBoSung(maHoSoBoSung, noiDung);
       dongModalBoSung();
       Swal.fire("Thành công", "Đã gửi yêu cầu bổ sung hồ sơ.", "success");
-      void taiDanhSach(trangThaiLoc);
+      void taiDanhSach();
     } catch (error: any) {
       Swal.fire("Lỗi", error?.response?.data?.message ?? "Không thể gửi yêu cầu bổ sung.", "error");
     }
   };
 
-  const baseUrl = import.meta.env.VITE_API_URL || "";
   return (
     <div className="qtv-page-content lecturer-review-page">
       <div className="lecturer-review-header">
-        <h3 className="fw-bold mb-0">Duyệt hồ sơ đăng ký giảng viên</h3>
+        <h3 className="fw-bold mb-0">Duyệt giảng viên</h3>
       </div>
 
-      <div className="lecturer-review-card">
-        <div className="toolbar">
-          <select
-          className="filter-select"
-          value={trangThaiLoc}
-          onChange={(e) => handleLoc(e.target.value)}
-        >
-          {TRANG_THAI_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+      <div className="lecturer-review-tabs" role="tablist" aria-label="Loại yêu cầu cần duyệt">
+        <button type="button" role="tab" aria-selected={activeTab === "accounts"} className={`lecturer-review-tab ${activeTab === "accounts" ? "active" : ""}`} onClick={() => setActiveTab("accounts")}>
+          <i className="bi bi-person-check" aria-hidden="true" /> Tài khoản
+        </button>
+        <button type="button" role="tab" aria-selected={activeTab === "certificates"} className={`lecturer-review-tab ${activeTab === "certificates" ? "active" : ""}`} onClick={() => setActiveTab("certificates")}>
+          <i className="bi bi-award" aria-hidden="true" /> Chứng chỉ
+        </button>
       </div>
+
+      {activeTab === "certificates" ? <DuyetChungChiTab /> : <>
+      <div className="lecturer-review-card">
+        <div className="lecturer-review-toolbar">
+          <div className="lecturer-review-search">
+            <i className="bi bi-search" aria-hidden="true"></i>
+            <input
+              className="search-input"
+              value={tuKhoa}
+              onChange={(e) => setTuKhoa(e.target.value)}
+              placeholder="Tìm theo tên, email, SĐT, lĩnh vực..."
+              aria-label="Tìm kiếm hồ sơ giảng viên"
+            />
+          </div>
+          <select className="filter-select" value={trangThaiLoc} onChange={(e) => setTrangThaiLoc(e.target.value)} aria-label="Lọc theo trạng thái">
+            {TRANG_THAI_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <select className="filter-select" value={linhVucLoc} onChange={(e) => setLinhVucLoc(e.target.value)} aria-label="Lọc theo lĩnh vực">
+            <option value="">Tất cả lĩnh vực</option>
+            {linhVucOptions.map((linhVuc) => <option key={linhVuc} value={linhVuc}>{linhVuc}</option>)}
+          </select>
+          <select className="filter-select" value={loaiGiayToLoc} onChange={(e) => setLoaiGiayToLoc(e.target.value)} aria-label="Lọc theo loại giấy tờ">
+            <option value="">Tất cả giấy tờ</option>
+            {loaiGiayToOptions.map((loaiGiayTo) => <option key={loaiGiayTo} value={loaiGiayTo}>{loaiGiayTo}</option>)}
+          </select>
+          {coBoLoc && (
+            <button type="button" className="lecturer-review-clear" onClick={xoaBoLoc}>
+              <i className="bi bi-x-circle" aria-hidden="true"></i>
+              Xóa lọc
+            </button>
+          )}
+        </div>
+
+        {!dangTai && (
+          <div className="lecturer-review-result-count">
+            Hiển thị <strong>{danhSachHienThi.length}</strong> / {danhSach.length} hồ sơ
+          </div>
+        )}
 
       {dangTai ? (
         <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
           Đang tải danh sách hồ sơ...
         </div>
-      ) : danhSach.length === 0 ? (
+      ) : danhSachHienThi.length === 0 ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-light)' }}>
           Không tìm thấy hồ sơ nào
         </div>
@@ -251,28 +376,13 @@ export default function DuyetGiangVien() {
               </tr>
             </thead>
             <tbody>
-              {danhSach.map((hs) => {
+              {danhSachHienThi.map((hs) => {
                 const tt = hienThiTrangThai(hs.trangThaiHoSo);
                 return (
                   <tr key={hs.maHoSoDangKyGiangVien}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                        {hs.anhDaiDienUrl ? (
-                          <img
-                            src={`${baseUrl}${hs.anhDaiDienUrl}`}
-                            alt={hs.hoTen}
-                            style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-light)', flexShrink: 0 }}
-                          />
-                        ) : (
-                          <div style={{
-                            width: 32, height: 32, borderRadius: '50%',
-                            background: 'var(--border-light)', color: 'var(--text-muted)',
-                            display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0
-                          }}>
-                            {hs.hoTen ? hs.hoTen[0].toUpperCase() : '?'}
-                          </div>
-                        )}
+                        <InstructorApplicationAvatar src={hs.anhDaiDienUrl} name={hs.hoTen} />
                         <span style={{ ...ellipsisStyle, fontWeight: 600, color: 'var(--text-dark)' }} title={hs.hoTen}>
                           {hs.hoTen}
                         </span>
@@ -301,9 +411,15 @@ export default function DuyetGiangVien() {
                         </button>
                         {hs.trangThaiHoSo === "ChoDuyet" && (
                           <>
-                            <button className="btn-action btn-unlock" title="Duyệt hồ sơ" aria-label={`Duyệt hồ sơ ${hs.hoTen}`} onClick={() => xacNhanDuyet(hs.maHoSoDangKyGiangVien)}>
-                              <i className="bi bi-check-lg" aria-hidden="true"></i>
-                              <span>Duyệt</span>
+                            <button
+                              className="btn-action btn-unlock"
+                              title="Duyệt hồ sơ"
+                              aria-label={`Duyệt hồ sơ ${hs.hoTen}`}
+                              disabled={maHoSoDangDuyet !== null}
+                              onClick={() => xacNhanDuyet(hs.maHoSoDangKyGiangVien)}
+                            >
+                              <i className={`bi ${maHoSoDangDuyet === hs.maHoSoDangKyGiangVien ? "bi-arrow-repeat lecturer-review-spin" : "bi-check-lg"}`} aria-hidden="true"></i>
+                              <span>{maHoSoDangDuyet === hs.maHoSoDangKyGiangVien ? "Đang duyệt" : "Duyệt"}</span>
                             </button>
                             <button className="btn-action btn-lock" title="Yêu cầu bổ sung" aria-label={`Yêu cầu bổ sung hồ sơ ${hs.hoTen}`} onClick={() => xacNhanBoSung(hs.maHoSoDangKyGiangVien)}>
                               <i className="bi bi-pencil" aria-hidden="true"></i>
@@ -403,9 +519,47 @@ export default function DuyetGiangVien() {
                   </div>
                   <div className="col-12">
                     <p><b>Ảnh đại diện:</b></p>
-                    {chiTiet.anhDaiDienUrl ? (
-                      <img src={`${baseUrl}${chiTiet.anhDaiDienUrl}`} alt="Avatar" style={{ maxWidth: 120, borderRadius: 8 }} />
-                    ) : <span className="text-muted">Không có</span>}
+                    <div className="lecturer-review-detail-avatar">
+                      <InstructorApplicationAvatar src={chiTiet.anhDaiDienUrl} name={chiTiet.hoTen} />
+                    </div>
+                  </div>
+                  <div className="col-12 mt-4">
+                    <h6 className="mb-3 fw-bold">CV và chứng chỉ chuyên môn</h6>
+                    {chiTiet.taiLieus?.length ? (
+                      <div className="lecturer-document-review-list">
+                        {chiTiet.taiLieus.map((taiLieu) => (
+                          <div className="lecturer-document-review-item" key={taiLieu.maTaiLieu}>
+                            <div className="lecturer-document-review-icon">
+                              <i className={`bi ${taiLieu.loaiTaiLieu === "CV" ? "bi-file-earmark-person" : "bi-award"}`} aria-hidden="true" />
+                            </div>
+                            <div className="lecturer-document-review-info">
+                              <strong>{taiLieu.loaiTaiLieu === "ChungChi" ? (taiLieu.tenChungChi || "Chứng chỉ chuyên môn (dữ liệu cũ)") : taiLieu.tenFile}</strong>
+                              <span>
+                                {taiLieu.loaiTaiLieu === "CV" ? "CV" : "Chứng chỉ"} · {formatFileSize(taiLieu.kichThuoc)} · {hienThiTrangThai(taiLieu.trangThai).text}
+                              </span>
+                              {taiLieu.loaiTaiLieu === "ChungChi" && (
+                                <div className="lecturer-certificate-review-metadata">
+                                  <span><b>File:</b> {taiLieu.tenFile}</span>
+                                  {taiLieu.donViCap && <span><b>Đơn vị cấp:</b> {taiLieu.donViCap}</span>}
+                                  {(taiLieu.ngayCapChungChi || taiLieu.ngayHetHanChungChi) && (
+                                    <span><b>Hiệu lực:</b> {taiLieu.ngayCapChungChi ? new Date(`${taiLieu.ngayCapChungChi}T00:00:00`).toLocaleDateString("vi-VN") : "—"} đến {taiLieu.ngayHetHanChungChi ? new Date(`${taiLieu.ngayHetHanChungChi}T00:00:00`).toLocaleDateString("vi-VN") : "không thời hạn"}</span>
+                                  )}
+                                  {taiLieu.maChungChi && <span><b>Mã chứng chỉ:</b> {taiLieu.maChungChi}</span>}
+                                  {taiLieu.urlXacMinh && <a href={taiLieu.urlXacMinh} target="_blank" rel="noopener noreferrer">Mở trang xác minh</a>}
+                                </div>
+                              )}
+                              {taiLieu.lyDoTuChoi && <small>Lý do: {taiLieu.lyDoTuChoi}</small>}
+                            </div>
+                            <button type="button" className="btn-action btn-edit" onClick={() => void taiTaiLieu(taiLieu.maTaiLieu, taiLieu.tenFile)}>
+                              <i className="bi bi-download" aria-hidden="true" />
+                              <span>Tải xuống</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="alert alert-warning mb-0">Hồ sơ chưa có CV hoặc chứng chỉ chuyên môn.</div>
+                    )}
                   </div>
                   <div className="col-12 mt-4">
                     <div className="d-flex align-items-center mb-3">
@@ -466,8 +620,13 @@ export default function DuyetGiangVien() {
             <div className="modal-actions">
                 {chiTiet.trangThaiHoSo === "ChoDuyet" && (
                   <>
-                    <button className="btn-save" onClick={() => xacNhanDuyet(chiTiet.maHoSoDangKyGiangVien)}>
-                      <i className="bi bi-check-lg" /> Duyệt & tạo tài khoản
+                    <button
+                      className="btn-save"
+                      disabled={maHoSoDangDuyet !== null}
+                      onClick={() => xacNhanDuyet(chiTiet.maHoSoDangKyGiangVien)}
+                    >
+                      <i className={`bi ${maHoSoDangDuyet === chiTiet.maHoSoDangKyGiangVien ? "bi-arrow-repeat lecturer-review-spin" : "bi-check-lg"}`} />
+                      {maHoSoDangDuyet === chiTiet.maHoSoDangKyGiangVien ? " Đang duyệt..." : " Duyệt & tạo tài khoản"}
                     </button>
                     <button className="btn-cancel" onClick={() => xacNhanBoSung(chiTiet.maHoSoDangKyGiangVien)}>
                       <i className="bi bi-pencil" /> Yêu cầu bổ sung
@@ -486,6 +645,7 @@ export default function DuyetGiangVien() {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }

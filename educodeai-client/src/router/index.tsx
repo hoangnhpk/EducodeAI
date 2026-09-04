@@ -48,6 +48,7 @@ import TaoLoTrinhAI from "../pages/giang-vien/tao-lo-trinh-AI/TaoLoTrinhAI";
 import RutTienGiangVien from "../pages/giang-vien/rut-tien/RutTienGiangVien";
 import NapTienAI from "../pages/giang-vien/nap-tien-ai/NapTienAI";
 import QuanLyMaGiamGiaGiangVien from "@/pages/giang-vien/ma-giam-gia/QuanLyMaGiamGiaGiangVien";
+import ChungChiGiangVien from "@/pages/giang-vien/chung-chi/ChungChiGiangVien";
 
 import QuanLyReviewMoi from "../pages/quan-tri-vien/quan-ly-binh-luan-review/QuanLyReviewMoi";
 import QuanLyNguoiDung from "../pages/quan-tri-vien/quan-ly-nguoi-dung/QuanLyNguoiDung";
@@ -149,6 +150,7 @@ export default function AppRouter() {
             <Route path="bai-tap-thuc-hanh" element={<Navigate to="/giang-vien/bai-tap" replace />} />
             <Route path="rut-tien" element={<RutTienGiangVien />} />
             <Route path="ma-giam-gia" element={<QuanLyMaGiamGiaGiangVien />} />
+            <Route path="chung-chi" element={<ChungChiGiangVien />} />
           </Route>
 
           <Route path="/quan-tri-vien" element={<ProtectedRoute allowRoles={[0]}><LayoutQuanTriVien /></ProtectedRoute>}>

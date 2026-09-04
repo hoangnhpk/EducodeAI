@@ -4,6 +4,7 @@ using educodeai_server.Controllers;
 using educodeai_server.Controllers.QuanTriVien;
 using educodeai_server.DTOs.XacThuc;
 using educodeai_server.Services.Interface;
+using educodeai_server.Services.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +19,15 @@ public sealed class XacThucFlowBaselineTests
 
     public XacThucFlowBaselineTests()
     {
-        _controller = new XacThucController(_authService.Object, Mock.Of<IGiayToScanningService>())
+        var originPolicy = new Mock<IRefreshRequestOriginPolicy>();
+        originPolicy
+            .Setup(policy => policy.IsAllowed(It.IsAny<HttpRequest>()))
+            .Returns((HttpRequest request) =>
+                request.Headers.ContainsKey("Origin") || request.Headers.ContainsKey("Referer"));
+        _controller = new XacThucController(
+            _authService.Object,
+            Mock.Of<IGiayToScanningService>(),
+            originPolicy.Object)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };

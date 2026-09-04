@@ -6,10 +6,18 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { getDeviceInfo } from '../../utils/deviceHelper';
 import { FaArrowLeft } from 'react-icons/fa';
 import ReCAPTCHA from "react-google-recaptcha";
+import { markLoginSucceeded } from '../../utils/authLifecycle';
 import { setAuthTokens } from '../../utils/authStorage';
 import { classifyLoginResponse, type LoginUser } from './loginFlow';
 import PasswordInput from '../../components/PasswordInput';
 import { RECAPTCHA_SITE_KEY } from '../../configs/captcha';
+import '../../assets/styles/hoc-vien-global.css';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim();
+
+if (!GOOGLE_CLIENT_ID) {
+    throw new Error('Thiếu cấu hình VITE_GOOGLE_CLIENT_ID.');
+}
 
 const DangNhap: React.FC = () => {
     const navigate = useNavigate();
@@ -29,8 +37,7 @@ const DangNhap: React.FC = () => {
     const [showCaptcha, setShowCaptcha] = useState(false); 
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
-    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "335320969122-3e5a0uoj7scbhmgi83utlesvf5rbrtdt.apps.googleusercontent.com";
-    
+
     const redirectByUserRole = (user: LoginUser) => {
         const role = user.vaiTro !== undefined ? user.vaiTro : user.VaiTro;
         if (role === 0) navigate('/quan-tri-vien');
@@ -47,6 +54,7 @@ const DangNhap: React.FC = () => {
     };
 
     const handleLoginSuccess = async (token: string, user: LoginUser) => {
+        markLoginSucceeded();
         setAuthTokens(token);
         localStorage.setItem('user_info', JSON.stringify(user));
         redirectByUserRole(user);
@@ -183,7 +191,7 @@ const DangNhap: React.FC = () => {
     };
 
     return (
-        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID} locale="vi">
             <div className="min-vh-100 d-flex align-items-center justify-content-center py-5" 
                 style={{ 
                     backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("/img/carousel-1.jpg")',
@@ -193,7 +201,7 @@ const DangNhap: React.FC = () => {
                 }}>
                 <div className="container">
                     <div className="row g-4 justify-content-center">
-                        <div className="col-lg-5 shadow-lg p-4 bg-white rounded-4 animate__animated animate__fadeIn">
+                        <div className="col-lg-5 login-card shadow-lg p-4 bg-white rounded-4 animate__animated animate__fadeIn">
                             
                             {step === 1 ? (
                                 <form onSubmit={handleLogin} noValidate>
@@ -253,13 +261,13 @@ const DangNhap: React.FC = () => {
                                             <button className="btn btn-primary w-100 py-3 text-white border-0 fw-bold rounded-pill" 
                                                 type="submit" style={{ backgroundColor: '#fb873f' }} 
                                                 disabled={isLoading || (showCaptcha && !captchaToken)}>
-                                                {isLoading ? "Đang xử lý..." : "Tiếp theo"}
+                                                {isLoading ? "Đang xử lý..." : "Đăng nhập"}
                                             </button>
                                         </div>
 
                                         {!showCaptcha && (
                                             <>
-                                                <div className="col-12 my-3 text-center position-relative">
+                                                <div className="col-12 text-center position-relative">
                                                     <hr />
                                                     <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted">Hoặc đăng nhập với</span>
                                                 </div>
@@ -288,8 +296,13 @@ const DangNhap: React.FC = () => {
                                                                 Swal.fire('Lỗi', `Google OAuth thất bại trước khi gọi API. Kiểm tra OAuth Client ID và Authorized JavaScript origins có ${currentOrigin}.`, 'error');
                                                             }}
                                                             ux_mode="popup"
+                                                            use_fedcm_for_button={false}
                                                             theme="outline"
-                                                            width="560"
+                                                            text="signin_with"
+                                                            shape="rectangular"
+                                                            logo_alignment="left"
+                                                            size="large"
+                                                            width="400"
                                                         />
                                                     </div>
                                                 </div>

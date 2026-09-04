@@ -13,10 +13,22 @@ export interface ChuongHocDTO {
   baiHocs: BaiHocDTO[];
 }
 
+export interface ChungChiGiangVienDTO {
+  maChungChi: number;
+  tenChungChi: string;
+  donViCap?: string;
+  ngayCap?: string;
+  ngayHetHan?: string;
+  maChungChiChe?: string;
+  urlXacMinh?: string;
+  ngayDuyet?: string;
+}
+
 export interface GiangVienDTO {
   maGiangVien: number;
   hoTen: string;
   anhDaiDien: string;
+  chungChi: ChungChiGiangVienDTO[];
 }
 
 export interface ChiTietKhoaHocDTO {

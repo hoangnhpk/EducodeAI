@@ -15,6 +15,7 @@ namespace educodeai_server.Services.Implementation
     {
         private const int AccessTokenMinutes = 15;
         private const int RefreshTokenDays = 14;
+        private const int AbsoluteRefreshTokenHours = 72;
         private const int RefreshTokenByteLength = 32; // 256-bit
         private readonly IConfiguration _config;
 
@@ -24,6 +25,8 @@ namespace educodeai_server.Services.Implementation
         }
 
         public TimeSpan RefreshTokenLifetime => TimeSpan.FromDays(RefreshTokenDays);
+
+        public DateTime GetRefreshFamilyDeadlineUtc(DateTime nowUtc) => nowUtc.AddHours(AbsoluteRefreshTokenHours);
 
         public AccessTokenResult CreateAccessToken(NguoiDungModel user, int maPhien)
         {

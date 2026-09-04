@@ -25,4 +25,8 @@ public sealed class ApiException : Exception
     public static ApiException Forbidden(
         string safeMessage = "Bạn không có quyền thực hiện thao tác này.") =>
         new(StatusCodes.Status403Forbidden, "FORBIDDEN", safeMessage);
+
+    public static ApiException Conflict(
+        string safeMessage = "Dữ liệu vừa được thay đổi. Vui lòng tải lại và thử lại.") =>
+        new(StatusCodes.Status409Conflict, "CONFLICT", safeMessage);
 }

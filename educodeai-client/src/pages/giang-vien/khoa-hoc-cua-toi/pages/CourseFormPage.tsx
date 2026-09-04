@@ -519,8 +519,11 @@ const CourseFormPage: React.FC<Props> = ({ maKhoaHoc, onSaved, onSavedAndContinu
                   min={1} max={999}
                   value={form.thoiLuongGio}
                   onChange={e => set('thoiLuongGio', Number(e.target.value))}
-                  disabled={submitting}
+                  disabled={submitting || isEdit}
                 />
+                <div className="khm-form-hint">
+                  {isEdit ? 'Tự động tính từ tổng thời lượng các bài học.' : 'Giá trị ban đầu; sau khi thêm bài học sẽ tự động cập nhật.'}
+                </div>
                 {errors.thoiLuongGio && <div className="khm-form-error">⚠ {errors.thoiLuongGio}</div>}
               </div>
 

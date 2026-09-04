@@ -17,9 +17,11 @@ interface UseLessonManagementProps {
   maChuong: number;
   maKhoaHoc: number;
   initialLessons: BaiHocDetail[];
+  onRefreshCourse: () => Promise<void>;
+  onNotify: (type: 'success' | 'error' | 'warning' | 'info', message: string) => void;
 }
 
-export const useLessonManagement = ({ maChuong, maKhoaHoc, initialLessons }: UseLessonManagementProps) => {
+export const useLessonManagement = ({ maChuong, maKhoaHoc, initialLessons, onRefreshCourse, onNotify }: UseLessonManagementProps) => {
   const maGiangVien = getGiangVienId();
   const { showToast, ToastContainer } = useToastStandalone();
 
@@ -82,6 +84,8 @@ export const useLessonManagement = ({ maChuong, maKhoaHoc, initialLessons }: Use
       await api.reorderBaiHoc(maGiangVien, maChuong, {
         lessonOrders: reordered.map(l => ({ maBaiHoc: l.maBaiHoc, thuTu: l.thuTu })),
       });
+      // Đọc lại dữ liệu sau khi lưu để đồng bộ với thứ tự thực tế trong DB/cache.
+      await loadLessons(true);
       showToast('success', 'Sắp xếp bài học thành công!');
     } catch {
       showToast('error', 'Lỗi sắp xếp. Đã khôi phục thứ tự cũ.');
@@ -99,10 +103,15 @@ export const useLessonManagement = ({ maChuong, maKhoaHoc, initialLessons }: Use
         } else {
           await api.capNhatBaiHocFile(editTarget.maBaiHoc, dto);
         }
-        setLessons(prev => prev.map(l => l.maBaiHoc === editTarget.maBaiHoc 
-          ? { ...l, tieuDe: dto.tieuDe, moTa: dto.moTa, thoiLuong: dto.thoiLuong || l.thoiLuong, linkVideo: (type === 'Video' ? dto.linkVideo : l.linkVideo) } 
-          : l));
-        showToast('success', 'Cập nhật bài học thành công! (Tải lại trang để thấy file mới nhất)');
+        if (dto.maChuong !== maChuong) {
+          onNotify('success', 'Đã chuyển bài học sang chương mới.');
+          await onRefreshCourse();
+        } else {
+          setLessons(prev => prev.map(l => l.maBaiHoc === editTarget.maBaiHoc
+            ? { ...l, tieuDe: dto.tieuDe, moTa: dto.moTa, thoiLuong: dto.thoiLuong || l.thoiLuong, linkVideo: (type === 'Video' ? dto.linkVideo : l.linkVideo) }
+            : l));
+          showToast('success', 'Cập nhật bài học thành công! (Tải lại trang để thấy file mới nhất)');
+        }
       } else {
         let res: any;
         if (type === 'Video') {

@@ -15,7 +15,6 @@ interface Props {
   onEdit: (maKhoaHoc: number) => void;
   onManage: (maKhoaHoc: number) => void;
   onArchive: (course: KhoaHocListItem) => void;
-  onDuplicate?: (maKhoaHoc: number) => void;
   onRestore?: (maKhoaHoc: number) => void;
   isDeleting?: boolean;
 }
@@ -25,7 +24,7 @@ const statusConfig = {
   'Đã xóa': { label: 'Đã xóa', cls: 'khm-badge-archived' },
 };
 
-const CourseCard: React.FC<Props> = ({ course, onEdit, onManage, onArchive, onDuplicate, onRestore, isDeleting }) => {
+const CourseCard: React.FC<Props> = ({ course, onEdit, onManage, onArchive, onRestore, isDeleting }) => {
   const st = statusConfig[course.trangThai as keyof typeof statusConfig] ?? statusConfig['Hoạt động'];
 
   return (
@@ -90,15 +89,6 @@ const CourseCard: React.FC<Props> = ({ course, onEdit, onManage, onArchive, onDu
               >
                 ✏️
               </button>
-              {onDuplicate && (
-                <button
-                  className="khm-btn khm-btn-outline khm-btn-sm"
-                  onClick={() => onDuplicate(course.maKhoaHoc)}
-                  title="Nhân bản khóa học"
-                >
-                  📋
-                </button>
-              )}
               <button
                 className="khm-btn khm-btn-ghost khm-btn-sm"
                 onClick={() => onArchive(course)}

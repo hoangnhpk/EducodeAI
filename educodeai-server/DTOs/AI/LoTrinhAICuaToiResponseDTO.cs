@@ -38,6 +38,8 @@ namespace educodeai_server.DTOs.AI
         public string TenKhoaHoc { get; set; } = null!;
         public string NoiDungChinh { get; set; } = null!;
         public string GhiChu { get; set; } = string.Empty;
+        public decimal GiaKhoaHoc { get; set; }
+        public string DonViTienTe { get; set; } = "VND";
         public int TuTuan { get; set; }
         public int DenTuan { get; set; }
         public string Slug { get; set; } = null!;
@@ -85,5 +87,11 @@ namespace educodeai_server.DTOs.AI
 
         [JsonPropertyName("ghiChu")]
         public string GhiChu { get; set; } = string.Empty;
+
+        [JsonPropertyName("giaKhoaHoc")]
+        public decimal GiaKhoaHoc { get; set; }
+
+        [JsonPropertyName("donViTienTe")]
+        public string DonViTienTe { get; set; } = "VND";
     }
 }

@@ -225,11 +225,30 @@ namespace educodeai_server.Repository.Implementation
                     TrinhDo = x.TrinhDo,
                     LinhVuc = x.LinhVuc,
                     KyNangChinh = x.KyNangChinh,
-                    ThoiLuongGio = x.ThoiLuongGio
+                    ThoiLuongGio = x.ThoiLuongGio,
+                    GiaKhoaHoc = x.GiaKhoaHoc,
+                    DonViTienTe = x.DonViTienTe
                 })
                 .ToListAsync();
         }
 
+        public async Task<List<KhoaHocAISnapshotDto>> GetKhoaHocByIdsAsync(List<int> maKhoaHoc)
+        {
+            return await _context.KhoaHocs
+                .Where(x => maKhoaHoc.Contains(x.MaKhoaHoc))
+                .Select(x => new KhoaHocAISnapshotDto
+                {
+                    MaKhoaHoc = x.MaKhoaHoc,
+                    TenKhoaHoc = x.TenKhoaHoc,
+                    TrinhDo = x.TrinhDo,
+                    LinhVuc = x.LinhVuc,
+                    KyNangChinh = x.KyNangChinh,
+                    ThoiLuongGio = x.ThoiLuongGio,
+                    GiaKhoaHoc = x.GiaKhoaHoc,
+                    DonViTienTe = x.DonViTienTe
+                })
+                .ToListAsync();
+        }
         public async Task<List<DangKyKhoaHocModel>> GetDangKyKhoaHocAsync(int maNguoiDung)
         {
             return await _context.DangKyKhoaHocs

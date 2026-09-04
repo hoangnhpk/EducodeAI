@@ -50,6 +50,8 @@ namespace educodeai_server.Data
         public DbSet<YeuCauRutTienGiangVienModel> YeuCauRutTienGiangViens { get; set; }
         public DbSet<HoTroRutTienGiangVienModel> HoTroRutTienGiangViens { get; set; }
         public DbSet<HoSoDangKyGiangVienModel> HoSoDangKyGiangViens { get; set; }
+        public DbSet<HoSoGiangVienTaiLieuModel> HoSoGiangVienTaiLieus { get; set; }
+        public DbSet<YeuCauChungChiGiangVienModel> YeuCauChungChiGiangViens { get; set; }
         public DbSet<DanhHieuModel> DanhHieus { get; set; }
         public DbSet<MauNhiemVuTuanModel> MauNhiemVuTuans { get; set; }
         public DbSet<NguoiDungGamificationModel> NguoiDungGamifications { get; set; }
@@ -105,6 +107,38 @@ namespace educodeai_server.Data
             modelBuilder.Entity<MaQuaTangHocVienModel>().HasIndex(x => new { x.MaNguoiTang, x.TrangThai, x.CreatedAt });
             modelBuilder.Entity<HoSoDangKyGiangVienModel>().HasIndex(x => x.Email);
             modelBuilder.Entity<HoSoDangKyGiangVienModel>().HasIndex(x => x.MaNguoiDung).IsUnique();
+            modelBuilder.Entity<HoSoGiangVienTaiLieuModel>().HasIndex(x => new { x.MaHoSoDangKyGiangVien, x.LoaiTaiLieu, x.TrangThai });
+            modelBuilder.Entity<HoSoGiangVienTaiLieuModel>().HasIndex(x => x.StorageKey).IsUnique();
+            modelBuilder.Entity<HoSoGiangVienTaiLieuModel>()
+                .HasIndex(x => new { x.MaHoSoDangKyGiangVien, x.ClientFileId })
+                .IsUnique()
+                .HasFilter("\"ClientFileId\" IS NOT NULL");
+            modelBuilder.Entity<HoSoGiangVienTaiLieuModel>()
+                .HasOne(x => x.HoSoDangKyGiangVien)
+                .WithMany(x => x.TaiLieus)
+                .HasForeignKey(x => x.MaHoSoDangKyGiangVien)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<YeuCauChungChiGiangVienModel>()
+                .HasIndex(x => new { x.MaGiangVien, x.ClientRequestId })
+                .IsUnique();
+            modelBuilder.Entity<YeuCauChungChiGiangVienModel>()
+                .HasIndex(x => x.StorageKey)
+                .IsUnique();
+            modelBuilder.Entity<YeuCauChungChiGiangVienModel>()
+                .HasIndex(x => x.MaDotGui);
+            modelBuilder.Entity<YeuCauChungChiGiangVienModel>()
+                .HasIndex(x => new { x.TrangThai, x.NgayTao });
+            modelBuilder.Entity<YeuCauChungChiGiangVienModel>()
+                .HasIndex(x => new { x.MaGiangVien, x.TrangThai, x.NgayDuyet });
+            modelBuilder.Entity<YeuCauChungChiGiangVienModel>()
+                .HasOne(x => x.GiangVien)
+                .WithMany()
+                .HasForeignKey(x => x.MaGiangVien)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<YeuCauChungChiGiangVienModel>()
+                .ToTable(table => table.HasCheckConstraint(
+                    "CK_YeuCauChungChiGiangViens_NgayHetHan",
+                    "\"NgayHetHan\" IS NULL OR \"NgayCap\" IS NULL OR \"NgayHetHan\" >= \"NgayCap\""));
 
             // Session hot-path indexes (Phase G realtime session)
             modelBuilder.Entity<PhienDangNhapModel>().HasIndex(p => new { p.MaNguoiDung, p.DangHoatDong });

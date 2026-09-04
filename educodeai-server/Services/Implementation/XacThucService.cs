@@ -5,6 +5,8 @@ using EduCodeAI.DTOs;
 using educodeai_server.Helpers;
 using educodeai_server.Models;
 using educodeai_server.Services.Interface;
+using educodeai_server.Services.Security;
+using educodeai_server.Services.IdentityDocuments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
@@ -46,8 +48,10 @@ namespace educodeai_server.Services.Implementation
         private readonly IOtpRateLimiter _otpRateLimiter;
         private readonly ILogger<XacThucService> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IHoSoGiangVienTaiLieuStorage _taiLieuStorage;
+        private readonly RefreshCookiePolicy _refreshCookiePolicy;
 
-        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IDistributedCache distributedCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter, ILogger<XacThucService> logger, IHttpClientFactory httpClientFactory)
+        public XacThucService(EduCodeAIDbContext context, IConfiguration config, ICaptchaService captchaService, IMemoryCache memoryCache, IDistributedCache distributedCache, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment env, IGiayToScanningService giayToScanningService, IDataProtectionProvider dataProtectionProvider, ITokenService tokenService, ISessionStateCache sessionStateCache, ISessionRealtimeNotifier sessionRealtimeNotifier, IOtpService otpService, IOtpRateLimiter otpRateLimiter, ILogger<XacThucService> logger, IHttpClientFactory httpClientFactory, IHoSoGiangVienTaiLieuStorage taiLieuStorage, RefreshCookiePolicy refreshCookiePolicy)
         {
             _context = context;
             _config = config;
@@ -65,6 +69,8 @@ namespace educodeai_server.Services.Implementation
             _otpRateLimiter = otpRateLimiter;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
+            _taiLieuStorage = taiLieuStorage;
+            _refreshCookiePolicy = refreshCookiePolicy;
         }
 
         // IP client cho rate-limit; null nếu không xác định được (rate-limiter tự bỏ qua phần IP).
@@ -436,7 +442,7 @@ namespace educodeai_server.Services.Implementation
             var httpContext = _httpContextAccessor.HttpContext;
 
             // Refresh token chỉ được chấp nhận từ cookie HttpOnly.
-            var plainToken = httpContext?.Request.Cookies[RefreshCookieName];
+            var plainToken = _refreshCookiePolicy.Read(httpContext?.Request ?? throw ApiException.AuthenticationFailed("Phiên làm việc đã hết hạn hoặc bị đăng xuất."));
 
             if (string.IsNullOrWhiteSpace(plainToken))
             {
@@ -482,7 +488,8 @@ namespace educodeai_server.Services.Implementation
                 throw ApiException.AuthenticationFailed("Phiên làm việc đã bị vô hiệu hóa do phát hiện sử dụng lại token.");
             }
 
-            if (stored.ThoiGianHetHan <= DateTime.UtcNow)
+            if (stored.ThoiGianHetHan <= DateTime.UtcNow
+                || (stored.AbsoluteExpiresAtUtc.HasValue && stored.AbsoluteExpiresAtUtc.Value <= DateTime.UtcNow))
             {
                 stored.NgayThuHoi = DateTime.UtcNow;
                 stored.LyDoThuHoi = "EXPIRED";
@@ -540,7 +547,10 @@ namespace educodeai_server.Services.Implementation
                 TokenHash = newMaterial.TokenHash,
                 FamilyId = stored.FamilyId,
                 Jti = newMaterial.Jti,
-                ThoiGianHetHan = newMaterial.ExpiresAtUtc,
+                ThoiGianHetHan = stored.AbsoluteExpiresAtUtc.HasValue
+                    ? new[] { newMaterial.ExpiresAtUtc, stored.AbsoluteExpiresAtUtc.Value }.Min()
+                    : newMaterial.ExpiresAtUtc,
+                AbsoluteExpiresAtUtc = stored.AbsoluteExpiresAtUtc,
                 NgayTao = DateTime.UtcNow,
                 IpTao = ipCurrent,
                 UserAgentTao = uaCurrent != null && uaCurrent.Length > 256 ? uaCurrent.Substring(0, 256) : uaCurrent
@@ -671,6 +681,7 @@ namespace educodeai_server.Services.Implementation
                 FamilyId = material.FamilyId,
                 Jti = material.Jti,
                 ThoiGianHetHan = material.ExpiresAtUtc,
+                AbsoluteExpiresAtUtc = _tokenService.GetRefreshFamilyDeadlineUtc(DateTime.UtcNow),
                 NgayTao = DateTime.UtcNow,
                 IpTao = ipTao,
                 UserAgentTao = uaTao
@@ -709,18 +720,8 @@ namespace educodeai_server.Services.Implementation
         {
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return;
-
-            var isHttps = httpContext.Request.IsHttps;
-            var options = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = isHttps,
-                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
-                Path = "/api/XacThuc",
-                Expires = expiresAtUtc,
-                IsEssential = true
-            };
-            httpContext.Response.Cookies.Append(RefreshCookieName, plainToken, options);
+            httpContext.Response.Cookies.Append(_refreshCookiePolicy.Name, plainToken,
+                _refreshCookiePolicy.Create(new DateTimeOffset(DateTime.SpecifyKind(expiresAtUtc, DateTimeKind.Utc))));
         }
 
         // Lấy MaPhien từ JWT của request hiện tại (căn cứ revoke — G.4/G.6).
@@ -734,18 +735,7 @@ namespace educodeai_server.Services.Implementation
         {
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return;
-
-            var isHttps = httpContext.Request.IsHttps;
-            var options = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = isHttps,
-                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
-                Path = "/api/XacThuc",
-                Expires = DateTime.UtcNow.AddDays(-1),
-                IsEssential = true
-            };
-            httpContext.Response.Cookies.Append(RefreshCookieName, string.Empty, options);
+            httpContext.Response.Cookies.Append(_refreshCookiePolicy.Name, string.Empty, _refreshCookiePolicy.CreateExpired());
         }
 
         // --- Triá»ƒn khai cÃ¡c hÃ m OTP báº£o máº­t qua MemoryCache ---
@@ -1279,6 +1269,7 @@ namespace educodeai_server.Services.Implementation
             await ValidateFile(request.AnhGiayToMatSau, "ảnh mặt sau giấy tờ");
             if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0)
                 await ValidateFile(request.AnhDaiDien, "ảnh đại diện");
+            await _taiLieuStorage.ValidateAsync(request.CvFiles, request.Certificates);
 
             // 4. Quét OCR ngay trong request. Ảnh CCCD không được ghi xuống ổ đĩa.
             var ketQuaQuet = await _giayToScanningService.QuetGiayToAsync(new GiayToScanningRequest
@@ -1307,105 +1298,96 @@ namespace educodeai_server.Services.Implementation
                 nguyenQuan = ketQuaQuet.NguyenQuan
             }));
 
-            // Chỉ avatar được lưu. Ảnh CCCD không được lưu ở bất kỳ thư mục nào.
+            // Tạo hồ sơ ở trạng thái nội bộ trước khi ghi file. Các truy vấn admin chỉ lấy
+            // ChoDuyet nên hồ sơ chưa đủ tài liệu không thể bị duyệt giữa chừng.
+            var hoSo = new HoSoDangKyGiangVienModel
+            {
+                HoTen = request.HoTen.Trim(),
+                Email = email,
+                TaiKhoan = taiKhoan,
+                MatKhau = BCrypt.Net.BCrypt.HashPassword(request.MatKhau),
+                SoDienThoai = request.SoDienThoai?.Trim(),
+                LinhVucGiangDay = request.LinhVucGiangDay.Trim(),
+                TieuSu = request.TieuSu?.Trim() ?? string.Empty,
+                LinkedInUrl = request.LinkedInUrl?.Trim(),
+                WebsiteUrl = request.WebsiteUrl?.Trim(),
+                LoaiGiayTo = request.LoaiGiayTo.Trim(),
+                SoGiayTo = soGiayTo,
+                DuLieuCccdMaHoa = duLieuCccdMaHoa,
+                AnhGiayToMatTruocUrl = string.Empty,
+                AnhGiayToMatSauUrl = string.Empty,
+                PhuongThucThanhToan = request.PhuongThucThanhToan.Trim(),
+                TenNganHang = request.TenNganHang?.Trim(),
+                SoTaiKhoanNhanTien = request.SoTaiKhoanNhanTien?.Trim(),
+                TenChuTaiKhoan = request.TenChuTaiKhoan?.Trim(),
+                MaSoThue = maSoThue,
+                LoaiDoiTuongThue = request.LoaiDoiTuongThue?.Trim(),
+                TrangThaiHoSo = "DangTaiTaiLieu",
+                NgayTao = DateTime.UtcNow,
+                NgayCapNhat = DateTime.UtcNow
+            };
+
+            try
+            {
+                _context.HoSoDangKyGiangViens.Add(hoSo);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                throw ApiException.InvalidRequest("Email, tài khoản hoặc số giấy tờ đã có hồ sơ đang xử lý.");
+            }
+
             var avatarRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien", "avatars");
             Directory.CreateDirectory(avatarRoot);
             string? avatarPath = null;
-            List<string> savedFiles = new();
+            IReadOnlyList<HoSoGiangVienTaiLieuModel> savedDocuments = Array.Empty<HoSoGiangVienTaiLieuModel>();
+            var finalSaveStarted = false;
 
             try
             {
                 if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0)
-                {
                     avatarPath = await LuuFileAsync(request.AnhDaiDien, avatarRoot, "/uploads/dang-ky-giang-vien/avatars");
-                    savedFiles.Add(Path.Combine(avatarRoot, Path.GetFileName(avatarPath)));
-                }
 
-                // 5. Tạo hồ sơ đăng ký trong transaction (bọc trong execution strategy vì Npgsql retry không cho BeginTransaction trực tiếp)
-                var strategy = _context.Database.CreateExecutionStrategy();
-                long maHoSoTao = 0;
-                string trangThaiTao = string.Empty;
+                // File được ghi ngoài execution-strategy để Npgsql không phát lại side effect
+                // filesystem khi retry transaction.
+                savedDocuments = await _taiLieuStorage.SaveAsync(
+                    hoSo.MaHoSoDangKyGiangVien,
+                    request.CvFiles,
+                    request.Certificates);
 
-                await strategy.ExecuteAsync(async () =>
-                {
-                    await using var tx = await _context.Database.BeginTransactionAsync();
-                    try
-                    {
-                        var hoSo = new HoSoDangKyGiangVienModel
-                        {
-                            // MaNguoiDung = null (chưa có tài khoản - admin duyệt sẽ tạo)
-                            HoTen = request.HoTen.Trim(),
-                            Email = email,
-                            TaiKhoan = taiKhoan,
-                            MatKhau = BCrypt.Net.BCrypt.HashPassword(request.MatKhau),
-                            SoDienThoai = request.SoDienThoai?.Trim(),
-                            LinhVucGiangDay = request.LinhVucGiangDay.Trim(),
-                            TieuSu = request.TieuSu.Trim(),
-                            LinkedInUrl = request.LinkedInUrl?.Trim(),
-                            WebsiteUrl = request.WebsiteUrl?.Trim(),
-                            LoaiGiayTo = request.LoaiGiayTo.Trim(),
-                            SoGiayTo = soGiayTo,
-                            AnhDaiDienUrl = avatarPath,
-                            DuLieuCccdMaHoa = duLieuCccdMaHoa,
-                            AnhGiayToMatTruocUrl = string.Empty,
-                            AnhGiayToMatSauUrl = string.Empty,
-                            PhuongThucThanhToan = request.PhuongThucThanhToan.Trim(),
-                            TenNganHang = request.TenNganHang?.Trim(),
-                            SoTaiKhoanNhanTien = request.SoTaiKhoanNhanTien?.Trim(),
-                            TenChuTaiKhoan = request.TenChuTaiKhoan?.Trim(),
-                            MaSoThue = maSoThue,
-                            LoaiDoiTuongThue = request.LoaiDoiTuongThue?.Trim(),
-                            TrangThaiHoSo = "ChoDuyet",
-                            NgayTao = DateTime.UtcNow,
-                            NgayCapNhat = DateTime.UtcNow
-                        };
-
-                        _context.HoSoDangKyGiangViens.Add(hoSo);
-                        await _context.SaveChangesAsync();
-                        await tx.CommitAsync();
-
-                        maHoSoTao = hoSo.MaHoSoDangKyGiangVien;
-                        trangThaiTao = hoSo.TrangThaiHoSo;
-                    }
-                    catch (DbUpdateException)
-                    {
-                        // I.2: unique index chống TOCTOU race — 2 request đồng thời vượt qua check AnyAsync
-                        // đều insert, index chặn cái sau. Trả lỗi thân thiện thay vì 500.
-                        await tx.RollbackAsync();
-                        foreach (var p in savedFiles)
-                        {
-                            try { if (File.Exists(p)) File.Delete(p); } catch { }
-                        }
-                        throw ApiException.InvalidRequest("Email, tài khoản hoặc số giấy tờ đã có hồ sơ đang xử lý.");
-                    }
-                    catch
-                    {
-                        await tx.RollbackAsync();
-                        // Dọn file đã lưu nếu DB fail
-                        foreach (var p in savedFiles)
-                        {
-                            try { if (File.Exists(p)) File.Delete(p); } catch { }
-                        }
-                        throw;
-                    }
-                });
+                hoSo.AnhDaiDienUrl = avatarPath;
+                hoSo.TrangThaiHoSo = "ChoDuyet";
+                hoSo.NgayCapNhat = DateTime.UtcNow;
+                _context.HoSoGiangVienTaiLieus.AddRange(savedDocuments);
+                finalSaveStarted = true;
+                await _context.SaveChangesAsync();
 
                 _memoryCache.Remove("VERIFIED_InstructorEmail_" + email);
-
                 return new
                 {
                     success = true,
                     message = "Hồ sơ giảng viên đã được gửi và đang chờ duyệt.",
-                    maHoSo = maHoSoTao,
-                    trangThai = trangThaiTao
+                    maHoSo = hoSo.MaHoSoDangKyGiangVien,
+                    trangThai = hoSo.TrangThaiHoSo
                 };
             }
             catch
             {
-                // Dọn file nếu lỗi trước khi vào transaction
-                foreach (var p in savedFiles)
+                // Nếu lệnh lưu cuối đã bắt đầu thì kết quả commit có thể không xác định.
+                // Không xóa file: DB có thể đã commit metadata và sẽ bị trỏ tới file mất.
+                // Hồ sơ chưa hoàn tất vẫn ở trạng thái nội bộ và không xuất hiện để admin duyệt.
+                if (!finalSaveStarted)
                 {
-                    try { if (File.Exists(p)) File.Delete(p); } catch { }
+                    _taiLieuStorage.DeleteFiles(savedDocuments);
+                    if (!string.IsNullOrWhiteSpace(avatarPath))
+                    {
+                        try
+                        {
+                            var fullAvatarPath = Path.Combine(avatarRoot, Path.GetFileName(avatarPath));
+                            AvatarStorageCleanup.TryDeleteIfInsideRoot(avatarRoot, fullAvatarPath, _logger);
+                        }
+                        catch { }
+                    }
                 }
                 throw;
             }
@@ -1509,7 +1491,9 @@ namespace educodeai_server.Services.Implementation
 
             var hoSo = await _context.HoSoDangKyGiangViens
                 .AsNoTracking()
-                .Where(x => x.Email == normalizedEmail)
+                .Where(x =>
+                    x.Email == normalizedEmail &&
+                    x.TrangThaiHoSo != "DangTaiTaiLieu")
                 .OrderByDescending(x => x.NgayTao)
                 .Select(x => new
                 {
@@ -1603,6 +1587,42 @@ namespace educodeai_server.Services.Implementation
             if (hoSo.DaNopBoSung)
                 throw ApiException.InvalidRequest("Hồ sơ đã được gửi bổ sung. Vui lòng đợi kết quả.");
 
+            var taiLieuHienCo = await _context.HoSoGiangVienTaiLieus
+                .Where(t => t.MaHoSoDangKyGiangVien == maHoSo)
+                .ToListAsync();
+            var thayCv = request.CvFiles.Count > 0;
+            var thayChungChi = request.Certificates.Count > 0;
+            var coCvHienCo = taiLieuHienCo.Any(t => t.LoaiTaiLieu == "CV");
+
+            await _taiLieuStorage.ValidateAsync(
+                request.CvFiles,
+                request.Certificates,
+                requireCv: !coCvHienCo);
+
+            var soCvSauCapNhat = (thayCv ? 0 : taiLieuHienCo.Count(t => t.LoaiTaiLieu == "CV")) + request.CvFiles.Count;
+            var soChungChiSauCapNhat = (thayChungChi ? 0 : taiLieuHienCo.Count(t => t.LoaiTaiLieu == "ChungChi")) + request.Certificates.Count;
+            if (soCvSauCapNhat == 0 || soCvSauCapNhat > HoSoGiangVienTaiLieuStorage.MaxCvFiles)
+                throw ApiException.InvalidRequest($"Hồ sơ phải có từ 1 đến {HoSoGiangVienTaiLieuStorage.MaxCvFiles} file CV.");
+            if (soChungChiSauCapNhat > HoSoGiangVienTaiLieuStorage.MaxCertificateFiles)
+                throw ApiException.InvalidRequest($"Chỉ được lưu tối đa {HoSoGiangVienTaiLieuStorage.MaxCertificateFiles} file chứng chỉ.");
+            var retainedSize = taiLieuHienCo
+                .Where(t => (t.LoaiTaiLieu == "CV" && !thayCv) || (t.LoaiTaiLieu == "ChungChi" && !thayChungChi))
+                .Sum(t => t.KichThuoc);
+            var uploadedSize = request.CvFiles.Sum(f => f.Length) + request.Certificates.Sum(c => c.File?.Length ?? 0);
+            if (retainedSize + uploadedSize > HoSoGiangVienTaiLieuStorage.MaxTotalSize)
+                throw ApiException.InvalidRequest("Tổng dung lượng CV và chứng chỉ sau khi cập nhật không được vượt quá 50MB.");
+
+            var coMatTruoc = request.AnhGiayToMatTruoc is { Length: > 0 };
+            var coMatSau = request.AnhGiayToMatSau is { Length: > 0 };
+            var soGiayToMoi = !string.IsNullOrWhiteSpace(request.SoGiayTo)
+                ? request.SoGiayTo.Trim()
+                : hoSo.SoGiayTo;
+            var doiSoGiayTo = !string.Equals(soGiayToMoi, hoSo.SoGiayTo, StringComparison.OrdinalIgnoreCase);
+            if (coMatTruoc != coMatSau)
+                throw ApiException.InvalidRequest("Vui lòng tải đủ cả mặt trước và mặt sau giấy tờ.");
+            if (doiSoGiayTo && (!coMatTruoc || !coMatSau))
+                throw ApiException.InvalidRequest("Khi thay đổi số giấy tờ, vui lòng tải lại đủ hai mặt để xác thực.");
+
             // Cập nhật thông tin text nếu có
             if (!string.IsNullOrWhiteSpace(request.HoTen)) hoSo.HoTen = request.HoTen.Trim();
             if (!string.IsNullOrWhiteSpace(request.TieuSu)) hoSo.TieuSu = request.TieuSu.Trim();
@@ -1610,7 +1630,7 @@ namespace educodeai_server.Services.Implementation
             if (!string.IsNullOrWhiteSpace(request.SoDienThoai)) hoSo.SoDienThoai = request.SoDienThoai.Trim();
             if (request.LinkedInUrl != null) hoSo.LinkedInUrl = request.LinkedInUrl.Trim();
             if (request.WebsiteUrl != null) hoSo.WebsiteUrl = request.WebsiteUrl.Trim();
-            if (!string.IsNullOrWhiteSpace(request.SoGiayTo)) hoSo.SoGiayTo = request.SoGiayTo.Trim();
+            // Số giấy tờ chỉ được cập nhật sau khi OCR xác nhận bên dưới.
             if (!string.IsNullOrWhiteSpace(request.TenNganHang)) hoSo.TenNganHang = request.TenNganHang.Trim();
             if (!string.IsNullOrWhiteSpace(request.SoTaiKhoanNhanTien)) hoSo.SoTaiKhoanNhanTien = request.SoTaiKhoanNhanTien.Trim();
             if (!string.IsNullOrWhiteSpace(request.TenChuTaiKhoan)) hoSo.TenChuTaiKhoan = request.TenChuTaiKhoan.Trim();
@@ -1621,6 +1641,7 @@ namespace educodeai_server.Services.Implementation
             var avatarRoot = Path.Combine(_env.WebRootPath, "uploads", "dang-ky-giang-vien", "avatars");
             Directory.CreateDirectory(avatarRoot);
             string? oldAvatar = hoSo.AnhDaiDienUrl;
+            string? newAvatarPath = null;
 
             if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0)
             {
@@ -1628,8 +1649,8 @@ namespace educodeai_server.Services.Implementation
                 // tránh upload file giả .jpg làm avatar serve public → stored-XSS.
                 if (!await KiemTraMagicBytesAnhAsync(request.AnhDaiDien))
                     throw ApiException.InvalidRequest("Ảnh đại diện không phải là ảnh hợp lệ (nội dung file sai định dạng).");
-                var p = await LuuFileAsync(request.AnhDaiDien, avatarRoot, "/uploads/dang-ky-giang-vien/avatars");
-                hoSo.AnhDaiDienUrl = p;
+                newAvatarPath = await LuuFileAsync(request.AnhDaiDien, avatarRoot, "/uploads/dang-ky-giang-vien/avatars");
+                hoSo.AnhDaiDienUrl = newAvatarPath;
             }
 
             // Nếu giảng viên gửi lại 2 mặt CCCD thì quét lại và mã hóa dữ liệu mới.
@@ -1645,7 +1666,6 @@ namespace educodeai_server.Services.Implementation
                 if (!ketQuaQuet.ThanhCong || string.IsNullOrWhiteSpace(ketQuaQuet.SoGiayTo))
                     throw ApiException.InvalidRequest(ketQuaQuet.ThongBao ?? "Không thể đọc số giấy tờ từ ảnh tải lên.");
 
-                var soGiayToMoi = !string.IsNullOrWhiteSpace(request.SoGiayTo) ? request.SoGiayTo.Trim() : hoSo.SoGiayTo;
                 if (!string.Equals(ketQuaQuet.SoGiayTo.Trim(), soGiayToMoi, StringComparison.OrdinalIgnoreCase))
                     throw ApiException.InvalidRequest("Số giấy tờ nhập vào không khớp với ảnh CCCD đã quét.");
 
@@ -1668,16 +1688,96 @@ namespace educodeai_server.Services.Implementation
                 hoSo.AnhGiayToMatSauUrl = string.Empty;
             }
 
-            // Đặt lại trạng thái chờ duyệt
-            hoSo.TrangThaiHoSo = "ChoDuyet";
-            hoSo.LyDoTuChoi = null;
-            hoSo.NgayCapNhat = DateTime.UtcNow;
-            // Đánh dấu đã nộp bổ sung và vô hiệu hóa token
-            hoSo.DaNopBoSung = true;
-            hoSo.NgayNopBoSung = DateTime.UtcNow;
-            hoSo.BoSungToken = null;
-            hoSo.BoSungTokenHetHan = null;
-            await _context.SaveChangesAsync();
+            IReadOnlyList<HoSoGiangVienTaiLieuModel> taiLieuMoi = Array.Empty<HoSoGiangVienTaiLieuModel>();
+            var taiLieuBiThay = taiLieuHienCo
+                .Where(t => (thayCv && t.LoaiTaiLieu == "CV") || (thayChungChi && t.LoaiTaiLieu == "ChungChi"))
+                .ToList();
+
+            // Claim nguyên tử token bổ sung trước khi ghi tài liệu. Chỉ một request đồng thời
+            // được chuyển CanBoSung -> DangBoSung; request còn lại không thể ghi metadata/file.
+            var tokenHash = _tokenService.HashRefreshToken(request.Token.Trim());
+            var claimedAt = DateTime.UtcNow;
+            var claimed = await _context.HoSoDangKyGiangViens
+                .Where(h =>
+                    h.MaHoSoDangKyGiangVien == maHoSo &&
+                    h.TrangThaiHoSo == "CanBoSung" &&
+                    !h.DaNopBoSung &&
+                    h.BoSungToken == tokenHash &&
+                    h.BoSungTokenHetHan > claimedAt)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(h => h.TrangThaiHoSo, "DangBoSung")
+                    .SetProperty(h => h.NgayCapNhat, claimedAt));
+            if (claimed != 1)
+            {
+                if (!string.IsNullOrWhiteSpace(newAvatarPath))
+                {
+                    try
+                    {
+                        var rel = newAvatarPath.TrimStart('/');
+                        var full = Path.Combine(_env.WebRootPath, rel.Replace('/', Path.DirectorySeparatorChar));
+                        if (File.Exists(full)) File.Delete(full);
+                    }
+                    catch { }
+                }
+                throw ApiException.InvalidRequest("Hồ sơ đang được cập nhật hoặc mã xác thực đã được sử dụng.");
+            }
+
+            var metadataSaveStarted = false;
+            try
+            {
+                if (thayCv || thayChungChi)
+                {
+                    taiLieuMoi = await _taiLieuStorage.SaveAsync(
+                        maHoSo,
+                        request.CvFiles,
+                        request.Certificates,
+                        requireCv: false);
+                    _context.HoSoGiangVienTaiLieus.AddRange(taiLieuMoi);
+                    _context.HoSoGiangVienTaiLieus.RemoveRange(taiLieuBiThay);
+                }
+
+                // Đặt lại trạng thái chờ duyệt
+                hoSo.TrangThaiHoSo = "ChoDuyet";
+                hoSo.LyDoTuChoi = null;
+                hoSo.NgayCapNhat = DateTime.UtcNow;
+                // Đánh dấu đã nộp bổ sung và vô hiệu hóa token
+                hoSo.DaNopBoSung = true;
+                hoSo.NgayNopBoSung = DateTime.UtcNow;
+                hoSo.BoSungToken = null;
+                hoSo.BoSungTokenHetHan = null;
+                metadataSaveStarted = true;
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                // Khi SaveChanges đã bắt đầu, kết quả commit có thể không xác định nếu mất kết nối.
+                // Không xóa file mới vì metadata có thể đã được commit và đang tham chiếu tới chúng.
+                if (!metadataSaveStarted)
+                {
+                    _taiLieuStorage.DeleteFiles(taiLieuMoi);
+                    await _context.HoSoDangKyGiangViens
+                        .Where(h =>
+                            h.MaHoSoDangKyGiangVien == maHoSo &&
+                            h.TrangThaiHoSo == "DangBoSung")
+                        .ExecuteUpdateAsync(setters => setters
+                            .SetProperty(h => h.TrangThaiHoSo, "CanBoSung")
+                            .SetProperty(h => h.NgayCapNhat, DateTime.UtcNow));
+                }
+                if (!string.IsNullOrWhiteSpace(newAvatarPath) && !metadataSaveStarted)
+                {
+                    try
+                    {
+                        var rel = newAvatarPath.TrimStart('/');
+                        var full = Path.Combine(_env.WebRootPath, rel.Replace('/', Path.DirectorySeparatorChar));
+                        if (File.Exists(full)) File.Delete(full);
+                    }
+                    catch { }
+                }
+                throw;
+            }
+
+            // Chỉ xóa file cũ sau khi metadata mới đã được lưu thành công.
+            _taiLieuStorage.DeleteFiles(taiLieuBiThay);
 
             // Dọn avatar cũ nếu đã thay
             if (request.AnhDaiDien != null && request.AnhDaiDien.Length > 0 && !string.IsNullOrWhiteSpace(oldAvatar))

@@ -190,19 +190,23 @@ const PlaylistImportPage: React.FC<Props> = ({
   return (
     <div className="khm-wrapper">
       <ToastContainer />
-      <div className="khm-page" style={{ maxWidth: 820 }}>
-        {/* Breadcrumb */}
-        <div className="khm-breadcrumb">
-          <button onClick={onCancel}>Khóa học của tôi</button>
-          <span className="khm-breadcrumb-sep">›</span>
-          <span className="khm-breadcrumb-current">Import YouTube Playlist</span>
-        </div>
-
-        <div className="khm-page-header" style={{ marginBottom: 28 }}>
+      <div className="khm-page khm-import-page">
+        <div
+          className="khm-page-header"
+          style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20 }}
+        >
           <div>
             <h1 className="khm-page-title">Import YouTube Playlist</h1>
             <p className="khm-page-subtitle">Tự động tạo bài học từ playlist YouTube</p>
           </div>
+          <button
+            type="button"
+            className="khm-btn khm-btn-outline"
+            onClick={onCancel}
+            style={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+          >
+            ← Quay lại chi tiết khóa học
+          </button>
         </div>
 
         <div className="khm-step-indicator">
@@ -371,15 +375,17 @@ const PlaylistImportPage: React.FC<Props> = ({
 
               {importGroups.map((g, idx) => (
                 <div key={g.id} style={{ border: '2px dashed var(--khm-gray-200)', borderRadius: 12, padding: 16, marginBottom: 16, position: 'relative' }}>
-                  {importGroups.length > 1 && (
-                    <button 
-                      onClick={() => setImportGroups(p => p.filter(x => x.id !== g.id))}
-                      style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', color: 'var(--khm-danger)', cursor: 'pointer', fontWeight: 700 }}
-                    >✕ Xóa</button>
-                  )}
-                  <h4 style={{ margin: '0 0 12px', fontSize: '0.95rem', fontWeight: 700 }}>
-                    {g.mode === 'existing' ? `Chương hiện có: ${chapters.find(c => c.maChuong === g.targetChapterId)?.tenChuong ?? 'Chưa chọn'}` : `Chương mới ${idx + 1}`}
-                  </h4>
+                  <div className="khm-import-group-header">
+                    <h4>
+                      {g.mode === 'existing' ? `Chương hiện có: ${chapters.find(c => c.maChuong === g.targetChapterId)?.tenChuong ?? 'Chưa chọn'}` : `Chương mới ${idx + 1}`}
+                    </h4>
+                    {importGroups.length > 1 && (
+                      <button
+                        className="khm-import-group-remove"
+                        onClick={() => setImportGroups(p => p.filter(x => x.id !== g.id))}
+                      >✕ Xóa</button>
+                    )}
+                  </div>
                   
                   {chapters.length > 0 && (
                     <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>

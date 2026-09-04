@@ -115,6 +115,31 @@
   border: 2px solid #f69050;
 }
 
+.ctgd-instructor-avatar,
+.ctgd-instructor-avatar-large {
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ctgd-instructor-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f69050, #e97936);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.ctgd-instructor-avatar-fallback.ctgd-instructor-avatar {
+  font-size: 15px;
+}
+
+.ctgd-instructor-avatar-fallback.ctgd-instructor-avatar-large {
+  border: 3px solid #fff2e8;
+  font-size: 28px;
+}
+
 .ctgd-instructor-info-top {
   display: flex;
   flex-direction: column;
@@ -224,6 +249,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 32px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -236,6 +262,8 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  min-width: 0;
+  flex: 1;
 }
 
 .ctgd-chapter-icon {
@@ -251,6 +279,8 @@
 }
 
 .ctgd-chapter-meta {
+  flex-shrink: 0;
+  white-space: nowrap;
   font-size: 14px;
   color: #65676b;
 }
@@ -380,6 +410,60 @@
   line-height: 1.6;
   margin-bottom: 20px;
 }
+
+.ctgd-instructor-certificates {
+  padding-top: 18px;
+  border-top: 1px solid #f0e4dc;
+}
+
+.ctgd-instructor-certificates-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #292524;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ctgd-instructor-certificates-title i { color: #16a34a; }
+.ctgd-instructor-certificates-list { display: grid; gap: 9px; }
+.ctgd-instructor-certificate {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dcfce7;
+  border-radius: 10px;
+  background: #f0fdf4;
+  color: #374151;
+  font-size: 13px;
+}
+.ctgd-instructor-certificate > i { margin-top: 3px; color: #f69050; font-size: 19px; }
+.ctgd-instructor-certificate-content { min-width: 0; flex: 1; }
+.ctgd-instructor-certificate-content h3 { margin: 0 0 5px; color: #292524; font-size: 15px; font-weight: 750; }
+.ctgd-instructor-certificate-content p { margin: 2px 0; color: #57534e; line-height: 1.45; }
+.ctgd-instructor-certificate-content > span {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 700;
+}
+.ctgd-instructor-certificate-content a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.ctgd-instructor-certificate-content a:hover { text-decoration: underline; }
 
 .ctgd-social-links {
   display: flex;

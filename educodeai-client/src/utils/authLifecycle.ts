@@ -4,6 +4,12 @@ let loggingOut = false;
 export const getSessionGeneration = (): number => sessionGeneration;
 export const isLoggingOut = (): boolean => loggingOut;
 
+export const markLoginSucceeded = (): number => {
+  loggingOut = false;
+  sessionGeneration += 1;
+  return sessionGeneration;
+};
+
 export const beginLogout = (): number => {
   loggingOut = true;
   sessionGeneration += 1;

@@ -2,6 +2,175 @@
   min-height: 100%;
 }
 
+.lecturer-review-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 5px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  width: fit-content;
+}
+
+.lecturer-review-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.lecturer-review-tab.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.certificate-review-toolbar {
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) minmax(150px, 190px) minmax(160px, 210px) minmax(140px, 170px) minmax(140px, 170px) auto auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+.lecturer-review-card .certificate-review-toolbar {
+  align-items: end;
+}
+
+.lecturer-review-card .certificate-review-toolbar > :not(.certificate-date-filter) {
+  min-height: 40px;
+}
+
+.certificate-date-filter {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.certificate-date-filter input,
+.certificate-pagination select {
+  min-height: 40px;
+  padding: 7px 9px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-dark);
+}
+
+.certificate-review-table { min-width: 1040px; }
+.certificate-review-table th:nth-child(1) { width: 23%; }
+.certificate-review-table th:nth-child(2) { width: 24%; }
+.certificate-review-table th:nth-child(3) { width: 15%; }
+.certificate-review-table th:nth-child(4) { width: 110px; }
+.certificate-review-table th:nth-child(5) { width: 140px; }
+.certificate-review-table th:nth-child(6) { width: 190px; text-align: center; }
+.certificate-review-user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.certificate-review-user > div { min-width: 0; }
+.certificate-review-user strong,
+.certificate-review-user span,
+.certificate-review-table td:nth-child(2) strong,
+.certificate-review-table td:nth-child(2) small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.certificate-review-user span,
+.certificate-review-table td:nth-child(2) small { margin-top: 3px; color: var(--text-muted); font-size: 11px; }
+.certificate-review-empty { padding: 55px 20px; color: var(--text-muted); text-align: center; }
+
+.certificate-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  margin-top: 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.certificate-pagination label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+.certificate-pagination label select {
+  width: auto;
+  flex: 0 0 auto;
+}
+.certificate-pagination > span { white-space: nowrap; }
+.certificate-pagination select { min-height: 34px; }
+.certificate-pagination > div { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.certificate-pagination button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); color: var(--text-dark); cursor: pointer; }
+.certificate-pagination button:disabled { cursor: not-allowed; opacity: .45; }
+
+.certificate-detail-modal { max-width: 720px; }
+.certificate-detail-owner { display: flex; align-items: center; gap: 11px; margin-bottom: 18px; padding: 12px; border-radius: var(--radius-md); background: var(--bg-light); }
+.certificate-detail-owner-info { display: grid; min-width: 0; flex: 1; }
+.certificate-batch-detail-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; color: var(--text-muted); font-size: 12px; }
+.certificate-batch-detail-list { display: grid; gap: 14px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
+.certificate-batch-detail-item { padding: 14px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: var(--bg-light); }
+.certificate-batch-detail-item h4 { margin: 0; color: var(--text-dark); font-size: 15px; }
+.certificate-child-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.certificate-decision-fieldset { margin-top: 14px; padding: 12px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: #fff; }
+.certificate-decision-fieldset legend { padding: 0 5px; color: var(--text-dark); font-size: 12px; font-weight: 700; }
+.certificate-decision-options { display: flex; flex-wrap: wrap; gap: 12px; }
+.certificate-decision-options label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-dark); font-size: 12px; cursor: pointer; }
+.certificate-decision-reason { display: grid; gap: 6px; margin-top: 12px; color: var(--text-dark); font-size: 12px; font-weight: 600; }
+.certificate-decision-reason textarea { min-height: 78px; padding: 9px 10px; border: 1px solid var(--border-light); border-radius: var(--radius-md); resize: vertical; font: inherit; font-weight: 400; }
+.certificate-batch-detail-item .certificate-detail-grid { margin-bottom: 10px; }
+.certificate-batch-detail-item .certificate-download { margin-bottom: 0; }
+.certificate-detail-reason { margin-bottom: 14px; padding: 10px 12px; border-radius: var(--radius-md); background: var(--warning-soft, #fff7e6); color: var(--text-dark); font-size: 12px; line-height: 1.5; }
+.certificate-detail-owner span { color: var(--text-muted); font-size: 12px; }
+.certificate-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 16px; }
+.certificate-detail-grid > div { min-width: 0; padding: 11px; border: 1px solid var(--border-light); border-radius: var(--radius-md); }
+.certificate-detail-grid dt { margin-bottom: 4px; color: var(--text-muted); font-size: 11px; }
+.certificate-detail-grid dd { overflow-wrap: anywhere; margin: 0; color: var(--text-dark); font-size: 13px; font-weight: 600; }
+.certificate-detail-wide { grid-column: 1 / -1; }
+.certificate-download { margin-bottom: 12px; }
+.certificate-reject { border-color: var(--danger) !important; color: var(--danger) !important; }
+
+
+.qlnv-swal-over-modal {
+  z-index: 20000 !important;
+}
+
+.lecturer-review-page .qlnv-modal-overlay,
+.lecturer-review-page + .qlnv-modal-overlay,
+.lecturer-review-page > .qlnv-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.lecturer-review-page .qlnv-modal-card {
+  width: 100%;
+  padding: 28px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.1);
+}
+
+.lecturer-review-spin {
+  animation: lecturer-review-spin 0.8s linear infinite;
+}
+
+@keyframes lecturer-review-spin {
+  to { transform: rotate(360deg); }
+}
+
 .lecturer-review-header {
   display: flex;
   align-items: center;
@@ -16,13 +185,100 @@
   box-shadow: var(--shadow-sm);
 }
 
-.lecturer-review-card .toolbar {
-  margin-bottom: 24px;
+.lecturer-review-card .lecturer-review-toolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) repeat(3, minmax(180px, 220px)) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.lecturer-review-search {
+  position: relative;
+  min-width: 0;
+}
+
+.lecturer-review-search > i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  z-index: 1;
+  color: var(--text-light);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.lecturer-review-search .search-input {
+  width: 100%;
+  min-width: 0;
+  padding-left: 40px;
 }
 
 .lecturer-review-card .filter-select {
-  width: 240px;
-  min-width: 200px;
+  width: 100%;
+  min-width: 0;
+}
+
+.lecturer-review-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lecturer-review-clear:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+@media (min-width: 769px) {
+  .certificate-review-card .certificate-review-toolbar > .btn-action,
+  .certificate-review-card .certificate-review-toolbar > .lecturer-review-clear {
+    width: 80px;
+    box-sizing: border-box;
+    justify-self: start;
+  }
+}
+
+.lecturer-review-result-count {
+  margin-bottom: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.lecturer-review-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-light);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.lecturer-review-avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lecturer-review-detail-avatar .lecturer-review-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  font-size: 24px;
 }
 
 .lecturer-review-card .table-responsive {
@@ -57,9 +313,9 @@
 }
 .lecturer-review-card .lecturer-review-table th:nth-child(6),
 .lecturer-review-card .lecturer-review-table td:nth-child(6) {
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px;
   text-align: center;
   box-sizing: border-box;
 }
@@ -100,8 +356,104 @@
   gap: 5px;
 }
 
+.lecturer-document-review-list {
+  display: grid;
+  gap: 10px;
+}
+
+.lecturer-document-review-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+}
+
+.lecturer-document-review-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 18px;
+}
+
+.lecturer-document-review-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.lecturer-document-review-info strong,
+.lecturer-document-review-info span,
+.lecturer-document-review-info small {
+  display: block;
+}
+
+.lecturer-document-review-info strong {
+  overflow: hidden;
+  color: var(--text-dark);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lecturer-document-review-info span {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.lecturer-document-review-info small {
+  margin-top: 4px;
+  color: var(--danger);
+}
+
+.lecturer-certificate-review-metadata {
+  display: grid;
+  gap: 3px;
+  margin-top: 7px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.lecturer-certificate-review-metadata span { margin: 0; }
+.lecturer-certificate-review-metadata a { color: var(--primary); font-size: 12px; font-weight: 600; }
+
+@media (max-width: 576px) {
+  .lecturer-document-review-item { align-items: flex-start; flex-wrap: wrap; }
+  .lecturer-document-review-item .btn-action { width: 100%; justify-content: center; }
+}
+
+@media (max-width: 1200px) {
+  .certificate-review-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lecturer-review-card .lecturer-review-toolbar {
+    grid-template-columns: minmax(260px, 1fr) repeat(2, minmax(180px, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
-  .lecturer-review-card .filter-select {
+  .lecturer-review-tabs { width: 100%; }
+  .lecturer-review-tab { flex: 1; justify-content: center; }
+  .certificate-review-toolbar,
+  .certificate-detail-grid { grid-template-columns: 1fr; }
+  .certificate-detail-wide { grid-column: auto; }
+  .certificate-pagination { align-items: flex-end; flex-direction: column; }
+  .lecturer-review-card {
+    padding: 20px;
+  }
+
+  .lecturer-review-card .lecturer-review-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .lecturer-review-card .filter-select,
+  .lecturer-review-clear {
     width: 100%;
   }
 }

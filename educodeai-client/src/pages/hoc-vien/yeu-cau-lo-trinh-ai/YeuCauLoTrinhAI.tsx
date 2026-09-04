@@ -17,6 +17,21 @@ export default function YeuCauLoTrinhAI() {
   const [isAIAvailable, setIsAIAvailable] = useState<boolean>(true);
 
   useEffect(() => {
+    const userId = getUserId();
+    const draftStorageKey = userId ? `ai-roadmap-draft:${userId}` : null;
+    const savedDraft = draftStorageKey ? sessionStorage.getItem(draftStorageKey) : null;
+
+    // Draft phải tách theo tài khoản; không được dùng chung giữa A và B.
+    sessionStorage.removeItem("ai-roadmap-draft");
+    if (savedDraft) {
+      try {
+        setKetQuaAI(JSON.parse(savedDraft));
+        setTrangThaiAI("da_co_ket_qua");
+      } catch {
+        sessionStorage.removeItem(draftStorageKey!);
+      }
+    }
+
     const checkAIStatus = async () => {
         try {
             const res = await axiosInstance.get<any>('/api/SinhDoAnAI/check-ai-status');
@@ -43,20 +58,40 @@ export default function YeuCauLoTrinhAI() {
       setTrangThaiAI("dang_phan_tich");
       const ketQua = await aiRoadmapService.taoLoTrinh(duLieu);
       setKetQuaAI(ketQua);
+      const draftStorageKey = `ai-roadmap-draft:${userId}`;
+      sessionStorage.setItem(draftStorageKey, JSON.stringify(ketQua));
       setTrangThaiAI("da_co_ket_qua");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       setTrangThaiAI("cho");
-      Swal.fire({ icon: 'error', text: "Lỗi khi tạo lộ trình" });
+
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message;
+      if (status === 429) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Đã hết lượt tạo lộ trình',
+          text: message || 'Bạn đã hết lượt tạo lộ trình AI hôm nay. Vui lòng quay lại vào ngày mai.',
+          confirmButtonText: 'Đã hiểu'
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          text: message || "Lỗi khi tạo lộ trình. Vui lòng thử lại."
+        });
+      }
     }
   };
 
   const handleModify = async (yeuCauSua: string) => {
-    if (!ketQuaAI?.maLoTrinh) return;
+    const userId = getUserId();
+    if (!userId || !ketQuaAI) return;
     try {
       setIsProcessing(true);
-      const ketQuaMoi = await aiRoadmapService.capNhatLoTrinh(ketQuaAI.maLoTrinh, yeuCauSua);
+      const ketQuaMoi = await aiRoadmapService.capNhatLoTrinh(ketQuaAI, yeuCauSua);
       setKetQuaAI(ketQuaMoi);
+      const draftStorageKey = `ai-roadmap-draft:${userId}`;
+      sessionStorage.setItem(draftStorageKey, JSON.stringify(ketQuaMoi));
       Swal.fire({ icon: 'success', text: "AI đã chỉnh sửa lộ trình theo ý bạn!", timer: 1500, showConfirmButton: false });
     } catch (error) {
       Swal.fire({ icon: 'error', text: "Lỗi khi sửa lộ trình. Vui lòng thử lại." });
@@ -66,12 +101,14 @@ export default function YeuCauLoTrinhAI() {
   };
 
   const handleConfirm = async () => {
-    if (!ketQuaAI?.maLoTrinh) return;
+    const userId = getUserId();
+    if (!userId || !ketQuaAI) return;
     try {
       setIsProcessing(true);
-      await aiRoadmapService.xacNhanLoTrinh(ketQuaAI.maLoTrinh);
+      await aiRoadmapService.xacNhanLoTrinh(ketQuaAI);
+      sessionStorage.removeItem(`ai-roadmap-draft:${userId}`);
 
-      Swal.fire({ icon: 'success', text: "Chúc mừng! Lộ trình học tập đã được áp dụng.", timer: 1500, showConfirmButton: false });
+      Swal.fire({ icon: 'success', text: "Lộ trình đã được lưu vào tài khoản của bạn.", timer: 1500, showConfirmButton: false });
       window.location.href = "/khoa-hoc-ai-cua-toi";
     } catch (error) {
       Swal.fire({ icon: 'error', text: "Có lỗi xảy ra khi lưu lộ trình." });

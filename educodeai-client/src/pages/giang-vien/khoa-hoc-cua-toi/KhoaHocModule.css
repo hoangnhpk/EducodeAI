@@ -60,6 +60,43 @@
   margin-right: auto;
 }
 
+.khm-import-page {
+  width: min(100%, 820px);
+  margin: 0 auto;
+}
+
+.khm-import-group-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.khm-import-group-header h4 {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.khm-import-group-remove {
+  position: static;
+  flex: 0 0 auto;
+  max-width: none;
+  padding: 0;
+  text-align: right;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  color: var(--khm-danger);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+
 /* ---------- Page Header ---------- */
 .khm-page-header {
   display: flex;
@@ -409,11 +446,17 @@
   max-width: 340px;
 }
 .khm-filter-actions {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   margin-left: auto;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+}
+.khm-status-tabs {
+  flex: 0 0 auto;
+  min-width: max-content;
 }
 .khm-search-box svg {
   position: absolute;
@@ -464,6 +507,10 @@
 }
 
 .khm-category-select {
+  flex: 0 1 220px;
+  width: 220px;
+  max-width: 220px;
+  min-width: 0;
   padding: 6px 12px;
   border: 1.5px solid var(--khm-gray-200);
   border-radius: var(--khm-radius-sm);
@@ -986,6 +1033,31 @@
   background: var(--khm-success-light);
   color: var(--success-strong);
   border: 1px solid var(--success);
+}
+
+@media (max-width: 768px) {
+  .khm-page-header { align-items: stretch; margin-bottom: 24px; }
+  .khm-page-header > * { min-width: 0; max-width: 100%; }
+  .khm-page-title { font-size: 1.5rem; overflow-wrap: anywhere; }
+  .khm-course-grid { grid-template-columns: minmax(0, 1fr); }
+  .khm-tabs, .khm-status-tabs { max-width: 100%; overflow-x: auto; }
+  .khm-tab, .khm-status-tab { flex: 0 0 auto; }
+  .khm-list-item-row { flex-wrap: wrap; }
+  .khm-list-item-info { flex: 1 1 180px; }
+  .khm-list-item-actions { flex: 1 1 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .khm-modal-backdrop { align-items: flex-end; padding: 8px; }
+  .khm-modal { width: 100%; max-height: calc(100dvh - 16px); }
+  .khm-modal-header, .khm-modal-body, .khm-modal-footer { padding: 16px; }
+  .khm-modal-footer { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  .khm-filter-actions, .khm-course-card-actions, .khm-modal-footer { width: 100%; }
+  .khm-filter-actions > *, .khm-course-card-actions > *, .khm-modal-footer > * { flex: 1 1 100%; justify-content: center; }
+  .khm-toast-container { inset: 8px 8px auto; }
+  .khm-toast { width: 100%; min-width: 0; max-width: none; }
+  .khm-step-indicator { align-items: flex-start; overflow-x: auto; padding-bottom: 8px; }
+  .khm-step { min-width: 150px; }
 }
 
 /* ---------- Stats row ---------- */

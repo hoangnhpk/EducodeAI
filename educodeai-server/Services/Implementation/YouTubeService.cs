@@ -191,6 +191,48 @@ namespace educodeai_server.Services.Implementation
                 }
             } while (!string.IsNullOrEmpty(nextPageToken));
 
+            // playlistItems không trả contentDetails.duration; lấy duration thật theo batch.
+            foreach (var batch in videos.Select(v => v.VideoId).Distinct().Chunk(50))
+            {
+                if (!CheckQuota(1)) break;
+
+                var ids = string.Join(",", batch);
+                var durationUrl = $"https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id={ids}&key={_apiKey}";
+                try
+                {
+                    await _semaphore.WaitAsync();
+                    var durationResponse = await _httpClient.GetAsync(durationUrl);
+                    if (!durationResponse.IsSuccessStatusCode) continue;
+
+                    var durationJson = await durationResponse.Content.ReadAsStringAsync();
+                    using var durationDocument = System.Text.Json.JsonDocument.Parse(durationJson);
+                    if (!durationDocument.RootElement.TryGetProperty("items", out var durationItems)) continue;
+
+                    var durations = durationItems.EnumerateArray()
+                        .Where(item => item.TryGetProperty("id", out _))
+                        .ToDictionary(
+                            item => item.GetProperty("id").GetString() ?? "",
+                            item => item.TryGetProperty("contentDetails", out var details) &&
+                                    details.TryGetProperty("duration", out var value)
+                                ? ParseDuration(value.GetString() ?? "")
+                                : 0);
+
+                    foreach (var video in videos)
+                    {
+                        if (durations.TryGetValue(video.VideoId, out var duration))
+                            video.Duration = duration;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"YouTube duration lookup failed: {ex.Message}");
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+
             return videos.OrderBy(v => v.Position).ToList();
         }
 
@@ -327,9 +369,9 @@ namespace educodeai_server.Services.Implementation
             if (!match.Success)
                 return 0;
 
-            var hours = int.Parse(match.Groups[1].Value ?? "0");
-            var minutes = int.Parse(match.Groups[2].Value ?? "0");
-            var seconds = int.Parse(match.Groups[3].Value ?? "0");
+            var hours = match.Groups[1].Success ? int.Parse(match.Groups[1].Value) : 0;
+            var minutes = match.Groups[2].Success ? int.Parse(match.Groups[2].Value) : 0;
+            var seconds = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : 0;
 
             return hours * 3600 + minutes * 60 + seconds;
         }

@@ -30,13 +30,30 @@
 @media (max-width: 768px) {
   .httt-toolbar {
     flex-wrap: wrap;
+    align-items: stretch;
   }
 
   .httt-toolbar select.httt-filter-select,
   .httt-toolbar input.httt-search-input {
     width: 100% !important;
+    min-width: 0;
     max-width: none;
     flex: 1 1 100%;
+  }
+
+  .httt-toolbar button.httt-filter-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .httt-table {
+    min-width: 1040px;
+  }
+}
+
+@media (max-width: 480px) {
+  .httt-table {
+    min-width: 960px;
   }
 }
 

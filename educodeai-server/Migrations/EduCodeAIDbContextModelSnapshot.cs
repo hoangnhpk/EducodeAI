@@ -38514,6 +38514,105 @@ namespace educodeai_server.Migrations
                     b.ToTable("HoSoDangKyGiangViens");
                 });
 
+            modelBuilder.Entity("educodeai_server.Models.HoSoGiangVienTaiLieuModel", b =>
+                {
+                    b.Property<long>("MaTaiLieu")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("MaTaiLieu"));
+
+                    b.Property<Guid?>("ClientFileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("DonViCap")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("HienThiCongKhai")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("KichThuoc")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("LoaiTaiLieu")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("LyDoTuChoi")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MaChungChi")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("MaHoSoDangKyGiangVien")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly?>("NgayCapChungChi")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("NgayDuyet")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("NgayHetHanChungChi")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("NgayTaiLen")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RelativePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("TenChungChi")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TenFileGoc")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("TrangThai")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("UrlXacMinh")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("MaTaiLieu");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.HasIndex("MaHoSoDangKyGiangVien", "ClientFileId")
+                        .IsUnique()
+                        .HasFilter("\"ClientFileId\" IS NOT NULL");
+
+                    b.HasIndex("MaHoSoDangKyGiangVien", "LoaiTaiLieu", "TrangThai");
+
+                    b.ToTable("HoSoGiangVienTaiLieus");
+                });
+
             modelBuilder.Entity("educodeai_server.Models.HoTroRutTienGiangVienModel", b =>
                 {
                     b.Property<int>("MaHoTroRutTienGiangVien")
@@ -40342,6 +40441,9 @@ namespace educodeai_server.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("MaRefreshToken"));
 
+                    b.Property<DateTime?>("AbsoluteExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FamilyId")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -40666,6 +40768,116 @@ namespace educodeai_server.Migrations
                     b.HasKey("NotificationId");
 
                     b.ToTable("WebhookLogs");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.YeuCauChungChiGiangVienModel", b =>
+                {
+                    b.Property<long>("MaYeuCauChungChi")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("MaYeuCauChungChi"));
+
+                    b.Property<Guid>("ClientRequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("DonViCap")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("HienThiCongKhai")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("KichThuoc")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("LyDoXuLy")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("MaChungChi")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("MaDotGui")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("MaGiangVien")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MaQuanTriVienDuyet")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("NgayCap")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("NgayCapNhat")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NgayDuyet")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("NgayHetHan")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("NgayTao")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("PhienBan")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("TenChungChi")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TenFileGoc")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("TrangThai")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("UrlXacMinh")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("MaYeuCauChungChi");
+
+                    b.HasIndex("MaDotGui");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.HasIndex("MaGiangVien", "ClientRequestId")
+                        .IsUnique();
+
+                    b.HasIndex("TrangThai", "NgayTao");
+
+                    b.HasIndex("MaGiangVien", "TrangThai", "NgayDuyet");
+
+                    b.ToTable("YeuCauChungChiGiangViens", t =>
+                        {
+                            t.HasCheckConstraint("CK_YeuCauChungChiGiangViens_NgayHetHan", "\"NgayHetHan\" IS NULL OR \"NgayCap\" IS NULL OR \"NgayHetHan\" >= \"NgayCap\"");
+                        });
                 });
 
             modelBuilder.Entity("educodeai_server.Models.YeuCauRutTienGiangVienModel", b =>
@@ -41038,6 +41250,17 @@ namespace educodeai_server.Migrations
                     b.Navigation("DonHang");
                 });
 
+            modelBuilder.Entity("educodeai_server.Models.HoSoGiangVienTaiLieuModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.HoSoDangKyGiangVienModel", "HoSoDangKyGiangVien")
+                        .WithMany("TaiLieus")
+                        .HasForeignKey("MaHoSoDangKyGiangVien")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("HoSoDangKyGiangVien");
+                });
+
             modelBuilder.Entity("educodeai_server.Models.HoTroRutTienGiangVienModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.NguoiDungModel", "GiangVien")
@@ -41396,6 +41619,17 @@ namespace educodeai_server.Migrations
                     b.Navigation("Chapter");
                 });
 
+            modelBuilder.Entity("educodeai_server.Models.YeuCauChungChiGiangVienModel", b =>
+                {
+                    b.HasOne("educodeai_server.Models.NguoiDungModel", "GiangVien")
+                        .WithMany()
+                        .HasForeignKey("MaGiangVien")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("GiangVien");
+                });
+
             modelBuilder.Entity("educodeai_server.Models.YeuCauRutTienGiangVienModel", b =>
                 {
                     b.HasOne("educodeai_server.Models.NguoiDungModel", "GiangVien")
@@ -41467,6 +41701,11 @@ namespace educodeai_server.Migrations
                     b.Navigation("MaQuaTangHocViens");
 
                     b.Navigation("ThongBaoEmailThanhToans");
+                });
+
+            modelBuilder.Entity("educodeai_server.Models.HoSoDangKyGiangVienModel", b =>
+                {
+                    b.Navigation("TaiLieus");
                 });
 
             modelBuilder.Entity("educodeai_server.Models.KeyAPIModel", b =>

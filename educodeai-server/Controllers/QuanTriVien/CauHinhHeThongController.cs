@@ -132,11 +132,17 @@ namespace educodeai_server.Controllers.QuanTriVien
             {
                 foreach (var config in newConfigs)
                 {
+                    var giaTri = config.GiaTri;
+                    if (string.Equals(config.MaKhoa, "BannerChinh", StringComparison.OrdinalIgnoreCase))
+                    {
+                        giaTri = ChuanHoaDuongDanBanner(giaTri);
+                    }
+
                     var existing = await _context.CauHinhs.FirstOrDefaultAsync(x => x.MaKhoa == config.MaKhoa);
 
                     if (existing != null)
                     {
-                        existing.GiaTri = config.GiaTri;
+                        existing.GiaTri = giaTri;
                         existing.NgayCapNhat = DateTime.UtcNow;
                     }
                     else
@@ -144,7 +150,7 @@ namespace educodeai_server.Controllers.QuanTriVien
                         _context.CauHinhs.Add(new CauHinhHeThongModel
                         {
                             MaKhoa = config.MaKhoa,
-                            GiaTri = config.GiaTri,
+                            GiaTri = giaTri,
                             NgayCapNhat = DateTime.UtcNow
                         });
                     }
@@ -167,5 +173,19 @@ namespace educodeai_server.Controllers.QuanTriVien
                 return StatusCode(500, new { success = false, message = "Không thể lưu cấu hình hệ thống. Vui lòng thử lại sau." });
             }
         }
+        private static string? ChuanHoaDuongDanBanner(string? giaTri)
+        {
+            if (string.IsNullOrWhiteSpace(giaTri))
+                return giaTri;
+
+            var value = giaTri.Trim();
+            if (Uri.TryCreate(value, UriKind.Absolute, out var uri))
+                value = uri.AbsolutePath;
+
+            return value.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase)
+                ? value
+                : value.TrimStart('/');
+        }
+
     }
 }

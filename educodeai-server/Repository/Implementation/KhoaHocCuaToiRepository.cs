@@ -22,6 +22,8 @@ namespace educodeai_server.Repository.Implementation
             return await _context.KhoaHocs
                 .Where(k => k.MaGiangVien == maGiangVien)
                 .Include(k => k.DangKyKhoaHocs)
+                .Include(k => k.ChuongHocs)
+                    .ThenInclude(ch => ch.BaiHocs)
                 .ToListAsync();
         }
 
@@ -75,6 +77,8 @@ namespace educodeai_server.Repository.Implementation
         {
             return await _context.ChuongHocs
                 .Include(c => c.KhoaHoc)
+                    .ThenInclude(k => k.ChuongHocs)
+                        .ThenInclude(ch => ch.BaiHocs)
                 .Include(c => c.BaiHocs)
                 .FirstOrDefaultAsync(c => c.MaChuong == maChuong);
         }
@@ -90,6 +94,13 @@ namespace educodeai_server.Repository.Implementation
 
         public Task DeleteChuongAsync(ChuongHocModel chuong)
         {
+            // FK MaChuong is required and configured NoAction; delete lessons explicitly
+            // before deleting the chapter to avoid EF conceptual-null errors.
+            if (chuong.BaiHocs is { Count: > 0 })
+            {
+                _context.BaiHocs.RemoveRange(chuong.BaiHocs);
+            }
+
             _context.ChuongHocs.Remove(chuong);
             return Task.CompletedTask;
         }
@@ -104,6 +115,8 @@ namespace educodeai_server.Repository.Implementation
             return await _context.BaiHocs
                 .Include(b => b.ChuongHoc)
                     .ThenInclude(c => c.KhoaHoc)
+                        .ThenInclude(k => k.ChuongHocs)
+                            .ThenInclude(c => c.BaiHocs)
                 .FirstOrDefaultAsync(b => b.MaBaiHoc == maBaiHoc);
         }
 

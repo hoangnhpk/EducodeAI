@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import './CauHinhHeThong.css';
 import { useSystemConfig } from '../../../contexts/SystemConfigContext';
 import { getAccessToken } from '../../../utils/authStorage';
+import { getBannerUrl } from '../../../utils/mediaUrl';
 
 const CauHinhHeThong = () => {
     const [activeTab, setActiveTab] = useState('general');
@@ -79,8 +80,9 @@ const CauHinhHeThong = () => {
                 
                 const result = await res.json();
                 if (result.success) {
-                    const fullUrl = `${apiUrl}${result.url}`;
-                    setConfigs(prev => ({ ...prev, BannerChinh: fullUrl }));
+                    // Lưu đường dẫn tương đối, KHÔNG kèm host. Nếu gắn ${apiUrl} vào đây thì
+                    // ảnh upload từ máy dev sẽ bị khóa cứng vào localhost và chết trên production.
+                    setConfigs(prev => ({ ...prev, BannerChinh: result.url }));
                     Swal.fire({
                         icon: 'success',
                         title: 'Đã tải ảnh thành công',
@@ -196,15 +198,15 @@ const CauHinhHeThong = () => {
                                     <div className="form-group" style={{opacity: 0.7}}>
                                         <label>Logo Website (Hệ thống đang sử dụng mặc định - Khóa):</label>
                                         <div className="media-input-group">
-                                            <img src="/img/icon.png" alt="Logo preview" className="preview-img logo-preview" />
-                                            <input type="text" className="input-config" value="icon.png" disabled style={{cursor: 'not-allowed', backgroundColor: 'var(--border-light)'}} />
+                                            <img src="/img/logo.png" alt="Logo preview" className="preview-img logo-preview" />
+                                            <input type="text" className="input-config" value="logo.png" disabled style={{cursor: 'not-allowed', backgroundColor: 'var(--border-light)'}} />
                                         </div>
                                     </div>
                                     <div className="form-group">
                                         <label>Banner Trang chủ (Chọn file từ máy tính):</label>
                                         <div className="media-input-group" style={{flexDirection: 'column', alignItems: 'flex-start', gap: '15px'}}>
                                             <img 
-                                                src={configs.BannerChinh.startsWith('http') ? configs.BannerChinh : `/img/${configs.BannerChinh}`} 
+                                                src={getBannerUrl(configs.BannerChinh)}
                                                 alt="Banner preview" 
                                                 className="preview-img banner-preview" 
                                                 style={{width: '100%', maxWidth: '600px', height: '150px', objectFit: 'cover'}}

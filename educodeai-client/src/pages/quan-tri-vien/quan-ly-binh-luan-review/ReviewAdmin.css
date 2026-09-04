@@ -1048,3 +1048,39 @@
   font-size: 13px;
   cursor: pointer;
 }
+
+@media (max-width: 1024px) {
+  .qtrv-page { padding: 16px; }
+  .qtrv-overview-grid, .qtrv-cards-grid { flex-wrap: wrap; }
+  .qtrv-card { flex: 1 1 calc(50% - 1px); }
+  .qtrv-table-card { max-width: 100%; overflow: hidden; }
+  .qtrv-table-card table { min-width: 980px; }
+}
+
+@media (max-width: 768px) {
+  .qtrv-page { padding: 8px; }
+  .qtrv-hero { align-items: stretch; flex-direction: column; }
+  .qtrv-hero__content { align-items: flex-start; }
+  .qtrv-ai-group { width: 100%; flex-wrap: wrap; }
+  .qtrv-ai-auto-badge { max-width: 100%; white-space: normal; }
+  .qtrv-ai-batch-btn { flex: 1 1 auto; justify-content: center; }
+  .qtrv-overview-grid, .qtrv-cards-grid { flex-direction: column; }
+  .qtrv-card { flex: 1 1 auto; border-right: 0; border-bottom: 1px solid var(--rc-border); }
+  .qtrv-settings-overlay { align-items: flex-end; padding: 8px; }
+  .qtrv-settings-panel { width: 100%; max-height: calc(100dvh - 16px); overflow-y: auto; }
+  .qtrv-pagination { align-items: stretch; flex-direction: column; gap: 12px; }
+  .qtrv-pagination__numbers { max-width: 100%; overflow-x: auto; padding-bottom: 4px; }
+  .qtrv-drawer { position: fixed; width: min(100%, 440px); height: 100dvh; }
+  .qtrv-detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .qtrv-drawer__footer { flex-wrap: wrap; }
+  .qtrv-drawer__footer > button { flex: 1 1 140px; }
+}
+
+@media (max-width: 480px) {
+  .qtrv-hero__content h1 { font-size: 16px; overflow-wrap: anywhere; }
+  .qtrv-ai-group > * { max-width: 100%; }
+  .qtrv-settings-footer { flex-wrap: wrap; }
+  .qtrv-settings-footer > button { flex: 1 1 100%; }
+  .qtrv-table-state, .qtrv-error-card { padding: 32px 16px; }
+  .qtrv-drawer__header, .qtrv-drawer__body, .qtrv-drawer__footer { padding-inline: 16px; }
+}

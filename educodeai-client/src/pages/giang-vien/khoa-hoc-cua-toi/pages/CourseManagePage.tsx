@@ -54,9 +54,9 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const loadDetail = useCallback(async () => {
+  const loadDetail = useCallback(async (silent = false) => {
     try {
-      setLoading(true); setError(null);
+      if (!silent) setLoading(true); setError(null);
       const data = await api.getChiTietKhoaHoc(maGiangVien, maKhoaHoc);
       setDetail(data);
       setCertForm({
@@ -275,9 +275,11 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                   </div>
                 </div>
                 <div>
-                  <label className="khm-form-label">Giá khóa học</label>
+                    <span className="khm-form-label">Giá khóa học</span>
                   <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--khm-gray-800)' }}>
-                    {detail.giaKhoaHoc.toLocaleString()} {detail.donViTienTe}
+                    {detail.donViTienTe?.toUpperCase() === 'FREE'
+                      ? 'Miễn phí'
+                      : `${detail.giaKhoaHoc.toLocaleString()} ${detail.donViTienTe}`}
                   </div>
                 </div>
                 <div>
@@ -345,12 +347,15 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                 {selectedChapter ? (
                   <LessonListEditor
                     key={selectedChapter.maChuong}
-                    maChuong={selectedChapter.maChuong}
-                    maKhoaHoc={maKhoaHoc}
-                    tenChuong={selectedChapter.tenChuong}
-                    initialLessons={detail.danhSachChuong.find(c => c.maChuong === selectedChapter.maChuong)?.danhSachBaiHoc ?? []}
-                    onImportYT={onImportPlaylist}
-                  />
+                      maChuong={selectedChapter.maChuong}
+                      maKhoaHoc={maKhoaHoc}
+                      chapters={detail.danhSachChuong.map(c => ({ maChuong: c.maChuong, tenChuong: c.tenChuong }))}
+                      initialLessons={detail.danhSachChuong.find(c => c.maChuong === selectedChapter.maChuong)?.danhSachBaiHoc ?? []}
+                      onRefreshCourse={loadDetail}
+                      onNotify={showToast}
+                      onImportYT={onImportPlaylist}
+                      onBackToChapters={() => setSelectedChapter(null)}
+                    />
                 ) : (
                   <ChapterListEditor
                     maKhoaHoc={maKhoaHoc}
@@ -489,10 +494,6 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                 <h3 className="khm-form-section-title">Cài đặt khóa học</h3>
               </div>
               <div className="khm-form-section-body">
-                <div className="khm-alert khm-alert-info" style={{ marginBottom: 20 }}>
-                  ℹ️ Các tính năng quản lý trạng thái khóa học đang phát triển.
-                </div>
-
                 <div className="khm-toggle-row">
                   <div>
                     <div className="khm-toggle-label">Cho phép mua khóa học</div>

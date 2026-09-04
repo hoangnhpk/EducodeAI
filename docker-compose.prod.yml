@@ -3,7 +3,7 @@ name: ${COMPOSE_PROJECT_NAME:-educodeai}
 x-backend-environment: &backend-environment
   ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
   ASPNETCORE_URLS: http://+:8080
-  ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SSL Mode=Disable
+  ConnectionStrings__DefaultConnection: ${DATABASE_CONNECTION_STRING}
   ConnectionStrings__Redis: redis:6379,password=${REDIS_PASSWORD},abortConnect=false
   RedisConfig__IsActive: "true"
   Jwt__Key: ${JWT_KEY}
@@ -45,6 +45,8 @@ x-backend-environment: &backend-environment
   ThanhToanSePay__MaNganHang: ${SEPAY_BANK_CODE:-MB}
   ThanhToanSePay__SoTaiKhoan: ${SEPAY_ACCOUNT_NUMBER}
   ThanhToanSePay__TenTaiKhoan: ${SEPAY_ACCOUNT_NAME}
+  SePayWebhook__BatBuocApiKey: ${SEPAY_WEBHOOK_REQUIRE_API_KEY:-false}
+  SePayWebhook__ApiKey: ${SEPAY_WEBHOOK_API_KEY:-}
   HocThu__SoVideoMacDinh: ${TRIAL_DEFAULT_VIDEO_COUNT:-2}
   OcrOffline__TessDataPath: ${OCR_TESSDATA_PATH:-/app/tessdata}
   CurrencyExchange__ApiUrl: ${CURRENCY_API_URL:-https://api.exchangerate-api.com/v4/latest/USD}
@@ -108,8 +110,6 @@ services:
     tmpfs:
       - /tmp
     depends_on:
-      migrate:
-        condition: service_completed_successfully
       redis:
         condition: service_healthy
     networks:
@@ -119,53 +119,6 @@ services:
       - no-new-privileges:true
     mem_limit: 1536m
     cpus: 1.50
-    logging: *default-logging
-
-  migrate:
-    build:
-      context: ./educodeai-server
-      dockerfile: Dockerfile
-    command: ["--migrate"]
-    restart: "no"
-    environment: *backend-environment
-    volumes:
-      - backend_tessdata:/app/tessdata
-      - ${GCP_SERVICE_ACCOUNT_HOST_PATH:-./secrets/gcp-service-account.json}:/run/secrets/gcp-service-account.json:ro
-    tmpfs:
-      - /tmp
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - data
-    security_opt:
-      - no-new-privileges:true
-    logging: *default-logging
-
-  postgres:
-    image: postgres:17-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-    networks:
-      - data
-    security_opt:
-      - no-new-privileges:true
-    shm_size: 256m
-    mem_limit: 1g
-    cpus: 1.00
     logging: *default-logging
 
   redis:

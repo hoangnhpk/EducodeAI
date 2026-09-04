@@ -5,6 +5,7 @@ import type { LoTrinhAICuaToiDTO } from './LoTrinhAICuaToiDTO';
 import { getAccessToken } from '../../../utils/authStorage';
 import { encodeId } from '@/utils/id-helper';
 import Swal from 'sweetalert2';
+import './KhoaHocCaNhanAI.css';
 
 const KhoaHocCaNhanAI = () => {
     const [roadmaps, setRoadmaps] = useState<LoTrinhAICuaToiDTO[]>([]);
@@ -204,14 +205,16 @@ const KhoaHocCaNhanAI = () => {
     return (
         <div className="khoa-hoc-ca-nhan-ai-page">
             {/* KHỐI 1: LỘ TRÌNH ĐANG HỌC */}
-            <div className="container-xxl py-5 pt-0">
+            <div className="container-xxl py-5 pt-0 roadmap-container">
                 <div className="container">
                     <div className="roadmap-wrapper text-center mb-5">
                         <p className="roadmap-eyebrow">Lộ trình học tập được cá nhân hóa bởi AI</p>
                         <div className="roadmap-heading">
                             <h2 className="display-6 mb-1">Danh sách lộ trình phát triển</h2>
                             <p className="text-muted">Lộ trình được thiết kế riêng dựa trên mục tiêu và trình độ của sếp.</p>
-                            <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold">Tạo lộ trình mới</Link>
+                            {roadmaps.length > 0 && (
+                                <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary mt-3 rounded-pill px-4 py-2 fw-bold">Tạo lộ trình mới</Link>
+                            )}
                         </div>
                         
                         <div className="roadmap-grid">
@@ -219,10 +222,10 @@ const KhoaHocCaNhanAI = () => {
                                 roadmaps.map((item) => (
                                     <div key={item.maLoTrinh} className="roadmap-card roadmap-card-primary text-start shadow-sm">
                                         <div className="card-top">
-                                            <span className="badge bg-primary mb-2">ĐANG HỌC</span>
+                                            <span className="roadmap-status-badge mb-2">ĐANG HỌC</span>
                                             <h3 className="h5 fw-bold">{item.tenLoTrinh}</h3>
                                             <p className="roadmap-path small text-primary mb-2">
-                                                <i className="fa fa-layer-group me-1"></i> Tổng {item.tongSoGiaiDoan} Giai đoạn
+                                                <i className="fa fa-layer-group me-1 roadmap-meta-icon"></i> Tổng {item.tongSoGiaiDoan} Giai đoạn
                                             </p>
                                             <small className="text-muted line-clamp-2">{item.moTaChung}</small>
                                         </div>
@@ -232,23 +235,32 @@ const KhoaHocCaNhanAI = () => {
                                                 <strong className="text-primary">{item.phanTramHoanThanh}%</strong>
                                             </div>
                                             <div className="progress" style={{ height: '6px' }}>
-                                                <div className="progress-bar" style={{ width: `${item.phanTramHoanThanh}%` }}></div>
+                                                <div
+                                                    className="progress-bar"
+                                                    role="progressbar"
+                                                    style={{ width: `${item.phanTramHoanThanh}%` }}
+                                                    aria-valuenow={item.phanTramHoanThanh}
+                                                    aria-valuemin={0}
+                                                    aria-valuemax={100}
+                                                    aria-label={`Tiến độ ${item.phanTramHoanThanh}%`}
+                                                ></div>
                                             </div>
                                         </div>
-                                        <div className="d-flex gap-2 mt-2">
+                                        <div className="d-flex gap-2 mt-2 roadmap-actions">
                                             <Link to={`/chi-tiet-lo-trinh/${encodeId(item.maLoTrinh)}`} className="btn btn-primary flex-grow-1 py-2">
                                                 Vào học ngay
                                             </Link>
-                                            <button onClick={() => handlePreview(item)} className="btn btn-outline-primary" title="Xem trước cấu trúc">
+                                            <button onClick={() => handlePreview(item)} className="btn roadmap-icon-button" title="Xem trước cấu trúc">
                                                 <i className="fa fa-eye"></i>
                                             </button>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="col-12 py-4 bg-light rounded-4 border border-dashed">
-                                    <p className="mb-3">Sếp chưa có lộ trình cá nhân nào.</p>
-                                    <Link to="/yeu-cau-lo-trinh-ai" className="btn btn-outline-primary btn-sm">Tạo mới ngay</Link>
+                                <div className="roadmap-empty-state">
+                                    <i className="fa fa-route roadmap-empty-state-icon" aria-hidden="true"></i>
+                                    <p className="roadmap-empty-state-text">Sếp chưa có lộ trình cá nhân nào.</p>
+                                    <Link to="/yeu-cau-lo-trinh-ai" className="roadmap-empty-state-link">Tạo lộ trình mới <span aria-hidden="true">&rarr;</span></Link>
                                 </div>
                             )}
                         </div>
@@ -279,7 +291,7 @@ const KhoaHocCaNhanAI = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="d-flex gap-2 mt-auto">
+                                            <div className="roadmap-actions mt-auto">
                                                 {/* Đã chuyển Link thành Button mở Modal Preview để tránh lỗi nhảy trang */}
                                                 <button
                                                     onClick={() => handlePreview(item, true)}
@@ -296,10 +308,10 @@ const KhoaHocCaNhanAI = () => {
                                     );
                                 })
                             ) : (
-                                <div className="col-12 text-center py-5 opacity-75">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="80" className="mb-3" style={{ filter: 'grayscale(1)' }} alt="empty" />
-                                    <p>Sếp chưa lưu lộ trình nào từ trang Khám phá.</p>
-                                    <Link to="/kham-pha-lo-trinh" className="text-decoration-none fw-bold">Tìm lộ trình hay ngay &rarr;</Link>
+                                <div className="roadmap-empty-state saved-roadmap-empty">
+                                    <i className="fa fa-bookmark roadmap-empty-state-icon" aria-hidden="true"></i>
+                                    <p className="roadmap-empty-state-text">Sếp chưa lưu lộ trình nào từ trang Khám phá.</p>
+                                    <Link to="/kham-pha-lo-trinh" className="roadmap-empty-state-link">Tìm lộ trình hay ngay <span aria-hidden="true">&rarr;</span></Link>
                                 </div>
                             )}
                         </div>

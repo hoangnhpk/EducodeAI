@@ -4,6 +4,8 @@
 .layout-giang-vien,
 .layout-qtv {
   display: flex;
+  width: 100%;
+  min-width: 0;
   min-height: 100vh;
   background: var(--bg-main);
 }
@@ -12,9 +14,17 @@
 .gv-sidebar,
 .qtv-sidebar {
   width: 260px;
+  height: 100vh;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
   color: white;
   padding: 20px;
   flex-shrink: 0;
+  overflow: hidden;
   box-shadow: var(--shadow-md);
   background: linear-gradient(135deg, var(--sidebar-gradient-start) 0%, var(--sidebar-gradient-end) 100%);
 }
@@ -103,6 +113,8 @@
 .gv-main-wrapper,
 .qtv-main-wrapper {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -174,6 +186,57 @@
   padding: 0;
 }
 
+/* ===== FORM CONTROL / SELECT RESPONSIVE DÙNG CHUNG ===== */
+.gv-main-content select,
+.qtv-main-content select,
+.gv-main-content .form-select,
+.qtv-main-content .form-select,
+.gv-main-content .filter-select,
+.qtv-main-content .filter-select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gv-main-content select option,
+.qtv-main-content select option {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gv-main-content .dropdown,
+.qtv-main-content .dropdown,
+.gv-main-content .btn-group,
+.qtv-main-content .btn-group {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gv-main-content .dropdown-menu,
+.qtv-main-content .dropdown-menu {
+  max-width: min(24rem, calc(100vw - 32px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.gv-main-content .dropdown-item,
+.qtv-main-content .dropdown-item {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.gv-main-content :is(.row, [class*="grid"], [class*="toolbar"], [class*="filter"]) > *,
+.qtv-main-content :is(.row, [class*="grid"], [class*="toolbar"], [class*="filter"]) > * {
+  min-width: 0;
+}
+
 /* ===== PAGE CONTENT QTV DÙNG CHUNG ===== */
 .qtv-main-content > div {
   padding: 24px;
@@ -200,6 +263,39 @@
   background: #F9FAFB;
 }
 
+@media (max-width: 1024px) {
+  .gv-sidebar,
+  .qtv-sidebar {
+    width: 224px;
+    padding: 16px;
+  }
+
+  .gv-main-content,
+  .qtv-main-content {
+    --gv-content-padding: 16px;
+    min-width: 0;
+  }
+
+  .qtv-main-content > div,
+  .qtv-page-content {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .qtv-content-card,
+  .qtv-main-content .akm-table-card,
+  .qtv-main-content .qtrv-table-card,
+  .qtv-main-content .qlhv-card,
+  .qtv-main-content .adm-wd-card,
+  .qtv-main-content .adm-revenue,
+  .qtv-main-content .adm-top,
+  .qtv-main-content .adm-widget,
+  .qtv-main-content .quan-tri-config-container {
+    min-width: 0;
+    padding: 24px;
+  }
+}
+
 @media (max-width: 768px) {
   .layout-giang-vien,
   .layout-qtv {
@@ -208,18 +304,102 @@
 
   .gv-sidebar,
   .qtv-sidebar {
+    position: static;
     width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    align-self: stretch;
+    padding: 16px;
+    overflow: visible;
+  }
+
+  .gv-sidebar-header h2,
+  .qtv-sidebar-header h2 {
+    margin-bottom: 12px;
+  }
+
+  .gv-sidebar-nav,
+  .qtv-sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .gv-nav-link,
+  .qtv-nav-link {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .gv-header,
   .qtv-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    padding: 16px;
   }
 
   .gv-header-right,
   .qtv-header-right {
     width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .gv-main-content,
+  .qtv-main-content {
+    --gv-content-padding: 16px;
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .gv-main-content > *,
+  .qtv-main-content > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .gv-page-title,
+  .qtv-page-title {
+    font-size: 22px;
+    overflow-wrap: anywhere;
+  }
+
+  .gv-page-subtitle,
+  .qtv-page-subtitle {
+    overflow-wrap: anywhere;
+  }
+
+  .gv-header-right > *,
+  .qtv-header-right > * {
+    max-width: 100%;
+  }
+
+  .gv-main-content,
+  .qtv-main-content {
+    --gv-content-padding: 8px;
+    gap: 16px;
+  }
+
+  .qtv-main-content > div,
+  .qtv-page-content {
+    padding: 8px;
+  }
+
+  .qtv-content-card,
+  .qtv-main-content .akm-table-card,
+  .qtv-main-content .qtrv-table-card,
+  .qtv-main-content .qlhv-card,
+  .qtv-main-content .adm-wd-card,
+  .qtv-main-content .adm-revenue,
+  .qtv-main-content .adm-top,
+  .qtv-main-content .adm-widget,
+  .qtv-main-content .quan-tri-config-container {
+    padding: 16px;
   }
 }
 

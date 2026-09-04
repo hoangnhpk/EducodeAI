@@ -10,7 +10,7 @@ Internet → Caddy Dự án 1 :80/:443
          → backend:8080 / static SPA
 ```
 
-Không mở backend, PostgreSQL hoặc Redis ra Internet.
+Không mở backend, Supabase PostgreSQL hoặc Redis ra Internet.
 
 ## 1. Điều kiện cần
 
@@ -214,7 +214,6 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f --t
 docker compose --env-file .env.production -f docker-compose.prod.yml logs -f --tail=200 frontend
 docker compose --env-file .env.production -f docker-compose.prod.yml logs -f --tail=200 backend
 docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail=200 migrate
-docker compose --env-file .env.production -f docker-compose.prod.yml logs -f --tail=200 postgres
 ```
 
 Log Caddy phải xem từ Dự án 1:
@@ -240,19 +239,13 @@ Restart riêng service:
 docker compose --env-file .env.production -f docker-compose.prod.yml restart frontend backend
 ```
 
-Không dùng `docker compose down -v` trong production vì `-v` xóa database, uploads và dữ liệu bền vững.
+Không dùng `docker compose down -v` trong production vì `-v` xóa Redis và uploads dữ liệu bền vững. Database nằm trên Supabase Cloud; thao tác database/backup thực hiện trong Supabase hoặc bằng `pg_dump` với connection string Supabase.
 
 ## 8. Backup tối thiểu
 
-### PostgreSQL
+### Supabase PostgreSQL
 
-```bash
-mkdir -p ~/backups && chmod 700 ~/backups
-docker compose --env-file .env.production -f docker-compose.prod.yml exec -T postgres \
-  sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' \
-  > ~/backups/educodeai-$(date +%F-%H%M%S).dump
-chmod 600 ~/backups/*.dump
-```
+Database production nằm trên Supabase Cloud. Bật backup tự động trong Supabase Dashboard; nếu cần backup thủ công, dùng `pg_dump` trên máy quản trị với connection string Supabase (không ghi connection string vào shell history hoặc Git).
 
 ### Uploads
 
@@ -292,7 +285,7 @@ Kiểm tra DNS trỏ đúng VPS, firewall mở 80/443 và log Caddy Dự án 1. 
 
 ```bash
 docker compose --env-file .env.production -f docker-compose.prod.yml ps -a migrate
-docker compose --env-file .env.production -f docker-compose.prod.yml logs migrate postgres
+docker compose --env-file .env.production -f docker-compose.prod.yml logs migrate
 ```
 
 Backend cố ý không start khi migration lỗi. Sửa cấu hình hoặc migration và chạy lại Compose; backup trước migration quan trọng.

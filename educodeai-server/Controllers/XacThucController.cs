@@ -2,6 +2,7 @@
 using educodeai_server.DTOs.NguoiDung;
 using EduCodeAI.DTOs;
 using educodeai_server.Services.Interface;
+using educodeai_server.Services.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -14,11 +15,13 @@ namespace educodeai_server.Controllers
     {
         private readonly IXacThucService _xacThucService;
         private readonly IGiayToScanningService _giayToScanningService;
+        private readonly IRefreshRequestOriginPolicy _refreshOriginPolicy;
 
-        public XacThucController(IXacThucService xacThucService, IGiayToScanningService giayToScanningService)
+        public XacThucController(IXacThucService xacThucService, IGiayToScanningService giayToScanningService, IRefreshRequestOriginPolicy refreshOriginPolicy)
         {
             _xacThucService = xacThucService;
             _giayToScanningService = giayToScanningService;
+            _refreshOriginPolicy = refreshOriginPolicy;
         }
 
         #region 1. API ĐĂNG NHẬP
@@ -69,7 +72,7 @@ namespace educodeai_server.Controllers
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
-            if (!IsSameSiteRequest(HttpContext.Request))
+            if (!_refreshOriginPolicy.IsAllowed(HttpContext.Request))
             {
                 throw Helpers.ApiException.Forbidden("Yêu cầu không hợp lệ.");
             }
@@ -209,6 +212,7 @@ namespace educodeai_server.Controllers
 
         [HttpPost("dang-ky-giang-vien")]
         [Consumes("multipart/form-data")]
+        [RequestFormLimits(MultipartBodyLengthLimit = 60 * 1024 * 1024)]
         public async Task<IActionResult> DangKyGiangVien([FromForm] DangKyGiangVienRequest request)
         {
             if (!ModelState.IsValid)
@@ -266,6 +270,7 @@ namespace educodeai_server.Controllers
         /// <summary>Giảng viên nộp lại hồ sơ bổ sung (public, xác thực bằng token từ email).</summary>
         [HttpPut("bo-sung-ho-so/{maHoSo}")]
         [Consumes("multipart/form-data")]
+        [RequestFormLimits(MultipartBodyLengthLimit = 60 * 1024 * 1024)]
         public async Task<IActionResult> BoSungHoSo(long maHoSo, [FromForm] BoSungHoSoRequest request)
         {
             if (!ModelState.IsValid)

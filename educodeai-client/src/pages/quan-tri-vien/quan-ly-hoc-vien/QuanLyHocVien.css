@@ -343,3 +343,30 @@ textarea.qlhv-input {
   min-height: 80px;
   font-family: inherit;
 }
+
+@media (max-width: 768px) {
+  .qlhv-container { min-height: 0; padding: 16px; }
+  .qlhv-header { align-items: stretch; flex-direction: column; gap: 16px; }
+  .qlhv-title { font-size: 24px; overflow-wrap: anywhere; }
+  .qlhv-btn-primary { width: 100%; }
+  .qlhv-tabs { max-width: 100%; }
+  .qlhv-tab-btn { flex: 0 0 auto; white-space: nowrap; }
+  .qlhv-filter-bar { align-items: stretch; flex-direction: column; }
+  .qlhv-input { width: 100%; max-width: none; min-width: 0; }
+  .qlhv-btn-search { width: 100%; justify-content: center; }
+  .qlhv-card { max-width: 100%; overflow: hidden; }
+  .qlhv-card > .qlhv-table { display: block; overflow-x: auto; }
+  .qlhv-table { min-width: 800px; }
+  .qlhv-pagination { align-items: stretch; flex-direction: column; gap: 12px; }
+  .qlhv-pagination > div { display: flex; flex-wrap: wrap; gap: 8px; }
+  .qlhv-page-btn { margin-left: 0; }
+  .qlhv-modal-overlay { align-items: flex-end; padding: 8px; }
+  .qlhv-modal-content { width: 100%; max-height: calc(100dvh - 16px); overflow-y: auto; padding: 16px; }
+  .qlhv-toast { inset: 8px 8px auto; max-width: none; }
+}
+
+@media (max-width: 480px) {
+  .qlhv-container { padding: 8px; }
+  .qlhv-modal-actions { flex-wrap: wrap; }
+  .qlhv-modal-actions > button { flex: 1 1 100%; }
+}
