@@ -280,7 +280,7 @@ namespace EduCodeAI.Controllers.HocVien
                     anhDaiDien = u.AnhDaiDien,
                     chuyenMon = "Giảng viên EduCode", // Default role title
                     diemTrungBinh = u.KhoaHocs
-                        .Where(k => k.TrangThai == "Hoạt động")
+                        .Where(k => k.TrangThai == "Hoạt động" && k.DiemDanhGiaTB >= 1)
                         .Average(k => (double?)k.DiemDanhGiaTB) ?? 0,
                     tongKhoaHoc = u.KhoaHocs
                         .Count(k => k.TrangThai == "Hoạt động")
