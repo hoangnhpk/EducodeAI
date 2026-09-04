@@ -54,7 +54,44 @@ namespace educodeai_server.Services.Implement
             _logger.LogInformation("[CACHE INVALIDATE] Xóa chi tiết khóa học {Id}: {Count} key", maKhoaHoc, keys.Count);
         }
 
-        // ===== COURSE MANAGEMENT =====
+        private void MoveLessonToChapter(BaiHocModel baiHoc, ChuongHocModel sourceChapter, ChuongHocModel targetChapter)
+        {
+            if (sourceChapter.MaChuong == targetChapter.MaChuong) return;
+
+            sourceChapter.BaiHocs.Remove(baiHoc);
+            targetChapter.BaiHocs.Add(baiHoc);
+            baiHoc.MaChuong = targetChapter.MaChuong;
+            baiHoc.ChuongHoc = targetChapter;
+
+            NormalizeLessonOrder(sourceChapter);
+            baiHoc.ThuTu = targetChapter.BaiHocs.Count;
+            NormalizeLessonOrder(targetChapter);
+        }
+
+        private static void NormalizeLessonOrder(ChuongHocModel chapter)
+        {
+            var ordered = chapter.BaiHocs
+                .Where(lesson => lesson.MaBaiHoc != 0)
+                .OrderBy(lesson => lesson.ThuTu)
+                .ThenBy(lesson => lesson.MaBaiHoc)
+                .ToList();
+
+            for (var i = 0; i < ordered.Count; i++)
+            {
+                ordered[i].ThuTu = i + 1;
+            }
+        }
+
+        private async Task<ChuongHocModel?> GetTargetChapterAsync(int? maChuong, BaiHocModel baiHoc)
+        {
+            if (!maChuong.HasValue || maChuong.Value == baiHoc.MaChuong)
+                return baiHoc.ChuongHoc;
+
+            var target = baiHoc.ChuongHoc.KhoaHoc.ChuongHocs
+                .FirstOrDefault(chapter => chapter.MaChuong == maChuong.Value);
+            return target;
+        }
+
         public async Task<List<KhoaHocGiangVienListDTO>> GetDanhSachKhoaHocAsync(int maGiangVien)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -322,11 +359,16 @@ namespace educodeai_server.Services.Implement
             if (baiHoc == null) return false;
             if (baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien) return false;
 
+            var sourceChapter = baiHoc.ChuongHoc;
+            var targetChapter = await GetTargetChapterAsync(dto.MaChuong, baiHoc);
+            if (targetChapter == null) return false;
+
             baiHoc.TieuDe = dto.TieuDe;
             baiHoc.NoiDung = WrapParagraph(dto.MoTa ?? baiHoc.NoiDung);
             baiHoc.LinkVideo = ExtractEmbedUrl(dto.LinkVideo);
             baiHoc.ThoiLuong = dto.ThoiLuong;
             baiHoc.ThuTu = dto.ThuTu;
+            MoveLessonToChapter(baiHoc, sourceChapter, targetChapter);
 
             await _repository.UpdateBaiHocAsync(baiHoc);
             baiHoc.ChuongHoc.KhoaHoc.ThoiLuongGio = CalculateCourseDurationHours(baiHoc.ChuongHoc.KhoaHoc);
@@ -469,9 +511,14 @@ namespace educodeai_server.Services.Implement
             if (baiHoc == null) return false;
             if (baiHoc.ChuongHoc.KhoaHoc.MaGiangVien != maGiangVien) return false;
 
+            var sourceChapter = baiHoc.ChuongHoc;
+            var targetChapter = await GetTargetChapterAsync(dto.MaChuong, baiHoc);
+            if (targetChapter == null) return false;
+
             baiHoc.TieuDe = dto.TieuDe;
             baiHoc.NoiDung = WrapParagraph(dto.MoTa ?? baiHoc.NoiDung);
             baiHoc.ThuTu = dto.ThuTu;
+            MoveLessonToChapter(baiHoc, sourceChapter, targetChapter);
 
             if (dto.File != null && dto.File.Length > 0)
             {
@@ -1179,6 +1226,7 @@ BẮT ĐẦU (Chỉ output JSON, không giải thích):";
                 LinkVideo = b.LinkVideo,
                 ThoiLuong = b.ThoiLuong ?? 0,
                 ThuTu = b.ThuTu,
+                MaChuong = b.MaChuong,
                 LoaiBaiHoc = b.LoaiBaiHoc,
                 VideoSource = b.VideoSource,
                 VideoPublicId = b.VideoPublicId,

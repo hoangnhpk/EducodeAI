@@ -151,6 +151,7 @@ public class BaiHocVideoDetailDTO
     public string? LinkVideo { get; set; }
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
+    public int MaChuong { get; set; }
     public string LoaiBaiHoc { get; set; } = "Video";
     public string? VideoSource { get; set; }
     public string? VideoPublicId { get; set; }
@@ -167,6 +168,7 @@ public class BaiHocVideoCreateUpdateDTO
     public string? LinkVideo { get; set; }
     public int ThoiLuong { get; set; }
     public int ThuTu { get; set; }
+    public int? MaChuong { get; set; }
     public string? VideoSource { get; set; }
     public string? VideoPublicId { get; set; }
     public int? VideoSizeMb { get; set; }
@@ -189,6 +191,7 @@ public class BaiHocFileCreateUpdateDTO
     public string? MoTa { get; set; }
     public IFormFile? File { get; set; }
     public int ThuTu { get; set; }
+    public int? MaChuong { get; set; }
 }
 
 public class ThemFileResponseDTO

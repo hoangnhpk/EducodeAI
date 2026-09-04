@@ -197,7 +197,8 @@ export const themBaiHocFile = async (maChuong: number, dto: any) => {
   if(dto.moTa) fd.append('MoTa', dto.moTa);
   if(dto.file) fd.append('File', dto.file);
   fd.append('ThuTu', dto.thuTu.toString());
-  
+  if (dto.maChuong !== undefined && dto.maChuong !== null) fd.append('MaChuong', dto.maChuong.toString());
+
   const res = await axiosClient.post(`${BASE}/them-file/${maChuong}`, fd, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
@@ -211,6 +212,7 @@ export const capNhatBaiHocFile = async (maBaiHoc: number, dto: any) => {
   if(dto.moTa) fd.append('MoTa', dto.moTa);
   if(dto.file) fd.append('File', dto.file);
   fd.append('ThuTu', dto.thuTu.toString());
+  if (dto.maChuong !== undefined && dto.maChuong !== null) fd.append('MaChuong', dto.maChuong.toString());
 
   const res: any = await axiosClient.put(`${BASE}/cap-nhat-file/${maBaiHoc}`, fd, {
     headers: { 'Content-Type': 'multipart/form-data' }

@@ -132,6 +132,7 @@ export interface BaiHocDetail {
   linkVideo?: string;
   thoiLuong: number;
   thuTu: number;
+  maChuong?: number;
   loaiBaiHoc?: string;
   videoSource?: string;
   videoPublicId?: string;
@@ -147,6 +148,7 @@ export interface BaiHocCreateUpdate {
   linkVideo?: string;
   thoiLuong: number;
   thuTu: number;
+  maChuong?: number;
   videoSource?: string;
   videoPublicId?: string;
   videoSizeMb?: number;
@@ -157,6 +159,7 @@ export interface BaiHocFileCreateUpdate {
   moTa?: string;
   file?: File | null;
   thuTu: number;
+  maChuong?: number;
 }
 
 export interface BaiHocResponse {
