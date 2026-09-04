@@ -129,7 +129,7 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
               </div>
             </label>
 
-            <label className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'ai' ? 'var(--ai-accent-soft)' : 'var(--bg-card)' }}>
+            <div className="khm-flex khm-gap-8" style={{ alignItems: 'flex-start', cursor: 'pointer', padding: 12, border: '1px solid var(--khm-gray-200)', borderRadius: 8, background: luaChon === 'ai' ? 'var(--ai-accent-soft)' : 'var(--bg-card)' }}>
               <input type="radio" name="subtitleOpt" checked={luaChon === 'ai'} onChange={() => setLuaChon('ai')} style={{ marginTop: 4, width: 'auto', flexShrink: 0 }} disabled={dangXuLy} />
               <div>
                 <strong style={{ display: 'block', marginBottom: 4, color: 'var(--ai-accent-hover)' }}>Dùng AI Transcription (Có phí) ✨</strong>
@@ -141,10 +141,10 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
                       <strong>Chi phí ước tính:</strong> ${chiPhiDuKien} USD <br/>
                       <span className="khm-text-muted">(Dựa trên thời lượng {Math.ceil(baiHoc.thoiLuong / 60)} phút)</span>
                     </div>
-                    <div className="khm-text-xs khm-text-muted khm-mb-12">
-                      <input type="checkbox" id="gdpr_consent" className="khm-mr-4" required />
-                      <label htmlFor="gdpr_consent">Tôi xác nhận video không chứa thông tin cá nhân nhạy cảm vi phạm GDPR.</label>
-                    </div>
+                    <label className="khm-flex khm-gap-8" htmlFor="gdpr_consent" style={{ alignItems: 'flex-start', cursor: 'pointer' }}>
+                      <input type="checkbox" id="gdpr_consent" required style={{ marginTop: 3, width: 'auto', flexShrink: 0 }} />
+                      <span>Tôi xác nhận video không chứa thông tin cá nhân nhạy cảm vi phạm GDPR.</span>
+                    </label>
                     <button 
                       className="khm-btn khm-btn-sm" 
                       style={{ background: 'var(--ai-accent)', color: 'var(--text-white)', border: 'none' }}
@@ -163,11 +163,11 @@ const SubtitleManagerModal: React.FC<SubtitleManagerModalProps> = ({ dangMo, bai
                   </div>
                 )}
               </div>
-            </label>
           </div>
         </div>
       </div>
     </div>
+  </div>
   );
 };
 
