@@ -104,7 +104,7 @@ const KhoaHocCuaToi: React.FC = () => {
       <PlaylistImportPage
         maKhoaHoc={maKhoaHoc}
         onSuccess={() => goManage(maKhoaHoc)}
-        onCancel={goList}
+        onCancel={() => goManage(maKhoaHoc)}
       />
     );
   }

@@ -191,18 +191,22 @@ const PlaylistImportPage: React.FC<Props> = ({
     <div className="khm-wrapper">
       <ToastContainer />
       <div className="khm-page khm-import-page">
-        {/* Breadcrumb */}
-        <div className="khm-breadcrumb">
-          <button onClick={onCancel}>Khóa học của tôi</button>
-          <span className="khm-breadcrumb-sep">›</span>
-          <span className="khm-breadcrumb-current">Import YouTube Playlist</span>
-        </div>
-
-        <div className="khm-page-header" style={{ marginBottom: 28 }}>
+        <div
+          className="khm-page-header"
+          style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20 }}
+        >
           <div>
             <h1 className="khm-page-title">Import YouTube Playlist</h1>
             <p className="khm-page-subtitle">Tự động tạo bài học từ playlist YouTube</p>
           </div>
+          <button
+            type="button"
+            className="khm-btn khm-btn-outline"
+            onClick={onCancel}
+            style={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+          >
+            ← Quay lại chi tiết khóa học
+          </button>
         </div>
 
         <div className="khm-step-indicator">
