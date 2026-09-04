@@ -54,20 +54,7 @@ namespace educodeai_server.Services.Implementation
                 using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
-                // 1. Validate số dư VND
-                var (tongDoanhThu, tongDangChoRut, _) = await TinhToanSoDuViAsync(maGiangVien);
-                var soDuKhaDung = tongDoanhThu - tongDangChoRut;
-
-                if (yeuCau.SoTienVnd > soDuKhaDung)
-                {
-                    throw new ApplicationException($"Số dư VND không đủ. Số dư khả dụng: {soDuKhaDung:N0} VND");
-                }
-
-                // 2. Quy đổi VND -> USD
-                var tyGia = await _currencyExchange.GetUsdToVndRateAsync();
-                var soTienUsd = yeuCau.SoTienVnd / tyGia;
-
-                // 3. Tạo hoặc lấy GiangVienQuota
+                // 1. Tạo hoặc lấy quota và khóa bản ghi để cập nhật nguyên tử
                 var quota = await _context.GiangVienQuotas
                     .FirstOrDefaultAsync(q => q.MaGiangVien == maGiangVien);
 
@@ -76,6 +63,19 @@ namespace educodeai_server.Services.Implementation
                     quota = new GiangVienQuotaModel { MaGiangVien = maGiangVien };
                     _context.GiangVienQuotas.Add(quota);
                 }
+
+                // 2. Validate số dư VND từ doanh thu và lịch sử quy đổi AI
+                var (tongDoanhThu, tongDangChoRut, _) = await TinhToanSoDuViAsync(maGiangVien);
+                var tongDaNapAI = await TongTienDaNapAIAsync(maGiangVien);
+                var soDuKhaDung = tongDoanhThu - tongDangChoRut - tongDaNapAI;
+                if (yeuCau.SoTienVnd <= 0 || yeuCau.SoTienVnd > soDuKhaDung)
+                {
+                    throw new ApplicationException($"Số dư VND không đủ. Số dư khả dụng: {soDuKhaDung:N0} VND");
+                }
+
+                // 3. Quy đổi VND -> USD
+                var tyGia = await _currencyExchange.GetUsdToVndRateAsync();
+                var soTienUsd = yeuCau.SoTienVnd / tyGia;
 
                 // 4. Cộng tiền vào AI Balance
                 quota.AiBalanceUsd += soTienUsd;
@@ -102,6 +102,7 @@ namespace educodeai_server.Services.Implementation
 
                 // Tính số dư mới
                 var (tongDoanhThuMoi, tongDangChoRutMoi, _) = await TinhToanSoDuViAsync(maGiangVien);
+                var tongDaNapAIMoi = await TongTienDaNapAIAsync(maGiangVien);
 
                 return new KetQuaNapTienAIDTO
                 {
@@ -110,7 +111,7 @@ namespace educodeai_server.Services.Implementation
                     SoTienUsd = soTienUsd,
                     TyGiaApDung = tyGia,
                     SoDuAiBalanceUsdMoi = quota.AiBalanceUsd,
-                    SoDuVndKhaDungMoi = tongDoanhThuMoi - tongDangChoRutMoi,
+                    SoDuVndKhaDungMoi = tongDoanhThuMoi - tongDangChoRutMoi - tongDaNapAIMoi,
                     CreatedAt = lichSu.CreatedAt
                 };
                 }
@@ -141,6 +142,13 @@ namespace educodeai_server.Services.Implementation
                 .ToListAsync();
 
             return lichSu;
+        }
+
+        private async Task<decimal> TongTienDaNapAIAsync(int maGiangVien)
+        {
+            return await _context.LichSuNapTienAIs
+                .Where(x => x.MaGiangVien == maGiangVien && x.TrangThai == "THANH_CONG")
+                .SumAsync(x => x.SoTienVnd);
         }
 
         private async Task<(decimal tongDoanhThu, decimal tongDangChoRut, decimal tongDaChuyenKhoan)> TinhToanSoDuViAsync(int maGiangVien)

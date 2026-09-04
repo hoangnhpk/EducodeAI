@@ -44,6 +44,9 @@ namespace educodeai_server.Services.Implementation
             }
 
             var (tongDoanhThuDaGhiNhan, tongDangChoXuLyRut, tongDaChuyenKhoan) = await TinhToanSoDuViAsync(maGiangVien);
+            var tongDaNapAI = await _dbContext.LichSuNapTienAIs
+                .Where(x => x.MaGiangVien == maGiangVien && x.TrangThai == "THANH_CONG")
+                .SumAsync(x => x.SoTienVnd);
 
             var nganHangTheoVietQr = DanhMucNganHangLienKet.TimTheoMaVietQr(giangVien.MaNganHangNhanTien);
 
@@ -52,7 +55,7 @@ namespace educodeai_server.Services.Implementation
                 TongDoanhThuDaGhiNhan = tongDoanhThuDaGhiNhan,
                 TongDangChoXuLyRut = tongDangChoXuLyRut,
                 TongDaChuyenKhoan = tongDaChuyenKhoan,
-                SoDuKhaDung = Math.Max(0, tongDoanhThuDaGhiNhan - tongDangChoXuLyRut),
+                SoDuKhaDung = Math.Max(0, tongDoanhThuDaGhiNhan - tongDangChoXuLyRut - tongDaNapAI),
                 MaNganHangNhanTien = giangVien.MaNganHangNhanTien,
                 MaNganHangChon = nganHangTheoVietQr?.Ma,
                 SoTaiKhoanNhanTien = giangVien.SoTaiKhoanNhanTien,
