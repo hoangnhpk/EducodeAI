@@ -43,9 +43,7 @@ export default function SidebarGiangVien() {
           <i className="fas fa-tags" aria-hidden="true" /> Mã Giảm Giá
         </Link>
 
-        <Link to="/giang-vien/tao-lo-trinh-AI" className={`gv-nav-link ${isActive('/giang-vien/tao-lo-trinh-AI') ? 'active' : ''}`}>
-          <i className="fas fa-route" aria-hidden="true" /> Quản Lý Lộ Trình AI
-        </Link>
+        {/* Ẩn mục "Quản Lý Lộ Trình AI" khỏi menu (route vẫn giữ) */}
 
         <Link to="/giang-vien/rut-tien" className={`gv-nav-link ${isActive('/giang-vien/rut-tien') ? 'active' : ''}`}>
           <i className="fas fa-money-bill-wave" aria-hidden="true" /> Rút Tiền

@@ -153,6 +153,9 @@ const getQuaTangTrangThaiMeta = (raw: string) => {
   return { className: 'qllh-gift-badge--default', label: raw || '—' };
 };
 
+// Ẩn nút tặng khóa học ở cột thao tác (đổi thành true để hiện lại)
+const HIEN_NUT_TANG_KHOA_HOC = false;
+
 const formatGiftTime = (raw: string) => {
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return '—';
@@ -737,14 +740,16 @@ export default function QuanLyHocVienKhoaHoc() {
                     )}
 
                     <td className="qllh-col-actions">
-                      <button
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', padding: '8px' }}
-                        title="Tặng khóa học"
-                        onClick={() => void handleTangKhoaHoc(hv)}
-                        disabled={dangTangCho === hv.maNguoiDung}
-                      >
-                        <i className="bi bi-gift" style={{ fontSize: 18 }} aria-hidden="true" />
-                      </button>
+                      {HIEN_NUT_TANG_KHOA_HOC && (
+                        <button
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', padding: '8px' }}
+                          title="Tặng khóa học"
+                          onClick={() => void handleTangKhoaHoc(hv)}
+                          disabled={dangTangCho === hv.maNguoiDung}
+                        >
+                          <i className="bi bi-gift" style={{ fontSize: 18 }} aria-hidden="true" />
+                        </button>
+                      )}
                       <button
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', padding: '8px' }}
                         title={!daChonKhoaCuThe ? "Xem các khóa đã đăng ký" : "Xem tiến độ chi tiết"}
