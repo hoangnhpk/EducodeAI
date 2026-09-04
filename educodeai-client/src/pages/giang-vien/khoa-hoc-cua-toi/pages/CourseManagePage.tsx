@@ -349,7 +349,6 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                     key={selectedChapter.maChuong}
                       maChuong={selectedChapter.maChuong}
                       maKhoaHoc={maKhoaHoc}
-                      tenChuong={selectedChapter.tenChuong}
                       initialLessons={detail.danhSachChuong.find(c => c.maChuong === selectedChapter.maChuong)?.danhSachBaiHoc ?? []}
                       onImportYT={onImportPlaylist}
                       onBackToChapters={() => setSelectedChapter(null)}
