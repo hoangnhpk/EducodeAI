@@ -133,9 +133,12 @@ namespace educodeai_server.Services.Implementation
             }
 
             var (tongDoanhThuDaGhiNhan, tongDangChoXuLyRut, _) = await TinhToanSoDuViAsync(maGiangVien);
-            var soDuKhaDung = tongDoanhThuDaGhiNhan - tongDangChoXuLyRut;
+            var tongDaNapAI = await _dbContext.LichSuNapTienAIs
+                .Where(x => x.MaGiangVien == maGiangVien && x.TrangThai == "THANH_CONG")
+                .SumAsync(x => x.SoTienVnd);
+            var soDuKhaDung = tongDoanhThuDaGhiNhan - tongDangChoXuLyRut - tongDaNapAI;
 
-            if (yeuCau.SoTienYeuCau > soDuKhaDung)
+            if (yeuCau.SoTienYeuCau <= 0 || yeuCau.SoTienYeuCau > soDuKhaDung)
             {
                 throw new ApplicationException("Số dư khả dụng không đủ để thực hiện yêu cầu rút.");
             }

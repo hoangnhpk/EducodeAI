@@ -34,7 +34,8 @@ namespace educodeai_server.Services.Implementation
             var soDuAiBalanceUsd = quota?.AiBalanceUsd ?? 0;
 
             var (tongDoanhThu, tongDangChoRut, _) = await TinhToanSoDuViAsync(maGiangVien);
-            var soDuVndKhaDung = tongDoanhThu - tongDangChoRut;
+            var tongDaNapAI = await TongTienDaNapAIAsync(maGiangVien);
+            var soDuVndKhaDung = tongDoanhThu - tongDangChoRut - tongDaNapAI;
 
             var tyGiaHienTai = await _currencyExchange.GetUsdToVndRateAsync();
 

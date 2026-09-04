@@ -228,9 +228,10 @@ export default function NapTienAI() {
                 <div className="text-danger small mt-1">Số dư VND không đủ</div>
               )}
             </div>
-            <div className="col-12 col-md-4 d-flex align-items-end">
+            <div className="col-12 col-md-4 d-flex align-items-start">
               <button
                 className="btn btn-primary w-100"
+                style={{ marginTop: '2rem' }}
                 onClick={xuLyNapTien}
                 disabled={
                   dangXuLy ||
