@@ -31,7 +31,7 @@ public sealed class DangNhapRequestValidationTests
 
         Assert.Contains(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.TaiKhoan)));
         Assert.Contains(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.MatKhau)));
-        Assert.Contains(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.CaptchaToken)));
+        Assert.DoesNotContain(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.CaptchaToken)));
         Assert.Contains(validationResults, result => result.MemberNames.Contains(nameof(DangNhapRequest.MaThietBi)));
     }
 
