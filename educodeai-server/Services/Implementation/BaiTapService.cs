@@ -21,7 +21,7 @@ namespace educodeai_server.Services.Implementation
             if      (lang == "python" || lang == "python3")                     compiler = "cpython-3.12.7";
             else if (lang == "c++" || lang == "cpp")                            compiler = "gcc-13.2.0";
             else if (lang == "c")                                                compiler = "gcc-13.2.0-c";
-            else if (lang == "c#" || lang == "csharp")                          compiler = "dotnetcore-8.0.402";
+            else if (lang == "c#" || lang == "csharp")                          compiler = "dotnetcore-6.0.425";
             else if (lang == "java")                                             compiler = "openjdk-jdk-21+35";
             else if (lang == "javascript" || lang == "js" || lang == "nodejs")  compiler = "nodejs-20.17.0";
             else if (lang == "typescript" || lang == "ts")                       compiler = "typescript-5.6.2";

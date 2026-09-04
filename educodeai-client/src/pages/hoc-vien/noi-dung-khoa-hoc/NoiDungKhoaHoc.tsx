@@ -184,6 +184,9 @@ const NoiDungKhoaHoc = () => {
     const handleVideoCompleted = useCallback((maBaiHocVuaXong: number) => {
         const baiHocVuaXong = flatList.find((bai) => bai.id === maBaiHocVuaXong);
 
+        // Video đã xem xong; ghi nhận ngay vào state để giao diện chứng chỉ đồng bộ.
+        danhDauHoanThanhBai(maBaiHocVuaXong);
+
         // Xem xong lý thuyết thì chuyển thẳng sang tab bài tập, không hiện popup.
         if (baiHocVuaXong?.thongTinQuiz) {
             setVideoDaXongLocal((prev) => [...prev, maBaiHocVuaXong]);
@@ -197,7 +200,6 @@ const NoiDungKhoaHoc = () => {
             return;
         }
 
-        danhDauHoanThanhBai(maBaiHocVuaXong);
     }, [flatList]);
 
     const handleThoiLuongRealLoaded = useCallback((maBaiHoc: number, thoiLuongGiay: number) => {
@@ -608,16 +610,31 @@ const NoiDungKhoaHoc = () => {
 
             <main className="cp-shell">
                 <section className="cp-left">
-                    {tabActive !== 'quiz' && (
                         <div className="cp-tabs">
                             <button
-                                className={`cp-tab ${tabActive === 'hoc' ? 'cp-tab-active' : ''}`}
+                                className={`cp-tab ${['hoc', 'quiz', 'ide'].includes(tabActive) ? 'cp-tab-active' : ''}`}
                                 onClick={() => {
-                                    setTabActive('hoc');
+                                    if (tabActive === 'quiz' && baiHocHienTai.loaiBaiHoc === 'Video') {
+                                        setTabActive('hoc');
+                                    } else if (tabActive === 'ide' && baiHocHienTai.loaiBaiHoc === 'Video') {
+                                        setTabActive('hoc');
+                                    } else if (baiHocHienTai.loaiBaiHoc === 'Quiz' || (tabActive !== 'quiz' && baiHocHienTai.thongTinQuiz && !baiHocHienTai.linkVideo)) {
+                                        setTabActive('quiz');
+                                    } else if (baiHocHienTai.loaiBaiHoc === 'Ide' || baiHocHienTai.loaiBaiHoc === 'Code' || (tabActive !== 'ide' && baiHocHienTai.maBaiTapThucHanh && !baiHocHienTai.linkVideo)) {
+                                        setTabActive('ide');
+                                    } else {
+                                        setTabActive('hoc');
+                                    }
                                     setDangLamKiemTraChungChi(false);
                                 }}
                             >
-                                <i className="fas fa-play-circle" /> Bài học
+                                {tabActive === 'quiz' || baiHocHienTai.loaiBaiHoc === 'Quiz' ? (
+                                    <><i className="fas fa-question-circle" /> Bài trắc nghiệm</>
+                                ) : tabActive === 'ide' || baiHocHienTai.loaiBaiHoc === 'Ide' || baiHocHienTai.loaiBaiHoc === 'Code' ? (
+                                    <><i className="fas fa-code" /> Bài thực hành</>
+                                ) : (
+                                    <><i className="fas fa-play-circle" /> Bài học</>
+                                )}
                             </button>
 
                             {baiHocHienTai.loaiBaiHoc === 'Video' && (
@@ -651,7 +668,6 @@ const NoiDungKhoaHoc = () => {
                                 <i className="fas fa-star" /> Đánh giá
                             </button>
                         </div>
-                    )}
 
                     <div className="cp-main-content">
                         {tabActive === 'quiz' ? (

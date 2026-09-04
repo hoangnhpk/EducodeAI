@@ -426,79 +426,83 @@ namespace educodeai_server.Repository.Implementation
         {
             if (dto == null) return false;
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                var duLieuLuuTru = new
+                using var transaction = await _context.Database.BeginTransactionAsync();
+
+                try
                 {
-                    SoCauDung = dto.SoCauDung,
-                    TongSoCau = dto.TongSoCau,
-                    DiemSo = dto.DiemSo,
-                    KetQua = dto.DaDat ? "Pass" : "Fail",
-                    ThoiGianNop = DateTime.Now,
-                    LichSuTraLoi = dto.ChiTietLamBai
-                };
-
-                var ketQuaMoi = new KetQuaLamBaiModel
-                {
-                    MaNguoiDung = dto.MaNguoiDung,
-                    MaBaiTap = dto.MaBaiTap,
-                    DiemSo = dto.DiemSo,
-                    TrangThai = dto.DaDat,
-                    NoiDungNopJSON = JsonSerializer.Serialize(duLieuLuuTru),
-                    NgayNop = DateTime.Now
-                };
-
-                _context.KetQuaLamBais.Add(ketQuaMoi);
-                await _context.SaveChangesAsync();
-
-                if (dto.DaDat)
-                {
-                    var tienDo = await _context.TienDoBaiHocs
-                        .FirstOrDefaultAsync(td => td.MaBaiHoc == dto.MaBaiHoc
-                                                && td.MaNguoiDung == dto.MaNguoiDung);
-
-                    // Đạt quiz chỉ đánh dấu ĐÃ XEM, không sinh ra thời gian xem video.
-                    // ThoiGianHoc là số GIÂY xem thật (client gửi currentTime của player),
-                    // nên không được gán giá trị bịa vào đây — trước đây gán 100 với ý
-                    // "100%" làm sai đơn vị và ghi đè mất thời gian xem thật ở nhánh else.
-                    if (tienDo == null)
+                    var duLieuLuuTru = new
                     {
-                        tienDo = new TienDoBaiHocModel
-                        {
-                            MaBaiHoc = dto.MaBaiHoc,
-                            MaNguoiDung = dto.MaNguoiDung,
-                            DaXem = true,
-                            NgayCapNhat = DateTime.Now
-                        };
-                        _context.TienDoBaiHocs.Add(tienDo);
-                    }
-                    else
-                    {
-                        if (!tienDo.DaXem)
-                        {
-                            tienDo.DaXem = true;
-                        }
-                        // NgayCapNhat vẫn cập nhật: học viên có học hôm nay thật, dữ liệu này
-                        // cấp cho nhiệm vụ ngay_hoc / hoc_bai và nhãn giam_chan.
-                        tienDo.NgayCapNhat = DateTime.Now;
-                        _context.TienDoBaiHocs.Update(tienDo);
-                    }
+                        SoCauDung = dto.SoCauDung,
+                        TongSoCau = dto.TongSoCau,
+                        DiemSo = dto.DiemSo,
+                        KetQua = dto.DaDat ? "Pass" : "Fail",
+                        ThoiGianNop = DateTime.Now,
+                        LichSuTraLoi = dto.ChiTietLamBai
+                    };
 
+                    var ketQuaMoi = new KetQuaLamBaiModel
+                    {
+                        MaNguoiDung = dto.MaNguoiDung,
+                        MaBaiTap = dto.MaBaiTap,
+                        DiemSo = dto.DiemSo,
+                        TrangThai = dto.DaDat,
+                        NoiDungNopJSON = JsonSerializer.Serialize(duLieuLuuTru),
+                        NgayNop = DateTime.Now
+                    };
+
+                    _context.KetQuaLamBais.Add(ketQuaMoi);
                     await _context.SaveChangesAsync();
+
+                    if (dto.DaDat)
+                    {
+                        var tienDo = await _context.TienDoBaiHocs
+                            .FirstOrDefaultAsync(td => td.MaBaiHoc == dto.MaBaiHoc
+                                                    && td.MaNguoiDung == dto.MaNguoiDung);
+
+                        // Đạt quiz chỉ đánh dấu ĐÃ XEM, không sinh ra thời gian xem video.
+                        // ThoiGianHoc là số GIÂY xem thật (client gửi currentTime của player),
+                        // nên không được gán giá trị bịa vào đây — trước đây gán 100 với ý
+                        // "100%" làm sai đơn vị và ghi đè mất thời gian xem thật ở nhánh else.
+                        if (tienDo == null)
+                        {
+                            tienDo = new TienDoBaiHocModel
+                            {
+                                MaBaiHoc = dto.MaBaiHoc,
+                                MaNguoiDung = dto.MaNguoiDung,
+                                DaXem = true,
+                                NgayCapNhat = DateTime.Now
+                            };
+                            _context.TienDoBaiHocs.Add(tienDo);
+                        }
+                        else
+                        {
+                            if (!tienDo.DaXem)
+                            {
+                                tienDo.DaXem = true;
+                            }
+                            // NgayCapNhat vẫn cập nhật: học viên có học hôm nay thật, dữ liệu này
+                            // cấp cho nhiệm vụ ngay_hoc / hoc_bai và nhãn giam_chan.
+                            tienDo.NgayCapNhat = DateTime.Now;
+                            _context.TienDoBaiHocs.Update(tienDo);
+                        }
+
+                        await _context.SaveChangesAsync();
+                    }
+
+                    await transaction.CommitAsync();
+                    return true;
                 }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
 
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-
-                Console.WriteLine($"Lỗi khi lưu kết quả bài tập: {ex.Message}");
-                return false;
-            }
+                    Console.WriteLine($"Lỗi khi lưu kết quả bài tập: {ex.Message}");
+                    return false;
+                }
+            });
         }
 
 
@@ -653,90 +657,93 @@ namespace educodeai_server.Repository.Implementation
                 ? "Bạn đã đạt yêu cầu và chứng chỉ đã được phát hành."
                 : "Bạn chưa đạt ngưỡng nhận chứng chỉ. Hãy ôn tập và thử lại.";
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                var ketQuaThi = new KetQuaKiemTraChungChiModel
+                using var transaction = await _context.Database.BeginTransactionAsync();
+
+                try
                 {
-                    MaKhoaHoc = dto.MaKhoaHoc,
-                    MaNguoiDung = dto.MaNguoiDung,
-                    DiemSo = diemSo,
-                    SoCauDung = soCauDung,
-                    TongSoCau = tongSoCau,
-                    DaDat = daDat,
-                    ChiTietLamBaiJSON = JsonSerializer.Serialize(new
+                    var ketQuaThi = new KetQuaKiemTraChungChiModel
                     {
-                        dto.ChiTietLamBai,
-                        TongSoCau = tongSoCau,
-                        SoCauDung = soCauDung,
+                        MaKhoaHoc = dto.MaKhoaHoc,
+                        MaNguoiDung = dto.MaNguoiDung,
                         DiemSo = diemSo,
-                        NgayThi = DateTime.UtcNow
-                    }),
-                    NgayThi = DateTime.UtcNow
-                };
-
-                _context.KetQuaKiemTraChungChis.Add(ketQuaThi);
-                await _context.SaveChangesAsync();
-
-                if (daDat)
-                {
-                    var chungChi = await _context.ChungChiKhoaHocs
-                        .FirstOrDefaultAsync(x => x.MaKhoaHoc == dto.MaKhoaHoc && x.MaNguoiDung == dto.MaNguoiDung);
-                    var ngayCap = DateTime.UtcNow;
-
-                    if (chungChi == null)
-                    {
-                        chungChi = new ChungChiKhoaHocModel
+                        SoCauDung = soCauDung,
+                        TongSoCau = tongSoCau,
+                        DaDat = daDat,
+                        ChiTietLamBaiJSON = JsonSerializer.Serialize(new
                         {
-                            MaKhoaHoc = dto.MaKhoaHoc,
-                            MaNguoiDung = dto.MaNguoiDung,
-                            MaChungChi = TaoMaChungChi(dto.MaKhoaHoc, dto.MaNguoiDung),
-                            MaKetQuaKiemTraChungChi = ketQuaThi.MaKetQuaKiemTraChungChi,
-                            HoTenHienThi = dto.HoTenHienThi,
-                            EmailNhan = dto.EmailNhan,
-                            NgayCap = ngayCap
-                        };
-                        _context.ChungChiKhoaHocs.Add(chungChi);
-                    }
-                    else
-                    {
-                        chungChi.MaKetQuaKiemTraChungChi = ketQuaThi.MaKetQuaKiemTraChungChi;
-                        chungChi.HoTenHienThi = dto.HoTenHienThi;
-                        chungChi.EmailNhan = dto.EmailNhan;
-                        chungChi.NgayCap = ngayCap;
-                        _context.ChungChiKhoaHocs.Update(chungChi);
-                    }
+                            dto.ChiTietLamBai,
+                            TongSoCau = tongSoCau,
+                            SoCauDung = soCauDung,
+                            DiemSo = diemSo,
+                            NgayThi = DateTime.UtcNow
+                        }),
+                        NgayThi = DateTime.UtcNow
+                    };
+
+                    _context.KetQuaKiemTraChungChis.Add(ketQuaThi);
                     await _context.SaveChangesAsync();
 
-                    thongBao = "Bạn đã đạt yêu cầu. Chứng chỉ đang được tạo và gửi bản PDF về email của bạn trong ít phút.";
+                    if (daDat)
+                    {
+                        var chungChi = await _context.ChungChiKhoaHocs
+                            .FirstOrDefaultAsync(x => x.MaKhoaHoc == dto.MaKhoaHoc && x.MaNguoiDung == dto.MaNguoiDung);
+                        var ngayCap = DateTime.UtcNow;
+
+                        if (chungChi == null)
+                        {
+                            chungChi = new ChungChiKhoaHocModel
+                            {
+                                MaKhoaHoc = dto.MaKhoaHoc,
+                                MaNguoiDung = dto.MaNguoiDung,
+                                MaChungChi = TaoMaChungChi(dto.MaKhoaHoc, dto.MaNguoiDung),
+                                MaKetQuaKiemTraChungChi = ketQuaThi.MaKetQuaKiemTraChungChi,
+                                HoTenHienThi = dto.HoTenHienThi,
+                                EmailNhan = dto.EmailNhan,
+                                NgayCap = ngayCap
+                            };
+                            _context.ChungChiKhoaHocs.Add(chungChi);
+                        }
+                        else
+                        {
+                            chungChi.MaKetQuaKiemTraChungChi = ketQuaThi.MaKetQuaKiemTraChungChi;
+                            chungChi.HoTenHienThi = dto.HoTenHienThi;
+                            chungChi.EmailNhan = dto.EmailNhan;
+                            chungChi.NgayCap = ngayCap;
+                            _context.ChungChiKhoaHocs.Update(chungChi);
+                        }
+                        await _context.SaveChangesAsync();
+
+                        thongBao = "Bạn đã đạt yêu cầu. Chứng chỉ đang được tạo và gửi bản PDF về email của bạn trong ít phút.";
+                    }
+
+                    await transaction.CommitAsync();
+
+                    return new KetQuaNopBaiKiemTraChungChiDTO
+                    {
+                        ThanhCong = true,
+                        DaDat = daDat,
+                        DiemSo = diemSo,
+                        SoCauDung = soCauDung,
+                        TongSoCau = tongSoCau,
+                        ThongBao = thongBao,
+                        ThongTinChungChi = await LayThongTinChungChiAsync(khoaHoc, dto.MaNguoiDung, tongSoCau)
+                    };
                 }
-
-                await transaction.CommitAsync();
-
-                return new KetQuaNopBaiKiemTraChungChiDTO
+                catch (Exception ex)
                 {
-                    ThanhCong = true,
-                    DaDat = daDat,
-                    DiemSo = diemSo,
-                    SoCauDung = soCauDung,
-                    TongSoCau = tongSoCau,
-                    ThongBao = thongBao,
-                    ThongTinChungChi = await LayThongTinChungChiAsync(khoaHoc, dto.MaNguoiDung, tongSoCau)
-                };
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
+                    await transaction.RollbackAsync();
+                    Console.WriteLine($"[NopBaiKiemTraChungChi] Lỗi lưu kết quả: {ex}");
 
-                Console.WriteLine($"[NopBaiKiemTraChungChi] Lỗi lưu kết quả: {ex}");
-
-                return new KetQuaNopBaiKiemTraChungChiDTO
-                {
-                    ThanhCong = false,
-                    ThongBao = "Không thể lưu kết quả bài kiểm tra chứng chỉ. Vui lòng thử lại sau."
-                };
-            }
+                    return new KetQuaNopBaiKiemTraChungChiDTO
+                    {
+                        ThanhCong = false,
+                        ThongBao = "Không thể lưu kết quả bài kiểm tra chứng chỉ. Vui lòng thử lại sau."
+                    };
+                }
+            });
         }
 
         public async Task CapNhatTrangThaiGuiEmailChungChiAsync(int maKhoaHoc, int maNguoiDung, bool trangThai)
@@ -968,10 +975,31 @@ namespace educodeai_server.Repository.Implementation
 
             try
             {
-                var danhSachCauHoi = JsonSerializer.Deserialize<List<CauHoiQuizRaw>>(json)
-                    ?? new List<CauHoiQuizRaw>();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
 
-                return danhSachCauHoi
+                using var document = JsonDocument.Parse(json);
+                var root = document.RootElement;
+                // Hỗ trợ cả mảng câu hỏi và dữ liệu cũ được bọc trong thuộc tính "Câu hỏi"/"questions".
+                if (root.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var property in root.EnumerateObject())
+                    {
+                        if (property.Value.ValueKind == JsonValueKind.Array)
+                        {
+                            root = property.Value;
+                            break;
+                        }
+                    }
+                }
+
+                var danhSachCauHoi = root.ValueKind == JsonValueKind.Array
+                    ? JsonSerializer.Deserialize<List<CauHoiQuizRaw>>(root.GetRawText(), options)
+                    : null;
+
+                return (danhSachCauHoi ?? new List<CauHoiQuizRaw>())
                     .Where(cauHoi => !string.IsNullOrWhiteSpace(cauHoi.CauHoi))
                     .Select((cauHoi, index) => new CauHoiChungChiItem
                     {
@@ -986,8 +1014,9 @@ namespace educodeai_server.Repository.Implementation
                     })
                     .ToList();
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[ParseCauHoiChungChi] Không đọc được dữ liệu đề: {ex.Message}");
                 return new List<CauHoiChungChiItem>();
             }
         }
