@@ -630,7 +630,7 @@ const NoiDungKhoaHoc = () => {
                             >
                                 {tabActive === 'quiz' || baiHocHienTai.loaiBaiHoc === 'Quiz' ? (
                                     <><i className="fas fa-question-circle" /> Bài trắc nghiệm</>
-                                ) : tabActive === 'ide' || baiHocHienTai.loaiBaiHoc === 'Ide' || baiHocHienTai.loaiBaiHoc === 'Code' ? (
+                                ) : tabActive === 'ide' || baiHocHienTai.loaiBaiHoc === 'Ide' ? (
                                     <><i className="fas fa-code" /> Bài thực hành</>
                                 ) : (
                                     <><i className="fas fa-play-circle" /> Bài học</>
