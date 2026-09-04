@@ -43,12 +43,14 @@ interface LessonModalProps {
   isOpen: boolean;
   editData?: BaiHocDetail | null;
   currentCount: number;
+  chapters: { maChuong: number; tenChuong: string }[];
+  currentChapterId: number;
   isLoading: boolean;
   uploadProgress: number | null;
   onSave: (type: 'Video' | 'File' | 'VideoUpload', dto: any) => void;
   onClose: () => void;
 }
-const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCount, isLoading, uploadProgress, onSave, onClose }) => {
+const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCount, chapters, currentChapterId, isLoading, uploadProgress, onSave, onClose }) => {
   const isEdit = !!editData;
   const initialType = editData?.loaiBaiHoc === 'File' ? 'File' : 'Video';
   const [loaiBaiHoc, setLoaiBaiHoc] = useState<'Video' | 'File' | 'VideoUpload'>(initialType);
@@ -56,6 +58,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
   const [moTa, setMoTa] = useState(editData?.moTa ?? '');
   const [linkVideo, setLinkVideo] = useState(editData?.linkVideo ?? '');
   const [thoiLuong, setThoiLuong] = useState(editData?.thoiLuong ?? 0);
+  const [maChuong, setMaChuong] = useState(editData?.maChuong ?? currentChapterId);
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const isYT = editData?.linkVideo && getYTId(editData.linkVideo);
@@ -68,6 +71,7 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
     setMoTa(editData?.moTa ?? '');
     setLinkVideo(editData?.linkVideo ?? '');
     setThoiLuong(editData?.thoiLuong ?? 0);
+    setMaChuong(editData?.maChuong ?? currentChapterId);
     setFile(null);
     setErrors({});
   }, [editData, isOpen]);
@@ -87,12 +91,13 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
 
   const handleSave = () => {
     if (!validate()) return;
+    const lessonData = { maChuong, thuTu: editData?.thuTu ?? currentCount + 1 };
     if (loaiBaiHoc === 'Video') {
-      onSave('Video', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), linkVideo: linkVideo.trim(), thoiLuong, thuTu: editData?.thuTu ?? currentCount + 1 });
+      onSave('Video', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), linkVideo: linkVideo.trim(), thoiLuong, ...lessonData });
     } else if (loaiBaiHoc === 'VideoUpload') {
-      onSave('VideoUpload', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), file, thuTu: editData?.thuTu ?? currentCount + 1 });
+      onSave('VideoUpload', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), file, ...lessonData });
     } else {
-      onSave('File', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), file, thuTu: editData?.thuTu ?? currentCount + 1 });
+      onSave('File', { tieuDe: tieuDe.trim(), moTa: moTa.trim(), file, ...lessonData });
     }
   };
 
@@ -132,6 +137,14 @@ const LessonModal: React.FC<LessonModalProps> = ({ isOpen, editData, currentCoun
             </div>
           )}
           
+          <div className="khm-form-group">
+            <label className="khm-form-label">Chương</label>
+            <select className="khm-form-select" value={maChuong} onChange={e => setMaChuong(Number(e.target.value))} disabled={isLoading}>
+              {chapters.map(chapter => <option key={chapter.maChuong} value={chapter.maChuong}>{chapter.tenChuong}</option>)}
+            </select>
+            {isEdit && <div className="khm-form-hint">Chọn chương khác để di chuyển bài học.</div>}
+          </div>
+
           <div className="khm-form-group">
             <label className="khm-form-label">Tiêu đề <span className="req">*</span></label>
             <input
@@ -382,19 +395,22 @@ const LessonRow: React.FC<{
 interface Props {
   maChuong: number;
   maKhoaHoc: number;
+  chapters: { maChuong: number; tenChuong: string }[];
   initialLessons?: BaiHocDetail[];
   onImportYT?: () => void;
   onBackToChapters: () => void;
+  onRefreshCourse: () => Promise<void>;
+  onNotify: (type: 'success' | 'error' | 'warning' | 'info', message: string) => void;
 }
 
-const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, initialLessons = [], onImportYT, onBackToChapters }) => {
+const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, chapters, initialLessons = [], onImportYT, onBackToChapters, onRefreshCourse, onNotify }) => {
   const {
     lessons, loading, error, modalOpen, editTarget, saving, deleteTarget, deleting, previewLesson,
     uploadProgress, setLessons,
     setModalOpen, setEditTarget, setDeleteTarget, setPreviewLesson,
     loadLessons, handleDragEnd, handleSave, handleConfirmDelete,
     ToastContainer
-  } = useLessonManagement({ maChuong, maKhoaHoc, initialLessons });
+  } = useLessonManagement({ maChuong, maKhoaHoc, initialLessons, onRefreshCourse, onNotify });
 
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [subtitleTarget, setSubtitleTarget] = useState<BaiHocDetail | null>(null);
@@ -472,6 +488,8 @@ const LessonListEditor: React.FC<Props> = ({ maChuong, maKhoaHoc, initialLessons
         isOpen={modalOpen}
         editData={editTarget}
         currentCount={lessons.length}
+        chapters={chapters}
+        currentChapterId={maChuong}
         isLoading={saving}
         uploadProgress={uploadProgress}
         onSave={(type, dto) => void handleSave(type, dto)}

@@ -54,9 +54,9 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const loadDetail = useCallback(async () => {
+  const loadDetail = useCallback(async (silent = false) => {
     try {
-      setLoading(true); setError(null);
+      if (!silent) setLoading(true); setError(null);
       const data = await api.getChiTietKhoaHoc(maGiangVien, maKhoaHoc);
       setDetail(data);
       setCertForm({
@@ -349,7 +349,10 @@ const CourseManagePage: React.FC<Props> = ({ maKhoaHoc, onBack, onEdit, onImport
                     key={selectedChapter.maChuong}
                       maChuong={selectedChapter.maChuong}
                       maKhoaHoc={maKhoaHoc}
+                      chapters={detail.danhSachChuong.map(c => ({ maChuong: c.maChuong, tenChuong: c.tenChuong }))}
                       initialLessons={detail.danhSachChuong.find(c => c.maChuong === selectedChapter.maChuong)?.danhSachBaiHoc ?? []}
+                      onRefreshCourse={loadDetail}
+                      onNotify={showToast}
                       onImportYT={onImportPlaylist}
                       onBackToChapters={() => setSelectedChapter(null)}
                     />
