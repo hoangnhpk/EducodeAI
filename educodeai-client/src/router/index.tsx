@@ -107,6 +107,10 @@ export default function AppRouter() {
             <Route path="/quen-mat-khau" element={<QuenMatKhau />} />
           </Route>
 
+          <Route element={<PublicRoute />}>
+            <Route path="/chung-chi/xac-nhan" element={<XacNhanChungChi />} />
+          </Route>
+
           <Route element={<PublicRoute><LayoutHocVien /></PublicRoute>}>
             <Route path="/" element={<HomeRedirect />} />
             <Route path="/khoa-hoc/:id" element={<ChiTietKhoaHoc />} />
