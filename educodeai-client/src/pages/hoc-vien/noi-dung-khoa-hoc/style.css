@@ -1332,7 +1332,7 @@ video::-webkit-media-controls-playback-rate-button {
 /* Container chính: Giới hạn chiều rộng, căn giữa, đổ bóng */
 .cp-quiz-wrapper {
     max-width: 800px;
-    margin: 2rem auto;
+    margin: 0.75rem auto;
     background: #ffffff;
     border-radius: 20px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);

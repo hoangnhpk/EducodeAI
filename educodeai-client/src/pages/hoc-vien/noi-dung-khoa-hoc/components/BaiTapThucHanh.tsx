@@ -382,7 +382,9 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                         <span style={{ marginLeft: 16 }}><i className="fas fa-code"></i> Ngôn ngữ: <span style={{ fontWeight: 'bold' }}>{duLieu.ngonNgu}</span></span>
                     </div>
 
-                    <div dangerouslySetInnerHTML={{ __html: duLieu.moTaDeBai }} />
+                    <div className="cp-problem-description">
+                        <ReactMarkdown>{duLieu.moTaDeBai}</ReactMarkdown>
+                    </div>
 
                     {duLieu.testCases.length > 0 && (
                         <>
@@ -398,7 +400,9 @@ export const BaiTapIDE: React.FC<BaiTapIDEProps> = ({ maBaiTap, khiHoanThanh }) 
                     {cleanGoiY && (
                         <div style={{ marginTop: '1.5rem', padding: '1rem', borderLeft: '4px solid #fcebb6', background: '#fffbeb', borderRadius: 4 }}>
                             <h4 style={{ margin: '0 0 0.5rem 0', color: '#b45309', fontSize: '0.95rem' }}><i className="fas fa-lightbulb"></i> Gợi ý</h4>
-                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#78350f' }}>{cleanGoiY}</p>
+                            <div style={{ margin: 0, fontSize: '0.9rem', color: '#78350f' }}>
+                                <ReactMarkdown>{cleanGoiY}</ReactMarkdown>
+                            </div>
                         </div>
                     )}
                 </div>
