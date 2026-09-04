@@ -14,6 +14,7 @@ import TrangThaiHoSoGiangVien from "../pages/auth/TrangThaiHoSoGiangVien";
 import BoSungHoSoGiangVien from "../pages/auth/BoSungHoSoGiangVien";
 import QuenMatKhau from "../pages/auth/QuenMatKhau";
 import NotFound from "../pages/NotFound";
+import XacNhanChungChi from "../pages/hoc-vien/chung-chi/XacNhanChungChi";
 
 import TrangChuHocVien from "@/pages/hoc-vien/trang-chu/TrangChu";
 import NoiDungKhoaHoc from "@/pages/hoc-vien/noi-dung-khoa-hoc/NoiDungKhoaHoc";

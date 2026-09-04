@@ -99,19 +99,6 @@ export const TabChungChi = ({
     if (dangLamBai) {
         return (
             <div className="cp-certificate-exam">
-                <div className="cp-certificate-exam-head">
-                    <div>
-                        <span className="cp-certificate-kicker">Bài kiểm tra cuối khóa</span>
-                        <h3>{baiKiemTraChungChi.tieuDe}</h3>
-                        <p>{baiKiemTraChungChi.moTa}</p>
-                    </div>
-                    <div className="cp-certificate-exam-badges">
-                        <span>{baiKiemTraChungChi.soCauHoi} câu</span>
-                        <span>{baiKiemTraChungChi.thoiGianLamBai ?? 0} phút</span>
-                        <span>Cần {baiKiemTraChungChi.diemCanDat}%</span>
-                    </div>
-                </div>
-
                 <div className={dangNopBai ? 'cp-certificate-submitting' : ''}>
                     <BaiTapTracNghiem
                         duLieu={{

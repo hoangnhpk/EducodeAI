@@ -1,5 +1,6 @@
 import { getUserInfo } from '@/utils/authHelper';
-import React from 'react';
+import { getAnhDaiDienUrl, layChuCaiAvatar } from '@/utils/avatarHelper';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface Props { 
@@ -16,8 +17,14 @@ export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai
     const navigate = useNavigate();
     const userInfo = getUserInfo();
     const userDisplayName = userInfo?.hoTen || userInfo?.taiKhoan || 'Học viên';
-    const userInitial = userDisplayName.trim().charAt(0).toUpperCase() || 'H';
-    const userAvatar = userInfo?.anhDaiDien;
+    const userInitial = layChuCaiAvatar(userDisplayName);
+    const rawAvatar = userInfo?.anhDaiDien;
+    const userAvatar = getAnhDaiDienUrl(rawAvatar);
+    const [avatarError, setAvatarError] = useState(false);
+
+    useEffect(() => {
+        setAvatarError(false);
+    }, [rawAvatar]);
 
     // Logic vẽ vòng tròn tiến độ SVG
     const radius = 16; 
@@ -123,8 +130,13 @@ export const ThanhTieuDe: React.FC<Props> = ({ tenKhoaHoc, soBaiDaHoc, tongSoBai
 
                 <div className="cp-user-chip" style={{ marginLeft: '15px' }}>
                     <div className="cp-user-avatar" style={{ overflow: 'hidden' }}>
-                        {userAvatar ? (
-                            <img src={userAvatar} alt={userDisplayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {userAvatar && !avatarError ? (
+                            <img 
+                                src={userAvatar} 
+                                alt={userDisplayName} 
+                                onError={() => setAvatarError(true)}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            />
                         ) : (
                             userInitial
                         )}
